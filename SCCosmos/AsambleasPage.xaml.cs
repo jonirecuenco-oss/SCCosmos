@@ -29,7 +29,7 @@ namespace SCCosmos
         private DispatcherTimer _autoSaveTimer;
 
         // ==========================================
-        // VARIABLES GLOBALES (Listas)
+        // VARIABLES GLOBALES (Listas) hola
         // ==========================================
         public ObservableCollection<string> ListaAños { get; set; }
         public ObservableCollection<AncianoComboItem> ListaAncianos { get; set; }
