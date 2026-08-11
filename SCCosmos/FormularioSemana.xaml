@@ -1,0 +1,141 @@
+﻿<Window x:Class="SCCosmos.FormularioSemana"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        Title="Editar Semana" Height="480" Width="650"
+        WindowStartupLocation="CenterOwner"
+        Background="#1E1E1E" Foreground="White" ResizeMode="NoResize">
+
+    <Grid Margin="25">
+        <StackPanel>
+            <TextBlock Text="Planificación de la Semana" FontSize="20" FontWeight="SemiBold" Foreground="#4BA3E3" Margin="0,0,0,5"/>
+            <TextBlock x:Name="TxtRango" Text="Rango de fechas" Foreground="#888888" Margin="0,0,0,20" FontSize="13"/>
+
+            <!-- 1. FILA: ACTIVIDAD Y CONGREGACIÓN -->
+            <Grid Margin="0,0,0,15">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                    <TextBlock Text="Actividad de la semana:" Foreground="White" Margin="0,0,0,5" FontWeight="Medium"/>
+                    <ComboBox x:Name="ComboActividades" HorizontalAlignment="Stretch" SelectionChanged="ComboActividades_SelectionChanged" Padding="6">
+                        <ComboBoxItem Content="Visita"/>
+                        <ComboBoxItem Content="Asamblea de circuito"/>
+                        <ComboBoxItem Content="Asamblea regional"/>
+                        <ComboBoxItem Content="ESP"/>
+                        <ComboBoxItem Content="Semana libre CG"/>
+                        <ComboBoxItem Content="Vacaciones"/>
+                        <ComboBoxItem Content="Otro"/>
+                    </ComboBox>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                    <TextBlock Text="Congregación asignada:" Foreground="White" Margin="0,0,0,5" FontWeight="Medium"/>
+                    <ComboBox x:Name="ComboCongregaciones" HorizontalAlignment="Stretch" Padding="6"
+                              DisplayMemberPath="Nombre" SelectedValuePath="Nombre"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- PANEL EXCLUSIVO ASAMBLEA -->
+            <StackPanel x:Name="PanelAsamblea" Visibility="Collapsed" Margin="0,0,0,15">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                        <TextBlock Text="Sección que asiste a la asamblea:" Foreground="White" Margin="0,0,0,5" FontWeight="Medium"/>
+                        <ComboBox x:Name="ComboSeccionesAsamblea" DisplayMemberPath="Nombre" SelectedValuePath="Nombre" HorizontalAlignment="Stretch" Padding="6"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                        <TextBlock Text="Día del fin de semana:" Foreground="White" Margin="0,0,0,5" FontWeight="Medium"/>
+                        <ComboBox x:Name="ComboDiaAsamblea" HorizontalAlignment="Stretch" Padding="6"/>
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+
+            <!-- CONTENEDOR DINÁMICO DE DETALLES DE VISITA -->
+            <StackPanel x:Name="PanelDetallesVisita" Visibility="Collapsed">
+
+                <!-- 2. FILA: TIPO DE VISITA Y ALOJAMIENTO -->
+                <Grid Margin="0,0,0,15">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                        <TextBlock Text="Tipo de visita:" Foreground="White" Margin="0,0,0,5" FontWeight="Medium"/>
+                        <ComboBox x:Name="ComboTipo" HorizontalAlignment="Stretch" SelectionChanged="ComboTipo_SelectionChanged" Padding="6">
+                            <ComboBoxItem Content="Visita SC"/>
+                            <ComboBoxItem Content="Visita (con SCS)"/>
+                            <ComboBoxItem Content="Visita (de pastoreo)"/>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                        <TextBlock Text="Régimen de alojamiento:" Foreground="White" Margin="0,0,0,5" FontWeight="Medium"/>
+                        <ComboBox x:Name="ComboAlojamiento" HorizontalAlignment="Stretch" Padding="6"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- 3A. FILA EXCLUSIVA SCS -->
+                <Grid x:Name="PanelSCS" Visibility="Collapsed" Margin="0,0,0,15">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                        <TextBlock Text="Superintendente Sustituto:" Foreground="White" Margin="0,0,0,5" FontSize="13"/>
+                        <ComboBox x:Name="ComboSCS" DisplayMemberPath="NombreJWHub" SelectionChanged="ComboSCS_SelectionChanged" Padding="6"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                        <TextBlock Text="Esposa del SCS:" Foreground="White" Margin="0,0,0,5" FontSize="13"/>
+                        <ComboBox x:Name="ComboEsposaSCS" DisplayMemberPath="NombreJWHub" Padding="6"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- 3B. FILA EXCLUSIVA PASTOREO -->
+                <Grid x:Name="PanelPastoreo" Visibility="Collapsed" Margin="0,0,0,15">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Grid Grid.Column="0" Margin="0,0,10,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Margin="0,0,5,0">
+                            <TextBlock Text="Nombre (Hno):" Foreground="White" Margin="0,0,0,5" FontSize="13"/>
+                            <TextBox x:Name="TxtHermanoPastoreo" Padding="6"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Margin="5,0,0,0">
+                            <TextBlock Text="Apellido:" Foreground="White" Margin="0,0,0,5" FontSize="13"/>
+                            <TextBox x:Name="TxtApellidoPastoreo" Padding="6"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                        <TextBlock Text="Esposa (si asiste):" Foreground="White" Margin="0,0,0,5" FontSize="13"/>
+                        <TextBox x:Name="TxtEsposaPastoreo" Padding="6"/>
+                    </StackPanel>
+                </Grid>
+
+            </StackPanel>
+
+            <!-- BOTONES DE ACCIÓN -->
+            <StackPanel  Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                <ui:Button Content="Cancelar" Click="BtnCancelar_Click" Margin="0,0,10,0" Padding="18,8" Cursor="Hand"/>
+                <ui:Button Content="Guardar" Appearance="Primary" Click="BtnGuardar_Click" Padding="18,8" Cursor="Hand" Icon="{ui:SymbolIcon Save24}"/>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</Window>

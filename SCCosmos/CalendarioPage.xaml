@@ -1,0 +1,246 @@
+﻿<Page x:Class="SCCosmos.CalendarioPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:local="clr-namespace:SCCosmos"
+      mc:Ignorable="d" 
+      d:DesignHeight="600" d:DesignWidth="1200"
+      Title="CalendarioPage">
+
+    <Page.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </Page.Resources>
+
+    <Grid>
+        <Grid Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- 0. TÍTULO FIJO -->
+            <TextBlock Text="RUTA" 
+                       Grid.Row="0" 
+                       FontSize="26" 
+                       FontWeight="SemiBold" 
+                       Foreground="White" 
+                       Margin="0,0,0,20"/>
+
+            <!-- 1. BOTÓN PASADO -->
+            <ui:Button x:Name="BtnCargarPasado" 
+                       Grid.Row="1" 
+                       Content="Cargar 52 semanas anteriores (1 año atrás)" 
+                       Icon="{ui:SymbolIcon ChevronUp24}"
+                       Click="BtnCargarPasado_Click"
+                       HorizontalAlignment="Stretch"
+                       Cursor="Hand"
+                       Padding="10,8" 
+                       Margin="0,0,0,10"/>
+
+            <!-- 2. LA TABLA (CON SCROLL INTERNO) -->
+            <DataGrid x:Name="TablaRuta" 
+                      Grid.Row="2" 
+                      VerticalAlignment="Stretch"
+                      HorizontalAlignment="Stretch"
+                      AutoGenerateColumns="False" 
+                      CanUserAddRows="False"
+                      HeadersVisibility="Column"
+                      SelectionMode="Single"
+                      IsReadOnly="True"
+                      GridLinesVisibility="Horizontal"
+                      HorizontalGridLinesBrush="#20FFFFFF"
+                      BorderThickness="1"
+                      BorderBrush="#20FFFFFF"
+                      Background="Transparent"
+                      RowBackground="Transparent"
+                      AlternatingRowBackground="Transparent"
+                      EnableRowVirtualization="True"
+                      VirtualizingPanel.IsVirtualizingWhenGrouping="True"
+                      VirtualizingPanel.ScrollUnit="Item"
+                      ScrollViewer.VerticalScrollBarVisibility="Auto"
+                      RowHeight="34">
+
+                <DataGrid.RowStyle>
+                    <Style TargetType="DataGridRow">
+                        <Setter Property="BorderThickness" Value="4,0,0,0"/>
+                        <Setter Property="BorderBrush" Value="Transparent"/>
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#15FFFFFF"/>
+                            </Trigger>
+                            <DataTrigger Binding="{Binding IsActual}" Value="True">
+                                <Setter Property="Background" Value="#2A0078D4"/>
+                                <Setter Property="BorderBrush" Value="#0078D4"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </DataGrid.RowStyle>
+
+                <DataGrid.GroupStyle>
+                    <GroupStyle>
+                        <GroupStyle.ContainerStyle>
+                            <Style TargetType="{x:Type GroupItem}">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="{x:Type GroupItem}">
+                                            <StackPanel>
+                                                <Border Background="#25FFFFFF" Padding="0,10" Margin="0" BorderThickness="0,1,0,1" BorderBrush="#35FFFFFF">
+                                                    <TextBlock Text="{Binding Name}" Foreground="White" FontWeight="Bold" FontSize="14" HorizontalAlignment="Center"/>
+                                                </Border>
+                                                <ItemsPresenter />
+                                            </StackPanel>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </GroupStyle.ContainerStyle>
+                    </GroupStyle>
+                </DataGrid.GroupStyle>
+
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Semana" Binding="{Binding RangoFechas}" Width="16*">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                <Setter Property="HorizontalAlignment" Value="Left"/>
+                                <Setter Property="Margin" Value="8,0"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+
+                    <DataGridTextColumn Header="Actividad" Binding="{Binding Actividad}" Width="12*">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                <Setter Property="HorizontalAlignment" Value="Left"/>
+                                <Setter Property="Margin" Value="8,0"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+
+                    <DataGridTextColumn Header="Congregación" Binding="{Binding CongregacionVisual}" Width="20*">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                <Setter Property="HorizontalAlignment" Value="Left"/>
+                                <Setter Property="Margin" Value="8,0"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+
+                    <DataGridTextColumn Header="Tipo" Binding="{Binding Tipo}" Width="10*">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                <Setter Property="HorizontalAlignment" Value="Left"/>
+                                <Setter Property="Margin" Value="8,0"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+
+                    <DataGridTextColumn Header="Acompañante" Binding="{Binding AcompananteVisual}" Width="14*">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                <Setter Property="HorizontalAlignment" Value="Left"/>
+                                <Setter Property="Margin" Value="8,0"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+
+                    <DataGridTextColumn Header="Alojamiento" Binding="{Binding Alojamiento}" Width="14*">
+                        <DataGridTextColumn.ElementStyle>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                <Setter Property="HorizontalAlignment" Value="Left"/>
+                                <Setter Property="Margin" Value="8,0"/>
+                            </Style>
+                        </DataGridTextColumn.ElementStyle>
+                    </DataGridTextColumn>
+
+                    <DataGridTemplateColumn Header="Acciones" Width="Auto" MinWidth="250">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel HorizontalAlignment="Left" Margin="8,0" Orientation="Horizontal" VerticalAlignment="Center">
+
+                                    <!-- Editar (Siempre visible) -->
+                                    <ui:Button Icon="{ui:SymbolIcon Edit24}" Padding="6" Margin="0,0,5,0" Cursor="Hand" Click="BtnEditar_Click" ToolTip="Editar parámetros de la semana"/>
+
+                                    <!-- Botones de VISITA -->
+                                    <ContentControl Margin="0,0,5,0" Visibility="{Binding VisibilidadVisita}">
+                                        <ui:Button Icon="{ui:SymbolIcon SendClock24}" Appearance="Secondary" Padding="6" Cursor="Hand" Click="BtnEnviarS302_Click" ToolTip="Enviar S-302" Background="{Binding ColorBotonS302}"/>
+                                    </ContentControl>
+
+                                    <ContentControl Margin="0,0,5,0" Visibility="{Binding VisibilidadVisita}">
+                                        <ui:Button Icon="{ui:SymbolIcon DocumentArrowRight24}" Appearance="Secondary" Padding="6" Cursor="Hand" Click="BtnEnviarDoc_Click" ToolTip="Enviar documentación de la visita" Background="{Binding ColorBotonDoc}"/>
+                                    </ContentControl>
+
+                                    <!-- Botones de ASAMBLEA -->
+                                    <ContentControl Margin="0,0,5,0" Visibility="{Binding VisibilidadAsamblea}">
+                                        <ui:Button Icon="{ui:SymbolIcon MailAlert24}" Appearance="Secondary" Padding="6" Cursor="Hand" Click="BtnEnviarRecordatorio_Click" ToolTip="Enviar recordatorio asamblea" Background="{Binding ColorBotonRecordatorio}"/>
+                                    </ContentControl>
+
+                                    <!-- Botones de HERRAMIENTAS: Importar -->
+                                    <ContentControl Margin="0,0,5,0" Visibility="{Binding VisibilidadVisita}">
+                                        <ui:Button Icon="{ui:SymbolIcon ArrowImport24}" Appearance="Secondary" Padding="6" Cursor="Hand" Click="BtnImportar_Click" ToolTip="Importar archivos (S-21 / Territorios)"/>
+                                    </ContentControl>
+
+                                    <!-- BOTÓN DEL OJO: Ahora C# decide si aparece o no -->
+                                    <ContentControl Margin="0,0,5,0" Visibility="{Binding VisibilidadVerVisita}">
+                                        <ui:Button Icon="{ui:SymbolIcon Eye24}" Appearance="Success" Padding="6" Cursor="Hand" Click="BtnVerVisita_Click" ToolTip="Ver datos de la congregación"/>
+                                    </ContentControl>
+
+                                    <!-- Botones de SOLAPAMIENTO DE ACTIVIDADES -->
+                                    <ui:Button 
+                                               Icon="{ui:SymbolIcon AddCircle24}" 
+                                               Appearance="Transparent" 
+                                               Foreground="#0078D4"
+                                               Padding="6" 
+                                               Cursor="Hand" 
+                                               Click="BtnSolaparActividad_Click" 
+                                               ToolTip="Solapar otra actividad en la misma semana"
+                                               Visibility="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsMouseOver, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                                    <ui:Button Icon="{ui:SymbolIcon Delete24}" 
+                                               Appearance="Transparent" 
+                                               Foreground="#D13438"
+                                               Padding="6" 
+                                               Cursor="Hand" 
+                                               Click="BtnEliminarActividad_Click" 
+                                               ToolTip="Eliminar esta actividad extra"
+                                               Visibility="{Binding EsClonada}"/>
+
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <!-- 3. BOTÓN FUTURO -->
+            <ui:Button x:Name="BtnCargarFuturo" 
+                       Grid.Row="3" 
+                       Content="Cargar 52 semanas siguientes (1 año adelante)" 
+                       Icon="{ui:SymbolIcon ChevronDown24}"
+                       Click="BtnCargarFuturo_Click"
+                       HorizontalAlignment="Stretch"
+                       Cursor="Hand"
+                       Padding="10,8" 
+                       Margin="0,10,0,0"/>
+        </Grid>
+
+        <!-- OVERLAY DE CARGA -->
+        <Grid x:Name="OverlayCargando" Background="#CC000000" Visibility="Collapsed" Panel.ZIndex="100" Grid.RowSpan="10">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="Cargando..." Foreground="White" FontSize="24" FontWeight="Bold" Margin="0,0,0,10" HorizontalAlignment="Center"/>
+                <ProgressBar IsIndeterminate="True" Width="200" Height="8" Foreground="#0078D4"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Page>

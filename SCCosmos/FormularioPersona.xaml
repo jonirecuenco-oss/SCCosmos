@@ -1,0 +1,92 @@
+﻿<Window x:Class="SCCosmos.FormularioPersonaWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        Title="Editar Persona" Height="450" Width="430"
+        WindowStartupLocation="CenterOwner" Background="#1E1E1E" Foreground="White">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Editar Datos Personales" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,15"/>
+
+        <StackPanel Grid.Row="1">
+            <TextBlock Text="Nombre Completo" Foreground="#AAAAAA" Margin="0,0,0,5"/>
+            <ui:TextBox x:Name="TxtNombre" Margin="0,0,0,10"/>
+
+            <Grid Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="F. Nacimiento" Foreground="#AAAAAA" Margin="0,0,0,5"/>
+                    <DatePicker x:Name="DpNacimiento" Padding="4"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="F. Bautismo" Foreground="#AAAAAA" Margin="0,0,0,5"/>
+                    <DatePicker x:Name="DpBautismo" Padding="4"/>
+                </StackPanel>
+            </Grid>
+
+            <Grid Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="Sexo" Foreground="#AAAAAA" Margin="0,0,0,5"/>
+                    <ComboBox x:Name="CmbSexo" Padding="6,4">
+                        <ComboBoxItem Content="Hombre"/>
+                        <ComboBoxItem Content="Mujer"/>
+                    </ComboBox>
+                </StackPanel>
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="Esperanza" Foreground="#AAAAAA" Margin="0,0,0,5"/>
+                    <ComboBox x:Name="CmbEsperanza" Padding="6,4">
+                        <ComboBoxItem Content="Otras ovejas"/>
+                        <ComboBoxItem Content="Ungido"/>
+                    </ComboBox>
+                </StackPanel>
+            </Grid>
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="10"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="Nombramiento" Foreground="#AAAAAA" Margin="0,0,0,5"/>
+                    <ComboBox x:Name="CmbNombramiento" Padding="6,4">
+                        <ComboBoxItem Content=""/>
+                        <!-- Opción vacía -->
+                        <ComboBoxItem Content="Anciano"/>
+                        <ComboBoxItem Content="Siervo Ministerial"/>
+                    </ComboBox>
+                </StackPanel>
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="Servicio" Foreground="#AAAAAA" Margin="0,0,0,5"/>
+                    <ComboBox x:Name="CmbServicio" Padding="6,4">
+                        <ComboBoxItem Content=""/>
+                        <!-- Opción vacía -->
+                        <ComboBoxItem Content="Precursor regular"/>
+                        <ComboBoxItem Content="Precursor especial"/>
+                        <ComboBoxItem Content="Misionero"/>
+                    </ComboBox>
+                </StackPanel>
+            </Grid>
+        </StackPanel>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
+            <ui:Button Content="Cancelar" Click="BtnCancelar_Click" Margin="0,0,10,0" Appearance="Secondary"/>
+            <ui:Button Content="Guardar" Click="BtnGuardar_Click" Appearance="Primary" Icon="{ui:SymbolIcon Save24}"/>
+        </StackPanel>
+    </Grid>
+</Window>

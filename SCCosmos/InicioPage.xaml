@@ -1,0 +1,69 @@
+﻿<Page x:Class="SCCosmos.InicioPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      Title="InicioPage"
+      Foreground="White">
+
+    <Grid Margin="40">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Saludo y Cabecera -->
+        <TextBlock Grid.Row="0" Text="¡Hola, Jonatán!" FontSize="36" FontWeight="Bold" Margin="0,0,0,5"/>
+        <TextBlock Grid.Row="1" Text="Esto es lo que tienes programado para la semana actual:" FontSize="16" Foreground="#AAAAAA" Margin="0,0,0,30"/>
+
+        <!-- Tarjeta de Resumen -->
+        <ui:Card Grid.Row="2" VerticalAlignment="Top" Padding="30" Background="#0AFFFFFF" BorderBrush="#1AFFFFFF">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Icono dinámico gigante -->
+                <ui:SymbolIcon x:Name="IconoActividad" Grid.Column="0" Symbol="Calendar24" FontSize="60" Foreground="#0078D4" Margin="0,0,30,0" VerticalAlignment="Center"/>
+
+                <!-- PANEL 1: DISEÑO PARA VISITAS -->
+                <StackPanel x:Name="PanelVisita" Grid.Column="1" VerticalAlignment="Center" Visibility="Collapsed">
+                    <TextBlock Text="VISITA A CONGREGACIÓN" FontSize="12" FontWeight="Bold" Foreground="#0078D4" Margin="0,0,0,5"/>
+                    <TextBlock Text="{Binding Congregacion}" FontSize="28" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,5"/>
+                    <StackPanel Orientation="Horizontal">
+                        <ui:SymbolIcon Symbol="CalendarClock24" Foreground="#AAAAAA" Margin="0,0,8,0"/>
+                        <TextBlock Text="{Binding FechaMartes, StringFormat='Del {0:dd MMM} al '}" Foreground="#AAAAAA" FontSize="14"/>
+                        <TextBlock Text="{Binding FechaDomingo, StringFormat='{}{0:dd MMM yyyy}'}" Foreground="#AAAAAA" FontSize="14"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- PANEL 2: DISEÑO PARA OTRAS ACTIVIDADES -->
+                <StackPanel x:Name="PanelOtraActividad" Grid.Column="1" VerticalAlignment="Center" Visibility="Collapsed">
+                    <TextBlock Text="ACTIVIDAD PROGRAMADA" FontSize="12" FontWeight="Bold" Foreground="#AAAAAA" Margin="0,0,0,5"/>
+                    <TextBlock Text="{Binding Actividad}" FontSize="28" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,5"/>
+                    <StackPanel Orientation="Horizontal">
+                        <ui:SymbolIcon Symbol="CalendarClock24" Foreground="#AAAAAA" Margin="0,0,8,0"/>
+                        <TextBlock Text="{Binding FechaMartes, StringFormat='Semana del {0:dd de MMMM}'}" Foreground="#AAAAAA" FontSize="14"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Botón de Acción (Solo visible si es visita) -->
+                <ui:Button x:Name="BtnVerVisita" Grid.Column="2" 
+                           Content="Ver detalles de la visita" 
+                           Appearance="Primary" 
+                           Icon="{ui:SymbolIcon ArrowRight24}" 
+                           Padding="20,12" 
+                           FontSize="14"
+                           VerticalAlignment="Center"
+                           Visibility="Collapsed"
+                           Click="BtnVerVisita_Click"/>
+            </Grid>
+        </ui:Card>
+
+        <!-- Mensaje por si no hay ninguna semana marcada como actual -->
+        <TextBlock x:Name="TxtSinDatos" Grid.Row="2" Text="No se ha detectado ninguna actividad para la semana actual." 
+                   Foreground="#AAAAAA" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,20,0,0" Visibility="Collapsed"/>
+    </Grid>
+</Page>

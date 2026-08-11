@@ -1,0 +1,46 @@
+﻿<Window x:Class="SCCosmos.EmparejarPersonasWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Emparejar Datos Importados" Height="600" Width="850"
+        Background="#1E1E1E" WindowStartupLocation="CenterScreen">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="REVISIÓN DE PERSONAS IMPORTADAS (NUEVAS)" FontSize="20" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
+        <TextBlock Grid.Row="1" Text="Se han detectado personas en JW Hub que no están vinculadas a tu base de datos. Por defecto se crearán como nuevas, pero puedes desplegar la lista para vincularlas a un perfil existente (solo te lo pedirá esta vez)." Foreground="#AAAAAA" TextWrapping="Wrap" Margin="0,0,0,20"/>
+
+        <DataGrid x:Name="TablaVinculacion" Grid.Row="2" AutoGenerateColumns="False" CanUserAddRows="False"
+                  Background="Transparent" RowBackground="Transparent" Foreground="White"
+                  HeadersVisibility="Column" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#20FFFFFF" BorderBrush="#30FFFFFF">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Nombre JW Hub" Binding="{Binding PersonaExtraida.NombreCompleto}" Width="2*" IsReadOnly="True"/>
+                <DataGridTextColumn Header="Cargos" Binding="{Binding CargosLabel}" Width="1.5*" IsReadOnly="True" Foreground="#FFB900"/>
+
+                <DataGridTemplateColumn Header="Acción / Vincular con..." Width="3*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <ComboBox ItemsSource="{Binding ListaOpciones}" 
+                                      SelectedItem="{Binding OpcionSeleccionada, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+                                      DisplayMemberPath="NombreMostrar" Background="#10FFFFFF" Foreground="Black" Margin="4"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <Grid Grid.Row="3" Margin="0,20,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Button Grid.Column="0" Content="Cancelar" Background="#333333" Foreground="White" Padding="10" BorderThickness="0" Cursor="Hand" Click="BtnCancelar_Click"/>
+            <Button Grid.Column="2" Content="Guardar y Aplicar" Background="#0078D4" Foreground="White" Padding="10" BorderThickness="0" Cursor="Hand" Click="BtnGuardar_Click"/>
+        </Grid>
+    </Grid>
+</Window>

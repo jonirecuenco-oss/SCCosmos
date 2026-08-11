@@ -1,0 +1,53 @@
+﻿<Window x:Class="SCCosmos.ProgramarActividadWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Programar Actividad" Height="500" Width="400" 
+        Background="#1E1E1E" WindowStartupLocation="CenterOwner" WindowStyle="ToolWindow">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock x:Name="TxtTitulo" Text="PROGRAMAR ACTIVIDAD" FontWeight="Bold" FontSize="18" Foreground="White" Margin="0,0,0,20" HorizontalAlignment="Center"/>
+
+        <StackPanel Grid.Row="1">
+
+            <!-- CONTENEDOR ACTIVIDAD (Se ocultará si es Comida) -->
+            <StackPanel x:Name="PanelActividad" Margin="0,0,0,15">
+                <TextBlock Text="Tipo de Actividad:" Foreground="#AAAAAA" Margin="0,0,0,5"/>
+                <ComboBox x:Name="CmbActividad" SelectionChanged="CmbActividad_SelectionChanged" Padding="8,6" Background="#2A2A2A" Foreground="White" BorderThickness="0" FontSize="14"/>
+            </StackPanel>
+
+            <!-- CONTENEDOR LIBRO (Se ocultará si no es Curso Bíblico) -->
+            <StackPanel x:Name="PanelLibro" Margin="0,0,0,15" Visibility="Collapsed">
+                <TextBlock Text="Libro y Lección:" Foreground="#AAAAAA" Margin="0,0,0,5"/>
+                <TextBox x:Name="TxtLibro" Padding="8,6" Background="#2A2A2A" Foreground="White" BorderThickness="0" FontSize="14"/>
+            </StackPanel>
+
+            <!-- CONTENEDOR CON QUIÉN -->
+            <StackPanel Margin="0,0,0,15">
+                <TextBlock Text="Acompañante / Familia:" Foreground="#AAAAAA" Margin="0,0,0,5"/>
+                <ComboBox x:Name="CmbAcompanante" DisplayMemberPath="Nombre" SelectedValuePath="Id" Padding="8,6" Background="#2A2A2A" Foreground="White" BorderThickness="0" FontSize="14" IsEditable="True" IsTextSearchEnabled="True"/>
+            </StackPanel>
+
+            <!-- CONTENEDOR HORA (Usamos 2 combos para simular un reloj preciso) -->
+            <StackPanel Margin="0,0,0,15">
+                <TextBlock Text="Hora de inicio:" Foreground="#AAAAAA" Margin="0,0,0,5"/>
+                <StackPanel Orientation="Horizontal">
+                    <ComboBox x:Name="CmbHora" Width="70" Padding="8,6" Background="#2A2A2A" Foreground="White" BorderThickness="0" FontSize="14"/>
+                    <TextBlock Text=":" Foreground="White" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Margin="5,0"/>
+                    <ComboBox x:Name="CmbMinutos" Width="70" Padding="8,6" Background="#2A2A2A" Foreground="White" BorderThickness="0" FontSize="14"/>
+                </StackPanel>
+            </StackPanel>
+
+        </StackPanel>
+
+        <!-- BOTONES -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <Button Content="Cancelar" Width="100" Padding="8" Margin="0,0,10,0" Background="#333333" Foreground="White" BorderThickness="0" Cursor="Hand" Click="BtnCancelar_Click"/>
+            <Button Content="Guardar" Width="100" Padding="8" Background="#0078D4" Foreground="White" BorderThickness="0" Cursor="Hand" FontWeight="Bold" Click="BtnGuardar_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

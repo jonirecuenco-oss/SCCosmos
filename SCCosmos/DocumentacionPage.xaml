@@ -1,0 +1,217 @@
+﻿<Page x:Class="SCCosmos.DocumentacionPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      Title="DocumentacionPage" Background="#1E1E1E"
+      PreviewMouseWheel="Page_PreviewMouseWheel">
+
+    <Page.Resources>
+        <!-- MOLDE PARA LA FILA DE CADA ARCHIVO SUBIDO -->
+        <DataTemplate x:Key="ArchivoFilaTemplate">
+            <Border Background="#2D2D30" Margin="0,0,0,8" CornerRadius="6" Padding="12,8" BorderBrush="#3E3E42" BorderThickness="1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <ui:SymbolIcon Symbol="Document24" Foreground="#4BA3E3" Margin="0,0,10,0"/>
+                        <TextBlock Text="{Binding NombreArchivo}" Foreground="White" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                    </StackPanel>
+
+                    <ui:Button Grid.Column="1" Icon="{ui:SymbolIcon Open24}" Appearance="Secondary" Margin="10,0,5,0" 
+                               Cursor="Hand" Click="BtnAbrirArchivo_Click" Tag="{Binding}" ToolTip="Abrir archivo"/>
+
+                    <ui:Button Grid.Column="2" Icon="{ui:SymbolIcon Delete24}" Appearance="Danger" Margin="0,0,0,0" 
+                               Cursor="Hand" Click="BtnBorrarArchivo_Click" Tag="{Binding}" ToolTip="Borrar archivo"/>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <!-- EL NUEVO MOLDE MAESTRO: PANTALLA DIVIDIDA (CORREO IZQUIERDA / ARCHIVOS DERECHA) -->
+        <DataTemplate x:Key="CategoriaContentTemplate">
+            <Grid Margin="0,20,0,0">
+                <Grid.ColumnDefinitions>
+                    <!-- 40% Izquierda (Correo), 60% Derecha (Archivos) -->
+                    <ColumnDefinition Width="4*"/>
+                    <ColumnDefinition Width="40"/>
+                    <!-- Separador invisible -->
+                    <ColumnDefinition Width="6*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- ================= COLUMNA IZQUIERDA: CONFIGURACIÓN DEL CORREO ================= -->
+                <StackPanel Grid.Column="0">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                        <ui:SymbolIcon Symbol="Mail24" Foreground="#4BA3E3" Margin="0,0,8,0"/>
+                        <TextBlock Text="CONFIGURACIÓN DEL CORREO" FontSize="14" FontWeight="SemiBold" Foreground="#4BA3E3" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <TextBlock Text="Asunto del correo:" Foreground="#AAAAAA" Margin="0,0,0,5"/>
+                    <TextBox Text="{Binding AsuntoEmail, Mode=TwoWay}" LostFocus="TxtPlantillaEmail_LostFocus" Padding="8" Background="#252528" Foreground="White" BorderBrush="#444" Margin="0,0,0,15" FontSize="14"/>
+
+                    <TextBlock Text="Cuerpo del mensaje (acepta HTML):" Foreground="#AAAAAA" Margin="0,0,0,5"/>
+                    <TextBox Text="{Binding PlantillaEmail, Mode=TwoWay}" AcceptsReturn="True" TextWrapping="Wrap" Height="150" VerticalScrollBarVisibility="Auto" LostFocus="TxtPlantillaEmail_LostFocus" Padding="10" Background="#252528" Foreground="White" BorderBrush="#444" Margin="0,0,0,25" FontFamily="Consolas" FontSize="13"/>
+
+                    <!-- VARIABLES SCS -->
+                    <StackPanel Visibility="{Binding VisibilidadVariablesSCS}">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <ui:SymbolIcon Symbol="Code24" Foreground="#4BA3E3" Margin="0,0,8,0"/>
+                            <TextBlock Text="VARIABLES DISPONIBLES" FontSize="13" FontWeight="SemiBold" Foreground="#4BA3E3" VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <Border Background="#252528" Padding="15" CornerRadius="6" BorderThickness="1" BorderBrush="#3E3E42">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Text="Nombre SCS:" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,10"/>
+                                <TextBox Grid.Column="1" Text="{Binding VarNombreSCS, Mode=TwoWay}" LostFocus="TxtVarSCS_LostFocus" Margin="0,0,0,10" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444"/>
+
+                                <TextBlock Grid.Row="1" Text="Apellido SCS:" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,10"/>
+                                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding VarApellidoSCS, Mode=TwoWay}" LostFocus="TxtVarApellidoSCS_LostFocus" Margin="0,0,0,10" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444"/>
+
+                                <TextBlock Grid.Row="2" Text="Su esposa:" Foreground="White" VerticalAlignment="Center"/>
+                                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding VarEsposaSCS, Mode=TwoWay}" LostFocus="TxtVarEsposaSCS_LostFocus" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444"/>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- VARIABLES PASTOREO -->
+                    <StackPanel Visibility="{Binding VisibilidadVariablesPastoreo}">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <ui:SymbolIcon Symbol="Code24" Foreground="#4BA3E3" Margin="0,0,8,0"/>
+                            <TextBlock Text="VARIABLES DISPONIBLES" FontSize="13" FontWeight="SemiBold" Foreground="#4BA3E3" VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <Border Background="#252528" Padding="15" CornerRadius="6" BorderThickness="1" BorderBrush="#3E3E42">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Text="Hermano:" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,10"/>
+                                <TextBox Grid.Column="1" Text="{Binding VarNombrePastoreo, Mode=TwoWay}" LostFocus="TxtVarPastoreo_LostFocus" Margin="0,0,0,10" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444"/>
+
+                                <TextBlock Grid.Row="1" Text="Apellido:" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,10"/>
+                                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding VarApellidoPastoreo, Mode=TwoWay}" LostFocus="TxtVarApellidoPastoreo_LostFocus" Margin="0,0,0,10" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444"/>
+
+                                <TextBlock Grid.Row="2" Text="Esposa:" Foreground="White" VerticalAlignment="Center"/>
+                                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding VarEsposaPastoreo, Mode=TwoWay}" LostFocus="TxtVarEsposaPastoreo_LostFocus" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444"/>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- ================= COLUMNA DERECHA: ARCHIVOS ADJUNTOS ================= -->
+                <StackPanel Grid.Column="2">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                        <ui:SymbolIcon Symbol="Attach24" Foreground="#4BA3E3" Margin="0,0,8,0"/>
+                        <TextBlock Text="ARCHIVOS ADJUNTOS" FontSize="14" FontWeight="SemiBold" Foreground="#4BA3E3" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <TextBlock Text="{Binding Descripcion}" Foreground="#AAAAAA" Margin="0,0,0,15" TextWrapping="Wrap"/>
+
+                    <!-- VISTA SIMPLE (Sin pestañas de alojamiento) -->
+                    <StackPanel Visibility="{Binding VisibilidadSimple}">
+                        <ui:Button Content="Subir archivo" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding Titulo}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
+                        <ItemsControl ItemsSource="{Binding ArchivosSimples}" ItemTemplate="{StaticResource ArchivoFilaTemplate}"/>
+                    </StackPanel>
+
+                    <!-- VISTA COMPLEJA (Con pestañas de alojamiento) -->
+                    <TabControl Visibility="{Binding VisibilidadColumnas}" Background="Transparent" BorderThickness="0" Foreground="White">
+
+                        <TabItem Header="Sin alojamiento">
+                            <StackPanel Margin="0,15,0,0">
+                                <ui:Button Content="Subir archivo" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding TagSinAlojamiento}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
+                                <ItemsControl ItemsSource="{Binding ArchivosSinAlojamiento}" ItemTemplate="{StaticResource ArchivoFilaTemplate}"/>
+                            </StackPanel>
+                        </TabItem>
+
+                        <TabItem Header="Aloj. (Ambos)" Visibility="{Binding VisibilidadAlojamientoEspecial}">
+                            <StackPanel Margin="0,15,0,0">
+                                <ui:Button Content="Subir archivo" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding TagAmbos}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
+                                <ItemsControl ItemsSource="{Binding ArchivosAmbos}" ItemTemplate="{StaticResource ArchivoFilaTemplate}"/>
+                            </StackPanel>
+                        </TabItem>
+
+                        <TabItem Header="Solo acomp." Visibility="{Binding VisibilidadAlojamientoEspecial}">
+                            <StackPanel Margin="0,15,0,0">
+                                <ui:Button Content="Subir archivo" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding TagAcompanante}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
+                                <ItemsControl ItemsSource="{Binding ArchivosAcompanante}" ItemTemplate="{StaticResource ArchivoFilaTemplate}"/>
+                            </StackPanel>
+                        </TabItem>
+
+                        <TabItem Header="Aloj. (Solo yo)" Visibility="{Binding VisibilidadAlojamientoEspecial}">
+                            <StackPanel Margin="0,15,0,0">
+                                <ui:Button Content="Subir archivo" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding TagSoloYo}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
+                                <ItemsControl ItemsSource="{Binding ArchivosSoloYo}" ItemTemplate="{StaticResource ArchivoFilaTemplate}"/>
+                            </StackPanel>
+                        </TabItem>
+
+                    </TabControl>
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+    </Page.Resources>
+
+    <!-- EL CONTENEDOR PRINCIPAL -->
+    <ScrollViewer x:Name="MainScrollViewer" VerticalScrollBarVisibility="Auto">
+        <Grid Margin="30">
+
+            <!-- CABECERA CON EL TÍTULO Y EL BOTÓN DE ENVIAR MENSAJE -->
+            <Grid VerticalAlignment="Top" Margin="0,0,0,15">
+                <TextBlock Text="DOCUMENTACIÓN Y CORREOS" FontSize="26" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+
+                <!-- EL NUEVO BOTÓN A LA DERECHA -->
+                <ui:Button Content="Nuevo mensaje" Icon="{ui:SymbolIcon Send24}" Appearance="Primary" HorizontalAlignment="Right" VerticalAlignment="Center" Cursor="Hand" Click="BtnEnviarMensajeGlobal_Click"/>
+            </Grid>
+
+            <!-- PESTAÑAS MAESTRAS (Visitas / Asambleas) -->
+            <TabControl Margin="0,50,0,0" Background="Transparent" BorderThickness="0" Foreground="White">
+
+                <TabItem Header="VISITAS A CONGREGACIONES">
+                    <!-- SUB-PESTAÑAS GENERADAS AUTOMÁTICAMENTE A PARTIR DE TUS DATOS -->
+                    <TabControl ItemsSource="{Binding CategoriasVisitas}" 
+                                ContentTemplate="{StaticResource CategoriaContentTemplate}"
+                                Background="Transparent" BorderThickness="0" Margin="0,15,0,0">
+                        <TabControl.ItemTemplate>
+                            <DataTemplate>
+                                <!-- El TextBlock no soporta Padding, se usa Margin -->
+                                <TextBlock Text="{Binding Titulo}" FontSize="15" Margin="15,8"/>
+                            </DataTemplate>
+                        </TabControl.ItemTemplate>
+                    </TabControl>
+                </TabItem>
+
+                <TabItem Header="ASAMBLEAS DE CIRCUITO">
+                    <!-- SUB-PESTAÑAS GENERADAS AUTOMÁTICAMENTE A PARTIR DE TUS DATOS -->
+                    <TabControl ItemsSource="{Binding CategoriasAsambleas}" 
+                                ContentTemplate="{StaticResource CategoriaContentTemplate}"
+                                Background="Transparent" BorderThickness="0" Margin="0,15,0,0">
+                        <TabControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Titulo}" FontSize="15" Margin="15,8"/>
+                            </DataTemplate>
+                        </TabControl.ItemTemplate>
+                    </TabControl>
+                </TabItem>
+
+            </TabControl>
+        </Grid>
+    </ScrollViewer>
+</Page>
