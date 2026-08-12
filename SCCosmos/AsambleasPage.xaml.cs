@@ -175,37 +175,47 @@ namespace SCCosmos
 
             var todasLasPersonas = DatabaseHelper.ObtenerPersonas();
 
-            var ancianosList = todasLasPersonas
-                .Where(p => !string.IsNullOrEmpty(p.Nombramiento) && p.Nombramiento.ToLower().Contains("anciano"))
-                .GroupBy(p => p.Id).Select(g => g.First())
-                .Select(p => new AncianoComboItem { Id = p.Id, NombreJWHub = !string.IsNullOrWhiteSpace(p.NombreJWHub) ? p.NombreJWHub : p.Nombre })
-                .OrderBy(a => a.NombreFormateado).ToList();
-
-            ancianosList.Insert(0, new AncianoComboItem { Id = -2, NombreJWHub = "Representante de Betel" });
-            ancianosList.Insert(0, new AncianoComboItem { Id = -1, NombreJWHub = "Jonatán Recuenco" });
-            ancianosList.Insert(0, new AncianoComboItem { Id = 0, NombreJWHub = "" });
-            ListaAncianos = new ObservableCollection<AncianoComboItem>(ancianosList);
-
+            var ancianosList = new List<AncianoComboItem>();
             var precursoresList = new List<AncianoComboItem>();
+
             foreach (var p in todasLasPersonas)
             {
+                int id = p.Id;
+                string nombreJW = p.NombreJWHub ?? "";
+                string nombre = p.Nombre ?? "";
                 string nombramiento = p.Nombramiento?.ToLower() ?? "";
-                string servicio = "";
-                var propServicio = p.GetType().GetProperty("Servicio");
-                if (propServicio != null) servicio = (propServicio.GetValue(p) as string)?.ToLower() ?? "";
+                string servicio = p.Servicio?.ToLower() ?? "";
+
+                string congre = p.CongregacionNombre ?? "";
+                if (congre == "Sin asignar") congre = "";
 
                 bool esAnciano = nombramiento.Contains("anciano");
                 bool esPrecursor = nombramiento.Contains("precursor regular") || nombramiento.Contains("precursor especial") || nombramiento.Contains("misionero") ||
                                    servicio.Contains("precursor regular") || servicio.Contains("precursor especial") || servicio.Contains("misionero");
 
-                if (esAnciano && esPrecursor)
+                if (esAnciano || esPrecursor)
                 {
-                    precursoresList.Add(new AncianoComboItem { Id = p.Id, NombreJWHub = !string.IsNullOrWhiteSpace(p.NombreJWHub) ? p.NombreJWHub : p.Nombre });
+                    var item = new AncianoComboItem
+                    {
+                        Id = id,
+                        NombreJWHub = !string.IsNullOrWhiteSpace(nombreJW) ? nombreJW : nombre,
+                        Congregacion = congre
+                    };
+
+                    if (esAnciano && !ancianosList.Any(a => a.Id == id)) ancianosList.Add(item);
+                    if (esAnciano && esPrecursor && !precursoresList.Any(a => a.Id == id)) precursoresList.Add(item);
                 }
             }
-            precursoresList = precursoresList.GroupBy(p => p.Id).Select(g => g.First()).OrderBy(a => a.NombreFormateado).ToList();
-            precursoresList.Insert(0, new AncianoComboItem { Id = -1, NombreJWHub = "Jonatán Recuenco" });
-            precursoresList.Insert(0, new AncianoComboItem { Id = 0, NombreJWHub = "" });
+
+            ancianosList = ancianosList.OrderBy(a => a.NombreFormateado).ToList();
+            ancianosList.Insert(0, new AncianoComboItem { Id = -2, NombreJWHub = "Representante de Betel", Congregacion = "" });
+            ancianosList.Insert(0, new AncianoComboItem { Id = -1, NombreJWHub = "Jonatán Recuenco", Congregacion = "" });
+            ancianosList.Insert(0, new AncianoComboItem { Id = 0, NombreJWHub = "", Congregacion = "" });
+            ListaAncianos = new ObservableCollection<AncianoComboItem>(ancianosList);
+
+            precursoresList = precursoresList.OrderBy(a => a.NombreFormateado).ToList();
+            precursoresList.Insert(0, new AncianoComboItem { Id = -1, NombreJWHub = "Jonatán Recuenco", Congregacion = "" });
+            precursoresList.Insert(0, new AncianoComboItem { Id = 0, NombreJWHub = "", Congregacion = "" });
             ListaPrecursores = new ObservableCollection<AncianoComboItem>(precursoresList);
 
             var listaCongs = DatabaseHelper.ObtenerListaCongregaciones();
@@ -235,7 +245,7 @@ namespace SCCosmos
                 {
                     if (string.IsNullOrWhiteSpace(txt)) return true;
                     var persona = item as AncianoComboItem;
-                    return persona != null && persona.NombreFormateado.ToLower().Contains(txt);
+                    return persona != null && persona.NombreMuestra.ToLower().Contains(txt);
                 };
                 cmb.IsDropDownOpen = true;
             }
@@ -431,7 +441,10 @@ namespace SCCosmos
                             {
                                 tablaMaestra.AddCell(new Cell().Add(new Paragraph(p.Hora ?? "").SetFont(fontNormal).SetFontSize(9)).SetPadding(3).SetVerticalAlignment(iText.Layout.Properties.VerticalAlignment.MIDDLE));
                                 tablaMaestra.AddCell(new Cell().Add(new Paragraph(p.Titulo ?? "").SetFont(fontNormal).SetFontSize(9)).SetPadding(3).SetVerticalAlignment(iText.Layout.Properties.VerticalAlignment.MIDDLE));
-                                string nombreOrador = ListaAncianos.FirstOrDefault(a => a.Id == p.AsignadoId)?.NombreFormateado ?? "";
+
+                                var asignado = ListaAncianos.FirstOrDefault(a => a.Id == p.AsignadoId) ?? ListaPrecursores.FirstOrDefault(a => a.Id == p.AsignadoId);
+                                string nombreOrador = asignado?.NombreMuestra ?? "";
+
                                 tablaMaestra.AddCell(new Cell().Add(new Paragraph(nombreOrador).SetFont(fontNormal).SetFontSize(9)).SetPadding(3).SetVerticalAlignment(iText.Layout.Properties.VerticalAlignment.MIDDLE));
                                 tablaMaestra.AddCell(new Cell().Add(new Paragraph(p.Participantes ?? "").SetFont(fontNormal).SetFontSize(9)).SetPadding(3).SetVerticalAlignment(iText.Layout.Properties.VerticalAlignment.MIDDLE));
                             }
@@ -673,8 +686,10 @@ namespace SCCosmos
                                 {
                                     tabla.AddCell(new Cell().Add(new Paragraph(p.Hora ?? "").SetFont(fontNormal).SetFontSize(9)).SetPadding(3).SetVerticalAlignment(iText.Layout.Properties.VerticalAlignment.MIDDLE));
                                     tabla.AddCell(new Cell().Add(new Paragraph(p.Titulo ?? "").SetFont(fontNormal).SetFontSize(9)).SetPadding(3).SetVerticalAlignment(iText.Layout.Properties.VerticalAlignment.MIDDLE));
+
                                     var asignado = ListaPrecursores.FirstOrDefault(a => a.Id == p.AsignadoId) ?? ListaAncianos.FirstOrDefault(a => a.Id == p.AsignadoId);
-                                    string nombreOrador = asignado?.NombreFormateado ?? "";
+                                    string nombreOrador = asignado?.NombreMuestra ?? "";
+
                                     tabla.AddCell(new Cell().Add(new Paragraph(nombreOrador).SetFont(fontNormal).SetFontSize(9)).SetPadding(3).SetVerticalAlignment(iText.Layout.Properties.VerticalAlignment.MIDDLE));
                                     tabla.AddCell(new Cell().Add(new Paragraph(p.Participantes ?? "").SetFont(fontNormal).SetFontSize(9)).SetPadding(3).SetVerticalAlignment(iText.Layout.Properties.VerticalAlignment.MIDDLE));
                                 }
@@ -726,7 +741,9 @@ namespace SCCosmos
 
             if (parte.Turno != "Precursores")
             {
-                MessageBox.Show("El envío automatizado para la Asamblea General está en desarrollo.\nDe momento solo está habilitado para la Reunión de Precursores.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Information);
+                var asignadoAsamblea = ListaAncianos.FirstOrDefault(a => a.Id == parte.AsignadoId) ?? ListaPrecursores.FirstOrDefault(a => a.Id == parte.AsignadoId);
+                string nombreAsamblea = asignadoAsamblea?.NombreMuestra ?? "Desconocido";
+                MessageBox.Show($"Módulo de envíos en desarrollo.\nSe enviará a: {nombreAsamblea}", "Enviar Asignación", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
@@ -773,7 +790,10 @@ namespace SCCosmos
                 if (nextParte.Tipo == "Discurso (serie)")
                 {
                     var nextAsig = ListaPrecursores.FirstOrDefault(a => a.Id == nextParte.AsignadoId) ?? ListaAncianos.FirstOrDefault(a => a.Id == nextParte.AsignadoId);
-                    nombreSiguiente = nextAsig?.NombreFormateado ?? "-";
+                    if (nextAsig != null && nextAsig.Id > 0)
+                    {
+                        nombreSiguiente = nextAsig.NombreMuestra;
+                    }
                 }
             }
 
@@ -804,10 +824,10 @@ namespace SCCosmos
                             string fechaStr = sesion.Fecha.HasValue ? sesion.Fecha.Value.ToString("dd 'de' MMMM 'de' yyyy") : "";
                             document.ReplaceText("$_FECHA", fechaStr);
 
+                            document.ReplaceText("$_HORA", sesion.Hora ?? "");
                             document.ReplaceText("$_DISCURSO", parte.Titulo ?? "");
                             document.ReplaceText("$_SIGUIENTE", nombreSiguiente);
 
-                            // Por si se han usado las variables del remitente
                             string varNombreAsig = DatabaseHelper.ObtenerConfiguracion("VarNomAsigPrec", "$_NOMBRE_ORADOR");
                             string varApellidoAsig = DatabaseHelper.ObtenerConfiguracion("VarApAsigPrec", "$_APELLIDO_ORADOR");
                             string varTemaAsig = DatabaseHelper.ObtenerConfiguracion("VarTemaAsigPrec", "$_TEMA_ASIGNADO");
@@ -839,6 +859,24 @@ namespace SCCosmos
                     RutaLocal = rutaNueva,
                     Categoria = arch.Categoria
                 });
+            }
+
+            if (!string.IsNullOrWhiteSpace(parte.RutaArchivo))
+            {
+                var rutasAdjuntos = parte.RutaArchivo.Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (var ruta in rutasAdjuntos)
+                {
+                    if (File.Exists(ruta))
+                    {
+                        archivosProcesados.Add(new ArchivoDocumento
+                        {
+                            Id = 0,
+                            NombreArchivo = Path.GetFileName(ruta),
+                            RutaLocal = ruta,
+                            Categoria = "Adjunto"
+                        });
+                    }
+                }
             }
 
             var popup = new ConfirmarEnvioWindow($"Enviar a: {infoHermano.NombreFormateado}", false, archivosProcesados);
@@ -1022,6 +1060,7 @@ namespace SCCosmos
     {
         public int Id { get; set; }
         public string NombreJWHub { get; set; }
+        public string Congregacion { get; set; }
 
         public string NombreFormateado
         {
@@ -1034,6 +1073,18 @@ namespace SCCosmos
                     if (partes.Length >= 2) return $"{partes[1].Trim()} {partes[0].Trim()}";
                 }
                 return NombreJWHub;
+            }
+        }
+
+        // FORMATO PARA LOS SELECTORES Y EL PDF: "NOMBRE (CONGREGACIÓN)"
+        public string NombreMuestra
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(NombreFormateado)) return "";
+                if (Id <= 0) return NombreFormateado;
+                if (string.IsNullOrWhiteSpace(Congregacion)) return NombreFormateado;
+                return $"{NombreFormateado} ({Congregacion})";
             }
         }
     }
@@ -1055,7 +1106,7 @@ namespace SCCosmos
         public AsignacionHermano Superintendente { get; set; }
         public AsignacionHermano Auditor { get; set; }
         public ObservableCollection<AsignacionHermano> Auxiliares { get; set; }
-        //ok
+
         public Visibility MostrarAuxiliares => Auxiliares != null && Auxiliares.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         public Visibility MostrarSeparadorAuxiliares => (Superintendente.AsignadoId > 0 || (Auditor != null && Auditor.AsignadoId > 0)) && MostrarAuxiliares == Visibility.Visible ? Visibility.Visible : Visibility.Collapsed;
         public Visibility VisibilidadAuditor => Nombre == "CONTABILIDAD" ? Visibility.Visible : Visibility.Collapsed;

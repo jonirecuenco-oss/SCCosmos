@@ -28,6 +28,7 @@ namespace SCCosmos
             }
 
             dynamic appWord = null;
+            dynamic docs = null; // Variable explícita para la colección Documents (CRUCIAL para liberar memoria)
             dynamic doc = null;
 
             try
@@ -50,7 +51,7 @@ namespace SCCosmos
                 appWord.ScreenUpdating = false;
 
                 // Abrimos el documento en modo Solo Lectura
-                dynamic docs = appWord.Documents;
+                docs = appWord.Documents;
                 doc = docs.Open(rutaOriginal, ReadOnly: true);
 
                 // Exportamos a PDF
@@ -66,7 +67,9 @@ namespace SCCosmos
             }
             finally
             {
-                // MUY IMPORTANTE: Cerramos el Word invisible y limpiamos la memoria ram para no dejar procesos colgados
+                // ========================================================
+                // RUTINA DE LIMPIEZA AGRESIVA PARA EVITAR "WORD FANTASMAS"
+                // ========================================================
                 try
                 {
                     if (doc != null)
@@ -74,6 +77,12 @@ namespace SCCosmos
                         doc.Close(0); // 0 = wdDoNotSaveChanges
                         Marshal.ReleaseComObject(doc);
                     }
+
+                    if (docs != null)
+                    {
+                        Marshal.ReleaseComObject(docs);
+                    }
+
                     if (appWord != null)
                     {
                         appWord.Quit(0); // 0 = wdDoNotSaveChanges
@@ -81,6 +90,19 @@ namespace SCCosmos
                     }
                 }
                 catch { }
+                finally
+                {
+                    doc = null;
+                    docs = null;
+                    appWord = null;
+
+                    // Forzar al recolector de basura de Windows a "matar" los procesos residuales en la RAM
+                    // Hay que hacerlo doblemente porque los objetos COM tardan en soltarse
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
+                }
             }
         }
     }

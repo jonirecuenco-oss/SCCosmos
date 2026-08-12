@@ -25,7 +25,7 @@
 
                     <Grid Grid.Column="3" Margin="0,0,10,0" VerticalAlignment="Top">
                         <ComboBox SelectedValue="{Binding AsignadoId, Mode=TwoWay}" 
-                                  DisplayMemberPath="NombreFormateado" SelectedValuePath="Id"
+                                  DisplayMemberPath="NombreMuestra" SelectedValuePath="Id"
                                   IsEditable="True" IsTextSearchEnabled="False" IsSynchronizedWithCurrentItem="False" StaysOpenOnEdit="True"
                                   Tag="Ancianos" Loaded="CmbAsignado_Loaded" TextBoxBase.TextChanged="CmbAsignado_TextChanged"
                                   Padding="5,5,25,5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" Cursor="Hand"/>
@@ -62,7 +62,7 @@
 
                     <Grid Grid.Column="3" Margin="0,0,10,0" VerticalAlignment="Top">
                         <ComboBox SelectedValue="{Binding AsignadoId, Mode=TwoWay}" 
-                                  DisplayMemberPath="NombreFormateado" SelectedValuePath="Id"
+                                  DisplayMemberPath="NombreMuestra" SelectedValuePath="Id"
                                   IsEditable="True" IsTextSearchEnabled="False" IsSynchronizedWithCurrentItem="False" StaysOpenOnEdit="True"
                                   Tag="Precursores" Loaded="CmbAsignado_Loaded" TextBoxBase.TextChanged="CmbAsignado_TextChanged"
                                   Padding="5,5,25,5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" Cursor="Hand"/>
@@ -91,7 +91,7 @@
                         <TextBlock Text="Superintendente" Foreground="#AAAAAA" FontSize="11" Margin="0,0,0,5"/>
                         <Grid Margin="0,0,0,10">
                             <ComboBox SelectedValue="{Binding Superintendente.AsignadoId, Mode=TwoWay}"
-                                      DisplayMemberPath="NombreFormateado" SelectedValuePath="Id"
+                                      DisplayMemberPath="NombreMuestra" SelectedValuePath="Id"
                                       IsEditable="True" IsTextSearchEnabled="False" IsSynchronizedWithCurrentItem="False" StaysOpenOnEdit="True"
                                       Tag="Ancianos" Loaded="CmbAsignado_Loaded" TextBoxBase.TextChanged="CmbAsignado_TextChanged"
                                       Background="#1E1E1E" Foreground="White" BorderBrush="#444" Padding="5,5,25,5" Cursor="Hand"/>
@@ -102,7 +102,7 @@
                             <TextBlock Text="Auditor" Foreground="#AAAAAA" FontSize="11" Margin="0,0,0,5"/>
                             <Grid>
                                 <ComboBox SelectedValue="{Binding Auditor.AsignadoId, Mode=TwoWay}"
-                                          DisplayMemberPath="NombreFormateado" SelectedValuePath="Id"
+                                          DisplayMemberPath="NombreMuestra" SelectedValuePath="Id"
                                           IsEditable="True" IsTextSearchEnabled="False" IsSynchronizedWithCurrentItem="False" StaysOpenOnEdit="True"
                                           Tag="Ancianos" Loaded="CmbAsignado_Loaded" TextBoxBase.TextChanged="CmbAsignado_TextChanged"
                                           Background="#1E1E1E" Foreground="White" BorderBrush="#444" Padding="5,5,25,5" Cursor="Hand"/>
@@ -122,7 +122,7 @@
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <ComboBox Grid.Column="0" SelectedValue="{Binding AsignadoId, Mode=TwoWay}"
-                                                  DisplayMemberPath="NombreFormateado" SelectedValuePath="Id"
+                                                  DisplayMemberPath="NombreMuestra" SelectedValuePath="Id"
                                                   IsEditable="True" IsTextSearchEnabled="False" IsSynchronizedWithCurrentItem="False" StaysOpenOnEdit="True"
                                                   Tag="Ancianos" Loaded="CmbAsignado_Loaded" TextBoxBase.TextChanged="CmbAsignado_TextChanged"
                                                   Background="#1E1E1E" Foreground="White" BorderBrush="#444" Padding="5,5,25,5" Cursor="Hand"/>

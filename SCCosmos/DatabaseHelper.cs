@@ -1868,7 +1868,14 @@ namespace SCCosmos
                 {
                     connection.Open();
                     var cmd = connection.CreateCommand();
-                    cmd.CommandText = "SELECT * FROM Personas WHERE Id = @id";
+
+                    // EL SECRETO: Unir la tabla Personas con Congregaciones para sacar el Nombre real
+                    cmd.CommandText = @"
+                        SELECT p.*, c.Nombre as NombreCongregacion 
+                        FROM Personas p 
+                        LEFT JOIN Congregaciones c ON p.CongregacionCodigo = c.Codigo 
+                        WHERE p.Id = @id";
+
                     cmd.Parameters.AddWithValue("@id", id);
 
                     using (var reader = cmd.ExecuteReader())
@@ -1889,7 +1896,7 @@ namespace SCCosmos
                                         else info.NombreFormateado = val;
                                     }
                                 }
-                                else if (col == "congregacion") info.Congregacion = val;
+                                else if (col == "nombrecongregacion") info.Congregacion = val;
                                 else if (col == "telefono" || col == "movil" || col == "teléfono" || col == "móvil") { if (string.IsNullOrEmpty(info.Telefono)) info.Telefono = val; }
                                 else if (col == "email" || col == "correo") { if (string.IsNullOrEmpty(info.Email)) info.Email = val; }
                                 else if (col == "añonacimiento" || col == "anionacimiento" || col == "año" || col == "anio") { if (string.IsNullOrEmpty(info.AnioNacimiento)) info.AnioNacimiento = val; }
