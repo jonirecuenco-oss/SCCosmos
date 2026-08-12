@@ -516,10 +516,22 @@ namespace SCCosmos
             string subCategoria = "Sin alojamiento";
             if (!string.IsNullOrEmpty(semanaSeleccionada.Alojamiento))
             {
-                if (semanaSeleccionada.Alojamiento.Contains("Sin alojamiento")) subCategoria = "Sin alojamiento";
-                else if (semanaSeleccionada.Alojamiento.Contains("ambos")) subCategoria = "Alojamiento (ambos)";
-                else if (semanaSeleccionada.Alojamiento.Contains("solo acompañante")) subCategoria = "Alojamiento (solo acompañante)";
-                else if (semanaSeleccionada.Alojamiento.Contains("solo yo")) subCategoria = "Alojamiento (solo yo)";
+                // Si la visita es "Visita SC" (Sin acompañantes - ni SCS ni Pastoreo)
+                if (categoriaBase == "Documentación de la visita")
+                {
+                    if (semanaSeleccionada.Alojamiento.Contains("Sin alojamiento"))
+                        subCategoria = "Sin alojamiento";
+                    else
+                        subCategoria = "Con alojamiento"; // Cualquier opción con alojamiento en visita normal salta aquí
+                }
+                else
+                {
+                    // Si es una visita con acompañante (SCS o Pastoreo) hay subcategorías más detalladas
+                    if (semanaSeleccionada.Alojamiento.Contains("Sin alojamiento")) subCategoria = "Sin alojamiento";
+                    else if (semanaSeleccionada.Alojamiento.Contains("ambos")) subCategoria = "Alojamiento (ambos)";
+                    else if (semanaSeleccionada.Alojamiento.Contains("solo acompañante")) subCategoria = "Alojamiento (solo acompañante)";
+                    else if (semanaSeleccionada.Alojamiento.Contains("solo yo")) subCategoria = "Alojamiento (solo yo)";
+                }
             }
 
             string tagBusqueda = $"{categoriaBase}|{subCategoria}";

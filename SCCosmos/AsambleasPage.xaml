@@ -24,7 +24,6 @@
                     <TextBox Grid.Column="2" Text="{Binding Titulo, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" VerticalAlignment="Top"/>
 
                     <Grid Grid.Column="3" Margin="0,0,10,0" VerticalAlignment="Top">
-                        <!-- PARCHE ANTI-AUTOCOMPLETADO APLICADO -->
                         <ComboBox SelectedValue="{Binding AsignadoId, Mode=TwoWay}" 
                                   DisplayMemberPath="NombreFormateado" SelectedValuePath="Id"
                                   IsEditable="True" IsTextSearchEnabled="False" IsSynchronizedWithCurrentItem="False" StaysOpenOnEdit="True"
@@ -62,7 +61,6 @@
                     <TextBox Grid.Column="2" Text="{Binding Titulo, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" VerticalAlignment="Top"/>
 
                     <Grid Grid.Column="3" Margin="0,0,10,0" VerticalAlignment="Top">
-                        <!-- PARCHE ANTI-AUTOCOMPLETADO APLICADO -->
                         <ComboBox SelectedValue="{Binding AsignadoId, Mode=TwoWay}" 
                                   DisplayMemberPath="NombreFormateado" SelectedValuePath="Id"
                                   IsEditable="True" IsTextSearchEnabled="False" IsSynchronizedWithCurrentItem="False" StaysOpenOnEdit="True"
@@ -92,7 +90,6 @@
                     <StackPanel Margin="15">
                         <TextBlock Text="Superintendente" Foreground="#AAAAAA" FontSize="11" Margin="0,0,0,5"/>
                         <Grid Margin="0,0,0,10">
-                            <!-- PARCHE ANTI-AUTOCOMPLETADO APLICADO -->
                             <ComboBox SelectedValue="{Binding Superintendente.AsignadoId, Mode=TwoWay}"
                                       DisplayMemberPath="NombreFormateado" SelectedValuePath="Id"
                                       IsEditable="True" IsTextSearchEnabled="False" IsSynchronizedWithCurrentItem="False" StaysOpenOnEdit="True"
@@ -101,11 +98,9 @@
                             <ui:Button Icon="{ui:SymbolIcon Dismiss12}" Appearance="Transparent" Foreground="#888" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,22,0" Visibility="{Binding Superintendente.VisibilidadCruz}" Click="BtnLimpiarAsignacionOrganigrama_Click" Tag="{Binding Superintendente}" Padding="2"/>
                         </Grid>
 
-                        <!-- APARTADO ESPECIAL DEL AUDITOR (Solo en Contabilidad) -->
                         <StackPanel Margin="0,5,0,10" Visibility="{Binding VisibilidadAuditor}">
                             <TextBlock Text="Auditor" Foreground="#AAAAAA" FontSize="11" Margin="0,0,0,5"/>
                             <Grid>
-                                <!-- PARCHE ANTI-AUTOCOMPLETADO APLICADO -->
                                 <ComboBox SelectedValue="{Binding Auditor.AsignadoId, Mode=TwoWay}"
                                           DisplayMemberPath="NombreFormateado" SelectedValuePath="Id"
                                           IsEditable="True" IsTextSearchEnabled="False" IsSynchronizedWithCurrentItem="False" StaysOpenOnEdit="True"
@@ -115,7 +110,6 @@
                             </Grid>
                         </StackPanel>
 
-                        <!-- SEPARADOR VISUAL PARA AUXILIARES -->
                         <Border Height="1" Background="#3E3E42" Margin="0,5,0,15" Visibility="{Binding MostrarSeparadorAuxiliares}"/>
 
                         <TextBlock Text="Auxiliares del Departamento" Foreground="#AAAAAA" FontSize="11" Margin="0,0,0,5" Visibility="{Binding MostrarAuxiliares}"/>
@@ -127,7 +121,6 @@
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
-                                        <!-- PARCHE ANTI-AUTOCOMPLETADO APLICADO -->
                                         <ComboBox Grid.Column="0" SelectedValue="{Binding AsignadoId, Mode=TwoWay}"
                                                   DisplayMemberPath="NombreFormateado" SelectedValuePath="Id"
                                                   IsEditable="True" IsTextSearchEnabled="False" IsSynchronizedWithCurrentItem="False" StaysOpenOnEdit="True"
@@ -158,9 +151,11 @@
 
                     <Grid Grid.Row="1">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="130"/>
                             <ColumnDefinition Width="15"/>
-                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="80"/>
+                            <ColumnDefinition Width="15"/>
+                            <ColumnDefinition Width="160"/>
                             <ColumnDefinition Width="15"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="15"/>
@@ -176,272 +171,284 @@
                             <TextBox Text="{Binding Hora, Mode=TwoWay}" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" HorizontalContentAlignment="Center"/>
                         </StackPanel>
                         <StackPanel Grid.Column="4">
+                            <TextBlock Text="Lugar" Foreground="#AAAAAA" Margin="0,0,0,5"/>
+                            <TextBox Text="{Binding Lugar, Mode=TwoWay}" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="6">
                             <TextBlock Text="Congregaciones asistentes" Foreground="#AAAAAA" Margin="0,0,0,5"/>
                             <ComboBox ItemsSource="{Binding DataContext.ListaCongregaciones, RelativeSource={RelativeSource AncestorType=Page}}" Text="{Binding Congregaciones, Mode=TwoWay}" IsEditable="True" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" ToolTip="Escoge una o escribe varias separadas por comas"/>
                         </StackPanel>
-                        <ui:Button Grid.Column="6" Icon="{ui:SymbolIcon Dismiss24}" Appearance="Danger" VerticalAlignment="Bottom" Cursor="Hand" Click="BtnEliminarSesion_Click" Tag="{Binding}" Padding="6,4" ToolTip="Eliminar sesión completa"/>
+                        <ui:Button Grid.Column="8" Icon="{ui:SymbolIcon Dismiss24}" Appearance="Danger" VerticalAlignment="Bottom" Cursor="Hand" Click="BtnEliminarSesion_Click" Tag="{Binding}" Padding="6,4" ToolTip="Eliminar sesión completa"/>
                     </Grid>
                 </Grid>
             </Border>
         </DataTemplate>
     </Page.Resources>
 
-    <ScrollViewer x:Name="MainScrollViewer" VerticalScrollBarVisibility="Auto">
-        <Grid Margin="30" Background="Transparent">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
+    <Grid>
+        <!-- EL CONTENEDOR PRINCIPAL -->
+        <ScrollViewer x:Name="MainScrollViewer" VerticalScrollBarVisibility="Auto">
+            <Grid Margin="30" Background="Transparent">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
 
-            <TextBlock Grid.Row="0" Text="ASAMBLEAS Y EVENTOS" FontSize="26" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,25"/>
+                <TextBlock Grid.Row="0" Text="ASAMBLEAS Y EVENTOS" FontSize="26" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,25"/>
 
-            <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0">
+                <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0">
 
-                <!-- PESTAÑA 1: PROGRAMA (ASAMBLEAS) -->
-                <TabItem Header="Programa" FontSize="16" Foreground="White">
-                    <Grid Margin="0,15,0,0">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
+                    <!-- PESTAÑA 1: PROGRAMA (ASAMBLEAS) -->
+                    <TabItem Header="Programa" FontSize="16" Foreground="White">
+                        <Grid Margin="0,15,0,0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
 
-                        <Border Grid.Row="0" Background="#252528" Padding="20" CornerRadius="8" BorderBrush="#3E3E42" BorderThickness="1" Margin="0,0,0,20">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="1*"/>
-                                    <ColumnDefinition Width="20"/>
-                                    <ColumnDefinition Width="2*"/>
-                                    <ColumnDefinition Width="20"/>
-                                    <ColumnDefinition Width="2*"/>
-                                </Grid.ColumnDefinitions>
+                            <Border Grid.Row="0" Background="#252528" Padding="20" CornerRadius="8" BorderBrush="#3E3E42" BorderThickness="1" Margin="0,0,0,20">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1*"/>
+                                        <ColumnDefinition Width="20"/>
+                                        <ColumnDefinition Width="2*"/>
+                                        <ColumnDefinition Width="20"/>
+                                        <ColumnDefinition Width="2*"/>
+                                    </Grid.ColumnDefinitions>
 
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Año" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                                    <ComboBox ItemsSource="{Binding ListaAños}" SelectedItem="{Binding AñoSeleccionado}" SelectionChanged="FiltrosAsamblea_SelectionChanged" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14" Cursor="Hand"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="Tipo de evento" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                                    <ComboBox ItemsSource="{Binding TiposAsamblea}" SelectedItem="{Binding TipoSeleccionado}" SelectionChanged="FiltrosAsamblea_SelectionChanged" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14" Cursor="Hand"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="4">
-                                    <TextBlock Text="Sección del circuito" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                                    <ComboBox ItemsSource="{Binding ListaSecciones}" SelectedItem="{Binding SeccionSeleccionada}" DisplayMemberPath="Nombre" SelectionChanged="FiltrosAsamblea_SelectionChanged" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14" Cursor="Hand"/>
-                                </StackPanel>
-                            </Grid>
-                        </Border>
-
-                        <Border Grid.Row="1" Background="#252528" Padding="20" CornerRadius="8" BorderBrush="#3E3E42" BorderThickness="1" Margin="0,0,0,20">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="32*"/>
-                                    <ColumnDefinition Width="15"/>
-                                    <ColumnDefinition Width="22*"/>
-                                    <ColumnDefinition Width="15"/>
-                                    <ColumnDefinition Width="16*"/>
-                                    <ColumnDefinition Width="15"/>
-                                    <ColumnDefinition Width="30*"/>
-                                </Grid.ColumnDefinitions>
-
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Título" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                                    <TextBox Text="{Binding TituloAsamblea, Mode=TwoWay}" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="Lugar" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                                    <TextBox Text="{Binding LugarAsamblea, Mode=TwoWay}" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="4">
-                                    <TextBlock Text="Fecha" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                                    <DatePicker SelectedDate="{Binding FechaAsamblea, Mode=TwoWay}" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="6">
-                                    <TextBlock Text="Texto temático" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                                    <TextBox Text="{Binding TextoTematico, Mode=TwoWay}" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14" FontStyle="Italic"/>
-                                </StackPanel>
-                            </Grid>
-                        </Border>
-
-                        <Border Grid.Row="2" Background="#252528" Padding="20" CornerRadius="8" BorderBrush="#3E3E42" BorderThickness="1">
-                            <StackPanel>
-                                <TextBlock Text="☀️ MAÑANA" FontSize="16" FontWeight="Bold" Foreground="#EBCB8B" Margin="0,0,0,15"/>
-                                <ItemsControl ItemsSource="{Binding PartesManana}" ItemTemplate="{StaticResource FilaProgramaAsambleaTemplate}"/>
-                                <ui:Button Content="Añadir parte a la mañana" Icon="{ui:SymbolIcon Add24}" Appearance="Secondary" HorizontalAlignment="Left" Margin="0,5,0,25" Click="BtnAñadirManana_Click" Cursor="Hand"/>
-
-                                <Border Height="1" Background="#3E3E42" Margin="0,10,0,20"/>
-
-                                <TextBlock Text="🌙 TARDE" FontSize="16" FontWeight="Bold" Foreground="#81A1C1" Margin="0,0,0,15"/>
-                                <ItemsControl ItemsSource="{Binding PartesTarde}" ItemTemplate="{StaticResource FilaProgramaAsambleaTemplate}"/>
-                                <ui:Button Content="Añadir parte a la tarde" Icon="{ui:SymbolIcon Add24}" Appearance="Secondary" HorizontalAlignment="Left" Margin="0,5,0,10" Click="BtnAñadirTarde_Click" Cursor="Hand"/>
-                            </StackPanel>
-                        </Border>
-
-                        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-                            <TextBlock x:Name="TxtGuardadoAsamblea" Text="✓ Guardado" Foreground="#81A1C1" VerticalAlignment="Center" Margin="0,0,15,0" Visibility="Collapsed" FontWeight="SemiBold"/>
-                            <ui:Button Content="Generar PDF" Appearance="Secondary" Icon="{ui:SymbolIcon DocumentPdf24}" Padding="15,8" FontSize="14" Cursor="Hand" Click="BtnGenerarPDFAsamblea_Click"/>
-                        </StackPanel>
-                    </Grid>
-                </TabItem>
-
-                <!-- PESTAÑA 2: ORGANIGRAMA -->
-                <TabItem Header="Organigrama" FontSize="16" Foreground="White">
-                    <Grid Margin="0,15,0,0">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-
-                        <!-- Filtros -->
-                        <Border Grid.Row="0" Background="#252528" Padding="20" CornerRadius="8" BorderBrush="#3E3E42" BorderThickness="1" Margin="0,0,0,20">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="1*"/>
-                                    <ColumnDefinition Width="20"/>
-                                    <ColumnDefinition Width="2*"/>
-                                    <ColumnDefinition Width="20"/>
-                                    <ColumnDefinition Width="2*"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Año" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                                    <ComboBox ItemsSource="{Binding ListaAños}" SelectedItem="{Binding AñoOrganigramaSeleccionado}" SelectionChanged="FiltrosOrganigrama_SelectionChanged" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14" Cursor="Hand"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="Tipo de evento" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                                    <ComboBox ItemsSource="{Binding TiposAsamblea}" SelectedItem="{Binding TipoOrganigramaSeleccionado}" SelectionChanged="FiltrosOrganigrama_SelectionChanged" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14" Cursor="Hand"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="4">
-                                    <TextBlock Text="Sección del circuito" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                                    <ComboBox ItemsSource="{Binding ListaSecciones}" SelectedItem="{Binding SeccionOrganigramaSeleccionada}" DisplayMemberPath="Nombre" SelectionChanged="FiltrosOrganigrama_SelectionChanged" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14" Cursor="Hand"/>
-                                </StackPanel>
-                            </Grid>
-                        </Border>
-
-                        <!-- Estructura Visual del Organigrama -->
-                        <Grid Grid.Row="1">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="1*"/>
-                                <ColumnDefinition Width="30"/>
-                                <ColumnDefinition Width="1*"/>
-                            </Grid.ColumnDefinitions>
-
-                            <!-- COLUMNA IZQUIERDA -->
-                            <StackPanel Grid.Column="0">
-                                <ContentControl Content="{Binding DeptSupAsamblea}" ContentTemplate="{StaticResource DepartamentoCajaTemplate}"/>
-                                <ContentControl Content="{Binding DeptAcomodadores}" ContentTemplate="{StaticResource DepartamentoCajaTemplate}"/>
-                                <ContentControl Content="{Binding DeptContabilidad}" ContentTemplate="{StaticResource DepartamentoCajaTemplate}"/>
-                                <ContentControl Content="{Binding DeptEstacionamiento}" ContentTemplate="{StaticResource DepartamentoCajaTemplate}"/>
-                                <ContentControl Content="{Binding DeptLimpieza}" ContentTemplate="{StaticResource DepartamentoCajaTemplate}"/>
-                                <ContentControl Content="{Binding DeptPrimerosAuxilios}" ContentTemplate="{StaticResource DepartamentoCajaTemplate}"/>
-                                <ContentControl Content="{Binding DeptSeguridad}" ContentTemplate="{StaticResource DepartamentoCajaTemplate}"/>
-                            </StackPanel>
-
-                            <!-- COLUMNA DERECHA -->
-                            <StackPanel Grid.Column="2">
-                                <ContentControl Content="{Binding DeptSupAuxAsamblea}" ContentTemplate="{StaticResource DepartamentoCajaTemplate}"/>
-
-                                <!-- BLOQUE MULTIMEDIA (Sin caja de Vídeo) -->
-                                <Border Background="#1A1A1C" CornerRadius="8" BorderBrush="#4C566A" BorderThickness="1" Padding="15" Margin="0,0,0,15">
-                                    <StackPanel>
-                                        <TextBlock Text="DEPARTAMENTO DE AUDIO Y VÍDEO" Foreground="#8FBCBB" FontWeight="Bold" Margin="0,0,0,15" HorizontalAlignment="Center"/>
-                                        <ContentControl Content="{Binding DeptAudioVideo}" ContentTemplate="{StaticResource DepartamentoCajaTemplate}"/>
-                                        <ContentControl Content="{Binding DeptAudio}" ContentTemplate="{StaticResource DepartamentoCajaTemplate}"/>
-                                        <ContentControl Content="{Binding DeptPlataforma}" ContentTemplate="{StaticResource DepartamentoCajaTemplate}"/>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Año" Foreground="#AAAAAA" Margin="0,0,0,5"/>
+                                        <ComboBox ItemsSource="{Binding ListaAños}" SelectedItem="{Binding AñoSeleccionado}" SelectionChanged="FiltrosAsamblea_SelectionChanged" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14" Cursor="Hand"/>
                                     </StackPanel>
-                                </Border>
-
-                                <ContentControl Content="{Binding DeptBautismo}" ContentTemplate="{StaticResource DepartamentoCajaTemplate}"/>
-                                <ContentControl Content="{Binding DeptObjetosPerdidos}" ContentTemplate="{StaticResource DepartamentoCajaTemplate}"/>
-                                <ContentControl Content="{Binding DeptTransporte}" ContentTemplate="{StaticResource DepartamentoCajaTemplate}"/>
-                                <ContentControl Content="{Binding DeptInstalacion}" ContentTemplate="{StaticResource DepartamentoCajaTemplate}"/>
-                            </StackPanel>
-                        </Grid>
-
-                        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,40">
-                            <TextBlock x:Name="TxtGuardadoOrganigrama" Text="✓ Guardado" Foreground="#81A1C1" VerticalAlignment="Center" Margin="0,0,15,0" Visibility="Collapsed" FontWeight="SemiBold"/>
-                            <ui:Button Content="Generar PDF (Organigrama)" Appearance="Secondary" Icon="{ui:SymbolIcon DocumentPdf24}" Padding="15,8" FontSize="14" Cursor="Hand" Click="BtnGenerarPDFOrganigrama_Click"/>
-                        </StackPanel>
-
-                    </Grid>
-                </TabItem>
-
-                <!-- PESTAÑA 3: ORADORES -->
-                <TabItem Header="Oradores" FontSize="16" Foreground="White">
-                    <Grid Margin="0,30,0,0">
-                        <TextBlock Text="Módulo de Oradores en desarrollo..." Foreground="#888" FontSize="16" HorizontalAlignment="Center"/>
-                    </Grid>
-                </TabItem>
-
-                <!-- PESTAÑA 4: REUNIÓN PRECURSORES -->
-                <TabItem Header="Reunión precursores" FontSize="16" Foreground="White">
-                    <Grid Margin="0,15,0,0">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-
-                        <Border Grid.Row="0" Background="#252528" Padding="20" CornerRadius="8" BorderBrush="#3E3E42" BorderThickness="1" Margin="0,0,0,20">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="150"/>
-                                    <ColumnDefinition Width="20"/>
-                                    <ColumnDefinition Width="1*"/>
-                                    <ColumnDefinition Width="20"/>
-                                    <ColumnDefinition Width="1*"/>
-                                </Grid.ColumnDefinitions>
-
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Año" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                                    <ComboBox ItemsSource="{Binding ListaAños}" SelectedItem="{Binding AñoPrecursoresSeleccionado}" SelectionChanged="FiltrosPrecursores_SelectionChanged" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14" Cursor="Hand"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="Título" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                                    <TextBox Text="{Binding TituloPrecursores, Mode=TwoWay}" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="4">
-                                    <TextBlock Text="Texto temático" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                                    <TextBox Text="{Binding TextoTematicoPrecursores, Mode=TwoWay}" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14" FontStyle="Italic"/>
-                                </StackPanel>
-                            </Grid>
-                        </Border>
-
-                        <Border Grid.Row="1" Background="#2E3440" Padding="20" CornerRadius="8" BorderBrush="#4C566A" BorderThickness="1" Margin="0,0,0,20">
-                            <StackPanel>
-                                <TextBlock Text="📅 SESIONES" FontSize="16" FontWeight="Bold" Foreground="#8FBCBB" Margin="0,0,0,15"/>
-                                <ItemsControl ItemsSource="{Binding SesionesPrecursores}" ItemTemplate="{StaticResource FilaSesionTemplate}"/>
-                                <ui:Button Content="Añadir nueva sesión" Icon="{ui:SymbolIcon CalendarAdd24}" Appearance="Secondary" HorizontalAlignment="Left" Margin="0,5,0,0" Click="BtnAñadirSesion_Click" Cursor="Hand"/>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Grid.Row="2" Background="#252528" Padding="20" CornerRadius="8" BorderBrush="#3E3E42" BorderThickness="1">
-                            <StackPanel>
-                                <Grid Margin="0,0,0,15">
-                                    <TextBlock Text="📋 PROGRAMA DE LA REUNIÓN" FontSize="16" FontWeight="Bold" Foreground="#EBCB8B" VerticalAlignment="Center"/>
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                        <TextBlock Text="Viendo el programa de:" Foreground="#AAAAAA" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                        <ComboBox ItemsSource="{Binding SesionesPrecursores}" SelectedItem="{Binding SesionPrecursoresActiva, Mode=TwoWay}" 
-                                                  DisplayMemberPath="TituloSesion" Width="200" Background="#1E1E1E" Foreground="White" BorderBrush="#444" Cursor="Hand"/>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="Tipo de evento" Foreground="#AAAAAA" Margin="0,0,0,5"/>
+                                        <ComboBox ItemsSource="{Binding TiposAsamblea}" SelectedItem="{Binding TipoSeleccionado}" SelectionChanged="FiltrosAsamblea_SelectionChanged" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14" Cursor="Hand"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="4">
+                                        <TextBlock Text="Sección del circuito" Foreground="#AAAAAA" Margin="0,0,0,5"/>
+                                        <ComboBox ItemsSource="{Binding ListaSecciones}" SelectedItem="{Binding SeccionSeleccionada}" DisplayMemberPath="Nombre" SelectionChanged="FiltrosAsamblea_SelectionChanged" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14" Cursor="Hand"/>
                                     </StackPanel>
                                 </Grid>
+                            </Border>
 
-                                <ItemsControl ItemsSource="{Binding SesionPrecursoresActiva.Partes}" ItemTemplate="{StaticResource FilaProgramaPrecursoresTemplate}"/>
-                                <ui:Button Content="Añadir parte al programa" Icon="{ui:SymbolIcon Add24}" Appearance="Secondary" HorizontalAlignment="Left" Margin="0,5,0,0" Click="BtnAñadirPartePrecursores_Click" Cursor="Hand"/>
+                            <Border Grid.Row="1" Background="#252528" Padding="20" CornerRadius="8" BorderBrush="#3E3E42" BorderThickness="1" Margin="0,0,0,20">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="32*"/>
+                                        <ColumnDefinition Width="15"/>
+                                        <ColumnDefinition Width="22*"/>
+                                        <ColumnDefinition Width="15"/>
+                                        <ColumnDefinition Width="16*"/>
+                                        <ColumnDefinition Width="15"/>
+                                        <ColumnDefinition Width="30*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Título" Foreground="#AAAAAA" Margin="0,0,0,5"/>
+                                        <TextBox Text="{Binding TituloAsamblea, Mode=TwoWay}" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="Lugar" Foreground="#AAAAAA" Margin="0,0,0,5"/>
+                                        <TextBox Text="{Binding LugarAsamblea, Mode=TwoWay}" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="4">
+                                        <TextBlock Text="Fecha" Foreground="#AAAAAA" Margin="0,0,0,5"/>
+                                        <DatePicker SelectedDate="{Binding FechaAsamblea, Mode=TwoWay}" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="6">
+                                        <TextBlock Text="Texto temático" Foreground="#AAAAAA" Margin="0,0,0,5"/>
+                                        <TextBox Text="{Binding TextoTematico, Mode=TwoWay}" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14" FontStyle="Italic"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <Border Grid.Row="2" Background="#252528" Padding="20" CornerRadius="8" BorderBrush="#3E3E42" BorderThickness="1">
+                                <StackPanel>
+                                    <TextBlock Text="☀️ MAÑANA" FontSize="16" FontWeight="Bold" Foreground="#EBCB8B" Margin="0,0,0,15"/>
+                                    <ItemsControl ItemsSource="{Binding PartesManana}" ItemTemplate="{StaticResource FilaProgramaAsambleaTemplate}"/>
+                                    <ui:Button Content="Añadir parte a la mañana" Icon="{ui:SymbolIcon Add24}" Appearance="Secondary" HorizontalAlignment="Left" Margin="0,5,0,25" Click="BtnAñadirManana_Click" Cursor="Hand"/>
+
+                                    <Border Height="1" Background="#3E3E42" Margin="0,10,0,20"/>
+
+                                    <TextBlock Text="🌙 TARDE" FontSize="16" FontWeight="Bold" Foreground="#81A1C1" Margin="0,0,0,15"/>
+                                    <ItemsControl ItemsSource="{Binding PartesTarde}" ItemTemplate="{StaticResource FilaProgramaAsambleaTemplate}"/>
+                                    <ui:Button Content="Añadir parte a la tarde" Icon="{ui:SymbolIcon Add24}" Appearance="Secondary" HorizontalAlignment="Left" Margin="0,5,0,10" Click="BtnAñadirTarde_Click" Cursor="Hand"/>
+                                </StackPanel>
+                            </Border>
+
+                            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                                <TextBlock x:Name="TxtGuardadoAsamblea" Text="✓ Guardado" Foreground="#81A1C1" VerticalAlignment="Center" Margin="0,0,15,0" Visibility="Collapsed" FontWeight="SemiBold"/>
+                                <ui:Button Content="Generar PDF" Appearance="Secondary" Icon="{ui:SymbolIcon DocumentPdf24}" Padding="15,8" FontSize="14" Cursor="Hand" Click="BtnGenerarPDFAsamblea_Click"/>
                             </StackPanel>
-                        </Border>
+                        </Grid>
+                    </TabItem>
 
-                        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,40">
-                            <TextBlock x:Name="TxtGuardadoPrecursores" Text="✓ Guardado" Foreground="#81A1C1" VerticalAlignment="Center" Margin="0,0,15,0" Visibility="Collapsed" FontWeight="SemiBold"/>
-                            <ui:Button Content="Generar PDF (Precursores)" Appearance="Secondary" Icon="{ui:SymbolIcon DocumentPdf24}" Padding="15,8" FontSize="14" Cursor="Hand" Click="BtnGenerarPDFPrecursores_Click"/>
-                        </StackPanel>
+                    <!-- PESTAÑA 2: ORGANIGRAMA -->
+                    <TabItem Header="Organigrama" FontSize="16" Foreground="White">
+                        <Grid Margin="0,15,0,0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
 
-                    </Grid>
-                </TabItem>
+                            <Border Grid.Row="0" Background="#252528" Padding="20" CornerRadius="8" BorderBrush="#3E3E42" BorderThickness="1" Margin="0,0,0,20">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1*"/>
+                                        <ColumnDefinition Width="20"/>
+                                        <ColumnDefinition Width="2*"/>
+                                        <ColumnDefinition Width="20"/>
+                                        <ColumnDefinition Width="2*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Año" Foreground="#AAAAAA" Margin="0,0,0,5"/>
+                                        <ComboBox ItemsSource="{Binding ListaAños}" SelectedItem="{Binding AñoOrganigramaSeleccionado}" SelectionChanged="FiltrosOrganigrama_SelectionChanged" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14" Cursor="Hand"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="Tipo de evento" Foreground="#AAAAAA" Margin="0,0,0,5"/>
+                                        <ComboBox ItemsSource="{Binding TiposAsamblea}" SelectedItem="{Binding TipoOrganigramaSeleccionado}" SelectionChanged="FiltrosOrganigrama_SelectionChanged" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14" Cursor="Hand"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="4">
+                                        <TextBlock Text="Sección del circuito" Foreground="#AAAAAA" Margin="0,0,0,5"/>
+                                        <ComboBox ItemsSource="{Binding ListaSecciones}" SelectedItem="{Binding SeccionOrganigramaSeleccionada}" DisplayMemberPath="Nombre" SelectionChanged="FiltrosOrganigrama_SelectionChanged" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14" Cursor="Hand"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
 
-            </TabControl>
+                            <Grid Grid.Row="1">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*"/>
+                                    <ColumnDefinition Width="30"/>
+                                    <ColumnDefinition Width="1*"/>
+                                </Grid.ColumnDefinitions>
 
+                                <!-- COLUMNA IZQUIERDA -->
+                                <StackPanel Grid.Column="0">
+                                    <ContentControl Content="{Binding DeptSupAsamblea}" ContentTemplate="{StaticResource DepartamentoCajaTemplate}"/>
+                                    <ContentControl Content="{Binding DeptAcomodadores}" ContentTemplate="{StaticResource DepartamentoCajaTemplate}"/>
+                                    <ContentControl Content="{Binding DeptContabilidad}" ContentTemplate="{StaticResource DepartamentoCajaTemplate}"/>
+                                    <ContentControl Content="{Binding DeptEstacionamiento}" ContentTemplate="{StaticResource DepartamentoCajaTemplate}"/>
+                                    <ContentControl Content="{Binding DeptLimpieza}" ContentTemplate="{StaticResource DepartamentoCajaTemplate}"/>
+                                    <ContentControl Content="{Binding DeptPrimerosAuxilios}" ContentTemplate="{StaticResource DepartamentoCajaTemplate}"/>
+                                    <ContentControl Content="{Binding DeptSeguridad}" ContentTemplate="{StaticResource DepartamentoCajaTemplate}"/>
+                                </StackPanel>
+
+                                <!-- COLUMNA DERECHA -->
+                                <StackPanel Grid.Column="2">
+                                    <ContentControl Content="{Binding DeptSupAuxAsamblea}" ContentTemplate="{StaticResource DepartamentoCajaTemplate}"/>
+
+                                    <Border Background="#1A1A1C" CornerRadius="8" BorderBrush="#4C566A" BorderThickness="1" Padding="15" Margin="0,0,0,15">
+                                        <StackPanel>
+                                            <TextBlock Text="DEPARTAMENTO DE AUDIO Y VÍDEO" Foreground="#8FBCBB" FontWeight="Bold" Margin="0,0,0,15" HorizontalAlignment="Center"/>
+                                            <ContentControl Content="{Binding DeptAudioVideo}" ContentTemplate="{StaticResource DepartamentoCajaTemplate}"/>
+                                            <ContentControl Content="{Binding DeptAudio}" ContentTemplate="{StaticResource DepartamentoCajaTemplate}"/>
+                                            <ContentControl Content="{Binding DeptPlataforma}" ContentTemplate="{StaticResource DepartamentoCajaTemplate}"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <ContentControl Content="{Binding DeptBautismo}" ContentTemplate="{StaticResource DepartamentoCajaTemplate}"/>
+                                    <ContentControl Content="{Binding DeptObjetosPerdidos}" ContentTemplate="{StaticResource DepartamentoCajaTemplate}"/>
+                                    <ContentControl Content="{Binding DeptTransporte}" ContentTemplate="{StaticResource DepartamentoCajaTemplate}"/>
+                                    <ContentControl Content="{Binding DeptInstalacion}" ContentTemplate="{StaticResource DepartamentoCajaTemplate}"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,40">
+                                <TextBlock x:Name="TxtGuardadoOrganigrama" Text="✓ Guardado" Foreground="#81A1C1" VerticalAlignment="Center" Margin="0,0,15,0" Visibility="Collapsed" FontWeight="SemiBold"/>
+                                <ui:Button Content="Generar PDF (Organigrama)" Appearance="Secondary" Icon="{ui:SymbolIcon DocumentPdf24}" Padding="15,8" FontSize="14" Cursor="Hand" Click="BtnGenerarPDFOrganigrama_Click"/>
+                            </StackPanel>
+
+                        </Grid>
+                    </TabItem>
+
+                    <!-- PESTAÑA 3: ORADORES -->
+                    <TabItem Header="Oradores" FontSize="16" Foreground="White">
+                        <Grid Margin="0,30,0,0">
+                            <TextBlock Text="Módulo de Oradores en desarrollo..." Foreground="#888" FontSize="16" HorizontalAlignment="Center"/>
+                        </Grid>
+                    </TabItem>
+
+                    <!-- PESTAÑA 4: REUNIÓN PRECURSORES -->
+                    <TabItem Header="Reunión precursores" FontSize="16" Foreground="White">
+                        <Grid Margin="0,15,0,0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <Border Grid.Row="0" Background="#252528" Padding="20" CornerRadius="8" BorderBrush="#3E3E42" BorderThickness="1" Margin="0,0,0,20">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="150"/>
+                                        <ColumnDefinition Width="20"/>
+                                        <ColumnDefinition Width="1*"/>
+                                        <ColumnDefinition Width="20"/>
+                                        <ColumnDefinition Width="1*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Año" Foreground="#AAAAAA" Margin="0,0,0,5"/>
+                                        <ComboBox ItemsSource="{Binding ListaAños}" SelectedItem="{Binding AñoPrecursoresSeleccionado}" SelectionChanged="FiltrosPrecursores_SelectionChanged" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14" Cursor="Hand"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="Título" Foreground="#AAAAAA" Margin="0,0,0,5"/>
+                                        <TextBox Text="{Binding TituloPrecursores, Mode=TwoWay}" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="4">
+                                        <TextBlock Text="Texto temático" Foreground="#AAAAAA" Margin="0,0,0,5"/>
+                                        <TextBox Text="{Binding TextoTematicoPrecursores, Mode=TwoWay}" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14" FontStyle="Italic"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <Border Grid.Row="1" Background="#2E3440" Padding="20" CornerRadius="8" BorderBrush="#4C566A" BorderThickness="1" Margin="0,0,0,20">
+                                <StackPanel>
+                                    <TextBlock Text="📅 SESIONES" FontSize="16" FontWeight="Bold" Foreground="#8FBCBB" Margin="0,0,0,15"/>
+                                    <ItemsControl ItemsSource="{Binding SesionesPrecursores}" ItemTemplate="{StaticResource FilaSesionTemplate}"/>
+                                    <ui:Button Content="Añadir nueva sesión" Icon="{ui:SymbolIcon CalendarAdd24}" Appearance="Secondary" HorizontalAlignment="Left" Margin="0,5,0,0" Click="BtnAñadirSesion_Click" Cursor="Hand"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Row="2" Background="#252528" Padding="20" CornerRadius="8" BorderBrush="#3E3E42" BorderThickness="1">
+                                <StackPanel>
+                                    <Grid Margin="0,0,0,15">
+                                        <TextBlock Text="📋 PROGRAMA DE LA REUNIÓN" FontSize="16" FontWeight="Bold" Foreground="#EBCB8B" VerticalAlignment="Center"/>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                            <TextBlock Text="Viendo el programa de:" Foreground="#AAAAAA" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                            <ComboBox ItemsSource="{Binding SesionesPrecursores}" SelectedItem="{Binding SesionPrecursoresActiva, Mode=TwoWay}" 
+                                                      DisplayMemberPath="TituloSesion" Width="200" Background="#1E1E1E" Foreground="White" BorderBrush="#444" Cursor="Hand"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <ItemsControl ItemsSource="{Binding SesionPrecursoresActiva.Partes}" ItemTemplate="{StaticResource FilaProgramaPrecursoresTemplate}"/>
+                                    <ui:Button Content="Añadir parte al programa" Icon="{ui:SymbolIcon Add24}" Appearance="Secondary" HorizontalAlignment="Left" Margin="0,5,0,0" Click="BtnAñadirPartePrecursores_Click" Cursor="Hand"/>
+                                </StackPanel>
+                            </Border>
+
+                            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,40">
+                                <TextBlock x:Name="TxtGuardadoPrecursores" Text="✓ Guardado" Foreground="#81A1C1" VerticalAlignment="Center" Margin="0,0,15,0" Visibility="Collapsed" FontWeight="SemiBold"/>
+                                <ui:Button Content="Generar PDF (Precursores)" Appearance="Secondary" Icon="{ui:SymbolIcon DocumentPdf24}" Padding="15,8" FontSize="14" Cursor="Hand" Click="BtnGenerarPDFPrecursores_Click"/>
+                            </StackPanel>
+
+                        </Grid>
+                    </TabItem>
+
+                </TabControl>
+
+            </Grid>
+        </ScrollViewer>
+
+        <!-- CAPA DE CARGA (Para Selenium) -->
+        <Grid x:Name="OverlayCargando" Background="#80000000" Visibility="Collapsed" Panel.ZIndex="999">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <ui:ProgressRing IsIndeterminate="True" Width="60" Height="60" Foreground="#4BA3E3"/>
+                <TextBlock Text="Procesando envío de asignación..." Foreground="White" FontSize="16" FontWeight="SemiBold" Margin="0,15,0,0" HorizontalAlignment="Center"/>
+            </StackPanel>
         </Grid>
-    </ScrollViewer>
+    </Grid>
 </Page>

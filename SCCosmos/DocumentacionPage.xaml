@@ -34,10 +34,8 @@
         <DataTemplate x:Key="CategoriaContentTemplate">
             <Grid Margin="0,20,0,0">
                 <Grid.ColumnDefinitions>
-                    <!-- 40% Izquierda (Correo), 60% Derecha (Archivos) -->
                     <ColumnDefinition Width="4*"/>
                     <ColumnDefinition Width="40"/>
-                    <!-- Separador invisible -->
                     <ColumnDefinition Width="6*"/>
                 </Grid.ColumnDefinitions>
 
@@ -115,6 +113,37 @@
                             </Grid>
                         </Border>
                     </StackPanel>
+
+                    <!-- VARIABLES ASIGNACIONES ASAMBLEA -->
+                    <StackPanel Visibility="{Binding VisibilidadVariablesAsignacion}">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <ui:SymbolIcon Symbol="Code24" Foreground="#4BA3E3" Margin="0,0,8,0"/>
+                            <TextBlock Text="VARIABLES DISPONIBLES" FontSize="13" FontWeight="SemiBold" Foreground="#4BA3E3" VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <Border Background="#252528" Padding="15" CornerRadius="6" BorderThickness="1" BorderBrush="#3E3E42">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Text="Nombre orador:" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,10"/>
+                                <TextBox Grid.Column="1" Text="{Binding VarNombreAsignado, Mode=TwoWay}" LostFocus="TxtVarNombreAsignado_LostFocus" Margin="0,0,0,10" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444"/>
+
+                                <TextBlock Grid.Row="1" Text="Apellido orador:" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,10"/>
+                                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding VarApellidoAsignado, Mode=TwoWay}" LostFocus="TxtVarApellidoAsignado_LostFocus" Margin="0,0,0,10" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444"/>
+
+                                <TextBlock Grid.Row="2" Text="Tema asignado:" Foreground="White" VerticalAlignment="Center"/>
+                                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding VarTemaAsignado, Mode=TwoWay}" LostFocus="TxtVarTemaAsignado_LostFocus" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444"/>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
                 </StackPanel>
 
                 <!-- ================= COLUMNA DERECHA: ARCHIVOS ADJUNTOS ================= -->
@@ -126,43 +155,114 @@
 
                     <TextBlock Text="{Binding Descripcion}" Foreground="#AAAAAA" Margin="0,0,0,15" TextWrapping="Wrap"/>
 
-                    <!-- VISTA SIMPLE (Sin pestañas de alojamiento) -->
+                    <!-- VISTA SIMPLE -->
                     <StackPanel Visibility="{Binding VisibilidadSimple}">
                         <ui:Button Content="Subir archivo" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding Titulo}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
                         <ItemsControl ItemsSource="{Binding ArchivosSimples}" ItemTemplate="{StaticResource ArchivoFilaTemplate}"/>
                     </StackPanel>
 
-                    <!-- VISTA COMPLEJA (Con pestañas de alojamiento) -->
+                    <!-- VISTA COMPLEJA (ETIQUETAS DIFERENCIADAS) -->
                     <TabControl Visibility="{Binding VisibilidadColumnas}" Background="Transparent" BorderThickness="0" Foreground="White">
 
-                        <TabItem Header="Sin alojamiento">
+                        <TabItem>
+                            <TabItem.Header>
+                                <Border Background="#3E3E42" CornerRadius="4" Padding="8,4">
+                                    <TextBlock Text="Sin alojamiento" FontSize="13" Foreground="White"/>
+                                </Border>
+                            </TabItem.Header>
                             <StackPanel Margin="0,15,0,0">
                                 <ui:Button Content="Subir archivo" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding TagSinAlojamiento}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
                                 <ItemsControl ItemsSource="{Binding ArchivosSinAlojamiento}" ItemTemplate="{StaticResource ArchivoFilaTemplate}"/>
                             </StackPanel>
                         </TabItem>
 
-                        <TabItem Header="Aloj. (Ambos)" Visibility="{Binding VisibilidadAlojamientoEspecial}">
+                        <TabItem Visibility="{Binding VisibilidadConAlojamiento}">
+                            <TabItem.Header>
+                                <Border Background="#3E3E42" CornerRadius="4" Padding="8,4">
+                                    <TextBlock Text="Con alojamiento" FontSize="13" Foreground="White"/>
+                                </Border>
+                            </TabItem.Header>
+                            <StackPanel Margin="0,15,0,0">
+                                <ui:Button Content="Subir archivo" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding TagConAlojamiento}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
+                                <ItemsControl ItemsSource="{Binding ArchivosConAlojamiento}" ItemTemplate="{StaticResource ArchivoFilaTemplate}"/>
+                            </StackPanel>
+                        </TabItem>
+
+                        <TabItem Visibility="{Binding VisibilidadAlojamientoEspecial}">
+                            <TabItem.Header>
+                                <Border Background="#3E3E42" CornerRadius="4" Padding="8,4">
+                                    <TextBlock Text="Aloj. (Ambos)" FontSize="13" Foreground="White"/>
+                                </Border>
+                            </TabItem.Header>
                             <StackPanel Margin="0,15,0,0">
                                 <ui:Button Content="Subir archivo" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding TagAmbos}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
                                 <ItemsControl ItemsSource="{Binding ArchivosAmbos}" ItemTemplate="{StaticResource ArchivoFilaTemplate}"/>
                             </StackPanel>
                         </TabItem>
 
-                        <TabItem Header="Solo acomp." Visibility="{Binding VisibilidadAlojamientoEspecial}">
+                        <TabItem Visibility="{Binding VisibilidadAlojamientoEspecial}">
+                            <TabItem.Header>
+                                <Border Background="#3E3E42" CornerRadius="4" Padding="8,4">
+                                    <TextBlock Text="Solo acomp." FontSize="13" Foreground="White"/>
+                                </Border>
+                            </TabItem.Header>
                             <StackPanel Margin="0,15,0,0">
                                 <ui:Button Content="Subir archivo" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding TagAcompanante}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
                                 <ItemsControl ItemsSource="{Binding ArchivosAcompanante}" ItemTemplate="{StaticResource ArchivoFilaTemplate}"/>
                             </StackPanel>
                         </TabItem>
 
-                        <TabItem Header="Aloj. (Solo yo)" Visibility="{Binding VisibilidadAlojamientoEspecial}">
+                        <TabItem Visibility="{Binding VisibilidadAlojamientoEspecial}">
+                            <TabItem.Header>
+                                <Border Background="#3E3E42" CornerRadius="4" Padding="8,4">
+                                    <TextBlock Text="Aloj. (Solo yo)" FontSize="13" Foreground="White"/>
+                                </Border>
+                            </TabItem.Header>
                             <StackPanel Margin="0,15,0,0">
                                 <ui:Button Content="Subir archivo" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding TagSoloYo}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
                                 <ItemsControl ItemsSource="{Binding ArchivosSoloYo}" ItemTemplate="{StaticResource ArchivoFilaTemplate}"/>
                             </StackPanel>
                         </TabItem>
 
+                    </TabControl>
+
+                    <!-- NUEVA VISTA: ASIGNACIÓN REUNIÓN PRECURSORES -->
+                    <TabControl Visibility="{Binding VisibilidadAsignacionPrec}" Background="Transparent" BorderThickness="0" Foreground="White">
+                        <TabItem>
+                            <TabItem.Header>
+                                <Border Background="#3E3E42" CornerRadius="4" Padding="8,4">
+                                    <TextBlock Text="Oración inicial" FontSize="13" Foreground="White"/>
+                                </Border>
+                            </TabItem.Header>
+                            <StackPanel Margin="0,15,0,0">
+                                <ui:Button Content="Subir archivo" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding TagOracionInicial}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
+                                <ItemsControl ItemsSource="{Binding ArchivosOracionInicial}" ItemTemplate="{StaticResource ArchivoFilaTemplate}"/>
+                            </StackPanel>
+                        </TabItem>
+
+                        <TabItem>
+                            <TabItem.Header>
+                                <Border Background="#3E3E42" CornerRadius="4" Padding="8,4">
+                                    <TextBlock Text="Discurso" FontSize="13" Foreground="White"/>
+                                </Border>
+                            </TabItem.Header>
+                            <StackPanel Margin="0,15,0,0">
+                                <ui:Button Content="Subir archivo" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding TagDiscurso}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
+                                <ItemsControl ItemsSource="{Binding ArchivosDiscurso}" ItemTemplate="{StaticResource ArchivoFilaTemplate}"/>
+                            </StackPanel>
+                        </TabItem>
+
+                        <TabItem>
+                            <TabItem.Header>
+                                <Border Background="#3E3E42" CornerRadius="4" Padding="8,4">
+                                    <TextBlock Text="Discurso (serie)" FontSize="13" Foreground="White"/>
+                                </Border>
+                            </TabItem.Header>
+                            <StackPanel Margin="0,15,0,0">
+                                <ui:Button Content="Subir archivo" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding TagDiscursoSerie}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
+                                <ItemsControl ItemsSource="{Binding ArchivosDiscursoSerie}" ItemTemplate="{StaticResource ArchivoFilaTemplate}"/>
+                            </StackPanel>
+                        </TabItem>
                     </TabControl>
                 </StackPanel>
             </Grid>
@@ -173,39 +273,41 @@
     <ScrollViewer x:Name="MainScrollViewer" VerticalScrollBarVisibility="Auto">
         <Grid Margin="30">
 
-            <!-- CABECERA CON EL TÍTULO Y EL BOTÓN DE ENVIAR MENSAJE -->
             <Grid VerticalAlignment="Top" Margin="0,0,0,15">
                 <TextBlock Text="DOCUMENTACIÓN Y CORREOS" FontSize="26" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-
-                <!-- EL NUEVO BOTÓN A LA DERECHA -->
                 <ui:Button Content="Nuevo mensaje" Icon="{ui:SymbolIcon Send24}" Appearance="Primary" HorizontalAlignment="Right" VerticalAlignment="Center" Cursor="Hand" Click="BtnEnviarMensajeGlobal_Click"/>
             </Grid>
 
-            <!-- PESTAÑAS MAESTRAS (Visitas / Asambleas) -->
+            <!-- PESTAÑAS MAESTRAS (DIFERENCIADAS VISUALMENTE) -->
             <TabControl Margin="0,50,0,0" Background="Transparent" BorderThickness="0" Foreground="White">
 
-                <TabItem Header="VISITAS A CONGREGACIONES">
-                    <!-- SUB-PESTAÑAS GENERADAS AUTOMÁTICAMENTE A PARTIR DE TUS DATOS -->
+                <TabItem>
+                    <TabItem.Header>
+                        <TextBlock Text="VISITAS A CONGREGACIONES" FontSize="18" FontWeight="Bold" Padding="10,5" Foreground="#4BA3E3"/>
+                    </TabItem.Header>
                     <TabControl ItemsSource="{Binding CategoriasVisitas}" 
                                 ContentTemplate="{StaticResource CategoriaContentTemplate}"
                                 Background="Transparent" BorderThickness="0" Margin="0,15,0,0">
+                        <!-- SUB-PESTAÑAS DORADAS -->
                         <TabControl.ItemTemplate>
                             <DataTemplate>
-                                <!-- El TextBlock no soporta Padding, se usa Margin -->
-                                <TextBlock Text="{Binding Titulo}" FontSize="15" Margin="15,8"/>
+                                <TextBlock Text="{Binding Titulo}" FontSize="15" FontWeight="SemiBold" Padding="10,5" Foreground="#EBCB8B"/>
                             </DataTemplate>
                         </TabControl.ItemTemplate>
                     </TabControl>
                 </TabItem>
 
-                <TabItem Header="ASAMBLEAS DE CIRCUITO">
-                    <!-- SUB-PESTAÑAS GENERADAS AUTOMÁTICAMENTE A PARTIR DE TUS DATOS -->
+                <TabItem>
+                    <TabItem.Header>
+                        <TextBlock Text="ASAMBLEAS DE CIRCUITO" FontSize="18" FontWeight="Bold" Padding="10,5" Foreground="#4BA3E3"/>
+                    </TabItem.Header>
                     <TabControl ItemsSource="{Binding CategoriasAsambleas}" 
                                 ContentTemplate="{StaticResource CategoriaContentTemplate}"
                                 Background="Transparent" BorderThickness="0" Margin="0,15,0,0">
+                        <!-- SUB-PESTAÑAS DORADAS -->
                         <TabControl.ItemTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Titulo}" FontSize="15" Margin="15,8"/>
+                                <TextBlock Text="{Binding Titulo}" FontSize="15" FontWeight="SemiBold" Padding="10,5" Foreground="#EBCB8B"/>
                             </DataTemplate>
                         </TabControl.ItemTemplate>
                     </TabControl>

@@ -1795,7 +1795,8 @@ namespace SCCosmos
                             Numero INTEGER,
                             Fecha TEXT,
                             Hora TEXT,
-                            Congregaciones TEXT
+                            Congregaciones TEXT,
+                            Lugar TEXT
                         );
                         CREATE TABLE IF NOT EXISTS ReunionPrecursoresPartes (
                             Id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1813,6 +1814,7 @@ namespace SCCosmos
                     try { var cmdAlt = connection.CreateCommand(); cmdAlt.CommandText = "ALTER TABLE ProgramaAsambleasPartes ADD COLUMN Tipo TEXT;"; cmdAlt.ExecuteNonQuery(); } catch { }
                     try { var cmdAlt = connection.CreateCommand(); cmdAlt.CommandText = "ALTER TABLE ReunionPrecursoresPartes ADD COLUMN Tipo TEXT;"; cmdAlt.ExecuteNonQuery(); } catch { }
                     try { var cmdAlt = connection.CreateCommand(); cmdAlt.CommandText = "ALTER TABLE ProgramaAsambleasOrganigrama ADD COLUMN Rol TEXT;"; cmdAlt.ExecuteNonQuery(); } catch { }
+                    try { var cmdAlt = connection.CreateCommand(); cmdAlt.CommandText = "ALTER TABLE ReunionPrecursoresSesiones ADD COLUMN Lugar TEXT;"; cmdAlt.ExecuteNonQuery(); } catch { }
                 }
             }
             catch { }
@@ -1855,9 +1857,6 @@ namespace SCCosmos
             public string Rol { get; set; }
         }
 
-        // =========================================================
-        // FUNCIÓN RASTREADORA (La que se me olvidó copiar)
-        // =========================================================
         public static InfoHermanoPDF ObtenerInfoHermanoParaOrganigrama(int id)
         {
             var info = new InfoHermanoPDF();
@@ -2137,7 +2136,7 @@ namespace SCCosmos
                 {
                     connection.Open();
                     var cmd = connection.CreateCommand();
-                    cmd.CommandText = "SELECT Id, Numero, Fecha, Hora, Congregaciones FROM ReunionPrecursoresSesiones WHERE ReunionId = @id ORDER BY Numero ASC, Id ASC";
+                    cmd.CommandText = "SELECT Id, Numero, Fecha, Hora, Congregaciones, Lugar FROM ReunionPrecursoresSesiones WHERE ReunionId = @id ORDER BY Numero ASC, Id ASC";
                     cmd.Parameters.AddWithValue("@id", reunionId);
                     using (var reader = cmd.ExecuteReader())
                     {
@@ -2153,7 +2152,8 @@ namespace SCCosmos
                                 Numero = reader.IsDBNull(1) ? 1 : reader.GetInt32(1),
                                 Fecha = fechaParseada,
                                 Hora = reader.IsDBNull(3) ? "" : reader.GetString(3),
-                                Congregaciones = reader.IsDBNull(4) ? "" : reader.GetString(4)
+                                Congregaciones = reader.IsDBNull(4) ? "" : reader.GetString(4),
+                                Lugar = reader.FieldCount > 5 && !reader.IsDBNull(5) ? reader.GetString(5) : ""
                             };
 
                             var cmdPartes = connection.CreateCommand();
@@ -2220,10 +2220,11 @@ namespace SCCosmos
                 foreach (var sesion in sesiones)
                 {
                     var insSesion = connection.CreateCommand();
-                    insSesion.CommandText = "INSERT INTO ReunionPrecursoresSesiones (ReunionId, Numero, Fecha, Hora, Congregaciones) VALUES (@id, @num, @fecha, @hora, @congre); SELECT last_insert_rowid();";
+                    insSesion.CommandText = "INSERT INTO ReunionPrecursoresSesiones (ReunionId, Numero, Fecha, Hora, Congregaciones, Lugar) VALUES (@id, @num, @fecha, @hora, @congre, @lugar); SELECT last_insert_rowid();";
                     insSesion.Parameters.AddWithValue("@id", reunionId); insSesion.Parameters.AddWithValue("@num", sesion.Numero);
                     insSesion.Parameters.AddWithValue("@fecha", sesion.Fecha.HasValue ? sesion.Fecha.Value.ToString("yyyy-MM-dd") : (object)DBNull.Value);
                     insSesion.Parameters.AddWithValue("@hora", sesion.Hora ?? ""); insSesion.Parameters.AddWithValue("@congre", sesion.Congregaciones ?? "");
+                    insSesion.Parameters.AddWithValue("@lugar", sesion.Lugar ?? "");
                     long newSesionId = (long)insSesion.ExecuteScalar();
 
                     foreach (var parte in sesion.Partes)

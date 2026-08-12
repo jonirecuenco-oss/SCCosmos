@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
@@ -10,18 +11,32 @@ using Microsoft.Win32;
 
 namespace SCCosmos
 {
-    public partial class DocumentacionPage : Page
+    // AÑADIDO INotifyPropertyChanged PARA QUE SE REFRESQUE AL INSTANTE LA LISTA DE ARCHIVOS
+    public partial class DocumentacionPage : Page, INotifyPropertyChanged
     {
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
         private readonly string _carpetaDestino = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ArchivosDocumentacion");
 
-        public ObservableCollection<CategoriaVista> CategoriasVisitas { get; set; }
-        public ObservableCollection<CategoriaVista> CategoriasAsambleas { get; set; }
+        private ObservableCollection<CategoriaVista> _categoriasVisitas;
+        public ObservableCollection<CategoriaVista> CategoriasVisitas
+        {
+            get => _categoriasVisitas;
+            set { _categoriasVisitas = value; OnPropertyChanged(nameof(CategoriasVisitas)); }
+        }
+
+        private ObservableCollection<CategoriaVista> _categoriasAsambleas;
+        public ObservableCollection<CategoriaVista> CategoriasAsambleas
+        {
+            get => _categoriasAsambleas;
+            set { _categoriasAsambleas = value; OnPropertyChanged(nameof(CategoriasAsambleas)); }
+        }
 
         public DocumentacionPage()
         {
             InitializeComponent();
 
-            // LA CLAVE PARA QUE LAS PESTAÑAS SE LEAN SOLAS
             this.DataContext = this;
 
             if (!Directory.Exists(_carpetaDestino))
@@ -30,9 +45,6 @@ namespace SCCosmos
             CargarCategorias();
         }
 
-        // =========================================================
-        // EL ESCUDO MAESTRO QUE FUERZA EL SCROLL (Se mantiene por seguridad)
-        // =========================================================
         private void Page_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
             if (MainScrollViewer == null) return;
@@ -60,11 +72,12 @@ namespace SCCosmos
             e.Handled = true;
         }
 
+        // ==========================================
+        // INICIALIZACIÓN DE DATOS (Solo se ejecuta 1 vez al abrir la página)
+        // ==========================================
         private void CargarCategorias()
         {
-            // ==========================================
-            // 1. PESTAÑA VISITAS
-            // ==========================================
+            // --- VISITAS ---
             var listaVisitas = new ObservableCollection<CategoriaVista>();
 
             var aviso = new CategoriaVista
@@ -78,7 +91,7 @@ namespace SCCosmos
 
             aviso.AsuntoEmail = DatabaseHelper.ObtenerConfiguracion("Asunto_" + aviso.Titulo, "Aviso de la visita");
             aviso.PlantillaEmail = DatabaseHelper.ObtenerConfiguracion("Email_" + aviso.Titulo, "Queridos compañeros,<br><br>Os dejo adjunto el formulario S-302 con la fecha de la próxima visita.<br><br>Recibid un fuerte abrazo.<br><br><b>NOTA AL CCA:</b> Por favor, confírmame la recepción de este correo. ¡Muchas gracias!");
-            aviso.ArchivosSimples = new ObservableCollection<ArchivoDocumento>(DatabaseHelper.ObtenerDocumentos(aviso.Titulo));
+            aviso.RecargarArchivos();
             listaVisitas.Add(aviso);
 
             listaVisitas.Add(CrearCategoriaColumnas("Documentación de la visita", "Para subir varios archivos: Carta para los ancianos, programa de actividad, S-61, u otros."));
@@ -87,9 +100,7 @@ namespace SCCosmos
 
             CategoriasVisitas = listaVisitas;
 
-            // ==========================================
-            // 2. PESTAÑA ASAMBLEAS
-            // ==========================================
+            // --- ASAMBLEAS ---
             var listaAsambleas = new ObservableCollection<CategoriaVista>();
 
             var notificacionAsamblea = new CategoriaVista
@@ -102,7 +113,7 @@ namespace SCCosmos
             };
             notificacionAsamblea.AsuntoEmail = DatabaseHelper.ObtenerConfiguracion("Asunto_" + notificacionAsamblea.Titulo, "Información sobre nuestra próxima asamblea de circuito");
             notificacionAsamblea.PlantillaEmail = DatabaseHelper.ObtenerConfiguracion("Email_" + notificacionAsamblea.Titulo, "Queridos hermanos,<br><br>Adjunto os enviamos información importante para nuestra próxima asamblea de circuito.<br><br>Recibid nuestro cariño y saludos.");
-            notificacionAsamblea.ArchivosSimples = new ObservableCollection<ArchivoDocumento>(DatabaseHelper.ObtenerDocumentos(notificacionAsamblea.Titulo));
+            notificacionAsamblea.RecargarArchivos();
             listaAsambleas.Add(notificacionAsamblea);
 
             var recordatorioAsamblea = new CategoriaVista
@@ -115,8 +126,43 @@ namespace SCCosmos
             };
             recordatorioAsamblea.AsuntoEmail = DatabaseHelper.ObtenerConfiguracion("Asunto_" + recordatorioAsamblea.Titulo, "Recordatorio de asamblea de circuito");
             recordatorioAsamblea.PlantillaEmail = DatabaseHelper.ObtenerConfiguracion("Email_" + recordatorioAsamblea.Titulo, "Queridos hermanos,<br><br>Os recordamos que pronto tendremos nuestra asamblea de circuito. Adjuntamos algunos recordatorios.<br><br>Recibid nuestro cariño y saludos.");
-            recordatorioAsamblea.ArchivosSimples = new ObservableCollection<ArchivoDocumento>(DatabaseHelper.ObtenerDocumentos(recordatorioAsamblea.Titulo));
+            recordatorioAsamblea.RecargarArchivos();
             listaAsambleas.Add(recordatorioAsamblea);
+
+            var asigAsamblea = new CategoriaVista
+            {
+                Titulo = "Asignación asamblea circuito",
+                Descripcion = "Archivos que se enviarán junto con la asignación a los oradores.",
+                VisibilidadSimple = Visibility.Visible,
+                VisibilidadColumnas = Visibility.Collapsed,
+                VisibilidadAlojamientoEspecial = Visibility.Collapsed,
+                VisibilidadVariablesAsignacion = Visibility.Visible
+            };
+            asigAsamblea.VarNombreAsignado = DatabaseHelper.ObtenerConfiguracion("VarNomAsig", "$_NOMBRE_ORADOR");
+            asigAsamblea.VarApellidoAsignado = DatabaseHelper.ObtenerConfiguracion("VarApAsig", "$_APELLIDO_ORADOR");
+            asigAsamblea.VarTemaAsignado = DatabaseHelper.ObtenerConfiguracion("VarTemaAsig", "$_TEMA_ASIGNADO");
+            asigAsamblea.AsuntoEmail = DatabaseHelper.ObtenerConfiguracion("Asunto_" + asigAsamblea.Titulo, "Asignación para la asamblea de circuito");
+            asigAsamblea.PlantillaEmail = DatabaseHelper.ObtenerConfiguracion("Email_" + asigAsamblea.Titulo, "Querido hermano,<br><br>Te enviamos adjunta tu asignación para la asamblea de circuito.<br><br>Un abrazo.");
+            asigAsamblea.RecargarArchivos();
+            listaAsambleas.Add(asigAsamblea);
+
+            var asigPrec = new CategoriaVista
+            {
+                Titulo = "Asignación reunión precursores",
+                Descripcion = "Archivos que se enviarán junto con la asignación para la reunión de precursores.",
+                VisibilidadSimple = Visibility.Collapsed,
+                VisibilidadColumnas = Visibility.Collapsed,
+                VisibilidadAlojamientoEspecial = Visibility.Collapsed,
+                VisibilidadVariablesAsignacion = Visibility.Visible,
+                VisibilidadAsignacionPrec = Visibility.Visible
+            };
+            asigPrec.VarNombreAsignado = DatabaseHelper.ObtenerConfiguracion("VarNomAsigPrec", "$_NOMBRE_ORADOR");
+            asigPrec.VarApellidoAsignado = DatabaseHelper.ObtenerConfiguracion("VarApAsigPrec", "$_APELLIDO_ORADOR");
+            asigPrec.VarTemaAsignado = DatabaseHelper.ObtenerConfiguracion("VarTemaAsigPrec", "$_TEMA_ASIGNADO");
+            asigPrec.AsuntoEmail = DatabaseHelper.ObtenerConfiguracion("Asunto_" + asigPrec.Titulo, "Asignación reunión precursores");
+            asigPrec.PlantillaEmail = DatabaseHelper.ObtenerConfiguracion("Email_" + asigPrec.Titulo, "Querido hermano,<br><br>Te enviamos adjunta tu asignación para la reunión de precursores.<br><br>Un abrazo.");
+            asigPrec.RecargarArchivos();
+            listaAsambleas.Add(asigPrec);
 
             CategoriasAsambleas = listaAsambleas;
         }
@@ -132,6 +178,9 @@ namespace SCCosmos
 
                 VisibilidadVariablesSCS = Visibility.Collapsed,
                 VisibilidadVariablesPastoreo = Visibility.Collapsed,
+                VisibilidadVariablesAsignacion = Visibility.Collapsed,
+                VisibilidadAsignacionPrec = Visibility.Collapsed,
+                VisibilidadConAlojamiento = Visibility.Collapsed,
 
                 VisibilidadAlojamientoEspecial = Visibility.Visible,
                 AnchoColumnaNormal = new GridLength(1, GridUnitType.Star),
@@ -141,7 +190,8 @@ namespace SCCosmos
             if (titulo == "Documentación de la visita")
             {
                 cat.VisibilidadAlojamientoEspecial = Visibility.Collapsed;
-                cat.AnchoColumnaEspecial = new GridLength(0);
+                cat.VisibilidadConAlojamiento = Visibility.Visible;
+                cat.AnchoColumnaEspecial = new GridLength(1, GridUnitType.Star);
             }
             else if (titulo == "Documentación de la visita (con SCS)")
             {
@@ -161,12 +211,21 @@ namespace SCCosmos
             cat.AsuntoEmail = DatabaseHelper.ObtenerConfiguracion("Asunto_" + titulo, "Documentación de la visita");
             cat.PlantillaEmail = DatabaseHelper.ObtenerConfiguracion("Email_" + titulo, "Queridos hermanos,<br><br>Os enviamos adjunta la documentación para la próxima visita.<br><br>Recibid un fuerte abrazo.");
 
-            cat.ArchivosSinAlojamiento = new ObservableCollection<ArchivoDocumento>(DatabaseHelper.ObtenerDocumentos(cat.TagSinAlojamiento));
-            cat.ArchivosAmbos = new ObservableCollection<ArchivoDocumento>(DatabaseHelper.ObtenerDocumentos(cat.TagAmbos));
-            cat.ArchivosAcompanante = new ObservableCollection<ArchivoDocumento>(DatabaseHelper.ObtenerDocumentos(cat.TagAcompanante));
-            cat.ArchivosSoloYo = new ObservableCollection<ArchivoDocumento>(DatabaseHelper.ObtenerDocumentos(cat.TagSoloYo));
+            cat.RecargarArchivos();
 
             return cat;
+        }
+
+        // ==========================================
+        // LA FUNCIÓN QUIRÚRGICA: Solo actualiza archivos sin borrar pestañas
+        // ==========================================
+        private void RecargarSoloArchivos()
+        {
+            if (CategoriasVisitas != null)
+                foreach (var cat in CategoriasVisitas) cat.RecargarArchivos();
+
+            if (CategoriasAsambleas != null)
+                foreach (var cat in CategoriasAsambleas) cat.RecargarArchivos();
         }
 
         private void BtnSubirArchivo_Click(object sender, RoutedEventArgs e)
@@ -191,8 +250,8 @@ namespace SCCosmos
                     File.Copy(ofd.FileName, rutaFinal);
                     DatabaseHelper.InsertarDocumento(categoriaDBSave, nombreArchivo, rutaFinal);
 
-                    // Actualizar UI
-                    CargarCategorias();
+                    // AHORA SOLO ACTUALIZAMOS LAS LISTAS INTERNAS DE ARCHIVOS
+                    RecargarSoloArchivos();
                 }
                 catch (Exception ex)
                 {
@@ -227,7 +286,9 @@ namespace SCCosmos
                 {
                     DatabaseHelper.EliminarDocumento(archivo.Id);
                     if (File.Exists(archivo.RutaLocal)) File.Delete(archivo.RutaLocal);
-                    CargarCategorias();
+
+                    // AHORA SOLO ACTUALIZAMOS LAS LISTAS INTERNAS DE ARCHIVOS
+                    RecargarSoloArchivos();
                 }
                 catch (Exception ex)
                 {
@@ -272,6 +333,33 @@ namespace SCCosmos
                 DatabaseHelper.GuardarConfiguracion("VarEsposaPastoreo", cat.VarEsposaPastoreo);
         }
 
+        private void TxtVarNombreAsignado_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if ((sender as TextBox)?.DataContext as CategoriaVista is CategoriaVista cat)
+            {
+                if (cat.Titulo.Contains("precursores")) DatabaseHelper.GuardarConfiguracion("VarNomAsigPrec", cat.VarNombreAsignado);
+                else DatabaseHelper.GuardarConfiguracion("VarNomAsig", cat.VarNombreAsignado);
+            }
+        }
+
+        private void TxtVarApellidoAsignado_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if ((sender as TextBox)?.DataContext as CategoriaVista is CategoriaVista cat)
+            {
+                if (cat.Titulo.Contains("precursores")) DatabaseHelper.GuardarConfiguracion("VarApAsigPrec", cat.VarApellidoAsignado);
+                else DatabaseHelper.GuardarConfiguracion("VarApAsig", cat.VarApellidoAsignado);
+            }
+        }
+
+        private void TxtVarTemaAsignado_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if ((sender as TextBox)?.DataContext as CategoriaVista is CategoriaVista cat)
+            {
+                if (cat.Titulo.Contains("precursores")) DatabaseHelper.GuardarConfiguracion("VarTemaAsigPrec", cat.VarTemaAsignado);
+                else DatabaseHelper.GuardarConfiguracion("VarTemaAsig", cat.VarTemaAsignado);
+            }
+        }
+
         private void TxtPlantillaEmail_LostFocus(object sender, RoutedEventArgs e)
         {
             if ((sender as TextBox)?.DataContext as CategoriaVista is CategoriaVista cat)
@@ -281,18 +369,19 @@ namespace SCCosmos
             }
         }
 
-
         private void BtnEnviarMensajeGlobal_Click(object sender, RoutedEventArgs e)
         {
-            // Abre la nueva ventana de envíos masivos
             EnviarMensajeWindow ventanaMensaje = new EnviarMensajeWindow();
             ventanaMensaje.Owner = Window.GetWindow(this);
             ventanaMensaje.ShowDialog();
         }
     }
 
-    public class CategoriaVista
+    public class CategoriaVista : INotifyPropertyChanged
     {
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
         public string Titulo { get; set; }
         public string Descripcion { get; set; }
 
@@ -301,6 +390,10 @@ namespace SCCosmos
 
         public Visibility VisibilidadVariablesSCS { get; set; } = Visibility.Collapsed;
         public Visibility VisibilidadVariablesPastoreo { get; set; } = Visibility.Collapsed;
+        public Visibility VisibilidadVariablesAsignacion { get; set; } = Visibility.Collapsed;
+        public Visibility VisibilidadConAlojamiento { get; set; } = Visibility.Collapsed;
+
+        public Visibility VisibilidadAsignacionPrec { get; set; } = Visibility.Collapsed;
 
         public Visibility VisibilidadAlojamientoEspecial { get; set; } = Visibility.Visible;
 
@@ -315,20 +408,63 @@ namespace SCCosmos
         public string VarApellidoPastoreo { get; set; }
         public string VarEsposaPastoreo { get; set; }
 
+        public string VarNombreAsignado { get; set; }
+        public string VarApellidoAsignado { get; set; }
+        public string VarTemaAsignado { get; set; }
+
         public string AsuntoEmail { get; set; }
         public string PlantillaEmail { get; set; }
 
         public string TagSinAlojamiento => Titulo + "|Sin alojamiento";
+        public string TagConAlojamiento => Titulo + "|Con alojamiento";
         public string TagAmbos => Titulo + "|Alojamiento (ambos)";
         public string TagAcompanante => Titulo + "|Alojamiento (solo acompañante)";
         public string TagSoloYo => Titulo + "|Alojamiento (solo yo)";
 
-        public ObservableCollection<ArchivoDocumento> ArchivosSimples { get; set; }
-        public ObservableCollection<ArchivoDocumento> ArchivosSinAlojamiento { get; set; }
-        public ObservableCollection<ArchivoDocumento> ArchivosAmbos { get; set; }
-        public ObservableCollection<ArchivoDocumento> ArchivosAcompanante { get; set; }
-        public ObservableCollection<ArchivoDocumento> ArchivosSoloYo { get; set; }
+        public string TagOracionInicial => Titulo + "|Oración inicial";
+        public string TagDiscurso => Titulo + "|Discurso";
+        public string TagDiscursoSerie => Titulo + "|Discurso (serie)";
 
+        // Listas Notificables (avisan al entorno gráfico cuando cambian para actualizar sin borrar la selección)
+        private ObservableCollection<ArchivoDocumento> _archivosSimples;
+        public ObservableCollection<ArchivoDocumento> ArchivosSimples { get => _archivosSimples; set { _archivosSimples = value; OnPropertyChanged(nameof(ArchivosSimples)); } }
+
+        private ObservableCollection<ArchivoDocumento> _archivosSinAlojamiento;
+        public ObservableCollection<ArchivoDocumento> ArchivosSinAlojamiento { get => _archivosSinAlojamiento; set { _archivosSinAlojamiento = value; OnPropertyChanged(nameof(ArchivosSinAlojamiento)); } }
+
+        private ObservableCollection<ArchivoDocumento> _archivosConAlojamiento;
+        public ObservableCollection<ArchivoDocumento> ArchivosConAlojamiento { get => _archivosConAlojamiento; set { _archivosConAlojamiento = value; OnPropertyChanged(nameof(ArchivosConAlojamiento)); } }
+
+        private ObservableCollection<ArchivoDocumento> _archivosAmbos;
+        public ObservableCollection<ArchivoDocumento> ArchivosAmbos { get => _archivosAmbos; set { _archivosAmbos = value; OnPropertyChanged(nameof(ArchivosAmbos)); } }
+
+        private ObservableCollection<ArchivoDocumento> _archivosAcompanante;
+        public ObservableCollection<ArchivoDocumento> ArchivosAcompanante { get => _archivosAcompanante; set { _archivosAcompanante = value; OnPropertyChanged(nameof(ArchivosAcompanante)); } }
+
+        private ObservableCollection<ArchivoDocumento> _archivosSoloYo;
+        public ObservableCollection<ArchivoDocumento> ArchivosSoloYo { get => _archivosSoloYo; set { _archivosSoloYo = value; OnPropertyChanged(nameof(ArchivosSoloYo)); } }
+
+        private ObservableCollection<ArchivoDocumento> _archivosOracionInicial;
+        public ObservableCollection<ArchivoDocumento> ArchivosOracionInicial { get => _archivosOracionInicial; set { _archivosOracionInicial = value; OnPropertyChanged(nameof(ArchivosOracionInicial)); } }
+
+        private ObservableCollection<ArchivoDocumento> _archivosDiscurso;
+        public ObservableCollection<ArchivoDocumento> ArchivosDiscurso { get => _archivosDiscurso; set { _archivosDiscurso = value; OnPropertyChanged(nameof(ArchivosDiscurso)); } }
+
+        private ObservableCollection<ArchivoDocumento> _archivosDiscursoSerie;
+        public ObservableCollection<ArchivoDocumento> ArchivosDiscursoSerie { get => _archivosDiscursoSerie; set { _archivosDiscursoSerie = value; OnPropertyChanged(nameof(ArchivosDiscursoSerie)); } }
+
+        public void RecargarArchivos()
+        {
+            ArchivosSimples = new ObservableCollection<ArchivoDocumento>(DatabaseHelper.ObtenerDocumentos(Titulo));
+            ArchivosSinAlojamiento = new ObservableCollection<ArchivoDocumento>(DatabaseHelper.ObtenerDocumentos(TagSinAlojamiento));
+            ArchivosConAlojamiento = new ObservableCollection<ArchivoDocumento>(DatabaseHelper.ObtenerDocumentos(TagConAlojamiento));
+            ArchivosAmbos = new ObservableCollection<ArchivoDocumento>(DatabaseHelper.ObtenerDocumentos(TagAmbos));
+            ArchivosAcompanante = new ObservableCollection<ArchivoDocumento>(DatabaseHelper.ObtenerDocumentos(TagAcompanante));
+            ArchivosSoloYo = new ObservableCollection<ArchivoDocumento>(DatabaseHelper.ObtenerDocumentos(TagSoloYo));
+
+            ArchivosOracionInicial = new ObservableCollection<ArchivoDocumento>(DatabaseHelper.ObtenerDocumentos(TagOracionInicial));
+            ArchivosDiscurso = new ObservableCollection<ArchivoDocumento>(DatabaseHelper.ObtenerDocumentos(TagDiscurso));
+            ArchivosDiscursoSerie = new ObservableCollection<ArchivoDocumento>(DatabaseHelper.ObtenerDocumentos(TagDiscursoSerie));
+        }
     }
-
 }
