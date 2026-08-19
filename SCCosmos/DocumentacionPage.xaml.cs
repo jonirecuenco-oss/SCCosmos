@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -7,17 +8,20 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 using Microsoft.Win32;
 
 namespace SCCosmos
 {
-    // AÑADIDO INotifyPropertyChanged PARA QUE SE REFRESQUE AL INSTANTE LA LISTA DE ARCHIVOS
     public partial class DocumentacionPage : Page, INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
         private readonly string _carpetaDestino = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ArchivosDocumentacion");
+
+        // Diccionario para gestionar los Auto-Saves sin fugas de memoria
+        private Dictionary<WebBrowser, DispatcherTimer> _wbTimers = new Dictionary<WebBrowser, DispatcherTimer>();
 
         private ObservableCollection<CategoriaVista> _categoriasVisitas;
         public ObservableCollection<CategoriaVista> CategoriasVisitas
@@ -73,34 +77,57 @@ namespace SCCosmos
         }
 
         // ==========================================
-        // INICIALIZACIÓN DE DATOS (Solo se ejecuta 1 vez al abrir la página)
+        // INICIALIZACIÓN DE DATOS
         // ==========================================
         private void CargarCategorias()
         {
-            // --- VISITAS ---
             var listaVisitas = new ObservableCollection<CategoriaVista>();
 
             var aviso = new CategoriaVista
             {
-                Titulo = "Aviso de la visita",
+                Titulo = "Aviso S-302",
                 Descripcion = "Para subir el archivo S-302 u otros que se enviarán junto con el aviso de la visita.",
                 VisibilidadSimple = Visibility.Visible,
                 VisibilidadColumnas = Visibility.Collapsed,
                 VisibilidadAlojamientoEspecial = Visibility.Collapsed
             };
-
             aviso.AsuntoEmail = DatabaseHelper.ObtenerConfiguracion("Asunto_" + aviso.Titulo, "Aviso de la visita");
             aviso.PlantillaEmail = DatabaseHelper.ObtenerConfiguracion("Email_" + aviso.Titulo, "Queridos compañeros,<br><br>Os dejo adjunto el formulario S-302 con la fecha de la próxima visita.<br><br>Recibid un fuerte abrazo.<br><br><b>NOTA AL CCA:</b> Por favor, confírmame la recepción de este correo. ¡Muchas gracias!");
             aviso.RecargarArchivos();
             listaVisitas.Add(aviso);
 
-            listaVisitas.Add(CrearCategoriaColumnas("Documentación de la visita", "Para subir varios archivos: Carta para los ancianos, programa de actividad, S-61, u otros."));
-            listaVisitas.Add(CrearCategoriaColumnas("Documentación de la visita (con SCS)", "Para subir varios archivos para la visita con el SCS."));
-            listaVisitas.Add(CrearCategoriaColumnas("Documentación de la visita (visita de pastoreo)", "Para subir varios archivos para la visita de pastoreo."));
+            listaVisitas.Add(CrearCategoriaColumnas("Documentación", "Para subir varios archivos: Carta para los ancianos, programa de actividad, S-61, u otros."));
+            listaVisitas.Add(CrearCategoriaColumnas("Documentación (con SCS)", "Para subir varios archivos para la visita con el SCS."));
+            listaVisitas.Add(CrearCategoriaColumnas("Documentación (con visita de pastoreo)", "Para subir varios archivos para la visita de pastoreo."));
+
+            var nombramientos = new CategoriaVista
+            {
+                Titulo = "Nombramientos",
+                Descripcion = "Adjunta cartas o notificaciones de nombramiento tras la visita.",
+                VisibilidadSimple = Visibility.Visible,
+                VisibilidadColumnas = Visibility.Collapsed,
+                VisibilidadAlojamientoEspecial = Visibility.Collapsed
+            };
+            nombramientos.AsuntoEmail = DatabaseHelper.ObtenerConfiguracion("Asunto_" + nombramientos.Titulo, "Cartas de Nombramiento");
+            nombramientos.PlantillaEmail = DatabaseHelper.ObtenerConfiguracion("Email_" + nombramientos.Titulo, "Queridos hermanos,<br><br>Adjunto las cartas de nombramiento de la reciente visita.<br><br>Un fuerte abrazo.");
+            nombramientos.RecargarArchivos();
+            listaVisitas.Add(nombramientos);
+
+            var envioS303 = new CategoriaVista
+            {
+                Titulo = "Envío de S-303",
+                Descripcion = "Sube y envía el informe oficial S-303 de la visita.",
+                VisibilidadSimple = Visibility.Visible,
+                VisibilidadColumnas = Visibility.Collapsed,
+                VisibilidadAlojamientoEspecial = Visibility.Collapsed
+            };
+            envioS303.AsuntoEmail = DatabaseHelper.ObtenerConfiguracion("Asunto_" + envioS303.Titulo, "Informe S-303");
+            envioS303.PlantillaEmail = DatabaseHelper.ObtenerConfiguracion("Email_" + envioS303.Titulo, "Queridos hermanos,<br><br>Adjunto el informe S-303 de la visita.<br><br>Un saludo cariñoso.");
+            envioS303.RecargarArchivos();
+            listaVisitas.Add(envioS303);
 
             CategoriasVisitas = listaVisitas;
 
-            // --- ASAMBLEAS ---
             var listaAsambleas = new ObservableCollection<CategoriaVista>();
 
             var notificacionAsamblea = new CategoriaVista
@@ -164,6 +191,19 @@ namespace SCCosmos
             asigPrec.RecargarArchivos();
             listaAsambleas.Add(asigPrec);
 
+            var envioOrganigrama = new CategoriaVista
+            {
+                Titulo = "Envío de organigrama",
+                Descripcion = "Configura el texto del correo y añade archivos extra que quieras adjuntar junto al PDF del organigrama generado.",
+                VisibilidadSimple = Visibility.Visible,
+                VisibilidadColumnas = Visibility.Collapsed,
+                VisibilidadAlojamientoEspecial = Visibility.Collapsed
+            };
+            envioOrganigrama.AsuntoEmail = DatabaseHelper.ObtenerConfiguracion("Asunto_" + envioOrganigrama.Titulo, "Organigrama AC");
+            envioOrganigrama.PlantillaEmail = DatabaseHelper.ObtenerConfiguracion("Email_" + envioOrganigrama.Titulo, "Queridos compañeros,<br><br>Os dejo adjunto el organigrama de la próxima asamblea de circuito.<br><br>Recibid un fuerte abrazo.");
+            envioOrganigrama.RecargarArchivos();
+            listaAsambleas.Add(envioOrganigrama);
+
             CategoriasAsambleas = listaAsambleas;
         }
 
@@ -187,20 +227,20 @@ namespace SCCosmos
                 AnchoColumnaEspecial = new GridLength(1, GridUnitType.Star)
             };
 
-            if (titulo == "Documentación de la visita")
+            if (titulo == "Documentación")
             {
                 cat.VisibilidadAlojamientoEspecial = Visibility.Collapsed;
                 cat.VisibilidadConAlojamiento = Visibility.Visible;
                 cat.AnchoColumnaEspecial = new GridLength(1, GridUnitType.Star);
             }
-            else if (titulo == "Documentación de la visita (con SCS)")
+            else if (titulo == "Documentación (con SCS)")
             {
                 cat.VisibilidadVariablesSCS = Visibility.Visible;
                 cat.VarNombreSCS = DatabaseHelper.ObtenerConfiguracion("VarSCS", "$_NOMBRE_SCS");
                 cat.VarApellidoSCS = DatabaseHelper.ObtenerConfiguracion("VarApSCS", "$_APELLIDO_SCS");
                 cat.VarEsposaSCS = DatabaseHelper.ObtenerConfiguracion("VarEsposaSCS", "$_ESPOSA_SCS");
             }
-            else if (titulo == "Documentación de la visita (visita de pastoreo)")
+            else if (titulo == "Documentación (con visita de pastoreo)")
             {
                 cat.VisibilidadVariablesPastoreo = Visibility.Visible;
                 cat.VarNombrePastoreo = DatabaseHelper.ObtenerConfiguracion("VarPastoreo", "$_NOMBRE_VISITA");
@@ -210,34 +250,27 @@ namespace SCCosmos
 
             cat.AsuntoEmail = DatabaseHelper.ObtenerConfiguracion("Asunto_" + titulo, "Documentación de la visita");
             cat.PlantillaEmail = DatabaseHelper.ObtenerConfiguracion("Email_" + titulo, "Queridos hermanos,<br><br>Os enviamos adjunta la documentación para la próxima visita.<br><br>Recibid un fuerte abrazo.");
-
             cat.RecargarArchivos();
 
             return cat;
         }
 
-        // ==========================================
-        // LA FUNCIÓN QUIRÚRGICA: Solo actualiza archivos sin borrar pestañas
-        // ==========================================
         private void RecargarSoloArchivos()
         {
-            if (CategoriasVisitas != null)
-                foreach (var cat in CategoriasVisitas) cat.RecargarArchivos();
-
-            if (CategoriasAsambleas != null)
-                foreach (var cat in CategoriasAsambleas) cat.RecargarArchivos();
+            if (CategoriasVisitas != null) foreach (var cat in CategoriasVisitas) cat.RecargarArchivos();
+            if (CategoriasAsambleas != null) foreach (var cat in CategoriasAsambleas) cat.RecargarArchivos();
         }
 
+        // ==========================================
+        // MANEJO DE ARCHIVOS ADJUNTOS
+        // ==========================================
         private void BtnSubirArchivo_Click(object sender, RoutedEventArgs e)
         {
             var boton = sender as Button ?? sender as Wpf.Ui.Controls.Button;
             if (boton == null) return;
 
             string categoriaDBSave = boton.Tag.ToString();
-
-            OpenFileDialog ofd = new OpenFileDialog();
-            ofd.Title = "Seleccionar documento";
-            ofd.Filter = "Todos los archivos (*.*)|*.*|Documentos PDF (*.pdf)|*.pdf|Documentos Word (*.docx)|*.docx";
+            OpenFileDialog ofd = new OpenFileDialog { Title = "Seleccionar documento", Filter = "Todos los archivos (*.*)|*.*|Documentos PDF (*.pdf)|*.pdf|Documentos Word (*.docx)|*.docx" };
 
             if (ofd.ShowDialog() == true)
             {
@@ -249,8 +282,6 @@ namespace SCCosmos
 
                     File.Copy(ofd.FileName, rutaFinal);
                     DatabaseHelper.InsertarDocumento(categoriaDBSave, nombreArchivo, rutaFinal);
-
-                    // AHORA SOLO ACTUALIZAMOS LAS LISTAS INTERNAS DE ARCHIVOS
                     RecargarSoloArchivos();
                 }
                 catch (Exception ex)
@@ -264,20 +295,16 @@ namespace SCCosmos
         {
             var boton = sender as Button ?? sender as Wpf.Ui.Controls.Button;
             if (boton == null) return;
-
             var archivo = boton.Tag as ArchivoDocumento;
 
-            if (File.Exists(archivo.RutaLocal))
-                Process.Start(new ProcessStartInfo(archivo.RutaLocal) { UseShellExecute = true });
-            else
-                MessageBox.Show("El archivo no se encuentra en el disco. Quizás fue eliminado manualmente.");
+            if (File.Exists(archivo.RutaLocal)) Process.Start(new ProcessStartInfo(archivo.RutaLocal) { UseShellExecute = true });
+            else MessageBox.Show("El archivo no se encuentra en el disco. Quizás fue eliminado manualmente.");
         }
 
         private void BtnBorrarArchivo_Click(object sender, RoutedEventArgs e)
         {
             var boton = sender as Button ?? sender as Wpf.Ui.Controls.Button;
             if (boton == null) return;
-
             var archivo = boton.Tag as ArchivoDocumento;
 
             if (MessageBox.Show($"¿Seguro que deseas borrar '{archivo.NombreArchivo}'?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
@@ -286,87 +313,143 @@ namespace SCCosmos
                 {
                     DatabaseHelper.EliminarDocumento(archivo.Id);
                     if (File.Exists(archivo.RutaLocal)) File.Delete(archivo.RutaLocal);
-
-                    // AHORA SOLO ACTUALIZAMOS LAS LISTAS INTERNAS DE ARCHIVOS
                     RecargarSoloArchivos();
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("El archivo no se pudo borrar. Asegúrate de que no esté abierto en otro programa. " + ex.Message);
+                    MessageBox.Show("El archivo no se pudo borrar. Asegúrate de que no esté abierto. " + ex.Message);
                 }
             }
         }
 
-        private void TxtVarSCS_LostFocus(object sender, RoutedEventArgs e)
+        // ==========================================
+        // LÓGICA DEL EDITOR DE TEXTO ENRIQUECIDO (CON AUTOGUARDADO)
+        // ==========================================
+        private void WbEditor_Loaded(object sender, RoutedEventArgs e)
         {
-            if ((sender as TextBox)?.DataContext as CategoriaVista is CategoriaVista cat)
-                DatabaseHelper.GuardarConfiguracion("VarSCS", cat.VarNombreSCS);
-        }
-
-        private void TxtVarApellidoSCS_LostFocus(object sender, RoutedEventArgs e)
-        {
-            if ((sender as TextBox)?.DataContext as CategoriaVista is CategoriaVista cat)
-                DatabaseHelper.GuardarConfiguracion("VarApSCS", cat.VarApellidoSCS);
-        }
-
-        private void TxtVarEsposaSCS_LostFocus(object sender, RoutedEventArgs e)
-        {
-            if ((sender as TextBox)?.DataContext as CategoriaVista is CategoriaVista cat)
-                DatabaseHelper.GuardarConfiguracion("VarEsposaSCS", cat.VarEsposaSCS);
-        }
-
-        private void TxtVarPastoreo_LostFocus(object sender, RoutedEventArgs e)
-        {
-            if ((sender as TextBox)?.DataContext as CategoriaVista is CategoriaVista cat)
-                DatabaseHelper.GuardarConfiguracion("VarPastoreo", cat.VarNombrePastoreo);
-        }
-
-        private void TxtVarApellidoPastoreo_LostFocus(object sender, RoutedEventArgs e)
-        {
-            if ((sender as TextBox)?.DataContext as CategoriaVista is CategoriaVista cat)
-                DatabaseHelper.GuardarConfiguracion("VarApPastoreo", cat.VarApellidoPastoreo);
-        }
-
-        private void TxtVarEsposaPastoreo_LostFocus(object sender, RoutedEventArgs e)
-        {
-            if ((sender as TextBox)?.DataContext as CategoriaVista is CategoriaVista cat)
-                DatabaseHelper.GuardarConfiguracion("VarEsposaPastoreo", cat.VarEsposaPastoreo);
-        }
-
-        private void TxtVarNombreAsignado_LostFocus(object sender, RoutedEventArgs e)
-        {
-            if ((sender as TextBox)?.DataContext as CategoriaVista is CategoriaVista cat)
+            if (sender is WebBrowser wb && wb.DataContext is CategoriaVista cat)
             {
-                if (cat.Titulo.Contains("precursores")) DatabaseHelper.GuardarConfiguracion("VarNomAsigPrec", cat.VarNombreAsignado);
-                else DatabaseHelper.GuardarConfiguracion("VarNomAsig", cat.VarNombreAsignado);
+                // Crea un temporizador que chequea cambios cada 2 segundos y guarda silenciosamente
+                var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+                timer.Tick += (s, args) =>
+                {
+                    try
+                    {
+                        string html = wb.InvokeScript("eval", "document.body.innerHTML").ToString();
+                        if (!string.IsNullOrWhiteSpace(html) && html != cat.PlantillaEmail)
+                        {
+                            cat.PlantillaEmail = html;
+                            DatabaseHelper.GuardarConfiguracion("Email_" + cat.Titulo, html);
+
+                            // Mostrar mensaje de guardado y desaparecer a los 2 segundos
+                            var panel = FindParent<Grid>(wb);
+                            if (panel != null)
+                            {
+                                var aviso = FindVisualChildByName<TextBlock>(panel, "TxtAvisoGuardado");
+                                if (aviso != null)
+                                {
+                                    aviso.Text = "Guardado automático ✓";
+                                    DispatcherTimer clearTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+                                    clearTimer.Tick += (cs, cargs) => { aviso.Text = ""; clearTimer.Stop(); };
+                                    clearTimer.Start();
+                                }
+                            }
+                        }
+                    }
+                    catch { }
+                };
+                timer.Start();
+                _wbTimers[wb] = timer;
             }
         }
 
-        private void TxtVarApellidoAsignado_LostFocus(object sender, RoutedEventArgs e)
+        private void WbEditor_Unloaded(object sender, RoutedEventArgs e)
         {
-            if ((sender as TextBox)?.DataContext as CategoriaVista is CategoriaVista cat)
+            if (sender is WebBrowser wb)
             {
-                if (cat.Titulo.Contains("precursores")) DatabaseHelper.GuardarConfiguracion("VarApAsigPrec", cat.VarApellidoAsignado);
-                else DatabaseHelper.GuardarConfiguracion("VarApAsig", cat.VarApellidoAsignado);
+                if (_wbTimers.TryGetValue(wb, out var timer))
+                {
+                    timer.Stop();
+                    _wbTimers.Remove(wb);
+                }
+
+                // Guardado de emergencia al cambiar de pestaña
+                if (wb.DataContext is CategoriaVista cat)
+                {
+                    try
+                    {
+                        string html = wb.InvokeScript("eval", "document.body.innerHTML").ToString();
+                        if (!string.IsNullOrWhiteSpace(html) && html != cat.PlantillaEmail)
+                        {
+                            cat.PlantillaEmail = html;
+                            DatabaseHelper.GuardarConfiguracion("Email_" + cat.Titulo, html);
+                        }
+                    }
+                    catch { }
+                }
             }
         }
 
-        private void TxtVarTemaAsignado_LostFocus(object sender, RoutedEventArgs e)
+        private void BtnFormato_Click(object sender, RoutedEventArgs e)
         {
-            if ((sender as TextBox)?.DataContext as CategoriaVista is CategoriaVista cat)
+            var btn = sender as FrameworkElement;
+            if (btn != null && btn.Tag is string comando)
             {
-                if (cat.Titulo.Contains("precursores")) DatabaseHelper.GuardarConfiguracion("VarTemaAsigPrec", cat.VarTemaAsignado);
-                else DatabaseHelper.GuardarConfiguracion("VarTemaAsig", cat.VarTemaAsignado);
+                var panel = FindParent<Grid>(btn);
+                var wb = FindVisualChildByName<WebBrowser>(panel, "WbEditor");
+                if (wb != null)
+                {
+                    try { wb.InvokeScript("eval", $"document.execCommand('{comando}', false, null);"); } catch { }
+                }
             }
         }
 
+        private void CmbTamano_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (sender is ComboBox cmb && cmb.SelectedItem is ComboBoxItem item && cmb.IsLoaded)
+            {
+                var panel = FindParent<Grid>(cmb);
+                var wb = FindVisualChildByName<WebBrowser>(panel, "WbEditor");
+                if (wb != null)
+                {
+                    try { wb.InvokeScript("eval", $"document.execCommand('fontSize', false, '{item.Tag}');"); } catch { }
+                }
+            }
+        }
+
+        // ==========================================
+        // FUNCIONES DE BÚSQUEDA EN EL ÁRBOL VISUAL
+        // ==========================================
+        private T FindParent<T>(DependencyObject child) where T : DependencyObject
+        {
+            DependencyObject parentObject = VisualTreeHelper.GetParent(child);
+            if (parentObject == null) return null;
+            T parent = parentObject as T;
+            return parent ?? FindParent<T>(parentObject);
+        }
+
+        private T FindVisualChildByName<T>(DependencyObject parent, string name) where T : FrameworkElement
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T t && t.Name == name)
+                    return t;
+
+                var result = FindVisualChildByName<T>(child, name);
+                if (result != null)
+                    return result;
+            }
+            return null;
+        }
+
+        // ==========================================
+        // EVENTOS ORIGINALES (Asunto, Variables, etc)
+        // ==========================================
         private void TxtPlantillaEmail_LostFocus(object sender, RoutedEventArgs e)
         {
             if ((sender as TextBox)?.DataContext as CategoriaVista is CategoriaVista cat)
-            {
                 DatabaseHelper.GuardarConfiguracion("Asunto_" + cat.Titulo, cat.AsuntoEmail);
-                DatabaseHelper.GuardarConfiguracion("Email_" + cat.Titulo, cat.PlantillaEmail);
-            }
         }
 
         private void BtnEnviarMensajeGlobal_Click(object sender, RoutedEventArgs e)
@@ -377,6 +460,48 @@ namespace SCCosmos
         }
     }
 
+    // ========================================================
+    // CLASE ESPECIAL QUE CONECTA WPF CON EL EDITOR WEBBROWSER
+    // ========================================================
+    public static class WbEditorHelper
+    {
+        public static readonly DependencyProperty HtmlProperty =
+            DependencyProperty.RegisterAttached("Html", typeof(string), typeof(WbEditorHelper), new PropertyMetadata(string.Empty, OnHtmlChanged));
+
+        public static string GetHtml(DependencyObject obj) => (string)obj.GetValue(HtmlProperty);
+        public static void SetHtml(DependencyObject obj, string value) => obj.SetValue(HtmlProperty, value);
+
+        private static void OnHtmlChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is WebBrowser wb)
+            {
+                string html = e.NewValue as string ?? "";
+
+                // AUMENTADA LA LETRA A 16px COMO DEFAULT
+                string docHtml = $@"
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset='UTF-8'>
+                    <meta http-equiv='X-UA-Compatible' content='IE=edge' />
+                    <style>
+                        body {{ font-family: 'Segoe UI', sans-serif; font-size: 16px; color: white; background-color: #252528; margin: 12px; outline: none; }}
+                        p {{ margin: 0 0 10px 0; }}
+                    </style>
+                </head>
+                <body contenteditable='true'>
+                    {html}
+                </body>
+                </html>";
+
+                wb.NavigateToString(docHtml);
+            }
+        }
+    }
+
+    // ========================================================
+    // CLASE DE MODELO PARA CADA PESTAÑA
+    // ========================================================
     public class CategoriaVista : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
@@ -425,7 +550,6 @@ namespace SCCosmos
         public string TagDiscurso => Titulo + "|Discurso";
         public string TagDiscursoSerie => Titulo + "|Discurso (serie)";
 
-        // Listas Notificables (avisan al entorno gráfico cuando cambian para actualizar sin borrar la selección)
         private ObservableCollection<ArchivoDocumento> _archivosSimples;
         public ObservableCollection<ArchivoDocumento> ArchivosSimples { get => _archivosSimples; set { _archivosSimples = value; OnPropertyChanged(nameof(ArchivosSimples)); } }
 

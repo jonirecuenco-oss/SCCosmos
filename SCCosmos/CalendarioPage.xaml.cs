@@ -192,7 +192,10 @@ namespace SCCosmos
             {
                 VisitasPage.CodigoPendiente = congreCodigo;
                 VisitasPage.NombrePendiente = semanaSeleccionada.Congregacion;
-                VisitasPage.IdVisitaPendiente = semanaSeleccionada.Id;
+
+                // --- NUEVA LÍNEA: Pasamos el mes de la visita a la página de Visitas ---
+                VisitasPage.MesPendiente = semanaSeleccionada.FechaMartes.ToString("yyyy-MM");
+
                 var ventanaPrincipal = Application.Current.MainWindow as MainWindow;
                 if (ventanaPrincipal != null)
                 {
@@ -456,8 +459,35 @@ namespace SCCosmos
                             var inputs = d.FindElements(By.XPath("//input[@type='file']"));
                             return inputs.Count > 0 ? inputs[0] : null;
                         });
+
+                        // SUBIMOS EL ARCHIVO
                         inputArchivo.SendKeys(rutaPdfRelleno);
+
+                        // === NUEVA ESPERA EXTENDIDA (HASTA 90 SEGUNDOS) ===
                         System.Threading.Thread.Sleep(1000);
+
+                        WebDriverWait waitSubida = new WebDriverWait(driver, TimeSpan.FromSeconds(90));
+
+                        string nombreCortoS302 = Path.GetFileNameWithoutExtension(rutaPdfRelleno);
+                        if (nombreCortoS302.Length > 15) nombreCortoS302 = nombreCortoS302.Substring(0, 15);
+                        try { waitSubida.Until(d => d.PageSource.Contains(nombreCortoS302)); } catch { }
+
+                        // Bucle Anti-Parpadeo
+                        try
+                        {
+                            waitSubida.Until(d => {
+                                var spinners = d.FindElements(By.XPath("//div[contains(@class, 'spinnerAnimation')]"));
+                                if (spinners.Count == 0)
+                                {
+                                    System.Threading.Thread.Sleep(1000);
+                                    return d.FindElements(By.XPath("//div[contains(@class, 'spinnerAnimation')]")).Count == 0;
+                                }
+                                return false;
+                            });
+                        }
+                        catch { }
+
+                        System.Threading.Thread.Sleep(2000);
 
                         IWebElement inputCuerpo = wait.Until(d => {
                             var inputs = d.FindElements(By.XPath("//div[@role='textbox' and @aria-label='Cuerpo del mensaje']"));
@@ -509,37 +539,43 @@ namespace SCCosmos
             if (semanaSeleccionada == null) return;
 
             string categoriaBase = "";
-            if (semanaSeleccionada.Tipo == "Visita SC") categoriaBase = "Documentación de la visita";
-            else if (semanaSeleccionada.Tipo == "Visita (con SCS)") categoriaBase = "Documentación de la visita (con SCS)";
-            else if (semanaSeleccionada.Tipo == "Visita (de pastoreo)") categoriaBase = "Documentación de la visita (visita de pastoreo)";
+            if (semanaSeleccionada.Tipo == "Visita SC") categoriaBase = "Documentación";
+            else if (semanaSeleccionada.Tipo == "Visita (con SCS)") categoriaBase = "Documentación (con SCS)";
+            else if (semanaSeleccionada.Tipo == "Visita (de pastoreo)") categoriaBase = "Documentación (con visita de pastoreo)";
 
             string subCategoria = "Sin alojamiento";
             if (!string.IsNullOrEmpty(semanaSeleccionada.Alojamiento))
             {
-                // Si la visita es "Visita SC" (Sin acompañantes - ni SCS ni Pastoreo)
-                if (categoriaBase == "Documentación de la visita")
+                string aloj = semanaSeleccionada.Alojamiento.ToLower();
+
+                if (categoriaBase == "Documentación")
                 {
-                    if (semanaSeleccionada.Alojamiento.Contains("Sin alojamiento"))
-                        subCategoria = "Sin alojamiento";
-                    else
-                        subCategoria = "Con alojamiento"; // Cualquier opción con alojamiento en visita normal salta aquí
+                    if (aloj.Contains("sin")) subCategoria = "Sin alojamiento";
+                    else subCategoria = "Con alojamiento";
                 }
                 else
                 {
-                    // Si es una visita con acompañante (SCS o Pastoreo) hay subcategorías más detalladas
-                    if (semanaSeleccionada.Alojamiento.Contains("Sin alojamiento")) subCategoria = "Sin alojamiento";
-                    else if (semanaSeleccionada.Alojamiento.Contains("ambos")) subCategoria = "Alojamiento (ambos)";
-                    else if (semanaSeleccionada.Alojamiento.Contains("solo acompañante")) subCategoria = "Alojamiento (solo acompañante)";
-                    else if (semanaSeleccionada.Alojamiento.Contains("solo yo")) subCategoria = "Alojamiento (solo yo)";
+                    if (aloj.Contains("sin")) subCategoria = "Sin alojamiento";
+                    else if (aloj.Contains("ambos")) subCategoria = "Alojamiento (ambos)";
+                    else if (aloj.Contains("solo acomp") || aloj.Contains("acompañante")) subCategoria = "Solo acomp";
+                    else if (aloj.Contains("solo yo")) subCategoria = "Aloj (solo yo)";
+                    else subCategoria = "Con alojamiento";
                 }
             }
 
             string tagBusqueda = $"{categoriaBase}|{subCategoria}";
             var archivosOriginales = DatabaseHelper.ObtenerDocumentos(tagBusqueda);
 
+            if ((archivosOriginales == null || archivosOriginales.Count == 0) && subCategoria.Contains("Alojamiento"))
+            {
+                subCategoria = "Con alojamiento";
+                tagBusqueda = $"{categoriaBase}|{subCategoria}";
+                archivosOriginales = DatabaseHelper.ObtenerDocumentos(tagBusqueda);
+            }
+
             if (archivosOriginales == null || archivosOriginales.Count == 0)
             {
-                MessageBox.Show($"Faltan documentos en:\n- {categoriaBase}\n- {subCategoria}\n\nSúbelos en el apartado Documentación.", "Faltan documentos", MessageBoxButton.OK, MessageBoxImage.Stop);
+                MessageBox.Show($"Faltan documentos en:\n- {categoriaBase}\n- {subCategoria}\n\nSúbelos en el apartado CORRESPONDENCIA > Visitas a las congregaciones.", "Faltan documentos", MessageBoxButton.OK, MessageBoxImage.Stop);
                 return;
             }
 
@@ -641,7 +677,6 @@ namespace SCCosmos
 
             bool? procederEnvio = popup.ShowDialog();
 
-            // GUARDAR EL ESTADO SI SE MODIFICÓ MANUALMENTE Y NO SE PULSÓ "PROCEDER AL ENVÍO"
             if (popup.EstadoModificadoManual && procederEnvio != true)
             {
                 semanaSeleccionada.DocEnviada = popup.EstadoEnviadoActual;
@@ -718,9 +753,39 @@ namespace SCCosmos
                                 return inputs.Count > 0 ? inputs[0] : null;
                             });
 
+                            // SUBIMOS TODOS LOS ARCHIVOS
                             string rutasUnidas = string.Join("\n", archivosProcesados.Select(a => a.RutaLocal));
                             inputArchivo.SendKeys(rutasUnidas);
-                            System.Threading.Thread.Sleep(1500 * archivosProcesados.Count);
+
+                            // === NUEVA ESPERA EXTENDIDA (HASTA 90 SEGUNDOS) ===
+                            System.Threading.Thread.Sleep(1000 * archivosProcesados.Count);
+
+                            WebDriverWait waitSubida = new WebDriverWait(driver, TimeSpan.FromSeconds(90));
+
+                            foreach (var arch in archivosProcesados)
+                            {
+                                string nombreCorto = Path.GetFileNameWithoutExtension(arch.NombreArchivo);
+                                if (nombreCorto.Length > 15) nombreCorto = nombreCorto.Substring(0, 15);
+                                try { waitSubida.Until(d => d.PageSource.Contains(nombreCorto)); } catch { }
+                            }
+
+                            // Bucle Anti-Parpadeo
+                            try
+                            {
+                                waitSubida.Until(d => {
+                                    var spinners = d.FindElements(By.XPath("//div[contains(@class, 'spinnerAnimation')]"));
+                                    if (spinners.Count == 0)
+                                    {
+                                        // Doble comprobación: si da 0, esperamos un momento y volvemos a mirar por si era un parpadeo del DOM
+                                        System.Threading.Thread.Sleep(1000);
+                                        return d.FindElements(By.XPath("//div[contains(@class, 'spinnerAnimation')]")).Count == 0;
+                                    }
+                                    return false;
+                                });
+                            }
+                            catch { }
+
+                            System.Threading.Thread.Sleep(2000);
 
                             IWebElement inputCuerpo = wait.Until(d => {
                                 var inputs = d.FindElements(By.XPath("//div[@role='textbox' and @aria-label='Cuerpo del mensaje']"));
@@ -765,7 +830,6 @@ namespace SCCosmos
                 }
             }
         }
-
 
         private async void BtnEnviarRecordatorio_Click(object sender, RoutedEventArgs e)
         {

@@ -11,11 +11,10 @@
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="65"/>
-                        <ColumnDefinition Width="140"/>
+                        <ColumnDefinition Width="150"/>
                         <ColumnDefinition Width="2*"/>
-                        <ColumnDefinition Width="1.5*"/>
                         <ColumnDefinition Width="2*"/>
-                        <ColumnDefinition Width="45"/>
+                        <ColumnDefinition Width="2*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
@@ -33,10 +32,11 @@
                     </Grid>
 
                     <TextBox Grid.Column="4" Text="{Binding Participantes, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" MinHeight="33" MaxHeight="100" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" VerticalAlignment="Top"/>
-                    <ui:Button Grid.Column="5" Icon="{ui:SymbolIcon Attach24}" Appearance="{Binding ColorBotonArchivo}" ToolTip="{Binding ToolTipArchivo}" Click="BtnAdjuntar_Click" Tag="{Binding}" Padding="6,4" Cursor="Hand" VerticalAlignment="Top" Margin="0,0,10,0"/>
-                    <StackPanel Grid.Column="6" Orientation="Horizontal" VerticalAlignment="Top">
-                        <ui:Button Icon="{ui:SymbolIcon Mail24}" Appearance="Success" Visibility="{Binding VisibilidadEnviar}" Cursor="Hand" Click="BtnEnviarAsignacion_Click" Tag="{Binding}" Padding="6,4" ToolTip="Enviar asignación" Margin="0,0,5,0"/>
-                        <ui:Button Icon="{ui:SymbolIcon Dismiss24}" Appearance="Danger" Cursor="Hand" Click="BtnEliminarParte_Click" Tag="{Binding}" Padding="6,4" ToolTip="Eliminar parte"/>
+
+                    <StackPanel Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Top">
+                        <ui:Button Icon="{ui:SymbolIcon Attach24}" Appearance="{Binding ColorBotonArchivo}" ToolTip="{Binding ToolTipArchivo}" Click="BtnAdjuntar_Click" Tag="{Binding}" Padding="6,4" Cursor="Hand" Margin="0"/>
+                        <ui:Button Icon="{ui:SymbolIcon Mail24}" Appearance="{Binding ColorBotonEmail}" Visibility="{Binding VisibilidadEnviar}" Cursor="Hand" Click="BtnEnviarAsignacion_Click" Tag="{Binding}" Padding="6,4" ToolTip="{Binding ToolTipEmail}" Margin="0"/>
+                        <ui:Button Icon="{ui:SymbolIcon Dismiss24}" Appearance="Danger" Cursor="Hand" Click="BtnEliminarParte_Click" Tag="{Binding}" Padding="6,4" ToolTip="Eliminar parte" Margin="10,0,0,0"/>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -48,11 +48,10 @@
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="65"/>
-                        <ColumnDefinition Width="140"/>
+                        <ColumnDefinition Width="150"/>
                         <ColumnDefinition Width="2*"/>
-                        <ColumnDefinition Width="1.5*"/>
                         <ColumnDefinition Width="2*"/>
-                        <ColumnDefinition Width="45"/>
+                        <ColumnDefinition Width="2*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
@@ -70,10 +69,11 @@
                     </Grid>
 
                     <TextBox Grid.Column="4" Text="{Binding Participantes, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" MinHeight="33" MaxHeight="100" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" VerticalAlignment="Top"/>
-                    <ui:Button Grid.Column="5" Icon="{ui:SymbolIcon Attach24}" Appearance="{Binding ColorBotonArchivo}" ToolTip="{Binding ToolTipArchivo}" Click="BtnAdjuntar_Click" Tag="{Binding}" Padding="6,4" Cursor="Hand" VerticalAlignment="Top" Margin="0,0,10,0"/>
-                    <StackPanel Grid.Column="6" Orientation="Horizontal" VerticalAlignment="Top">
-                        <ui:Button Icon="{ui:SymbolIcon Mail24}" Appearance="Success" Visibility="{Binding VisibilidadEnviar}" Cursor="Hand" Click="BtnEnviarAsignacion_Click" Tag="{Binding}" Padding="6,4" ToolTip="Enviar asignación" Margin="0,0,5,0"/>
-                        <ui:Button Icon="{ui:SymbolIcon Dismiss24}" Appearance="Danger" Cursor="Hand" Click="BtnEliminarParte_Click" Tag="{Binding}" Padding="6,4" ToolTip="Eliminar parte"/>
+
+                    <StackPanel Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Top">
+                        <ui:Button Icon="{ui:SymbolIcon Attach24}" Appearance="{Binding ColorBotonArchivo}" ToolTip="{Binding ToolTipArchivo}" Click="BtnAdjuntar_Click" Tag="{Binding}" Padding="6,4" Cursor="Hand" Margin="0"/>
+                        <ui:Button Icon="{ui:SymbolIcon Mail24}" Appearance="{Binding ColorBotonEmail}" Visibility="{Binding VisibilidadEnviar}" Cursor="Hand" Click="BtnEnviarAsignacion_Click" Tag="{Binding}" Padding="6,4" ToolTip="{Binding ToolTipEmail}" Margin="0"/>
+                        <ui:Button Icon="{ui:SymbolIcon Dismiss24}" Appearance="Danger" Cursor="Hand" Click="BtnEliminarParte_Click" Tag="{Binding}" Padding="6,4" ToolTip="Eliminar parte" Margin="10,0,0,0"/>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -98,21 +98,7 @@
                             <ui:Button Icon="{ui:SymbolIcon Dismiss12}" Appearance="Transparent" Foreground="#888" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,22,0" Visibility="{Binding Superintendente.VisibilidadCruz}" Click="BtnLimpiarAsignacionOrganigrama_Click" Tag="{Binding Superintendente}" Padding="2"/>
                         </Grid>
 
-                        <StackPanel Margin="0,5,0,10" Visibility="{Binding VisibilidadAuditor}">
-                            <TextBlock Text="Auditor" Foreground="#AAAAAA" FontSize="11" Margin="0,0,0,5"/>
-                            <Grid>
-                                <ComboBox SelectedValue="{Binding Auditor.AsignadoId, Mode=TwoWay}"
-                                          DisplayMemberPath="NombreMuestra" SelectedValuePath="Id"
-                                          IsEditable="True" IsTextSearchEnabled="False" IsSynchronizedWithCurrentItem="False" StaysOpenOnEdit="True"
-                                          Tag="Ancianos" Loaded="CmbAsignado_Loaded" TextBoxBase.TextChanged="CmbAsignado_TextChanged"
-                                          Background="#1E1E1E" Foreground="White" BorderBrush="#444" Padding="5,5,25,5" Cursor="Hand"/>
-                                <ui:Button Icon="{ui:SymbolIcon Dismiss12}" Appearance="Transparent" Foreground="#888" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,22,0" Visibility="{Binding Auditor.VisibilidadCruz}" Click="BtnLimpiarAsignacionOrganigrama_Click" Tag="{Binding Auditor}" Padding="2"/>
-                            </Grid>
-                        </StackPanel>
-
-                        <Border Height="1" Background="#3E3E42" Margin="0,5,0,15" Visibility="{Binding MostrarSeparadorAuxiliares}"/>
-
-                        <TextBlock Text="Auxiliares del Departamento" Foreground="#AAAAAA" FontSize="11" Margin="0,0,0,5" Visibility="{Binding MostrarAuxiliares}"/>
+                        <TextBlock Text="Auxiliares" Foreground="#AAAAAA" FontSize="11" Margin="0,0,0,5" Visibility="{Binding MostrarAuxiliares}"/>
                         <ItemsControl ItemsSource="{Binding Auxiliares}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
@@ -132,7 +118,24 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
+                        <!-- Botón Añadir Auxiliar debajo del Superintendente/Auxiliares -->
                         <ui:Button Content="Añadir auxiliar" Icon="{ui:SymbolIcon Add24}" Appearance="Secondary" HorizontalAlignment="Left" Margin="0,5,0,0" Click="BtnAñadirAuxiliar_Click" Tag="{Binding}"/>
+
+                        <!-- CAJA DEL AUDITOR AL FINAL (Caja dentro de la caja) -->
+                        <Border Visibility="{Binding VisibilidadAuditor}" Background="#1A1A1C" CornerRadius="6" BorderBrush="#3E3E42" BorderThickness="1" Padding="12" Margin="0,20,0,0">
+                            <StackPanel>
+                                <TextBlock Text="Auditor" Foreground="#92CDDC" FontWeight="SemiBold" FontSize="12" Margin="0,0,0,8" HorizontalAlignment="Center"/>
+                                <Grid>
+                                    <ComboBox SelectedValue="{Binding Auditor.AsignadoId, Mode=TwoWay}"
+                                              DisplayMemberPath="NombreMuestra" SelectedValuePath="Id"
+                                              IsEditable="True" IsTextSearchEnabled="False" IsSynchronizedWithCurrentItem="False" StaysOpenOnEdit="True"
+                                              Tag="Ancianos" Loaded="CmbAsignado_Loaded" TextBoxBase.TextChanged="CmbAsignado_TextChanged"
+                                              Background="#252528" Foreground="White" BorderBrush="#444" Padding="5,5,25,5" Cursor="Hand"/>
+                                    <ui:Button Icon="{ui:SymbolIcon Dismiss12}" Appearance="Transparent" Foreground="#888" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,22,0" Visibility="{Binding Auditor.VisibilidadCruz}" Click="BtnLimpiarAsignacionOrganigrama_Click" Tag="{Binding Auditor}" Padding="2"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
                     </StackPanel>
                 </StackPanel>
             </Border>
@@ -358,6 +361,7 @@
 
                             <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,40">
                                 <TextBlock x:Name="TxtGuardadoOrganigrama" Text="✓ Guardado" Foreground="#81A1C1" VerticalAlignment="Center" Margin="0,0,15,0" Visibility="Collapsed" FontWeight="SemiBold"/>
+                                <ui:Button Content="Enviar organigrama" Click="BtnEnviarOrganigrama_Click" Appearance="Primary"  Padding="15,8" FontSize="14" Cursor="Hand" Margin="10,0,10,0" Icon="{ui:SymbolIcon Mail24}"/> 
                                 <ui:Button Content="Generar PDF (Organigrama)" Appearance="Secondary" Icon="{ui:SymbolIcon DocumentPdf24}" Padding="15,8" FontSize="14" Cursor="Hand" Click="BtnGenerarPDFOrganigrama_Click"/>
                             </StackPanel>
 

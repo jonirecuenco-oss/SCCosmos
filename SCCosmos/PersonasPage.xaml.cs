@@ -5,25 +5,60 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
+using System.ComponentModel;
+using System.Windows.Threading;
+using System.Net.Http;
+using System.Text.Json;
+using System.Globalization;
+using System.Windows.Media.Imaging;
+using System.Diagnostics;
 
 namespace SCCosmos
 {
     public partial class PersonasPage : Page
     {
-        // Variables para la paginación y búsqueda
         private List<Persona> _todasLasPersonas = new List<Persona>();
         private List<Persona> _personasFiltradas = new List<Persona>();
+
         private int _paginaActual = 1;
-        private int _tamanoPagina = 20;
+        private int _tamanoPagina = 15; // Ajustado a 15
         private int _totalPaginas = 1;
+
+        private string _columnaOrdenActual = "Nombre";
+        private ListSortDirection _direccionOrdenActual = ListSortDirection.Ascending;
+
+        private DispatcherTimer _timerBusqueda;
+        private bool _cargandoColumnas = true;
 
         public PersonasPage()
         {
             InitializeComponent();
             ComprobarPerfilFirefox();
 
-            // Usamos Loaded para poder llamar al método asíncrono y ver el spinner al arrancar
-            this.Loaded += async (s, e) => await CargarListaPersonasAsync();
+            LstServicio.ItemsSource = new List<string> { "Precursor regular", "Precursor especial", "Misionero" };
+            LstSols.ItemsSource = new List<string> { "A-2", "A-19", "A-8", "G-8" };
+            LstPrivs.ItemsSource = new List<string> {
+                "Instructor de la Escuela del Servicio de Precursor", "Superintendente de circuito sustituto",
+                "Miembro del CEH", "Superintendente de asamblea", "Superintendente auxiliar de asamblea",
+                "Coordinador", "Secretario", "Miembro del GVP", "Persona que pertenece a una entidad del LDC"
+            };
+
+            CmbFiltroNombramiento.SelectedIndex = 0;
+            CmbFiltroSexo.SelectedIndex = 0;
+            CmbFiltroEsperanza.SelectedIndex = 0;
+
+            _timerBusqueda = new DispatcherTimer();
+            _timerBusqueda.Interval = TimeSpan.FromMilliseconds(400);
+            _timerBusqueda.Tick += TimerBusqueda_Tick;
+
+            CargarConfiguracionColumnas();
+
+            this.Loaded += async (s, e) =>
+            {
+                await CargarListaPersonasAsync();
+                CargarNombramientosAsync();
+            };
         }
 
         private void ComprobarPerfilFirefox()
@@ -35,193 +70,435 @@ namespace SCCosmos
             }
         }
 
-        // ==========================================
-        // CARGA ASÍNCRONA DE DATOS Y FILTRADO
-        // ==========================================
+        private void BtnColumnas_Click(object sender, RoutedEventArgs e) { PopupColumnas.IsOpen = true; }
+
+        private void CargarConfiguracionColumnas()
+        {
+            _cargandoColumnas = true;
+
+            string config = DatabaseHelper.ObtenerConfiguracion("ColumnasPersonasVisibles", "1,0,0,0,0,1,1,1,1");
+            string[] valores = config.Split(',');
+
+            if (valores.Length == 9)
+            {
+                ChkColCongregacion.IsChecked = valores[0] == "1";
+                ChkColFechaNacimiento.IsChecked = valores[1] == "1";
+                ChkColFechaBautismo.IsChecked = valores[2] == "1";
+                ChkColSexo.IsChecked = valores[3] == "1";
+                ChkColEsperanza.IsChecked = valores[4] == "1";
+                ChkColNombramiento.IsChecked = valores[5] == "1";
+                ChkColServicio.IsChecked = valores[6] == "1";
+                ChkColSolicitudes.IsChecked = valores[7] == "1";
+                ChkColPrivilegios.IsChecked = valores[8] == "1";
+            }
+
+            AplicarVisibilidadColumnas();
+            _cargandoColumnas = false;
+        }
+
+        private void ChkCol_Changed(object sender, RoutedEventArgs e)
+        {
+            if (_cargandoColumnas) return;
+            AplicarVisibilidadColumnas();
+
+            string config = $"{(ChkColCongregacion.IsChecked == true ? "1" : "0")}," +
+                            $"{(ChkColFechaNacimiento.IsChecked == true ? "1" : "0")}," +
+                            $"{(ChkColFechaBautismo.IsChecked == true ? "1" : "0")}," +
+                            $"{(ChkColSexo.IsChecked == true ? "1" : "0")}," +
+                            $"{(ChkColEsperanza.IsChecked == true ? "1" : "0")}," +
+                            $"{(ChkColNombramiento.IsChecked == true ? "1" : "0")}," +
+                            $"{(ChkColServicio.IsChecked == true ? "1" : "0")}," +
+                            $"{(ChkColSolicitudes.IsChecked == true ? "1" : "0")}," +
+                            $"{(ChkColPrivilegios.IsChecked == true ? "1" : "0")}";
+
+            DatabaseHelper.GuardarConfiguracion("ColumnasPersonasVisibles", config);
+        }
+
+        private void AplicarVisibilidadColumnas()
+        {
+            ColCongregacion.Visibility = ChkColCongregacion.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+            ColFechaNacimiento.Visibility = ChkColFechaNacimiento.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+            ColFechaBautismo.Visibility = ChkColFechaBautismo.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+            ColSexo.Visibility = ChkColSexo.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+            ColEsperanza.Visibility = ChkColEsperanza.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+            ColNombramiento.Visibility = ChkColNombramiento.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+            ColServicio.Visibility = ChkColServicio.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+            ColSolicitudes.Visibility = ChkColSolicitudes.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+            ColPrivilegios.Visibility = ChkColPrivilegios.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+        }
+
         private async Task CargarListaPersonasAsync()
         {
             SpinnerCargando.Visibility = Visibility.Visible;
             TablaPersonas.ItemsSource = null;
 
-            // Leemos la base de datos en un hilo secundario para no congelar la pantalla
             _todasLasPersonas = await Task.Run(() => DatabaseHelper.ObtenerPersonas());
 
-            // =========================================================
-            // ESTANDARIZAR FORMATO DE FECHAS (dd/MM/yyyy)
-            // =========================================================
             foreach (var p in _todasLasPersonas)
             {
                 if (!string.IsNullOrWhiteSpace(p.FechaNacimiento) && DateTime.TryParse(p.FechaNacimiento, out DateTime fn))
-                {
                     p.FechaNacimiento = fn.ToString("dd/MM/yyyy");
-                }
 
                 if (!string.IsNullOrWhiteSpace(p.FechaBautismo) && DateTime.TryParse(p.FechaBautismo, out DateTime fb))
-                {
                     p.FechaBautismo = fb.ToString("dd/MM/yyyy");
-                }
             }
-            // =========================================================
+
+            var congregaciones = _todasLasPersonas.Select(p => p.CongregacionNombre).Where(c => !string.IsNullOrEmpty(c)).Distinct().OrderBy(c => c).ToList();
+            LstCongre.ItemsSource = congregaciones;
 
             AplicarFiltroYPaginar();
 
             SpinnerCargando.Visibility = Visibility.Collapsed;
         }
 
-        private void AplicarFiltroYPaginar()
+        private void CargarNombramientosAsync()
         {
-            string busqueda = TxtBuscar.Text.Trim().ToLower();
+            var recomendaciones = DatabaseHelper.ObtenerRecomendaciones();
 
-            if (string.IsNullOrEmpty(busqueda))
+            if (recomendaciones.Count > 0)
             {
-                _personasFiltradas = _todasLasPersonas.ToList();
+                foreach (var rec in recomendaciones)
+                {
+                    rec.ArchivosAdjuntos = DatabaseHelper.ObtenerDocumentos("DescargaHub_" + rec.Hermano);
+                }
+
+                TxtSinNombramientos.Visibility = Visibility.Collapsed;
+                TablaNombramientos.Visibility = Visibility.Visible;
+
+                var collectionView = CollectionViewSource.GetDefaultView(recomendaciones);
+                collectionView.GroupDescriptions.Clear();
+                collectionView.GroupDescriptions.Add(new PropertyGroupDescription("Congregacion"));
+
+                TablaNombramientos.ItemsSource = collectionView;
             }
             else
             {
-                // El buscador mira en toda la lista base, no importa en qué página estés
-                _personasFiltradas = _todasLasPersonas
-                    .Where(p => p.Nombre != null && p.Nombre.ToLower().Contains(busqueda))
-                    .ToList();
+                TablaNombramientos.Visibility = Visibility.Collapsed;
+                TxtSinNombramientos.Visibility = Visibility.Visible;
+            }
+        }
+
+        private async void BtnCancelarRecomendacion_Click(object sender, RoutedEventArgs e)
+        {
+            var boton = sender as FrameworkElement;
+            if (boton == null || !(boton.Tag is RecomendacionHub rec)) return;
+
+            if (MessageBox.Show($"¿Estás seguro de querer cancelar esta recomendación para {rec.Hermano}?", "Confirmar Cancelación", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+            {
+                string folderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SCCosmos", "PerfilFirefoxCorreo");
+
+                boton.IsEnabled = false;
+                SpinnerCargando.Visibility = Visibility.Visible;
+
+                try
+                {
+                    await Task.Run(() => SincronizadorJWHub.CancelarRecomendacionHub(folderPath, rec));
+
+                    DatabaseHelper.EliminarRecomendacion(rec.Hermano, rec.Congregacion);
+
+                    var archivosViejos = DatabaseHelper.ObtenerDocumentos("DescargaHub_" + rec.Hermano);
+                    foreach (var arc in archivosViejos)
+                    {
+                        DatabaseHelper.EliminarDocumento(arc.Id);
+                        if (File.Exists(arc.RutaLocal)) File.Delete(arc.RutaLocal);
+                    }
+
+                    MessageBox.Show($"La recomendación de {rec.Hermano} se ha cancelado en JW Hub.\nEl registro ha sido eliminado de la bandeja.", "Cancelado", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                    await CargarListaPersonasAsync();
+                    CargarNombramientosAsync();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error durante la automatización: {ex.Message}", "Fallo", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                finally
+                {
+                    boton.IsEnabled = true;
+                    SpinnerCargando.Visibility = Visibility.Collapsed;
+                }
+            }
+        }
+
+        private async void BtnAprobarRecomendacion_Click(object sender, RoutedEventArgs e)
+        {
+            var boton = sender as FrameworkElement;
+            if (boton == null || !(boton.Tag is RecomendacionHub rec)) return;
+
+            var ventana = new AprobarNombramientoWindow(rec);
+            ventana.Owner = Window.GetWindow(this);
+
+            if (ventana.ShowDialog() == true)
+            {
+                string folderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SCCosmos", "PerfilFirefoxCorreo");
+
+                boton.IsEnabled = false;
+                SpinnerCargando.Visibility = Visibility.Visible;
+
+                try
+                {
+                    await Task.Run(() => SincronizadorJWHub.AprobarRecomendacionYEnviarCorreo(folderPath, rec, ventana.FechaSeleccionada, ventana.ArchivosPdfGenerados));
+
+                    var personaBD = _todasLasPersonas.FirstOrDefault(x =>
+                        (!string.IsNullOrEmpty(x.Nombre) && x.Nombre.Contains(rec.Hermano, StringComparison.OrdinalIgnoreCase)) ||
+                        (!string.IsNullOrEmpty(x.NombreComun) && x.NombreComun.Contains(rec.Hermano, StringComparison.OrdinalIgnoreCase)));
+
+                    if (personaBD != null && !string.IsNullOrEmpty(rec.RecomendadoComo))
+                    {
+                        if (rec.RecomendadoComo.Contains("Anciano", StringComparison.OrdinalIgnoreCase)) personaBD.Nombramiento = "Anciano";
+                        else if (rec.RecomendadoComo.Contains("Siervo", StringComparison.OrdinalIgnoreCase)) personaBD.Nombramiento = "Siervo ministerial";
+                        DatabaseHelper.ActualizarPersona(personaBD);
+                    }
+
+                    DatabaseHelper.EliminarRecomendacion(rec.Hermano, rec.Congregacion);
+
+                    var archivosViejos = DatabaseHelper.ObtenerDocumentos("DescargaHub_" + rec.Hermano);
+                    foreach (var arc in archivosViejos)
+                    {
+                        DatabaseHelper.EliminarDocumento(arc.Id);
+                        if (File.Exists(arc.RutaLocal)) File.Delete(arc.RutaLocal);
+                    }
+
+                    MessageBox.Show($"¡ÉXITO TOTAL!\nLa recomendación de {rec.Hermano} se ha aprobado y el correo se ha generado.\nEl registro ha sido eliminado de la bandeja de pendientes.", "Aprobado", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                    await CargarListaPersonasAsync();
+                    CargarNombramientosAsync();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error durante la automatización: {ex.Message}", "Fallo", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                finally
+                {
+                    boton.IsEnabled = true;
+                    SpinnerCargando.Visibility = Visibility.Collapsed;
+                }
+            }
+        }
+
+        private void BtnAbrirArchivoNombramiento_Click(object sender, RoutedEventArgs e)
+        {
+            var boton = sender as Button ?? sender as Wpf.Ui.Controls.Button;
+            if (boton == null) return;
+
+            var archivo = boton.Tag as ArchivoDocumento;
+
+            if (File.Exists(archivo.RutaLocal))
+            {
+                Process.Start(new ProcessStartInfo(archivo.RutaLocal) { UseShellExecute = true });
+            }
+            else
+            {
+                MessageBox.Show("El archivo no se encuentra en el disco. Quizás fue eliminado o movido manualmente de la carpeta Documentos.", "Archivo no encontrado", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        private void BtnFiltroCongre_Click(object sender, RoutedEventArgs e) { PopFiltroCongre.IsOpen = true; }
+        private void BtnFiltroServicio_Click(object sender, RoutedEventArgs e) { PopFiltroServicio.IsOpen = true; }
+        private void BtnFiltroSols_Click(object sender, RoutedEventArgs e) { PopFiltroSols.IsOpen = true; }
+        private void BtnFiltroPrivs_Click(object sender, RoutedEventArgs e) { PopFiltroPrivs.IsOpen = true; }
+
+        private void LstFiltro_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!IsLoaded) return;
+
+            BtnFiltroCongre.Content = LstCongre.SelectedItems.Count > 0 ? $"{LstCongre.SelectedItems.Count} selec." : "Todas ▼";
+            BtnFiltroServicio.Content = LstServicio.SelectedItems.Count > 0 ? $"{LstServicio.SelectedItems.Count} selec." : "Todos ▼";
+            BtnFiltroSols.Content = LstSols.SelectedItems.Count > 0 ? $"{LstSols.SelectedItems.Count} selec." : "Todas ▼";
+            BtnFiltroPrivs.Content = LstPrivs.SelectedItems.Count > 0 ? $"{LstPrivs.SelectedItems.Count} selec." : "Todos ▼";
+
+            _timerBusqueda.Stop();
+            _timerBusqueda.Start();
+        }
+
+        private void FiltroCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!IsLoaded) return;
+            _timerBusqueda.Stop();
+            _timerBusqueda.Start();
+        }
+
+        private void BtnLimpiarFiltros_Click(object sender, RoutedEventArgs e)
+        {
+            TxtBuscar.Text = "";
+            CmbFiltroNombramiento.SelectedIndex = 0;
+            CmbFiltroSexo.SelectedIndex = 0;
+            CmbFiltroEsperanza.SelectedIndex = 0;
+
+            LstCongre.SelectedItems.Clear();
+            LstServicio.SelectedItems.Clear();
+            LstSols.SelectedItems.Clear();
+            LstPrivs.SelectedItems.Clear();
+
+            AplicarFiltroYPaginar();
+        }
+
+        private void TxtBuscar_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            _timerBusqueda.Stop();
+            _timerBusqueda.Start();
+        }
+
+        private void TimerBusqueda_Tick(object sender, EventArgs e)
+        {
+            _timerBusqueda.Stop();
+            AplicarFiltroYPaginar();
+        }
+
+        private void TablaPersonas_Sorting(object sender, DataGridSortingEventArgs e)
+        {
+            e.Handled = true;
+
+            string propertyName = e.Column.SortMemberPath;
+            if (string.IsNullOrEmpty(propertyName) && e.Column is DataGridBoundColumn boundColumn && boundColumn.Binding is Binding binding)
+            {
+                propertyName = binding.Path.Path;
             }
 
-            // Recalculamos las páginas y devolvemos al usuario a la página 1 tras buscar
+            if (string.IsNullOrEmpty(propertyName)) return;
+
+            if (_columnaOrdenActual == propertyName)
+            {
+                _direccionOrdenActual = _direccionOrdenActual == ListSortDirection.Ascending ? ListSortDirection.Descending : ListSortDirection.Ascending;
+            }
+            else
+            {
+                _columnaOrdenActual = propertyName;
+                _direccionOrdenActual = ListSortDirection.Ascending;
+            }
+
+            e.Column.SortDirection = _direccionOrdenActual;
+
+            foreach (var col in TablaPersonas.Columns)
+            {
+                if (col != e.Column) col.SortDirection = null;
+            }
+
+            AplicarFiltroYPaginar();
+        }
+
+        private object ObtenerValorPropiedad(Persona p, string propName)
+        {
+            return p.GetType().GetProperty(propName)?.GetValue(p, null) ?? "";
+        }
+
+        private void AplicarFiltroYPaginar()
+        {
+            string busqueda = TxtBuscar.Text.Trim().ToLower();
+            string nombramiento = (CmbFiltroNombramiento.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "";
+            string sexo = (CmbFiltroSexo.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "";
+            string esperanza = (CmbFiltroEsperanza.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "";
+
+            var congreSels = LstCongre.SelectedItems.Cast<string>().ToList();
+            var servSels = LstServicio.SelectedItems.Cast<string>().ToList();
+            var solSels = LstSols.SelectedItems.Cast<string>().ToList();
+            var privSels = LstPrivs.SelectedItems.Cast<string>().ToList();
+
+            _personasFiltradas = _todasLasPersonas.Where(p =>
+                ((p.Nombre != null && p.Nombre.ToLower().Contains(busqueda)) || (p.NombreComun != null && p.NombreComun.ToLower().Contains(busqueda))) &&
+                (string.IsNullOrEmpty(nombramiento) || p.Nombramiento == nombramiento) &&
+                (string.IsNullOrEmpty(sexo) || p.Sexo == sexo) &&
+                (string.IsNullOrEmpty(esperanza) || p.Esperanza == esperanza) &&
+                (congreSels.Count == 0 || congreSels.Contains(p.CongregacionNombre)) &&
+                (servSels.Count == 0 || servSels.Contains(p.Servicio)) &&
+                (solSels.Count == 0 || solSels.Any(s => p.Solicitudes != null && p.Solicitudes.Contains(s))) &&
+                (privSels.Count == 0 || privSels.Any(pr => p.Privilegios != null && p.Privilegios.Contains(pr)))
+            ).ToList();
+
+            if (!string.IsNullOrEmpty(_columnaOrdenActual))
+            {
+                if (_direccionOrdenActual == ListSortDirection.Ascending)
+                    _personasFiltradas = _personasFiltradas.OrderBy(p => ObtenerValorPropiedad(p, _columnaOrdenActual)).ToList();
+                else
+                    _personasFiltradas = _personasFiltradas.OrderByDescending(p => ObtenerValorPropiedad(p, _columnaOrdenActual)).ToList();
+            }
+
             _totalPaginas = (int)Math.Ceiling(_personasFiltradas.Count / (double)_tamanoPagina);
             if (_totalPaginas == 0) _totalPaginas = 1;
-            _paginaActual = 1;
+
+            if (_paginaActual > _totalPaginas) _paginaActual = 1;
 
             RenderizarPagina();
         }
 
         private void RenderizarPagina()
         {
-            // Cortamos el "trozo" de 25 personas que corresponde a la página actual
-            var personasPagina = _personasFiltradas
-                .Skip((_paginaActual - 1) * _tamanoPagina)
-                .Take(_tamanoPagina)
-                .ToList();
+            var personasPagina = _personasFiltradas.Skip((_paginaActual - 1) * _tamanoPagina).Take(_tamanoPagina).ToList();
 
             TablaPersonas.ItemsSource = personasPagina;
-
             TxtPaginaInfo.Text = $"Página {_paginaActual} de {_totalPaginas}";
 
             BtnAnterior.IsEnabled = _paginaActual > 1;
             BtnSiguiente.IsEnabled = _paginaActual < _totalPaginas;
         }
 
-        // ==========================================
-        // EVENTOS DE LA INTERFAZ
-        // ==========================================
-        private void TxtBuscar_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            // Filtramos en tiempo real sin llamar a la base de datos otra vez
-            AplicarFiltroYPaginar();
-        }
-
         private void BtnAnterior_Click(object sender, RoutedEventArgs e)
         {
-            if (_paginaActual > 1)
-            {
-                _paginaActual--;
-                RenderizarPagina();
-            }
+            if (_paginaActual > 1) { _paginaActual--; RenderizarPagina(); }
         }
 
         private void BtnSiguiente_Click(object sender, RoutedEventArgs e)
         {
-            if (_paginaActual < _totalPaginas)
-            {
-                _paginaActual++;
-                RenderizarPagina();
-            }
+            if (_paginaActual < _totalPaginas) { _paginaActual++; RenderizarPagina(); }
         }
 
         private async void BtnSincronizarHub_Click(object sender, RoutedEventArgs e)
         {
             string folderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SCCosmos", "PerfilFirefoxCorreo");
-            MessageBox.Show("Se va a abrir Firefox.\nRecorreremos Precursores, Ancianos y Siervos automáticamente. Por favor, no toques el navegador.", "Sincronizando...", MessageBoxButton.OK, MessageBoxImage.Information);
+
             BtnSincronizarHub.IsEnabled = false;
+            var oldContent = BtnSincronizarHub.Content;
+            BtnSincronizarHub.Content = "Sincronizando...";
 
             try
             {
-                var personasObtenidas = await Task.Run(() => SincronizadorJWHub.Sincronizar(folderPath));
+                var personasExtraidas = await Task.Run(() => SincronizadorJWHub.SincronizarGlobal(folderPath));
 
-                if (personasObtenidas != null)
+                if (personasExtraidas != null && personasExtraidas.Count > 0)
                 {
-                    if (personasObtenidas.Count == 0)
+                    var personasParaBD = personasExtraidas.Select(pe => new Persona
                     {
-                        MessageBox.Show("No se detectó información. ¿Quizás caducó tu sesión o la congregación no tiene ningún siervo/anciano/precursor?", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
-                        return;
-                    }
+                        Nombre = pe.NombreCompleto,
+                        NombreJWHub = pe.NombreCompleto,
+                        NombreComun = pe.NombreComun,
+                        Sexo = "",
+                        Esperanza = pe.Esperanza,
+                        FechaNacimiento = pe.FechaNacimiento,
+                        FechaBautismo = pe.FechaBautismo,
+                        FechaInicioPrec = pe.FechaInicioPrec,
+                        FechaUltimaEscuela = pe.FechaUltimaEscuela,
+                        Solicitudes = pe.Solicitudes,
+                        Nombramiento = pe.Nombramiento,
+                        Servicio = pe.Servicio,
+                        Privilegios = pe.Privilegios,
+                        CongregacionNombre = pe.Congregacion,
+                        Telefono = pe.Telefono,
+                        Email = pe.Email,
+                        EmailJW = pe.EmailJW,
+                        Direccion = pe.Direccion,
+                        Foto = pe.Foto
+                    }).ToList();
 
-                    var personasDb = await Task.Run(() => DatabaseHelper.ObtenerPersonas());
-                    var listaNuevos = new List<PersonaExtraida>();
-                    int actualizadosAuto = 0;
+                    var ventana = new SyncHubWindow(personasParaBD);
+                    ventana.Owner = Window.GetWindow(this);
 
-                    // Filtramos los de nuestra base de datos que ya tenían un nombre JW Hub asociado
-                    var dbVinculadas = personasDb.Where(p => !string.IsNullOrWhiteSpace(p.NombreJWHub)).ToList();
-
-                    // 1. REVISAR A LOS EXISTENTES (Actualizarlos o quitarles los privilegios perdidos)
-                    foreach (var dbPerson in dbVinculadas)
+                    if (ventana.ShowDialog() == true)
                     {
-                        var extraido = personasObtenidas.FirstOrDefault(p => p.NombreCompleto == dbPerson.NombreJWHub);
-
-                        if (extraido != null)
-                        {
-                            // Sigue teniendo privilegios en JW Hub: Lo actualizamos con sus datos nuevos
-                            DatabaseHelper.ActualizarDatosPersonaImportada(dbPerson.Id, extraido);
-                            actualizadosAuto++;
-                        }
-                        else
-                        {
-                            // Ya NO tiene privilegios (No apareció en ninguna pestaña de JW Hub)
-                            // Le borramos Servicio y Nombramiento (pero mantenemos sus datos de contacto y su nombre JW Hub intactos)
-                            if (!string.IsNullOrEmpty(dbPerson.Nombramiento) || !string.IsNullOrEmpty(dbPerson.Servicio) || !string.IsNullOrEmpty(dbPerson.Solicitudes))
-                            {
-                                var dummy = new PersonaExtraida
-                                {
-                                    NombreCompleto = dbPerson.NombreJWHub,
-                                    Congregacion = dbPerson.CongregacionCodigo,
-                                    Servicio = "",
-                                    Nombramiento = "",
-                                    Solicitudes = "",
-                                    Privilegios = ""
-                                };
-                                DatabaseHelper.ActualizarDatosPersonaImportada(dbPerson.Id, dummy);
-                                actualizadosAuto++;
-                            }
-                        }
-                    }
-
-                    // 2. DETECTAR A LOS NUEVOS (Los que ha extraído pero no están en la BBDD vinculados)
-                    foreach (var prec in personasObtenidas)
-                    {
-                        if (!dbVinculadas.Any(p => p.NombreJWHub == prec.NombreCompleto))
-                        {
-                            listaNuevos.Add(prec);
-                        }
-                    }
-
-                    // Lanzar ventana si hay nuevos, si no, notificar éxito
-                    if (listaNuevos.Count > 0)
-                    {
-                        var ventana = new EmparejarPersonasWindow(listaNuevos);
-                        ventana.Owner = Window.GetWindow(this);
-                        if (ventana.ShowDialog() == true) await CargarListaPersonasAsync();
-                    }
-                    else
-                    {
-                        MessageBox.Show($"Sincronización completada en segundo plano.\n\nSe actualizaron {actualizadosAuto} personas que ya tenías vinculadas.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
                         await CargarListaPersonasAsync();
                     }
                 }
+
+                CargarNombramientosAsync();
+
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error durante la lectura: {ex.Message}", "Error de sincronización", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Error de automatización: {ex.Message}", "Fallo de Sincronización", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
                 BtnSincronizarHub.IsEnabled = true;
+                BtnSincronizarHub.Content = oldContent;
             }
         }
 
@@ -237,22 +514,13 @@ namespace SCCosmos
 
                 if (ventana.ShowDialog() == true)
                 {
-                    DatabaseHelper.ActualizarPersona(ventana.PersonaActualizada);
-                    await CargarListaPersonasAsync(); // Recargamos para refrescar la vista
+                    if (!ventana.EsUnaFusion())
+                    {
+                        DatabaseHelper.ActualizarPersona(ventana.PersonaActualizada);
+                    }
+
+                    await CargarListaPersonasAsync();
                 }
-            }
-        }
-
-        private void BtnVerActividad_Click(object sender, RoutedEventArgs e)
-        {
-            var boton = sender as FrameworkElement;
-            var personaSeleccionada = boton.DataContext as Persona;
-
-            if (personaSeleccionada != null)
-            {
-                ActividadPersona ventanaActividad = new ActividadPersona(personaSeleccionada);
-                ventanaActividad.Owner = Window.GetWindow(this);
-                ventanaActividad.ShowDialog();
             }
         }
 
@@ -263,15 +531,157 @@ namespace SCCosmos
 
             if (personaSeleccionada != null)
             {
-                var resultado = MessageBox.Show($"¿Estás seguro de que deseas eliminar permanentemente a {personaSeleccionada.Nombre}? Se borrará también todo su historial de actividad.",
+                var resultado = MessageBox.Show($"¿Estás seguro de que deseas eliminar permanentemente a {personaSeleccionada.Nombre}?\nSe borrará también todo su historial de actividad.",
                                                 "Confirmar Eliminación", MessageBoxButton.YesNo, MessageBoxImage.Error);
 
                 if (resultado == MessageBoxResult.Yes)
                 {
                     DatabaseHelper.EliminarPersona(personaSeleccionada.Id);
-                    await CargarListaPersonasAsync(); // Volvemos a leer BBDD y repaginar
+                    await CargarListaPersonasAsync();
                 }
             }
+        }
+
+        private async void TabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (e.Source is TabControl tc && tc.SelectedIndex == 1 && _todasLasPersonas != null)
+            {
+                var pendientes = _todasLasPersonas.Where(p => !string.IsNullOrWhiteSpace(p.Direccion) && p.Latitud == 0 && p.Longitud == 0).ToList();
+
+                if (pendientes.Count > 0)
+                {
+                    string htmlCarga = $@"
+                    <!DOCTYPE html>
+                    <html><head>
+                        <meta charset='UTF-8'>
+                        <style>body{{background:#1E1E1E;color:#4BA3E3;display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:'Segoe UI',sans-serif;text-align:center;}}</style>
+                    </head><body>
+                        <h2>Geolocalizando direcciones en el mapa...</h2>
+                        <p>Convirtiendo textos a coordenadas ({pendientes.Count} pendientes).</p>
+                        <p style='color:#AAAAAA; font-size:14px; margin-top:20px;'>(Este proceso protege tu IP evitando saturar los servidores de OpenStreetMap).</p>
+                    </body></html>";
+
+                    MapaWebBrowser.NavigateToString(htmlCarga);
+
+                    using (var client = new HttpClient())
+                    {
+                        client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 SCCosmos/1.0");
+
+                        foreach (var p in pendientes)
+                        {
+                            try
+                            {
+                                string url = $"https://nominatim.openstreetmap.org/search?q={Uri.EscapeDataString(p.Direccion)}&format=json&limit=1&countrycodes=es";
+                                string response = await client.GetStringAsync(url);
+                                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                                var resultados = JsonSerializer.Deserialize<List<NominatimResult>>(response, options);
+
+                                double lat = 999, lon = 999;
+
+                                if (resultados != null && resultados.Count > 0)
+                                {
+                                    if (double.TryParse(resultados[0].lat, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double latP)) lat = latP;
+                                    if (double.TryParse(resultados[0].lon, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double lonP)) lon = lonP;
+                                }
+
+                                p.Latitud = lat;
+                                p.Longitud = lon;
+
+                                using (var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={DatabaseHelper.RutaDirectorioDatos}\\sccosmos.db"))
+                                {
+                                    connection.Open();
+                                    var cmd = connection.CreateCommand();
+                                    cmd.CommandText = "UPDATE Personas SET Latitud=@lat, Longitud=@lon WHERE Id=@id OR PersonaRaizId=@id OR Id=(SELECT PersonaRaizId FROM Personas WHERE Id=@id)";
+                                    cmd.Parameters.AddWithValue("@lat", lat);
+                                    cmd.Parameters.AddWithValue("@lon", lon);
+                                    cmd.Parameters.AddWithValue("@id", p.Id);
+                                    cmd.ExecuteNonQuery();
+                                }
+                            }
+                            catch { break; }
+
+                            await Task.Delay(1500);
+                        }
+                    }
+                }
+
+                DibujarMapa();
+            }
+        }
+
+        private void DibujarMapa()
+        {
+            var sb = new System.Text.StringBuilder();
+
+            // FILTRAMOS PARA QUE IGNORE A LOS QUE NO TIENEN COORDENADAS VÁLIDAS NI PENDIENTES
+            var personasConCoords = _todasLasPersonas.Where(p => p.Latitud != 0 && p.Latitud != 999 && p.Longitud != 0 && p.Longitud != 999).ToList();
+
+            foreach (var p in personasConCoords)
+            {
+                string nombreLimpio = p.Nombre != null ? p.Nombre.Replace("'", "\\'") : "Desconocido";
+                string dirLimpia = (p.Direccion ?? "").Replace("'", "\\'");
+
+                sb.AppendLine($"L.marker([{p.Latitud.ToString(System.Globalization.CultureInfo.InvariantCulture)}, {p.Longitud.ToString(System.Globalization.CultureInfo.InvariantCulture)}]).addTo(map).bindPopup('<b>{nombreLimpio}</b><br>{dirLimpia}');");
+            }
+
+            string html = $@"
+            <!DOCTYPE html>
+            <html><head>
+                <meta http-equiv='X-UA-Compatible' content='IE=edge' />
+                <meta charset='UTF-8'>
+                <link rel='stylesheet' href='https://unpkg.com/leaflet@1.7.1/dist/leaflet.css' />
+                <script src='https://unpkg.com/leaflet@1.7.1/dist/leaflet.js'></script>
+                <style>body{{margin:0;padding:0;overflow:hidden;background:#252526;font-family:Segoe UI, sans-serif;}} #map{{height:100vh;width:100vw;background:#252526;}}</style>
+            </head><body>
+                <div id='map'></div>
+                <script>
+                    var map = L.map('map').setView([40.4168, -3.7038], 6);
+                    L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{ attribution: '© OpenStreetMap contributors' }}).addTo(map);
+                    
+                    {sb.ToString()}
+                    
+                    var markers = [];
+                    map.eachLayer(function (layer) {{ if (layer instanceof L.Marker) markers.push(layer.getLatLng()); }});
+                    if (markers.length > 0) map.fitBounds(L.latLngBounds(markers), {{padding: [30, 30]}});
+                </script>
+            </body></html>";
+
+            MapaWebBrowser.NavigateToString(html);
+        }
+
+        public class NominatimResult
+        {
+            public string lat { get; set; }
+            public string lon { get; set; }
+        }
+    }
+
+    public class Base64ImageConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            string base64 = value as string;
+            if (string.IsNullOrEmpty(base64)) return null;
+
+            try
+            {
+                byte[] imageBytes = System.Convert.FromBase64String(base64);
+                using (var ms = new MemoryStream(imageBytes))
+                {
+                    var image = new BitmapImage();
+                    image.BeginInit();
+                    image.CacheOption = BitmapCacheOption.OnLoad;
+                    image.StreamSource = ms;
+                    image.EndInit();
+                    return image;
+                }
+            }
+            catch { return null; }
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
         }
     }
 }

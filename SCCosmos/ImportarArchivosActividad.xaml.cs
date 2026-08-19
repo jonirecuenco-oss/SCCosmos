@@ -61,7 +61,6 @@ namespace SCCosmos
 
         private void BtnProcesar_Click(object sender, RoutedEventArgs e)
         {
-            // 1. S-21 ES OBLIGATORIO, S-13 ES OPCIONAL
             if (string.IsNullOrEmpty(_rutaS21))
             {
                 MessageBox.Show("Debes seleccionar al menos el archivo S-21 para continuar.", "Archivo faltante", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -70,7 +69,6 @@ namespace SCCosmos
 
             try
             {
-                // Leer S-21 (Obligatorio)
                 string contenidoS21 = System.IO.File.ReadAllText(_rutaS21).Trim();
                 if (!contenidoS21.StartsWith("[")) contenidoS21 = "[" + contenidoS21 + "]";
 
@@ -79,7 +77,6 @@ namespace SCCosmos
 
                 List<TerritorioJSON> listaTerritorios = null;
 
-                // Leer S-13 SOLO si el usuario ha seleccionado un archivo
                 if (!string.IsNullOrEmpty(_rutaTerritorios))
                 {
                     string contenidoS13 = System.IO.File.ReadAllText(_rutaTerritorios).Trim();
@@ -89,26 +86,15 @@ namespace SCCosmos
 
                 if (listaPersonas != null)
                 {
-                    // === PUNTO CLAVE: Ya NO borramos la congregación ===
-                    // DatabaseHelper.GuardarActividadImportada usará "ON CONFLICT" e "INSERT OR UPDATE" 
-                    // para preservar el histórico y añadir lo nuevo.
+                    // ABRIMOS EL NUEVO DASHBOARD DE SINCRONIZACIÓN EN LUGAR DE GUARDAR A CIEGAS
+                    var syncDashboard = new SyncJsonWindow(_congreCodigo, listaPersonas, listaTerritorios);
+                    syncDashboard.Owner = Window.GetWindow(this);
 
-                    // Guardar el S-21 en Base de Datos (Siempre)
-                    DatabaseHelper.GuardarActividadImportada(_congreCodigo, listaPersonas);
-
-                    // Guardar los Territorios en Base de Datos (Solo si se subieron)
-                    if (listaTerritorios != null)
+                    if (syncDashboard.ShowDialog() == true)
                     {
-                        DatabaseHelper.GuardarTerritoriosImportados(_congreCodigo, listaTerritorios);
-                        MessageBox.Show("¡S-21 y S-13 importados correctamente!", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                        this.DialogResult = true;
+                        this.Close();
                     }
-                    else
-                    {
-                        MessageBox.Show("¡S-21 importado correctamente! (Sin S-13)", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
-                    }
-
-                    this.DialogResult = true;
-                    this.Close();
                 }
             }
             catch (Exception ex)

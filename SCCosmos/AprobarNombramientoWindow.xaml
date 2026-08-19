@@ -1,0 +1,27 @@
+﻿<Window x:Class="SCCosmos.AprobarNombramientoWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        Title="Aprobar Nombramiento" Height="400" Width="450"
+        WindowStartupLocation="CenterOwner" Background="#1E1E1E">
+    <Grid Margin="20">
+        <StackPanel>
+            <TextBlock Text="Aprobar Recomendación" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,15"/>
+
+            <TextBlock Text="Selecciona la fecha efectiva del nombramiento:" Foreground="#AAA" Margin="0,0,0,5"/>
+            <DatePicker x:Name="DpFecha" Margin="0,0,0,15" FontSize="14" Height="35"/>
+
+            <TextBlock Text="Se generarán estos documentos (convertidos a PDF):" Foreground="#AAA" Margin="0,0,0,5"/>
+            <Border Background="#252526" BorderBrush="#333" BorderThickness="1" CornerRadius="6" Padding="10" MinHeight="100" Margin="0,0,0,25">
+                <ListBox x:Name="LstArchivos" Background="Transparent" Foreground="White" BorderThickness="0" DisplayMemberPath="NombreArchivo"/>
+            </Border>
+
+            <TextBlock x:Name="TxtEstado" Text="" Foreground="#55C855" FontWeight="Bold" Margin="0,0,0,10" HorizontalAlignment="Center"/>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <ui:Button Content="Cancelar" Appearance="Secondary" Margin="0,0,10,0" Click="BtnCancelar_Click"/>
+                <ui:Button x:Name="BtnAprobar" Content="Aceptar" Appearance="Primary" Icon="{ui:SymbolIcon Checkmark24}" Click="BtnAprobar_Click"/>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</Window>

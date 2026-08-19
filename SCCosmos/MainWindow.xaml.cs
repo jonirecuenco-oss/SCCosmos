@@ -29,6 +29,13 @@ namespace SCCosmos
 
             this.Loaded += (s, e) =>
             {
+                // DETECCIÓN INTELIGENTE DE PANTALLAS PEQUEÑAS (PORTÁTILES)
+                // Si el ancho lógico de la pantalla es menor a 1600px, cerramos el menú por defecto.
+                if (SystemParameters.PrimaryScreenWidth < 1600)
+                {
+                    MenuPrincipal.IsPaneOpen = false;
+                }
+
                 this.MenuPrincipal.Navigate(typeof(InicioPage));
             };
 

@@ -2,10 +2,13 @@
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:local="clr-namespace:SCCosmos"
       Title="VisitasPage" Background="#1E1E1E"
       SizeChanged="Page_SizeChanged">
 
     <Page.Resources>
+        <local:Base64ImageConverter x:Key="Base64Converter"/>
+
         <Style x:Key="EstiloBotonPaginacion" TargetType="Button">
             <Setter Property="Width" Value="40"/>
             <Setter Property="Height" Value="40"/>
@@ -29,139 +32,83 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+
         <DataTemplate x:Key="BotonEditarTemplate">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                 <Button Content="✏️" ToolTip="Editar" Click="BtnEditarPersona_Click" Background="Transparent" Foreground="White" BorderThickness="0" Cursor="Hand" Margin="2,0,8,0" FontSize="14"/>
-                <Button Content="🗑️" ToolTip="Eliminar" Click="BtnEliminarPersona_Click" Background="Transparent" Foreground="White" BorderThickness="0" Cursor="Hand" Margin="0,0,2,0" FontSize="14"/>
+                <Button Content="🗑️" ToolTip="Eliminar" Background="Transparent" Foreground="White" BorderThickness="0" Cursor="Hand" Margin="0,0,2,0" FontSize="14" Click="BtnEliminarPersona_Click"/>
             </StackPanel>
         </DataTemplate>
     </Page.Resources>
 
-    <ScrollViewer x:Name="MainScrollViewer" VerticalScrollBarVisibility="Auto">
-        <Grid Margin="20">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
+    <Grid>
+        <ScrollViewer x:Name="MainScrollViewer" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="20">
+                <TextBlock x:Name="TxtTitulo" Text="DATOS DE LA CONGREGACIÓN" FontSize="24" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,20"/>
 
-            <TextBlock x:Name="TxtTitulo" Grid.Row="0" Text="DATOS DE LA CONGREGACIÓN" FontSize="24" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,20"/>
-
-            <StackPanel Grid.Row="1" Margin="0,0,15,20">
-                <!-- CINTA DE MESES -->
-                <Grid Margin="0,0,0,15" Height="50">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-
-                    <Button Grid.Column="0" Content="&#x25C0;" Width="40" Background="#333333" Foreground="White" BorderThickness="0" FontSize="18" Cursor="Hand" Click="BtnScrollIzquierda_Click"/>
-
-                    <ScrollViewer Grid.Column="1" x:Name="ScrollMeses" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
-                        <ListBox x:Name="ListMeses" PreviewMouseWheel="UIElement_PreviewMouseWheel" SelectionChanged="ListMeses_SelectionChanged" BorderThickness="0" Background="Transparent" Padding="0">
-                            <ListBox.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel Orientation="Horizontal"/>
-                                </ItemsPanelTemplate>
-                            </ListBox.ItemsPanel>
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <Border x:Name="Bd" Padding="25,8" Margin="4,0" CornerRadius="8" Background="#20FFFFFF">
-                                        <TextBlock Text="{Binding NombreVisual}" Foreground="White" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                    </Border>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                            <ListBox.ItemContainerStyle>
-                                <Style TargetType="ListBoxItem">
-                                    <Setter Property="Template">
-                                        <Setter.Value>
-                                            <ControlTemplate TargetType="ListBoxItem">
-                                                <Border x:Name="BdItem" Background="Transparent" CornerRadius="8" Padding="2">
-                                                    <ContentPresenter/>
-                                                </Border>
-                                                <ControlTemplate.Triggers>
-                                                    <Trigger Property="IsSelected" Value="True">
-                                                        <Setter TargetName="BdItem" Property="Background" Value="#FF007ACC"/>
-                                                    </Trigger>
-                                                    <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter TargetName="BdItem" Property="Background" Value="#40FFFFFF"/>
-                                                    </Trigger>
-                                                </ControlTemplate.Triggers>
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>
-                                </Style>
-                            </ListBox.ItemContainerStyle>
-                        </ListBox>
-                    </ScrollViewer>
-
-                    <Button Grid.Column="2" Content="&#x25B6;" Width="40" Background="#333333" Foreground="White" BorderThickness="0" FontSize="18" Cursor="Hand" Click="BtnScrollDerecha_Click"/>
-                </Grid>
-
-                <!-- SECCIÓN ACTIVIDAD -->
-                <Expander Header="MINISTERIO" IsExpanded="True" FontSize="16" FontWeight="SemiBold" HorizontalContentAlignment="Stretch" Margin="0,0,0,10">
+                <!-- SECCIÓN MINISTERIO -->
+                <Expander IsExpanded="True" FontSize="16" FontWeight="Normal" HorizontalContentAlignment="Stretch" Margin="0,0,0,10">
+                    <Expander.Header>
+                        <Grid>
+                            <TextBlock Text="MINISTERIO Y PUBLICADORES" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Expander.Header>
                     <StackPanel Margin="10,15,10,10">
+
                         <Grid Margin="0,0,0,15">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
-                            <ListBox Grid.Column="0" x:Name="TabGrupos" PreviewMouseWheel="UIElement_PreviewMouseWheel" SelectionChanged="TabGrupos_SelectionChanged" BorderThickness="0" Background="Transparent" ScrollViewer.HorizontalScrollBarVisibility="Disabled" Margin="0,0,10,0">
-                                <ListBox.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <WrapPanel Orientation="Horizontal"/>
-                                    </ItemsPanelTemplate>
-                                </ListBox.ItemsPanel>
-                                <ListBox.ItemContainerStyle>
-                                    <Style TargetType="ListBoxItem">
-                                        <Setter Property="Template">
-                                            <Setter.Value>
-                                                <ControlTemplate TargetType="ListBoxItem">
-                                                    <Border x:Name="BdItem" Background="#2A2A2A" Padding="15,10" Margin="0,0,6,6" CornerRadius="6">
-                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                    </Border>
-                                                    <ControlTemplate.Triggers>
-                                                        <Trigger Property="IsSelected" Value="True">
-                                                            <Setter TargetName="BdItem" Property="Background" Value="#0078D4"/>
-                                                        </Trigger>
-                                                        <Trigger Property="IsMouseOver" Value="True">
-                                                            <Setter TargetName="BdItem" Property="Background" Value="#404040"/>
-                                                        </Trigger>
-                                                    </ControlTemplate.Triggers>
-                                                </ControlTemplate>
-                                            </Setter.Value>
-                                        </Setter>
-                                        <Setter Property="Foreground" Value="White"/>
-                                        <Setter Property="FontSize" Value="14"/>
-                                        <Setter Property="FontWeight" Value="SemiBold"/>
-                                        <Setter Property="Cursor" Value="Hand"/>
-                                    </Style>
-                                </ListBox.ItemContainerStyle>
-                            </ListBox>
+                            <!-- LISTA DE GRUPOS + BOTÓN DE AÑADIR -->
+                            <WrapPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                <ListBox x:Name="TabGrupos" PreviewMouseWheel="UIElement_PreviewMouseWheel" SelectionChanged="TabGrupos_SelectionChanged" BorderThickness="0" Background="Transparent" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                    <ListBox.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel Orientation="Horizontal"/>
+                                        </ItemsPanelTemplate>
+                                    </ListBox.ItemsPanel>
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="ListBoxItem">
+                                                        <Border x:Name="BdItem" Background="#2A2A2A" Padding="15,10" Margin="0,0,6,6" CornerRadius="6">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsSelected" Value="True">
+                                                                <Setter TargetName="BdItem" Property="Background" Value="#0078D4"/>
+                                                            </Trigger>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="BdItem" Property="Background" Value="#404040"/>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Setter Property="Foreground" Value="White"/>
+                                            <Setter Property="FontSize" Value="14"/>
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                            <Setter Property="Cursor" Value="Hand"/>
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
+                                </ListBox>
 
-                            <Button Grid.Column="1" Content="➕ Añadir Publicador" FontSize="16" FontWeight="SemiBold" Padding="20,10" Margin="10,0,0,6" BorderThickness="0" Cursor="Hand" Click="BtnNuevaPersona_Click" VerticalAlignment="Top">
-                                <Button.Style>
-                                    <Style TargetType="Button">
-                                        <Setter Property="Background" Value="#10893E"/>
-                                        <Setter Property="Foreground" Value="White"/>
-                                        <Setter Property="Template">
-                                            <Setter.Value>
-                                                <ControlTemplate TargetType="Button">
-                                                    <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="6">
-                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                    </Border>
-                                                </ControlTemplate>
-                                            </Setter.Value>
-                                        </Setter>
-                                        <Style.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Background" Value="#0E7535"/>
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                            </Button>
+                                <!-- BOTÓN + MEJORADO -->
+                                <Button Content="➕" ToolTip="Añadir Publicador" FontSize="16" FontWeight="SemiBold" Padding="15,8" Background="#10893E" Foreground="White" BorderThickness="0" Cursor="Hand" Click="BtnNuevaPersona_Click" VerticalAlignment="Top" Margin="4,0,0,6"/>
+                            </WrapPanel>
+
+                            <!-- CINTA DE MES INDIVIDUAL -->
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top" Margin="10,0,0,0">
+                                <TextBlock Text="Mes de referencia:" Foreground="Gray" FontSize="14" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <ui:Button Icon="{ui:SymbolIcon ChevronLeft24}" Appearance="Transparent" Padding="4" Margin="0,0,5,0" Cursor="Hand" Click="BtnMesAntMinisterio_Click"/>
+                                <Border Background="#2A2A2A" CornerRadius="4" Padding="15,6" MinWidth="140">
+                                    <TextBlock x:Name="TxtMesMinisterio" Text="Mes" Foreground="White" FontSize="14" FontWeight="SemiBold" TextAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ui:Button Icon="{ui:SymbolIcon ChevronRight24}" Appearance="Transparent" Padding="4" Margin="5,0,0,0" Cursor="Hand" Click="BtnMesSigMinisterio_Click"/>
+                            </StackPanel>
                         </Grid>
 
                         <DataGrid x:Name="TablaVisitas" PreviewMouseWheel="UIElement_PreviewMouseWheel" FontWeight="Normal" HorizontalAlignment="Stretch" AutoGenerateColumns="False" CanUserAddRows="False"
@@ -174,21 +121,63 @@
                                     <Setter Property="Foreground" Value="White"/>
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding EsPrecursor}" Value="True">
-                                            <Setter Property="Background" Value="AliceBlue"/>
+                                            <Setter Property="Background" Value="#1A0078D4"/>
                                         </DataTrigger>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="DarkViolet"/>
+                                            <Setter Property="Background" Value="#400078D4"/>
                                         </Trigger>
                                     </Style.Triggers>
                                 </Style>
                             </DataGrid.RowStyle>
+
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="Nombre" Width="16*" MinWidth="220" SortMemberPath="NombreComun">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,0,0">
+                                                <Border Width="36" Height="36" CornerRadius="18" Background="#2A2A2A" ClipToBounds="True" Margin="0,4,12,4">
+                                                    <Image Source="{Binding Foto, Converter={StaticResource Base64Converter}}" Stretch="UniformToFill"/>
+                                                </Border>
+                                                <TextBlock Text="{Binding NombreVisual}" VerticalAlignment="Center" ToolTip="{Binding AlertaTooltip}">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding EsPrecursor}" Value="True">
+                                                                    <Setter Property="FontWeight" Value="Bold"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
                         </DataGrid>
                     </StackPanel>
                 </Expander>
 
-                <!-- PROGRAMA DE LA VISITA -->
-                <Expander x:Name="ExpanderPrograma" Header="PROGRAMA DE LA VISITA" FontSize="16" FontWeight="SemiBold" HorizontalContentAlignment="Stretch" Margin="0,0,0,10" Visibility="Collapsed">
+                <!-- MAPA DEL TERRITORIO -->
+                <Expander Header="MAPA DEL TERRITORIO Y SALÓN" FontSize="16" FontWeight="Normal" HorizontalContentAlignment="Stretch" Margin="0,0,0,10" Expanded="ExpanderMapa_Expanded" Collapsed="ExpanderMapa_Collapsed">
                     <StackPanel Margin="10,15,10,10">
+                        <!-- El WebBrowser no admite esquinas redondeadas sin romper el renderizado (Airspace issue). Lo hacemos cuadrado. -->
+                        <Border BorderBrush="#333333" BorderThickness="1" Height="550">
+                            <WebBrowser x:Name="MapaWebBrowser" Margin="0" Visibility="Collapsed"/>
+                        </Border>
+                    </StackPanel>
+                </Expander>
+
+                <!-- PROGRAMA DE LA VISITA -->
+                <Expander x:Name="ExpanderPrograma" FontSize="16" FontWeight="Normal" HorizontalContentAlignment="Stretch" Margin="0,0,0,10">
+                    <Expander.Header>
+                        <Grid>
+                            <TextBlock Text="PROGRAMA DE LA VISITA" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Expander.Header>
+                    <StackPanel Margin="10,15,10,10">
+
+                       
                         <DataGrid x:Name="TablaPrograma" PreviewMouseWheel="UIElement_PreviewMouseWheel" FontWeight="Normal" HorizontalAlignment="Stretch" AutoGenerateColumns="False" CanUserAddRows="False"
                                   HeadersVisibility="Column" SelectionMode="Single" IsReadOnly="True" MaxHeight="800" ScrollViewer.HorizontalScrollBarVisibility="Auto"
                                   GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#20FFFFFF"
@@ -234,7 +223,17 @@
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
                                                     <Border Background="#005A9E" CornerRadius="4" Padding="6,4" Margin="0,0,0,4">
-                                                        <TextBlock Text="{Binding Texto}" Foreground="White" FontSize="11" TextAlignment="Center" TextWrapping="Wrap"/>
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="Auto" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock Grid.Column="0" Text="{Binding Texto}" Foreground="White" FontSize="11" TextAlignment="Left" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                                            <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="5,0,0,0" VerticalAlignment="Center">
+                                                                <Button Content="✏️" Background="Transparent" Foreground="White" BorderThickness="0" Padding="2" FontSize="10" Cursor="Hand" ToolTip="Editar" Tag="{Binding}" Click="BtnEditarActividad_Click"/>
+                                                                <Button Content="🗑️" Background="Transparent" Foreground="#FF5555" BorderThickness="0" Padding="2" FontSize="10" Cursor="Hand" ToolTip="Eliminar" Tag="{Binding}" Click="BtnEliminarActividad_Click"/>
+                                                            </StackPanel>
+                                                        </Grid>
                                                     </Border>
                                                 </DataTemplate>
                                             </ItemsControl.ItemTemplate>
@@ -317,8 +316,13 @@
                     </StackPanel>
                 </Expander>
 
-                <!-- APARTADO NOTAS PERSONALES DE LA VISITA -->
-                <Expander x:Name="ExpanderNotas" Header="NOTAS PERSONALES" FontSize="16" FontWeight="SemiBold" HorizontalContentAlignment="Stretch" Margin="0,0,0,10" Visibility="Collapsed">
+                <!-- NOTAS PERSONALES -->
+                <Expander x:Name="ExpanderNotas" FontSize="16" FontWeight="Normal" HorizontalContentAlignment="Stretch" Margin="0,0,0,10">
+                    <Expander.Header>
+                        <Grid>
+                            <TextBlock Text="NOTAS PERSONALES DE LA VISITA" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Expander.Header>
                     <Grid x:Name="PanelNotas" Margin="10,15,10,10">
                         <Grid.Resources>
                             <Style x:Key="HeaderSeccion" TargetType="Border">
@@ -355,7 +359,9 @@
                         </Grid.Resources>
 
                         <StackPanel>
-                            <TextBlock Text="Los cambios se guardan automáticamente al dejar de escribir." Foreground="#888888" FontSize="12" Margin="0,0,0,15" FontStyle="Italic"/>
+                            <Grid Margin="0,0,0,15">
+                                <TextBlock Text="Los cambios se guardan automáticamente al dejar de escribir." Foreground="#888888" FontSize="12" VerticalAlignment="Center" FontStyle="Italic"/>
+                            </Grid>
 
                             <ItemsControl ItemsSource="{Binding MisNotasAgrupadas}">
                                 <ItemsControl.ItemTemplate>
@@ -382,13 +388,11 @@
                                                                 </Grid.ColumnDefinitions>
 
                                                                 <TextBlock Style="{StaticResource CajaPreguntas}" Grid.Column="0" Text="{Binding Pregunta}" VerticalAlignment="Center"/>
-
                                                                 <TextBox Style="{StaticResource CajaRespuestas}" Grid.Column="1" 
                                                                          Text="{Binding Respuesta, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                                          Background="{Binding FondoRespuesta}" 
                                                                          Foreground="{Binding ColorTextoRespuesta}"
                                                                          LostFocus="TxtNotaRespuesta_LostFocus"/>
-
                                                                 <Button Grid.Column="2" Content="🚩" Background="Transparent" Foreground="#FF5555" BorderThickness="0" 
                                                                         FontSize="18" Cursor="Hand" Margin="5,0,0,0" ToolTip="Marcar como alerta"
                                                                         Click="BtnAlertaNota_Click"/>
@@ -405,8 +409,45 @@
                     </Grid>
                 </Expander>
 
-                <!-- SECCIÓN GRUPOS (WrapPanel Responsive) -->
-                <Expander Header="GRUPOS DE PREDICACIÓN" FontSize="16" FontWeight="SemiBold" HorizontalContentAlignment="Stretch" Margin="0,0,0,10">
+                <!-- ESTADÍSTICAS -->
+                <Expander Header="INFORMACIÓN DE LA CONGREGACIÓN" FontSize="16" FontWeight="Normal" HorizontalContentAlignment="Stretch" Margin="0,0,0,10">
+                    <Border x:Name="PanelEstadisticas" Background="#1E1E1E" CornerRadius="8" Padding="15" Margin="15,10,15,15">
+                        <WrapPanel Orientation="Horizontal">
+
+                            <StackPanel Width="320" Margin="0,0,20,15">
+                                <TextBlock Text="{Binding TotalPersonas, StringFormat='Publicadores activos (con grupo): {0}'}" Foreground="White" Margin="0,4" FontSize="14" FontWeight="SemiBold"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,4">
+                                    <TextBlock Text="{Binding TotalHombres, StringFormat='Hombres: {0}'}" Foreground="#CCCCCC" FontSize="13" Margin="0,0,15,0"/>
+                                    <TextBlock Text="{Binding TotalMujeres, StringFormat='Mujeres: {0}'}" Foreground="#CCCCCC" FontSize="13"/>
+                                </StackPanel>
+                                <TextBlock Text="{Binding MediaEdad, StringFormat='Media de edad: {0} años'}" Foreground="#CCCCCC" Margin="0,4" FontSize="13"/>
+                                <TextBlock Text="{Binding NoBautizados, StringFormat='No bautizados: {0}'}" Foreground="#CCCCCC" Margin="0,4" FontSize="13"/>
+                            </StackPanel>
+
+                            <StackPanel Width="320" Margin="0,0,20,15">
+                                <TextBlock Text="{Binding Ancianos, StringFormat='Ancianos: {0}'}" Foreground="White" Margin="0,4" FontSize="14"/>
+                                <TextBlock Text="{Binding SiervosMinisteriales, StringFormat='Siervos Ministeriales: {0}'}" Foreground="White" Margin="0,4" FontSize="14"/>
+                                <TextBlock Text="{Binding BautizadosRecientes, StringFormat='Bautizados (últimos 6 meses): {0}'}" Foreground="#55C855" Margin="0,4" FontSize="13" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding Irregulares, StringFormat='Irregulares (últimos 6 meses): {0}'}" Foreground="#FF5555" Margin="0,4" FontSize="13"/>
+                            </StackPanel>
+
+                            <StackPanel Width="320" Margin="0,0,0,15">
+                                <TextBlock Text="{Binding PrecursoresRegulares, StringFormat='Prec. Regulares: {0}'}" Foreground="#0078D4" Margin="0,4" FontSize="14" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding PrecursoresEspeciales, StringFormat='Prec. Especiales / Misioneros: {0}'}" Foreground="#0078D4" Margin="0,4" FontSize="14" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding AuxiliaresMesEscogido, StringFormat='Auxiliares (mes seleccionado): {0}'}" Foreground="#FFB900" Margin="0,4" FontSize="13" FontWeight="Bold"/>
+                                <TextBlock Text="{Binding Auxiliares6Meses, StringFormat='Hicieron Auxiliar (últimos 6 meses): {0}'}" Foreground="#FFB900" Margin="0,4" FontSize="13"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,4">
+                                    <TextBlock Text="{Binding TotalCursos, StringFormat='CBs (mes): {0}'}" Foreground="White" FontSize="13" Margin="0,0,15,0"/>
+                                    <TextBlock Text="{Binding MediaCursos, StringFormat='Media: {0}'}" Foreground="White" FontSize="13"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                        </WrapPanel>
+                    </Border>
+                </Expander>
+
+                <!-- GRUPOS DE PREDICACIÓN -->
+                <Expander Header="GRUPOS DE PREDICACIÓN" FontSize="16" FontWeight="Normal" HorizontalContentAlignment="Stretch" Margin="0,0,0,10">
                     <StackPanel Margin="10,15,10,10">
                         <ItemsControl x:Name="GraficoGrupos" PreviewMouseWheel="UIElement_PreviewMouseWheel">
                             <ItemsControl.ItemsPanel>
@@ -449,46 +490,25 @@
                     </StackPanel>
                 </Expander>
 
-                <!-- SECCIÓN INFORMACIÓN (Cambiado a WrapPanel para que fluya hacia abajo al estrechar la ventana) -->
-                <Expander Header="INFORMACIÓN" FontSize="16" FontWeight="SemiBold" HorizontalContentAlignment="Stretch" Margin="0,0,0,10">
-                    <Border x:Name="PanelEstadisticas" Background="#1E1E1E" CornerRadius="8" Padding="15" Margin="15,10,15,15">
-                        <WrapPanel Orientation="Horizontal">
-
-                            <StackPanel Width="320" Margin="0,0,20,15">
-                                <TextBlock Text="{Binding TotalPersonas, StringFormat='Publicadores activos (con grupo): {0}'}" Foreground="White" Margin="0,4" FontSize="14" FontWeight="SemiBold"/>
-                                <StackPanel Orientation="Horizontal" Margin="0,4">
-                                    <TextBlock Text="{Binding TotalHombres, StringFormat='Hombres: {0}'}" Foreground="#CCCCCC" FontSize="13" Margin="0,0,15,0"/>
-                                    <TextBlock Text="{Binding TotalMujeres, StringFormat='Mujeres: {0}'}" Foreground="#CCCCCC" FontSize="13"/>
-                                </StackPanel>
-                                <TextBlock Text="{Binding MediaEdad, StringFormat='Media de edad: {0} años'}" Foreground="#CCCCCC" Margin="0,4" FontSize="13"/>
-                                <TextBlock Text="{Binding NoBautizados, StringFormat='No bautizados: {0}'}" Foreground="#CCCCCC" Margin="0,4" FontSize="13"/>
-                            </StackPanel>
-
-                            <StackPanel Width="320" Margin="0,0,20,15">
-                                <TextBlock Text="{Binding Ancianos, StringFormat='Ancianos: {0}'}" Foreground="White" Margin="0,4" FontSize="14"/>
-                                <TextBlock Text="{Binding SiervosMinisteriales, StringFormat='Siervos Ministeriales: {0}'}" Foreground="White" Margin="0,4" FontSize="14"/>
-                                <TextBlock Text="{Binding BautizadosRecientes, StringFormat='Bautizados (últimos 6 meses): {0}'}" Foreground="#55C855" Margin="0,4" FontSize="13" FontWeight="SemiBold"/>
-                                <TextBlock Text="{Binding Irregulares, StringFormat='Irregulares (últimos 6 meses): {0}'}" Foreground="#FF5555" Margin="0,4" FontSize="13"/>
-                            </StackPanel>
-
-                            <StackPanel Width="320" Margin="0,0,0,15">
-                                <TextBlock Text="{Binding PrecursoresRegulares, StringFormat='Prec. Regulares: {0}'}" Foreground="#0078D4" Margin="0,4" FontSize="14" FontWeight="SemiBold"/>
-                                <TextBlock Text="{Binding PrecursoresEspeciales, StringFormat='Prec. Especiales / Misioneros: {0}'}" Foreground="#0078D4" Margin="0,4" FontSize="14" FontWeight="SemiBold"/>
-                                <TextBlock Text="{Binding AuxiliaresMesEscogido, StringFormat='Auxiliares (mes seleccionado): {0}'}" Foreground="#FFB900" Margin="0,4" FontSize="13" FontWeight="Bold"/>
-                                <TextBlock Text="{Binding Auxiliares6Meses, StringFormat='Hicieron Auxiliar (últimos 6 meses): {0}'}" Foreground="#FFB900" Margin="0,4" FontSize="13"/>
-                                <StackPanel Orientation="Horizontal" Margin="0,4">
-                                    <TextBlock Text="{Binding TotalCursos, StringFormat='CBs (mes): {0}'}" Foreground="White" FontSize="13" Margin="0,0,15,0"/>
-                                    <TextBlock Text="{Binding MediaCursos, StringFormat='Media: {0}'}" Foreground="White" FontSize="13"/>
-                                </StackPanel>
-                            </StackPanel>
-
-                        </WrapPanel>
-                    </Border>
-                </Expander>
-
-                <!-- SECCIÓN TERRITORIOS (Cambiado a WrapPanel para diseño responsivo) -->
-                <Expander Header="TERRITORIOS (S-13)" FontSize="16" FontWeight="SemiBold" HorizontalContentAlignment="Stretch" Margin="0,0,0,10">
+                <!-- TERRITORIOS -->
+                <Expander FontSize="16" FontWeight="Normal" HorizontalContentAlignment="Stretch" Margin="0,0,0,10">
+                    <Expander.Header>
+                        <Grid>
+                            <TextBlock Text="TERRITORIOS (S-13)" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Expander.Header>
                     <StackPanel Margin="10,15,10,10">
+
+                        <!-- CINTA DE MES INDIVIDUAL -->
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,15">
+                            <TextBlock Text="Mes de cálculo (últ. 6 meses):" Foreground="Gray" FontSize="14" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <ui:Button Icon="{ui:SymbolIcon ChevronLeft24}" Appearance="Transparent" Padding="4" Margin="0,0,5,0" Cursor="Hand" Click="BtnMesAntTerritorios_Click"/>
+                            <Border Background="#2A2A2A" CornerRadius="4" Padding="15,6" MinWidth="140">
+                                <TextBlock x:Name="TxtMesTerritorios" Text="Mes" Foreground="White" FontSize="14" FontWeight="SemiBold" TextAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ui:Button Icon="{ui:SymbolIcon ChevronRight24}" Appearance="Transparent" Padding="4" Margin="5,0,0,0" Cursor="Hand" Click="BtnMesSigTerritorios_Click"/>
+                        </StackPanel>
+
                         <WrapPanel Margin="0,0,0,15" Orientation="Horizontal">
                             <Border Background="#1AFFFFFF" CornerRadius="6" Padding="15" Margin="0,0,10,10" Width="180">
                                 <StackPanel>
@@ -618,9 +638,27 @@
                     </StackPanel>
                 </Expander>
 
-                <Expander Header="CONTABILIDAD (Últimos 6 meses)" FontSize="16" FontWeight="SemiBold" HorizontalContentAlignment="Stretch" Margin="0,0,0,10">
+                <!-- CONTABILIDAD -->
+                <Expander FontSize="16" FontWeight="Normal" HorizontalContentAlignment="Stretch" Margin="0,0,0,10">
+                    <Expander.Header>
+                        <Grid>
+                            <TextBlock Text="CONTABILIDAD (Últimos 6 meses)" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Expander.Header>
                     <StackPanel Margin="10,15,10,10">
-                        <TextBlock Text="Los cambios se guardan automáticamente al escribir" Foreground="#888888" FontSize="12" Margin="0,0,0,10" FontStyle="Italic"/>
+
+                        <Grid Margin="0,0,0,15">
+                            <TextBlock Text="Los cambios se guardan automáticamente al escribir" Foreground="#888888" FontSize="12" VerticalAlignment="Center" FontStyle="Italic"/>
+                            <!-- CINTA DE MES INDIVIDUAL -->
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <TextBlock Text="Mes final del balance:" Foreground="Gray" FontSize="14" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <ui:Button Icon="{ui:SymbolIcon ChevronLeft24}" Appearance="Transparent" Padding="4" Margin="0,0,5,0" Cursor="Hand" Click="BtnMesAntContabilidad_Click"/>
+                                <Border Background="#2A2A2A" CornerRadius="4" Padding="15,6" MinWidth="140">
+                                    <TextBlock x:Name="TxtMesContabilidad" Text="Mes" Foreground="White" FontSize="14" FontWeight="SemiBold" TextAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ui:Button Icon="{ui:SymbolIcon ChevronRight24}" Appearance="Transparent" Padding="4" Margin="5,0,0,0" Cursor="Hand" Click="BtnMesSigContabilidad_Click"/>
+                            </StackPanel>
+                        </Grid>
 
                         <DataGrid x:Name="TablaContabilidad" PreviewMouseWheel="UIElement_PreviewMouseWheel" AutoGenerateColumns="False" CanUserAddRows="False"
                                   HeadersVisibility="Column" SelectionMode="Single" IsReadOnly="False" ScrollViewer.HorizontalScrollBarVisibility="Auto"
@@ -646,14 +684,81 @@
                         </DataGrid>
                     </StackPanel>
                 </Expander>
-            </StackPanel>
 
-            <Border x:Name="PanelCargando" Grid.RowSpan="2" Background="#AA000000" Visibility="Collapsed" Panel.ZIndex="9999">
-                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <TextBlock Text="Cargando..." Foreground="White" FontSize="24" FontWeight="Bold" Margin="0,0,0,10" HorizontalAlignment="Center"/>
-                    <ProgressBar IsIndeterminate="True" Width="200" Height="8" Foreground="#0078D4"/>
-                </StackPanel>
-            </Border>
-        </Grid>
-    </ScrollViewer>
+                <!-- S-303 Y S-2 -->
+                <!-- S-303 Y S-2 -->
+                <Expander x:Name="ExpanderS303yS2" Header="S-303 y S-2" FontSize="16" FontWeight="Normal" HorizontalContentAlignment="Stretch" Margin="0,0,0,10">
+                    <StackPanel Margin="10,15,10,10">
+
+                        <!-- PARTE 1: S-303 -->
+                        <Border Background="#1A1A1C" CornerRadius="6" Padding="15" Margin="0,0,0,20" BorderBrush="#333333" BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock Text="DOCUMENTO S-303" FontSize="14" FontWeight="SemiBold" Foreground="#4BA3E3" Margin="0,0,0,10"/>
+                                <ItemsControl x:Name="ListaS303">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,5">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding NombreVisual}" Foreground="White" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                                <Button Grid.Column="1" Content="{Binding TextoBoton}" Tag="{Binding}" Click="BtnEditarS303_Click" 
+                                                        Background="#0078D4" Foreground="White" BorderThickness="0" Padding="10,5" Cursor="Hand" Margin="10,0,0,0"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock x:Name="TxtSinS303" Text="..." Foreground="#AAAAAA" FontStyle="Italic" Visibility="Collapsed" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- PARTE 2: S-2 (RECOMENDACIONES) -->
+                        <Border Background="#1A1A1C" CornerRadius="6" Padding="15" BorderBrush="#333333" BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock Text="RECOMENDACIONES Y BAJAS PENDIENTES (S-2)" FontSize="14" FontWeight="SemiBold" Foreground="#4BA3E3" Margin="0,0,0,10"/>
+
+                                <DataGrid x:Name="TablaS2" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column" SelectionMode="Single" 
+                                          IsReadOnly="True" Background="Transparent" RowBackground="Transparent" BorderThickness="0" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#333333">
+                                    <DataGrid.RowStyle>
+                                        <Style TargetType="DataGridRow">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                            <Setter Property="Foreground" Value="White"/>
+                                            <Setter Property="MinHeight" Value="35"/>
+                                        </Style>
+                                    </DataGrid.RowStyle>
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Hermano" Binding="{Binding Hermano}" Width="2*" FontWeight="SemiBold"/>
+                                        <DataGridTextColumn Header="Acción" Binding="{Binding Tipo}" Width="1*"/>
+                                        <DataGridTextColumn Header="Recomendado como" Binding="{Binding RecomendadoComo}" Width="1.5*"/>
+                                        <DataGridTemplateColumn Header="Gestionar" Width="Auto">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                        <Button Content="✅ Aprobar" Tag="{Binding}" Click="BtnAprobarRecomendacionVisita_Click" Background="#10893E" Foreground="White" BorderThickness="0" Padding="8,4" Cursor="Hand" Margin="0,0,5,0"/>
+                                                        <Button Content="❌ Cancelar" Tag="{Binding}" Click="BtnCancelarRecomendacionVisita_Click" Background="#E81123" Foreground="White" BorderThickness="0" Padding="8,4" Cursor="Hand"/>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                <TextBlock x:Name="TxtSinS2" Text="No hay recomendaciones ni bajas pendientes en JW Hub para esta congregación." Foreground="#AAAAAA" FontStyle="Italic" Visibility="Collapsed"/>
+                            </StackPanel>
+                        </Border>
+
+                    </StackPanel>
+                </Expander>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- CAPA DE CARGA GLOBAL -->
+        <Border x:Name="PanelCargando" Background="#AA000000" Visibility="Collapsed" Panel.ZIndex="9999">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="Cargando..." Foreground="White" FontSize="24" FontWeight="Bold" Margin="0,0,0,10" HorizontalAlignment="Center"/>
+                <ProgressBar IsIndeterminate="True" Width="200" Height="8" Foreground="#0078D4"/>
+            </StackPanel>
+        </Border>
+    </Grid>
 </Page>

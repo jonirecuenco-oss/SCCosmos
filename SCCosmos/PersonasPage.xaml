@@ -1,119 +1,330 @@
 ﻿<Page x:Class="SCCosmos.PersonasPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       xmlns:local="clr-namespace:SCCosmos"
-      mc:Ignorable="d" 
-      d:DesignHeight="600" d:DesignWidth="1100"
-      Title="PersonasPage">
+      Title="PersonasPage" Background="#1E1E1E">
+
     <Page.Resources>
         <local:Base64ImageConverter x:Key="Base64Converter"/>
     </Page.Resources>
-    <Grid Margin="20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <!-- La tabla ocupará todo el alto sobrante (100%) -->
-            <RowDefinition Height="Auto"/>
-            <!-- Fila para la paginación -->
-        </Grid.RowDefinitions>
 
-        <TextBlock Text="REGISTRO GENERAL DE PERSONAS" Grid.Row="0" FontSize="26" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,15"/>
+    <Grid>
+        <!-- EL CONTENEDOR PRINCIPAL (Igual que en Asambleas) -->
+        <ScrollViewer x:Name="MainScrollViewer" VerticalScrollBarVisibility="Auto">
+            <Grid Margin="30" Background="Transparent">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
 
-        <Grid Grid.Row="1" Margin="0,0,0,15">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
+                <Grid Grid.Row="0" Margin="0,0,0,25">
+                    <TextBlock Text="PERSONAS" FontSize="26" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+                    <ui:Button x:Name="BtnSincronizarHub" Content="Sincronizar JW Hub" Icon="{ui:SymbolIcon ArrowSync24}" Appearance="Primary" Click="BtnSincronizarHub_Click" HorizontalAlignment="Right" Visibility="Collapsed"/>
+                </Grid>
 
-            <ui:TextBox Grid.Column="0" x:Name="TxtBuscar" PlaceholderText="Buscar por nombre..." Icon="{ui:SymbolIcon Search24}" TextChanged="TxtBuscar_TextChanged" Width="350"/>
-            <ui:Button Grid.Column="2" x:Name="BtnSincronizarHub" Content="Sincronizar personas de JW Hub" Icon="{ui:SymbolIcon ArrowSync24}" Appearance="Primary" Click="BtnSincronizarHub_Click" Visibility="Collapsed"/>
-        </Grid>
+                <!-- PESTAÑAS PRINCIPALES -->
+                <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0" SelectionChanged="TabControl_SelectionChanged">
 
-        <!-- CONTENEDOR DE LA TABLA Y EL SPINNER -->
-        <Grid Grid.Row="2">
-            <DataGrid x:Name="TablaPersonas" AutoGenerateColumns="False" CanUserAddRows="False"
-                      HeadersVisibility="Column" SelectionMode="Single" IsReadOnly="True" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
-                      GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#20FFFFFF" BorderThickness="1"
-                      BorderBrush="#20FFFFFF" Background="Transparent" RowBackground="Transparent"
-                      AlternatingRowBackground="Transparent" VirtualizingPanel.IsVirtualizingWhenGrouping="True" VirtualizingPanel.ScrollUnit="Item">
-                <DataGrid.RowStyle>
-                    <Style TargetType="DataGridRow">
-                        <Setter Property="Background" Value="Transparent"/>
-                        <Setter Property="Foreground" Value="White"/>
-                        <Setter Property="BorderThickness" Value="0"/>
-                        <Setter Property="MinHeight" Value="40"/>
-                        <Style.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#10FFFFFF"/>
-                            </Trigger>
-                        </Style.Triggers>
-                    </Style>
-                </DataGrid.RowStyle>
+                    <!-- PESTAÑA 1: REGISTROS DE PERSONAS -->
+                    <TabItem Header="Registros de personas" FontSize="16" Foreground="White">
+                        <Grid Margin="0,15,0,0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
 
-                <DataGrid.Columns>
-                    <!-- Columnas de datos (La de Nombre ocupa el espacio sobrante con *) -->
-                    <!-- COLUMNA DE FOTO -->
-                    <DataGridTemplateColumn Header="Foto" Width="70">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <!-- Un borde redondo que recorta la imagen en círculo -->
-                                <Border Width="40" Height="40" CornerRadius="20" Background="#2A2A2A" ClipToBounds="True" Margin="0,5">
-                                    <Image Source="{Binding Foto, Converter={StaticResource Base64Converter}}" Stretch="UniformToFill"/>
-                                </Border>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                    <DataGridTextColumn Header="Nombre" Binding="{Binding Nombre}" Width="*"/>
-                    <DataGridTextColumn Header="Congregación" Binding="{Binding CongregacionNombre}" Width="250"/>
-                    <DataGridTextColumn Header="F. Nacimiento" Binding="{Binding FechaNacimiento}" Width="110"/>
-                    <DataGridTextColumn Header="F. Bautismo" Binding="{Binding FechaBautismo}" Width="110"/>
-                    <DataGridTextColumn Header="Sexo" Binding="{Binding Sexo}" Width="80"/>
-                    <DataGridTextColumn Header="Esperanza" Binding="{Binding Esperanza}" Width="110"/>
-                    <DataGridTextColumn Header="Nombramiento" Binding="{Binding Nombramiento}" Width="130"/>
-                    <DataGridTextColumn Header="Servicio" Binding="{Binding Servicio}" Width="140"/>
-                    <DataGridTextColumn Header="Solicitudes" Binding="{Binding Solicitudes}" Width="160" Foreground="#FFB900" FontWeight="SemiBold"/>
-                    <DataGridTemplateColumn Header="Privilegios" Width="350">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding PrivilegiosLista}" 
-                                           TextWrapping="Wrap" 
-                                           Foreground="#0078D4" 
-                                           FontWeight="SemiBold" 
-                                           VerticalAlignment="Center" 
-                                           Margin="0,5,0,5"/>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                    <!-- COLUMNA DE ACCIONES A LA DERECHA DEL TODO -->
-                    <DataGridTemplateColumn Header="Acciones" Width="140">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                    <ui:Button Icon="{ui:SymbolIcon Edit24}" Padding="6" Margin="0,0,6,0" Click="BtnEditarPersona_Click" ToolTip="Editar datos personales"/>
-                                    <ui:Button Icon="{ui:SymbolIcon Document24}" Appearance="Secondary" Padding="6" Margin="0,0,6,0" Click="BtnVerActividad_Click" ToolTip="Ver historial de actividad"/>
-                                    <ui:Button Icon="{ui:SymbolIcon Delete24}" Appearance="Danger" Padding="6" Click="BtnEliminarPersona_Click" ToolTip="Eliminar persona y su actividad"/>
-                                </StackPanel>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                </DataGrid.Columns>
-            </DataGrid>
+                            <!-- PANEL DE FILTROS AVANZADOS -->
+                            <Border Grid.Row="0" Background="#252528" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="8" Padding="20" Margin="0,0,0,20">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
 
-            <!-- SPINNER DE CARGA -->
-            <ui:ProgressRing x:Name="SpinnerCargando" IsIndeterminate="True" Visibility="Collapsed" Width="50" Height="50" Foreground="#0078D4"/>
-        </Grid>
+                                    <WrapPanel Grid.Column="0" Orientation="Horizontal" Margin="0,-5,0,0">
+                                        <!-- Nombre -->
+                                        <StackPanel Margin="0,5,15,0">
+                                            <TextBlock Text="Nombre" Foreground="#AAAAAA" FontSize="11" Margin="0,0,0,5"/>
+                                            <ui:TextBox x:Name="TxtBuscar" PlaceholderText="Buscar texto..." Width="160" TextChanged="TxtBuscar_TextChanged" Background="#1E1E1E" Foreground="White" BorderBrush="#444"/>
+                                        </StackPanel>
 
-        <!-- PAGINACIÓN -->
-        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,15,0,0">
-            <ui:Button x:Name="BtnAnterior" Content="Anterior" Icon="{ui:SymbolIcon ChevronLeft24}" Click="BtnAnterior_Click" Margin="0,0,15,0" Cursor="Hand"/>
-            <TextBlock x:Name="TxtPaginaInfo" Text="Página 1 de 1" Foreground="White" VerticalAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
-            <ui:Button x:Name="BtnSiguiente" Content="Siguiente" Icon="{ui:SymbolIcon ChevronRight24}" Click="BtnSiguiente_Click" Margin="15,0,0,0" Cursor="Hand"/>
-        </StackPanel>
+                                        <!-- Congregación (Múltiple) -->
+                                        <StackPanel Margin="0,5,15,0">
+                                            <TextBlock Text="Congregación" Foreground="#AAAAAA" FontSize="11" Margin="0,0,0,5"/>
+                                            <ui:Button x:Name="BtnFiltroCongre" Content="Todas ▼" Width="130" Click="BtnFiltroCongre_Click" Appearance="Secondary"/>
+                                            <Popup x:Name="PopFiltroCongre" StaysOpen="False" PlacementTarget="{Binding ElementName=BtnFiltroCongre}" Placement="Bottom">
+                                                <Border Background="#2D2D30" BorderBrush="#0078D4" BorderThickness="1" CornerRadius="4" Padding="5" MaxHeight="250">
+                                                    <ListBox x:Name="LstCongre" SelectionMode="Multiple" SelectionChanged="LstFiltro_SelectionChanged" Background="Transparent" Foreground="White" BorderThickness="0"/>
+                                                </Border>
+                                            </Popup>
+                                        </StackPanel>
 
+                                        <!-- Nombramiento (Individual) -->
+                                        <StackPanel Margin="0,5,15,0">
+                                            <TextBlock Text="Nombramiento" Foreground="#AAAAAA" FontSize="11" Margin="0,0,0,5"/>
+                                            <ComboBox x:Name="CmbFiltroNombramiento" Width="140" SelectionChanged="FiltroCombo_SelectionChanged" Background="#1E1E1E" Foreground="White" BorderBrush="#444">
+                                                <ComboBoxItem Content="Todos" Tag=""/>
+                                                <ComboBoxItem Content="Anciano" Tag="Anciano"/>
+                                                <ComboBoxItem Content="Siervo ministerial" Tag="Siervo ministerial"/>
+                                            </ComboBox>
+                                        </StackPanel>
+
+                                        <!-- Servicio (Múltiple) -->
+                                        <StackPanel Margin="0,5,15,0">
+                                            <TextBlock Text="Servicio" Foreground="#AAAAAA" FontSize="11" Margin="0,0,0,5"/>
+                                            <ui:Button x:Name="BtnFiltroServicio" Content="Todos ▼" Width="130" Click="BtnFiltroServicio_Click" Appearance="Secondary"/>
+                                            <Popup x:Name="PopFiltroServicio" StaysOpen="False" PlacementTarget="{Binding ElementName=BtnFiltroServicio}" Placement="Bottom">
+                                                <Border Background="#2D2D30" BorderBrush="#0078D4" BorderThickness="1" CornerRadius="4" Padding="5">
+                                                    <ListBox x:Name="LstServicio" SelectionMode="Multiple" SelectionChanged="LstFiltro_SelectionChanged" Background="Transparent" Foreground="White" BorderThickness="0"/>
+                                                </Border>
+                                            </Popup>
+                                        </StackPanel>
+
+                                        <!-- Solicitudes (Múltiple) -->
+                                        <StackPanel Margin="0,5,15,0">
+                                            <TextBlock Text="Solicitudes" Foreground="#AAAAAA" FontSize="11" Margin="0,0,0,5"/>
+                                            <ui:Button x:Name="BtnFiltroSols" Content="Todas ▼" Width="110" Click="BtnFiltroSols_Click" Appearance="Secondary"/>
+                                            <Popup x:Name="PopFiltroSols" StaysOpen="False" PlacementTarget="{Binding ElementName=BtnFiltroSols}" Placement="Bottom">
+                                                <Border Background="#2D2D30" BorderBrush="#0078D4" BorderThickness="1" CornerRadius="4" Padding="5">
+                                                    <ListBox x:Name="LstSols" SelectionMode="Multiple" SelectionChanged="LstFiltro_SelectionChanged" Background="Transparent" Foreground="White" BorderThickness="0"/>
+                                                </Border>
+                                            </Popup>
+                                        </StackPanel>
+
+                                        <!-- Privilegios (Múltiple) -->
+                                        <StackPanel Margin="0,5,15,0">
+                                            <TextBlock Text="Privilegios" Foreground="#AAAAAA" FontSize="11" Margin="0,0,0,5"/>
+                                            <ui:Button x:Name="BtnFiltroPrivs" Content="Todos ▼" Width="130" Click="BtnFiltroPrivs_Click" Appearance="Secondary"/>
+                                            <Popup x:Name="PopFiltroPrivs" StaysOpen="False" PlacementTarget="{Binding ElementName=BtnFiltroPrivs}" Placement="Bottom">
+                                                <Border Background="#2D2D30" BorderBrush="#0078D4" BorderThickness="1" CornerRadius="4" Padding="5" MaxHeight="250">
+                                                    <ListBox x:Name="LstPrivs" SelectionMode="Multiple" SelectionChanged="LstFiltro_SelectionChanged" Background="Transparent" Foreground="White" BorderThickness="0"/>
+                                                </Border>
+                                            </Popup>
+                                        </StackPanel>
+
+                                        <!-- Sexo (Individual) -->
+                                        <StackPanel Margin="0,5,15,0">
+                                            <TextBlock Text="Sexo" Foreground="#AAAAAA" FontSize="11" Margin="0,0,0,5"/>
+                                            <ComboBox x:Name="CmbFiltroSexo" Width="100" SelectionChanged="FiltroCombo_SelectionChanged" Background="#1E1E1E" Foreground="White" BorderBrush="#444">
+                                                <ComboBoxItem Content="Todos" Tag=""/>
+                                                <ComboBoxItem Content="Hombre" Tag="Hombre"/>
+                                                <ComboBoxItem Content="Mujer" Tag="Mujer"/>
+                                            </ComboBox>
+                                        </StackPanel>
+
+                                        <!-- Esperanza (Individual) -->
+                                        <StackPanel Margin="0,5,0,0">
+                                            <TextBlock Text="Esperanza" Foreground="#AAAAAA" FontSize="11" Margin="0,0,0,5"/>
+                                            <ComboBox x:Name="CmbFiltroEsperanza" Width="110" SelectionChanged="FiltroCombo_SelectionChanged" Background="#1E1E1E" Foreground="White" BorderBrush="#444">
+                                                <ComboBoxItem Content="Todas" Tag=""/>
+                                                <ComboBoxItem Content="Otras ovejas" Tag="Otras ovejas"/>
+                                                <ComboBoxItem Content="Ungido" Tag="Ungido"/>
+                                            </ComboBox>
+                                        </StackPanel>
+                                    </WrapPanel>
+
+                                    <!-- Botones Limpiar y Columnas -->
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom">
+                                        <ui:Button ToolTip="Limpiar Filtros" Icon="{ui:SymbolIcon Dismiss24}" Appearance="Danger" Click="BtnLimpiarFiltros_Click" Margin="0,0,10,0"/>
+                                        <ui:Button x:Name="BtnColumnas" Content="Columnas" Icon="{ui:SymbolIcon List24}" Appearance="Secondary" Click="BtnColumnas_Click"/>
+
+                                        <Popup x:Name="PopupColumnas" StaysOpen="False" PlacementTarget="{Binding ElementName=BtnColumnas}" Placement="Bottom" VerticalOffset="5" AllowsTransparency="True" PopupAnimation="Fade">
+                                            <Border Background="#2D2D30" BorderBrush="#0078D4" BorderThickness="1" CornerRadius="8" Padding="15">
+                                                <StackPanel x:Name="PanelColumnas">
+                                                    <TextBlock Text="Mostrar u Ocultar" Foreground="#AAAAAA" FontWeight="Bold" Margin="0,0,0,10"/>
+                                                    <CheckBox x:Name="ChkColCongregacion" Content="Congregación" Tag="ColCongregacion" Checked="ChkCol_Changed" Unchecked="ChkCol_Changed" Margin="0,0,0,4"/>
+                                                    <CheckBox x:Name="ChkColFechaNacimiento" Content="Fecha de Nacimiento" Tag="ColFechaNacimiento" Checked="ChkCol_Changed" Unchecked="ChkCol_Changed" Margin="0,0,0,4"/>
+                                                    <CheckBox x:Name="ChkColFechaBautismo" Content="Fecha de Bautismo" Tag="ColFechaBautismo" Checked="ChkCol_Changed" Unchecked="ChkCol_Changed" Margin="0,0,0,4"/>
+                                                    <CheckBox x:Name="ChkColSexo" Content="Sexo" Tag="ColSexo" Checked="ChkCol_Changed" Unchecked="ChkCol_Changed" Margin="0,0,0,4"/>
+                                                    <CheckBox x:Name="ChkColEsperanza" Content="Esperanza" Tag="ColEsperanza" Checked="ChkCol_Changed" Unchecked="ChkCol_Changed" Margin="0,0,0,4"/>
+                                                    <CheckBox x:Name="ChkColNombramiento" Content="Nombramiento" Tag="ColNombramiento" Checked="ChkCol_Changed" Unchecked="ChkCol_Changed" Margin="0,0,0,4"/>
+                                                    <CheckBox x:Name="ChkColServicio" Content="Servicio" Tag="ColServicio" Checked="ChkCol_Changed" Unchecked="ChkCol_Changed" Margin="0,0,0,4"/>
+                                                    <CheckBox x:Name="ChkColSolicitudes" Content="Solicitudes" Tag="ColSolicitudes" Checked="ChkCol_Changed" Unchecked="ChkCol_Changed" Margin="0,0,0,4"/>
+                                                    <CheckBox x:Name="ChkColPrivilegios" Content="Privilegios" Tag="ColPrivilegios" Checked="ChkCol_Changed" Unchecked="ChkCol_Changed"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </Popup>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <DataGrid x:Name="TablaPersonas" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" Sorting="TablaPersonas_Sorting" HeadersVisibility="Column" SelectionMode="Single" IsReadOnly="True" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#20FFFFFF" BorderThickness="1" BorderBrush="#3E3E42" Background="Transparent" RowBackground="Transparent" AlternatingRowBackground="Transparent" VirtualizingPanel.IsVirtualizingWhenGrouping="True" VirtualizingPanel.ScrollUnit="Item">
+                                <DataGrid.RowStyle>
+                                    <Style TargetType="DataGridRow">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="BorderThickness" Value="0"/>
+                                        <Setter Property="MinHeight" Value="40"/>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="#10FFFFFF"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGrid.RowStyle>
+
+                                <DataGrid.Columns>
+                                    <DataGridTemplateColumn Header="Foto" Width="70" CanUserSort="False">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Border Width="40" Height="40" CornerRadius="20" Background="#2A2A2A" ClipToBounds="True" Margin="0,5">
+                                                    <Image Source="{Binding Foto, Converter={StaticResource Base64Converter}}" Stretch="UniformToFill"/>
+                                                </Border>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <DataGridTextColumn x:Name="ColNombre" Header="Nombre" Binding="{Binding Nombre}" Width="3*" MinWidth="220" SortMemberPath="Nombre"/>
+                                    <DataGridTextColumn x:Name="ColCongregacion" Header="Congregación" Binding="{Binding CongregacionNombre}" Width="2*"/>
+                                    <DataGridTextColumn x:Name="ColFechaNacimiento" Header="F. Nacimiento" Binding="{Binding FechaNacimiento}" Width="110"/>
+                                    <DataGridTextColumn x:Name="ColFechaBautismo" Header="F. Bautismo" Binding="{Binding FechaBautismo}" Width="110"/>
+                                    <DataGridTextColumn x:Name="ColSexo" Header="Sexo" Binding="{Binding Sexo}" Width="80"/>
+                                    <DataGridTextColumn x:Name="ColEsperanza" Header="Esperanza" Binding="{Binding Esperanza}" Width="110"/>
+                                    <DataGridTextColumn x:Name="ColNombramiento" Header="Nombramiento" Binding="{Binding Nombramiento}" Width="130"/>
+                                    <DataGridTextColumn x:Name="ColServicio" Header="Servicio" Binding="{Binding Servicio}" Width="140"/>
+                                    <DataGridTextColumn x:Name="ColSolicitudes" Header="Solicitudes" Binding="{Binding Solicitudes}" Width="110" Foreground="#FFB900" FontWeight="SemiBold"/>
+
+                                    <DataGridTemplateColumn x:Name="ColPrivilegios" Header="Privilegios" Width="2.5*" SortMemberPath="PrivilegiosLista">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding PrivilegiosLista}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" ToolTip="{Binding PrivilegiosLista}" Foreground="#0078D4" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,5,0,5"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <DataGridTemplateColumn Header="Acciones" Width="100" CanUserSort="False">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                    <ui:Button Icon="{ui:SymbolIcon Edit24}" Padding="6" Margin="0,0,6,0" Click="BtnEditarPersona_Click" ToolTip="Editar datos personales"/>
+                                                    <ui:Button Icon="{ui:SymbolIcon Delete24}" Appearance="Danger" Padding="6" Click="BtnEliminarPersona_Click" ToolTip="Eliminar persona"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <ui:ProgressRing x:Name="SpinnerCargando" IsIndeterminate="True" Visibility="Collapsed" Width="50" Height="50" Foreground="#0078D4" Grid.Row="1"/>
+
+                            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,15,0,0">
+                                <ui:Button x:Name="BtnAnterior" Content="Anterior" Icon="{ui:SymbolIcon ChevronLeft24}" Click="BtnAnterior_Click" Margin="0,0,15,0" Cursor="Hand"/>
+                                <TextBlock x:Name="TxtPaginaInfo" Text="Página 1 de 1" Foreground="White" VerticalAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
+                                <ui:Button x:Name="BtnSiguiente" Content="Siguiente" Icon="{ui:SymbolIcon ChevronRight24}" Click="BtnSiguiente_Click" Margin="15,0,0,0" Cursor="Hand"/>
+                            </StackPanel>
+                        </Grid>
+                    </TabItem>
+
+                    <!-- PESTAÑA 2: MAPA -->
+                    <TabItem Header="Mapa" FontSize="16" Foreground="White">
+                        <Border BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="8" Margin="0,15,0,0" ClipToBounds="True">
+                            <WebBrowser x:Name="MapaWebBrowser" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                        </Border>
+                    </TabItem>
+
+                    <!-- PESTAÑA 3: NOMBRAMIENTOS Y BAJAS -->
+                    <TabItem Header="Nombramientos y bajas" FontSize="16" Foreground="White">
+                        <Grid Margin="0,15,0,0">
+                            <DataGrid x:Name="TablaNombramientos" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column" SelectionMode="Single" IsReadOnly="True" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#20FFFFFF" BorderThickness="1" BorderBrush="#3E3E42" Background="Transparent" RowBackground="Transparent" AlternatingRowBackground="Transparent">
+
+                                <DataGrid.GroupStyle>
+                                    <GroupStyle>
+                                        <GroupStyle.ContainerStyle>
+                                            <Style TargetType="{x:Type GroupItem}">
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="{x:Type GroupItem}">
+                                                            <StackPanel>
+                                                                <Border Background="#1AFFFFFF" Padding="10,8" Margin="0,15,0,0" CornerRadius="4,4,0,0">
+                                                                    <TextBlock Text="{Binding Name}" FontWeight="Bold" Foreground="#4BA3E3" FontSize="16"/>
+                                                                </Border>
+                                                                <ItemsPresenter />
+                                                            </StackPanel>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </GroupStyle.ContainerStyle>
+                                    </GroupStyle>
+                                </DataGrid.GroupStyle>
+
+                                <DataGrid.RowStyle>
+                                    <Style TargetType="DataGridRow">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="BorderThickness" Value="0"/>
+                                        <Setter Property="MinHeight" Value="45"/>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="#10FFFFFF"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGrid.RowStyle>
+
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Hermano" Binding="{Binding Hermano}" Width="4*" FontWeight="Bold" FontSize="15"/>
+                                    <DataGridTextColumn Header="Tipo de recomendación" Binding="{Binding Tipo}" Width="2*" Foreground="#EBCB8B"/>
+                                    <DataGridTextColumn Header="Recomendado como" Binding="{Binding RecomendadoComo}" Width="2*" Foreground="#55C855" FontWeight="SemiBold"/>
+                                    <DataGridTextColumn Header="Fecha o Próxima Visita" Binding="{Binding Fecha}" Width="2*" Foreground="#AAAAAA"/>
+
+                                    <DataGridTemplateColumn Header="Archivos" Width="2*">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <ItemsControl ItemsSource="{Binding ArchivosAdjuntos}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <ui:Button Content="{Binding NombreArchivo}" Appearance="Secondary" Icon="{ui:SymbolIcon Document24}" Padding="6,4" Margin="0,2" Cursor="Hand" Click="BtnAbrirArchivoNombramiento_Click" Tag="{Binding}" ToolTip="Haz clic para abrir el archivo"/>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <StackPanel Orientation="Vertical"/>
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                </ItemsControl>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <DataGridTemplateColumn Header="Acciones" Width="210">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <ui:Button Content="Aprobar" 
+                           Appearance="Success" 
+                           Icon="{ui:SymbolIcon CheckMark24}" 
+                           Padding="10,4" 
+                           Margin="0,2,5,2" 
+                           Cursor="Hand" 
+                           Click="BtnAprobarRecomendacion_Click" 
+                           Tag="{Binding}" 
+                           ToolTip="Aprobar recomendación"/>
+
+                                                    <ui:Button Content="Cancelar" 
+                           Appearance="Danger" 
+                           Icon="{ui:SymbolIcon Delete24}" 
+                           Padding="10,4" 
+                           Margin="0,2,0,2" 
+                           Cursor="Hand" 
+                           Click="BtnCancelarRecomendacion_Click" 
+                           Tag="{Binding}" 
+                           ToolTip="Cancelar recomendación"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <TextBlock x:Name="TxtSinNombramientos" Text="No hay recomendaciones de nombramientos descargadas." Foreground="#777" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
+                        </Grid>
+                    </TabItem>
+
+                </TabControl>
+            </Grid>
+        </ScrollViewer>
     </Grid>
 </Page>

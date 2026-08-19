@@ -2,6 +2,9 @@
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using Microsoft.Data.Sqlite;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace SCCosmos
 {
@@ -11,6 +14,9 @@ namespace SCCosmos
         {
             InitializeComponent();
             CargarSemanaActual();
+
+            // Cargamos las estadísticas de forma asíncrona para no congelar la pantalla de inicio
+            _ = CargarEstadisticasAsync();
         }
 
         private void CargarSemanaActual()
@@ -36,7 +42,7 @@ namespace SCCosmos
                 {
                     // Si no hay datos guardados en la BD para la semana en curso, mostramos el aviso
                     TxtSinDatos.Visibility = Visibility.Visible;
-                    ((UIElement)IconoActividad.Parent).Visibility = Visibility.Collapsed;
+                    IconoActividad.Visibility = Visibility.Collapsed;
                     return;
                 }
 
@@ -49,6 +55,11 @@ namespace SCCosmos
                     PanelVisita.Visibility = Visibility.Visible;
                     BtnVerVisita.Visibility = Visibility.Visible;
                     IconoActividad.Symbol = Wpf.Ui.Controls.SymbolRegular.Building24;
+
+                    // NUEVO: Cargar el programa del día si existe
+                    string congreCodigo = DatabaseHelper.ObtenerCodigoCongregacion(semanaActual.Congregacion);
+                    string mesReferenciaStr = martesDeEstaSemana.ToString("yyyy-MM");
+                    CargarProgramaDelDia(congreCodigo, mesReferenciaStr, hoy.DayOfWeek);
                 }
                 else
                 {
@@ -63,11 +74,63 @@ namespace SCCosmos
             }
         }
 
+        private void CargarProgramaDelDia(string congreCodigo, string mesReferenciaStr, DayOfWeek diaHoy)
+        {
+            // Traducimos el DayOfWeek al formato string que usa la base de datos del Programa
+            string diaDbStr = "";
+            switch (diaHoy)
+            {
+                case DayOfWeek.Wednesday: diaDbStr = "Miércoles"; break;
+                case DayOfWeek.Thursday: diaDbStr = "Jueves"; break;
+                case DayOfWeek.Friday: diaDbStr = "Viernes"; break;
+                case DayOfWeek.Saturday: diaDbStr = "Sábado"; break;
+                case DayOfWeek.Sunday: diaDbStr = "Domingo"; break;
+                default: return; // Lunes y Martes no tienen programa de predicación guardado
+            }
+
+            var programaDeHoy = new List<ActividadHoy>();
+            string[] turnos = { "1. MAÑANA", "2. MEDIODÍA", "3. TARDE", "4. NOCHE" };
+
+            // Extraemos todo lo programado para este día exacto
+            foreach (var turno in turnos)
+            {
+                string turnoLimpio = turno.Substring(3); // Quita el "1. "
+
+                // Recopilamos a Joni, Rebe y Comidas del mismo turno
+                var responsables = new[] { "Joni", "Rebe", "Comida", "Cenar", "Dormir" };
+
+                foreach (var resp in responsables)
+                {
+                    var actividades = DatabaseHelper.ObtenerActividadesPrograma(congreCodigo, mesReferenciaStr, diaDbStr, turnoLimpio, resp);
+                    foreach (var act in actividades)
+                    {
+                        var comp = DatabaseHelper.ObtenerPersonaPorId(act.CompaneroId);
+                        string nombreComp = comp != null ? comp.Nombre.Split(' ')[0] : "Alguien";
+
+                        programaDeHoy.Add(new ActividadHoy
+                        {
+                            Hora = act.Hora,
+                            TipoActividad = act.TipoActividad,
+                            CompaneroNombre = nombreComp,
+                            VerCompanero = (resp == "Comida" || resp == "Cenar" || resp == "Dormir") ? Visibility.Collapsed : Visibility.Visible
+                        });
+                    }
+                }
+            }
+
+            if (programaDeHoy.Count > 0)
+            {
+                // Ordenamos por hora para que quede un planning secuencial perfecto
+                var programaOrdenado = programaDeHoy.OrderBy(a => a.Hora).ToList();
+                ListaProgramaHoy.ItemsSource = programaOrdenado;
+                PanelProgramaDia.Visibility = Visibility.Visible;
+            }
+        }
+
         private void BtnVerVisita_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                // 1. Recuperamos los datos de la semana actual (los habíamos guardado en el DataContext al cargar la página)
                 var semanaActual = this.DataContext as SemanaCalendario;
 
                 if (semanaActual != null && !string.IsNullOrEmpty(semanaActual.Congregacion))
@@ -75,7 +138,8 @@ namespace SCCosmos
                     string congreCodigo = DatabaseHelper.ObtenerCodigoCongregacion(semanaActual.Congregacion);
                     VisitasPage.CodigoPendiente = congreCodigo;
                     VisitasPage.NombrePendiente = semanaActual.Congregacion;
-                    VisitasPage.IdVisitaPendiente = semanaActual.Id;
+                    VisitasPage.MesPendiente = semanaActual.FechaMartes.ToString("yyyy-MM");
+
                     var ventanaPrincipal = Application.Current.MainWindow as MainWindow;
                     if (ventanaPrincipal != null)
                     {
@@ -91,6 +155,83 @@ namespace SCCosmos
             {
                 System.Windows.MessageBox.Show($"Error al intentar abrir la visita: {ex.Message}");
             }
+        }
+
+        // ==========================================
+        // CÁLCULO DE ESTADÍSTICAS DEL CIRCUITO
+        // ==========================================
+        private async Task CargarEstadisticasAsync()
+        {
+            // Usamos Task.Run para que las consultas SQL se hagan en segundo plano sin congelar la UI
+            var stats = await Task.Run(() => ObtenerContadoresDesdeBD());
+
+            // Una vez terminadas las consultas, actualizamos la interfaz gráfica
+            TxtTotalPrecReg.Text = stats.PrecRegulares.ToString();
+            TxtTotalPrecEsp.Text = stats.PrecEspeciales.ToString();
+            TxtTotalAncianos.Text = stats.Ancianos.ToString();
+            TxtTotalSM.Text = stats.SiervosM.ToString();
+            TxtTotalA2.Text = stats.SolA2.ToString();
+            TxtTotalA19.Text = stats.SolA19.ToString();
+        }
+
+        private EstadisticasCircuito ObtenerContadoresDesdeBD()
+        {
+            var res = new EstadisticasCircuito();
+
+            // Nos conectamos a la BD usando la ruta oficial de tu DatabaseHelper
+            string dbPath = System.IO.Path.Combine(DatabaseHelper.RutaDirectorioDatos, "sccosmos.db");
+            string connectionString = $"Data Source={dbPath}";
+
+            try
+            {
+                using (var connection = new SqliteConnection(connectionString))
+                {
+                    connection.Open();
+
+                    res.PrecRegulares = EjecutarCount(connection, "SELECT COUNT(*) FROM Personas WHERE Servicio LIKE '%Precursor regular%';");
+                    res.PrecEspeciales = EjecutarCount(connection, "SELECT COUNT(*) FROM Personas WHERE Servicio LIKE '%Precursor especial%';");
+
+                    res.Ancianos = EjecutarCount(connection, "SELECT COUNT(*) FROM Personas WHERE Nombramiento LIKE '%Anciano%';");
+                    res.SiervosM = EjecutarCount(connection, "SELECT COUNT(*) FROM Personas WHERE Nombramiento LIKE '%Siervo ministerial%';");
+
+                    res.SolA2 = EjecutarCount(connection, "SELECT COUNT(*) FROM Personas WHERE Solicitudes LIKE '%A-2%';");
+                    res.SolA19 = EjecutarCount(connection, "SELECT COUNT(*) FROM Personas WHERE Solicitudes LIKE '%A-19%';");
+                }
+            }
+            catch { } // Si la BD aún no está inicializada o falla, se quedarán en 0.
+
+            return res;
+        }
+
+        private int EjecutarCount(SqliteConnection connection, string query)
+        {
+            using (var cmd = connection.CreateCommand())
+            {
+                cmd.CommandText = query;
+                var resultado = cmd.ExecuteScalar();
+                return resultado != null && resultado != DBNull.Value ? Convert.ToInt32(resultado) : 0;
+            }
+        }
+
+        // ==========================================
+        // CLASES DE DATOS
+        // ==========================================
+        private class EstadisticasCircuito
+        {
+            public int PrecRegulares { get; set; } = 0;
+            public int PrecEspeciales { get; set; } = 0;
+            public int Ancianos { get; set; } = 0;
+            public int SiervosM { get; set; } = 0;
+            public int SolA2 { get; set; } = 0;
+            public int SolA19 { get; set; } = 0;
+        }
+
+        public class ActividadHoy
+        {
+            public string Hora { get; set; }
+            public string TipoActividad { get; set; }
+            public string CompaneroNombre { get; set; }
+            public Visibility VerCompanero { get; set; }
         }
     }
 }

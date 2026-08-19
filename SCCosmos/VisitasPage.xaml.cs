@@ -8,6 +8,10 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
+using System.Text.Json;
+using System.Net.Http;
+using System.Globalization;
+using System.IO;
 
 namespace SCCosmos
 {
@@ -15,13 +19,11 @@ namespace SCCosmos
     {
         private string _congreCodigo;
         private string _congreNombre;
-        private string _mesVisitaActiva = null;
         private int _totalPublicadoresActivos = 0;
-        private string _mesContabilidadActivo = "";
 
         public static string CodigoPendiente = "";
         public static string NombrePendiente = "";
-        public static int IdVisitaPendiente = 0;
+        public static string MesPendiente = "";
 
         private bool _cargandoDatos = false;
 
@@ -29,6 +31,17 @@ namespace SCCosmos
         private List<FilaTablaTerritorio> _territoriosGlobal = new List<FilaTablaTerritorio>();
         private int _paginaActual = 1;
         private const int _itemsPorPagina = 20;
+
+        // Variables de estado independientes para cada módulo
+        private DateTime _mesMinisterio;
+        private DateTime _mesPrograma;
+        private DateTime _mesNotas;
+        private DateTime _mesTerritorios;
+        private DateTime _mesContabilidad;
+        private DateTime _mesS303;
+
+        private bool _mapaCargado = false;
+        private string _htmlMapaCache = "";
 
         public List<CategoriaNotas> MisNotasAgrupadas { get; set; }
 
@@ -49,16 +62,13 @@ namespace SCCosmos
             _congreNombre = NombrePendiente;
             TxtTitulo.Text = $"DATOS DE LA CONGREGACIÓN: {_congreNombre.ToUpper()}";
 
-            CargarGruposPredicacion();
-            CargarCintaMeses();
-
-            // Ajustamos las columnas por primera vez con el ancho inicial
+            InicializarMeses();
+            CargarS303yS2();
             AjustarVisibilidadColumnas(this.ActualWidth);
+
+            if (PanelCargando != null) PanelCargando.Visibility = Visibility.Collapsed;
         }
 
-        // =========================================================
-        // DISEÑO RESPONSIVO (Ocultar columnas al achicar pantalla)
-        // =========================================================
         private void Page_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             AjustarVisibilidadColumnas(e.NewSize.Width);
@@ -73,17 +83,9 @@ namespace SCCosmos
                 string header = col.Header?.ToString();
                 if (string.IsNullOrEmpty(header)) continue;
 
-                // Si la pantalla baja de 1250, ocultamos el Nombre de JW Hub (que suele sobrar)
-                if (header == "Nombre JW Hub")
-                    col.Visibility = anchoPantalla < 1250 ? Visibility.Collapsed : Visibility.Visible;
-
-                // Si baja de 1100, ocultamos detalles secundarios demográficos
-                else if (header == "Sexo" || header == "Edad" || header == "Baut.")
-                    col.Visibility = anchoPantalla < 1100 ? Visibility.Collapsed : Visibility.Visible;
-
-                // Si baja de 950, ocultamos conteos estadísticos
-                else if (header == "Terrs." || header == "CBs")
-                    col.Visibility = anchoPantalla < 950 ? Visibility.Collapsed : Visibility.Visible;
+                if (header == "Nombre JW Hub") col.Visibility = anchoPantalla < 1250 ? Visibility.Collapsed : Visibility.Visible;
+                else if (header == "Sexo" || header == "Edad" || header == "Baut.") col.Visibility = anchoPantalla < 1100 ? Visibility.Collapsed : Visibility.Visible;
+                else if (header == "Terrs." || header == "CBs") col.Visibility = anchoPantalla < 950 ? Visibility.Collapsed : Visibility.Visible;
             }
         }
 
@@ -92,16 +94,8 @@ namespace SCCosmos
             if (!e.Handled)
             {
                 e.Handled = true;
-                var eventArg = new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta)
-                {
-                    RoutedEvent = UIElement.MouseWheelEvent,
-                    Source = sender
-                };
-
-                if (MainScrollViewer != null)
-                {
-                    MainScrollViewer.RaiseEvent(eventArg);
-                }
+                var eventArg = new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta) { RoutedEvent = UIElement.MouseWheelEvent, Source = sender };
+                if (MainScrollViewer != null) MainScrollViewer.RaiseEvent(eventArg);
             }
         }
 
@@ -117,7 +111,7 @@ namespace SCCosmos
                 foreach (var act in historico)
                 {
                     bool horasMayorQueCero = false;
-                    if (double.TryParse(act.Horas?.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double hMes))
+                    if (double.TryParse(act.Horas?.Replace(",", "."), NumberStyles.Any, CultureInfo.InvariantCulture, out double hMes))
                     {
                         if (hMes > 0) horasMayorQueCero = true;
                     }
@@ -137,176 +131,171 @@ namespace SCCosmos
             return maxFecha;
         }
 
-        private void CargarCintaMeses()
-        {
-            var meses = new List<MesSelectorVisita>();
-            DateTime inicio = DateTime.Today.AddMonths(-24);
+        // ==========================================
+        // CINTAS DE MESES INDEPENDIENTES (RIBBONS)
+        // ==========================================
 
-            for (int i = 0; i <= 36; i++)
+        private void InicializarMeses()
+        {
+            DateTime mesBase = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+
+            if (!string.IsNullOrEmpty(MesPendiente) && DateTime.TryParseExact(MesPendiente, "yyyy-MM", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime parsedMes))
             {
-                DateTime f = inicio.AddMonths(i);
-                string nombreMes = f.ToString("MMMM yyyy", new System.Globalization.CultureInfo("es-ES"));
-                nombreMes = char.ToUpper(nombreMes[0]) + nombreMes.Substring(1);
-                meses.Add(new MesSelectorVisita { FechaBase = f, NombreVisual = nombreMes });
+                mesBase = parsedMes;
             }
-            ListMeses.ItemsSource = meses;
 
-            DateTime maxFecha = CalcularMaximoMesActividad();
+            _mesMinisterio = mesBase;
+            _mesPrograma = mesBase;
+            _mesNotas = mesBase;
+            _mesTerritorios = mesBase;
+            _mesContabilidad = mesBase;
+            _mesS303 = mesBase;
 
-            var mesActual = maxFecha != DateTime.MinValue
-                ? meses.FirstOrDefault(m => m.FechaBase.Year == maxFecha.Year && m.FechaBase.Month == maxFecha.Month)
-                : meses.FirstOrDefault(m => m.FechaBase.Year == DateTime.Today.Year && m.FechaBase.Month == DateTime.Today.Month);
+            ActualizarUI_MesMinisterio();
+            ActualizarUI_MesPrograma();
+            ActualizarUI_MesNotas();
+            ActualizarUI_MesTerritorios();
+            ActualizarUI_MesContabilidad();
+            ActualizarUI_MesS303();
+        }
 
-            if (mesActual == null) mesActual = meses.FirstOrDefault(m => m.FechaBase.Year == DateTime.Today.Year && m.FechaBase.Month == DateTime.Today.Month);
+        private string FormatearMes(DateTime d)
+        {
+            string nombreMes = d.ToString("MMMM yyyy", new CultureInfo("es-ES"));
+            return char.ToUpper(nombreMes[0]) + nombreMes.Substring(1);
+        }
 
-            if (mesActual != null)
+        // --- MINISTERIO ---
+        private async void ActualizarUI_MesMinisterio()
+        {
+            if (TxtMesMinisterio != null) TxtMesMinisterio.Text = FormatearMes(_mesMinisterio);
+            if (_cargandoDatos) return;
+            _cargandoDatos = true;
+            try
             {
-                ListMeses.SelectedItem = mesActual;
+                DateTime maxMesAct = CalcularMaximoMesActividad();
+                DateTime mesFinGrid = (maxMesAct != DateTime.MinValue && _mesMinisterio > maxMesAct) ? maxMesAct : _mesMinisterio;
+
+                DateTime[] mesesARenderizar = new DateTime[6];
+                for (int i = 0; i < 6; i++) mesesARenderizar[5 - i] = mesFinGrid.AddMonths(-i);
+
+                var listadoHermanosHistorico = DatabaseHelper.ObtenerPersonasHistoricasPorMes(_congreCodigo, _mesMinisterio.ToString("yyyy-MM"));
+
+                await ProcesarColumnasYDatosDinamicos(mesesARenderizar, listadoHermanosHistorico);
+                CargarGruposPredicacion(listadoHermanosHistorico);
             }
+            finally { _cargandoDatos = false; }
         }
 
-        private void BtnScrollIzquierda_Click(object sender, RoutedEventArgs e)
+        private void BtnMesAntMinisterio_Click(object sender, RoutedEventArgs e) { _mesMinisterio = _mesMinisterio.AddMonths(-1); ActualizarUI_MesMinisterio(); }
+        private void BtnMesSigMinisterio_Click(object sender, RoutedEventArgs e) { _mesMinisterio = _mesMinisterio.AddMonths(1); ActualizarUI_MesMinisterio(); }
+
+        // --- PROGRAMA ---
+        private void ActualizarUI_MesPrograma()
         {
-            ScrollMeses.ScrollToHorizontalOffset(ScrollMeses.HorizontalOffset - 250);
+            //if (TxtMesPrograma != null) TxtMesPrograma.Text = FormatearMes(_mesPrograma);
+            if (!_cargandoDatos) CargarPrograma(_mesPrograma);
         }
 
-        private void BtnScrollDerecha_Click(object sender, RoutedEventArgs e)
+        // --- NOTAS ---
+        private void ActualizarUI_MesNotas()
         {
-            ScrollMeses.ScrollToHorizontalOffset(ScrollMeses.HorizontalOffset + 250);
+            //if (TxtMesNotas != null) TxtMesNotas.Text = FormatearMes(_mesNotas);
+            if (!_cargandoDatos) CargarNotas(_mesNotas);
         }
 
-        private void CentrarMesEnCinta(MesSelectorVisita mesElegido)
+        // --- TERRITORIOS ---
+        private async void ActualizarUI_MesTerritorios()
         {
-            if (mesElegido == null || ScrollMeses == null) return;
-
-            Dispatcher.BeginInvoke(new Action(() =>
+            if (TxtMesTerritorios != null) TxtMesTerritorios.Text = FormatearMes(_mesTerritorios);
+            if (_cargandoDatos) return;
+            _cargandoDatos = true;
+            try
             {
-                var container = ListMeses.ItemContainerGenerator.ContainerFromItem(mesElegido) as FrameworkElement;
-                if (container != null && ScrollMeses.ViewportWidth > 0)
-                {
-                    var transform = container.TransformToAncestor(ListMeses);
-                    Point posicionAbsoluta = transform.Transform(new Point(0, 0));
-                    double offsetCentro = posicionAbsoluta.X - (ScrollMeses.ViewportWidth / 2) + (container.ActualWidth / 2);
-                    ScrollMeses.ScrollToHorizontalOffset(offsetCentro);
-                }
-            }), DispatcherPriority.Loaded);
-        }
+                DateTime inicio6m = _mesTerritorios.AddMonths(-5);
+                DateTime fin6m = _mesTerritorios.AddMonths(1).AddDays(-1);
 
-        private async void ListMeses_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (ListMeses.SelectedItem is MesSelectorVisita seleccion)
-            {
-                CentrarMesEnCinta(seleccion);
-
-                if (string.IsNullOrEmpty(_congreCodigo)) return;
-                if (_cargandoDatos) return;
-
-                _cargandoDatos = true;
-                try
-                {
-                    if (PanelCargando != null) PanelCargando.Visibility = Visibility.Visible;
-                    await Task.Delay(50);
-
-                    DateTime mesReferencia = new DateTime(seleccion.FechaBase.Year, seleccion.FechaBase.Month, 1);
-
-                    DateTime maxMesActividad = CalcularMaximoMesActividad();
-                    DateTime mesFinGrid = mesReferencia;
-
-                    if (maxMesActividad != DateTime.MinValue && mesReferencia > maxMesActividad)
-                    {
-                        mesFinGrid = maxMesActividad;
-                    }
-
-                    DateTime[] mesesARenderizar = new DateTime[6];
-                    for (int i = 0; i < 6; i++) mesesARenderizar[5 - i] = mesFinGrid.AddMonths(-i);
-
-                    DateTime fechaInicio6Meses = mesReferencia.AddMonths(-5);
-                    DateTime fechaFin6Meses = mesReferencia.AddMonths(1).AddDays(-1);
-
-                    await ProcesarColumnasYDatosDinamicos(mesesARenderizar);
-                    await CargarTerritorios(mesReferencia, fechaInicio6Meses, fechaFin6Meses);
-
-                    CargarProgramaYNotas(mesReferencia);
-                    CargarContabilidadList(mesReferencia);
-                }
-                finally
-                {
-                    _cargandoDatos = false;
-                    if (PanelCargando != null) PanelCargando.Visibility = Visibility.Collapsed;
-                }
+                var listadoHermanosHistorico = DatabaseHelper.ObtenerPersonasHistoricasPorMes(_congreCodigo, _mesTerritorios.ToString("yyyy-MM"));
+                await CargarTerritorios(_mesTerritorios, inicio6m, fin6m, listadoHermanosHistorico);
             }
+            finally { _cargandoDatos = false; }
+        }
+        private void BtnMesAntTerritorios_Click(object sender, RoutedEventArgs e) { _mesTerritorios = _mesTerritorios.AddMonths(-1); ActualizarUI_MesTerritorios(); }
+        private void BtnMesSigTerritorios_Click(object sender, RoutedEventArgs e) { _mesTerritorios = _mesTerritorios.AddMonths(1); ActualizarUI_MesTerritorios(); }
+
+        // --- CONTABILIDAD ---
+        private void ActualizarUI_MesContabilidad()
+        {
+            if (TxtMesContabilidad != null) TxtMesContabilidad.Text = FormatearMes(_mesContabilidad);
+            if (!_cargandoDatos) CargarContabilidadList(_mesContabilidad);
+        }
+        private void BtnMesAntContabilidad_Click(object sender, RoutedEventArgs e) { _mesContabilidad = _mesContabilidad.AddMonths(-1); ActualizarUI_MesContabilidad(); }
+        private void BtnMesSigContabilidad_Click(object sender, RoutedEventArgs e) { _mesContabilidad = _mesContabilidad.AddMonths(1); ActualizarUI_MesContabilidad(); }
+
+        // --- S-303 ---
+        private void ActualizarUI_MesS303()
+        {
+            //if (TxtMesS303 != null) TxtMesS303.Text = FormatearMes(_mesS303);
+            if (!_cargandoDatos) CargarS303yS2();
         }
 
-        private void CargarProgramaYNotas(DateTime mesReferencia)
+        // ==========================================
+        // CREADORES DE MÓDULOS (PROGRAMA Y NOTAS)
+        // ==========================================
+        private void CargarPrograma(DateTime mesReferencia)
         {
             string mesRefStr = mesReferencia.ToString("yyyy-MM");
 
-            bool hayVisitaEnEsteMes = DatabaseHelper.HayVisitaRegistrada(_congreCodigo, _congreNombre, mesRefStr);
+            string[] turnos = { "1. MAÑANA", "2. MEDIODÍA", "3. TARDE", "4. NOCHE" };
+            var filasPrograma = new List<FilaPrograma>();
 
-            if (hayVisitaEnEsteMes)
+            foreach (var turno in turnos)
             {
-                _mesVisitaActiva = mesRefStr;
-                ExpanderPrograma.Visibility = Visibility.Visible;
-                ExpanderPrograma.Header = $"PROGRAMA DE LA VISITA ({mesReferencia.ToString("MMMM yyyy").ToUpper()})";
-                ExpanderNotas.Visibility = Visibility.Visible;
-
-                string[] turnos = { "1. MAÑANA", "2. MEDIODÍA", "3. TARDE", "4. NOCHE" };
-                var filasPrograma = new List<FilaPrograma>();
-
-                foreach (var turno in turnos)
+                if (turno == "2. MEDIODÍA") filasPrograma.Add(CrearFilaPrograma(mesRefStr, turno, "Comida"));
+                else if (turno == "4. NOCHE")
                 {
-                    if (turno == "2. MEDIODÍA")
-                        filasPrograma.Add(CrearFilaPrograma(_mesVisitaActiva, turno, "Comida"));
-                    else
-                    {
-                        filasPrograma.Add(CrearFilaPrograma(_mesVisitaActiva, turno, "Joni"));
-                        filasPrograma.Add(CrearFilaPrograma(_mesVisitaActiva, turno, "Rebe"));
-                    }
+                    filasPrograma.Add(CrearFilaPrograma(mesRefStr, turno, "Cenar"));
+                    filasPrograma.Add(CrearFilaPrograma(mesRefStr, turno, "Dormir"));
                 }
-
-                var collectionView = CollectionViewSource.GetDefaultView(filasPrograma);
-                collectionView.GroupDescriptions.Clear();
-                collectionView.GroupDescriptions.Add(new PropertyGroupDescription("Turno"));
-                TablaPrograma.ItemsSource = collectionView;
-
-                IdVisitaPendiente = DatabaseHelper.ObtenerIdSemanaVisita(_congreNombre, mesRefStr);
-
-                if (IdVisitaPendiente == 0)
+                else
                 {
-                    var nuevaSemana = new SemanaCalendario { FechaMartes = new DateTime(mesReferencia.Year, mesReferencia.Month, 1), Congregacion = _congreNombre, Actividad = "Visita" };
-                    DatabaseHelper.GuardarSemana(nuevaSemana);
-                    IdVisitaPendiente = DatabaseHelper.ObtenerIdSemanaVisita(_congreNombre, mesRefStr);
-                }
-
-                if (IdVisitaPendiente > 0)
-                {
-                    var notasPlanas = DatabaseHelper.ObtenerNotasVisita(IdVisitaPendiente);
-
-                    MisNotasAgrupadas = notasPlanas.GroupBy(n => n.Cabecera)
-                        .Select(g => new CategoriaNotas
-                        {
-                            Cabecera = g.Key,
-                            Preguntas = g.ToList()
-                        }).ToList();
-
-                    var panelNotas = this.FindName("PanelNotas") as FrameworkElement;
-                    if (panelNotas != null) panelNotas.DataContext = this;
+                    filasPrograma.Add(CrearFilaPrograma(mesRefStr, turno, "Joni"));
+                    filasPrograma.Add(CrearFilaPrograma(mesRefStr, turno, "Rebe"));
                 }
             }
-            else
+
+            var collectionView = CollectionViewSource.GetDefaultView(filasPrograma);
+            collectionView.GroupDescriptions.Clear();
+            collectionView.GroupDescriptions.Add(new PropertyGroupDescription("Turno"));
+            TablaPrograma.ItemsSource = collectionView;
+        }
+
+        private void CargarNotas(DateTime mesReferencia)
+        {
+            string mesRefStr = mesReferencia.ToString("yyyy-MM");
+            int idVisita = DatabaseHelper.ObtenerIdSemanaVisita(_congreNombre, mesRefStr);
+
+            if (idVisita == 0)
             {
-                _mesVisitaActiva = null;
-                ExpanderPrograma.Visibility = Visibility.Collapsed;
-                ExpanderNotas.Visibility = Visibility.Collapsed;
+                var nuevaSemana = new SemanaCalendario { FechaMartes = new DateTime(mesReferencia.Year, mesReferencia.Month, 1), Congregacion = _congreNombre, Actividad = "Visita" };
+                DatabaseHelper.GuardarSemana(nuevaSemana);
+                idVisita = DatabaseHelper.ObtenerIdSemanaVisita(_congreNombre, mesRefStr);
+            }
+
+            if (idVisita > 0)
+            {
+                var notasPlanas = DatabaseHelper.ObtenerNotasVisita(idVisita);
+                MisNotasAgrupadas = notasPlanas.GroupBy(n => n.Cabecera)
+                    .Select(g => new CategoriaNotas { Cabecera = g.Key, Preguntas = g.ToList() }).ToList();
+
+                var panelNotas = this.FindName("PanelNotas") as FrameworkElement;
+                if (panelNotas != null) panelNotas.DataContext = this;
             }
         }
 
         private void TxtNotaRespuesta_LostFocus(object sender, RoutedEventArgs e)
         {
-            if (sender is TextBox txt && txt.DataContext is NotaVisita nota)
-            {
-                DatabaseHelper.ActualizarNotaVisitaUnica(nota);
-            }
+            if (sender is TextBox txt && txt.DataContext is NotaVisita nota) DatabaseHelper.ActualizarNotaVisitaUnica(nota);
         }
 
         private void BtnAlertaNota_Click(object sender, RoutedEventArgs e)
@@ -317,7 +306,6 @@ namespace SCCosmos
                 DatabaseHelper.ActualizarNotaVisitaUnica(nota);
             }
         }
-
 
         private FilaPrograma CrearFilaPrograma(string mesRefStr, string turno, string persona)
         {
@@ -351,17 +339,12 @@ namespace SCCosmos
                 var comp = DatabaseHelper.ObtenerPersonaPorId(act.CompaneroId);
                 string nombreComp = comp != null ? comp.Nombre.Split(' ')[0] : "Alguien";
 
-                string texto = responsable == "Comida"
-                    ? $"{act.Hora} - {nombreComp}"
-                    : $"{act.Hora} - {act.TipoActividad} ({nombreComp})";
-
-                celda.ListaActividades.Add(new BotonActividadUI { Texto = texto });
+                string texto = responsable == "Comida" || responsable == "Cenar" || responsable == "Dormir" ? $"{act.Hora} - {nombreComp}" : $"{act.Hora} - {act.TipoActividad} ({nombreComp})";
+                celda.ListaActividades.Add(new BotonActividadUI { Texto = texto, Dia = dia, Turno = turnoLimpio, Responsable = responsable, ActividadDB = act });
             }
 
-            if (responsable == "Comida" && celda.ListaActividades.Count > 0)
-                celda.VerBotonAnadir = Visibility.Collapsed;
-            else
-                celda.VerBotonAnadir = Visibility.Visible;
+            if ((responsable == "Comida" || responsable == "Cenar" || responsable == "Dormir") && celda.ListaActividades.Count > 0) celda.VerBotonAnadir = Visibility.Collapsed;
+            else celda.VerBotonAnadir = Visibility.Visible;
 
             return celda;
         }
@@ -370,94 +353,124 @@ namespace SCCosmos
         {
             if (sender is Button btn && btn.Tag is CeldaPrograma celda)
             {
-                if (ListMeses.SelectedItem == null || string.IsNullOrEmpty(_mesVisitaActiva)) return;
-                DateTime fechaActual = ((MesSelectorVisita)ListMeses.SelectedItem).FechaBase;
+                var ventana = new ProgramarActividadWindow(celda.Responsable, celda.Turno, celda.Dia, _congreCodigo, _mesPrograma.ToString("yyyy-MM"));
+                if (ventana.ShowDialog() == true) ActualizarUI_MesPrograma();
+            }
+        }
 
-                var ventana = new ProgramarActividadWindow(celda.Responsable, celda.Turno, celda.Dia, _congreCodigo, _mesVisitaActiva);
-                if (ventana.ShowDialog() == true)
+        private void BtnEliminarActividad_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is BotonActividadUI ui)
+            {
+                if (MessageBox.Show($"¿Eliminar actividad de {ui.Responsable} a las {ui.ActividadDB.Hora}?", "Confirmar Eliminación", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
                 {
-                    CargarProgramaYNotas(fechaActual);
+                    using (var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={DatabaseHelper.RutaDirectorioDatos}\\sccosmos.db"))
+                    {
+                        connection.Open();
+                        var cmd = connection.CreateCommand();
+                        cmd.CommandText = "DELETE FROM ProgramaVisitaV2 WHERE CongreCodigo=@c AND MesReferencia=@m AND DiaSemana=@d AND Turno=@t AND Responsable=@r AND Hora=@h";
+                        cmd.Parameters.AddWithValue("@c", _congreCodigo);
+                        cmd.Parameters.AddWithValue("@m", _mesPrograma.ToString("yyyy-MM"));
+                        cmd.Parameters.AddWithValue("@d", ui.Dia);
+                        cmd.Parameters.AddWithValue("@t", ui.Turno);
+                        cmd.Parameters.AddWithValue("@r", ui.Responsable);
+                        cmd.Parameters.AddWithValue("@h", ui.ActividadDB.Hora);
+                        cmd.ExecuteNonQuery();
+                    }
+                    ActualizarUI_MesPrograma();
                 }
             }
         }
 
-        private void CargarGruposPredicacion()
+        private void BtnEditarActividad_Click(object sender, RoutedEventArgs e)
         {
-            var listadoHermanos = DatabaseHelper.ObtenerPersonasPorCongregacion(_congreCodigo);
-            var estadisticas = listadoHermanos
-                .Where(p => p.Grupo > 0)
-                .GroupBy(p => p.Grupo)
-                .Select(g => new EstadisticasGrupo
-                {
-                    NumeroGrupo = g.Key,
-                    NumPublicadores = g.Count(),
-                    NumPrecursores = g.Count(p => !string.IsNullOrWhiteSpace(p.Servicio) && (p.Servicio.ToLower().Contains("precursor") || p.Servicio.ToLower().Contains("misionero"))),
-                    NumAncianos = g.Count(p => !string.IsNullOrWhiteSpace(p.Nombramiento) && p.Nombramiento.ToLower().Contains("anciano")),
-                    NumSM = g.Count(p => !string.IsNullOrWhiteSpace(p.Nombramiento) && (p.Nombramiento.ToLower().Contains("siervo") || p.Nombramiento.ToLower().Contains("ministerial")))
-                })
-                .OrderBy(g => g.NumeroGrupo)
-                .ToList();
+            if (sender is Button btn && btn.Tag is BotonActividadUI ui)
+            {
+                var inputWin = new Window { Title = "Editar Actividad", Width = 350, Height = 320, WindowStartupLocation = WindowStartupLocation.CenterScreen, WindowStyle = WindowStyle.ToolWindow, Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)) };
+                var grid = new StackPanel { Margin = new Thickness(20) };
 
-            if (GraficoGrupos != null) GraficoGrupos.ItemsSource = estadisticas;
+                // 1. Selector de Acompañante
+                grid.Children.Add(new TextBlock { Text = "Acompañante / Familia:", Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 5) });
+                var listaHermanos = DatabaseHelper.ObtenerPersonasHistoricasPorMes(_congreCodigo, _mesPrograma.ToString("yyyy-MM")).OrderBy(p => p.Nombre).ToList();
+                var cmbAcompanante = new ComboBox
+                {
+                    ItemsSource = listaHermanos,
+                    DisplayMemberPath = "Nombre",
+                    SelectedValuePath = "Id",
+                    Padding = new Thickness(8),
+                    Background = new SolidColorBrush(Color.FromRgb(42, 42, 42)),
+                    Foreground = Brushes.White,
+                    BorderThickness = new Thickness(0),
+                    SelectedValue = ui.ActividadDB.CompaneroId
+                };
+                grid.Children.Add(cmbAcompanante);
+
+                // 2. Hora
+                grid.Children.Add(new TextBlock { Text = "Hora (ej. 10:00):", Foreground = Brushes.White, Margin = new Thickness(0, 10, 0, 5) });
+                var txtHora = new TextBox { Text = ui.ActividadDB.Hora, Padding = new Thickness(8), Background = new SolidColorBrush(Color.FromRgb(42, 42, 42)), Foreground = Brushes.White, BorderThickness = new Thickness(0) };
+                grid.Children.Add(txtHora);
+
+                // 3. Tipo de Actividad
+                grid.Children.Add(new TextBlock { Text = "Tipo de Actividad / Notas:", Foreground = Brushes.White, Margin = new Thickness(0, 10, 0, 5) });
+                var txtTipo = new TextBox { Text = ui.ActividadDB.TipoActividad, Padding = new Thickness(8), Background = new SolidColorBrush(Color.FromRgb(42, 42, 42)), Foreground = Brushes.White, BorderThickness = new Thickness(0) };
+                grid.Children.Add(txtTipo);
+
+                var btnSave = new Button { Content = "Guardar Cambios", Width = 120, Margin = new Thickness(0, 15, 0, 0), Background = new SolidColorBrush(Color.FromRgb(0, 120, 212)), Foreground = Brushes.White, Padding = new Thickness(8), BorderThickness = new Thickness(0), Cursor = Cursors.Hand };
+                btnSave.Click += (s, args) => {
+                    if (!string.IsNullOrWhiteSpace(txtHora.Text) && cmbAcompanante.SelectedValue != null)
+                    {
+                        using (var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={DatabaseHelper.RutaDirectorioDatos}\\sccosmos.db"))
+                        {
+                            connection.Open();
+                            var cmd = connection.CreateCommand();
+                            cmd.CommandText = "UPDATE ProgramaVisitaV2 SET Hora=@nh, TipoActividad=@nt, CompaneroId=@ncomp WHERE CongreCodigo=@c AND MesReferencia=@m AND DiaSemana=@d AND Turno=@t AND Responsable=@r AND Hora=@h";
+                            cmd.Parameters.AddWithValue("@nh", txtHora.Text.Trim());
+                            cmd.Parameters.AddWithValue("@nt", txtTipo.Text.Trim());
+                            cmd.Parameters.AddWithValue("@ncomp", cmbAcompanante.SelectedValue);
+                            cmd.Parameters.AddWithValue("@c", _congreCodigo);
+                            cmd.Parameters.AddWithValue("@m", _mesPrograma.ToString("yyyy-MM"));
+                            cmd.Parameters.AddWithValue("@d", ui.Dia);
+                            cmd.Parameters.AddWithValue("@t", ui.Turno);
+                            cmd.Parameters.AddWithValue("@r", ui.Responsable);
+                            cmd.Parameters.AddWithValue("@h", ui.ActividadDB.Hora);
+                            cmd.ExecuteNonQuery();
+                        }
+                        inputWin.DialogResult = true;
+                        inputWin.Close();
+                    }
+                    else
+                    {
+                        MessageBox.Show("Debes indicar una hora y seleccionar un acompañante.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    }
+                };
+                grid.Children.Add(btnSave);
+                inputWin.Content = grid;
+
+                if (inputWin.ShowDialog() == true) ActualizarUI_MesPrograma();
+            }
         }
 
-        private async Task ProcesarColumnasYDatosDinamicos(DateTime[] meses)
+        // ==========================================
+        // CREADORES DE MÓDULOS (MINISTERIO Y TERRITORIOS)
+        // ==========================================
+        private async Task ProcesarColumnasYDatosDinamicos(DateTime[] meses, List<Persona> listadoHermanos)
         {
-            TablaVisitas.Columns.Clear();
-
-            TablaVisitas.AlternatingRowBackground = null;
-            TablaVisitas.RowBackground = Brushes.Transparent;
-
-            var rowStyle = new Style(typeof(DataGridRow));
-            rowStyle.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.Transparent));
-            rowStyle.Setters.Add(new Setter(Control.CursorProperty, Cursors.Hand));
-
-            rowStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(4, 0, 0, 0)));
-            rowStyle.Setters.Add(new Setter(Control.BorderBrushProperty, Brushes.Transparent));
-
-            var precursorRowTrigger = new DataTrigger { Binding = new Binding("EsPrecursor"), Value = true };
-            precursorRowTrigger.Setters.Add(new Setter(Control.BorderBrushProperty, (SolidColorBrush)new BrushConverter().ConvertFrom("#0078D4")));
-            rowStyle.Triggers.Add(precursorRowTrigger);
-
-            var hoverTrigger = new Trigger { Property = DataGridRow.IsMouseOverProperty, Value = true };
-            hoverTrigger.Setters.Add(new Setter(Control.BackgroundProperty, new SolidColorBrush(Color.FromArgb(80, 0, 120, 212))));
-            rowStyle.Triggers.Add(hoverTrigger);
-
-            rowStyle.Setters.Add(new EventSetter(UIElement.PreviewMouseLeftButtonUpEvent, new MouseButtonEventHandler(FilaVisita_Click)));
-            TablaVisitas.RowStyle = rowStyle;
-
-            var baseCellStyle = new Style(typeof(DataGridCell));
-            baseCellStyle.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.Transparent));
-            baseCellStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0)));
-            baseCellStyle.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(8, 0, 0, 0)));
-
-            var selectedTrigger = new Trigger { Property = DataGridCell.IsSelectedProperty, Value = true };
-            selectedTrigger.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.Transparent));
-            selectedTrigger.Setters.Add(new Setter(Control.BorderBrushProperty, Brushes.Transparent));
-            baseCellStyle.Triggers.Add(selectedTrigger);
-
-            TablaVisitas.CellStyle = baseCellStyle;
+            while (TablaVisitas.Columns.Count > 1)
+            {
+                TablaVisitas.Columns.RemoveAt(1);
+            }
 
             var estiloIzquierda = new Style(typeof(TextBlock));
             estiloIzquierda.Setters.Add(new Setter(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center));
             estiloIzquierda.Setters.Add(new Setter(TextBlock.TextAlignmentProperty, TextAlignment.Left));
             estiloIzquierda.Setters.Add(new Setter(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Left));
 
-            var estiloNombre = new Style(typeof(TextBlock), estiloIzquierda);
-            var triggerSinAlerta = new DataTrigger { Binding = new Binding("AlertaTooltip"), Value = null };
-            triggerSinAlerta.Setters.Add(new Setter(ToolTipService.IsEnabledProperty, false));
-            estiloNombre.Setters.Add(new Setter(FrameworkElement.ToolTipProperty, new Binding("AlertaTooltip")));
-            estiloNombre.Setters.Add(new Setter(ToolTipService.ShowDurationProperty, 15000));
-            estiloNombre.Triggers.Add(triggerSinAlerta);
-
-            var triggerPrecursorTxt = new DataTrigger { Binding = new Binding("EsPrecursor"), Value = true };
-            triggerPrecursorTxt.Setters.Add(new Setter(TextBlock.FontWeightProperty, FontWeights.Bold));
-            estiloNombre.Triggers.Add(triggerPrecursorTxt);
-
-            TablaVisitas.Columns.Add(new DataGridTextColumn { Header = "Nombre", Binding = new Binding("NombreVisual"), Width = new DataGridLength(16, DataGridLengthUnitType.Star), ElementStyle = estiloNombre });
-            TablaVisitas.Columns.Add(new DataGridTextColumn { Header = "Nombre JW Hub", Binding = new Binding("NombreJWHub"), Width = new DataGridLength(14, DataGridLengthUnitType.Star), ElementStyle = estiloIzquierda });
-
             string[] shortMonths = { "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic" };
+
+            var baseCellStyle = new Style(typeof(DataGridCell));
+            baseCellStyle.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.Transparent));
+            baseCellStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0)));
+            baseCellStyle.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(8, 0, 0, 0)));
 
             for (int i = 0; i < 6; i++)
             {
@@ -504,10 +517,8 @@ namespace SCCosmos
             };
             TablaVisitas.Columns.Add(colAcciones);
 
-            // Ajustamos las columnas recién creadas al tamaño de la pantalla
             AjustarVisibilidadColumnas(this.ActualWidth);
 
-            var listadoHermanos = DatabaseHelper.ObtenerPersonasPorCongregacion(_congreCodigo);
             var territoriosBD = DatabaseHelper.ObtenerTerritoriosPorCongregacion(_congreCodigo);
             var filasGrid = new List<FilaVisitaPublisher>();
 
@@ -531,16 +542,16 @@ namespace SCCosmos
             foreach (var h in listadoHermanos)
             {
                 DateTime? fElim = ParsearFecha(h.FechaEliminacion);
-                if (fElim.HasValue && new DateTime(fElim.Value.Year, fElim.Value.Month, 1) < mesReferenciaGrid)
-                    continue;
+                if (fElim.HasValue && new DateTime(fElim.Value.Year, fElim.Value.Month, 1) < mesReferenciaGrid) continue;
 
                 DateTime? fCrea = ParsearFecha(h.FechaCreacion);
-                if (fCrea.HasValue && new DateTime(fCrea.Value.Year, fCrea.Value.Month, 1) > mesReferenciaGrid)
-                    continue;
+                if (fCrea.HasValue && new DateTime(fCrea.Value.Year, fCrea.Value.Month, 1) > mesReferenciaGrid) continue;
+
                 contadorRespiro++;
                 if (contadorRespiro % 10 == 0) await Task.Delay(1);
 
                 string nombreLimpio = !string.IsNullOrWhiteSpace(h.Nombre) ? h.Nombre.Trim() : "";
+                string nombreComunLimpio = !string.IsNullOrWhiteSpace(h.NombreComun) ? h.NombreComun.Trim() : nombreLimpio;
                 string jwHubLimpio = !string.IsNullOrWhiteSpace(h.NombreJWHub) ? h.NombreJWHub.Trim() : "";
                 string nombramientoLimpio = !string.IsNullOrWhiteSpace(h.Nombramiento) ? h.Nombramiento.Trim() : "";
                 string servicioLimpio = !string.IsNullOrWhiteSpace(h.Servicio) ? h.Servicio.Trim() : "";
@@ -548,7 +559,8 @@ namespace SCCosmos
 
                 bool esPrec = !string.IsNullOrWhiteSpace(servicioLimpio) && (servicioLimpio.ToLower().Contains("precursor") || servicioLimpio.ToLower().Contains("misionero"));
 
-                var informesHistoricos = DatabaseHelper.ObtenerActividadPersona(h.Id);
+                long idParaActividad = h.PersonaRaizId > 0 ? h.PersonaRaizId : h.Id;
+                var informesHistoricos = DatabaseHelper.ObtenerActividadPersona((int)idParaActividad);
                 int conteoDevueltos = 0;
 
                 foreach (var t in territoriosBD)
@@ -637,7 +649,7 @@ namespace SCCosmos
                     }
                 }
 
-                string nombreMostrar = nombreLimpio;
+                string nombreMostrar = nombreComunLimpio;
                 if (esPrec) nombreMostrar = "   " + nombreMostrar;
 
                 string tooltipAlerta = null;
@@ -676,7 +688,9 @@ namespace SCCosmos
                 var nuevaFila = new FilaVisitaPublisher
                 {
                     PersonaId = h.Id,
+                    PersonaRaizId = h.PersonaRaizId,
                     Nombre = nombreLimpio,
+                    NombreComun = nombreComunLimpio,
                     NombreVisual = nombreMostrar,
                     AlertaTooltip = tooltipAlerta,
                     NombreJWHub = jwHubLimpio,
@@ -688,6 +702,7 @@ namespace SCCosmos
                     AniosBautizado = (fb.HasValue && fb.Value.Year > 1900 && bautNumerica > 0 && bautNumerica <= 120) ? bautNumerica.ToString("0.0") : "-",
                     Sexo = sexoLimpio,
                     FechaNacimientoReal = fn ?? DateTime.MaxValue,
+                    Foto = h.Foto,
 
                     ActividadM1 = act1.Valor,
                     NotasM1 = act1.Notas,
@@ -709,7 +724,6 @@ namespace SCCosmos
                     ColorM6 = act6.ColorValor,
 
                     CursosUltimoMes = string.IsNullOrWhiteSpace(act6.Cursos) || act6.Cursos.Trim() == "0" ? "-" : act6.Cursos.Trim(),
-
                     TerritoriosTrabajados = conteoDevueltos.ToString()
                 };
                 filasGrid.Add(nuevaFila);
@@ -739,9 +753,9 @@ namespace SCCosmos
             var panelVista = this.FindName("PanelEstadisticas") as FrameworkElement;
             if (panelVista != null) panelVista.DataContext = estadisticasUI;
 
-            _filasVisitasGlobal = filasGrid.OrderBy(f => (f.Nombre ?? "").Replace("(", "").Replace(")", "").Trim()).ThenBy(f => f.FechaNacimientoReal).ToList();
-            var gruposUnicos = _filasVisitasGlobal.Select(f => f.GrupoPredicacion).Distinct().OrderBy(g => g).ToList();
+            _filasVisitasGlobal = filasGrid.OrderBy(f => (f.NombreComun ?? "").Replace("(", "").Replace(")", "").Trim()).ThenBy(f => f.FechaNacimientoReal).ToList();
 
+            var gruposUnicos = _filasVisitasGlobal.Select(f => f.GrupoPredicacion).Distinct().OrderBy(g => g == "SIN ASIGNAR" ? 1 : 0).ThenBy(g => g).ToList();
             TabGrupos.SelectionChanged -= TabGrupos_SelectionChanged;
             TabGrupos.ItemsSource = gruposUnicos;
             TabGrupos.SelectionChanged += TabGrupos_SelectionChanged;
@@ -752,7 +766,6 @@ namespace SCCosmos
                 if (idx >= gruposUnicos.Count) idx = 0;
 
                 TabGrupos.SelectedIndex = idx;
-
                 string grupoActivo = gruposUnicos[idx];
                 var filtrados = _filasVisitasGlobal.Where(f => f.GrupoPredicacion == grupoActivo).ToList();
                 TablaVisitas.ItemsSource = filtrados;
@@ -763,15 +776,30 @@ namespace SCCosmos
                     foreach (var col in TablaVisitas.Columns)
                     {
                         var anchoActual = col.Width;
-                        col.Width = 0;
-                        col.Width = anchoActual;
+                        col.Width = 0; col.Width = anchoActual;
                     }
                 }), DispatcherPriority.Loaded);
             }
-            else
-            {
-                TablaVisitas.ItemsSource = null;
-            }
+            else TablaVisitas.ItemsSource = null;
+        }
+
+        private void CargarGruposPredicacion(List<Persona> listadoHermanos)
+        {
+            var estadisticas = listadoHermanos
+                .Where(p => p.Grupo > 0)
+                .GroupBy(p => p.Grupo)
+                .Select(g => new EstadisticasGrupo
+                {
+                    NumeroGrupo = g.Key,
+                    NumPublicadores = g.Count(),
+                    NumPrecursores = g.Count(p => !string.IsNullOrWhiteSpace(p.Servicio) && (p.Servicio.ToLower().Contains("precursor") || p.Servicio.ToLower().Contains("misionero"))),
+                    NumAncianos = g.Count(p => !string.IsNullOrWhiteSpace(p.Nombramiento) && p.Nombramiento.ToLower().Contains("anciano")),
+                    NumSM = g.Count(p => !string.IsNullOrWhiteSpace(p.Nombramiento) && (p.Nombramiento.ToLower().Contains("siervo") || p.Nombramiento.ToLower().Contains("ministerial")))
+                })
+                .OrderBy(g => g.NumeroGrupo)
+                .ToList();
+
+            if (GraficoGrupos != null) GraficoGrupos.ItemsSource = estadisticas;
         }
 
         private void TabGrupos_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -787,19 +815,18 @@ namespace SCCosmos
                     foreach (var col in TablaVisitas.Columns)
                     {
                         var anchoActual = col.Width;
-                        col.Width = 0;
-                        col.Width = anchoActual;
+                        col.Width = 0; col.Width = anchoActual;
                     }
                 }), DispatcherPriority.Loaded);
             }
         }
 
-        private async Task CargarTerritorios(DateTime mesReferencia, DateTime fechaInicio, DateTime fechaFin)
+        private async Task CargarTerritorios(DateTime mesReferencia, DateTime fechaInicio, DateTime fechaFin, List<Persona> personasMes)
         {
             var listaPlana = DatabaseHelper.ObtenerTerritoriosPorCongregacion(_congreCodigo);
             var grupos = listaPlana.GroupBy(t => t.Nombre).ToList();
 
-            var nombresS21Disponibles = DatabaseHelper.ObtenerPersonasPorCongregacion(_congreCodigo)
+            var nombresS21Disponibles = personasMes
                 .Where(p => p.Grupo > 0 || string.IsNullOrWhiteSpace(p.NombreJWHub) || p.Nombre != p.NombreJWHub)
                 .Select(p => p.Nombre).OrderBy(n => n).ToList();
             nombresS21Disponibles.Insert(0, "-- Sin Asignar --");
@@ -822,15 +849,12 @@ namespace SCCosmos
                 if (contadorRespiro % 10 == 0) await Task.Delay(1);
 
                 DateTime? fElim = ParsearFecha(grupo.FirstOrDefault()?.FechaEliminacion);
-                if (fElim.HasValue && new DateTime(fElim.Value.Year, fElim.Value.Month, 1) < fechaBaseStats)
-                    continue;
+                if (fElim.HasValue && new DateTime(fElim.Value.Year, fElim.Value.Month, 1) < fechaBaseStats) continue;
 
                 DateTime? fechaCreacion = ParsearFecha(grupo.FirstOrDefault()?.FechaCreacion);
-                if (fechaCreacion.HasValue && new DateTime(fechaCreacion.Value.Year, fechaCreacion.Value.Month, 1) > fechaBaseStats)
-                    continue;
+                if (fechaCreacion.HasValue && new DateTime(fechaCreacion.Value.Year, fechaCreacion.Value.Month, 1) > fechaBaseStats) continue;
 
                 totalTerritorios++;
-
                 var asignaciones = grupo.ToList();
                 var fila = new FilaTablaTerritorio { Nombre = grupo.Key, UltimaVez = grupo.FirstOrDefault()?.UltimaFechaCompletado };
 
@@ -842,9 +866,7 @@ namespace SCCosmos
 
                 filasGrid.Add(fila);
 
-                bool trabajadoEn6Meses = false;
-                bool enCurso = false;
-                bool caducado = false;
+                bool trabajadoEn6Meses = false; bool enCurso = false; bool caducado = false;
                 DateTime? ultimaDevolucionValida = null;
 
                 foreach (var asig in asignaciones)
@@ -852,8 +874,7 @@ namespace SCCosmos
                     DateTime? fAsig = ParsearFecha(asig.FechaAsignado);
                     DateTime? fComp = ParsearFecha(asig.FechaCompletado);
 
-                    if (fComp.HasValue && fComp.Value >= fecha6MesesAntes && fComp.Value < fechaBaseStats)
-                        trabajadoEn6Meses = true;
+                    if (fComp.HasValue && fComp.Value >= fecha6MesesAntes && fComp.Value < fechaBaseStats) trabajadoEn6Meses = true;
 
                     if (fAsig.HasValue && fAsig.Value < fechaBaseStats && (!fComp.HasValue || fComp.Value >= fechaBaseStats))
                     {
@@ -863,8 +884,7 @@ namespace SCCosmos
 
                     if (fComp.HasValue && fComp.Value < fechaBaseStats)
                     {
-                        if (!ultimaDevolucionValida.HasValue || fComp.Value > ultimaDevolucionValida.Value)
-                            ultimaDevolucionValida = fComp.Value;
+                        if (!ultimaDevolucionValida.HasValue || fComp.Value > ultimaDevolucionValida.Value) ultimaDevolucionValida = fComp.Value;
                     }
                 }
 
@@ -880,10 +900,7 @@ namespace SCCosmos
                     if (diasInactivo >= 730) sinTrabajar2Anos++;
                     else if (diasInactivo >= 365) sinTrabajar1Ano++;
                 }
-                else
-                {
-                    sinTrabajar2Anos++;
-                }
+                else sinTrabajar2Anos++;
             }
 
             _territoriosGlobal = filasGrid;
@@ -918,14 +935,9 @@ namespace SCCosmos
                 {
                     Content = i.ToString(),
                     Tag = i,
-                    Style = (Style)this.FindResource("EstiloBotonPaginacion")
+                    Style = (Style)this.FindResource("EstiloBotonPaginacion"),
+                    Background = i == _paginaActual ? (SolidColorBrush)new BrushConverter().ConvertFrom("#0078D4") : (SolidColorBrush)new BrushConverter().ConvertFrom("#333333")
                 };
-
-                if (i == _paginaActual)
-                    btn.Background = (SolidColorBrush)new BrushConverter().ConvertFrom("#0078D4");
-                else
-                    btn.Background = (SolidColorBrush)new BrushConverter().ConvertFrom("#333333");
-
                 btn.Click += BtnPaginaTerritorio_Click;
                 PanelPaginacion.Children.Add(btn);
             }
@@ -933,47 +945,224 @@ namespace SCCosmos
 
         private void BtnPaginaTerritorio_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button btn && btn.Tag is int paginaTarget)
-            {
-                MostrarPaginaTerritorios(paginaTarget);
-            }
+            if (sender is Button btn && btn.Tag is int paginaTarget) MostrarPaginaTerritorios(paginaTarget);
         }
 
-        private void FilaVisita_Click(object sender, MouseButtonEventArgs e)
+        private async void ExpanderMapa_Expanded(object sender, RoutedEventArgs e)
         {
-            var originalSource = e.OriginalSource as DependencyObject;
-            while (originalSource != null)
-            {
-                if (originalSource is Button || originalSource is System.Windows.Controls.Primitives.ScrollBar) return;
-                originalSource = VisualTreeHelper.GetParent(originalSource);
-            }
+            MapaWebBrowser.Visibility = Visibility.Visible;
 
-            if (sender is DataGridRow row && row.DataContext is FilaVisitaPublisher fila)
+            var expander = sender as Expander;
+            if (expander != null && expander.IsExpanded)
             {
-                if (ListMeses.SelectedItem == null) return;
-                DateTime fechaActual = ((MesSelectorVisita)ListMeses.SelectedItem).FechaBase;
-
-                var ventana = new EditarPersonaWindow(fila.PersonaId, _congreCodigo, fechaActual);
-                if (ventana.ShowDialog() == true)
+                if (_mapaCargado && !string.IsNullOrEmpty(_htmlMapaCache))
                 {
-                    CargarGruposPredicacion();
-                    ListMeses_SelectionChanged(null, null);
+                    MapaWebBrowser.NavigateToString(_htmlMapaCache);
+                    return;
                 }
+
+                var personasActivas = DatabaseHelper.ObtenerPersonasPorCongregacion(_congreCodigo);
+                // Si la latitud es 999, es que ya la buscamos y no existe, no la volvemos a buscar
+                var pendientes = personasActivas.Where(p => !string.IsNullOrWhiteSpace(p.Direccion) && p.Latitud == 0 && p.Longitud == 0).ToList();
+
+                if (pendientes.Count > 0)
+                {
+                    string htmlCarga = $@"
+                    <!DOCTYPE html>
+                    <html><head>
+                        <meta charset='UTF-8'>
+                        <style>body{{margin:0;padding:0;overflow:hidden;background:#252526;color:#4BA3E3;display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:'Segoe UI',sans-serif;text-align:center;}}</style>
+                    </head><body>
+                        <h2>Geolocalizando direcciones en el mapa...</h2>
+                        <p>Convirtiendo textos a coordenadas ({pendientes.Count} pendientes).</p>
+                    </body></html>";
+
+                    MapaWebBrowser.NavigateToString(htmlCarga);
+
+                    using (var client = new HttpClient())
+                    {
+                        client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 SCCosmos/1.0");
+
+                        foreach (var p in pendientes)
+                        {
+                            try
+                            {
+                                string url = $"https://nominatim.openstreetmap.org/search?q={Uri.EscapeDataString(p.Direccion)}&format=json&limit=1&countrycodes=es";
+                                string response = await client.GetStringAsync(url);
+                                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                                var resultados = JsonSerializer.Deserialize<List<NominatimResult>>(response, options);
+
+                                double lat = 999, lon = 999;
+
+                                if (resultados != null && resultados.Count > 0)
+                                {
+                                    if (double.TryParse(resultados[0].lat, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double latP)) lat = latP;
+                                    if (double.TryParse(resultados[0].lon, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double lonP)) lon = lonP;
+                                }
+
+                                p.Latitud = lat;
+                                p.Longitud = lon;
+
+                                using (var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={DatabaseHelper.RutaDirectorioDatos}\\sccosmos.db"))
+                                {
+                                    connection.Open();
+                                    var cmd = connection.CreateCommand();
+                                    cmd.CommandText = "UPDATE Personas SET Latitud=@lat, Longitud=@lon WHERE Id=@id OR PersonaRaizId=@id OR Id=(SELECT PersonaRaizId FROM Personas WHERE Id=@id)";
+                                    cmd.Parameters.AddWithValue("@lat", lat);
+                                    cmd.Parameters.AddWithValue("@lon", lon);
+                                    cmd.Parameters.AddWithValue("@id", p.Id);
+                                    cmd.ExecuteNonQuery();
+                                }
+                            }
+                            catch { break; }
+                            await Task.Delay(1500);
+                        }
+                    }
+                }
+                DibujarMapa(personasActivas);
             }
         }
+
+        private void ExpanderMapa_Collapsed(object sender, RoutedEventArgs e)
+        {
+            MapaWebBrowser.Visibility = Visibility.Collapsed;
+        }
+
+        private void DibujarMapa(List<Persona> personas)
+        {
+            var sb = new System.Text.StringBuilder();
+            var personasConCoords = personas.Where(p => p.Latitud != 0 && p.Latitud != 999 && p.Longitud != 0 && p.Longitud != 999).ToList();
+
+            foreach (var p in personasConCoords)
+            {
+                string nombreLimpio = EscapeJsString(p.Nombre);
+                string dirLimpia = EscapeJsString(p.Direccion ?? "");
+                sb.AppendLine($"var m = L.marker([{p.Latitud.ToString(CultureInfo.InvariantCulture)}, {p.Longitud.ToString(CultureInfo.InvariantCulture)}]).addTo(map).bindPopup('<b>{nombreLimpio}</b><br>{dirLimpia}');");
+                sb.AppendLine("markers.push(m);");
+            }
+
+            var congre = DatabaseHelper.ObtenerCongregaciones().FirstOrDefault(c => c.Codigo == _congreCodigo);
+            if (congre != null && congre.Latitud != 0 && congre.Longitud != 0)
+            {
+                string nombreLimpio = EscapeJsString(congre.Nombre);
+                string dirLimpia = EscapeJsString(congre.DireccionSR ?? "");
+
+                sb.AppendLine($@"
+                    var srIcon = new L.Icon({{
+                      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                      iconSize: [25, 41],
+                      iconAnchor: [12, 41],
+                      popupAnchor: [1, -34],
+                      shadowSize: [41, 41]
+                    }});
+                    var mSR = L.marker([{congre.Latitud.ToString(CultureInfo.InvariantCulture)}, {congre.Longitud.ToString(CultureInfo.InvariantCulture)}], {{icon: srIcon}}).addTo(map).bindPopup('<b style=\'color:red\'>SALÓN DEL REINO</b><br><b>{nombreLimpio}</b><br>{dirLimpia}');
+                    markers.push(mSR);
+                ");
+            }
+
+            var elementosMapa = DatabaseHelper.ObtenerElementosMapa();
+            var territoriosDeEstaCongre = elementosMapa.Where(e => e.Tipo == "Polygon" &&
+                (e.Nombre.IndexOf(_congreNombre, StringComparison.OrdinalIgnoreCase) >= 0 || _congreNombre.IndexOf(e.Nombre, StringComparison.OrdinalIgnoreCase) >= 0)).ToList();
+
+            foreach (var terr in territoriosDeEstaCongre)
+            {
+                string n = EscapeJsString(terr.Nombre);
+                string desc = EscapeJsString(terr.Descripcion.Replace("\n", "<br>"));
+                sb.AppendLine($"var poly = L.polygon({terr.Coordenadas}, {{color: '#4BA3E3', weight: 2, fillOpacity: 0.15}}).addTo(map).bindPopup('<div style=\\'max-height:250px; overflow-y:auto; font-family:Segoe UI;\\'><h3 style=\\'margin-top:0px; margin-bottom:5px; color:#1e1e1e;\\'>{n}</h3>{desc}</div>');");
+                sb.AppendLine("polygons.push(poly);");
+            }
+
+            string html = $@"
+            <!DOCTYPE html>
+            <html><head>
+                <meta http-equiv='X-UA-Compatible' content='IE=edge' />
+                <meta charset='UTF-8'>
+                <link rel='stylesheet' href='https://unpkg.com/leaflet@1.7.1/dist/leaflet.css' />
+                <script src='https://unpkg.com/leaflet@1.7.1/dist/leaflet.js'></script>
+                <style>body{{margin:0;padding:0;overflow:hidden;background:#252526;font-family:Segoe UI, sans-serif;}} #map{{height:100vh;width:100vw;background:#252526;}}</style>
+            </head><body>
+                <div id='map'></div>
+                <script>
+                    var map = L.map('map').setView([40.4168, -3.7038], 6);
+                    L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{ attribution: '© OpenStreetMap contributors' }}).addTo(map);
+                    
+                    var markers = [];
+                    var polygons = [];
+                    
+                    {sb.ToString()}
+                    
+                    var bounds = L.latLngBounds();
+                    markers.forEach(function(m) {{ bounds.extend(m.getLatLng()); }});
+                    polygons.forEach(function(p) {{ bounds.extend(p.getBounds()); }});
+                    
+                    if (bounds.isValid()) {{
+                        map.fitBounds(bounds, {{padding: [30, 30]}});
+                    }}
+                </script>
+            </body></html>";
+
+            _htmlMapaCache = html;
+            _mapaCargado = true;
+            MapaWebBrowser.NavigateToString(html);
+        }
+
+        private string EscapeJsString(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return "";
+            return s.Replace("\\", "\\\\").Replace("'", "\\'").Replace("\r", "").Replace("\n", "").Replace("\u2028", "").Replace("\u2029", "");
+        }
+
+        // =====================================
+        // INTEGRACIÓN AVANZADA DE FORMULARIO
+        // =====================================
 
         private void BtnEditarPersona_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button btn && btn.DataContext is FilaVisitaPublisher fila)
-            {
-                if (ListMeses.SelectedItem == null) return;
-                DateTime fechaActual = ((MesSelectorVisita)ListMeses.SelectedItem).FechaBase;
+            if (sender is Button btn && btn.DataContext is FilaVisitaPublisher fila) AbrirFormularioPersona(fila.PersonaId);
+        }
 
-                var ventana = new EditarPersonaWindow(fila.PersonaId, _congreCodigo, fechaActual);
+        private void BtnNuevaPersona_Click(object sender, RoutedEventArgs e)
+        {
+            AbrirFormularioPersona(0);
+        }
+
+        private void AbrirFormularioPersona(int personaId)
+        {
+            DateTime fechaActual = _mesMinisterio;
+
+            Persona persona = null;
+            if (personaId > 0)
+            {
+                persona = DatabaseHelper.ObtenerPersonaPorId(personaId);
+            }
+            else
+            {
+                persona = new Persona { CongregacionCodigo = _congreCodigo, Nombre = "Nuevo Publicador" };
+                int nuevoId = DatabaseHelper.InsertarPersonaNueva(persona);
+                persona.Id = nuevoId;
+            }
+
+            if (persona != null)
+            {
+                var listaPersonasEsteMes = _filasVisitasGlobal.Select(f => new Persona { Id = f.PersonaId, NombreComun = f.NombreVisual, Nombre = f.Nombre }).ToList();
+
+                var ventana = new FormularioPersonaWindow(persona, listaPersonasEsteMes);
+                ventana.Owner = Window.GetWindow(this);
+
                 if (ventana.ShowDialog() == true)
                 {
-                    CargarGruposPredicacion();
-                    ListMeses_SelectionChanged(null, null);
+                    if (!ventana.EsUnaFusion()) DatabaseHelper.ActualizarPersonaDesdeVisitas(ventana.PersonaActualizada, fechaActual.ToString("yyyy-MM"));
+
+                    // --- NUEVO: Vaciamos la caché del mapa para obligarlo a recargar y buscar la nueva dirección ---
+                    _mapaCargado = false;
+                    _htmlMapaCache = "";
+
+                    ActualizarUI_MesMinisterio();
+                }
+                else if (personaId == 0)
+                {
+                    DatabaseHelper.EliminarPersona(persona.Id);
                 }
             }
         }
@@ -982,26 +1171,24 @@ namespace SCCosmos
         {
             if (sender is Button btn && btn.DataContext is FilaVisitaPublisher fila)
             {
-                if (MessageBox.Show($"¿Estás seguro de eliminar a '{fila.Nombre}'?\n\nSus registros históricos se mantendrán intactos, pero desaparecerá del listado a partir de este mes.", "Eliminar Persona", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+                var resultado = MessageBox.Show($"¿Estás seguro de que deseas eliminar permanentemente a {fila.Nombre}?\nSe borrará también todo su historial de actividad.", "Confirmar Eliminación", MessageBoxButton.YesNo, MessageBoxImage.Error);
+
+                if (resultado == MessageBoxResult.Yes)
                 {
-                    DatabaseHelper.MarcarPersonaEliminada(fila.PersonaId);
-                    ListMeses_SelectionChanged(null, null);
+                    DatabaseHelper.EliminarPersona(fila.PersonaId);
+
+                    // --- NUEVO: Vaciamos la caché del mapa para que desaparezca la chincheta de la persona borrada ---
+                    _mapaCargado = false;
+                    _htmlMapaCache = "";
+
+                    ActualizarUI_MesMinisterio();
                 }
             }
         }
 
-        private void BtnNuevaPersona_Click(object sender, RoutedEventArgs e)
-        {
-            if (ListMeses.SelectedItem == null) return;
-            DateTime fechaActual = ((MesSelectorVisita)ListMeses.SelectedItem).FechaBase;
-
-            var ventana = new EditarPersonaWindow(0, _congreCodigo, fechaActual);
-            if (ventana.ShowDialog() == true)
-            {
-                CargarGruposPredicacion();
-                ListMeses_SelectionChanged(null, null);
-            }
-        }
+        // =====================================
+        // RESTO DEL CÓDIGO (Territorios y Cursos)
+        // =====================================
 
         private void CmbVinculacion_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -1009,7 +1196,6 @@ namespace SCCosmos
             if (sender is ComboBox combo && combo.DataContext is CeldaVuelta celda)
             {
                 if (!combo.IsLoaded) return;
-
                 if (!combo.IsDropDownOpen && !combo.IsKeyboardFocusWithin) return;
 
                 string nombreSeleccionado = (e.AddedItems.Count > 0) ? e.AddedItems[0].ToString() : (combo.SelectedItem?.ToString() ?? "");
@@ -1018,7 +1204,7 @@ namespace SCCosmos
                 DatabaseHelper.ActualizarVinculacionTerritorio(celda.RegistroId, nombreGuardar);
                 celda.NombreS21 = nombreGuardar;
 
-                if (ListMeses != null && ListMeses.SelectedItem != null) ListMeses_SelectionChanged(null, null);
+                ActualizarUI_MesTerritorios();
             }
         }
 
@@ -1029,7 +1215,7 @@ namespace SCCosmos
                 if (MessageBox.Show($"¿Estás seguro de eliminar el territorio '{fila.Nombre}'?\n\nNo se borrarán los datos del pasado, pero dejará de aparecer y contabilizar a partir de este mes.", "Eliminar Territorio", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
                 {
                     DatabaseHelper.MarcarTerritorioEliminado(_congreCodigo, fila.Nombre);
-                    ListMeses_SelectionChanged(null, null);
+                    ActualizarUI_MesTerritorios();
                 }
             }
         }
@@ -1038,16 +1224,7 @@ namespace SCCosmos
         {
             if (sender is Button btn && btn.DataContext is FilaTablaTerritorio fila)
             {
-                var inputWin = new Window
-                {
-                    Title = "Renombrar Territorio",
-                    Width = 350,
-                    Height = 180,
-                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
-                    WindowStyle = WindowStyle.ToolWindow,
-                    Background = new SolidColorBrush(Color.FromRgb(30, 30, 30))
-                };
-
+                var inputWin = new Window { Title = "Renombrar Territorio", Width = 350, Height = 180, WindowStartupLocation = WindowStartupLocation.CenterScreen, WindowStyle = WindowStyle.ToolWindow, Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)) };
                 var grid = new StackPanel { Margin = new Thickness(20) };
                 grid.Children.Add(new TextBlock { Text = "Nuevo nombre del territorio:", Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 10) });
 
@@ -1069,10 +1246,7 @@ namespace SCCosmos
                 grid.Children.Add(btnSave);
                 inputWin.Content = grid;
 
-                if (inputWin.ShowDialog() == true)
-                {
-                    ListMeses_SelectionChanged(null, null);
-                }
+                if (inputWin.ShowDialog() == true) ActualizarUI_MesTerritorios();
             }
         }
 
@@ -1129,8 +1303,7 @@ namespace SCCosmos
         private double ParsearMoneda(string texto)
         {
             if (string.IsNullOrWhiteSpace(texto)) return 0;
-            if (double.TryParse(texto.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double val))
-                return val;
+            if (double.TryParse(texto.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double val)) return val;
             return 0;
         }
 
@@ -1162,15 +1335,8 @@ namespace SCCosmos
                 valorVisual = hStr;
                 double.TryParse(hStr.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out horasNumericas);
             }
-            else if (registro.Participacion)
-            {
-                valorVisual = "✅";
-                colorFinal = colorVerde;
-            }
-            else
-            {
-                colorFinal = colorRojo;
-            }
+            else if (registro.Participacion) { valorVisual = "✅"; colorFinal = colorVerde; }
+            else colorFinal = colorRojo;
 
             if (notasDelMes != null) valorVisual += "*";
 
@@ -1203,10 +1369,7 @@ namespace SCCosmos
             celda.NombreS13 = asig.AsignadoA;
             celda.Fechas = $"{(string.IsNullOrWhiteSpace(asig.FechaAsignado) ? "--" : asig.FechaAsignado)} al {(string.IsNullOrWhiteSpace(asig.FechaCompletado) ? "--" : asig.FechaCompletado)}";
 
-            if (!string.IsNullOrWhiteSpace(asig.NombreVinculado) && nombresS21.Contains(asig.NombreVinculado))
-            {
-                celda.NombreS21 = asig.NombreVinculado;
-            }
+            if (!string.IsNullOrWhiteSpace(asig.NombreVinculado) && nombresS21.Contains(asig.NombreVinculado)) celda.NombreS21 = asig.NombreVinculado;
             else
             {
                 if (cacheFuzzy.ContainsKey(asig.AsignadoA)) celda.NombreS21 = cacheFuzzy[asig.AsignadoA];
@@ -1234,20 +1397,219 @@ namespace SCCosmos
             return null;
         }
 
-        // ===============================================
-        // ESTRUCTURAS DE DATOS (CLASES INTERNAS)
-        // ===============================================
-
-        public class MesSelectorVisita
+        // ==========================================
+        // GESTIÓN DE S-303 Y S-2
+        // ==========================================
+        private void CargarS303yS2()
         {
-            public DateTime FechaBase { get; set; }
-            public string NombreVisual { get; set; }
+            // 1. Cargar S-303 inteligente (Busca copia o pide plantilla)
+            var listaUI = new List<DocumentoS303UI>();
+            string mesRef = _mesS303.ToString("yyyy-MM");
+            string identificadorVisita = $"S-303_{_congreCodigo}_{mesRef}";
+
+            // Busca si ya existe la copia específica
+            var docEspecifico = DatabaseHelper.ObtenerDocumentos("S-303")
+                .FirstOrDefault(d => d.NombreArchivo.Contains(identificadorVisita));
+
+            if (docEspecifico != null)
+            {
+                listaUI.Add(new DocumentoS303UI
+                {
+                    NombreVisual = $"Informe S-303 - {_congreNombre} ({FormatearMes(_mesS303)})",
+                    TextoBoton = "✏️ Abrir / Editar",
+                    EsPlantilla = false,
+                    DocumentoOriginal = docEspecifico
+                });
+            }
+            else
+            {
+                // Busca la plantilla genérica en "Envío de S-303"
+                var plantilla = DatabaseHelper.ObtenerDocumentos("Envío de S-303")
+                    .FirstOrDefault(d => d.NombreArchivo.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase));
+
+                if (plantilla != null)
+                {
+                    listaUI.Add(new DocumentoS303UI
+                    {
+                        NombreVisual = $"Plantilla detectada: {plantilla.NombreArchivo}",
+                        TextoBoton = "📄 Crear para este mes",
+                        EsPlantilla = true,
+                        DocumentoOriginal = plantilla
+                    });
+                }
+            }
+
+            if (listaUI.Count > 0)
+            {
+                ListaS303.ItemsSource = listaUI;
+                ListaS303.Visibility = Visibility.Visible;
+                TxtSinS303.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                ListaS303.Visibility = Visibility.Collapsed;
+                TxtSinS303.Text = "No se ha subido la plantilla genérica del S-303.\nPor favor, súbela primero desde 'Correspondencia > Visitas a las congregaciones > Envío de S-303'.";
+                TxtSinS303.Visibility = Visibility.Visible;
+            }
+
+            // 2. Cargar S-2 (Recomendaciones y bajas pendientes)
+            var recomendaciones = DatabaseHelper.ObtenerRecomendaciones()
+                .Where(r => r.Congregacion == _congreNombre)
+                .ToList();
+
+            if (recomendaciones.Count > 0)
+            {
+                TablaS2.ItemsSource = recomendaciones;
+                TablaS2.Visibility = Visibility.Visible;
+                TxtSinS2.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                TablaS2.Visibility = Visibility.Collapsed;
+                TxtSinS2.Visibility = Visibility.Visible;
+            }
         }
+
+        private void BtnEditarS303_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is DocumentoS303UI docUI)
+            {
+                if (File.Exists(docUI.DocumentoOriginal.RutaLocal))
+                {
+                    if (docUI.EsPlantilla)
+                    {
+                        try
+                        {
+                            string mesRef = _mesS303.ToString("yyyy-MM");
+                            string nombreCopia = $"S-303_{_congreCodigo}_{mesRef}.pdf";
+                            string rutaCopia = Path.Combine(Path.GetDirectoryName(docUI.DocumentoOriginal.RutaLocal), nombreCopia);
+
+                            File.Copy(docUI.DocumentoOriginal.RutaLocal, rutaCopia, true);
+
+                            // AQUÍ ESTÁ EL CAMBIO: Llamamos a tu método original de 3 parámetros
+                            DatabaseHelper.InsertarDocumento("S-303", nombreCopia, rutaCopia);
+
+                            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(rutaCopia) { UseShellExecute = true });
+                            ActualizarUI_MesS303(); // Recargar para que ahora salga el botón "Abrir / Editar"
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show($"Error al crear la copia del S-303: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
+                    }
+                    else
+                    {
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(docUI.DocumentoOriginal.RutaLocal) { UseShellExecute = true });
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("El archivo no se encuentra en el disco.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private async void BtnAprobarRecomendacionVisita_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is RecomendacionHub rec)
+            {
+                var ventana = new AprobarNombramientoWindow(rec);
+                ventana.Owner = Window.GetWindow(this);
+
+                if (ventana.ShowDialog() == true)
+                {
+                    string folderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SCCosmos", "PerfilFirefoxCorreo");
+                    PanelCargando.Visibility = Visibility.Visible;
+
+                    try
+                    {
+                        await Task.Run(() => SincronizadorJWHub.AprobarRecomendacionYEnviarCorreo(folderPath, rec, ventana.FechaSeleccionada, ventana.ArchivosPdfGenerados));
+
+                        // Actualizamos su cargo en la BD y en su versión del mes del ministerio
+                        var personasDB = DatabaseHelper.ObtenerPersonasPorCongregacion(_congreCodigo);
+                        var personaBD = personasDB.FirstOrDefault(x =>
+                            (!string.IsNullOrEmpty(x.Nombre) && x.Nombre.Contains(rec.Hermano, StringComparison.OrdinalIgnoreCase)) ||
+                            (!string.IsNullOrEmpty(x.NombreComun) && x.NombreComun.Contains(rec.Hermano, StringComparison.OrdinalIgnoreCase)));
+
+                        if (personaBD != null && !string.IsNullOrEmpty(rec.RecomendadoComo))
+                        {
+                            if (rec.RecomendadoComo.Contains("Anciano", StringComparison.OrdinalIgnoreCase)) personaBD.Nombramiento = "Anciano";
+                            else if (rec.RecomendadoComo.Contains("Siervo", StringComparison.OrdinalIgnoreCase)) personaBD.Nombramiento = "Siervo ministerial";
+
+                            DatabaseHelper.ActualizarPersonaDesdeVisitas(personaBD, _mesMinisterio.ToString("yyyy-MM"));
+                        }
+
+                        // Limpieza
+                        DatabaseHelper.EliminarRecomendacion(rec.Hermano, rec.Congregacion);
+                        var archivosViejos = DatabaseHelper.ObtenerDocumentos("DescargaHub_" + rec.Hermano);
+                        foreach (var arc in archivosViejos)
+                        {
+                            DatabaseHelper.EliminarDocumento(arc.Id);
+                            if (File.Exists(arc.RutaLocal)) File.Delete(arc.RutaLocal);
+                        }
+
+                        MessageBox.Show($"La recomendación de {rec.Hermano} se ha aprobado con éxito.", "Aprobado", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                        CargarS303yS2();
+                        ActualizarUI_MesMinisterio();
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error durante la automatización: {ex.Message}", "Fallo", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                    finally
+                    {
+                        PanelCargando.Visibility = Visibility.Collapsed;
+                    }
+                }
+            }
+        }
+
+        private async void BtnCancelarRecomendacionVisita_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is RecomendacionHub rec)
+            {
+                if (MessageBox.Show($"¿Estás seguro de querer cancelar la recomendación para {rec.Hermano}?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+                {
+                    string folderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SCCosmos", "PerfilFirefoxCorreo");
+                    PanelCargando.Visibility = Visibility.Visible;
+
+                    try
+                    {
+                        await Task.Run(() => SincronizadorJWHub.CancelarRecomendacionHub(folderPath, rec));
+
+                        DatabaseHelper.EliminarRecomendacion(rec.Hermano, rec.Congregacion);
+                        var archivosViejos = DatabaseHelper.ObtenerDocumentos("DescargaHub_" + rec.Hermano);
+                        foreach (var arc in archivosViejos)
+                        {
+                            DatabaseHelper.EliminarDocumento(arc.Id);
+                            if (File.Exists(arc.RutaLocal)) File.Delete(arc.RutaLocal);
+                        }
+
+                        MessageBox.Show($"La recomendación de {rec.Hermano} se ha cancelado.", "Cancelado", MessageBoxButton.OK, MessageBoxImage.Information);
+                        CargarS303yS2();
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Error durante la automatización: {ex.Message}", "Fallo", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                    finally
+                    {
+                        PanelCargando.Visibility = Visibility.Collapsed;
+                    }
+                }
+            }
+        }
+
+        public class NominatimResult { public string lat { get; set; } public string lon { get; set; } }
+        public class MesSelectorVisita { public DateTime FechaBase { get; set; } public string NombreVisual { get; set; } }
 
         public class FilaVisitaPublisher
         {
             public int PersonaId { get; set; }
+            public int PersonaRaizId { get; set; }
             public string Nombre { get; set; }
+            public string NombreComun { get; set; }
             public string NombreVisual { get; set; }
             public string AlertaTooltip { get; set; }
             public string NombreJWHub { get; set; }
@@ -1259,6 +1621,7 @@ namespace SCCosmos
             public string AniosBautizado { get; set; }
             public string Sexo { get; set; }
             public DateTime FechaNacimientoReal { get; set; }
+            public string Foto { get; set; }
 
             public string ActividadM1 { get; set; }
             public string ActividadM2 { get; set; }
@@ -1282,7 +1645,6 @@ namespace SCCosmos
             public Brush ColorM6 { get; set; }
 
             public string CursosUltimoMes { get; set; }
-
             public string TerritoriosTrabajados { get; set; }
             public bool EsPrecursor { get; set; }
         }
@@ -1357,6 +1719,14 @@ namespace SCCosmos
             public CeldaPrograma Domingo { get; set; }
         }
 
+        public class DocumentoS303UI
+        {
+            public string NombreVisual { get; set; }
+            public string TextoBoton { get; set; }
+            public bool EsPlantilla { get; set; }
+            public ArchivoDocumento DocumentoOriginal { get; set; }
+        }
+
         public class CeldaPrograma
         {
             public string Dia { get; set; }
@@ -1369,6 +1739,10 @@ namespace SCCosmos
         public class BotonActividadUI
         {
             public string Texto { get; set; }
+            public string Dia { get; set; }
+            public string Turno { get; set; }
+            public string Responsable { get; set; }
+            public DatabaseHelper.ActividadPrograma ActividadDB { get; set; }
         }
 
         public class FilaContabilidad : System.ComponentModel.INotifyPropertyChanged

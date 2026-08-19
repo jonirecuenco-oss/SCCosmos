@@ -165,7 +165,7 @@ namespace SCCosmos
                 int idABorrar = _personaId;
                 idPersonaGuardada = idSobreviviente;
 
-                DatabaseHelper.FusionarPersonas(idSobreviviente, idABorrar, nuevoNombre, grupo, _congreCodigo, nombreEditadaOriginal, personaAntigua.Nombre);
+               // DatabaseHelper.FusionarPersonas(idSobreviviente, idABorrar, nuevoNombre, grupo, _congreCodigo, nombreEditadaOriginal, personaAntigua.Nombre);
 
                 personaAntigua.Nombre = nuevoNombre; personaAntigua.Grupo = grupo; personaAntigua.FechaNacimiento = fechaNacimientoFinal;
                 personaAntigua.FechaBautismo = fechaBautismoFinal; personaAntigua.Sexo = sexoFinal; personaAntigua.NombreJWHub = jwFinal;

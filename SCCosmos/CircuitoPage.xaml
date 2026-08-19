@@ -2,7 +2,7 @@
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-      Title="CircuitoPage" Background="#1E1E1E">
+      Title="CircuitoPage">
 
     <Grid Margin="20">
         <Grid.RowDefinitions>
@@ -10,48 +10,16 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Text="CIRCUITO" FontSize="26" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,15"/>
+        <!-- CABECERA Y BOTÓN KMZ FLOTANTE -->
+        <Grid Grid.Row="0" Margin="0,0,0,15">
+            <TextBlock Text="CIRCUITO" FontSize="26" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+            <ui:Button Content="Subir archivo .KMZ" Icon="{ui:SymbolIcon Map24}" Appearance="Secondary" HorizontalAlignment="Right" VerticalAlignment="Center" Click="BtnSubirKMZ_Click"/>
+        </Grid>
 
-        <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0" Foreground="White">
+        <!-- PESTAÑAS -->
+        <TabControl Grid.Row="1" SelectionChanged="TabControl_SelectionChanged">
 
-            <!-- PESTAÑA 1: SECCIONES -->
-            <TabItem Header="SECCIONES DEL CIRCUITO">
-                <Grid Margin="0,15,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="2*"/>
-                        <ColumnDefinition Width="1*"/>
-                    </Grid.ColumnDefinitions>
-
-                    <DataGrid x:Name="TablaSecciones" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" 
-                              Background="Transparent" RowBackground="Transparent" BorderBrush="#20FFFFFF" BorderThickness="1"
-                              HorizontalGridLinesBrush="#20FFFFFF" GridLinesVisibility="Horizontal" Margin="0,0,20,0" RowHeight="34">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Sección" Binding="{Binding Nombre}" Width="80"/>
-                            <DataGridTextColumn Header="Lugar de Asamblea" Binding="{Binding LugarAsamblea}" Width="*"/>
-                            <DataGridTemplateColumn Header="Acción" Width="80">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <ui:Button Icon="{ui:SymbolIcon Delete24}" Appearance="Danger" Padding="5" Cursor="Hand" Click="BtnBorrarSeccion_Click" Tag="{Binding Id}"/>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
-
-                    <Border Grid.Column="1" Background="#252528" Padding="15" CornerRadius="5" VerticalAlignment="Top">
-                        <StackPanel>
-                            <TextBlock Text="Nueva Sección" FontWeight="SemiBold" Foreground="#4BA3E3" Margin="0,0,0,15"/>
-                            <TextBlock Text="Letra de la sección (A, B, C...):" Foreground="White" Margin="0,0,0,5"/>
-                            <TextBox x:Name="TxtLetraSeccion" Margin="0,0,0,15" Padding="6" MaxLength="5"/>
-                            <TextBlock Text="Lugar de asamblea:" Foreground="White" Margin="0,0,0,5"/>
-                            <TextBox x:Name="TxtLugarAsamblea" Margin="0,0,0,20" Padding="6"/>
-                            <ui:Button Content="Crear sección" Appearance="Primary" HorizontalAlignment="Stretch" Cursor="Hand" Click="BtnCrearSeccion_Click"/>
-                        </StackPanel>
-                    </Border>
-                </Grid>
-            </TabItem>
-
-            <!-- PESTAÑA 2: CONGREGACIONES -->
+            <!-- PESTAÑA 1: CONGREGACIONES Y SECCIONES -->
             <TabItem Header="CONGREGACIONES">
                 <Grid Margin="0,15,0,0">
                     <Grid.RowDefinitions>
@@ -59,32 +27,90 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <ui:Button Grid.Row="0" Content="Añadir congregación" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" HorizontalAlignment="Right" Margin="0,0,0,15" Padding="15,8" Click="BtnAnadirCongregacion_Click"/>
+                    <!-- BLOQUE SECCIONES -->
+                    <Border Grid.Row="0" Background="#252528" Padding="15" CornerRadius="5" Margin="0,0,0,15">
+                        <StackPanel>
+                            <TextBlock Text="SECCIONES DEL CIRCUITO" FontWeight="SemiBold" FontSize="16" Foreground="#4BA3E3" Margin="0,0,0,10"/>
 
-                    <DataGrid x:Name="TablaCongregaciones" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column" SelectionMode="Single" IsReadOnly="True" 
-                              GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#30FFFFFF" BorderThickness="1" BorderBrush="#20FFFFFF" Background="Transparent" RowHeight="34">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="80"/>
-                            <DataGridTextColumn Header="Nombre" Binding="{Binding Nombre}" Width="150"/>
-                            <DataGridTextColumn Header="Sección" Binding="{Binding NombreSeccion}" Width="80"/>
-                            <DataGridTextColumn Header="Email" Binding="{Binding Email}" Width="*"/>
-                            <DataGridTextColumn Header="Entre semana" Binding="{Binding HoraEntreSemana}" Width="100"/>
-                            <DataGridTextColumn Header="Día FDS" Binding="{Binding DiaFinSemana}" Width="90"/>
-                            <DataGridTextColumn Header="Hora FDS" Binding="{Binding HoraFinSemana}" Width="90"/>
+                            <DataGrid x:Name="TablaSecciones" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" 
+                                      Background="Transparent" RowBackground="Transparent" BorderBrush="#20FFFFFF" BorderThickness="1"
+                                      HorizontalGridLinesBrush="#20FFFFFF" GridLinesVisibility="Horizontal" Margin="0,0,0,15" RowHeight="34">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Sección" Binding="{Binding Nombre}" Width="80"/>
+                                    <DataGridTextColumn Header="Lugar de Asamblea" Binding="{Binding LugarAsamblea}" Width="*"/>
+                                    <DataGridTemplateColumn Header="Acción" Width="80">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <ui:Button Icon="{ui:SymbolIcon Delete24}" Appearance="Danger" Padding="5" Cursor="Hand" Click="BtnBorrarSeccion_Click" Tag="{Binding Id}"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
 
-                            <DataGridTemplateColumn Header="Acciones" Width="120">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <ui:Button Icon="{ui:SymbolIcon Edit24}" Margin="0,0,5,0" Padding="6" Click="BtnEditarCongregacion_Click" Tag="{Binding}"/>
-                                            <ui:Button Icon="{ui:SymbolIcon Delete24}" Appearance="Danger" Padding="6" Click="BtnBorrarCongregacion_Click" Tag="{Binding}"/>
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Letra:" Foreground="White" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                <TextBox x:Name="TxtLetraSeccion" Width="50" Margin="0,0,15,0" Padding="6" MaxLength="5"/>
+                                <TextBlock Text="Lugar:" Foreground="White" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                <TextBox x:Name="TxtLugarAsamblea" Width="250" Margin="0,0,15,0" Padding="6"/>
+                                <ui:Button Content="Añadir sección" Appearance="Primary" Cursor="Hand" Click="BtnCrearSeccion_Click"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- BLOQUE CONGREGACIONES -->
+                    <Border Grid.Row="1" Background="#252528" Padding="15" CornerRadius="5">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <Grid Grid.Row="0" Margin="0,0,0,10">
+                                <TextBlock Text="LISTADO DE CONGREGACIONES" FontWeight="SemiBold" FontSize="16" Foreground="#4BA3E3" VerticalAlignment="Center"/>
+                                <ui:Button Content="Añadir congregación" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" HorizontalAlignment="Right" Click="BtnAnadirCongregacion_Click"/>
+                            </Grid>
+
+                            <!-- DataGrid Editable -->
+                            <DataGrid x:Name="TablaCongregaciones" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column" SelectionMode="Single" IsReadOnly="False" 
+                                      GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#30FFFFFF" BorderThickness="1" BorderBrush="#20FFFFFF" Background="Transparent" RowHeight="34"
+                                      CellEditEnding="TablaCongregaciones_CellEditEnding">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="65"/>
+                                    <DataGridTextColumn Header="Nombre" Binding="{Binding Nombre}" Width="140"/>
+                                    <DataGridComboBoxColumn x:Name="ColSeccionGrid" Header="Sección" SelectedItemBinding="{Binding NombreSeccion}" Width="70"/>
+                                    <DataGridTextColumn Header="Dirección" Binding="{Binding DireccionSR}" Width="*"/>
+                                    <DataGridTextColumn Header="Aforo" Binding="{Binding Capacidad}" Width="55"/>
+                                    <DataGridTextColumn Header="Población" Binding="{Binding Poblacion}" Width="75"/>
+                                    <DataGridTextColumn Header="ES" Binding="{Binding DiaEntreSemana}" Width="55"/>
+                                    <DataGridTextColumn Header="Hora ES" Binding="{Binding HoraEntreSemana}" Width="65"/>
+                                    <DataGridTextColumn Header="FDS" Binding="{Binding DiaFinSemana}" Width="55"/>
+                                    <DataGridTextColumn Header="Hora FDS" Binding="{Binding HoraFinSemana}" Width="70"/>
+                                    <DataGridTextColumn Header="Latitud" Binding="{Binding Latitud}" Width="70"/>
+                                    <DataGridTextColumn Header="Longitud" Binding="{Binding Longitud}" Width="70"/>
+
+                                    <DataGridTemplateColumn Header="Acciones" Width="100" IsReadOnly="True">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <ui:Button Icon="{ui:SymbolIcon Edit24}" Margin="0,0,5,0" Padding="6" Click="BtnEditarCongregacion_Click" Tag="{Binding}"/>
+                                                    <ui:Button Icon="{ui:SymbolIcon Delete24}" Appearance="Danger" Padding="6" Click="BtnBorrarCongregacion_Click" Tag="{Binding}"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </Border>
                 </Grid>
+            </TabItem>
+
+            <!-- PESTAÑA 2: MAPA -->
+            <TabItem Header="MAPA">
+                <Border CornerRadius="5" Margin="0,15,0,0" ClipToBounds="True">
+                    <WebBrowser x:Name="MapaWebBrowser"/>
+                </Border>
             </TabItem>
 
         </TabControl>
