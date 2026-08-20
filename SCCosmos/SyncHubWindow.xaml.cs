@@ -182,6 +182,13 @@ namespace SCCosmos
 
         private void BtnFinalizar_Click(object sender, RoutedEventArgs e)
         {
+            // Iteramos sobre todos los "Nuevos" que aún no se hayan añadido manualmente a la BD
+            foreach (var itemNuevo in _nuevos)
+            {
+                DatabaseHelper.InsertarPersonaNueva(itemNuevo.PersonaHub);
+            }
+
+            // Una vez añadidos todos, cerramos la ventana
             this.DialogResult = true;
             this.Close();
         }

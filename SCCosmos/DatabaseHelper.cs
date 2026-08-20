@@ -79,9 +79,9 @@ namespace SCCosmos
             using (var connection = new SqliteConnection(ConnectionString))
             {
                 connection.Open();
+                //BorrarPersonasYActividad();
                 CrearTablasPrincipales(connection);
                 AsegurarTablasAsambleasInterno(connection);
-
                 EjecutarMigracionesYParches(connection);
             }
         }
@@ -604,29 +604,38 @@ namespace SCCosmos
             {
                 connection.Open();
                 var cmd = connection.CreateCommand();
+
+                // Hemos añadido todas las columnas que faltaban (Teléfono, Email, Esperanza...)
                 cmd.CommandText = @"
-                    INSERT INTO Personas (Nombre, CongregacionCodigo, Grupo, Nombramiento, Servicio, Solicitudes, Privilegios, Foto, FechaNacimiento, Sexo, FechaBautismo, NombreJWHub, FechaCreacion, NombreComun, Direccion, Latitud, Longitud, ConyugeId, EmailJW)
-                    VALUES ($nombre, $codigo, $grupo, $nomb, $serv, $sol, $priv, $foto, $fn, $sexo, $fb, $jw, $fc, $nombreComun, $dir, $lat, $lon, $conyuge, $emailjw);
+                    INSERT INTO Personas (Nombre, CongregacionCodigo, Grupo, Nombramiento, Servicio, Solicitudes, Privilegios, Foto, FechaNacimiento, Sexo, FechaBautismo, Esperanza, Telefono, Email, FechaInicioPrec, FechaUltimaEscuela, NombreJWHub, FechaCreacion, NombreComun, Direccion, Latitud, Longitud, ConyugeId, EmailJW)
+                    VALUES ($nombre, $codigo, $grupo, $nomb, $serv, $sol, $priv, $foto, $fn, $sexo, $fb, $esperanza, $tlf, $email, $inicio, $escuela, $jw, $fc, $nombreComun, $dir, $lat, $lon, $conyuge, $emailjw);
                     SELECT last_insert_rowid();";
+
                 cmd.Parameters.AddWithValue("$nombre", p.Nombre ?? "");
-                cmd.Parameters.AddWithValue("$codigo", p.CongregacionCodigo);
+                cmd.Parameters.AddWithValue("$codigo", p.CongregacionCodigo ?? ""); // Protección anti-nulos
                 cmd.Parameters.AddWithValue("$grupo", p.Grupo);
                 cmd.Parameters.AddWithValue("$nomb", p.Nombramiento ?? "");
                 cmd.Parameters.AddWithValue("$serv", p.Servicio ?? "");
                 cmd.Parameters.AddWithValue("$sol", p.Solicitudes ?? "");
+                cmd.Parameters.AddWithValue("$priv", p.Privilegios ?? "");
+                cmd.Parameters.AddWithValue("$foto", p.Foto ?? "");
                 cmd.Parameters.AddWithValue("$fn", p.FechaNacimiento ?? "");
                 cmd.Parameters.AddWithValue("$sexo", p.Sexo ?? "");
                 cmd.Parameters.AddWithValue("$fb", p.FechaBautismo ?? "");
+                cmd.Parameters.AddWithValue("$esperanza", p.Esperanza ?? "");
+                cmd.Parameters.AddWithValue("$tlf", p.Telefono ?? "");
+                cmd.Parameters.AddWithValue("$email", p.Email ?? "");
+                cmd.Parameters.AddWithValue("$inicio", p.FechaInicioPrec ?? "");
+                cmd.Parameters.AddWithValue("$escuela", p.FechaUltimaEscuela ?? "");
                 cmd.Parameters.AddWithValue("$jw", p.NombreJWHub ?? "");
                 cmd.Parameters.AddWithValue("$fc", p.FechaCreacion ?? "");
-                cmd.Parameters.AddWithValue("$priv", p.Privilegios ?? "");
-                cmd.Parameters.AddWithValue("$foto", p.Foto ?? "");
                 cmd.Parameters.AddWithValue("$nombreComun", p.NombreComun ?? "");
                 cmd.Parameters.AddWithValue("$dir", p.Direccion ?? "");
                 cmd.Parameters.AddWithValue("$lat", p.Latitud);
                 cmd.Parameters.AddWithValue("$lon", p.Longitud);
                 cmd.Parameters.AddWithValue("$conyuge", p.ConyugeId);
                 cmd.Parameters.AddWithValue("$emailjw", p.EmailJW ?? "");
+
                 return Convert.ToInt32(cmd.ExecuteScalar());
             }
         }

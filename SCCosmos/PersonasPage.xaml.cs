@@ -456,27 +456,60 @@ namespace SCCosmos
 
                 if (personasExtraidas != null && personasExtraidas.Count > 0)
                 {
-                    var personasParaBD = personasExtraidas.Select(pe => new Persona
+                    // 1. Obtenemos las congregaciones de tu BD para poder comparar
+                    var listaCongresBD = DatabaseHelper.ObtenerCongregaciones();
+
+                    // 2. Mapeo inteligente con extracción de código entre paréntesis
+                    var personasParaBD = personasExtraidas.Select(pe =>
                     {
-                        Nombre = pe.NombreCompleto,
-                        NombreJWHub = pe.NombreCompleto,
-                        NombreComun = pe.NombreComun,
-                        Sexo = "",
-                        Esperanza = pe.Esperanza,
-                        FechaNacimiento = pe.FechaNacimiento,
-                        FechaBautismo = pe.FechaBautismo,
-                        FechaInicioPrec = pe.FechaInicioPrec,
-                        FechaUltimaEscuela = pe.FechaUltimaEscuela,
-                        Solicitudes = pe.Solicitudes,
-                        Nombramiento = pe.Nombramiento,
-                        Servicio = pe.Servicio,
-                        Privilegios = pe.Privilegios,
-                        CongregacionNombre = pe.Congregacion,
-                        Telefono = pe.Telefono,
-                        Email = pe.Email,
-                        EmailJW = pe.EmailJW,
-                        Direccion = pe.Direccion,
-                        Foto = pe.Foto
+                        string congreHub = pe.Congregacion ?? "";
+                        string codigoDetectado = "";
+                        string nombreLimpiado = congreHub;
+
+                        // Extraer el código "760" de "Ciudad Jardín (760)"
+                        int start = congreHub.LastIndexOf('(');
+                        int end = congreHub.LastIndexOf(')');
+                        if (start >= 0 && end > start)
+                        {
+                            codigoDetectado = congreHub.Substring(start + 1, end - start - 1).Trim();
+                            nombreLimpiado = congreHub.Substring(0, start).Trim();
+                        }
+
+                        // Comprobar si ese código o nombre coincide con alguna de tus congregaciones locales
+                        var congreMatch = listaCongresBD.FirstOrDefault(c =>
+                            (!string.IsNullOrEmpty(codigoDetectado) && c.Codigo == codigoDetectado) ||
+                            c.Nombre.Equals(nombreLimpiado, StringComparison.OrdinalIgnoreCase) ||
+                            congreHub.Contains(c.Nombre));
+
+                        if (congreMatch != null)
+                        {
+                            codigoDetectado = congreMatch.Codigo;
+                            nombreLimpiado = congreMatch.Nombre;
+                        }
+
+                        return new Persona
+                        {
+                            Nombre = pe.NombreCompleto,
+                            NombreJWHub = pe.NombreCompleto,
+                            NombreComun = pe.NombreComun,
+                            Sexo = "",
+                            Esperanza = pe.Esperanza,
+                            FechaNacimiento = pe.FechaNacimiento,
+                            FechaBautismo = pe.FechaBautismo,
+                            FechaInicioPrec = pe.FechaInicioPrec,
+                            FechaUltimaEscuela = pe.FechaUltimaEscuela,
+                            Solicitudes = pe.Solicitudes,
+                            Nombramiento = pe.Nombramiento,
+                            Servicio = pe.Servicio,
+                            Privilegios = pe.Privilegios,
+                            CongregacionNombre = nombreLimpiado,
+                            CongregacionCodigo = codigoDetectado,
+                            Telefono = pe.Telefono,
+                            Email = pe.Email,
+                            EmailJW = pe.EmailJW,
+                            Direccion = pe.Direccion,
+                            Foto = pe.Foto
+                        };
                     }).ToList();
 
                     var ventana = new SyncHubWindow(personasParaBD);

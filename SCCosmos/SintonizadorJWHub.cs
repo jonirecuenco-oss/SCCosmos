@@ -66,7 +66,7 @@ namespace SCCosmos
                     Thread.Sleep(2000); // Dar tiempo a que cargue la vista de registros
 
                     // ---> MODO DE PRUEBA: Buscar solo la palabra "badenas"
-                    /*try
+                    try
                     {
                         var inputBuscar = driver.FindElements(By.XPath("//input[@type='search' or contains(@placeholder, 'Introduzca un nombre')]")).FirstOrDefault(i => i.Displayed && i.Enabled);
 
@@ -79,7 +79,7 @@ namespace SCCosmos
                             Thread.Sleep(1000);
                         }
                     }
-                    catch { }*/
+                    catch { }
                     // <--- FIN MODO DE PRUEBA
 
                     // 3. Pulsar el botón "Buscar"
@@ -216,7 +216,12 @@ namespace SCCosmos
                             else if (etiqueta.Contains("congregación") || etiqueta.Contains("congregacion"))
                             {
                                 var dds = par.FindElements(By.TagName("dd"));
-                                if (dds.Count > 0) { string valorUnido = string.Join(", ", dds.Select(d => d.GetAttribute("textContent").Trim())); tempPersona.Congregacion = ExtraerCodigoCongregacion(valorUnido); }
+                                if (dds.Count > 0)
+                                {
+                                    string valorUnido = string.Join(", ", dds.Select(d => d.GetAttribute("textContent").Trim()));
+                                    // AHORA PASAMOS EL TEXTO CRUDO TAL CUAL VIENE DE INTERNET
+                                    tempPersona.Congregacion = valorUnido;
+                                }
                             }
                             else if (etiqueta.Contains("edad") || etiqueta.Contains("nacimiento"))
                             {
