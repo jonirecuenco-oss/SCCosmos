@@ -17,17 +17,16 @@ namespace SCCosmos
             var listaExtraidos = new List<PersonaExtraida>();
             string urlBase = "https://hub.jw.org";
 
+            // Cargamos la BD en memoria para la validación cruzada anti-conflictos
+            var personasDB = DatabaseHelper.ObtenerPersonas().Where(p => string.IsNullOrEmpty(p.FechaEliminacion)).ToList();
+
             var service = FirefoxDriverService.CreateDefaultService();
-            service.HideCommandPromptWindow = true; // Oculta la consola negra de Geckodriver
+            service.HideCommandPromptWindow = true;
 
             FirefoxOptions options = new FirefoxOptions();
             options.AddArgument("-profile");
             options.AddArgument(rutaPerfilFirefox);
 
-            // === MODO HEADLESS DESACTIVADO PARA PRUEBAS ===
-            // options.AddArgument("--headless"); 
-
-            // CONFIGURACIÓN PARA DESCARGAS DE NOMBRAMIENTOS
             string tempDownloadPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TempDownloads");
             if (!Directory.Exists(tempDownloadPath)) Directory.CreateDirectory(tempDownloadPath);
 
@@ -48,7 +47,6 @@ namespace SCCosmos
 
                     driver.Navigate().GoToUrl(urlBase + "/");
 
-                    // 1. Ir a Personas de la congregación
                     var btnPersonas = EsperaDinamicaElementoClicable(driver, By.XPath("//a[contains(@href, 'congregation-persons') or contains(text(), 'Personas de la congregación')]"), 60);
 
                     if (btnPersonas != null) btnPersonas.Click();
@@ -58,31 +56,12 @@ namespace SCCosmos
                         return listaExtraidos;
                     }
 
-                    // 2. Ir a "Registros de personas"
                     var btnRegistros = EsperaDinamicaElementoClicable(driver, By.XPath("//a[contains(@href, '/records') or contains(text(), 'Registros de personas')]"), 15);
                     if (btnRegistros != null) btnRegistros.Click();
                     else return listaExtraidos;
 
-                    Thread.Sleep(2000); // Dar tiempo a que cargue la vista de registros
+                    Thread.Sleep(2000);
 
-                    // ---> MODO DE PRUEBA: Buscar solo la palabra "badenas"
-                    try
-                    {
-                        var inputBuscar = driver.FindElements(By.XPath("//input[@type='search' or contains(@placeholder, 'Introduzca un nombre')]")).FirstOrDefault(i => i.Displayed && i.Enabled);
-
-                        if (inputBuscar != null)
-                        {
-                            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView({block: 'center'});", inputBuscar);
-                            Thread.Sleep(500);
-                            inputBuscar.Clear();
-                            inputBuscar.SendKeys("badenas");
-                            Thread.Sleep(1000);
-                        }
-                    }
-                    catch { }
-                    // <--- FIN MODO DE PRUEBA
-
-                    // 3. Pulsar el botón "Buscar"
                     var btnBuscar = EsperaDinamicaElementoClicable(driver, By.XPath("//button[.//span[contains(text(), 'Buscar')]]"), 15);
                     if (btnBuscar != null)
                     {
@@ -123,7 +102,10 @@ namespace SCCosmos
                         "Miembro del GVP", "Persona que pertenece a una entidad del LDC", "Superintendente auxiliar de asamblea"
                     };
 
-                    for (int i = 0; i < totalCards; i++)
+                    int reintentosFallidos = 0;
+                    int i = 0;
+
+                    while (i < totalCards && reintentosFallidos < 3)
                     {
                         var cards = driver.FindElements(By.CssSelector("article"));
                         while (i >= cards.Count)
@@ -156,161 +138,157 @@ namespace SCCosmos
                             catch { break; }
                         }
 
-                        if (i >= cards.Count) continue;
+                        if (i >= cards.Count) break;
                         var card = cards[i];
 
                         var spanNombre = card.FindElements(By.CssSelector("span.transliteration__vernacular")).FirstOrDefault();
-                        if (spanNombre == null || string.IsNullOrWhiteSpace(spanNombre.Text)) continue;
+                        if (spanNombre == null || string.IsNullOrWhiteSpace(spanNombre.Text)) { i++; continue; }
 
                         string nombreReal = spanNombre.Text.Replace("\u200B", "").Trim();
-                        var tempPersona = new PersonaExtraida { NombreCompleto = nombreReal };
-                        string[] partesNombre = nombreReal.Split(',');
+                        PersonaExtraida mejorExtraccion = null;
 
-                        // Invertimos "Apellidos, Nombre" a "Nombre Apellidos"
-                        if (partesNombre.Length >= 2)
+                        // ==============================================================
+                        // SISTEMA DE REVISIÓN TRIPLE 
+                        // (Internet, Datos Incompletos y Conflictos Falsos)
+                        // ==============================================================
+                        for (int revision = 1; revision <= 3; revision++)
                         {
-                            string apellidos = partesNombre[0].Trim();
-                            string nombrePila = partesNombre[1].Trim();
-                            tempPersona.NombreComun = $"{nombrePila} {apellidos}";
-                            tempPersona.Apellidos = apellidos;
-                        }
-                        else
-                        {
-                            tempPersona.NombreComun = nombreReal.Trim();
-                            tempPersona.Apellidos = "";
-                        }
-
-                        // Badges (Nombramiento / Servicio)
-                        var badges = card.FindElements(By.CssSelector("ptrn-badges .badge"));
-                        foreach (var badge in badges)
-                        {
-                            // Usamos textContent puro para evadir Angular
-                            string textoBadge = badge.GetAttribute("textContent").Trim();
-                            if (textoBadge.Contains("Misionero", StringComparison.OrdinalIgnoreCase)) tempPersona.Servicio = "Misionero";
-                            else if (textoBadge.Contains("Precursor especial", StringComparison.OrdinalIgnoreCase)) tempPersona.Servicio = "Precursor especial";
-                            else if (textoBadge.Contains("Precursor", StringComparison.OrdinalIgnoreCase)) { if (tempPersona.Servicio != "Precursor especial") tempPersona.Servicio = "Precursor regular"; }
-                            else if (textoBadge.Contains("Anciano", StringComparison.OrdinalIgnoreCase)) tempPersona.Nombramiento = "Anciano";
-                            else if (textoBadge.Contains("Siervo", StringComparison.OrdinalIgnoreCase)) tempPersona.Nombramiento = "Siervo ministerial";
-                        }
-
-                        // Datos Exteriores
-                        var paresDatos = card.FindElements(By.CssSelector("dl div.data__pair"));
-                        foreach (var par in paresDatos)
-                        {
-                            var dt = par.FindElements(By.TagName("dt")).FirstOrDefault();
-                            if (dt == null) continue;
-
-                            string etiqueta = dt.GetAttribute("textContent").ToLower();
-
-                            if (etiqueta.Contains("privilegio"))
+                            try
                             {
-                                var dds = par.FindElements(By.TagName("dd"));
-                                var misPrivilegios = new List<string>();
-                                foreach (var dd in dds)
+                                // Comprobación estricta de caída de red
+                                string urlActual = driver.Url;
+                                if (urlActual.Contains("/error", StringComparison.OrdinalIgnoreCase))
                                 {
-                                    string privTexto = dd.GetAttribute("textContent").Trim();
-                                    if (privilegiosPermitidos.Any(p => privTexto.IndexOf(p, StringComparison.OrdinalIgnoreCase) >= 0)) misPrivilegios.Add(privTexto);
-                                }
-                                if (misPrivilegios.Count > 0) tempPersona.Privilegios = string.Join("\n", misPrivilegios);
-                            }
-                            else if (etiqueta.Contains("congregación") || etiqueta.Contains("congregacion"))
-                            {
-                                var dds = par.FindElements(By.TagName("dd"));
-                                if (dds.Count > 0)
-                                {
-                                    string valorUnido = string.Join(", ", dds.Select(d => d.GetAttribute("textContent").Trim()));
-                                    // AHORA PASAMOS EL TEXTO CRUDO TAL CUAL VIENE DE INTERNET
-                                    tempPersona.Congregacion = valorUnido;
+                                    throw new Exception("Error 404/500 devuelto por JW Hub.");
                                 }
                             }
-                            else if (etiqueta.Contains("edad") || etiqueta.Contains("nacimiento"))
+                            catch (WebDriverException)
                             {
-                                var dds = par.FindElements(By.TagName("dd"));
-                                if (dds.Count > 0)
+                                throw new Exception("Pérdida de conexión con el navegador.");
+                            }
+
+                            try
+                            {
+                                var tempPersona = new PersonaExtraida { NombreCompleto = nombreReal };
+                                string[] partesNombre = nombreReal.Split(',');
+
+                                if (partesNombre.Length >= 2)
                                 {
-                                    string valorTxt = dds.First().GetAttribute("textContent").Trim();
-                                    var matchYear = System.Text.RegularExpressions.Regex.Match(valorTxt, @"\b(19|20)\d{2}\b");
-                                    if (matchYear.Success)
+                                    string apellidos = partesNombre[0].Trim();
+                                    string nombrePila = partesNombre[1].Trim();
+                                    tempPersona.NombreComun = $"{nombrePila} {apellidos}";
+                                    tempPersona.Apellidos = apellidos;
+                                }
+                                else
+                                {
+                                    tempPersona.NombreComun = nombreReal.Trim();
+                                    tempPersona.Apellidos = "";
+                                }
+
+                                var badges = card.FindElements(By.CssSelector("ptrn-badges .badge"));
+                                foreach (var badge in badges)
+                                {
+                                    string textoBadge = badge.GetAttribute("textContent").Trim();
+                                    if (textoBadge.Contains("Misionero", StringComparison.OrdinalIgnoreCase)) tempPersona.Servicio = "Misionero";
+                                    else if (textoBadge.Contains("Precursor especial", StringComparison.OrdinalIgnoreCase)) tempPersona.Servicio = "Precursor especial";
+                                    else if (textoBadge.Contains("Precursor", StringComparison.OrdinalIgnoreCase)) { if (tempPersona.Servicio != "Precursor especial") tempPersona.Servicio = "Precursor regular"; }
+                                    else if (textoBadge.Contains("Anciano", StringComparison.OrdinalIgnoreCase)) tempPersona.Nombramiento = "Anciano";
+                                    else if (textoBadge.Contains("Siervo", StringComparison.OrdinalIgnoreCase)) tempPersona.Nombramiento = "Siervo ministerial";
+                                }
+
+                                var paresDatos = card.FindElements(By.CssSelector("dl div.data__pair"));
+                                foreach (var par in paresDatos)
+                                {
+                                    var dt = par.FindElements(By.TagName("dt")).FirstOrDefault();
+                                    if (dt == null) continue;
+
+                                    string etiqueta = dt.GetAttribute("textContent").ToLower();
+
+                                    if (etiqueta.Contains("privilegio"))
                                     {
-                                        tempPersona.FechaNacimiento = ConvertirFechaJWHub(valorTxt);
+                                        var dds = par.FindElements(By.TagName("dd"));
+                                        var misPrivilegios = new List<string>();
+                                        foreach (var dd in dds)
+                                        {
+                                            string privTexto = dd.GetAttribute("textContent").Trim();
+                                            if (privilegiosPermitidos.Any(p => privTexto.IndexOf(p, StringComparison.OrdinalIgnoreCase) >= 0)) misPrivilegios.Add(privTexto);
+                                        }
+                                        if (misPrivilegios.Count > 0) tempPersona.Privilegios = string.Join("\n", misPrivilegios);
+                                    }
+                                    else if (etiqueta.Contains("congregación") || etiqueta.Contains("congregacion"))
+                                    {
+                                        var dds = par.FindElements(By.TagName("dd"));
+                                        if (dds.Count > 0) tempPersona.Congregacion = string.Join(", ", dds.Select(d => d.GetAttribute("textContent").Trim()));
+                                    }
+                                    else if (etiqueta.Contains("edad") || etiqueta.Contains("nacimiento"))
+                                    {
+                                        var dds = par.FindElements(By.TagName("dd"));
+                                        if (dds.Count > 0)
+                                        {
+                                            string valorTxt = dds.First().GetAttribute("textContent").Trim();
+                                            var matchYear = System.Text.RegularExpressions.Regex.Match(valorTxt, @"\b(19|20)\d{2}\b");
+                                            if (matchYear.Success) tempPersona.FechaNacimiento = ConvertirFechaJWHub(valorTxt);
+                                            else
+                                            {
+                                                string edadStr = valorTxt.Split(new char[] { ',', '.' })[0].Trim();
+                                                string digitos = new string(edadStr.Where(char.IsDigit).ToArray());
+                                                if (!string.IsNullOrEmpty(digitos) && int.TryParse(digitos, out int edad))
+                                                    tempPersona.FechaNacimiento = $"01/01/{DateTime.Now.Year - edad}";
+                                            }
+                                        }
+                                    }
+                                    else if (etiqueta.Contains("bautismo") || etiqueta.Contains("bautizado"))
+                                    {
+                                        var dds = par.FindElements(By.TagName("dd"));
+                                        if (dds.Count > 0)
+                                        {
+                                            string valorTxt = dds.First().GetAttribute("textContent").Trim();
+                                            var matchYear = System.Text.RegularExpressions.Regex.Match(valorTxt, @"\b(19|20)\d{2}\b");
+                                            if (matchYear.Success) tempPersona.FechaBautismo = ConvertirFechaJWHub(valorTxt);
+                                            else
+                                            {
+                                                string edadStr = valorTxt.Split(new char[] { ',', '.' })[0].Trim();
+                                                string digitos = new string(edadStr.Where(char.IsDigit).ToArray());
+                                                if (!string.IsNullOrEmpty(digitos) && int.TryParse(digitos, out int aniosBaut))
+                                                    tempPersona.FechaBautismo = $"01/01/{DateTime.Now.Year - aniosBaut}";
+                                            }
+                                        }
                                     }
                                     else
                                     {
-                                        // Es una edad tipo "26,6"
-                                        string edadStr = valorTxt.Split(new char[] { ',', '.' })[0].Trim();
-                                        string digitos = new string(edadStr.Where(char.IsDigit).ToArray());
-                                        if (!string.IsNullOrEmpty(digitos) && int.TryParse(digitos, out int edad))
-                                            tempPersona.FechaNacimiento = $"01/01/{DateTime.Now.Year - edad}";
+                                        var dds = par.FindElements(By.TagName("dd"));
+                                        if (dds.Count == 0) continue;
+                                        string valorUnido = string.Join(", ", dds.Select(d => d.GetAttribute("textContent").Trim()));
+
+                                        if (etiqueta.Contains("teléfono") || etiqueta.Contains("celular") || etiqueta.Contains("movil") || etiqueta.Contains("móvil") || etiqueta.Contains("telefono"))
+                                        {
+                                            string tlfRaw = valorUnido.Replace(" ", "").Replace("+34", "").Replace("-", "").Trim();
+                                            if ((tlfRaw.StartsWith("6") || tlfRaw.StartsWith("7")) && string.IsNullOrEmpty(tempPersona.Telefono)) tempPersona.Telefono = tlfRaw;
+                                        }
                                     }
                                 }
-                            }
-                            else if (etiqueta.Contains("bautismo") || etiqueta.Contains("bautizado"))
-                            {
-                                var dds = par.FindElements(By.TagName("dd"));
-                                if (dds.Count > 0)
+
+                                var btnVerMas = card.FindElements(By.XPath(".//a[contains(@class, 'button--action') and .//ptrn-translate[contains(text(), 'Ver más')]]")).FirstOrDefault()
+                                             ?? card.FindElements(By.XPath(".//a[contains(@class, 'button') and .//ptrn-translate[contains(text(), 'Ver más')]]")).FirstOrDefault()
+                                             ?? card.FindElements(By.XPath(".//a[contains(@href, 'person') and .//ptrn-translate[contains(text(), 'Ver más')]]")).FirstOrDefault();
+
+                                if (btnVerMas != null)
                                 {
-                                    string valorTxt = dds.First().GetAttribute("textContent").Trim();
-                                    var matchYear = System.Text.RegularExpressions.Regex.Match(valorTxt, @"\b(19|20)\d{2}\b");
-                                    if (matchYear.Success)
+                                    string urlPerfil = btnVerMas.GetAttribute("href");
+
+                                    if (!string.IsNullOrEmpty(urlPerfil))
                                     {
-                                        tempPersona.FechaBautismo = ConvertirFechaJWHub(valorTxt);
-                                    }
-                                    else
-                                    {
-                                        // Son años tipo "12,1"
-                                        string edadStr = valorTxt.Split(new char[] { ',', '.' })[0].Trim();
-                                        string digitos = new string(edadStr.Where(char.IsDigit).ToArray());
-                                        if (!string.IsNullOrEmpty(digitos) && int.TryParse(digitos, out int aniosBaut))
-                                            tempPersona.FechaBautismo = $"01/01/{DateTime.Now.Year - aniosBaut}";
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                var dds = par.FindElements(By.TagName("dd"));
-                                if (dds.Count == 0) continue;
-                                string valorUnido = string.Join(", ", dds.Select(d => d.GetAttribute("textContent").Trim()));
+                                        string ventanaListado = driver.CurrentWindowHandle;
+                                        ((IJavaScriptExecutor)driver).ExecuteScript("window.open(arguments[0], '_blank');", urlPerfil);
+                                        Thread.Sleep(500);
+                                        driver.SwitchTo().Window(driver.WindowHandles.Last());
 
-                                if (etiqueta.Contains("teléfono") || etiqueta.Contains("celular") || etiqueta.Contains("movil") || etiqueta.Contains("móvil") || etiqueta.Contains("telefono"))
-                                {
-                                    string tlfRaw = valorUnido.Replace(" ", "").Replace("+34", "").Replace("-", "").Trim();
-                                    if ((tlfRaw.StartsWith("6") || tlfRaw.StartsWith("7")) && string.IsNullOrEmpty(tempPersona.Telefono))
-                                    {
-                                        tempPersona.Telefono = tlfRaw;
-                                    }
-                                }
-                            }
-                        }
-
-                        // --- EXTRACCIÓN PROFUNDA EN PESTAÑA NUEVA ---
-                        try
-                        {
-                            var btnVerMas = card.FindElements(By.XPath(".//a[contains(@class, 'button--action') and .//ptrn-translate[contains(text(), 'Ver más')]]")).FirstOrDefault()
-                                         ?? card.FindElements(By.XPath(".//a[contains(@class, 'button') and .//ptrn-translate[contains(text(), 'Ver más')]]")).FirstOrDefault()
-                                         ?? card.FindElements(By.XPath(".//a[contains(@href, 'person') and .//ptrn-translate[contains(text(), 'Ver más')]]")).FirstOrDefault();
-
-                            if (btnVerMas != null)
-                            {
-                                string urlPerfil = btnVerMas.GetAttribute("href");
-
-                                if (!string.IsNullOrEmpty(urlPerfil))
-                                {
-                                    string ventanaListado = driver.CurrentWindowHandle;
-
-                                    ((IJavaScriptExecutor)driver).ExecuteScript("window.open(arguments[0], '_blank');", urlPerfil);
-                                    Thread.Sleep(500);
-                                    driver.SwitchTo().Window(driver.WindowHandles.Last());
-
-                                    try
-                                    {
-                                        EsperaDinamicaElementoVisibilidad(driver, By.TagName("app-address"), 15);
-
-                                        // --- 1. FOTO ---
                                         try
                                         {
+                                            EsperaDinamicaElementoVisibilidad(driver, By.TagName("app-address"), 15);
+
                                             var imgElement = driver.FindElements(By.CssSelector("div.bg-g300 img[alt='Fotografía principal']")).FirstOrDefault()
                                                           ?? driver.FindElements(By.CssSelector("img[alt='Fotografía principal']")).FirstOrDefault();
-
                                             if (imgElement != null)
                                             {
                                                 string src = imgElement.GetAttribute("src");
@@ -318,14 +296,12 @@ namespace SCCosmos
                                                 {
                                                     string ventanaPerfil = driver.CurrentWindowHandle;
                                                     int handleCountBefore = driver.WindowHandles.Count;
-
                                                     ((IJavaScriptExecutor)driver).ExecuteScript("window.open(arguments[0], '_blank');", src);
                                                     Thread.Sleep(1000);
 
                                                     if (driver.WindowHandles.Count > handleCountBefore)
                                                     {
                                                         driver.SwitchTo().Window(driver.WindowHandles.Last());
-
                                                         try
                                                         {
                                                             WebDriverWait w = new WebDriverWait(driver, TimeSpan.FromSeconds(15));
@@ -349,47 +325,29 @@ namespace SCCosmos
                                                             }
                                                         }
                                                         catch { }
-                                                        finally
-                                                        {
-                                                            driver.Close();
-                                                            driver.SwitchTo().Window(ventanaPerfil);
-                                                        }
+                                                        finally { driver.Close(); driver.SwitchTo().Window(ventanaPerfil); }
                                                     }
                                                 }
                                             }
-                                        }
-                                        catch { }
 
-                                        // --- 2. EMAILS ---
-                                        try
-                                        {
                                             var emails = driver.FindElements(By.CssSelector("bdi.email"));
                                             foreach (var email in emails)
                                             {
+                                                string htmlTag = email.GetAttribute("outerHTML");
+                                                if (htmlTag.Contains("ng-star-inserted") && !htmlTag.Contains("@")) continue;
+
                                                 string textoEmail = email.GetAttribute("textContent").Trim();
                                                 if (textoEmail.EndsWith("@jwpub.org", StringComparison.OrdinalIgnoreCase)) tempPersona.EmailJW = textoEmail;
-                                                else if (!string.IsNullOrEmpty(textoEmail)) tempPersona.Email = textoEmail;
+                                                else if (!string.IsNullOrEmpty(textoEmail) && textoEmail.Contains("@")) tempPersona.Email = textoEmail;
                                             }
-                                        }
-                                        catch { }
 
-                                        // --- 3. DIRECCIÓN FÍSICA ---
-                                        try
-                                        {
-                                            // Usamos . en lugar de text() para evadir spans
                                             var appAddress = driver.FindElements(By.XPath("//dt[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnopqrstuvwxyzáéíóú'), 'dirección física') or contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnopqrstuvwxyzáéíóú'), 'dirección postal')]/following-sibling::dd//app-address")).FirstOrDefault();
                                             if (appAddress != null)
                                             {
                                                 string dirRaw = appAddress.GetAttribute("textContent").Trim();
                                                 tempPersona.Direccion = string.Join(", ", dirRaw.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()));
                                             }
-                                        }
-                                        catch { }
 
-                                        // --- RECOLECCIÓN DEL OVERVIEW ---
-                                        try
-                                        {
-                                            // ESPERANZA
                                             var ddEsperanza = driver.FindElements(By.XPath("//dt[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnopqrstuvwxyzáéíóú'), 'esperanza')]/following-sibling::dd")).FirstOrDefault();
                                             if (ddEsperanza != null)
                                             {
@@ -398,98 +356,106 @@ namespace SCCosmos
                                                 else if (txtEsp.Contains("Ungido", StringComparison.OrdinalIgnoreCase)) tempPersona.Esperanza = "Ungido";
                                             }
 
-                                            // INICIO PRECURSORADO
                                             var ddInicio = driver.FindElements(By.XPath("//dt[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnopqrstuvwxyzáéíóú'), 'inicio del precursorado')]/following-sibling::dd")).FirstOrDefault();
-                                            if (ddInicio != null)
-                                            {
-                                                tempPersona.FechaInicioPrec = ConvertirFechaJWHub(ddInicio.GetAttribute("textContent").Trim());
-                                            }
-                                        }
-                                        catch { }
+                                            if (ddInicio != null) tempPersona.FechaInicioPrec = ConvertirFechaJWHub(ddInicio.GetAttribute("textContent").Trim());
 
-                                        // --- 4. SOLICITUDES VIGENTES ---
-                                        var btnSolicitudes = EsperaDinamicaElementoClicable(driver, By.XPath("//a[contains(@href, '/applications') or contains(., 'Solicitudes vigentes')]"), 3);
-                                        if (btnSolicitudes != null)
-                                        {
-                                            btnSolicitudes.Click();
-                                            Thread.Sleep(2000);
-                                            try
+                                            var btnSolicitudes = EsperaDinamicaElementoClicable(driver, By.XPath("//a[contains(@href, '/applications') or contains(., 'Solicitudes vigentes')]"), 3);
+                                            if (btnSolicitudes != null)
                                             {
+                                                btnSolicitudes.Click();
+                                                Thread.Sleep(2000);
                                                 string htmlSols = driver.PageSource;
                                                 var matches = System.Text.RegularExpressions.Regex.Matches(htmlSols, @"\b(A-2|A-8|G-8|A-19)\b");
                                                 var solList = new List<string>();
-
-                                                foreach (System.Text.RegularExpressions.Match m in matches)
-                                                {
-                                                    solList.Add(m.Value);
-                                                }
-
+                                                foreach (System.Text.RegularExpressions.Match m in matches) solList.Add(m.Value);
                                                 if (solList.Count > 0) tempPersona.Solicitudes = string.Join(", ", solList.Distinct());
                                             }
-                                            catch { }
-                                        }
 
-                                        // --- 5. EDUCACIÓN TEOCRÁTICA ---
-                                        var btnEducacion = EsperaDinamicaElementoClicable(driver, By.XPath("//a[contains(@href, '/theocratic-education') or contains(., 'Educación teocrática')]"), 3);
-                                        if (btnEducacion != null)
-                                        {
-                                            btnEducacion.Click();
-                                            Thread.Sleep(2000);
-                                            try
+                                            var btnEducacion = EsperaDinamicaElementoClicable(driver, By.XPath("//a[contains(@href, '/theocratic-education') or contains(., 'Educación teocrática')]"), 3);
+                                            if (btnEducacion != null)
                                             {
+                                                btnEducacion.Click();
+                                                Thread.Sleep(2000);
                                                 var headerEscuela = driver.FindElements(By.XPath("//h2[contains(., 'Pioneer Service School') or contains(., 'Escuela del Servicio de Precursor') or contains(., 'Escuela para Evangelizadores')]")).FirstOrDefault();
                                                 if (headerEscuela != null)
                                                 {
                                                     var cardEscuela = headerEscuela.FindElement(By.XPath("./ancestor::article[contains(@class, 'card')]"));
                                                     var ddGrad = cardEscuela.FindElements(By.XPath(".//dt[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnopqrstuvwxyzáéíóú'), 'fecha de graduación')]/following-sibling::dd")).FirstOrDefault();
-
-                                                    if (ddGrad != null)
-                                                    {
-                                                        tempPersona.FechaUltimaEscuela = ConvertirFechaJWHub(ddGrad.GetAttribute("textContent"));
-                                                    }
+                                                    if (ddGrad != null) tempPersona.FechaUltimaEscuela = ConvertirFechaJWHub(ddGrad.GetAttribute("textContent"));
                                                 }
                                             }
-                                            catch { }
                                         }
-
-                                        // --- 6. ESTADO (Esperanza e Inicio Precursorado POR SI ACASO) ---
-                                        var btnEstado = EsperaDinamicaElementoClicable(driver, By.XPath("//a[contains(@href, '/spiritual-status') or contains(., 'Estado')]"), 3);
-                                        if (btnEstado != null)
+                                        finally
                                         {
-                                            btnEstado.Click();
-                                            Thread.Sleep(2000);
-                                            try
-                                            {
-                                                var ddEsperanza = driver.FindElements(By.XPath("//dt[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnopqrstuvwxyzáéíóú'), 'esperanza')]/following-sibling::dd")).FirstOrDefault();
-                                                if (ddEsperanza != null && string.IsNullOrEmpty(tempPersona.Esperanza))
-                                                {
-                                                    string textoEsperanza = ddEsperanza.GetAttribute("textContent").Trim();
-                                                    if (textoEsperanza.Contains("Otras", StringComparison.OrdinalIgnoreCase)) tempPersona.Esperanza = "Otras ovejas";
-                                                    else if (textoEsperanza.Contains("Ungido", StringComparison.OrdinalIgnoreCase)) tempPersona.Esperanza = "Ungido";
-                                                }
-
-                                                var ddInicio = driver.FindElements(By.XPath("//dt[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnopqrstuvwxyzáéíóú'), 'inicio del precursorado')]/following-sibling::dd")).FirstOrDefault();
-                                                if (ddInicio != null && string.IsNullOrEmpty(tempPersona.FechaInicioPrec))
-                                                {
-                                                    tempPersona.FechaInicioPrec = ConvertirFechaJWHub(ddInicio.GetAttribute("textContent").Trim());
-                                                }
-                                            }
-                                            catch { }
+                                            driver.Close();
+                                            driver.SwitchTo().Window(ventanaListado);
+                                            Thread.Sleep(1000);
                                         }
-
-                                    }
-                                    finally
-                                    {
-                                        driver.Close();
-                                        driver.SwitchTo().Window(ventanaListado);
-                                        Thread.Sleep(2000);
                                     }
                                 }
+
+                                mejorExtraccion = tempPersona;
+
+                                // 1. OBLIGAMOS a que haya Congregación, Nacimiento y Bautismo. Si no, forzamos reintento (hasta 3 veces)
+                                bool faltanDatosGrave = string.IsNullOrWhiteSpace(tempPersona.Congregacion) ||
+                                                        string.IsNullOrWhiteSpace(tempPersona.FechaNacimiento) ||
+                                                        string.IsNullOrWhiteSpace(tempPersona.FechaBautismo);
+
+                                if (faltanDatosGrave) throw new Exception("Faltan datos obligatorios. Forzando reintento...");
+
+                                // 2. Verificamos si hay un posible conflicto con la BD.
+                                bool hayConflicto = false;
+                                string codigoDet = "";
+                                if (!string.IsNullOrWhiteSpace(tempPersona.Congregacion))
+                                {
+                                    int start = tempPersona.Congregacion.LastIndexOf('(');
+                                    int end = tempPersona.Congregacion.LastIndexOf(')');
+                                    if (start >= 0 && end > start) codigoDet = tempPersona.Congregacion.Substring(start + 1, end - start - 1).Trim();
+                                }
+
+                                var matchDB = personasDB.FirstOrDefault(p =>
+                                {
+                                    if (!string.IsNullOrEmpty(p.NombreJWHub) && p.NombreJWHub == tempPersona.NombreCompleto) return true;
+                                    bool mismoNombre = p.Nombre == tempPersona.NombreCompleto;
+                                    bool mismaCongre = p.CongregacionCodigo == codigoDet;
+                                    bool mismaFecha = true;
+                                    if (!string.IsNullOrWhiteSpace(p.FechaNacimiento) && !string.IsNullOrWhiteSpace(tempPersona.FechaNacimiento))
+                                        mismaFecha = p.FechaNacimiento.Trim() == tempPersona.FechaNacimiento.Trim();
+                                    return mismoNombre && mismaCongre && mismaFecha;
+                                });
+
+                                if (matchDB != null)
+                                {
+                                    hayConflicto = DetectarConflictoSincronizador(matchDB, tempPersona, codigoDet);
+
+                                    // Si NO hay conflicto, la extracción es perfecta. Salimos del bucle.
+                                    if (!hayConflicto) break;
+                                }
+                                else
+                                {
+                                    // Si no existe en BD (persona totalmente nueva) salimos del bucle.
+                                    break;
+                                }
+
+                                // Si hemos llegado aquí, es porque hay un "Posible Conflicto".
+                                // Forzamos el reintento tirando una excepción para que haga la revisión 2 y 3.
+                                throw new Exception("Conflicto detectado. Forzando re-evaluación...");
+                            }
+                            catch (Exception)
+                            {
+                                // Si es la 3ª revisión, ya no reintentamos, nos quedamos con lo último que atrapó
+                                if (revision >= 3) break;
+
+                                Thread.Sleep(1500);
+                                cards = driver.FindElements(By.CssSelector("article"));
+                                if (i < cards.Count) card = cards[i];
                             }
                         }
-                        catch { }
 
-                        listaExtraidos.Add(tempPersona);
+                        if (mejorExtraccion != null) listaExtraidos.Add(mejorExtraccion);
+
+                        i++;
+                        reintentosFallidos = 0; // Si logramos extraer la tarjeta, reseteamos el contador de fallos catastróficos
                     }
 
                     // =========================================================================
@@ -558,11 +524,40 @@ namespace SCCosmos
                 }
                 catch (Exception ex)
                 {
-                    System.Windows.MessageBox.Show("Error durante la extracción: " + ex.Message, "Error JW Hub", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                    // Alerta de seguridad: aborta el proceso, pero rescata lo que haya extraído hasta el fallo
+                    System.Windows.MessageBox.Show($"La extracción se ha detenido en el publicador {listaExtraidos.Count} debido a una desconexión o fallo en JW Hub.\n\nEl sistema abrirá la ventana para que puedas guardar el progreso de los hermanos que sí se han logrado extraer de forma segura.", "Aviso de Sincronización Parcial", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
                 }
             }
 
             return listaExtraidos;
+        }
+
+        private static bool DetectarConflictoSincronizador(Persona db, PersonaExtraida hub, string codigoDet)
+        {
+            if (!string.IsNullOrEmpty(hub.NombreCompleto) && db.NombreJWHub != hub.NombreCompleto) return true;
+            if (!string.IsNullOrEmpty(hub.NombreComun) && db.NombreComun != hub.NombreComun) return true;
+            if (!string.IsNullOrEmpty(codigoDet) && db.CongregacionCodigo != codigoDet) return true;
+            if (!string.IsNullOrEmpty(hub.Esperanza) && db.Esperanza != hub.Esperanza) return true;
+            if (!string.IsNullOrEmpty(hub.Nombramiento) && db.Nombramiento != hub.Nombramiento) return true;
+            if (!string.IsNullOrEmpty(hub.Servicio) && db.Servicio != hub.Servicio) return true;
+            if (!string.IsNullOrEmpty(hub.FechaNacimiento) && db.FechaNacimiento != hub.FechaNacimiento) return true;
+            if (!string.IsNullOrEmpty(hub.FechaBautismo) && db.FechaBautismo != hub.FechaBautismo) return true;
+            if (!string.IsNullOrEmpty(hub.FechaInicioPrec) && db.FechaInicioPrec != hub.FechaInicioPrec) return true;
+            if (!string.IsNullOrEmpty(hub.FechaUltimaEscuela) && db.FechaUltimaEscuela != hub.FechaUltimaEscuela) return true;
+            if (!string.IsNullOrEmpty(hub.Email) && db.Email != hub.Email) return true;
+            if (!string.IsNullOrEmpty(hub.EmailJW) && db.EmailJW != hub.EmailJW) return true;
+            if (!string.IsNullOrEmpty(hub.Telefono) && db.Telefono != hub.Telefono) return true;
+            if (!string.IsNullOrEmpty(hub.Direccion) && db.Direccion != hub.Direccion) return true;
+            if (!string.IsNullOrEmpty(hub.Foto) && db.Foto != hub.Foto) return true;
+            if (!string.IsNullOrEmpty(hub.Privilegios) && (string.IsNullOrEmpty(db.Privilegios) || !db.Privilegios.Contains(hub.Privilegios))) return true;
+
+            string hubSols = hub.Solicitudes ?? "";
+            string dbSols = db.Solicitudes ?? "";
+            var listHub = hubSols.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).OrderBy(s => s).ToList();
+            var listDb = dbSols.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).OrderBy(s => s).ToList();
+            if (!listHub.SequenceEqual(listDb)) return true;
+
+            return false;
         }
 
         public static void CancelarRecomendacionHub(string rutaPerfilFirefox, RecomendacionHub rec)
@@ -890,29 +885,6 @@ namespace SCCosmos
 
             return $"{dia:D2}/{mes:D2}/{anio}";
         }
-
-        private static string ExtraerCodigoCongregacion(string textoOriginal)
-        {
-            if (string.IsNullOrWhiteSpace(textoOriginal)) return "";
-            int inicio = textoOriginal.LastIndexOf('(');
-            int fin = textoOriginal.LastIndexOf(')');
-            if (inicio >= 0 && fin > inicio) return textoOriginal.Substring(inicio + 1, fin - inicio - 1).Trim();
-            return textoOriginal.Trim();
-        }
-
-        private static string ExtraerCodigosSolicitudes(string textoOriginal)
-        {
-            if (string.IsNullOrWhiteSpace(textoOriginal)) return "";
-            var coincidencias = System.Text.RegularExpressions.Regex.Matches(textoOriginal, @"[A-Z]+-\d+");
-            if (coincidencias.Count > 0)
-            {
-                var codigos = new List<string>();
-                foreach (System.Text.RegularExpressions.Match match in coincidencias) codigos.Add(match.Value);
-                return string.Join(", ", codigos);
-            }
-            if (System.Text.RegularExpressions.Regex.IsMatch(textoOriginal.Trim(), @"^\d+$")) return "";
-            return textoOriginal.Trim();
-        }
     }
 
     public class PersonaExtraida
@@ -920,12 +892,8 @@ namespace SCCosmos
         public string NombreCompleto { get; set; }
         public string NombreComun { get; set; }
         public string Apellidos { get; set; }
-
-        // --- PROPIEDADES DE FECHA DE PRECURSORADO ---
         public string FechaInicioPrec { get; set; }
-        // Esta propiedad puente evita que el resto del programa (DatabaseHelper, EmparejarPersonas) dé error
         public string FechaInicio { get => FechaInicioPrec; set => FechaInicioPrec = value; }
-
         public string FechaUltimaEscuela { get; set; }
         public string FechaBautismo { get; set; }
         public string Email { get; set; }

@@ -32,9 +32,31 @@ namespace SCCosmos
 
             foreach (var hubItem in _personasHub)
             {
-                var matchDB = personasDB.FirstOrDefault(p =>
-                    (!string.IsNullOrEmpty(p.NombreJWHub) && p.NombreJWHub == hubItem.NombreJWHub) ||
-                    p.Nombre == hubItem.Nombre);
+                // 1. Buscamos a TODOS los que tengan el mismo nombre exacto en esa congregación
+                var posiblesMatches = personasDB.Where(p =>
+                    p.Nombre == hubItem.Nombre &&
+                    p.CongregacionCodigo == hubItem.CongregacionCodigo
+                ).ToList();
+
+                Persona matchDB = null;
+
+                if (posiblesMatches.Count == 1)
+                {
+                    // CASO A: Solo hay uno. Es él con total seguridad (aunque le hayan corregido la fecha)
+                    matchDB = posiblesMatches[0];
+                }
+                else if (posiblesMatches.Count > 1)
+                {
+                    // CASO B: Hay homónimos (2 o más con el mismo nombre). Desempatamos con la fecha.
+                    matchDB = posiblesMatches.FirstOrDefault(p =>
+                        !string.IsNullOrWhiteSpace(p.FechaNacimiento) &&
+                        !string.IsNullOrWhiteSpace(hubItem.FechaNacimiento) &&
+                        p.FechaNacimiento.Trim() == hubItem.FechaNacimiento.Trim()
+                    );
+
+                    // Salvavidas por si ambos homónimos tienen la fecha en blanco en nuestra BD
+                    if (matchDB == null) matchDB = posiblesMatches[0];
+                }
 
                 if (matchDB != null)
                 {

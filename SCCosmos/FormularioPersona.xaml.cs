@@ -267,8 +267,8 @@ namespace SCCosmos
             string v1 = valActual?.Trim() ?? "";
             string v2 = valDuplicado?.Trim() ?? "";
 
-            // Solo creamos conflicto si JW Hub aporta un dato y es DIFERENTE al actual
-            if (v1.ToLower() != v2.ToLower() && !string.IsNullOrEmpty(v2))
+            // Quitamos la restricción de que v2 no pueda estar vacío, para permitir el "viceversa"
+            if (v1.ToLower() != v2.ToLower())
             {
                 Panel parent = txtOriginal.Parent as Panel;
                 if (parent == null) return null;
@@ -288,16 +288,26 @@ namespace SCCosmos
                     ToolTip = "Dato en conflicto: JW Hub vs BBDD"
                 };
 
-                if (!string.IsNullOrEmpty(v1)) cmb.Items.Add(v1);
-                cmb.Items.Add(v2);
+                // Si alguno está en blanco, le ponemos la etiqueta (Vacío)
+                string opt1 = string.IsNullOrEmpty(v1) ? "(Vacío)" : v1;
+                string opt2 = string.IsNullOrEmpty(v2) ? "(Vacío)" : v2;
+
+                cmb.Items.Add(opt1);
+                if (opt1 != opt2) cmb.Items.Add(opt2);
 
                 // Priorizamos el valor nuevo (Hub)
-                cmb.SelectedItem = v2;
+                cmb.SelectedItem = opt2;
 
-                cmb.SelectionChanged += (s, e) => { if (cmb.SelectedItem != null) txtOriginal.Text = cmb.SelectedItem.ToString(); };
-                cmb.AddHandler(System.Windows.Controls.Primitives.TextBoxBase.TextChangedEvent, new TextChangedEventHandler((s, e) => { txtOriginal.Text = cmb.Text; }));
+                cmb.SelectionChanged += (s, e) => {
+                    if (cmb.SelectedItem != null)
+                        txtOriginal.Text = cmb.SelectedItem.ToString() == "(Vacío)" ? "" : cmb.SelectedItem.ToString();
+                };
 
-                txtOriginal.Text = cmb.SelectedItem?.ToString() ?? "";
+                cmb.AddHandler(System.Windows.Controls.Primitives.TextBoxBase.TextChangedEvent, new TextChangedEventHandler((s, e) => {
+                    txtOriginal.Text = cmb.Text == "(Vacío)" ? "" : cmb.Text;
+                }));
+
+                txtOriginal.Text = cmb.SelectedItem?.ToString() == "(Vacío)" ? "" : (cmb.SelectedItem?.ToString() ?? "");
 
                 int index = parent.Children.IndexOf(txtOriginal);
                 parent.Children.Insert(index + 1, cmb);
@@ -311,7 +321,7 @@ namespace SCCosmos
             string v1 = valActual?.Trim() ?? "";
             string v2 = valDuplicado?.Trim() ?? "";
 
-            if (v1.ToLower() != v2.ToLower() && !string.IsNullOrEmpty(v2))
+            if (v1.ToLower() != v2.ToLower())
             {
                 Panel parent = txtOriginal.Parent as Panel;
                 if (parent == null) return null;
@@ -331,27 +341,34 @@ namespace SCCosmos
                     ToolTip = "Elige la dirección correcta"
                 };
 
-                if (!string.IsNullOrEmpty(v1)) cmb.Items.Add(v1);
-                cmb.Items.Add(v2);
+                string opt1 = string.IsNullOrEmpty(v1) ? "(Vacío)" : v1;
+                string opt2 = string.IsNullOrEmpty(v2) ? "(Vacío)" : v2;
 
-                cmb.SelectedItem = v2;
+                cmb.Items.Add(opt1);
+                if (opt1 != opt2) cmb.Items.Add(opt2);
+
+                cmb.SelectedItem = opt2;
                 _latitudActual = pFusion.Latitud;
                 _longitudActual = pFusion.Longitud;
 
                 cmb.SelectionChanged += (s, e) => {
                     if (cmb.SelectedItem != null)
                     {
-                        txtOriginal.Text = cmb.SelectedItem.ToString();
-                        if (cmb.SelectedItem.ToString() == v2)
+                        string sel = cmb.SelectedItem.ToString();
+                        txtOriginal.Text = sel == "(Vacío)" ? "" : sel;
+                        if (sel == opt2)
                         {
                             _latitudActual = pFusion.Latitud;
                             _longitudActual = pFusion.Longitud;
                         }
                     }
                 };
-                cmb.AddHandler(System.Windows.Controls.Primitives.TextBoxBase.TextChangedEvent, new TextChangedEventHandler((s, e) => { txtOriginal.Text = cmb.Text; }));
 
-                txtOriginal.Text = cmb.SelectedItem?.ToString() ?? "";
+                cmb.AddHandler(System.Windows.Controls.Primitives.TextBoxBase.TextChangedEvent, new TextChangedEventHandler((s, e) => {
+                    txtOriginal.Text = cmb.Text == "(Vacío)" ? "" : cmb.Text;
+                }));
+
+                txtOriginal.Text = cmb.SelectedItem?.ToString() == "(Vacío)" ? "" : (cmb.SelectedItem?.ToString() ?? "");
 
                 int index = parent.Children.IndexOf(txtOriginal);
                 parent.Children.Insert(index + 1, cmb);
@@ -365,19 +382,99 @@ namespace SCCosmos
             string v1 = valActual?.Trim() ?? "";
             string v2 = valDuplicado?.Trim() ?? "";
 
-            if (v1.ToLower() != v2.ToLower() && !string.IsNullOrEmpty(v2))
+            if (v1.ToLower() != v2.ToLower())
             {
                 cmbOriginal.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFB900"));
                 cmbOriginal.BorderThickness = new Thickness(1);
                 cmbOriginal.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#332b00"));
-                cmbOriginal.ToolTip = $"El valor antiguo era: {v1}\nNuevo detectado: {v2}";
 
-                AsignarComboBox(cmbOriginal, v2);
+                string textoV1 = string.IsNullOrEmpty(v1) ? "(Vacío)" : v1;
+                string textoV2 = string.IsNullOrEmpty(v2) ? "(Vacío)" : v2;
+
+                cmbOriginal.ToolTip = $"El valor antiguo era: {textoV1}\nNuevo detectado: {textoV2}";
+
+                // Nos aseguramos de que exista la opción "(Vacío)" para poder seleccionarla
+                bool existeVacio = false;
+                foreach (ComboBoxItem item in cmbOriginal.Items)
+                {
+                    if (item.Content.ToString() == "(Vacío)") { existeVacio = true; break; }
+                }
+
+                if (!existeVacio)
+                {
+                    cmbOriginal.Items.Insert(0, new ComboBoxItem { Content = "(Vacío)" });
+                }
+
+                if (string.IsNullOrEmpty(v2)) AsignarComboBox(cmbOriginal, "(Vacío)");
+                else AsignarComboBox(cmbOriginal, v2);
+
                 return nombreCampoVisible;
             }
             return null;
         }
 
+        private void GuardarCamposEnObjeto()
+        {
+            PersonaActualizada.Nombre = TxtNombre.Text;
+            PersonaActualizada.NombreComun = TxtNombreComun.Text;
+            PersonaActualizada.NombreJWHub = TxtNombreJW.Text;
+            PersonaActualizada.Email = TxtEmail.Text;
+            PersonaActualizada.EmailJW = TxtEmailJW.Text;
+            PersonaActualizada.Telefono = TxtTelefono.Text;
+
+            PersonaActualizada.Direccion = TxtDireccion.Text.Trim();
+            if (PersonaActualizada.Direccion != _direccionInicial)
+            {
+                _latitudActual = 0;
+                _longitudActual = 0;
+            }
+            PersonaActualizada.Latitud = _latitudActual;
+            PersonaActualizada.Longitud = _longitudActual;
+
+            int grp; int.TryParse(TxtGrupo.Text, out grp);
+            PersonaActualizada.Grupo = grp;
+
+            PersonaActualizada.FechaNacimiento = TxtFechaNac.Text;
+            PersonaActualizada.FechaBautismo = TxtFechaBaut.Text;
+            PersonaActualizada.FechaInicioPrec = TxtInicioPrec.Text;
+            PersonaActualizada.FechaUltimaEscuela = TxtEscuela.Text;
+
+            // Extraemos los combos y, si el usuario eligió "(Vacío)", lo guardamos como "" para que no pete la BD
+            PersonaActualizada.Sexo = (CmbSexo.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "";
+            if (PersonaActualizada.Sexo == "(Vacío)") PersonaActualizada.Sexo = "";
+
+            PersonaActualizada.Esperanza = (CmbEsperanza.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "";
+            if (PersonaActualizada.Esperanza == "(Vacío)") PersonaActualizada.Esperanza = "";
+
+            PersonaActualizada.Nombramiento = (CmbNombramiento.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "";
+            if (PersonaActualizada.Nombramiento == "(Vacío)") PersonaActualizada.Nombramiento = "";
+
+            PersonaActualizada.Servicio = (CmbServicio.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "";
+            if (PersonaActualizada.Servicio == "(Vacío)") PersonaActualizada.Servicio = "";
+
+            PersonaActualizada.CongregacionCodigo = CmbCongregacion.SelectedValue?.ToString() ?? PersonaActualizada.CongregacionCodigo;
+
+            PersonaActualizada.ConyugeId = CmbConyuge.SelectedValue != null ? (int)CmbConyuge.SelectedValue : 0;
+            PersonaActualizada.Privilegios = TxtPrivilegios.Text.Trim();
+
+            List<string> sols = new List<string>();
+            foreach (CheckBox chk in PanelSolicitudes.Children.OfType<CheckBox>())
+            {
+                if (chk.IsChecked == true) sols.Add(chk.Tag.ToString());
+            }
+            PersonaActualizada.Solicitudes = string.Join(", ", sols);
+
+            if (PanelFotoConflicto.Visibility == Visibility.Visible && RdoFotoDuplicada.IsChecked == true)
+            {
+                PersonaActualizada.Foto = _base64FotoFusion;
+            }
+            else
+            {
+                PersonaActualizada.Foto = _base64FotoModificada;
+            }
+        }
+
+        
         private List<string> EvaluarConflictos(Persona pFusion)
         {
             List<string> camposConflictos = new List<string>();
@@ -544,59 +641,7 @@ namespace SCCosmos
             ImgFoto.Source = null;
         }
 
-        private void GuardarCamposEnObjeto()
-        {
-            PersonaActualizada.Nombre = TxtNombre.Text;
-            PersonaActualizada.NombreComun = TxtNombreComun.Text;
-            PersonaActualizada.NombreJWHub = TxtNombreJW.Text;
-            PersonaActualizada.Email = TxtEmail.Text;
-            PersonaActualizada.EmailJW = TxtEmailJW.Text;
-            PersonaActualizada.Telefono = TxtTelefono.Text;
-
-            PersonaActualizada.Direccion = TxtDireccion.Text.Trim();
-            if (PersonaActualizada.Direccion != _direccionInicial)
-            {
-                _latitudActual = 0;
-                _longitudActual = 0;
-            }
-            PersonaActualizada.Latitud = _latitudActual;
-            PersonaActualizada.Longitud = _longitudActual;
-
-            int grp; int.TryParse(TxtGrupo.Text, out grp);
-            PersonaActualizada.Grupo = grp;
-
-            PersonaActualizada.FechaNacimiento = TxtFechaNac.Text;
-            PersonaActualizada.FechaBautismo = TxtFechaBaut.Text;
-            PersonaActualizada.FechaInicioPrec = TxtInicioPrec.Text;
-            PersonaActualizada.FechaUltimaEscuela = TxtEscuela.Text;
-
-            PersonaActualizada.Sexo = (CmbSexo.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "";
-            PersonaActualizada.Esperanza = (CmbEsperanza.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "";
-            PersonaActualizada.Nombramiento = (CmbNombramiento.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "";
-            PersonaActualizada.Servicio = (CmbServicio.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "";
-
-            PersonaActualizada.CongregacionCodigo = CmbCongregacion.SelectedValue?.ToString() ?? PersonaActualizada.CongregacionCodigo;
-
-            PersonaActualizada.ConyugeId = CmbConyuge.SelectedValue != null ? (int)CmbConyuge.SelectedValue : 0;
-            PersonaActualizada.Privilegios = TxtPrivilegios.Text.Trim();
-
-            List<string> sols = new List<string>();
-            foreach (CheckBox chk in PanelSolicitudes.Children.OfType<CheckBox>())
-            {
-                if (chk.IsChecked == true) sols.Add(chk.Tag.ToString());
-            }
-            PersonaActualizada.Solicitudes = string.Join(", ", sols);
-
-            if (PanelFotoConflicto.Visibility == Visibility.Visible && RdoFotoDuplicada.IsChecked == true)
-            {
-                PersonaActualizada.Foto = _base64FotoFusion;
-            }
-            else
-            {
-                PersonaActualizada.Foto = _base64FotoModificada;
-            }
-        }
-
+        
         private async void BtnGuardar_Click(object sender, RoutedEventArgs e)
         {
             if (_latitudActual == 0 && _longitudActual == 0 && !string.IsNullOrWhiteSpace(TxtDireccion.Text))

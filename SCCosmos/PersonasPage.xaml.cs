@@ -22,7 +22,7 @@ namespace SCCosmos
         private List<Persona> _personasFiltradas = new List<Persona>();
 
         private int _paginaActual = 1;
-        private int _tamanoPagina = 15; // Ajustado a 15
+        private int _tamanoPagina = 15;
         private int _totalPaginas = 1;
 
         private string _columnaOrdenActual = "Nombre";
@@ -454,19 +454,17 @@ namespace SCCosmos
             {
                 var personasExtraidas = await Task.Run(() => SincronizadorJWHub.SincronizarGlobal(folderPath));
 
+                // Aunque haya ocurrido un error y haya devuelto una lista parcial, si tiene al menos 1, mostramos la ventana
                 if (personasExtraidas != null && personasExtraidas.Count > 0)
                 {
-                    // 1. Obtenemos las congregaciones de tu BD para poder comparar
                     var listaCongresBD = DatabaseHelper.ObtenerCongregaciones();
 
-                    // 2. Mapeo inteligente con extracción de código entre paréntesis
                     var personasParaBD = personasExtraidas.Select(pe =>
                     {
                         string congreHub = pe.Congregacion ?? "";
                         string codigoDetectado = "";
                         string nombreLimpiado = congreHub;
 
-                        // Extraer el código "760" de "Ciudad Jardín (760)"
                         int start = congreHub.LastIndexOf('(');
                         int end = congreHub.LastIndexOf(')');
                         if (start >= 0 && end > start)
@@ -475,7 +473,6 @@ namespace SCCosmos
                             nombreLimpiado = congreHub.Substring(0, start).Trim();
                         }
 
-                        // Comprobar si ese código o nombre coincide con alguna de tus congregaciones locales
                         var congreMatch = listaCongresBD.FirstOrDefault(c =>
                             (!string.IsNullOrEmpty(codigoDetectado) && c.Codigo == codigoDetectado) ||
                             c.Nombre.Equals(nombreLimpiado, StringComparison.OrdinalIgnoreCase) ||
@@ -526,6 +523,7 @@ namespace SCCosmos
             }
             catch (Exception ex)
             {
+                // Este bloque captura errores técnicos que hayan impedido incluso el arranque del navegador
                 MessageBox.Show($"Error de automatización: {ex.Message}", "Fallo de Sincronización", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
@@ -646,7 +644,6 @@ namespace SCCosmos
         {
             var sb = new System.Text.StringBuilder();
 
-            // FILTRAMOS PARA QUE IGNORE A LOS QUE NO TIENEN COORDENADAS VÁLIDAS NI PENDIENTES
             var personasConCoords = _todasLasPersonas.Where(p => p.Latitud != 0 && p.Latitud != 999 && p.Longitud != 0 && p.Longitud != 999).ToList();
 
             foreach (var p in personasConCoords)

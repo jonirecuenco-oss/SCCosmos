@@ -1,0 +1,110 @@
+﻿<Page x:Class="SCCosmos.DescargasPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      mc:Ignorable="d" 
+      d:DesignHeight="600" d:DesignWidth="1000"
+      Title="Descargas"
+      Background="Transparent">
+
+    <!-- El contenedor principal (Padding y margen para que respire) -->
+    <Grid Margin="30">
+        <Grid.RowDefinitions>
+            <!-- Fila 0: Título de la página -->
+            <RowDefinition Height="Auto"/>
+            <!-- Fila 1: Contenido (Las 3 columnas) -->
+            <RowDefinition Height="*"/>
+            <!-- Fila 2: Botón de descarga -->
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="DESCARGAS" FontSize="24" FontWeight="Bold" Margin="0,0,0,20" Foreground="White"/>
+
+        <!-- ScrollViewer por si la ventana se hace muy pequeña verticalmente -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+
+            <!-- GRID DE 3 COLUMNAS -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- ============================================== -->
+                <!-- COLUMNA 1: PROGRAMAS DE BETEL                  -->
+                <!-- ============================================== -->
+                <Border Grid.Column="0" BorderBrush="#444444" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,10,20" Background="#2D2D30">
+                    <StackPanel>
+                        <TextBlock Text="PROGRAMAS DE BETEL" FontWeight="Bold" FontSize="16" Foreground="#569CD6" Margin="0,0,0,15" TextWrapping="Wrap"/>
+
+                        <CheckBox x:Name="chkBetelAdoracion" IsChecked="True" Margin="0,0,0,10">
+                            <TextBlock Text="Adoración matutina" FontSize="14" Foreground="#EEEEEE" TextWrapping="Wrap"/>
+                        </CheckBox>
+                    </StackPanel>
+                </Border>
+
+                <!-- ============================================== -->
+                <!-- COLUMNA 2: PROGRAMAS TEOCRÁTICOS               -->
+                <!-- ============================================== -->
+                <Border Grid.Column="1" BorderBrush="#444444" BorderThickness="1" CornerRadius="5" Padding="15" Margin="10,0,10,20" Background="#2D2D30">
+                    <StackPanel>
+                        <TextBlock Text="PROGRAMAS TEOCRÁTICOS" FontWeight="Bold" FontSize="16" Foreground="#569CD6" Margin="0,0,0,15" TextWrapping="Wrap"/>
+
+                        <CheckBox x:Name="chkTeoDiscursos" IsChecked="True" Margin="0,0,0,12">
+                            <TextBlock Text="Discursos públicos" FontSize="14" Foreground="#EEEEEE" TextWrapping="Wrap"/>
+                        </CheckBox>
+
+                        <CheckBox x:Name="chkTeoAsambleaSucursal" IsChecked="True" Margin="0,0,0,12">
+                            <TextBlock Text="Asamblea de circuito con representante de la sucursal" FontSize="14" Foreground="#EEEEEE" TextWrapping="Wrap"/>
+                        </CheckBox>
+
+                        <CheckBox x:Name="chkTeoAsambleaSuper" IsChecked="True" Margin="0,0,0,12">
+                            <TextBlock Text="Asamblea de circuito con superintendente de circuito" FontSize="14" Foreground="#EEEEEE" TextWrapping="Wrap"/>
+                        </CheckBox>
+
+                        <CheckBox x:Name="chkTeoAsambleaRegional" IsChecked="True" Margin="0,0,0,12">
+                            <TextBlock Text="Asamblea regional" FontSize="14" Foreground="#EEEEEE" TextWrapping="Wrap"/>
+                        </CheckBox>
+                    </StackPanel>
+                </Border>
+
+                <!-- ============================================== -->
+                <!-- COLUMNA 3: JW.ORG (PRÓXIMAMENTE)               -->
+                <!-- ============================================== -->
+                <Border Grid.Column="2" BorderBrush="#333333" BorderThickness="1" CornerRadius="5" Padding="15" Margin="10,0,0,20" Background="#1E1E1E">
+                    <StackPanel>
+                        <TextBlock Text="JW.ORG (Próximamente)" FontWeight="Bold" FontSize="16" Foreground="#888888" Margin="0,0,0,15" TextWrapping="Wrap"/>
+
+                        <CheckBox x:Name="chkJwDiscursos" IsChecked="True" IsEnabled="False" Margin="0,0,0,12">
+                            <TextBlock Text="Discursos JW Broadcasting" FontSize="14" Foreground="#777777" TextWrapping="Wrap"/>
+                        </CheckBox>
+
+                        <CheckBox x:Name="chkJwAdoracion" IsChecked="True" IsEnabled="False" Margin="0,0,0,12">
+                            <TextBlock Text="Adoración matutina" FontSize="14" Foreground="#777777" TextWrapping="Wrap"/>
+                        </CheckBox>
+
+                        <CheckBox x:Name="chkJwGalaad" IsChecked="True" IsEnabled="False" Margin="0,0,0,12">
+                            <TextBlock Text="Graduación de Galaad" FontSize="14" Foreground="#777777" TextWrapping="Wrap"/>
+                        </CheckBox>
+                    </StackPanel>
+                </Border>
+
+            </Grid>
+        </ScrollViewer>
+
+        <!-- BOTÓN DE INICIO -->
+        <Button Grid.Row="2" x:Name="btnDescargar" Content="INICIAR DESCARGAS" 
+                Height="50" Margin="0,20,0,0" FontSize="16" FontWeight="Bold" 
+                Background="#0078D7" Foreground="White" BorderThickness="0"
+                Cursor="Hand" Click="btnDescargar_Click">
+            <Button.Resources>
+                <Style TargetType="Border">
+                    <Setter Property="CornerRadius" Value="5"/>
+                </Style>
+            </Button.Resources>
+        </Button>
+
+    </Grid>
+</Page>

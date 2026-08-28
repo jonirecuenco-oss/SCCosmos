@@ -108,6 +108,7 @@
                     <ui:NavigationViewItem Content="ESP" Icon="{ui:SymbolIcon HatGraduation24}"/>
                     <ui:NavigationViewItem Content="Asambleas" Icon="{ui:SymbolIcon Earth24}" TargetPageType="{x:Type local:AsambleasPage}"/>
                     <ui:NavigationViewItem Content="Archivo del circuito" Icon="{ui:SymbolIcon BriefCase24}"/>
+                    <ui:NavigationViewItem Content="Multimedia" Icon="{ui:SymbolIcon ArrowDownload24}" TargetPageType="{x:Type local:DescargasPage}"/>
                 </ui:NavigationView.MenuItems>
 
                 <ui:NavigationView.FooterMenuItems>
