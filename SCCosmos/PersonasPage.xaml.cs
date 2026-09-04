@@ -18,6 +18,13 @@ namespace SCCosmos
 {
     public partial class PersonasPage : Page
     {
+        // =========================================================
+        // VARIABLES GLOBALES (Para recibir órdenes desde InicioPage)
+        // =========================================================
+        public static string FiltroPendienteServicio = "";
+        public static string FiltroPendienteNombramiento = "";
+        public static string FiltroPendienteSolicitud = "";
+
         private List<Persona> _todasLasPersonas = new List<Persona>();
         private List<Persona> _personasFiltradas = new List<Persona>();
 
@@ -54,12 +61,119 @@ namespace SCCosmos
 
             CargarConfiguracionColumnas();
 
-            this.Loaded += async (s, e) =>
-            {
-                await CargarListaPersonasAsync();
-                CargarNombramientosAsync();
-            };
+            // Nos suscribimos a los eventos de carga y descarga de la página
+            this.Loaded += Page_Loaded;
+            this.Unloaded += Page_Unloaded;
+            SincronizadorJWHub.ProgresoCambiado += Sincronizador_ProgresoCambiado;
         }
+
+        // =========================================================================================
+        // CONTROL GLOBAL DE EVENTOS (SINCRONIZACIÓN)
+        // =========================================================================================
+        private async void Page_Loaded(object sender, RoutedEventArgs e)
+        {
+            // 1. Vinculamos el evento de sincronización
+            SincronizadorJWHub.SincronizacionCambiada += Sincronizador_EstadoCambiado;
+            ActualizarUI_Sincronizacion(SincronizadorJWHub.EstaSincronizando);
+
+            // 2. Antes de cargar datos, aplicamos los filtros que vengan de la página de Inicio
+            ProcesarFiltrosPendientes();
+
+            // 3. Cargamos datos (y al terminar se aplicarán los filtros visuales)
+            await CargarListaPersonasAsync();
+            CargarNombramientosAsync();
+        }
+
+        private void Page_Unloaded(object sender, RoutedEventArgs e)
+        {
+            SincronizadorJWHub.SincronizacionCambiada -= Sincronizador_EstadoCambiado;
+        }
+
+        private void Sincronizador_EstadoCambiado(bool ejecutando)
+        {
+            Application.Current.Dispatcher.Invoke(() => ActualizarUI_Sincronizacion(ejecutando));
+        }
+
+        private void Sincronizador_ProgresoCambiado(int actual, int total)
+        {
+            // Como esto viene de otro hilo, usamos el Dispatcher para actualizar la interfaz
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                if (total > 0)
+                {
+                    int porcentaje = (int)Math.Round(((double)actual / total) * 100);
+
+                    // Suponiendo que tu botón se llame BtnSincronizar:
+                    BtnSincronizarHub.Content = $"Sintonizando... {porcentaje}%";
+                }
+            });
+        }
+
+        private void ActualizarUI_Sincronizacion(bool ejecutando)
+        {
+            if (ejecutando)
+            {
+                BtnSincronizarHub.IsEnabled = false;
+                BtnSincronizarHub.Content = "Sincronizando...";
+            }
+            else
+            {
+                BtnSincronizarHub.IsEnabled = true;
+                BtnSincronizarHub.Content = "Sincronizar JW Hub";
+                //SpinnerCargando.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        // =========================================================================================
+        // NUEVA FUNCIÓN: PROCESAR FILTROS QUE LLEGAN DESDE LA PÁGINA INICIO
+        // =========================================================================================
+        private void ProcesarFiltrosPendientes()
+        {
+            bool hayFiltros = false;
+
+            if (!string.IsNullOrEmpty(FiltroPendienteServicio))
+            {
+                LstServicio.SelectedItems.Clear();
+                var item = LstServicio.Items.Cast<string>().FirstOrDefault(x => x == FiltroPendienteServicio);
+                if (item != null) LstServicio.SelectedItems.Add(item);
+                FiltroPendienteServicio = "";
+                hayFiltros = true;
+            }
+
+            if (!string.IsNullOrEmpty(FiltroPendienteNombramiento))
+            {
+                var comboItem = CmbFiltroNombramiento.Items.Cast<ComboBoxItem>().FirstOrDefault(i => i.Tag != null && i.Tag.ToString() == FiltroPendienteNombramiento);
+                if (comboItem != null) CmbFiltroNombramiento.SelectedItem = comboItem;
+                FiltroPendienteNombramiento = "";
+                hayFiltros = true;
+            }
+
+            if (!string.IsNullOrEmpty(FiltroPendienteSolicitud))
+            {
+                LstSols.SelectedItems.Clear();
+                var item = LstSols.Items.Cast<string>().FirstOrDefault(x => x == FiltroPendienteSolicitud);
+                if (item != null) LstSols.SelectedItems.Add(item);
+                FiltroPendienteSolicitud = "";
+                hayFiltros = true;
+            }
+
+            if (hayFiltros)
+            {
+                // Limpiamos todo el resto de opciones para que muestre de forma purista solo lo que se clicó
+                TxtBuscar.Text = "";
+                LstCongre.SelectedItems.Clear();
+                LstPrivs.SelectedItems.Clear();
+                CmbFiltroSexo.SelectedIndex = 0;
+                CmbFiltroEsperanza.SelectedIndex = 0;
+
+                // Actualizamos los textos de los botones desplegables
+                BtnFiltroServicio.Content = LstServicio.SelectedItems.Count > 0 ? $"{LstServicio.SelectedItems.Count} selec." : "Todos ▼";
+                BtnFiltroSols.Content = LstSols.SelectedItems.Count > 0 ? $"{LstSols.SelectedItems.Count} selec." : "Todas ▼";
+                BtnFiltroCongre.Content = "Todas ▼";
+                BtnFiltroPrivs.Content = "Todos ▼";
+            }
+        }
+
 
         private void ComprobarPerfilFirefox()
         {
@@ -129,7 +243,7 @@ namespace SCCosmos
 
         private async Task CargarListaPersonasAsync()
         {
-            SpinnerCargando.Visibility = Visibility.Visible;
+            //SpinnerCargando.Visibility = Visibility.Visible;
             TablaPersonas.ItemsSource = null;
 
             _todasLasPersonas = await Task.Run(() => DatabaseHelper.ObtenerPersonas());
@@ -148,7 +262,8 @@ namespace SCCosmos
 
             AplicarFiltroYPaginar();
 
-            SpinnerCargando.Visibility = Visibility.Collapsed;
+            //if (!SincronizadorJWHub.EstaSincronizando)
+                //SpinnerCargando.Visibility = Visibility.Collapsed;
         }
 
         private void CargarNombramientosAsync()
@@ -188,7 +303,7 @@ namespace SCCosmos
                 string folderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SCCosmos", "PerfilFirefoxCorreo");
 
                 boton.IsEnabled = false;
-                SpinnerCargando.Visibility = Visibility.Visible;
+                //SpinnerCargando.Visibility = Visibility.Visible;
 
                 try
                 {
@@ -215,7 +330,8 @@ namespace SCCosmos
                 finally
                 {
                     boton.IsEnabled = true;
-                    SpinnerCargando.Visibility = Visibility.Collapsed;
+                    //if (!SincronizadorJWHub.EstaSincronizando)
+                        //SpinnerCargando.Visibility = Visibility.Collapsed;
                 }
             }
         }
@@ -233,7 +349,7 @@ namespace SCCosmos
                 string folderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SCCosmos", "PerfilFirefoxCorreo");
 
                 boton.IsEnabled = false;
-                SpinnerCargando.Visibility = Visibility.Visible;
+                //SpinnerCargando.Visibility = Visibility.Visible;
 
                 try
                 {
@@ -271,7 +387,8 @@ namespace SCCosmos
                 finally
                 {
                     boton.IsEnabled = true;
-                    SpinnerCargando.Visibility = Visibility.Collapsed;
+                    //if (!SincronizadorJWHub.EstaSincronizando)
+                        //SpinnerCargando.Visibility = Visibility.Collapsed;
                 }
             }
         }
@@ -293,168 +410,20 @@ namespace SCCosmos
             }
         }
 
-        private void BtnFiltroCongre_Click(object sender, RoutedEventArgs e) { PopFiltroCongre.IsOpen = true; }
-        private void BtnFiltroServicio_Click(object sender, RoutedEventArgs e) { PopFiltroServicio.IsOpen = true; }
-        private void BtnFiltroSols_Click(object sender, RoutedEventArgs e) { PopFiltroSols.IsOpen = true; }
-        private void BtnFiltroPrivs_Click(object sender, RoutedEventArgs e) { PopFiltroPrivs.IsOpen = true; }
-
-        private void LstFiltro_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (!IsLoaded) return;
-
-            BtnFiltroCongre.Content = LstCongre.SelectedItems.Count > 0 ? $"{LstCongre.SelectedItems.Count} selec." : "Todas ▼";
-            BtnFiltroServicio.Content = LstServicio.SelectedItems.Count > 0 ? $"{LstServicio.SelectedItems.Count} selec." : "Todos ▼";
-            BtnFiltroSols.Content = LstSols.SelectedItems.Count > 0 ? $"{LstSols.SelectedItems.Count} selec." : "Todas ▼";
-            BtnFiltroPrivs.Content = LstPrivs.SelectedItems.Count > 0 ? $"{LstPrivs.SelectedItems.Count} selec." : "Todos ▼";
-
-            _timerBusqueda.Stop();
-            _timerBusqueda.Start();
-        }
-
-        private void FiltroCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (!IsLoaded) return;
-            _timerBusqueda.Stop();
-            _timerBusqueda.Start();
-        }
-
-        private void BtnLimpiarFiltros_Click(object sender, RoutedEventArgs e)
-        {
-            TxtBuscar.Text = "";
-            CmbFiltroNombramiento.SelectedIndex = 0;
-            CmbFiltroSexo.SelectedIndex = 0;
-            CmbFiltroEsperanza.SelectedIndex = 0;
-
-            LstCongre.SelectedItems.Clear();
-            LstServicio.SelectedItems.Clear();
-            LstSols.SelectedItems.Clear();
-            LstPrivs.SelectedItems.Clear();
-
-            AplicarFiltroYPaginar();
-        }
-
-        private void TxtBuscar_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            _timerBusqueda.Stop();
-            _timerBusqueda.Start();
-        }
-
-        private void TimerBusqueda_Tick(object sender, EventArgs e)
-        {
-            _timerBusqueda.Stop();
-            AplicarFiltroYPaginar();
-        }
-
-        private void TablaPersonas_Sorting(object sender, DataGridSortingEventArgs e)
-        {
-            e.Handled = true;
-
-            string propertyName = e.Column.SortMemberPath;
-            if (string.IsNullOrEmpty(propertyName) && e.Column is DataGridBoundColumn boundColumn && boundColumn.Binding is Binding binding)
-            {
-                propertyName = binding.Path.Path;
-            }
-
-            if (string.IsNullOrEmpty(propertyName)) return;
-
-            if (_columnaOrdenActual == propertyName)
-            {
-                _direccionOrdenActual = _direccionOrdenActual == ListSortDirection.Ascending ? ListSortDirection.Descending : ListSortDirection.Ascending;
-            }
-            else
-            {
-                _columnaOrdenActual = propertyName;
-                _direccionOrdenActual = ListSortDirection.Ascending;
-            }
-
-            e.Column.SortDirection = _direccionOrdenActual;
-
-            foreach (var col in TablaPersonas.Columns)
-            {
-                if (col != e.Column) col.SortDirection = null;
-            }
-
-            AplicarFiltroYPaginar();
-        }
-
-        private object ObtenerValorPropiedad(Persona p, string propName)
-        {
-            return p.GetType().GetProperty(propName)?.GetValue(p, null) ?? "";
-        }
-
-        private void AplicarFiltroYPaginar()
-        {
-            string busqueda = TxtBuscar.Text.Trim().ToLower();
-            string nombramiento = (CmbFiltroNombramiento.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "";
-            string sexo = (CmbFiltroSexo.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "";
-            string esperanza = (CmbFiltroEsperanza.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "";
-
-            var congreSels = LstCongre.SelectedItems.Cast<string>().ToList();
-            var servSels = LstServicio.SelectedItems.Cast<string>().ToList();
-            var solSels = LstSols.SelectedItems.Cast<string>().ToList();
-            var privSels = LstPrivs.SelectedItems.Cast<string>().ToList();
-
-            _personasFiltradas = _todasLasPersonas.Where(p =>
-                ((p.Nombre != null && p.Nombre.ToLower().Contains(busqueda)) || (p.NombreComun != null && p.NombreComun.ToLower().Contains(busqueda))) &&
-                (string.IsNullOrEmpty(nombramiento) || p.Nombramiento == nombramiento) &&
-                (string.IsNullOrEmpty(sexo) || p.Sexo == sexo) &&
-                (string.IsNullOrEmpty(esperanza) || p.Esperanza == esperanza) &&
-                (congreSels.Count == 0 || congreSels.Contains(p.CongregacionNombre)) &&
-                (servSels.Count == 0 || servSels.Contains(p.Servicio)) &&
-                (solSels.Count == 0 || solSels.Any(s => p.Solicitudes != null && p.Solicitudes.Contains(s))) &&
-                (privSels.Count == 0 || privSels.Any(pr => p.Privilegios != null && p.Privilegios.Contains(pr)))
-            ).ToList();
-
-            if (!string.IsNullOrEmpty(_columnaOrdenActual))
-            {
-                if (_direccionOrdenActual == ListSortDirection.Ascending)
-                    _personasFiltradas = _personasFiltradas.OrderBy(p => ObtenerValorPropiedad(p, _columnaOrdenActual)).ToList();
-                else
-                    _personasFiltradas = _personasFiltradas.OrderByDescending(p => ObtenerValorPropiedad(p, _columnaOrdenActual)).ToList();
-            }
-
-            _totalPaginas = (int)Math.Ceiling(_personasFiltradas.Count / (double)_tamanoPagina);
-            if (_totalPaginas == 0) _totalPaginas = 1;
-
-            if (_paginaActual > _totalPaginas) _paginaActual = 1;
-
-            RenderizarPagina();
-        }
-
-        private void RenderizarPagina()
-        {
-            var personasPagina = _personasFiltradas.Skip((_paginaActual - 1) * _tamanoPagina).Take(_tamanoPagina).ToList();
-
-            TablaPersonas.ItemsSource = personasPagina;
-            TxtPaginaInfo.Text = $"Página {_paginaActual} de {_totalPaginas}";
-
-            BtnAnterior.IsEnabled = _paginaActual > 1;
-            BtnSiguiente.IsEnabled = _paginaActual < _totalPaginas;
-        }
-
-        private void BtnAnterior_Click(object sender, RoutedEventArgs e)
-        {
-            if (_paginaActual > 1) { _paginaActual--; RenderizarPagina(); }
-        }
-
-        private void BtnSiguiente_Click(object sender, RoutedEventArgs e)
-        {
-            if (_paginaActual < _totalPaginas) { _paginaActual++; RenderizarPagina(); }
-        }
-
         private async void BtnSincronizarHub_Click(object sender, RoutedEventArgs e)
         {
             string folderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SCCosmos", "PerfilFirefoxCorreo");
 
+            // Bloqueamos el botón y guardamos su texto original para recuperarlo después
+            string textoOriginal = BtnSincronizarHub.Content?.ToString() ?? "Sintonizar JW Hub";
             BtnSincronizarHub.IsEnabled = false;
-            var oldContent = BtnSincronizarHub.Content;
-            BtnSincronizarHub.Content = "Sincronizando...";
 
             try
             {
                 var personasExtraidas = await Task.Run(() => SincronizadorJWHub.SincronizarGlobal(folderPath));
 
-                // Aunque haya ocurrido un error y haya devuelto una lista parcial, si tiene al menos 1, mostramos la ventana
+                MessageBox.Show($"¡Prueba en segundo plano completada!\nSe extrajeron {personasExtraidas?.Count ?? 0} personas de JW Hub.", "Sincronización JW Hub", MessageBoxButton.OK, MessageBoxImage.Information);
+
                 if (personasExtraidas != null && personasExtraidas.Count > 0)
                 {
                     var listaCongresBD = DatabaseHelper.ObtenerCongregaciones();
@@ -475,8 +444,8 @@ namespace SCCosmos
 
                         var congreMatch = listaCongresBD.FirstOrDefault(c =>
                             (!string.IsNullOrEmpty(codigoDetectado) && c.Codigo == codigoDetectado) ||
-                            c.Nombre.Equals(nombreLimpiado, StringComparison.OrdinalIgnoreCase) ||
-                            congreHub.Contains(c.Nombre));
+                            (c.Nombre != null && c.Nombre.Equals(nombreLimpiado, StringComparison.OrdinalIgnoreCase)) ||
+                            (c.Nombre != null && congreHub.Contains(c.Nombre)));
 
                         if (congreMatch != null)
                         {
@@ -519,17 +488,15 @@ namespace SCCosmos
                 }
 
                 CargarNombramientosAsync();
-
             }
             catch (Exception ex)
             {
-                // Este bloque captura errores técnicos que hayan impedido incluso el arranque del navegador
                 MessageBox.Show($"Error de automatización: {ex.Message}", "Fallo de Sincronización", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
+                BtnSincronizarHub.Content = textoOriginal;
                 BtnSincronizarHub.IsEnabled = true;
-                BtnSincronizarHub.Content = oldContent;
             }
         }
 
@@ -677,6 +644,155 @@ namespace SCCosmos
             </body></html>";
 
             MapaWebBrowser.NavigateToString(html);
+        }
+
+        private void BtnFiltroCongre_Click(object sender, RoutedEventArgs e) { PopFiltroCongre.IsOpen = true; }
+        private void BtnFiltroServicio_Click(object sender, RoutedEventArgs e) { PopFiltroServicio.IsOpen = true; }
+        private void BtnFiltroSols_Click(object sender, RoutedEventArgs e) { PopFiltroSols.IsOpen = true; }
+        private void BtnFiltroPrivs_Click(object sender, RoutedEventArgs e) { PopFiltroPrivs.IsOpen = true; }
+
+        private void LstFiltro_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!IsLoaded) return;
+
+            BtnFiltroCongre.Content = LstCongre.SelectedItems.Count > 0 ? $"{LstCongre.SelectedItems.Count} selec." : "Todas ▼";
+            BtnFiltroServicio.Content = LstServicio.SelectedItems.Count > 0 ? $"{LstServicio.SelectedItems.Count} selec." : "Todos ▼";
+            BtnFiltroSols.Content = LstSols.SelectedItems.Count > 0 ? $"{LstSols.SelectedItems.Count} selec." : "Todas ▼";
+            BtnFiltroPrivs.Content = LstPrivs.SelectedItems.Count > 0 ? $"{LstPrivs.SelectedItems.Count} selec." : "Todos ▼";
+
+            _timerBusqueda.Stop();
+            _timerBusqueda.Start();
+        }
+
+        private void FiltroCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!IsLoaded) return;
+            _timerBusqueda.Stop();
+            _timerBusqueda.Start();
+        }
+
+        private void BtnLimpiarFiltros_Click(object sender, RoutedEventArgs e)
+        {
+            TxtBuscar.Text = "";
+            CmbFiltroNombramiento.SelectedIndex = 0;
+            CmbFiltroSexo.SelectedIndex = 0;
+            CmbFiltroEsperanza.SelectedIndex = 0;
+
+            LstCongre.SelectedItems.Clear();
+            LstServicio.SelectedItems.Clear();
+            LstSols.SelectedItems.Clear();
+            LstPrivs.SelectedItems.Clear();
+
+            AplicarFiltroYPaginar();
+        }
+
+        private void TxtBuscar_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            _timerBusqueda.Stop();
+            _timerBusqueda.Start();
+        }
+
+        private void TimerBusqueda_Tick(object sender, EventArgs e)
+        {
+            _timerBusqueda.Stop();
+            AplicarFiltroYPaginar();
+        }
+
+        private void TablaPersonas_Sorting(object sender, DataGridSortingEventArgs e)
+        {
+            e.Handled = true;
+
+            string propertyName = e.Column.SortMemberPath;
+            if (string.IsNullOrEmpty(propertyName) && e.Column is DataGridBoundColumn boundColumn && boundColumn.Binding is Binding binding)
+            {
+                propertyName = binding.Path.Path;
+            }
+
+            if (string.IsNullOrEmpty(propertyName)) return;
+
+            if (_columnaOrdenActual == propertyName)
+            {
+                _direccionOrdenActual = _direccionOrdenActual == ListSortDirection.Ascending ? ListSortDirection.Descending : ListSortDirection.Ascending;
+            }
+            else
+            {
+                _columnaOrdenActual = propertyName;
+                _direccionOrdenActual = ListSortDirection.Ascending;
+            }
+
+            e.Column.SortDirection = _direccionOrdenActual;
+
+            foreach (var col in TablaPersonas.Columns)
+            {
+                if (col != e.Column) col.SortDirection = null;
+            }
+
+            AplicarFiltroYPaginar();
+        }
+
+        private object ObtenerValorPropiedad(Persona p, string propName)
+        {
+            return p.GetType().GetProperty(propName)?.GetValue(p, null) ?? "";
+        }
+
+        private void AplicarFiltroYPaginar()
+        {
+            string busqueda = TxtBuscar.Text.Trim().ToLower();
+            string nombramiento = (CmbFiltroNombramiento.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "";
+            string sexo = (CmbFiltroSexo.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "";
+            string esperanza = (CmbFiltroEsperanza.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "";
+
+            var congreSels = LstCongre.SelectedItems.Cast<string>().ToList();
+            var servSels = LstServicio.SelectedItems.Cast<string>().ToList();
+            var solSels = LstSols.SelectedItems.Cast<string>().ToList();
+            var privSels = LstPrivs.SelectedItems.Cast<string>().ToList();
+
+            _personasFiltradas = _todasLasPersonas.Where(p =>
+                ((p.Nombre != null && p.Nombre.ToLower().Contains(busqueda)) || (p.NombreComun != null && p.NombreComun.ToLower().Contains(busqueda))) &&
+                (string.IsNullOrEmpty(nombramiento) || p.Nombramiento == nombramiento) &&
+                (string.IsNullOrEmpty(sexo) || p.Sexo == sexo) &&
+                (string.IsNullOrEmpty(esperanza) || p.Esperanza == esperanza) &&
+                (congreSels.Count == 0 || congreSels.Contains(p.CongregacionNombre)) &&
+                (servSels.Count == 0 || servSels.Contains(p.Servicio)) &&
+                (solSels.Count == 0 || solSels.Any(s => p.Solicitudes != null && p.Solicitudes.Contains(s))) &&
+                (privSels.Count == 0 || privSels.Any(pr => p.Privilegios != null && p.Privilegios.Contains(pr)))
+            ).ToList();
+
+            if (!string.IsNullOrEmpty(_columnaOrdenActual))
+            {
+                if (_direccionOrdenActual == ListSortDirection.Ascending)
+                    _personasFiltradas = _personasFiltradas.OrderBy(p => ObtenerValorPropiedad(p, _columnaOrdenActual)).ToList();
+                else
+                    _personasFiltradas = _personasFiltradas.OrderByDescending(p => ObtenerValorPropiedad(p, _columnaOrdenActual)).ToList();
+            }
+
+            _totalPaginas = (int)Math.Ceiling(_personasFiltradas.Count / (double)_tamanoPagina);
+            if (_totalPaginas == 0) _totalPaginas = 1;
+
+            if (_paginaActual > _totalPaginas) _paginaActual = 1;
+
+            RenderizarPagina();
+        }
+
+        private void RenderizarPagina()
+        {
+            var personasPagina = _personasFiltradas.Skip((_paginaActual - 1) * _tamanoPagina).Take(_tamanoPagina).ToList();
+
+            TablaPersonas.ItemsSource = personasPagina;
+            TxtPaginaInfo.Text = $"{_personasFiltradas.Count} resultados | Página {_paginaActual} de {_totalPaginas}";
+
+            BtnAnterior.IsEnabled = _paginaActual > 1;
+            BtnSiguiente.IsEnabled = _paginaActual < _totalPaginas;
+        }
+
+        private void BtnAnterior_Click(object sender, RoutedEventArgs e)
+        {
+            if (_paginaActual > 1) { _paginaActual--; RenderizarPagina(); }
+        }
+
+        private void BtnSiguiente_Click(object sender, RoutedEventArgs e)
+        {
+            if (_paginaActual < _totalPaginas) { _paginaActual++; RenderizarPagina(); }
         }
 
         public class NominatimResult

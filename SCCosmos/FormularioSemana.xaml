@@ -24,9 +24,11 @@
                         <ComboBoxItem Content="Visita"/>
                         <ComboBoxItem Content="Asamblea de circuito"/>
                         <ComboBoxItem Content="Asamblea regional"/>
-                        <ComboBoxItem Content="ESP"/>
+                        <ComboBoxItem Content="Semana de precursor"/>
                         <ComboBoxItem Content="Semana libre CG"/>
+                        <ComboBoxItem Content="ESP"/>
                         <ComboBoxItem Content="Vacaciones"/>
+                        <ComboBoxItem Content="Conmemoración"/>
                         <ComboBoxItem Content="Otro"/>
                     </ComboBox>
                 </StackPanel>
@@ -72,6 +74,7 @@
                         <TextBlock Text="Tipo de visita:" Foreground="White" Margin="0,0,0,5" FontWeight="Medium"/>
                         <ComboBox x:Name="ComboTipo" HorizontalAlignment="Stretch" SelectionChanged="ComboTipo_SelectionChanged" Padding="6">
                             <ComboBoxItem Content="Visita SC"/>
+                            <ComboBoxItem Content="Visita de SCS"/>
                             <ComboBoxItem Content="Visita (con SCS)"/>
                             <ComboBoxItem Content="Visita (de pastoreo)"/>
                         </ComboBox>

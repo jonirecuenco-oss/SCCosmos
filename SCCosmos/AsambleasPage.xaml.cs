@@ -27,6 +27,16 @@ using iText.IO.Font;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Firefox;
 using OpenQA.Selenium.Support.UI;
+using System.Windows.Media;
+
+using Color = iText.Kernel.Colors.Color;
+using Style = System.Windows.Style;
+using System.Windows.Documents;
+using System.Windows.Shapes;
+using Path = System.IO.Path;
+using Paragraph = iText.Layout.Element.Paragraph;
+using Table = iText.Layout.Element.Table;
+using Border = System.Windows.Controls.Border;
 
 namespace SCCosmos
 {
@@ -35,12 +45,18 @@ namespace SCCosmos
         private bool _isInitializing = true;
         private DispatcherTimer _autoSaveTimer;
 
+        // VARIABLES PARA DRAG & DROP
+        private PartePrograma _draggedParte;
+        private Point _dragStartPoint;
+        private DragAdorner _dragAdorner;
+        private AdornerLayer _adornerLayer;
+
         // TEMPORIZADOR ANTI-LAG PARA COMBOBOX
         private DispatcherTimer _comboFilterTimer;
-        private ComboBox _activeComboBox;
-        private TextBox _activeTextBox;
-        private string _activeSearchText;
-        private bool _isFiltering = false;
+        public ComboBox _activeComboBox;
+        public TextBox _activeTextBox;
+        public string _activeSearchText;
+        public bool _isFiltering = false;
 
         // ==========================================
         // VARIABLES GLOBALES (Listas)
@@ -56,6 +72,8 @@ namespace SCCosmos
         // ==========================================
         public ObservableCollection<string> TiposAsamblea { get; set; }
         public ObservableCollection<SeccionCircuito> ListaSecciones { get; set; }
+        public ObservableCollection<SeccionCircuito> ListaSeccionesMatriz { get; set; }
+
         public string AñoSeleccionado { get; set; }
         public string TipoSeleccionado { get; set; }
         public SeccionCircuito SeccionSeleccionada { get; set; }
@@ -64,6 +82,8 @@ namespace SCCosmos
         public string TipoOrganigramaSeleccionado { get; set; }
         public SeccionCircuito SeccionOrganigramaSeleccionada { get; set; }
 
+        public SeccionCircuito SeccionMatrizSeleccionada { get; set; }
+
         private string _tituloAsamblea; public string TituloAsamblea { get => _tituloAsamblea; set { _tituloAsamblea = value; OnPropertyChanged(nameof(TituloAsamblea)); TriggerAutoSave(); } }
         private string _lugarAsamblea; public string LugarAsamblea { get => _lugarAsamblea; set { _lugarAsamblea = value; OnPropertyChanged(nameof(LugarAsamblea)); TriggerAutoSave(); } }
         private DateTime? _fechaAsamblea; public DateTime? FechaAsamblea { get => _fechaAsamblea; set { _fechaAsamblea = value; OnPropertyChanged(nameof(FechaAsamblea)); TriggerAutoSave(); } }
@@ -71,6 +91,11 @@ namespace SCCosmos
 
         public ObservableCollection<PartePrograma> PartesManana { get; set; }
         public ObservableCollection<PartePrograma> PartesTarde { get; set; }
+
+        // MATRIZ DE ORADORES
+        public ObservableCollection<OradorFila> ListaOradores { get; set; }
+        private Dictionary<int, OradorFila> _todosLosOradoresBase = new Dictionary<int, OradorFila>();
+        private List<int> _añosConDatosGlobal = new List<int>();
 
         public List<DepartamentoOrganigrama> ListaDepartamentosCajas { get; set; }
 
@@ -98,7 +123,20 @@ namespace SCCosmos
         private string _textoTematicoPrecursores; public string TextoTematicoPrecursores { get => _textoTematicoPrecursores; set { _textoTematicoPrecursores = value; OnPropertyChanged(nameof(TextoTematicoPrecursores)); TriggerAutoSave(); } }
 
         public ObservableCollection<SesionPrecursores> SesionesPrecursores { get; set; }
-        private SesionPrecursores _sesionPrecursoresActiva; public SesionPrecursores SesionPrecursoresActiva { get => _sesionPrecursoresActiva; set { _sesionPrecursoresActiva = value; OnPropertyChanged(nameof(SesionPrecursoresActiva)); } }
+
+        private SesionPrecursores _sesionPrecursoresActiva;
+        public SesionPrecursores SesionPrecursoresActiva
+        {
+            get => _sesionPrecursoresActiva;
+            set
+            {
+                _sesionPrecursoresActiva = value;
+                OnPropertyChanged(nameof(SesionPrecursoresActiva));
+                OnPropertyChanged(nameof(VisibilidadSesionActiva));
+            }
+        }
+
+        public Visibility VisibilidadSesionActiva => SesionPrecursoresActiva != null ? Visibility.Visible : Visibility.Collapsed;
 
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
@@ -141,6 +179,7 @@ namespace SCCosmos
             CargarProgramaAsambleaDesdeBD();
             CargarOrganigramaDesdeBD();
             CargarProgramaPrecursoresDesdeBD();
+            CargarOradores();
         }
 
         private void InicializarDepartamentos()
@@ -179,11 +218,22 @@ namespace SCCosmos
         private void CargarConfiguracionBase()
         {
             var seccionesBD = DatabaseHelper.ObtenerSecciones();
+
             var listaSec = new List<SeccionCircuito>();
-            if (seccionesBD != null) listaSec.AddRange(seccionesBD);
+            var listaSecMatriz = new List<SeccionCircuito> { new SeccionCircuito { Nombre = "Todas" } };
+
+            if (seccionesBD != null)
+            {
+                listaSec.AddRange(seccionesBD);
+                listaSecMatriz.AddRange(seccionesBD);
+            }
+
             ListaSecciones = new ObservableCollection<SeccionCircuito>(listaSec);
+            ListaSeccionesMatriz = new ObservableCollection<SeccionCircuito>(listaSecMatriz);
+
             SeccionSeleccionada = null;
             SeccionOrganigramaSeleccionada = null;
+            SeccionMatrizSeleccionada = ListaSeccionesMatriz[0];
 
             var congregaciones = DatabaseHelper.ObtenerCongregaciones();
             var dictSecciones = new Dictionary<string, string>();
@@ -213,8 +263,7 @@ namespace SCCosmos
 
                 string seccionP = dictSecciones.ContainsKey(congre) ? dictSecciones[congre] : "";
 
-                if (nombreJW.Contains("Jonatán Recuenco") || nombre.Contains("Jonatán Recuenco") ||
-                    nombreJW.Contains("Representante de Betel") || nombre.Contains("Representante de Betel"))
+                if (nombreJW.Contains("Representante de Betel") || nombre.Contains("Representante de Betel"))
                     continue;
 
                 bool esAnciano = nombramiento.Contains("anciano");
@@ -240,10 +289,21 @@ namespace SCCosmos
             }
 
             ancianosList = ancianosList.OrderBy(a => a.NombreFormateado).ToList();
+
+            string nombreSC = DatabaseHelper.ObtenerConfiguracion("NombreSC", "") + " " + DatabaseHelper.ObtenerConfiguracion("ApellidoSC", "");
+            if (string.IsNullOrWhiteSpace(nombreSC.Trim())) nombreSC = "Superintendente de Circuito";
+
+            var perfilSC = new AncianoComboItem { Id = -1, NombreJWHub = nombreSC.Trim(), NombreComun = nombreSC.Trim(), Congregacion = "SC", NombreSeccion = "" };
+            var perfilBetel = new AncianoComboItem { Id = -2, NombreJWHub = "Representante de Betel", NombreComun = "Representante de Betel", Congregacion = "Betel", NombreSeccion = "" };
+
+            ancianosList.Add(perfilSC);
+            ancianosList.Add(perfilBetel);
+
             ancianosList.Insert(0, new AncianoComboItem { Id = 0, NombreJWHub = "", NombreComun = "", Congregacion = "", NombreSeccion = "" });
             ListaAncianos = new ObservableCollection<AncianoComboItem>(ancianosList);
 
             precursoresList = precursoresList.OrderBy(a => a.NombreFormateado).ToList();
+            precursoresList.Add(perfilSC);
             precursoresList.Insert(0, new AncianoComboItem { Id = 0, NombreJWHub = "", NombreComun = "", Congregacion = "", NombreSeccion = "" });
             ListaPrecursores = new ObservableCollection<AncianoComboItem>(precursoresList);
 
@@ -284,10 +344,7 @@ namespace SCCosmos
             if (cmb == null || tb == null || !tb.IsKeyboardFocusWithin) return;
 
             var selectedItem = cmb.SelectedItem as AncianoComboItem;
-            if (selectedItem != null && selectedItem.NombreMuestra == tb.Text)
-            {
-                return;
-            }
+            if (selectedItem != null && selectedItem.NombreMuestra == tb.Text) return;
 
             _activeComboBox = cmb;
             _activeTextBox = tb;
@@ -354,7 +411,7 @@ namespace SCCosmos
 
                 if (persona.Id == 0) return true;
 
-                if (!string.IsNullOrWhiteSpace(seccionFiltro))
+                if (persona.Id > 0 && !string.IsNullOrWhiteSpace(seccionFiltro))
                 {
                     if (persona.NombreSeccion != seccionFiltro) return false;
                 }
@@ -370,6 +427,9 @@ namespace SCCosmos
         private void FiltrosOrganigrama_SelectionChanged(object sender, SelectionChangedEventArgs e) { if (!_isInitializing) CargarOrganigramaDesdeBD(); }
         private void FiltrosPrecursores_SelectionChanged(object sender, SelectionChangedEventArgs e) { if (!_isInitializing) CargarProgramaPrecursoresDesdeBD(); }
 
+        // Filtro específico para la matriz de oradores
+        private void FiltrosMatriz_SelectionChanged(object sender, SelectionChangedEventArgs e) { if (!_isInitializing) CargarOradores(); }
+
         private void CargarProgramaAsambleaDesdeBD()
         {
             if (AñoSeleccionado == null || TipoSeleccionado == null || SeccionSeleccionada == null) return;
@@ -383,7 +443,17 @@ namespace SCCosmos
 
             _tituloAsamblea = tituloTemp; OnPropertyChanged(nameof(TituloAsamblea));
             _textoTematico = textoTemp; OnPropertyChanged(nameof(TextoTematico));
-            _lugarAsamblea = lugarTemp; OnPropertyChanged(nameof(LugarAsamblea));
+
+            if (string.IsNullOrWhiteSpace(lugarTemp))
+            {
+                _lugarAsamblea = SeccionSeleccionada.LugarAsamblea;
+            }
+            else
+            {
+                _lugarAsamblea = lugarTemp;
+            }
+            OnPropertyChanged(nameof(LugarAsamblea));
+
             _fechaAsamblea = fechaTemp; OnPropertyChanged(nameof(FechaAsamblea));
 
             if (asambleaId > 0)
@@ -397,6 +467,77 @@ namespace SCCosmos
                 }
             }
             _isInitializing = false;
+        }
+
+        private void BtnDuplicarPrograma_Click(object sender, RoutedEventArgs e)
+        {
+            if (AñoSeleccionado == null || TipoSeleccionado == null || SeccionSeleccionada == null) return;
+
+            string nombreSeccionFuente = null;
+            long asambleaIdFuente = 0;
+
+            foreach (var sec in ListaSecciones)
+            {
+                if (sec.Nombre == SeccionSeleccionada.Nombre) continue;
+
+                long tempId = DatabaseHelper.ObtenerIdYDatosAsamblea(AñoSeleccionado, TipoSeleccionado, sec.Nombre, out _, out _, out _, out _);
+                if (tempId > 0)
+                {
+                    var partesTest = DatabaseHelper.ObtenerPartesAsamblea(tempId);
+                    if (partesTest != null && partesTest.Count > 0)
+                    {
+                        nombreSeccionFuente = sec.Nombre;
+                        asambleaIdFuente = tempId;
+                        break;
+                    }
+                }
+            }
+
+            if (string.IsNullOrEmpty(nombreSeccionFuente))
+            {
+                MessageBox.Show("No se ha encontrado ninguna otra sección de este circuito que tenga el programa de asamblea rellenado para poder copiarlo.", "Información", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            if (MessageBox.Show($"Se ha detectado que la sección '{nombreSeccionFuente}' ya tiene el programa hecho.\n\n¿Deseas duplicar su esquema (horas, temas y tipos) a la sección '{SeccionSeleccionada.Nombre}'?\n\nLos participantes, asignados y archivos adjuntos se dejarán en blanco.", "Duplicar Programa", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+            {
+                _isInitializing = true;
+
+                DatabaseHelper.ObtenerIdYDatosAsamblea(AñoSeleccionado, TipoSeleccionado, nombreSeccionFuente, out string tituloFuente, out string textoFuente, out _, out _);
+                TituloAsamblea = tituloFuente;
+                TextoTematico = textoFuente;
+
+                foreach (var p in PartesManana) p.PropertyChanged -= Objeto_PropertyChanged;
+                foreach (var p in PartesTarde) p.PropertyChanged -= Objeto_PropertyChanged;
+                PartesManana.Clear();
+                PartesTarde.Clear();
+
+                var partesFuente = DatabaseHelper.ObtenerPartesAsamblea(asambleaIdFuente);
+                foreach (var p in partesFuente)
+                {
+                    var nuevaParte = new PartePrograma
+                    {
+                        Turno = p.Turno,
+                        Hora = p.Hora,
+                        Tipo = p.Tipo,
+                        Titulo = p.Titulo,
+                        AsignadoId = 0,
+                        Participantes = "",
+                        RutaArchivo = "",
+                        Enviado = false
+                    };
+
+                    nuevaParte.PropertyChanged += Objeto_PropertyChanged;
+
+                    if (nuevaParte.Turno == "Mañana") PartesManana.Add(nuevaParte);
+                    else PartesTarde.Add(nuevaParte);
+                }
+
+                _isInitializing = false;
+                TriggerAutoSave();
+
+                MessageBox.Show("El esquema del programa se ha duplicado con éxito. Ya puedes empezar a asignar hermanos.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
         }
 
         private void CargarOrganigramaDesdeBD()
@@ -521,9 +662,6 @@ namespace SCCosmos
             catch (Exception ex) { MessageBox.Show($"Error al guardar:\n\n{ex.Message}", "Error de Guardado", MessageBoxButton.OK, MessageBoxImage.Error); }
         }
 
-        // ==========================================
-        // CARGA INTELIGENTE DE FUENTES SEGOE UI
-        // ==========================================
         private PdfFont GetPdfFont(string fontName, string style)
         {
             try
@@ -557,9 +695,6 @@ namespace SCCosmos
             return clean;
         }
 
-        // ==========================================
-        // GENERACIÓN DE NOMBRE DE ARCHIVO ORGANIGRAMA
-        // ==========================================
         private string GenerarNombreArchivoOrganigrama()
         {
             string tipo = "AC-CO";
@@ -761,14 +896,12 @@ namespace SCCosmos
                     float padTop2 = isCompact ? 0f : 1f;
                     float padBot2 = isCompact ? 0f : 2f;
 
-                    // Primera Fila
                     inTable.AddCell(new Cell().SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER).SetVerticalAlignment(iText.Layout.Properties.VerticalAlignment.MIDDLE).SetBorder(iText.Layout.Borders.Border.NO_BORDER).SetPaddingTop(padTop1).SetPaddingBottom(padBot1)
                         .Add(new Paragraph(nombreStr).SetFont(fontBold).SetFontSize(7.5f).SetMargin(0)));
 
                     inTable.AddCell(new Cell().SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER).SetVerticalAlignment(iText.Layout.Properties.VerticalAlignment.MIDDLE).SetBorder(iText.Layout.Borders.Border.NO_BORDER).SetPaddingTop(padTop1).SetPaddingBottom(padBot1)
                         .Add(new Paragraph(info.Congregacion).SetFont(fontNormal).SetFontSize(7.5f).SetFontColor(ColorConstants.BLACK).SetMargin(0)));
 
-                    // Segunda Fila
                     inTable.AddCell(new Cell().SetTextAlignment(iText.Layout.Properties.TextAlignment.CENTER).SetVerticalAlignment(iText.Layout.Properties.VerticalAlignment.MIDDLE).SetBorder(iText.Layout.Borders.Border.NO_BORDER).SetPaddingTop(padTop2).SetPaddingBottom(padBot2)
                         .Add(new Paragraph(telFormat).SetFont(fontNormal).SetFontSize(7.5f).SetMargin(0)));
 
@@ -960,8 +1093,6 @@ namespace SCCosmos
                     if (id > 0)
                     {
                         var info = DatabaseHelper.ObtenerInfoHermanoParaOrganigrama(id);
-
-                        // PRIORIZAMOS EMAIL JW
                         string correoAUsar = !string.IsNullOrWhiteSpace(info.EmailJW) ? info.EmailJW : info.Email;
                         if (!string.IsNullOrWhiteSpace(correoAUsar)) correos.Add(correoAUsar);
                     }
@@ -1003,10 +1134,12 @@ namespace SCCosmos
             {
                 foreach (var arch in archivosExtra)
                 {
-                    if (File.Exists(arch.RutaLocal))
+                    string rutaExtraida = DatabaseHelper.ExtraerDocumentoDesdeBD(arch.Id, arch.NombreArchivo);
+
+                    if (!string.IsNullOrEmpty(rutaExtraida) && File.Exists(rutaExtraida))
                     {
                         string rutaCopia = Path.Combine(carpetaTemp, arch.NombreArchivo);
-                        File.Copy(arch.RutaLocal, rutaCopia, true);
+                        File.Copy(rutaExtraida, rutaCopia, true);
                         rutasAdjuntos.Add(rutaCopia);
                     }
                 }
@@ -1071,7 +1204,6 @@ namespace SCCosmos
                         string rutasUnidas = string.Join("\n", rutasAdjuntos);
                         inputArchivo.SendKeys(rutasUnidas);
 
-                        // === ESPERA EXTENDIDA ANTI-PARPADEO ===
                         System.Threading.Thread.Sleep(1000 * rutasAdjuntos.Count);
 
                         WebDriverWait waitSubida = new WebDriverWait(driver, TimeSpan.FromSeconds(90));
@@ -1116,6 +1248,7 @@ namespace SCCosmos
                             foreach (var b in botones) { if (b.Displayed && b.Enabled) return b; }
                             return null;
                         });
+
                         ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", btnEnviar);
 
                         System.Threading.Thread.Sleep(4000);
@@ -1259,7 +1392,6 @@ namespace SCCosmos
 
             var infoHermano = DatabaseHelper.ObtenerInfoHermanoParaOrganigrama(parte.AsignadoId);
 
-            // PRIORIZAMOS EMAIL JW
             string correoAUsar = !string.IsNullOrWhiteSpace(infoHermano.EmailJW) ? infoHermano.EmailJW : infoHermano.Email;
 
             if (string.IsNullOrWhiteSpace(correoAUsar))
@@ -1294,8 +1426,16 @@ namespace SCCosmos
 
             foreach (var arch in archivosOriginales)
             {
+                string rutaExtraida = DatabaseHelper.ExtraerDocumentoDesdeBD(arch.Id, arch.NombreArchivo);
+
+                if (string.IsNullOrEmpty(rutaExtraida) || !File.Exists(rutaExtraida))
+                {
+                    MessageBox.Show($"No se pudo encontrar o extraer la plantilla de '{arch.NombreArchivo}' de la base de datos.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    continue;
+                }
+
                 string rutaNueva = Path.Combine(carpetaTemp, arch.NombreArchivo);
-                File.Copy(arch.RutaLocal, rutaNueva, true);
+                File.Copy(rutaExtraida, rutaNueva, true);
 
                 if (Path.GetExtension(rutaNueva).ToLower() == ".docx")
                 {
@@ -1441,7 +1581,6 @@ namespace SCCosmos
                         string rutasUnidas = string.Join("\n", archivosProcesados.Select(a => a.RutaLocal));
                         inputArchivo.SendKeys(rutasUnidas);
 
-                        // === ESPERA EXTENDIDA ANTI-PARPADEO ===
                         System.Threading.Thread.Sleep(1000 * archivosProcesados.Count);
 
                         WebDriverWait waitSubida = new WebDriverWait(driver, TimeSpan.FromSeconds(90));
@@ -1563,11 +1702,520 @@ namespace SCCosmos
             SesionPrecursoresActiva.Partes.Add(p);
             TriggerAutoSave();
         }
+
+        // ==========================================
+        // DRAG & DROP: MOVER FILAS DEL PROGRAMA
+        // ==========================================
+        private void DragHandle_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            _dragStartPoint = e.GetPosition(this);
+            var frameworkElement = sender as FrameworkElement;
+            _draggedParte = frameworkElement?.DataContext as PartePrograma;
+        }
+
+        private void DragHandle_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (e.LeftButton == MouseButtonState.Pressed && _draggedParte != null)
+            {
+                Point mousePos = e.GetPosition(this);
+                Vector diff = _dragStartPoint - mousePos;
+
+                if (Math.Abs(diff.X) > SystemParameters.MinimumHorizontalDragDistance ||
+                    Math.Abs(diff.Y) > SystemParameters.MinimumVerticalDragDistance)
+                {
+                    // Obtener la fila visual completa
+                    var draggedElement = (FrameworkElement)sender;
+                    var rowBorder = (Border)((Grid)draggedElement.Parent).Parent;
+
+                    // Crear la "imagen fantasma" (Adorner)
+                    _adornerLayer = AdornerLayer.GetAdornerLayer(this);
+                    if (_adornerLayer != null)
+                    {
+                        _dragAdorner = new DragAdorner(this, rowBorder, 0.6, _dragStartPoint);
+                        _adornerLayer.Add(_dragAdorner);
+                    }
+
+                    // Iniciar el arrastre nativo
+                    var data = new DataObject("PartePrograma", _draggedParte);
+                    DragDrop.DoDragDrop(draggedElement, data, DragDropEffects.Move);
+
+                    // Limpiar al soltar
+                    if (_adornerLayer != null && _dragAdorner != null)
+                    {
+                        _adornerLayer.Remove(_dragAdorner);
+                    }
+                    _dragAdorner = null;
+                    _draggedParte = null;
+                }
+            }
+        }
+
+        private void Root_PreviewDragOver(object sender, DragEventArgs e)
+        {
+            if (_dragAdorner != null)
+            {
+                // Actualiza la posición del fantasma para que siga al ratón
+                _dragAdorner.UpdatePosition(e.GetPosition(this));
+            }
+        }
+
+        private void Fila_Drop(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent("PartePrograma"))
+            {
+                var parteArrastrada = e.Data.GetData("PartePrograma") as PartePrograma;
+                var frameworkElement = sender as FrameworkElement;
+                var parteDestino = frameworkElement?.DataContext as PartePrograma;
+
+                if (parteArrastrada != null && parteDestino != null && parteArrastrada != parteDestino)
+                {
+                    ObservableCollection<PartePrograma> listaObjetivo = null;
+
+                    if (PartesManana.Contains(parteArrastrada) && PartesManana.Contains(parteDestino)) listaObjetivo = PartesManana;
+                    else if (PartesTarde.Contains(parteArrastrada) && PartesTarde.Contains(parteDestino)) listaObjetivo = PartesTarde;
+                    else
+                    {
+                        foreach (var s in SesionesPrecursores)
+                        {
+                            if (s.Partes.Contains(parteArrastrada) && s.Partes.Contains(parteDestino))
+                            {
+                                listaObjetivo = s.Partes;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (listaObjetivo != null)
+                    {
+                        int indexOriginal = listaObjetivo.IndexOf(parteArrastrada);
+                        int indexDestino = listaObjetivo.IndexOf(parteDestino);
+                        listaObjetivo.Move(indexOriginal, indexDestino);
+                        TriggerAutoSave();
+                    }
+                }
+            }
+        }
+
+
+        // ==========================================
+        // MATRIZ INTELIGENTE DE ORADORES (AÑOS Y CABECERAS DINÁMICAS)
+        // ==========================================
+        private async void CargarOradores()
+        {
+            int anioSiguiente = DateTime.Now.Year + 1;
+
+            // 1. Usamos una variable LOCAL para evitar que los procesos choquen entre sí
+            var añosConDatosLocal = new List<int>();
+
+            var dictOradores = new Dictionary<int, OradorFila>();
+            _todosLosOradoresBase.Clear();
+
+            foreach (var a in ListaAncianos) if (a.Id > 0) { var o = new OradorFila { Id = a.Id, Nombre = a.NombreMuestra, Seccion = a.NombreSeccion }; dictOradores[a.Id] = o; _todosLosOradoresBase[a.Id] = o; }
+            foreach (var p in ListaPrecursores) if (p.Id > 0 && !dictOradores.ContainsKey(p.Id)) { var o = new OradorFila { Id = p.Id, Nombre = p.NombreMuestra, Seccion = p.NombreSeccion }; dictOradores[p.Id] = o; _todosLosOradoresBase[p.Id] = o; }
+
+            await Task.Run(() =>
+            {
+                var secciones = DatabaseHelper.ObtenerSecciones();
+
+                // 2. ESCANEAR LA BASE DE DATOS
+                for (int y = 2015; y <= anioSiguiente; y++)
+                {
+                    string yStr = y.ToString();
+                    bool tiene = false;
+
+                    long rpId = DatabaseHelper.ObtenerDatosReunionPrecursores(yStr, out _, out _);
+                    if (rpId > 0 && DatabaseHelper.ObtenerSesionesPrecursores(rpId).Any(s => s.Partes.Any(p => p.AsignadoId > 0))) tiene = true;
+
+                    if (!tiene && secciones != null)
+                    {
+                        foreach (var sec in secciones)
+                        {
+                            long acbrId = DatabaseHelper.ObtenerIdYDatosAsamblea(yStr, "AC (con rep. de Betel)", sec.Nombre, out _, out _, out _, out _);
+                            if (acbrId > 0 && DatabaseHelper.ObtenerPartesAsamblea(acbrId).Any(p => p.AsignadoId > 0)) { tiene = true; break; }
+
+                            long accoId = DatabaseHelper.ObtenerIdYDatosAsamblea(yStr, "AC (con sup. de circuito)", sec.Nombre, out _, out _, out _, out _);
+                            if (accoId > 0 && DatabaseHelper.ObtenerPartesAsamblea(accoId).Any(p => p.AsignadoId > 0)) { tiene = true; break; }
+                        }
+                    }
+
+                    if (tiene || y == anioSiguiente) añosConDatosLocal.Add(y);
+                }
+
+                añosConDatosLocal = añosConDatosLocal.Distinct().OrderBy(y => y).ToList();
+
+                foreach (var o in dictOradores.Values)
+                {
+                    o.SetBOS(DatabaseHelper.ObtenerConfiguracion($"BOS_{o.Id}", ""));
+
+                    foreach (int y in añosConDatosLocal)
+                    {
+                        o.Anios[y] = new FilaAnio { OradorId = o.Id, Anio = y };
+                        o.Anios[y].SetEV(DatabaseHelper.ObtenerConfiguracion($"EV_{y}_{o.Id}", "False") == "True");
+
+                        string manACBR = DatabaseHelper.ObtenerConfiguracion($"MANUAL_ACBR_{y}_{o.Id}", "");
+                        if (!string.IsNullOrEmpty(manACBR)) o.Anios[y].SetACBR(manACBR);
+
+                        string manRP = DatabaseHelper.ObtenerConfiguracion($"MANUAL_RP_{y}_{o.Id}", "");
+                        if (!string.IsNullOrEmpty(manRP)) o.Anios[y].SetRP(manRP);
+
+                        string manACCO = DatabaseHelper.ObtenerConfiguracion($"MANUAL_ACCO_{y}_{o.Id}", "");
+                        if (!string.IsNullOrEmpty(manACCO)) o.Anios[y].SetACCO(manACCO);
+                    }
+                }
+
+                foreach (int y in añosConDatosLocal)
+                {
+                    string yStr = y.ToString();
+
+                    long rpId = DatabaseHelper.ObtenerDatosReunionPrecursores(yStr, out _, out _);
+                    if (rpId > 0)
+                        foreach (var sesion in DatabaseHelper.ObtenerSesionesPrecursores(rpId))
+                            foreach (var parte in sesion.Partes)
+                                if (parte.AsignadoId > 0 && dictOradores.TryGetValue(parte.AsignadoId, out var orador))
+                                    AsignarParteAOrador(orador, y, "RP", parte);
+
+                    if (secciones != null)
+                    {
+                        foreach (var sec in secciones)
+                        {
+                            long acbrId = DatabaseHelper.ObtenerIdYDatosAsamblea(yStr, "AC (con rep. de Betel)", sec.Nombre, out _, out _, out _, out _);
+                            if (acbrId > 0)
+                                foreach (var parte in DatabaseHelper.ObtenerPartesAsamblea(acbrId))
+                                    if (parte.AsignadoId > 0 && dictOradores.TryGetValue(parte.AsignadoId, out var orador))
+                                        AsignarParteAOrador(orador, y, "AC-BR", parte);
+
+                            long accoId = DatabaseHelper.ObtenerIdYDatosAsamblea(yStr, "AC (con sup. de circuito)", sec.Nombre, out _, out _, out _, out _);
+                            if (accoId > 0)
+                                foreach (var parte in DatabaseHelper.ObtenerPartesAsamblea(accoId))
+                                    if (parte.AsignadoId > 0 && dictOradores.TryGetValue(parte.AsignadoId, out var orador))
+                                        AsignarParteAOrador(orador, y, "AC-CO", parte);
+                        }
+                    }
+                }
+            });
+
+            // GUARDAMOS EN LA VARIABLE GLOBAL DE FORMA SEGURA (Evita el choque de hilos)
+            _añosConDatosGlobal = añosConDatosLocal;
+
+            string manualesStr = DatabaseHelper.ObtenerConfiguracion("OradoresMatrizManuales", "");
+            var manualesSet = new HashSet<int>(manualesStr.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(s => int.TryParse(s, out int n) ? n : 0));
+
+            string ocultosStr = DatabaseHelper.ObtenerConfiguracion("OradoresMatrizOcultos", "");
+            var ocultosSet = new HashSet<int>(ocultosStr.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(s => int.TryParse(s, out int n) ? n : 0));
+
+            string seccionFiltro = SeccionMatrizSeleccionada?.Nombre;
+            bool filtrarPorSeccion = !string.IsNullOrEmpty(seccionFiltro) && seccionFiltro != "Todas";
+
+            var listaFinal = dictOradores.Values
+                .Where(o => (o.TieneDiscursos() || manualesSet.Contains(o.Id)) && !ocultosSet.Contains(o.Id))
+                .Where(o => !filtrarPorSeccion || o.Seccion == seccionFiltro)
+                .OrderBy(o => string.IsNullOrWhiteSpace(o.BOS) ? "ZZZ" : o.BOS)
+                .ThenBy(o => o.Nombre)
+                .ToList();
+
+            Dispatcher.Invoke(() => {
+                if (TablaOradores != null)
+                {
+                    var colNombre = TablaOradores.Columns[0];
+                    var colBOS = TablaOradores.Columns[1];
+                    var colBorrar = TablaOradores.Columns.FirstOrDefault(c => c.Header?.ToString() == " ");
+
+                    TablaOradores.Columns.Clear();
+                    TablaOradores.Columns.Add(colNombre);
+                    TablaOradores.Columns.Add(colBOS);
+
+                    var centerStyle = new Style(typeof(CheckBox));
+                    centerStyle.Setters.Add(new Setter(FrameworkElement.HorizontalAlignmentProperty, System.Windows.HorizontalAlignment.Center));
+                    centerStyle.Setters.Add(new Setter(FrameworkElement.VerticalAlignmentProperty, System.Windows.VerticalAlignment.Center));
+                    centerStyle.Setters.Add(new Setter(FrameworkElement.CursorProperty, Cursors.Hand));
+                    centerStyle.Setters.Add(new Setter(FrameworkElement.LayoutTransformProperty, new ScaleTransform(1.3, 1.3)));
+
+                    foreach (int y in _añosConDatosGlobal)
+                    {
+                        string headerXaml = $@"
+                        <DataTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'>
+                            <Grid Height='45' Width='344'>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height='*'/>
+                                    <RowDefinition Height='*'/>
+                                </Grid.RowDefinitions>
+                                <Border BorderThickness='0,0,0,1' BorderBrush='#3E3E42'>
+                                    <TextBlock Text='{y}' VerticalAlignment='Center' HorizontalAlignment='Center' Foreground='White' FontWeight='Bold'/>
+                                </Border>
+                                <Grid Grid.Row='1'>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width='55'/>
+                                        <ColumnDefinition Width='1'/>
+                                        <ColumnDefinition Width='95'/>
+                                        <ColumnDefinition Width='1'/>
+                                        <ColumnDefinition Width='95'/>
+                                        <ColumnDefinition Width='1'/>
+                                        <ColumnDefinition Width='95'/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column='0' Text='EV' VerticalAlignment='Center' HorizontalAlignment='Center' FontSize='11' Foreground='#AAAAAA'/>
+                                    <Rectangle Grid.Column='1' Fill='#3E3E42'/>
+                                    <TextBlock Grid.Column='2' Text='AC-BR' VerticalAlignment='Center' HorizontalAlignment='Center' FontSize='11' Foreground='#AAAAAA'/>
+                                    <Rectangle Grid.Column='3' Fill='#3E3E42'/>
+                                    <TextBlock Grid.Column='4' Text='R. Prec' VerticalAlignment='Center' HorizontalAlignment='Center' FontSize='11' Foreground='#AAAAAA'/>
+                                    <Rectangle Grid.Column='5' Fill='#3E3E42'/>
+                                    <TextBlock Grid.Column='6' Text='AC-CO' VerticalAlignment='Center' HorizontalAlignment='Center' FontSize='11' Foreground='#AAAAAA'/>
+                                </Grid>
+                            </Grid>
+                        </DataTemplate>";
+
+                        string cellXaml = $@"
+                        <DataTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'>
+                            <Grid Width='344'>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width='55'/>
+                                    <ColumnDefinition Width='1'/>
+                                    <ColumnDefinition Width='95'/>
+                                    <ColumnDefinition Width='1'/>
+                                    <ColumnDefinition Width='95'/>
+                                    <ColumnDefinition Width='1'/>
+                                    <ColumnDefinition Width='95'/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <CheckBox Grid.Column='0' IsChecked='{{Binding Anios[{y}].EV, UpdateSourceTrigger=PropertyChanged}}' HorizontalAlignment='Center' VerticalAlignment='Center' Cursor='Hand'>
+                                    <CheckBox.LayoutTransform><ScaleTransform ScaleX='1.3' ScaleY='1.3'/></CheckBox.LayoutTransform>
+                                </CheckBox>
+                                
+                                <Rectangle Grid.Column='1' Fill='#30FFFFFF'/>
+                                
+                                <Border Grid.Column='2' Background='{{Binding Anios[{y}].BgACBR}}' Margin='2' CornerRadius='4'>
+                                    <TextBox Text='{{Binding Anios[{y}].ACBR, UpdateSourceTrigger=PropertyChanged}}' Background='Transparent' BorderThickness='0' Foreground='White' HorizontalContentAlignment='Center' VerticalContentAlignment='Center' FontSize='12'/>
+                                </Border>
+                                
+                                <Rectangle Grid.Column='3' Fill='#30FFFFFF'/>
+                                
+                                <Border Grid.Column='4' Background='{{Binding Anios[{y}].BgRP}}' Margin='2' CornerRadius='4'>
+                                    <TextBox Text='{{Binding Anios[{y}].RP, UpdateSourceTrigger=PropertyChanged}}' Background='Transparent' BorderThickness='0' Foreground='White' HorizontalContentAlignment='Center' VerticalContentAlignment='Center' FontSize='12'/>
+                                </Border>
+                                
+                                <Rectangle Grid.Column='5' Fill='#30FFFFFF'/>
+                                
+                                <Border Grid.Column='6' Background='{{Binding Anios[{y}].BgACCO}}' Margin='2' CornerRadius='4'>
+                                    <TextBox Text='{{Binding Anios[{y}].ACCO, UpdateSourceTrigger=PropertyChanged}}' Background='Transparent' BorderThickness='0' Foreground='White' HorizontalContentAlignment='Center' VerticalContentAlignment='Center' FontSize='12'/>
+                                </Border>
+                            </Grid>
+                        </DataTemplate>";
+
+                        var colYear = new DataGridTemplateColumn
+                        {
+                            HeaderTemplate = (DataTemplate)System.Windows.Markup.XamlReader.Parse(headerXaml),
+                            CellTemplate = (DataTemplate)System.Windows.Markup.XamlReader.Parse(cellXaml),
+                            Width = 344
+                        };
+
+                        TablaOradores.Columns.Add(colYear);
+                    }
+
+                    if (colBorrar != null) TablaOradores.Columns.Add(colBorrar);
+
+                    ListaOradores = new ObservableCollection<OradorFila>(listaFinal);
+                    TablaOradores.ItemsSource = ListaOradores;
+                }
+            });
+        }
+
+        private void AsignarParteAOrador(OradorFila orador, int anio, string tipoAsamblea, PartePrograma parte)
+        {
+            if (parte.Tipo == "Canción" || parte.Tipo.Contains("Oración") || parte.Tipo == "Música") return;
+
+            orador.TieneHistorialBD = true;
+
+            string textoParte = parte.Tipo.Replace("(serie)", "").Trim();
+            var match = System.Text.RegularExpressions.Regex.Match(parte.Titulo ?? "", @"\d+");
+            if (match.Success) textoParte += " " + match.Value;
+            else if (textoParte == "Resumen de La Atalaya") textoParte = "Atalaya";
+
+            if (orador.Anios.ContainsKey(anio))
+            {
+                if (tipoAsamblea == "AC-BR" && string.IsNullOrEmpty(DatabaseHelper.ObtenerConfiguracion($"MANUAL_ACBR_{anio}_{orador.Id}", ""))) orador.Anios[anio].SetACBR(textoParte);
+                else if (tipoAsamblea == "RP" && string.IsNullOrEmpty(DatabaseHelper.ObtenerConfiguracion($"MANUAL_RP_{anio}_{orador.Id}", ""))) orador.Anios[anio].SetRP(textoParte);
+                else if (tipoAsamblea == "AC-CO" && string.IsNullOrEmpty(DatabaseHelper.ObtenerConfiguracion($"MANUAL_ACCO_{anio}_{orador.Id}", ""))) orador.Anios[anio].SetACCO(textoParte);
+            }
+        }
+
+        private void BtnAñadirParticipanteMatriz_Click(object sender, RoutedEventArgs e)
+        {
+            string seccionFiltro = SeccionMatrizSeleccionada?.Nombre;
+            bool filtrarPorSeccion = !string.IsNullOrEmpty(seccionFiltro) && seccionFiltro != "Todas";
+
+            var disponibles = _todosLosOradoresBase.Values
+                .Where(o => !ListaOradores.Any(lo => lo.Id == o.Id))
+                .Where(o => !filtrarPorSeccion || o.Seccion == seccionFiltro)
+                .Select(o => new AncianoComboItem { Id = o.Id, NombreComun = o.Nombre })
+                .OrderBy(a => a.NombreComun)
+                .ToList();
+
+            if (disponibles.Count == 0)
+            {
+                MessageBox.Show("Todos los ancianos y precursores de esta sección ya están añadidos a la matriz.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var nuevaFila = new OradorFila
+            {
+                Id = -999,
+                Nombre = "Selecciona un orador...",
+                IsNew = true,
+                OpcionesDisponibles = disponibles
+            };
+
+            foreach (var col in _añosConDatosGlobal)
+            {
+                nuevaFila.Anios[col] = new FilaAnio { Anio = col, OradorId = -999 };
+            }
+
+            ListaOradores.Add(nuevaFila);
+            TablaOradores.ScrollIntoView(nuevaFila);
+        }
+
+        private void CmbNuevoOradorMatriz_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (sender is ComboBox cmb && cmb.SelectedItem is AncianoComboItem sel && cmb.Tag is OradorFila fila)
+            {
+                fila.Id = sel.Id;
+                fila.Nombre = sel.NombreMuestra;
+                fila.IsNew = false;
+
+                foreach (var anio in fila.Anios.Values) anio.OradorId = sel.Id;
+
+                string manuales = DatabaseHelper.ObtenerConfiguracion("OradoresMatrizManuales", "");
+                var list = manuales.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+                if (!list.Contains(sel.Id.ToString())) list.Add(sel.Id.ToString());
+                DatabaseHelper.GuardarConfiguracion("OradoresMatrizManuales", string.Join(",", list));
+
+                string ocultos = DatabaseHelper.ObtenerConfiguracion("OradoresMatrizOcultos", "");
+                var listOcultos = ocultos.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+                if (listOcultos.Contains(sel.Id.ToString()))
+                {
+                    listOcultos.Remove(sel.Id.ToString());
+                    DatabaseHelper.GuardarConfiguracion("OradoresMatrizOcultos", string.Join(",", listOcultos));
+                }
+            }
+        }
+
+        private void BtnEliminarOradorMatriz_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Wpf.Ui.Controls.Button btn && btn.Tag is OradorFila fila)
+            {
+                if (fila.Id == -999)
+                {
+                    ListaOradores.Remove(fila);
+                    return;
+                }
+
+                if (MessageBox.Show($"¿Deseas quitar a {fila.Nombre} de la tabla de oradores?", "Borrar participante", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                {
+                    ListaOradores.Remove(fila);
+
+                    string manuales = DatabaseHelper.ObtenerConfiguracion("OradoresMatrizManuales", "");
+                    var list = manuales.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+                    if (list.Contains(fila.Id.ToString()))
+                    {
+                        list.Remove(fila.Id.ToString());
+                        DatabaseHelper.GuardarConfiguracion("OradoresMatrizManuales", string.Join(",", list));
+                    }
+
+                    string ocultos = DatabaseHelper.ObtenerConfiguracion("OradoresMatrizOcultos", "");
+                    var listOcultos = ocultos.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+                    if (!listOcultos.Contains(fila.Id.ToString()))
+                    {
+                        listOcultos.Add(fila.Id.ToString());
+                        DatabaseHelper.GuardarConfiguracion("OradoresMatrizOcultos", string.Join(",", listOcultos));
+                    }
+
+                    foreach (var anio in fila.Anios.Values)
+                    {
+                        anio.ACBR = "";
+                        anio.RP = "";
+                        anio.ACCO = "";
+                        anio.EV = false;
+                    }
+                }
+            }
+        }
     }
 
     // ==========================================
     // CLASES DE DATOS
     // ==========================================
+
+    public class FilaAnio : INotifyPropertyChanged
+    {
+        public int OradorId { get; set; }
+        public int Anio { get; set; }
+
+        private bool _ev;
+        public bool EV { get => _ev; set { _ev = value; OnPropertyChanged("EV"); if (OradorId > 0) Task.Run(() => DatabaseHelper.GuardarConfiguracion($"EV_{Anio}_{OradorId}", value.ToString())); } }
+        public void SetEV(bool val) { _ev = val; OnPropertyChanged("EV"); }
+
+        private string _acbr;
+        public string ACBR { get => _acbr; set { if (_acbr != value) { _acbr = value; OnPropertyChanged("ACBR"); OnPropertyChanged("BgACBR"); if (OradorId > 0) Task.Run(() => DatabaseHelper.GuardarConfiguracion($"MANUAL_ACBR_{Anio}_{OradorId}", value ?? "")); } } }
+        public void SetACBR(string val) { _acbr = val; OnPropertyChanged("ACBR"); OnPropertyChanged("BgACBR"); }
+
+        private string _rp;
+        public string RP { get => _rp; set { if (_rp != value) { _rp = value; OnPropertyChanged("RP"); OnPropertyChanged("BgRP"); if (OradorId > 0) Task.Run(() => DatabaseHelper.GuardarConfiguracion($"MANUAL_RP_{Anio}_{OradorId}", value ?? "")); } } }
+        public void SetRP(string val) { _rp = val; OnPropertyChanged("RP"); OnPropertyChanged("BgRP"); }
+
+        private string _acco;
+        public string ACCO { get => _acco; set { if (_acco != value) { _acco = value; OnPropertyChanged("ACCO"); OnPropertyChanged("BgACCO"); if (OradorId > 0) Task.Run(() => DatabaseHelper.GuardarConfiguracion($"MANUAL_ACCO_{Anio}_{OradorId}", value ?? "")); } } }
+        public void SetACCO(string val) { _acco = val; OnPropertyChanged("ACCO"); OnPropertyChanged("BgACCO"); }
+
+        public string BgACBR => GetBgColor(ACBR);
+        public string BgRP => GetBgColor(RP);
+        public string BgACCO => GetBgColor(ACCO);
+
+        private string GetBgColor(string text)
+        {
+            string s = text?.ToLower() ?? "";
+            if (s.Contains("discurso")) return "#005AB5";
+            if (s.Contains("atalaya")) return "#DC3220";
+            if (s.Contains("entrevista")) return "#009E73";
+            if (s.Contains("presidencia")) return "#762A83";
+            return "Transparent";
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+    }
+
+    public class OradorFila : INotifyPropertyChanged
+    {
+        public int Id { get; set; }
+        public string Seccion { get; set; }
+
+        private string _nombre;
+        public string Nombre { get => _nombre; set { _nombre = value; OnPropertyChanged("Nombre"); } }
+
+        private bool _isNew;
+        public bool IsNew { get => _isNew; set { _isNew = value; OnPropertyChanged("IsNew"); OnPropertyChanged("VisTextBlock"); OnPropertyChanged("VisComboBox"); } }
+
+        private bool _tieneHistorialBD = false;
+        public bool TieneHistorialBD { get => _tieneHistorialBD; set { _tieneHistorialBD = value; OnPropertyChanged("TieneHistorialBD"); OnPropertyChanged("VisibilidadBorrar"); } }
+
+        public Visibility VisTextBlock => IsNew ? Visibility.Collapsed : Visibility.Visible;
+        public Visibility VisComboBox => IsNew ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility VisibilidadBorrar => TieneHistorialBD ? Visibility.Collapsed : Visibility.Visible;
+
+        public List<AncianoComboItem> OpcionesDisponibles { get; set; }
+
+        private string _bos; public string BOS { get => _bos; set { _bos = value; OnPropertyChanged("BOS"); if (Id > 0) Task.Run(() => DatabaseHelper.GuardarConfiguracion($"BOS_{Id}", value ?? "")); } }
+
+        public void SetBOS(string v) { _bos = v; OnPropertyChanged("BOS"); }
+
+        public Dictionary<int, FilaAnio> Anios { get; set; } = new Dictionary<int, FilaAnio>();
+
+        public bool TieneDiscursos()
+        {
+            return Anios.Values.Any(a => !string.IsNullOrEmpty(a.ACBR) || !string.IsNullOrEmpty(a.RP) || !string.IsNullOrEmpty(a.ACCO));
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+    }
 
     public class AncianoComboItem
     {
@@ -1688,5 +2336,45 @@ namespace SCCosmos
 
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+    }
+
+    // CLASE PARA GENERAR LA IMAGEN FANTASMA AL ARRASTRAR
+    public class DragAdorner : Adorner
+    {
+        private Rectangle _child;
+        private double _offsetLeft;
+        private double _offsetTop;
+
+        public DragAdorner(UIElement adornedElement, UIElement visualElement, double opacity, Point dragStartPoint)
+            : base(adornedElement)
+        {
+            var brush = new VisualBrush(visualElement) { Opacity = opacity };
+            _child = new Rectangle { Width = visualElement.RenderSize.Width, Height = visualElement.RenderSize.Height, Fill = brush };
+
+            // Calcula dónde agarraste la fila exactamente para que el ratón no salte
+            Point elementOffset = visualElement.TransformToAncestor(adornedElement).Transform(new Point(0, 0));
+            _offsetLeft = dragStartPoint.X - elementOffset.X;
+            _offsetTop = dragStartPoint.Y - elementOffset.Y;
+
+            IsHitTestVisible = false; // Permite que los clics traspasen el fantasma
+        }
+
+        protected override int VisualChildrenCount => 1;
+        protected override Visual GetVisualChild(int index) => _child;
+        protected override Size MeasureOverride(Size constraint)
+        {
+            _child.Measure(constraint);
+            return _child.DesiredSize;
+        }
+        protected override Size ArrangeOverride(Size finalSize)
+        {
+            _child.Arrange(new Rect(_child.DesiredSize));
+            return finalSize;
+        }
+
+        public void UpdatePosition(Point position)
+        {
+            RenderTransform = new TranslateTransform(position.X - _offsetLeft, position.Y - _offsetTop);
+        }
     }
 }

@@ -22,18 +22,28 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- 0. TÍTULO FIJO -->
-            <TextBlock Text="RUTA" 
-                       Grid.Row="0" 
-                       FontSize="26" 
-                       FontWeight="SemiBold" 
-                       Foreground="White" 
-                       Margin="0,0,0,20"/>
+            <!-- 0. CABECERA CON TÍTULO Y BOTÓN DE CONFIGURACIÓN -->
+            <Grid Grid.Row="0" Margin="0,0,0,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Text="RUTA" FontSize="26" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+
+                <ui:Button Grid.Column="1" 
+                           Content="Configurar Ciclo (3 Años)" 
+                           Icon="{ui:SymbolIcon CalendarSettings24}" 
+                           Appearance="Secondary" 
+                           Click="BtnConfigurarCiclo_Click" 
+                           Cursor="Hand" 
+                           Padding="12,6"/>
+            </Grid>
 
             <!-- 1. BOTÓN PASADO -->
             <ui:Button x:Name="BtnCargarPasado" 
                        Grid.Row="1" 
-                       Content="Cargar 52 semanas anteriores (1 año atrás)" 
+                       Content="Cargar 6 meses más" 
                        Icon="{ui:SymbolIcon ChevronUp24}"
                        Click="BtnCargarPasado_Click"
                        HorizontalAlignment="Stretch"
@@ -66,18 +76,31 @@
 
                 <DataGrid.RowStyle>
                     <Style TargetType="DataGridRow">
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="Foreground" Value="White"/>
+                        <Setter Property="Opacity" Value="{Binding OpacidadSemana}"/>
+                        <Setter Property="Cursor" Value="Hand"/>
+
+                        <!-- TRUCO DE ALINEACIÓN: Todas las filas tienen 4px de borde, pero invisible por defecto -->
                         <Setter Property="BorderThickness" Value="4,0,0,0"/>
                         <Setter Property="BorderBrush" Value="Transparent"/>
+
+                        <EventSetter Event="MouseLeftButtonUp" Handler="FilaSemana_Click"/>
+
                         <Style.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#15FFFFFF"/>
-                            </Trigger>
+                            <!-- SEMANA ACTUAL -->
                             <DataTrigger Binding="{Binding IsActual}" Value="True">
-                                <Setter Property="Background" Value="#2A0078D4"/>
-                                <Setter Property="BorderBrush" Value="#0078D4"/>
-                                <Setter Property="Foreground" Value="White"/>
-                                <Setter Property="FontWeight" Value="Bold"/>
+                                <Setter Property="Background" Value="#354BA3E3"/>
+                                <!-- Solo "encendemos" el color del borde, el grosor de 4px ya está aplicado -->
+                                <Setter Property="BorderBrush" Value="#4BA3E3"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
                             </DataTrigger>
+
+                            <!-- EFECTO HOVER -->
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#30FFFFFF"/>
+                                <Setter Property="Opacity" Value="1.0"/>
+                            </Trigger>
                         </Style.Triggers>
                     </Style>
                 </DataGrid.RowStyle>
@@ -90,8 +113,8 @@
                                     <Setter.Value>
                                         <ControlTemplate TargetType="{x:Type GroupItem}">
                                             <StackPanel>
-                                                <Border Background="#25FFFFFF" Padding="0,10" Margin="0" BorderThickness="0,1,0,1" BorderBrush="#35FFFFFF">
-                                                    <TextBlock Text="{Binding Name}" Foreground="White" FontWeight="Bold" FontSize="14" HorizontalAlignment="Center"/>
+                                                <Border Background="#25FFFFFF" Padding="15,6" Margin="0" BorderThickness="0,1,0,1" BorderBrush="#35FFFFFF">
+                                                    <TextBlock Text="{Binding Name}" Foreground="White" FontWeight="Bold" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                 </Border>
                                                 <ItemsPresenter />
                                             </StackPanel>
@@ -196,6 +219,15 @@
                                         <ui:Button Icon="{ui:SymbolIcon Eye24}" Appearance="Success" Padding="6" Cursor="Hand" Click="BtnVerVisita_Click" ToolTip="Ver datos de la congregación"/>
                                     </ContentControl>
 
+                                    <ui:Button Icon="{ui:SymbolIcon Delete24}" 
+                                       Appearance="Transparent" 
+                                       Foreground="#D13438"
+                                       Padding="6" 
+                                       Cursor="Hand" 
+                                       Click="BtnEliminarActividad_Click" 
+                                       ToolTip="Eliminar esta actividad extra"
+                                       Visibility="{Binding EsClonada}"/>
+
                                     <!-- Botones de SOLAPAMIENTO DE ACTIVIDADES -->
                                     <ui:Button 
                                                Icon="{ui:SymbolIcon AddCircle24}" 
@@ -207,15 +239,7 @@
                                                ToolTip="Solapar otra actividad en la misma semana"
                                                Visibility="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsMouseOver, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
-                                    <ui:Button Icon="{ui:SymbolIcon Delete24}" 
-                                               Appearance="Transparent" 
-                                               Foreground="#D13438"
-                                               Padding="6" 
-                                               Cursor="Hand" 
-                                               Click="BtnEliminarActividad_Click" 
-                                               ToolTip="Eliminar esta actividad extra"
-                                               Visibility="{Binding EsClonada}"/>
-
+                                   
                                 </StackPanel>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
@@ -226,7 +250,7 @@
             <!-- 3. BOTÓN FUTURO -->
             <ui:Button x:Name="BtnCargarFuturo" 
                        Grid.Row="3" 
-                       Content="Cargar 52 semanas siguientes (1 año adelante)" 
+                       Content="Cargar 6 meses más" 
                        Icon="{ui:SymbolIcon ChevronDown24}"
                        Click="BtnCargarFuturo_Click"
                        HorizontalAlignment="Stretch"

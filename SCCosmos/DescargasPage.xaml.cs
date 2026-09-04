@@ -1,8 +1,10 @@
 ﻿using System;
 using System.IO;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace SCCosmos
 {
@@ -11,48 +13,107 @@ namespace SCCosmos
         public DescargasPage()
         {
             InitializeComponent();
+            this.Loaded += Page_Loaded;
+            this.Unloaded += Page_Unloaded;
+        }
+
+        private void Page_Loaded(object sender, RoutedEventArgs e)
+        {
+            DescargadorStreamJW.DescargaCambiada += Descargador_EstadoCambiado;
+            ActualizarUI_Descarga(DescargadorStreamJW.EstaDescargando);
+            CargarExplorador();
+        }
+
+        private void Page_Unloaded(object sender, RoutedEventArgs e)
+        {
+            DescargadorStreamJW.DescargaCambiada -= Descargador_EstadoCambiado;
+        }
+
+        private void Descargador_EstadoCambiado(bool ejecutando)
+        {
+            Application.Current.Dispatcher.Invoke(() => ActualizarUI_Descarga(ejecutando));
+        }
+
+        private void ActualizarUI_Descarga(bool ejecutando)
+        {
+            if (ejecutando)
+            {
+                btnDescargar.IsEnabled = false;
+                btnDescargar.Content = "DESCARGANDO... POR FAVOR, ESPERE";
+            }
+            else
+            {
+                btnDescargar.IsEnabled = true;
+                btnDescargar.Content = "INICIAR DESCARGAS";
+            }
+        }
+
+        // =======================================================
+        // OBTENER LA RUTA DESDE LA CONFIGURACIÓN (JSON LOCAL)
+        // =======================================================
+        private string ObtenerRutaDescargas()
+        {
+            string ruta = "";
+            try
+            {
+                // Vamos a la misma carpeta donde ConfiguracionPage guarda el archivo
+                string rutaAppData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SCCosmos");
+                string rutaArchivo = Path.Combine(rutaAppData, "local_settings.json");
+
+                if (File.Exists(rutaArchivo))
+                {
+                    string json = File.ReadAllText(rutaArchivo);
+                    var localSettings = JsonSerializer.Deserialize<ConfiguracionLocalSettings>(json);
+
+                    if (localSettings != null && !string.IsNullOrWhiteSpace(localSettings.RutaDescargas))
+                    {
+                        ruta = localSettings.RutaDescargas;
+                    }
+                }
+            }
+            catch { }
+
+            // Fallback de seguridad si no hay ruta configurada o no existe la carpeta
+            if (string.IsNullOrWhiteSpace(ruta) || !Directory.Exists(ruta))
+            {
+                ruta = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DescargasStream");
+                if (!Directory.Exists(ruta)) Directory.CreateDirectory(ruta);
+            }
+
+            return ruta;
         }
 
         private async void btnDescargar_Click(object sender, RoutedEventArgs e)
         {
-            // 1. Desactivamos el botón y cambiamos el texto
-            btnDescargar.IsEnabled = false;
-            btnDescargar.Content = "DESCARGANDO... POR FAVOR, ESPERE";
-
             try
             {
-                // 2. Leemos el estado de todas las casillas (Checkboxes) de la pantalla
                 OpcionesDescarga misOpciones = new OpcionesDescarga
                 {
-                    // Betel
                     Betel_AdoracionMatutina = chkBetelAdoracion.IsChecked ?? false,
-
-                    // Teocráticos
                     Teocraticos_DiscursosPublicos = chkTeoDiscursos.IsChecked ?? false,
                     Teocraticos_AsambleaCircuitoSucursal = chkTeoAsambleaSucursal.IsChecked ?? false,
                     Teocraticos_AsambleaCircuitoSuperintendente = chkTeoAsambleaSuper.IsChecked ?? false,
                     Teocraticos_AsambleaRegional = chkTeoAsambleaRegional.IsChecked ?? false,
-
-                    // JW.ORG
-                    JwOrg_DiscursosBroadcasting = chkJwDiscursos.IsChecked ?? false,
                     JwOrg_AdoracionMatutina = chkJwAdoracion.IsChecked ?? false,
-                    JwOrg_GraduacionGalaad = chkJwGalaad.IsChecked ?? false
+                    JwOrg_DiscursosBroadcasting = chkJwDiscursos.IsChecked ?? false,
+                    JwOrg_GraduacionGalaad = chkJwGalaad.IsChecked ?? false,
+                    JwOrg_ReunionAnual = chkJwReunionAnual.IsChecked ?? false
                 };
 
-                // 3. OBTENEMOS LA RUTA DINÁMICA DEL PERFIL
                 string rutaPerfil = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SCCosmos", "PerfilFirefoxCorreo");
+                if (!Directory.Exists(rutaPerfil)) Directory.CreateDirectory(rutaPerfil);
 
-                // Verificamos si la carpeta existe. Si no, la creamos para que Firefox no dé error de "Sesión no creada".
-                if (!Directory.Exists(rutaPerfil))
-                {
-                    Directory.CreateDirectory(rutaPerfil);
-                }
+                // 1. Obtenemos la ruta oficial de tu configuración
+                string rutaDestinoArchivos = ObtenerRutaDescargas();
 
-                // 4. Ejecutamos el robot en segundo plano
+                // 2. Ejecutamos pasándole los 3 argumentos que pide ahora el robot
                 await Task.Run(() =>
                 {
-                    DescargadorStreamJW.DescargarUltimoDiscurso(rutaPerfil, misOpciones);
+                    DescargadorStreamJW.DescargarUltimoDiscurso(rutaPerfil, rutaDestinoArchivos, misOpciones);
                 });
+
+                // Al terminar, actualizamos el explorador automáticamente
+                CargarExplorador();
 
                 MessageBox.Show("¡Todas las descargas han finalizado correctamente!", "Proceso Completado", MessageBoxButton.OK, MessageBoxImage.Information);
             }
@@ -60,11 +121,148 @@ namespace SCCosmos
             {
                 MessageBox.Show($"Ocurrió un error general: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-            finally
+        }
+
+        // =======================================================
+        // EXPLORADOR DE ARCHIVOS EN 2 COLUMNAS (TreeView Dinámico)
+        // =======================================================
+        // =======================================================
+        // EXPLORADOR DE ARCHIVOS EN 3 COLUMNAS (TreeView Dinámico)
+        // =======================================================
+        private void CargarExplorador()
+        {
+            ArbolArchivosCol1.Items.Clear();
+            ArbolArchivosCol2.Items.Clear();
+            ArbolArchivosCol3.Items.Clear(); // <--- Limpiamos la nueva columna 3
+
+            string rutaDescargas = ObtenerRutaDescargas();
+
+            if (Directory.Exists(rutaDescargas))
             {
-                // 5. Volvemos a activar el botón al terminar
-                btnDescargar.IsEnabled = true;
-                btnDescargar.Content = "INICIAR DESCARGAS";
+                var directorios = Directory.GetDirectories(rutaDescargas);
+                var listaCarpetas = new System.Collections.Generic.List<string>();
+
+                foreach (var d in directorios)
+                {
+                    if (!new DirectoryInfo(d).Name.Equals("_Temp", StringComparison.OrdinalIgnoreCase))
+                    {
+                        listaCarpetas.Add(d);
+                    }
+                }
+
+                // Repartimos las carpetas entre las 3 columnas (Rellenando hacia abajo y luego a la derecha)
+                int itemsPorColumna = (int)Math.Ceiling(listaCarpetas.Count / 3.0);
+
+                for (int i = 0; i < listaCarpetas.Count; i++)
+                {
+                    var dirInfo = new DirectoryInfo(listaCarpetas[i]);
+                    var rootNodo = new TreeViewItem
+                    {
+                        Header = "📁 " + dirInfo.Name,
+                        IsExpanded = false, // Cerradas por defecto
+                        // Eliminado el FontWeight.Bold según tu petición
+                        Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#8FBCBB")),
+                        Margin = new Thickness(0, 0, 0, 5)
+                    };
+
+                    ConstruirArbol(listaCarpetas[i], rootNodo);
+
+                    // Distribución en 3 columnas
+                    if (i < itemsPorColumna) ArbolArchivosCol1.Items.Add(rootNodo);
+                    else if (i < itemsPorColumna * 2) ArbolArchivosCol2.Items.Add(rootNodo);
+                    else ArbolArchivosCol3.Items.Add(rootNodo);
+                }
+
+                // Los archivos sueltos en la raíz van a la primera columna
+                var archivosSueltos = Directory.GetFiles(rutaDescargas);
+                foreach (var file in archivosSueltos)
+                {
+                    var fileInfo = new FileInfo(file);
+                    var fileNodo = new TreeViewItem
+                    {
+                        Header = "📄 " + fileInfo.Name,
+                        Foreground = Brushes.WhiteSmoke,
+                        Cursor = System.Windows.Input.Cursors.Hand,
+                        Margin = new Thickness(0, 0, 0, 2)
+                    };
+
+                    fileNodo.MouseDoubleClick += (s, e) =>
+                    {
+                        e.Handled = true;
+                        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(fileInfo.FullName) { UseShellExecute = true }); }
+                        catch (Exception ex) { MessageBox.Show($"No se puede abrir el archivo:\n{ex.Message}"); }
+                    };
+
+                    ArbolArchivosCol1.Items.Add(fileNodo);
+                }
+
+                if (ArbolArchivosCol1.Items.Count == 0 && ArbolArchivosCol2.Items.Count == 0 && ArbolArchivosCol3.Items.Count == 0)
+                {
+                    ArbolArchivosCol1.Items.Add(new TreeViewItem { Header = "La carpeta está vacía.", Foreground = Brushes.Gray });
+                }
+            }
+            else
+            {
+                ArbolArchivosCol1.Items.Add(new TreeViewItem { Header = "Carpeta no encontrada o no configurada.", Foreground = Brushes.Gray });
+            }
+        }
+
+        private void ConstruirArbol(string rutaDirectorio, TreeViewItem nodoPadre)
+        {
+            try
+            {
+                foreach (var dir in Directory.GetDirectories(rutaDirectorio))
+                {
+                    var dirInfo = new DirectoryInfo(dir);
+                    if (dirInfo.Name.Equals("_Temp", StringComparison.OrdinalIgnoreCase)) continue;
+
+                    var subNodo = new TreeViewItem
+                    {
+                        Header = "📁 " + dirInfo.Name,
+                        Foreground = Brushes.LightGray,
+                        IsExpanded = false // <--- CERRADAS POR DEFECTO
+                    };
+
+                    ConstruirArbol(dir, subNodo);
+                    nodoPadre.Items.Add(subNodo);
+                }
+
+                foreach (var file in Directory.GetFiles(rutaDirectorio))
+                {
+                    var fileInfo = new FileInfo(file);
+                    var fileNodo = new TreeViewItem
+                    {
+                        Header = "📄 " + fileInfo.Name,
+                        Foreground = Brushes.WhiteSmoke,
+                        Cursor = System.Windows.Input.Cursors.Hand
+                    };
+
+                    fileNodo.MouseDoubleClick += (s, e) =>
+                    {
+                        e.Handled = true;
+                        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(fileInfo.FullName) { UseShellExecute = true }); }
+                        catch (Exception ex) { MessageBox.Show($"No se puede abrir el archivo:\n{ex.Message}"); }
+                    };
+
+                    nodoPadre.Items.Add(fileNodo);
+                }
+            }
+            catch { }
+        }
+
+        
+
+        private void BtnActualizarExplorador_Click(object sender, RoutedEventArgs e)
+        {
+            CargarExplorador();
+        }
+
+        private void BtnAbrirCarpeta_Click(object sender, RoutedEventArgs e)
+        {
+            string ruta = ObtenerRutaDescargas();
+            if (Directory.Exists(ruta))
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", $"\"{ruta}\"") { UseShellExecute = true });
             }
         }
     }

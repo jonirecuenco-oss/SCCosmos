@@ -73,7 +73,8 @@ namespace SCCosmos
                 Latitud = personaInicial.Latitud,
                 Longitud = personaInicial.Longitud,
                 ConyugeId = personaInicial.ConyugeId,
-                EmailJW = personaInicial.EmailJW
+                EmailJW = personaInicial.EmailJW,
+                Notas = personaInicial.Notas // <--- CAMPO NUEVO
             };
 
             _base64FotoModificada = PersonaActualizada.Foto;
@@ -85,9 +86,6 @@ namespace SCCosmos
             RefrescarListaConyugesYVincular();
         }
 
-        // ========================================================
-        // NUEVO MÉTODO PÚBLICO PARA SYNC HUB (AHORA SILENCIOSO)
-        // ========================================================
         public void CargarConflictosDesdeHub(Persona pHub)
         {
             LimpiarSelectsDinamicos();
@@ -95,10 +93,8 @@ namespace SCCosmos
 
             if (camposCambiados.Count > 0)
             {
-                // Solo mostramos el texto de advertencia en rojo arriba del formulario, sin Popups
                 TxtAdvertenciaConflictos.Visibility = Visibility.Visible;
             }
-            // Si no hay cambios (Count == 0), no mostramos nada y se abre el formulario normal.
         }
 
         private void CargarDatosEnInterfaz()
@@ -110,6 +106,7 @@ namespace SCCosmos
             TxtEmailJW.Text = PersonaActualizada.EmailJW;
             TxtTelefono.Text = PersonaActualizada.Telefono;
             TxtDireccion.Text = PersonaActualizada.Direccion;
+            TxtNotas.Text = PersonaActualizada.Notas;
 
             TxtGrupo.Text = PersonaActualizada.Grupo > 0 ? PersonaActualizada.Grupo.ToString() : "";
             TxtFechaNac.Text = PersonaActualizada.FechaNacimiento;
@@ -234,7 +231,7 @@ namespace SCCosmos
 
         private void LimpiarSelectsDinamicos()
         {
-            var textboxes = new TextBox[] { TxtNombre, TxtNombreComun, TxtNombreJW, TxtEmail, TxtEmailJW, TxtTelefono, TxtDireccion, TxtGrupo, TxtFechaNac, TxtFechaBaut, TxtInicioPrec, TxtEscuela };
+            var textboxes = new TextBox[] { TxtNombre, TxtNombreComun, TxtNombreJW, TxtEmail, TxtEmailJW, TxtTelefono, TxtDireccion, TxtGrupo, TxtFechaNac, TxtFechaBaut, TxtInicioPrec, TxtEscuela, TxtNotas, TxtPrivilegios };
             foreach (var txt in textboxes)
             {
                 txt.Visibility = Visibility.Visible;
@@ -258,7 +255,7 @@ namespace SCCosmos
             PanelFotoNormal.Visibility = Visibility.Visible;
             PanelFotoConflicto.Visibility = Visibility.Collapsed;
             TxtAdvertenciaConflictos.Visibility = Visibility.Collapsed;
-            TxtPrivilegios.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1E1E1E"));
+            TxtPrivilegios.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#252526"));
             foreach (CheckBox chk in PanelSolicitudes.Children.OfType<CheckBox>()) chk.Foreground = Brushes.White;
         }
 
@@ -267,7 +264,6 @@ namespace SCCosmos
             string v1 = valActual?.Trim() ?? "";
             string v2 = valDuplicado?.Trim() ?? "";
 
-            // Quitamos la restricción de que v2 no pueda estar vacío, para permitir el "viceversa"
             if (v1.ToLower() != v2.ToLower())
             {
                 Panel parent = txtOriginal.Parent as Panel;
@@ -288,14 +284,12 @@ namespace SCCosmos
                     ToolTip = "Dato en conflicto: JW Hub vs BBDD"
                 };
 
-                // Si alguno está en blanco, le ponemos la etiqueta (Vacío)
                 string opt1 = string.IsNullOrEmpty(v1) ? "(Vacío)" : v1;
                 string opt2 = string.IsNullOrEmpty(v2) ? "(Vacío)" : v2;
 
                 cmb.Items.Add(opt1);
                 if (opt1 != opt2) cmb.Items.Add(opt2);
 
-                // Priorizamos el valor nuevo (Hub)
                 cmb.SelectedItem = opt2;
 
                 cmb.SelectionChanged += (s, e) => {
@@ -312,6 +306,58 @@ namespace SCCosmos
                 int index = parent.Children.IndexOf(txtOriginal);
                 parent.Children.Insert(index + 1, cmb);
                 return nombreCampoVisible;
+            }
+            return null;
+        }
+
+        // ========================================================
+        // NUEVO: LÓGICA DE CONFLICTOS PARA PRIVILEGIOS
+        // ========================================================
+        private string ResolverConflictoPrivilegios(TextBox txtOriginal, string valActual, string valDuplicado)
+        {
+            string v1 = valActual?.Trim() ?? "";
+            string v2 = valDuplicado?.Trim() ?? "";
+
+            if (!string.IsNullOrEmpty(v2) && v1.ToLower() != v2.ToLower())
+            {
+                Panel parent = txtOriginal.Parent as Panel;
+                if (parent == null) return null;
+
+                txtOriginal.Visibility = Visibility.Collapsed;
+
+                ComboBox cmb = new ComboBox
+                {
+                    Name = "CmbConflict_" + txtOriginal.Name,
+                    IsEditable = false,
+                    Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#332b00")),
+                    Foreground = Brushes.White,
+                    BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFB900")),
+                    BorderThickness = new Thickness(1),
+                    Padding = new Thickness(4),
+                    Margin = txtOriginal.Margin,
+                    ToolTip = "Dato en conflicto: JW Hub vs BBDD. Selecciona qué hacer."
+                };
+
+                var optActual = new ComboBoxItem { Content = "Conservar los actuales", Tag = v1 };
+                var optHub = new ComboBoxItem { Content = "Reemplazar por los de JW Hub", Tag = v2 };
+                var optComb = new ComboBoxItem { Content = "Combinar ambos", Tag = string.IsNullOrEmpty(v1) ? v2 : v1 + "\n" + v2 };
+
+                cmb.Items.Add(optComb);
+                cmb.Items.Add(optHub);
+                cmb.Items.Add(optActual);
+
+                cmb.SelectedItem = optComb;
+
+                cmb.SelectionChanged += (s, e) => {
+                    if (cmb.SelectedItem is ComboBoxItem item)
+                        txtOriginal.Text = item.Tag.ToString();
+                };
+
+                txtOriginal.Text = optComb.Tag.ToString();
+
+                int index = parent.Children.IndexOf(txtOriginal);
+                parent.Children.Insert(index + 1, cmb);
+                return "Privilegios";
             }
             return null;
         }
@@ -393,7 +439,6 @@ namespace SCCosmos
 
                 cmbOriginal.ToolTip = $"El valor antiguo era: {textoV1}\nNuevo detectado: {textoV2}";
 
-                // Nos aseguramos de que exista la opción "(Vacío)" para poder seleccionarla
                 bool existeVacio = false;
                 foreach (ComboBoxItem item in cmbOriginal.Items)
                 {
@@ -421,6 +466,7 @@ namespace SCCosmos
             PersonaActualizada.Email = TxtEmail.Text;
             PersonaActualizada.EmailJW = TxtEmailJW.Text;
             PersonaActualizada.Telefono = TxtTelefono.Text;
+            PersonaActualizada.Notas = TxtNotas.Text.Trim(); // <-- GUARDAMOS LAS NOTAS
 
             PersonaActualizada.Direccion = TxtDireccion.Text.Trim();
             if (PersonaActualizada.Direccion != _direccionInicial)
@@ -439,7 +485,6 @@ namespace SCCosmos
             PersonaActualizada.FechaInicioPrec = TxtInicioPrec.Text;
             PersonaActualizada.FechaUltimaEscuela = TxtEscuela.Text;
 
-            // Extraemos los combos y, si el usuario eligió "(Vacío)", lo guardamos como "" para que no pete la BD
             PersonaActualizada.Sexo = (CmbSexo.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "";
             if (PersonaActualizada.Sexo == "(Vacío)") PersonaActualizada.Sexo = "";
 
@@ -474,7 +519,7 @@ namespace SCCosmos
             }
         }
 
-        
+
         private List<string> EvaluarConflictos(Persona pFusion)
         {
             List<string> camposConflictos = new List<string>();
@@ -512,17 +557,10 @@ namespace SCCosmos
                 RdoFotoDuplicada.IsChecked = true;
             }
 
-            if (!string.IsNullOrWhiteSpace(pFusion.Privilegios))
-            {
-                if (string.IsNullOrWhiteSpace(TxtPrivilegios.Text) || !TxtPrivilegios.Text.Contains(pFusion.Privilegios))
-                {
-                    TxtPrivilegios.Text = string.IsNullOrWhiteSpace(TxtPrivilegios.Text) ? pFusion.Privilegios : TxtPrivilegios.Text + "\n" + pFusion.Privilegios;
-                    TxtPrivilegios.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#332b00"));
-                    camposConflictos.Add("Privilegios");
-                }
-            }
+            // AHORA USA EL NUEVO RESOLVEDOR INTELIGENTE
+            string rPriv = ResolverConflictoPrivilegios(TxtPrivilegios, TxtPrivilegios.Text, pFusion.Privilegios);
+            if (rPriv != null) camposConflictos.Add(rPriv);
 
-            // === LÓGICA BLINDADA DE SOLICITUDES ===
             if (!string.IsNullOrWhiteSpace(pFusion.Solicitudes) || !string.IsNullOrWhiteSpace(PersonaActualizada.Solicitudes))
             {
                 var solsHub = (pFusion.Solicitudes ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).ToList();
@@ -569,8 +607,13 @@ namespace SCCosmos
             if (!TxtDireccion.IsFocused) return;
             string query = TxtDireccion.Text.Trim();
 
+            // DESBLOQUEO: Si el usuario teclea en la dirección, se borran las coordenadas
+            // El botón vuelve a su estado original
             _latitudActual = 0;
             _longitudActual = 0;
+            BtnFijarMapa.Appearance = Wpf.Ui.Controls.ControlAppearance.Secondary;
+            BtnFijarMapa.Icon = new Wpf.Ui.Controls.SymbolIcon { Symbol = Wpf.Ui.Controls.SymbolRegular.Location24 };
+            BtnFijarMapa.ToolTip = "Fijar coordenadas manualmente";
 
             if (query.Length < 4) { PopupDirecciones.IsOpen = false; return; }
 
@@ -641,7 +684,23 @@ namespace SCCosmos
             ImgFoto.Source = null;
         }
 
-        
+        private void BtnFijarMapa_Click(object sender, RoutedEventArgs e)
+        {
+            var ventanaMapa = new MapaCoordenadasWindow(_latitudActual, _longitudActual, TxtDireccion.Text);
+            ventanaMapa.Owner = this;
+            if (ventanaMapa.ShowDialog() == true)
+            {
+                // Asignamos las nuevas coordenadas manuales
+                _latitudActual = ventanaMapa.LatitudFinal;
+                _longitudActual = ventanaMapa.LongitudFinal;
+
+                // Bloqueo visual: Botón verde, icono de 'Check' y nueva descripción
+                BtnFijarMapa.Appearance = Wpf.Ui.Controls.ControlAppearance.Success;
+                BtnFijarMapa.Icon = new Wpf.Ui.Controls.SymbolIcon { Symbol = Wpf.Ui.Controls.SymbolRegular.Checkmark24 };
+                BtnFijarMapa.ToolTip = "Coordenadas fijadas";
+            }
+        }
+
         private async void BtnGuardar_Click(object sender, RoutedEventArgs e)
         {
             if (_latitudActual == 0 && _longitudActual == 0 && !string.IsNullOrWhiteSpace(TxtDireccion.Text))
@@ -712,6 +771,23 @@ namespace SCCosmos
             _esUnaFusion = false;
             this.DialogResult = true;
             this.Close();
+        }
+
+        private void Window_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == System.Windows.Input.Key.Enter)
+            {
+                // CORTAFUEGOS: Si estás escribiendo en un cuadro de texto grande (como Notas o Privilegios), 
+                // el Enter hará un salto de línea normal y no guardará la ficha por accidente.
+                if (System.Windows.Input.Keyboard.FocusedElement is TextBox txt && txt.AcceptsReturn)
+                    return;
+
+                BtnGuardar_Click(null, null);
+            }
+            else if (e.Key == System.Windows.Input.Key.Escape)
+            {
+                BtnCancelar_Click(null, null);
+            }
         }
 
         private void BtnCancelar_Click(object sender, RoutedEventArgs e) { this.DialogResult = false; this.Close(); }

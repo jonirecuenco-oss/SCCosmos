@@ -10,13 +10,22 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="ffmpeg.exe" />
     <None Remove="sccosmos.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="ffmpeg.exe">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="DocX" Version="5.2.0" />
     <PackageReference Include="itext" Version="9.7.0" />
+    <PackageReference Include="itext7.font-asian" Version="9.7.0" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.9" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4191.47" />
     <PackageReference Include="Selenium.WebDriver" Version="4.45.0" />
     <PackageReference Include="Selenium.WebDriver.GeckoDriver" Version="0.37.0" />
     <PackageReference Include="WPF-UI" Version="4.3.0" />

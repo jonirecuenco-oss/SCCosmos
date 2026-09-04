@@ -1,6 +1,16 @@
-﻿using System;
+﻿using iText.Forms;
+using iText.Kernel.Pdf;
+using OpenQA.Selenium;
+using OpenQA.Selenium.Firefox;
+using OpenQA.Selenium.Support.UI;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -8,10 +18,6 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
-using System.Text.Json;
-using System.Net.Http;
-using System.Globalization;
-using System.IO;
 
 namespace SCCosmos
 {
@@ -193,14 +199,12 @@ namespace SCCosmos
         // --- PROGRAMA ---
         private void ActualizarUI_MesPrograma()
         {
-            //if (TxtMesPrograma != null) TxtMesPrograma.Text = FormatearMes(_mesPrograma);
             if (!_cargandoDatos) CargarPrograma(_mesPrograma);
         }
 
         // --- NOTAS ---
         private void ActualizarUI_MesNotas()
         {
-            //if (TxtMesNotas != null) TxtMesNotas.Text = FormatearMes(_mesNotas);
             if (!_cargandoDatos) CargarNotas(_mesNotas);
         }
 
@@ -235,7 +239,6 @@ namespace SCCosmos
         // --- S-303 ---
         private void ActualizarUI_MesS303()
         {
-            //if (TxtMesS303 != null) TxtMesS303.Text = FormatearMes(_mesS303);
             if (!_cargandoDatos) CargarS303yS2();
         }
 
@@ -1397,9 +1400,135 @@ namespace SCCosmos
             return null;
         }
 
-        // ==========================================
-        // GESTIÓN DE S-303 Y S-2
-        // ==========================================
+        
+
+        private void BtnEditarS303_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is DocumentoS303UI docUI)
+            {
+                if (File.Exists(docUI.DocumentoOriginal.RutaLocal))
+                {
+                    if (docUI.EsPlantilla)
+                    {
+                        try
+                        {
+                            string mesRef = _mesS303.ToString("yyyy-MM");
+                            string nombreCopia = $"S-303_{_congreCodigo}_{mesRef}.pdf";
+                            string rutaCopia = Path.Combine(Path.GetDirectoryName(docUI.DocumentoOriginal.RutaLocal), nombreCopia);
+
+                            // OBTENER DATOS PARA AUTO-COMPLETAR
+                            var congre = DatabaseHelper.ObtenerCongregaciones().FirstOrDefault(c => c.Codigo == _congreCodigo);
+                            string fechaVisitaStr = "";
+
+                            using (var conn = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={DatabaseHelper.RutaDirectorioDatos}\\sccosmos.db"))
+                            {
+                                conn.Open();
+                                var cmd = conn.CreateCommand();
+                                cmd.CommandText = "SELECT FechaMartes FROM Semanas WHERE Congregacion = @c AND Actividad = 'Visita' AND FechaMartes LIKE @m || '%' LIMIT 1";
+                                cmd.Parameters.AddWithValue("@c", _congreNombre);
+                                cmd.Parameters.AddWithValue("@m", mesRef);
+                                var res = cmd.ExecuteScalar();
+                                if (res != null && DateTime.TryParse(res.ToString(), out DateTime fMartes))
+                                {
+                                    DateTime fDom = fMartes.AddDays(5);
+                                    fechaVisitaStr = $"Del {fMartes.Day} de {fMartes.ToString("MMM", new CultureInfo("es-ES"))} al {fDom.Day} de {fDom.ToString("MMM", new CultureInfo("es-ES"))} de {fDom.Year}";
+                                }
+                            }
+
+                            // OBTENER DATOS DE CONFIGURACIÓN
+                            string nomSC = DatabaseHelper.ObtenerConfiguracion("NombreSC", "").Trim();
+                            string apeSC = DatabaseHelper.ObtenerConfiguracion("ApellidosSC", "");
+                            if (string.IsNullOrEmpty(apeSC)) apeSC = DatabaseHelper.ObtenerConfiguracion("ApellidoSC", ""); // Por si estuviera en singular
+
+                            string nombreCompletoSC = $"{nomSC} {apeSC}".Trim();
+                            string numCirc = DatabaseHelper.ObtenerConfiguracion("NumeroCircuito", "");
+
+                            // RELLENAR PDF CON iText7 (Con tamaño de fuente fijo)
+                            using (PdfDocument pdfDoc = new PdfDocument(new PdfReader(docUI.DocumentoOriginal.RutaLocal), new PdfWriter(rutaCopia)))
+                            {
+                                PdfAcroForm form = PdfAcroForm.GetAcroForm(pdfDoc, true);
+                                if (form != null)
+                                {
+                                    // Establecemos un tamaño de letra fijo para que no se auto-ajuste de forma extraña
+                                    float tamanoLetra = 10f;
+
+                                    var f1 = form.GetField("900_1_Text_SanSerif");
+                                    if (f1 != null) { f1.SetFontSize(tamanoLetra); f1.SetValue(_congreCodigo ?? ""); }
+
+                                    var f2 = form.GetField("900_2_Text_SanSerif");
+                                    if (f2 != null) { f2.SetFontSize(tamanoLetra); f2.SetValue(fechaVisitaStr ?? ""); }
+
+                                    var f3 = form.GetField("900_3_Text_SanSerif");
+                                    if (f3 != null) { f3.SetFontSize(tamanoLetra); f3.SetValue(_congreNombre ?? ""); }
+
+                                    var f4 = form.GetField("900_4_Text_SanSerif");
+                                    if (f4 != null) { f4.SetFontSize(tamanoLetra); f4.SetValue(congre?.Municipio ?? ""); }
+
+                                    var f5 = form.GetField("900_5_Text_SanSerif");
+                                    if (f5 != null) { f5.SetFontSize(tamanoLetra); f5.SetValue(congre?.Provincia ?? ""); }
+
+                                    var f6 = form.GetField("900_6_Text_SanSerif");
+                                    if (f6 != null) { f6.SetFontSize(tamanoLetra); f6.SetValue(nombreCompletoSC); }
+
+                                    var f7 = form.GetField("900_7_Text_SanSerif");
+                                    if (f7 != null) { f7.SetFontSize(tamanoLetra); f7.SetValue(numCirc ?? ""); }
+                                }
+                            }
+
+                            DatabaseHelper.InsertarDocumento("S-303", nombreCopia, rutaCopia);
+
+                            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(rutaCopia) { UseShellExecute = true });
+                            ActualizarUI_MesS303();
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show($"Error al crear y rellenar la copia del S-303: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
+                    }
+                    else
+                    {
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(docUI.DocumentoOriginal.RutaLocal) { UseShellExecute = true });
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("El archivo no se encuentra en el disco.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private void BtnEliminarS303_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is DocumentoS303UI docUI)
+            {
+                if (!docUI.EsPlantilla && docUI.DocumentoOriginal != null)
+                {
+                    if (MessageBox.Show("¿Eliminar el S-303 de este mes? Se perderán los datos que hubieras escrito en el PDF.", "Eliminar S-303", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+                    {
+                        // 1. Borramos el archivo físico del disco duro
+                        try { if (File.Exists(docUI.DocumentoOriginal.RutaLocal)) File.Delete(docUI.DocumentoOriginal.RutaLocal); } catch { }
+
+                        // 2. Buscamos TODOS los registros en la base de datos asociados a este S-303 y los aniquilamos
+                        string mesRef = _mesS303.ToString("yyyy-MM");
+                        string identificadorVisita = $"S-303_{_congreCodigo}_{mesRef}";
+
+                        var todosLosRegistros = DatabaseHelper.ObtenerDocumentos("S-303")
+                            .Where(d => d.NombreArchivo.Contains(identificadorVisita))
+                            .ToList();
+
+                        foreach (var doc in todosLosRegistros)
+                        {
+                            DatabaseHelper.EliminarDocumento(doc.Id);
+                        }
+
+                        // 3. Vaciamos la lista por completo y la recargamos
+                        ListaS303.ItemsSource = null;
+                        CargarS303yS2();
+                    }
+                }
+            }
+        }
+
         private void CargarS303yS2()
         {
             // 1. Cargar S-303 inteligente (Busca copia o pide plantilla)
@@ -1407,7 +1536,6 @@ namespace SCCosmos
             string mesRef = _mesS303.ToString("yyyy-MM");
             string identificadorVisita = $"S-303_{_congreCodigo}_{mesRef}";
 
-            // Busca si ya existe la copia específica
             var docEspecifico = DatabaseHelper.ObtenerDocumentos("S-303")
                 .FirstOrDefault(d => d.NombreArchivo.Contains(identificadorVisita));
 
@@ -1423,7 +1551,6 @@ namespace SCCosmos
             }
             else
             {
-                // Busca la plantilla genérica en "Envío de S-303"
                 var plantilla = DatabaseHelper.ObtenerDocumentos("Envío de S-303")
                     .FirstOrDefault(d => d.NombreArchivo.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase));
 
@@ -1441,6 +1568,7 @@ namespace SCCosmos
 
             if (listaUI.Count > 0)
             {
+                ListaS303.ItemsSource = null;
                 ListaS303.ItemsSource = listaUI;
                 ListaS303.Visibility = Visibility.Visible;
                 TxtSinS303.Visibility = Visibility.Collapsed;
@@ -1455,6 +1583,7 @@ namespace SCCosmos
             // 2. Cargar S-2 (Recomendaciones y bajas pendientes)
             var recomendaciones = DatabaseHelper.ObtenerRecomendaciones()
                 .Where(r => r.Congregacion == _congreNombre)
+                .Select(r => new RecomendacionS2UI { Original = r, Aprobar = false })
                 .ToList();
 
             if (recomendaciones.Count > 0)
@@ -1468,141 +1597,243 @@ namespace SCCosmos
                 TablaS2.Visibility = Visibility.Collapsed;
                 TxtSinS2.Visibility = Visibility.Visible;
             }
+
+            // 3. Cargar la plantilla de correo por defecto
+            string asuntoPlantilla = DatabaseHelper.ObtenerConfiguracion("Asunto_Envío de S-303", "Informe S-303");
+            string cuerpoPlantilla = DatabaseHelper.ObtenerConfiguracion("Email_Envío de S-303", "Queridos hermanos,<br><br>Adjunto el informe S-303 de la visita.<br><br>Un saludo cariñoso.");
+
+            // Reemplazamos etiquetas dinámicas
+            asuntoPlantilla = asuntoPlantilla.Replace("[Congregacion]", _congreNombre);
+            cuerpoPlantilla = cuerpoPlantilla.Replace("[Congregacion]", _congreNombre);
+
+            TxtAsuntoEnvio.Text = asuntoPlantilla;
+
+            // Inyectamos el HTML directamente en el editor visual
+            WbEditorHelper.SetHtml(WbEditorEnvio, cuerpoPlantilla);
         }
 
-        private void BtnEditarS303_Click(object sender, RoutedEventArgs e)
+        private void BtnFormato_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button btn && btn.Tag is DocumentoS303UI docUI)
+            if (sender is Button btn && btn.Tag is string comando)
             {
-                if (File.Exists(docUI.DocumentoOriginal.RutaLocal))
+                try { WbEditorEnvio.InvokeScript("eval", $"document.execCommand('{comando}', false, null);"); } catch { }
+            }
+        }
+
+        private void CmbTamano_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (sender is ComboBox cmb && cmb.SelectedItem is ComboBoxItem item && cmb.IsLoaded)
+            {
+                try { WbEditorEnvio.InvokeScript("eval", $"document.execCommand('fontSize', false, '{item.Tag}');"); } catch { }
+            }
+        }
+
+        private async void BtnEnviarS2_Click(object sender, RoutedEventArgs e)
+        {
+            string mesRef = _mesS303.ToString("yyyy-MM");
+            string identificadorVisita = $"S-303_{_congreCodigo}_{mesRef}";
+
+            // Verificamos que el S-303 se haya generado
+            var docEspecifico = DatabaseHelper.ObtenerDocumentos("S-303").FirstOrDefault(d => d.NombreArchivo.Contains(identificadorVisita));
+
+            if (docEspecifico == null || !File.Exists(docEspecifico.RutaLocal))
+            {
+                MessageBox.Show("No se puede enviar el correo porque aún no has creado la plantilla del S-303 para este mes.", "Falta S-303", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var congre = DatabaseHelper.ObtenerCongregaciones().FirstOrDefault(c => c.Codigo == _congreCodigo);
+            string emailDestino = congre?.Email ?? "";
+
+            if (string.IsNullOrWhiteSpace(emailDestino))
+            {
+                MessageBox.Show("La congregación no tiene una dirección de correo electrónico configurada. Añádela primero desde el apartado de Edición de Congregaciones.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            string folderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SCCosmos", "PerfilFirefoxCorreo");
+
+            if (!Directory.Exists(folderPath))
+            {
+                MessageBox.Show("Debes ir a 'Configuración' y vincular tu cuenta de correo primero.", "Perfil no encontrado", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            string asunto = TxtAsuntoEnvio.Text;
+            string cuerpoHtml = "";
+            try { cuerpoHtml = WbEditorEnvio.InvokeScript("eval", "document.body.innerHTML").ToString(); } catch { }
+            string rutaS303 = docEspecifico.RutaLocal;
+            bool copiaSrv = ChkCopiaSRV.IsChecked == true;
+
+            // Extraemos las recomendaciones (S-2) que el usuario haya marcado con el CheckBox para aprobar
+            var recomendacionesS2 = TablaS2.ItemsSource as List<RecomendacionS2UI>;
+            var recomendacionesAAprobar = recomendacionesS2?.Where(r => r.Aprobar).Select(r => r.Original).ToList() ?? new List<RecomendacionHub>();
+
+            if (PanelCargando != null) PanelCargando.Visibility = Visibility.Visible;
+
+            try
+            {
+                await Task.Run(() =>
                 {
-                    if (docUI.EsPlantilla)
+                    // 1. AUTOMATIZACIÓN DE SELENIUM PARA EL ENVÍO DEL S-303
+                    var service = FirefoxDriverService.CreateDefaultService();
+                    service.HideCommandPromptWindow = true; // Que no aparezca la ventana negra de CMD
+
+                    var options = new FirefoxOptions();
+                    options.AddArgument("-profile");
+                    options.AddArgument(folderPath);
+                    options.AddArgument("-no-remote");
+
+                    IWebDriver driver = new FirefoxDriver(service, options);
+
+                    try
                     {
+                        // Vamos al correo
+                        driver.Navigate().GoToUrl("https://mail.jwpub.org/owa/#path=/mail");
+                        WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(20));
+
+                        // Clic en "Nuevo"
+                        IWebElement btnNuevo = wait.Until(d => {
+                            var botones = d.FindElements(By.XPath("//button[contains(@title, 'Escribir un mensaje nuevo') or .//span[text()='Nuevo']]"));
+                            foreach (var btn in botones) { if (btn.Displayed && btn.Enabled) return btn; }
+                            return null;
+                        });
+                        ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", btnNuevo);
+
+                        // Campo "Para" (Congregación)
+                        IWebElement inputCorreo = wait.Until(d => {
+                            var inputs = d.FindElements(By.XPath("//input[@aria-label='Para' and @role='textbox']"));
+                            foreach (var input in inputs) { if (input.Displayed && input.Enabled) return input; }
+                            return null;
+                        });
+                        System.Threading.Thread.Sleep(500);
+                        ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].focus(); arguments[0].click();", inputCorreo);
+
+                        inputCorreo.SendKeys(emailDestino);
+                        System.Threading.Thread.Sleep(500);
+                        inputCorreo.SendKeys(Keys.Return);
+                        System.Threading.Thread.Sleep(200);
+
+                        // Si hay que enviar copia a SRV
+                        if (copiaSrv)
+                        {
+                            string emailSrv = DatabaseHelper.ObtenerConfiguracion("EmailSRV", "srv.es@jwpub.org"); // Parametrizable
+                            inputCorreo.SendKeys(emailSrv);
+                            System.Threading.Thread.Sleep(500);
+                            inputCorreo.SendKeys(Keys.Return);
+                            System.Threading.Thread.Sleep(200);
+                        }
+                        inputCorreo.SendKeys(Keys.Tab); // Salir del campo Para
+
+                        // Asunto
+                        IWebElement inputAsunto = wait.Until(d => {
+                            var inputs = d.FindElements(By.XPath("//input[contains(@aria-label, 'Asunto') or @placeholder='Agregar un asunto']"));
+                            foreach (var input in inputs) { if (input.Displayed && input.Enabled) return input; }
+                            return null;
+                        });
+                        ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].focus(); arguments[0].click();", inputAsunto);
+                        inputAsunto.SendKeys(asunto);
+
+                        // Adjuntar S-303
+                        IWebElement inputArchivo = wait.Until(d => {
+                            var inputs = d.FindElements(By.XPath("//input[@type='file']"));
+                            return inputs.Count > 0 ? inputs[0] : null;
+                        });
+                        inputArchivo.SendKeys(rutaS303);
+                        System.Threading.Thread.Sleep(1000);
+
+                        // Esperar a que la subida del PDF termine (hasta 90 segundos si el internet va lento)
+                        WebDriverWait waitSubida = new WebDriverWait(driver, TimeSpan.FromSeconds(90));
+                        string nombreCortoS303 = Path.GetFileNameWithoutExtension(rutaS303);
+                        if (nombreCortoS303.Length > 15) nombreCortoS303 = nombreCortoS303.Substring(0, 15);
+                        try { waitSubida.Until(d => d.PageSource.Contains(nombreCortoS303)); } catch { }
+
                         try
                         {
-                            string mesRef = _mesS303.ToString("yyyy-MM");
-                            string nombreCopia = $"S-303_{_congreCodigo}_{mesRef}.pdf";
-                            string rutaCopia = Path.Combine(Path.GetDirectoryName(docUI.DocumentoOriginal.RutaLocal), nombreCopia);
-
-                            File.Copy(docUI.DocumentoOriginal.RutaLocal, rutaCopia, true);
-
-                            // AQUÍ ESTÁ EL CAMBIO: Llamamos a tu método original de 3 parámetros
-                            DatabaseHelper.InsertarDocumento("S-303", nombreCopia, rutaCopia);
-
-                            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(rutaCopia) { UseShellExecute = true });
-                            ActualizarUI_MesS303(); // Recargar para que ahora salga el botón "Abrir / Editar"
+                            waitSubida.Until(d => {
+                                var spinners = d.FindElements(By.XPath("//div[contains(@class, 'spinnerAnimation')]"));
+                                if (spinners.Count == 0)
+                                {
+                                    System.Threading.Thread.Sleep(1000);
+                                    return d.FindElements(By.XPath("//div[contains(@class, 'spinnerAnimation')]")).Count == 0;
+                                }
+                                return false;
+                            });
                         }
-                        catch (Exception ex)
-                        {
-                            MessageBox.Show($"Error al crear la copia del S-303: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                        }
-                    }
-                    else
-                    {
-                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(docUI.DocumentoOriginal.RutaLocal) { UseShellExecute = true });
-                    }
-                }
-                else
-                {
-                    MessageBox.Show("El archivo no se encuentra en el disco.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
-        }
+                        catch { }
 
-        private async void BtnAprobarRecomendacionVisita_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button btn && btn.Tag is RecomendacionHub rec)
-            {
-                var ventana = new AprobarNombramientoWindow(rec);
-                ventana.Owner = Window.GetWindow(this);
+                        System.Threading.Thread.Sleep(2000);
 
-                if (ventana.ShowDialog() == true)
-                {
-                    string folderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SCCosmos", "PerfilFirefoxCorreo");
-                    PanelCargando.Visibility = Visibility.Visible;
+                        // Cuerpo del mensaje (Ya está en HTML gracias al editor)
+                        IWebElement inputCuerpo = wait.Until(d => {
+                            var inputs = d.FindElements(By.XPath("//div[@role='textbox' and @aria-label='Cuerpo del mensaje']"));
+                            foreach (var input in inputs) { if (input.Displayed && input.Enabled) return input; }
+                            return null;
+                        });
 
-                    try
-                    {
-                        await Task.Run(() => SincronizadorJWHub.AprobarRecomendacionYEnviarCorreo(folderPath, rec, ventana.FechaSeleccionada, ventana.ArchivosPdfGenerados));
+                        ((IJavaScriptExecutor)driver).ExecuteScript(
+                            "arguments[0].focus(); document.execCommand('insertHTML', false, arguments[1]);",
+                            inputCuerpo, cuerpoHtml);
 
-                        // Actualizamos su cargo en la BD y en su versión del mes del ministerio
-                        var personasDB = DatabaseHelper.ObtenerPersonasPorCongregacion(_congreCodigo);
-                        var personaBD = personasDB.FirstOrDefault(x =>
-                            (!string.IsNullOrEmpty(x.Nombre) && x.Nombre.Contains(rec.Hermano, StringComparison.OrdinalIgnoreCase)) ||
-                            (!string.IsNullOrEmpty(x.NombreComun) && x.NombreComun.Contains(rec.Hermano, StringComparison.OrdinalIgnoreCase)));
+                        System.Threading.Thread.Sleep(1000);
 
-                        if (personaBD != null && !string.IsNullOrEmpty(rec.RecomendadoComo))
-                        {
-                            if (rec.RecomendadoComo.Contains("Anciano", StringComparison.OrdinalIgnoreCase)) personaBD.Nombramiento = "Anciano";
-                            else if (rec.RecomendadoComo.Contains("Siervo", StringComparison.OrdinalIgnoreCase)) personaBD.Nombramiento = "Siervo ministerial";
+                        // Clic en Enviar
+                        IWebElement btnEnviar = wait.Until(d => {
+                            var botones = d.FindElements(By.XPath("//button[@aria-label='Enviar' or @title='Enviar']"));
+                            foreach (var b in botones) { if (b.Displayed && b.Enabled) return b; }
+                            return null;
+                        });
+                        ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", btnEnviar);
 
-                            DatabaseHelper.ActualizarPersonaDesdeVisitas(personaBD, _mesMinisterio.ToString("yyyy-MM"));
-                        }
-
-                        // Limpieza
-                        DatabaseHelper.EliminarRecomendacion(rec.Hermano, rec.Congregacion);
-                        var archivosViejos = DatabaseHelper.ObtenerDocumentos("DescargaHub_" + rec.Hermano);
-                        foreach (var arc in archivosViejos)
-                        {
-                            DatabaseHelper.EliminarDocumento(arc.Id);
-                            if (File.Exists(arc.RutaLocal)) File.Delete(arc.RutaLocal);
-                        }
-
-                        MessageBox.Show($"La recomendación de {rec.Hermano} se ha aprobado con éxito.", "Aprobado", MessageBoxButton.OK, MessageBoxImage.Information);
-
-                        CargarS303yS2();
-                        ActualizarUI_MesMinisterio();
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"Error durante la automatización: {ex.Message}", "Fallo", MessageBoxButton.OK, MessageBoxImage.Error);
+                        // Dejamos 4 segundos para asegurarnos de que da tiempo a que la página procese el envío
+                        System.Threading.Thread.Sleep(4000);
                     }
                     finally
                     {
-                        PanelCargando.Visibility = Visibility.Collapsed;
+                        if (driver != null) driver.Quit();
                     }
-                }
+
+                    // 2. GESTIÓN DE S-2 (Futuro)
+                    if (recomendacionesAAprobar.Count > 0)
+                    {
+                        // Si más adelante programas la lógica para que los S-2 marcados con Check se aprueben, irá aquí.
+                        // SincronizadorJWHub.AprobarRecomendacionMasiva(folderPath, recomendacionesAAprobar); 
+                    }
+
+                });
+
+                MessageBox.Show("El correo con el S-303 se ha enviado con éxito.", "Envío completado", MessageBoxButton.OK, MessageBoxImage.Information);
             }
-        }
-
-        private async void BtnCancelarRecomendacionVisita_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button btn && btn.Tag is RecomendacionHub rec)
+            catch (Exception ex)
             {
-                if (MessageBox.Show($"¿Estás seguro de querer cancelar la recomendación para {rec.Hermano}?", "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
-                {
-                    string folderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SCCosmos", "PerfilFirefoxCorreo");
-                    PanelCargando.Visibility = Visibility.Visible;
-
-                    try
-                    {
-                        await Task.Run(() => SincronizadorJWHub.CancelarRecomendacionHub(folderPath, rec));
-
-                        DatabaseHelper.EliminarRecomendacion(rec.Hermano, rec.Congregacion);
-                        var archivosViejos = DatabaseHelper.ObtenerDocumentos("DescargaHub_" + rec.Hermano);
-                        foreach (var arc in archivosViejos)
-                        {
-                            DatabaseHelper.EliminarDocumento(arc.Id);
-                            if (File.Exists(arc.RutaLocal)) File.Delete(arc.RutaLocal);
-                        }
-
-                        MessageBox.Show($"La recomendación de {rec.Hermano} se ha cancelado.", "Cancelado", MessageBoxButton.OK, MessageBoxImage.Information);
-                        CargarS303yS2();
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show($"Error durante la automatización: {ex.Message}", "Fallo", MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
-                    finally
-                    {
-                        PanelCargando.Visibility = Visibility.Collapsed;
-                    }
-                }
+                MessageBox.Show($"Ha ocurrido un error al intentar enviar el correo:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                if (PanelCargando != null) PanelCargando.Visibility = Visibility.Collapsed;
             }
         }
 
         public class NominatimResult { public string lat { get; set; } public string lon { get; set; } }
         public class MesSelectorVisita { public DateTime FechaBase { get; set; } public string NombreVisual { get; set; } }
+
+        public class RecomendacionS2UI : INotifyPropertyChanged
+        {
+            public RecomendacionHub Original { get; set; }
+            public string Hermano => Original?.Hermano;
+            public string Tipo => Original?.Tipo;
+            public string RecomendadoComo => Original?.RecomendadoComo;
+
+            private bool _aprobar;
+            public bool Aprobar
+            {
+                get { return _aprobar; }
+                set { _aprobar = value; OnPropertyChanged("Aprobar"); }
+            }
+
+            public event PropertyChangedEventHandler PropertyChanged;
+            protected void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
 
         public class FilaVisitaPublisher
         {
@@ -1724,6 +1955,10 @@ namespace SCCosmos
             public string NombreVisual { get; set; }
             public string TextoBoton { get; set; }
             public bool EsPlantilla { get; set; }
+
+            // ESTO ES LO QUE LO OCULTA SI ES UNA PLANTILLA
+            public Visibility VerBotonBorrar => EsPlantilla ? Visibility.Collapsed : Visibility.Visible;
+
             public ArchivoDocumento DocumentoOriginal { get; set; }
         }
 
@@ -1745,10 +1980,10 @@ namespace SCCosmos
             public DatabaseHelper.ActividadPrograma ActividadDB { get; set; }
         }
 
-        public class FilaContabilidad : System.ComponentModel.INotifyPropertyChanged
+        public class FilaContabilidad : INotifyPropertyChanged
         {
-            public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
-            public void ForzarActualizacionPromedio() => PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs("Promedio"));
+            public event PropertyChangedEventHandler PropertyChanged;
+            public void ForzarActualizacionPromedio() => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Promedio"));
 
             public string MesReferencia { get; set; }
             public string NombreMesVisual { get; set; }
@@ -1772,7 +2007,7 @@ namespace SCCosmos
             private double ParsearMonedaHelper(string texto)
             {
                 if (string.IsNullOrWhiteSpace(texto)) return 0;
-                if (double.TryParse(texto.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double val)) return val;
+                if (double.TryParse(texto.Replace(",", "."), NumberStyles.Any, CultureInfo.InvariantCulture, out double val)) return val;
                 return 0;
             }
         }

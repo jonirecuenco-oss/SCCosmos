@@ -45,9 +45,7 @@
                                Cursor="Hand" Click="BtnAlertas_Click" MouseEnter="BtnAlertas_MouseEnter"
                                ToolTip="Notificaciones y Alertas" Padding="8,6"/>
 
-                    <Border x:Name="BadgeAlertas" Background="#D13438" Width="10" Height="10" 
-                            CornerRadius="5" HorizontalAlignment="Right" VerticalAlignment="Top" 
-                            Margin="4,6,8,0" Visibility="Collapsed" IsHitTestVisible="False"/>
+
 
                     <!-- EL MENÚ FLOTANTE (POPUP) -->
                     <Popup x:Name="PopupAlertas" StaysOpen="False" PlacementTarget="{Binding ElementName=BtnAlertas}" Placement="Bottom" VerticalOffset="8" HorizontalOffset="-250" AllowsTransparency="True" PopupAnimation="Fade">
@@ -61,7 +59,21 @@
                                 <ItemsControl x:Name="ListaAlertas">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Border Background="#333337" CornerRadius="6" Padding="12" Margin="0,0,0,8" BorderThickness="4,0,0,0" BorderBrush="{Binding ColorBorde}">
+                                            <!-- ESTO LO HACE CLICABLE Y AÑADE EL EVENTO -->
+                                            <Border Background="#333337" CornerRadius="6" Padding="12" Margin="0,0,0,8" 
+                                                    BorderThickness="4,0,0,0" BorderBrush="{Binding ColorBorde}"
+                                                    Cursor="Hand" MouseLeftButtonUp="AlertaItem_Click" Tag="{Binding TipoAlerta}">
+                                                <!-- Efecto visual al pasar el ratón -->
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Style.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter Property="Background" Value="#3E3E42"/>
+                                                            </Trigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+
                                                 <StackPanel>
                                                     <TextBlock Text="{Binding Titulo}" FontWeight="SemiBold" Foreground="White"/>
                                                     <TextBlock Text="{Binding Descripcion}" Foreground="#CCCCCC" TextWrapping="Wrap" Margin="0,4,0,0" FontSize="13"/>
@@ -105,10 +117,10 @@
                     <ui:NavigationViewItem Content="Circuito" Icon="{ui:SymbolIcon Map24}" TargetPageType="{x:Type local:CircuitoPage}"/>
                     <ui:NavigationViewItem x:Name="MenuRuta" Content="Ruta" Icon="{ui:SymbolIcon VehicleCar24}" TargetPageType="{x:Type local:CalendarioPage}"/>
                     <ui:NavigationViewItem Content="Personas" Icon="{ui:SymbolIcon People24}" TargetPageType="{x:Type local:PersonasPage}"/>
-                    <ui:NavigationViewItem Content="ESP" Icon="{ui:SymbolIcon HatGraduation24}"/>
+                    <ui:NavigationViewItem Content="Escuelas" Icon="{ui:SymbolIcon HatGraduation24}" TargetPageType="{x:Type local:EscuelasPage}"/>
                     <ui:NavigationViewItem Content="Asambleas" Icon="{ui:SymbolIcon Earth24}" TargetPageType="{x:Type local:AsambleasPage}"/>
-                    <ui:NavigationViewItem Content="Archivo del circuito" Icon="{ui:SymbolIcon BriefCase24}"/>
-                    <ui:NavigationViewItem Content="Multimedia" Icon="{ui:SymbolIcon ArrowDownload24}" TargetPageType="{x:Type local:DescargasPage}"/>
+                    <ui:NavigationViewItem Content="Archivo del circuito" Icon="{ui:SymbolIcon BriefCase24}" TargetPageType="{x:Type local:ArchivoCircuitoPage}"/>
+                    <ui:NavigationViewItem Content="Descargas" Icon="{ui:SymbolIcon ArrowDownload24}" TargetPageType="{x:Type local:DescargasPage}"/>
                 </ui:NavigationView.MenuItems>
 
                 <ui:NavigationView.FooterMenuItems>

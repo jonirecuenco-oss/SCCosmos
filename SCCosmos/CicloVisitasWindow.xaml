@@ -1,0 +1,159 @@
+﻿<Window x:Class="SCCosmos.CicloVisitasWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        Title="Ciclo de Visitas (6 Ruedas)" Height="700" Width="1200"
+        Background="#1E1E1E" Foreground="White"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- CABECERA -->
+        <Grid Grid.Row="0" Margin="0,0,0,15">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel>
+                <TextBlock Text="Matriz de Visitas (3 Años)" FontSize="22" FontWeight="Bold"/>
+                <TextBlock Text="Marca la casilla ☑ para bloquear una congregación y que no sea reemplazada al autocompletar." Foreground="#AAAAAA" Margin="0,5,0,0"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <ui:Button Content="Limpiar Futuras" Icon="{ui:SymbolIcon Delete24}" 
+                           Appearance="Danger" Click="BtnLimpiar_Click" Cursor="Hand" Height="40" Margin="0,0,10,0"/>
+
+                <ui:Button Content="Auto-Completar (Rotación)" Icon="{ui:SymbolIcon ArrowRotateClockwise24}" 
+                           Appearance="Primary" Click="BtnAutoGenerar_Click" Cursor="Hand" Height="40"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- TABLA -->
+        <DataGrid x:Name="TablaCiclo" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" 
+                  Background="#252526" RowBackground="#252526" AlternatingRowBackground="#2D2D30" 
+                  Foreground="White" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#444444"
+                  HeadersVisibility="Column" RowHeight="40" BorderBrush="#444444" BorderThickness="1">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Nº" Binding="{Binding Orden}" IsReadOnly="True" Width="40">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="VerticalAlignment" Value="Center"/>
+                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                            <Setter Property="FontWeight" Value="Bold"/>
+                            <Setter Property="Foreground" Value="#0078D4"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+
+                <!-- CICLO 1 -->
+                <DataGridTemplateColumn Header="VISITA 1&#x0a;(Septiembre)" Width="*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <ComboBox ItemsSource="{Binding DataContext.ListaCongregaciones, RelativeSource={RelativeSource AncestorType=Window}}" SelectedItem="{Binding Visita1, UpdateSourceTrigger=PropertyChanged}" Background="Transparent" BorderThickness="0" Foreground="White" VerticalAlignment="Center"/>
+                                <CheckBox Grid.Column="1" IsChecked="{Binding L1, UpdateSourceTrigger=PropertyChanged}" ToolTip="Bloquear" VerticalAlignment="Center" Margin="5,0"/>
+                            </Grid>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- CICLO 2 -->
+                <DataGridTemplateColumn Header="VISITA 2&#x0a;(Feb / Mar)" Width="*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <ComboBox ItemsSource="{Binding DataContext.ListaCongregaciones, RelativeSource={RelativeSource AncestorType=Window}}" SelectedItem="{Binding Visita2, UpdateSourceTrigger=PropertyChanged}" Background="Transparent" BorderThickness="0" Foreground="White" VerticalAlignment="Center"/>
+                                <CheckBox Grid.Column="1" IsChecked="{Binding L2, UpdateSourceTrigger=PropertyChanged}" ToolTip="Bloquear" VerticalAlignment="Center" Margin="5,0"/>
+                            </Grid>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- CICLO 3 -->
+                <DataGridTemplateColumn Header="VISITA 3&#x0a;(Septiembre)" Width="*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <ComboBox ItemsSource="{Binding DataContext.ListaCongregaciones, RelativeSource={RelativeSource AncestorType=Window}}" SelectedItem="{Binding Visita3, UpdateSourceTrigger=PropertyChanged}" Background="Transparent" BorderThickness="0" Foreground="White" VerticalAlignment="Center"/>
+                                <CheckBox Grid.Column="1" IsChecked="{Binding L3, UpdateSourceTrigger=PropertyChanged}" ToolTip="Bloquear" VerticalAlignment="Center" Margin="5,0"/>
+                            </Grid>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- CICLO 4 -->
+                <DataGridTemplateColumn Header="VISITA 4&#x0a;(Feb / Mar)" Width="*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <ComboBox ItemsSource="{Binding DataContext.ListaCongregaciones, RelativeSource={RelativeSource AncestorType=Window}}" SelectedItem="{Binding Visita4, UpdateSourceTrigger=PropertyChanged}" Background="Transparent" BorderThickness="0" Foreground="White" VerticalAlignment="Center"/>
+                                <CheckBox Grid.Column="1" IsChecked="{Binding L4, UpdateSourceTrigger=PropertyChanged}" ToolTip="Bloquear" VerticalAlignment="Center" Margin="5,0"/>
+                            </Grid>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- CICLO 5 -->
+                <DataGridTemplateColumn Header="VISITA 5&#x0a;(Septiembre)" Width="*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <ComboBox ItemsSource="{Binding DataContext.ListaCongregaciones, RelativeSource={RelativeSource AncestorType=Window}}" SelectedItem="{Binding Visita5, UpdateSourceTrigger=PropertyChanged}" Background="Transparent" BorderThickness="0" Foreground="White" VerticalAlignment="Center"/>
+                                <CheckBox Grid.Column="1" IsChecked="{Binding L5, UpdateSourceTrigger=PropertyChanged}" ToolTip="Bloquear" VerticalAlignment="Center" Margin="5,0"/>
+                            </Grid>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- CICLO 6 -->
+                <DataGridTemplateColumn Header="VISITA 6&#x0a;(Feb / Mar)" Width="*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <ComboBox ItemsSource="{Binding DataContext.ListaCongregaciones, RelativeSource={RelativeSource AncestorType=Window}}" SelectedItem="{Binding Visita6, UpdateSourceTrigger=PropertyChanged}" Background="Transparent" BorderThickness="0" Foreground="White" VerticalAlignment="Center"/>
+                                <CheckBox Grid.Column="1" IsChecked="{Binding L6, UpdateSourceTrigger=PropertyChanged}" ToolTip="Bloquear" VerticalAlignment="Center" Margin="5,0"/>
+                            </Grid>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- PIE DE VENTANA (Guardado Automático y Cerrar) -->
+        <Grid Grid.Row="2" Margin="0,15,0,0">
+            <TextBlock x:Name="TxtGuardado" Text="✓ Guardado automáticamente" Foreground="#4CAF50" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Left" Visibility="Hidden"/>
+            <ui:Button Content="Cerrar" Appearance="Secondary" Click="BtnCancelar_Click" HorizontalAlignment="Right" Width="150"/>
+        </Grid>
+    </Grid>
+</Window>

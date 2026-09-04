@@ -13,10 +13,10 @@ namespace SCCosmos
         public InicioPage()
         {
             InitializeComponent();
+            TxtSaludo.Text = $"¡Hola, {DatabaseHelper.ObtenerConfiguracion("NombreSC", "Jonatán")}!";
             CargarSemanaActual();
-
-            // Cargamos las estadísticas de forma asíncrona para no congelar la pantalla de inicio
             _ = CargarEstadisticasAsync();
+
         }
 
         private void CargarSemanaActual()
@@ -172,6 +172,8 @@ namespace SCCosmos
             TxtTotalSM.Text = stats.SiervosM.ToString();
             TxtTotalA2.Text = stats.SolA2.ToString();
             TxtTotalA19.Text = stats.SolA19.ToString();
+            TxtTotalA8.Text = stats.SolA8.ToString();
+            TxtTotalG8.Text = stats.SolG8.ToString();
         }
 
         private EstadisticasCircuito ObtenerContadoresDesdeBD()
@@ -196,6 +198,9 @@ namespace SCCosmos
 
                     res.SolA2 = EjecutarCount(connection, "SELECT COUNT(*) FROM Personas WHERE Solicitudes LIKE '%A-2%';");
                     res.SolA19 = EjecutarCount(connection, "SELECT COUNT(*) FROM Personas WHERE Solicitudes LIKE '%A-19%';");
+
+                    res.SolA8 = EjecutarCount(connection, "SELECT COUNT(*) FROM Personas WHERE Solicitudes LIKE '%A-8%';");
+                    res.SolG8 = EjecutarCount(connection, "SELECT COUNT(*) FROM Personas WHERE Solicitudes LIKE '%G-8%';");
                 }
             }
             catch { } // Si la BD aún no está inicializada o falla, se quedarán en 0.
@@ -213,6 +218,21 @@ namespace SCCosmos
             }
         }
 
+        private void NavegarAPersonas()
+        {
+            var ventanaPrincipal = Application.Current.MainWindow as MainWindow;
+            ventanaPrincipal?.MenuPrincipal.Navigate(typeof(PersonasPage));
+        }
+
+        private void CardPrecReg_Click(object sender, System.Windows.Input.MouseButtonEventArgs e) { PersonasPage.FiltroPendienteServicio = "Precursor regular"; NavegarAPersonas(); }
+        private void CardPrecEsp_Click(object sender, System.Windows.Input.MouseButtonEventArgs e) { PersonasPage.FiltroPendienteServicio = "Precursor especial"; NavegarAPersonas(); }
+        private void CardAncianos_Click(object sender, System.Windows.Input.MouseButtonEventArgs e) { PersonasPage.FiltroPendienteNombramiento = "Anciano"; NavegarAPersonas(); }
+        private void CardSiervos_Click(object sender, System.Windows.Input.MouseButtonEventArgs e) { PersonasPage.FiltroPendienteNombramiento = "Siervo ministerial"; NavegarAPersonas(); }
+        private void CardA2_Click(object sender, System.Windows.Input.MouseButtonEventArgs e) { PersonasPage.FiltroPendienteSolicitud = "A-2"; NavegarAPersonas(); }
+        private void CardA19_Click(object sender, System.Windows.Input.MouseButtonEventArgs e) { PersonasPage.FiltroPendienteSolicitud = "A-19"; NavegarAPersonas(); }
+        private void CardA8_Click(object sender, System.Windows.Input.MouseButtonEventArgs e) { PersonasPage.FiltroPendienteSolicitud = "A-8"; NavegarAPersonas(); }
+        private void CardG8_Click(object sender, System.Windows.Input.MouseButtonEventArgs e) { PersonasPage.FiltroPendienteSolicitud = "G-8"; NavegarAPersonas(); }
+
         // ==========================================
         // CLASES DE DATOS
         // ==========================================
@@ -224,6 +244,8 @@ namespace SCCosmos
             public int SiervosM { get; set; } = 0;
             public int SolA2 { get; set; } = 0;
             public int SolA19 { get; set; } = 0;
+            public int SolA8 { get; set; } = 0; // NUEVO
+            public int SolG8 { get; set; } = 0; // NUEVO
         }
 
         public class ActividadHoy

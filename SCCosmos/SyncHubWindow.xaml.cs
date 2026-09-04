@@ -32,32 +32,44 @@ namespace SCCosmos
 
             foreach (var hubItem in _personasHub)
             {
-                // 1. Buscamos a TODOS los que tengan el mismo nombre exacto en esa congregación
+                // 1. Buscamos a TODOS los que tengan el mismo nombre en esa congregación
                 var posiblesMatches = personasDB.Where(p =>
-                    p.Nombre == hubItem.Nombre &&
+                    (p.Nombre == hubItem.Nombre || p.NombreJWHub == hubItem.Nombre) &&
                     p.CongregacionCodigo == hubItem.CongregacionCodigo
                 ).ToList();
 
                 Persona matchDB = null;
 
-                if (posiblesMatches.Count == 1)
+                if (posiblesMatches.Count > 0)
                 {
-                    // CASO A: Solo hay uno. Es él con total seguridad (aunque le hayan corregido la fecha)
-                    matchDB = posiblesMatches[0];
-                }
-                else if (posiblesMatches.Count > 1)
-                {
-                    // CASO B: Hay homónimos (2 o más con el mismo nombre). Desempatamos con la fecha.
+                    // 2. FILTRO ANTI-HOMÓNIMOS EN LA INTERFAZ
                     matchDB = posiblesMatches.FirstOrDefault(p =>
-                        !string.IsNullOrWhiteSpace(p.FechaNacimiento) &&
-                        !string.IsNullOrWhiteSpace(hubItem.FechaNacimiento) &&
-                        p.FechaNacimiento.Trim() == hubItem.FechaNacimiento.Trim()
-                    );
+                    {
+                        Func<string, string, bool> SonIncompatibles = (dbDate, hubDate) =>
+                        {
+                            if (string.IsNullOrWhiteSpace(dbDate) || string.IsNullOrWhiteSpace(hubDate)) return false;
 
-                    // Salvavidas por si ambos homónimos tienen la fecha en blanco en nuestra BD
-                    if (matchDB == null) matchDB = posiblesMatches[0];
+                            bool dbAprox = dbDate.StartsWith("01/01/");
+                            bool hubAprox = hubDate.StartsWith("01/01/");
+
+                            if (!dbAprox && !hubAprox) return dbDate.Trim() != hubDate.Trim();
+
+                            int yearDB = 0, yearHub = 0;
+                            if (dbDate.Length >= 4) int.TryParse(dbDate.Substring(dbDate.Length - 4), out yearDB);
+                            if (hubDate.Length >= 4) int.TryParse(hubDate.Substring(hubDate.Length - 4), out yearHub);
+
+                            if (yearDB > 0 && yearHub > 0 && Math.Abs(yearDB - yearHub) > 2) return true;
+                            return false;
+                        };
+
+                        if (SonIncompatibles(p.FechaNacimiento, hubItem.FechaNacimiento)) return false;
+                        if (SonIncompatibles(p.FechaBautismo, hubItem.FechaBautismo)) return false;
+
+                        return true;
+                    });
                 }
 
+                // A partir de aquí sigue el código original que comprueba los conflictos...
                 if (matchDB != null)
                 {
                     procesadosDB.Add(matchDB.Id);
@@ -73,6 +85,7 @@ namespace SCCosmos
                 }
                 else
                 {
+                    // Si no hubo Match (porque el Juan López que encontró era el padre y este es el hijo) entra aquí como NUEVO.
                     _nuevos.Add(new SyncItemHub { PersonaDB = null, PersonaHub = hubItem, NombreVisual = hubItem.Nombre, Descripcion = "Aparece en JW Hub pero no está en la Base de Datos." });
                 }
             }
@@ -111,9 +124,11 @@ namespace SCCosmos
             if (!string.IsNullOrEmpty(hub.Nombramiento) && db.Nombramiento != hub.Nombramiento) return true;
             if (!string.IsNullOrEmpty(hub.Servicio) && db.Servicio != hub.Servicio) return true;
 
-            if (!string.IsNullOrEmpty(hub.FechaNacimiento) && db.FechaNacimiento != hub.FechaNacimiento) return true;
-            if (!string.IsNullOrEmpty(hub.FechaBautismo) && db.FechaBautismo != hub.FechaBautismo) return true;
-            if (!string.IsNullOrEmpty(hub.FechaInicioPrec) && db.FechaInicioPrec != hub.FechaInicioPrec) return true;
+            // Ignorar falsos positivos si la fecha es aproximada (01/01/YYYY)
+            if (!string.IsNullOrEmpty(hub.FechaNacimiento) && db.FechaNacimiento != hub.FechaNacimiento && !hub.FechaNacimiento.StartsWith("01/01/")) return true;
+            if (!string.IsNullOrEmpty(hub.FechaBautismo) && db.FechaBautismo != hub.FechaBautismo && !hub.FechaBautismo.StartsWith("01/01/")) return true;
+            if (!string.IsNullOrEmpty(hub.FechaInicioPrec) && db.FechaInicioPrec != hub.FechaInicioPrec && !hub.FechaInicioPrec.StartsWith("01/01/")) return true;
+
             if (!string.IsNullOrEmpty(hub.FechaUltimaEscuela) && db.FechaUltimaEscuela != hub.FechaUltimaEscuela) return true;
 
             if (!string.IsNullOrEmpty(hub.Email) && db.Email != hub.Email) return true;
@@ -199,6 +214,23 @@ namespace SCCosmos
                 var ventana = new FormularioPersonaWindow(item.PersonaDB);
                 ventana.Owner = Window.GetWindow(this);
                 if (ventana.ShowDialog() == true) DatabaseHelper.ActualizarPersona(ventana.PersonaActualizada);
+            }
+        }
+
+        // ==========================================
+        // NUEVA FUNCIÓN: DESCARTAR ITEM
+        // ==========================================
+        private void BtnDescartar_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is SyncItemHub item)
+            {
+                // Buscamos en qué lista está y lo borramos
+                if (_conflictos.Contains(item)) _conflictos.Remove(item);
+                else if (_nuevos.Contains(item)) _nuevos.Remove(item);
+                else if (_bajas.Contains(item)) _bajas.Remove(item);
+                else if (_iguales.Contains(item)) _iguales.Remove(item);
+
+                ActualizarListasUI();
             }
         }
 

@@ -1,0 +1,49 @@
+﻿<Window x:Class="SCCosmos.MapaCoordenadasWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        Title="Ajuste fino de Coordenadas" Height="600" Width="800"
+        WindowStartupLocation="CenterOwner" Background="#1E1E1E">
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Fijar Coordenadas Manuales" FontSize="22" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,5"/>
+        <TextBlock Text="Busca una calle o haz clic directamente en el mapa para colocar la chincheta exacta." Foreground="#AAAAAA" Margin="0,0,0,15"/>
+
+        <Grid Grid.Row="1" Margin="0,0,0,15">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <ui:TextBox x:Name="TxtBuscador" PlaceholderText="Escribe una dirección para centrar el mapa..." Background="#252526" Foreground="White" BorderBrush="#333" KeyDown="TxtBuscador_KeyDown"/>
+            <ui:Button Grid.Column="1" Content="Buscar" Appearance="Secondary" Margin="10,0,0,0" Click="BtnBuscar_Click"/>
+        </Grid>
+
+        <!-- EL MAPA INTERACTIVO -->
+        <Border Grid.Row="2" BorderBrush="#333" BorderThickness="1" CornerRadius="8" ClipToBounds="True" Background="#2A2A2A">
+            <WebBrowser x:Name="WbMapa" Loaded="WbMapa_Loaded"/>
+        </Border>
+
+        <!-- BARRA INFERIOR -->
+        <Grid Grid.Row="3" Margin="0,15,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="Coordenadas seleccionadas: " Foreground="#AAAAAA"/>
+                <TextBlock x:Name="TxtCoordenadas" Text="Ninguna" Foreground="#4BA3E3" FontWeight="Bold"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <ui:Button Content="Cancelar" Appearance="Secondary" Margin="0,0,10,0" Click="BtnCancelar_Click"/>
+                <ui:Button Content="Bloquear Coordenadas" Appearance="Success" Click="BtnGuardar_Click"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

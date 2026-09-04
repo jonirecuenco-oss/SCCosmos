@@ -207,8 +207,6 @@
                                 </DataGrid.Columns>
                             </DataGrid>
 
-                            <ui:ProgressRing x:Name="SpinnerCargando" IsIndeterminate="True" Visibility="Collapsed" Width="50" Height="50" Foreground="#0078D4" Grid.Row="1"/>
-
                             <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,15,0,0">
                                 <ui:Button x:Name="BtnAnterior" Content="Anterior" Icon="{ui:SymbolIcon ChevronLeft24}" Click="BtnAnterior_Click" Margin="0,0,15,0" Cursor="Hand"/>
                                 <TextBlock x:Name="TxtPaginaInfo" Text="Página 1 de 1" Foreground="White" VerticalAlignment="Center" FontSize="14" FontWeight="SemiBold"/>

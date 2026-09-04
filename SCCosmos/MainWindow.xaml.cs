@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO; // Soluciona el error de 'Path'
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
+using System.Windows.Controls; // Soluciona 'ScrollViewer' y 'ScrollBarVisibility'
+using System.Windows.Controls.Primitives; // Soluciona 'DragDeltaEventArgs'
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
@@ -12,6 +14,9 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Threading;
+using System.Text.Json;
+using System.Net.NetworkInformation; // Para el ping de Internet
 using Wpf.Ui.Controls;
 using Microsoft.Data.Sqlite;
 
@@ -19,33 +24,305 @@ namespace SCCosmos
 {
     public partial class MainWindow : FluentWindow
     {
+        private DispatcherTimer _timerTareasFondo;
+
         public MainWindow()
         {
             InitializeComponent();
             DatabaseHelper.InicializarDatabase();
 
-            // Forzamos manualmente que el popup "abrace" al botón para evitar fallos de posición
             PopupAlertas.PlacementTarget = BtnAlertas;
 
             this.Loaded += (s, e) =>
             {
-                // DETECCIÓN INTELIGENTE DE PANTALLAS PEQUEÑAS (PORTÁTILES)
-                // Si el ancho lógico de la pantalla es menor a 1600px, cerramos el menú por defecto.
                 if (SystemParameters.PrimaryScreenWidth < 1600)
                 {
                     MenuPrincipal.IsPaneOpen = false;
                 }
 
                 this.MenuPrincipal.Navigate(typeof(InicioPage));
+
+                // =========================================================
+                // INICIAR RELOJ PARA TAREAS AUTOMÁTICAS
+                // =========================================================
+                _timerTareasFondo = new DispatcherTimer();
+                _timerTareasFondo.Interval = TimeSpan.FromHours(1);
+                _timerTareasFondo.Tick += (sender, args) =>
+                {
+                    RevisarDescargasMartes();
+                    RevisarSincronizacionLunes();
+                };
+                _timerTareasFondo.Start();
+
+                // NUEVO: Escuchar al sistema operativo cuando vuelva el Internet
+                NetworkChange.NetworkAvailabilityChanged += (senderNet, argsNet) =>
+                {
+                    if (argsNet.IsAvailable)
+                    {
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            RevisarDescargasMartes();
+                            RevisarSincronizacionLunes();
+                        });
+                    }
+                };
+
+                // Comprobamos inmediatamente al abrir el programa
+                RevisarDescargasMartes();
+                RevisarSincronizacionLunes();
             };
 
-            // Se recalcula al volver a la ventana principal
             this.Activated += (s, e) => VerificarAlertas();
-
-            // =========================================================
-            // AÑADIMOS EL GANCHO GLOBAL AL CONSTRUCTOR PARA EL SCROLL
-            // =========================================================
             this.PreviewMouseWheel += MainWindow_PreviewMouseWheel;
+        }
+
+        // =========================================================
+        // UTILIDAD: PING PARA ASEGURAR CONEXIÓN REAL
+        // =========================================================
+        private async Task<bool> HayConexionReal()
+        {
+            try
+            {
+                using (var ping = new Ping())
+                {
+                    // Hacemos ping a los DNS de Google. Si responde, hay internet real.
+                    var reply = await ping.SendPingAsync("8.8.8.8", 2000);
+                    return reply.Status == IPStatus.Success;
+                }
+            }
+            catch { return false; }
+        }
+
+        // =========================================================
+        // TAREAS AUTOMÁTICAS EN SEGUNDO PLANO
+        // =========================================================
+
+        private async void RevisarDescargasMartes()
+        {
+            if (DateTime.Today.DayOfWeek == DayOfWeek.Tuesday)
+            {
+                // Si no hay red, abortamos en silencio. Se volverá a intentar en 1h o al reconectar.
+                if (!await HayConexionReal()) return;
+
+                string rutaAppData = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SCCosmos");
+                string rutaLocalSettings = System.IO.Path.Combine(rutaAppData, "local_settings.json");
+                bool autoDescargarEnEstePC = false;
+
+                if (System.IO.File.Exists(rutaLocalSettings))
+                {
+                    try
+                    {
+                        using (JsonDocument doc = JsonDocument.Parse(System.IO.File.ReadAllText(rutaLocalSettings)))
+                        {
+                            if (doc.RootElement.TryGetProperty("AutoDescargarMartes", out JsonElement prop))
+                                autoDescargarEnEstePC = prop.GetBoolean();
+                        }
+                    }
+                    catch { }
+                }
+
+                if (!autoDescargarEnEstePC) return;
+
+                string ultimaDescarga = DatabaseHelper.ObtenerConfiguracion("UltimaDescargaMartes", "");
+                string hoyString = DateTime.Today.ToString("yyyy-MM-dd");
+
+                if (ultimaDescarga != hoyString)
+                {
+                    DatabaseHelper.GuardarConfiguracion("UltimaDescargaMartes", hoyString);
+
+                    string rutaDestinoArchivos = ObtenerRutaDescargas();
+                    OpcionesDescarga misOpciones = new OpcionesDescarga
+                    {
+                        Betel_AdoracionMatutina = true,
+                        Teocraticos_DiscursosPublicos = true,
+                        Teocraticos_AsambleaCircuitoSucursal = true,
+                        Teocraticos_AsambleaCircuitoSuperintendente = true,
+                        Teocraticos_AsambleaRegional = true,
+                        JwOrg_AdoracionMatutina = true,
+                        JwOrg_DiscursosBroadcasting = true,
+                        JwOrg_GraduacionGalaad = true,
+                        JwOrg_ReunionAnual = true
+                    };
+
+                    await Task.Run(() =>
+                    {
+                        string perfil = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SCCosmos", "PerfilFirefoxCorreo");
+                        int nuevosArchivos = DescargadorStreamJW.DescargarUltimoDiscurso(perfil, rutaDestinoArchivos, misOpciones);
+
+                        if (nuevosArchivos > 0)
+                        {
+                            Application.Current.Dispatcher.Invoke(() =>
+                            {
+                                DatabaseHelper.GuardarConfiguracion("AlertaNuevasDescargas", nuevosArchivos.ToString());
+                                VerificarAlertas();
+                            });
+                        }
+                    });
+                }
+            }
+        }
+
+        private string ObtenerRutaDescargas()
+        {
+            string ruta = "";
+            try
+            {
+                // Vamos a la misma carpeta donde ConfiguracionPage guarda el archivo
+                string rutaAppData = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SCCosmos");
+                string rutaArchivo = System.IO.Path.Combine(rutaAppData, "local_settings.json");
+
+                if (File.Exists(rutaArchivo))
+                {
+                    string json = File.ReadAllText(rutaArchivo);
+                    var localSettings = JsonSerializer.Deserialize<ConfiguracionLocalSettings>(json);
+
+                    if (localSettings != null && !string.IsNullOrWhiteSpace(localSettings.RutaDescargas))
+                    {
+                        ruta = localSettings.RutaDescargas;
+                    }
+                }
+            }
+            catch { }
+
+            // Fallback de seguridad si no hay ruta configurada o no existe la carpeta
+            if (string.IsNullOrWhiteSpace(ruta) || !Directory.Exists(ruta))
+            {
+                ruta = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DescargasStream");
+                if (!Directory.Exists(ruta)) Directory.CreateDirectory(ruta);
+            }
+
+            return ruta;
+        }
+
+        private async void RevisarSincronizacionLunes()
+        {
+            if (DateTime.Today.DayOfWeek == DayOfWeek.Monday)
+            {
+                // Si no hay red, abortamos en silencio. 
+                if (!await HayConexionReal()) return;
+
+                string rutaAppData = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SCCosmos");
+                string rutaLocalSettings = System.IO.Path.Combine(rutaAppData, "local_settings.json");
+                bool autoSincronizarEnEstePC = false;
+
+                if (System.IO.File.Exists(rutaLocalSettings))
+                {
+                    try
+                    {
+                        using (JsonDocument doc = JsonDocument.Parse(System.IO.File.ReadAllText(rutaLocalSettings)))
+                        {
+                            if (doc.RootElement.TryGetProperty("AutoSincronizarLunes", out JsonElement prop))
+                                autoSincronizarEnEstePC = prop.GetBoolean();
+                        }
+                    }
+                    catch { }
+                }
+
+                if (!autoSincronizarEnEstePC) return;
+
+                string ultimaSincronizacion = DatabaseHelper.ObtenerConfiguracion("UltimaSincronizacionLunes", "");
+                string hoyString = DateTime.Today.ToString("yyyy-MM-dd");
+
+                if (ultimaSincronizacion != hoyString)
+                {
+                    DatabaseHelper.GuardarConfiguracion("UltimaSincronizacionLunes", hoyString);
+
+                    await Task.Run(() =>
+                    {
+                        string perfil = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SCCosmos", "PerfilFirefoxCorreo");
+
+                        // NUEVO: Pasamos 'modoSilencioso: true' para que no muestre avisos de error por pantalla
+                        var personasExtraidas = SincronizadorJWHub.SincronizarGlobal(perfil, modoSilencioso: true);
+
+                        if (personasExtraidas != null && personasExtraidas.Count > 0)
+                        {
+                            var listaCongresBD = DatabaseHelper.ObtenerCongregaciones();
+                            var personasParaBD = personasExtraidas.Select(pe =>
+                            {
+                                string congreHub = pe.Congregacion ?? "";
+                                string codigoDetectado = "";
+                                string nombreLimpiado = congreHub;
+
+                                int start = congreHub.LastIndexOf('(');
+                                int end = congreHub.LastIndexOf(')');
+                                if (start >= 0 && end > start)
+                                {
+                                    codigoDetectado = congreHub.Substring(start + 1, end - start - 1).Trim();
+                                    nombreLimpiado = congreHub.Substring(0, start).Trim();
+                                }
+
+                                var congreMatch = listaCongresBD.FirstOrDefault(c =>
+                                    (!string.IsNullOrEmpty(codigoDetectado) && c.Codigo == codigoDetectado) ||
+                                    (c.Nombre != null && c.Nombre.Equals(nombreLimpiado, StringComparison.OrdinalIgnoreCase)) ||
+                                    (c.Nombre != null && congreHub.Contains(c.Nombre)));
+
+                                if (congreMatch != null)
+                                {
+                                    codigoDetectado = congreMatch.Codigo;
+                                    nombreLimpiado = congreMatch.Nombre;
+                                }
+
+                                return new Persona
+                                {
+                                    Nombre = pe.NombreCompleto,
+                                    NombreJWHub = pe.NombreCompleto,
+                                    NombreComun = pe.NombreComun,
+                                    Sexo = "",
+                                    Esperanza = pe.Esperanza,
+                                    FechaNacimiento = pe.FechaNacimiento,
+                                    FechaBautismo = pe.FechaBautismo,
+                                    FechaInicioPrec = pe.FechaInicioPrec,
+                                    FechaUltimaEscuela = pe.FechaUltimaEscuela,
+                                    Solicitudes = pe.Solicitudes,
+                                    Nombramiento = pe.Nombramiento,
+                                    Servicio = pe.Servicio,
+                                    Privilegios = pe.Privilegios,
+                                    CongregacionNombre = nombreLimpiado,
+                                    CongregacionCodigo = codigoDetectado,
+                                    Telefono = pe.Telefono,
+                                    Email = pe.Email,
+                                    EmailJW = pe.EmailJW,
+                                    Direccion = pe.Direccion,
+                                    Foto = pe.Foto
+                                };
+                            }).ToList();
+
+                            if (HayCambiosEnSincronizacion(personasParaBD))
+                            {
+                                string tempFile = System.IO.Path.Combine(rutaAppData, "HubSync_Pendiente.json");
+                                System.IO.File.WriteAllText(tempFile, JsonSerializer.Serialize(personasParaBD));
+
+                                Application.Current.Dispatcher.Invoke(() =>
+                                {
+                                    VerificarAlertas();
+                                });
+                            }
+                        }
+                    });
+                }
+            }
+        }
+
+        private bool HayCambiosEnSincronizacion(List<Persona> extraidas)
+        {
+            var db = DatabaseHelper.ObtenerPersonas().Where(p => string.IsNullOrEmpty(p.FechaEliminacion)).ToList();
+
+            var nombresExtraidos = extraidas.Select(e => e.NombreJWHub).ToHashSet();
+            if (db.Any(p => !string.IsNullOrEmpty(p.NombreJWHub) && !nombresExtraidos.Contains(p.NombreJWHub))) return true;
+
+            foreach (var ext in extraidas)
+            {
+                var match = db.FirstOrDefault(p => p.NombreJWHub == ext.NombreJWHub || p.Nombre == ext.Nombre);
+
+                if (match == null) return true;
+
+                if (match.CongregacionCodigo != ext.CongregacionCodigo) return true;
+                if (match.Nombramiento != ext.Nombramiento) return true;
+                if (match.Servicio != ext.Servicio) return true;
+                if (match.Privilegios != ext.Privilegios) return true;
+            }
+
+            return false;
         }
 
         // =========================================================
@@ -94,25 +371,113 @@ namespace SCCosmos
             public string Descripcion { get; set; }
             public string ColorBorde { get; set; }
             public int Dias { get; set; }
+            public string TipoAlerta { get; set; } // Identificador para la acción al hacer clic
         }
 
         private List<AlertaItem> _alertasActuales = new List<AlertaItem>();
+        private int _cantidadAlertasVistas = 0; // Memoria para saber cuándo volverla gris
 
         private void BtnAlertas_Click(object sender, RoutedEventArgs e)
         {
             PopupAlertas.IsOpen = true;
+            ApagarCampana();
         }
 
         private void BtnAlertas_MouseEnter(object sender, MouseEventArgs e)
         {
             // ¡Se abrirá al instante al posar el cursor sobre la campana!
             PopupAlertas.IsOpen = true;
+            ApagarCampana();
         }
 
-        private void VerificarAlertas()
+        private void ApagarCampana()
+        {
+            // Apaga el punto rojo y la pone en gris
+            //BadgeAlertas.Visibility = Visibility.Collapsed;
+            BtnAlertas.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#AAAAAA"));
+
+            // Memoriza cuántas alertas había para no volver a encenderse hasta que haya nuevas
+            _cantidadAlertasVistas = _alertasActuales.Count;
+
+            // Borra la notificación de "Nuevas descargas listas" en BD si existía
+            if (DatabaseHelper.ObtenerConfiguracion("AlertaNuevasDescargas", "0") != "0")
+            {
+                DatabaseHelper.GuardarConfiguracion("AlertaNuevasDescargas", "0");
+                VerificarAlertas(soloSilencioso: true);
+            }
+        }
+
+        // =========================================================
+        // ACCIONES AL HACER CLIC EN UNA NOTIFICACIÓN DE LA CAMPANA
+        // =========================================================
+        private void AlertaItem_Click(object sender, MouseButtonEventArgs e)
+        {
+            var border = sender as Border;
+            if (border == null) return;
+
+            string tipoAlerta = border.Tag?.ToString() ?? "";
+
+            // Si el usuario hace clic en la alerta morada del Lunes
+            if (tipoAlerta == "SincronizacionJWHub")
+            {
+                string rutaAppData = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SCCosmos");
+                string tempFile = System.IO.Path.Combine(rutaAppData, "HubSync_Pendiente.json");
+
+                if (System.IO.File.Exists(tempFile))
+                {
+                    try
+                    {
+                        string json = System.IO.File.ReadAllText(tempFile);
+                        var personasPendientes = JsonSerializer.Deserialize<List<Persona>>(json);
+
+                        PopupAlertas.IsOpen = false; // Cerramos el menú flotante para que no estorbe
+
+                        // Abrimos la ventana de revisión visual de cambios (la tuya original)
+                        var ventana = new SyncHubWindow(personasPendientes);
+                        ventana.Owner = this;
+                        ventana.ShowDialog();
+                        System.IO.File.Delete(tempFile);
+                        VerificarAlertas();
+                    }
+                    catch { }
+                }
+            }
+        }
+
+        // Parámetro para recalcular sin volver a pintar de amarillo la campana recién apagada
+        private void VerificarAlertas(bool soloSilencioso = false)
         {
             _alertasActuales.Clear();
             DateTime hoy = DateTime.Today;
+
+            string rutaAppData = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SCCosmos");
+
+            // 1. Alerta por sincronización de JW Hub (Lunes)
+            if (System.IO.File.Exists(System.IO.Path.Combine(rutaAppData, "HubSync_Pendiente.json")))
+            {
+                _alertasActuales.Add(new AlertaItem
+                {
+                    Titulo = "Revisión de JW Hub",
+                    Descripcion = "Haz clic aquí para revisar las altas, bajas y modificaciones detectadas por la sincronización automática.",
+                    ColorBorde = "#9C27B0", // Morado
+                    Dias = -2,
+                    TipoAlerta = "SincronizacionJWHub"
+                });
+            }
+
+            // 2. Alerta por Descargas (Martes)
+            string nuevasDescargas = DatabaseHelper.ObtenerConfiguracion("AlertaNuevasDescargas", "0");
+            if (nuevasDescargas != "0")
+            {
+                _alertasActuales.Add(new AlertaItem
+                {
+                    Titulo = "¡Nuevas descargas listas!",
+                    Descripcion = $"El sistema ha descargado {nuevasDescargas} audios nuevos automáticamente.",
+                    ColorBorde = "#107C10", // Verde vibrante
+                    Dias = -1,
+                    TipoAlerta = "DescargaJW"
+                });
+            }
 
             string configPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SCCosmos", "rutadb.txt");
             string dir = System.IO.File.Exists(configPath) ? System.IO.File.ReadAllText(configPath) : @"C:\Users\Usuario\Documents\2 - ESP-BA-01\8 - Otros\SCCosmos";
@@ -153,7 +518,8 @@ namespace SCCosmos
                                         Titulo = "S-302 pendiente",
                                         Descripcion = $"Quedan {diasFaltantes} días para la visita a {nombreCon}.",
                                         ColorBorde = "#FFA500", // Naranja
-                                        Dias = diasFaltantes
+                                        Dias = diasFaltantes,
+                                        TipoAlerta = "S302"
                                     });
                                 }
 
@@ -164,7 +530,8 @@ namespace SCCosmos
                                         Titulo = "Documentación de visita",
                                         Descripcion = $"Quedan {diasFaltantes} días para la visita a {nombreCon}.",
                                         ColorBorde = "#D13438", // Rojo
-                                        Dias = diasFaltantes
+                                        Dias = diasFaltantes,
+                                        TipoAlerta = "Documentacion"
                                     });
                                 }
                             }
@@ -177,7 +544,8 @@ namespace SCCosmos
                                         Titulo = "Recordatorio de asamblea",
                                         Descripcion = $"Quedan {diasFaltantes} días para la asamblea de la Sección {seccion}.",
                                         ColorBorde = "#0078D4", // Azul
-                                        Dias = diasFaltantes
+                                        Dias = diasFaltantes,
+                                        TipoAlerta = "Recordatorio"
                                     });
                                 }
                             }
@@ -190,8 +558,13 @@ namespace SCCosmos
             // Actualizamos la interfaz del Popup y de la campana
             if (_alertasActuales.Count > 0)
             {
-                BadgeAlertas.Visibility = Visibility.Visible;
-                BtnAlertas.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFB0B0")); // Campana roja
+                //BadgeAlertas.Visibility = Visibility.Visible;
+
+                // Si hay notificaciones nuevas que el usuario no ha visto, pintamos la campana de amarillo
+                if (!soloSilencioso && _alertasActuales.Count > _cantidadAlertasVistas)
+                {
+                    BtnAlertas.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFD700")); // Dorado
+                }
 
                 ListaAlertas.ItemsSource = _alertasActuales.OrderBy(a => a.Dias).ToList();
                 ListaAlertas.Visibility = Visibility.Visible;
@@ -200,8 +573,9 @@ namespace SCCosmos
             }
             else
             {
-                BadgeAlertas.Visibility = Visibility.Collapsed;
+                //BadgeAlertas.Visibility = Visibility.Collapsed;
                 BtnAlertas.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#AAAAAA")); // Campana normal
+                _cantidadAlertasVistas = 0;
 
                 ListaAlertas.ItemsSource = null;
                 ListaAlertas.Visibility = Visibility.Collapsed;

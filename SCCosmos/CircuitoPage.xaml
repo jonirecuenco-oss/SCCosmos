@@ -2,9 +2,10 @@
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-      Title="CircuitoPage">
+      xmlns:local="clr-namespace:SCCosmos"
+      Title="CircuitoPage" Background="#1E1E1E">
 
-    <Grid Margin="20">
+    <Grid Margin="30" Background="Transparent">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -16,11 +17,11 @@
             <ui:Button Content="Subir archivo .KMZ" Icon="{ui:SymbolIcon Map24}" Appearance="Secondary" HorizontalAlignment="Right" VerticalAlignment="Center" Click="BtnSubirKMZ_Click"/>
         </Grid>
 
-        <!-- PESTAÑAS -->
-        <TabControl Grid.Row="1" SelectionChanged="TabControl_SelectionChanged">
+
+        <TabControl Grid.Row="1" SelectionChanged="TabControl_SelectionChanged" Background="Transparent" BorderThickness="0">
 
             <!-- PESTAÑA 1: CONGREGACIONES Y SECCIONES -->
-            <TabItem Header="CONGREGACIONES">
+            <TabItem Header="Congregaciones" FontSize="16" Foreground="White">
                 <Grid Margin="0,15,0,0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -71,14 +72,32 @@
                                 <ui:Button Content="Añadir congregación" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" HorizontalAlignment="Right" Click="BtnAnadirCongregacion_Click"/>
                             </Grid>
 
-                            <!-- DataGrid Editable -->
-                            <DataGrid x:Name="TablaCongregaciones" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column" SelectionMode="Single" IsReadOnly="False" 
-                                      GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#30FFFFFF" BorderThickness="1" BorderBrush="#20FFFFFF" Background="Transparent" RowHeight="34"
-                                      CellEditEnding="TablaCongregaciones_CellEditEnding">
+                            <DataGrid x:Name="TablaCongregaciones" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column" SelectionMode="Single" IsReadOnly="True" 
+                                      GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#30FFFFFF" BorderThickness="1" BorderBrush="#20FFFFFF" 
+                                      Background="Transparent" RowBackground="Transparent" Foreground="White" RowHeight="34">
+
+                                <!-- AHORA REACCIONA A UN SOLO CLIC -->
+                                <DataGrid.RowStyle>
+                                    <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
+                                        <EventSetter Event="MouseLeftButtonUp" Handler="RowCongregacion_Click"/>
+                                        <Setter Property="Cursor" Value="Hand"/>
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="#25FFFFFF"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGrid.RowStyle>
+
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="65"/>
                                     <DataGridTextColumn Header="Nombre" Binding="{Binding Nombre}" Width="140"/>
-                                    <DataGridComboBoxColumn x:Name="ColSeccionGrid" Header="Sección" SelectedItemBinding="{Binding NombreSeccion}" Width="70"/>
+                                    <DataGridTextColumn Header="Sección" Binding="{Binding NombreSeccion}" Width="70"/>
+
+                                    <DataGridTextColumn Header="Provincia" Binding="{Binding Provincia}" Width="110"/>
+                                    <DataGridTextColumn Header="Municipio" Binding="{Binding Municipio}" Width="110"/>
+
                                     <DataGridTextColumn Header="Dirección" Binding="{Binding DireccionSR}" Width="*"/>
                                     <DataGridTextColumn Header="Aforo" Binding="{Binding Capacidad}" Width="55"/>
                                     <DataGridTextColumn Header="Población" Binding="{Binding Poblacion}" Width="75"/>
@@ -93,8 +112,8 @@
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <StackPanel Orientation="Horizontal">
-                                                    <ui:Button Icon="{ui:SymbolIcon Edit24}" Margin="0,0,5,0" Padding="6" Click="BtnEditarCongregacion_Click" Tag="{Binding}"/>
-                                                    <ui:Button Icon="{ui:SymbolIcon Delete24}" Appearance="Danger" Padding="6" Click="BtnBorrarCongregacion_Click" Tag="{Binding}"/>
+                                                    <ui:Button Icon="{ui:SymbolIcon Edit24}" Margin="0,0,5,0" Padding="6" Click="BtnEditarCongregacion_Click" Tag="{Binding}" ToolTip="Editar"/>
+                                                    <ui:Button Icon="{ui:SymbolIcon Delete24}" Appearance="Danger" Padding="6" Click="BtnBorrarCongregacion_Click" Tag="{Binding}" ToolTip="Eliminar"/>
                                                 </StackPanel>
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
@@ -107,7 +126,7 @@
             </TabItem>
 
             <!-- PESTAÑA 2: MAPA -->
-            <TabItem Header="MAPA">
+            <TabItem Header="Mapa" FontSize="16" Foreground="White">
                 <Border CornerRadius="5" Margin="0,15,0,0" ClipToBounds="True">
                     <WebBrowser x:Name="MapaWebBrowser"/>
                 </Border>

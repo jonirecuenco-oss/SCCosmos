@@ -297,8 +297,17 @@ namespace SCCosmos
             if (boton == null) return;
             var archivo = boton.Tag as ArchivoDocumento;
 
-            if (File.Exists(archivo.RutaLocal)) Process.Start(new ProcessStartInfo(archivo.RutaLocal) { UseShellExecute = true });
-            else MessageBox.Show("El archivo no se encuentra en el disco. Quizás fue eliminado manualmente.");
+            // Extraemos el archivo desde la BBDD a nuestra carpeta temporal para asegurar que siempre existe
+            string rutaExtraida = DatabaseHelper.ExtraerDocumentoDesdeBD(archivo.Id, archivo.NombreArchivo);
+
+            if (!string.IsNullOrEmpty(rutaExtraida) && File.Exists(rutaExtraida))
+            {
+                Process.Start(new ProcessStartInfo(rutaExtraida) { UseShellExecute = true });
+            }
+            else
+            {
+                MessageBox.Show("No se ha podido encontrar ni extraer el archivo de la Base de Datos. Es posible que sea un archivo muy antiguo que solo existía como acceso directo.", "Archivo no encontrado", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         }
 
         private void BtnBorrarArchivo_Click(object sender, RoutedEventArgs e)
@@ -317,49 +326,66 @@ namespace SCCosmos
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("El archivo no se pudo borrar. Asegúrate de que no esté abierto. " + ex.Message);
+                    MessageBox.Show("El archivo no se pudo borrar por completo. " + ex.Message);
                 }
             }
         }
 
         // ==========================================
-        // LÓGICA DEL EDITOR DE TEXTO ENRIQUECIDO (CON AUTOGUARDADO)
+        // LÓGICA DEL EDITOR DE TEXTO ENRIQUECIDO (CON AUTOGUARDADO DE JAVASCRIPT)
         // ==========================================
         private void WbEditor_Loaded(object sender, RoutedEventArgs e)
         {
-            if (sender is WebBrowser wb && wb.DataContext is CategoriaVista cat)
+            if (sender is WebBrowser wb)
             {
-                // Crea un temporizador que chequea cambios cada 2 segundos y guarda silenciosamente
-                var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
-                timer.Tick += (s, args) =>
+                // ==============================================================
+                // ARREGLO FANTASMAS: Destruimos timers previos de reciclaje WPF
+                // ==============================================================
+                if (_wbTimers.TryGetValue(wb, out var timerAntiguo))
+                {
+                    timerAntiguo.Stop();
+                    _wbTimers.Remove(wb);
+                }
+
+                var timerNuevo = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+                timerNuevo.Tick += (s, args) =>
                 {
                     try
                     {
-                        string html = wb.InvokeScript("eval", "document.body.innerHTML").ToString();
-                        if (!string.IsNullOrWhiteSpace(html) && html != cat.PlantillaEmail)
+                        // Leemos el DataContext DINÁMICAMENTE cada segundo
+                        if (wb.DataContext is CategoriaVista currentCat)
                         {
-                            cat.PlantillaEmail = html;
-                            DatabaseHelper.GuardarConfiguracion("Email_" + cat.Titulo, html);
+                            var isReady = wb.InvokeScript("eval", "window.readyToSave");
 
-                            // Mostrar mensaje de guardado y desaparecer a los 2 segundos
-                            var panel = FindParent<Grid>(wb);
-                            if (panel != null)
+                            if (isReady is bool ready && ready)
                             {
-                                var aviso = FindVisualChildByName<TextBlock>(panel, "TxtAvisoGuardado");
-                                if (aviso != null)
+                                wb.InvokeScript("eval", "window.readyToSave = false;");
+                                string html = wb.InvokeScript("eval", "document.body.innerHTML").ToString();
+
+                                if (!string.IsNullOrWhiteSpace(html) && html != currentCat.PlantillaEmail)
                                 {
-                                    aviso.Text = "Guardado automático ✓";
-                                    DispatcherTimer clearTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
-                                    clearTimer.Tick += (cs, cargs) => { aviso.Text = ""; clearTimer.Stop(); };
-                                    clearTimer.Start();
+                                    currentCat.ActualizarPlantillaSilencioso(html);
+
+                                    var panel = FindParent<Grid>(wb);
+                                    if (panel != null)
+                                    {
+                                        var aviso = FindVisualChildByName<TextBlock>(panel, "TxtAvisoGuardado");
+                                        if (aviso != null)
+                                        {
+                                            aviso.Text = "Guardado automático ✓";
+                                            DispatcherTimer clearTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+                                            clearTimer.Tick += (cs, cargs) => { aviso.Text = ""; clearTimer.Stop(); };
+                                            clearTimer.Start();
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                     catch { }
                 };
-                timer.Start();
-                _wbTimers[wb] = timer;
+                timerNuevo.Start();
+                _wbTimers[wb] = timerNuevo;
             }
         }
 
@@ -373,16 +399,15 @@ namespace SCCosmos
                     _wbTimers.Remove(wb);
                 }
 
-                // Guardado de emergencia al cambiar de pestaña
-                if (wb.DataContext is CategoriaVista cat)
+                // Guardado final dinámico
+                if (wb.DataContext is CategoriaVista currentCat)
                 {
                     try
                     {
                         string html = wb.InvokeScript("eval", "document.body.innerHTML").ToString();
-                        if (!string.IsNullOrWhiteSpace(html) && html != cat.PlantillaEmail)
+                        if (!string.IsNullOrWhiteSpace(html) && html != currentCat.PlantillaEmail)
                         {
-                            cat.PlantillaEmail = html;
-                            DatabaseHelper.GuardarConfiguracion("Email_" + cat.Titulo, html);
+                            currentCat.ActualizarPlantillaSilencioso(html);
                         }
                     }
                     catch { }
@@ -399,7 +424,11 @@ namespace SCCosmos
                 var wb = FindVisualChildByName<WebBrowser>(panel, "WbEditor");
                 if (wb != null)
                 {
-                    try { wb.InvokeScript("eval", $"document.execCommand('{comando}', false, null);"); } catch { }
+                    try
+                    {
+                        wb.InvokeScript("eval", $"document.execCommand('{comando}', false, null); window.readyToSave = true;");
+                    }
+                    catch { }
                 }
             }
         }
@@ -412,7 +441,11 @@ namespace SCCosmos
                 var wb = FindVisualChildByName<WebBrowser>(panel, "WbEditor");
                 if (wb != null)
                 {
-                    try { wb.InvokeScript("eval", $"document.execCommand('fontSize', false, '{item.Tag}');"); } catch { }
+                    try
+                    {
+                        wb.InvokeScript("eval", $"document.execCommand('fontSize', false, '{item.Tag}'); window.readyToSave = true;");
+                    }
+                    catch { }
                 }
             }
         }
@@ -443,15 +476,6 @@ namespace SCCosmos
             return null;
         }
 
-        // ==========================================
-        // EVENTOS ORIGINALES (Asunto, Variables, etc)
-        // ==========================================
-        private void TxtPlantillaEmail_LostFocus(object sender, RoutedEventArgs e)
-        {
-            if ((sender as TextBox)?.DataContext as CategoriaVista is CategoriaVista cat)
-                DatabaseHelper.GuardarConfiguracion("Asunto_" + cat.Titulo, cat.AsuntoEmail);
-        }
-
         private void BtnEnviarMensajeGlobal_Click(object sender, RoutedEventArgs e)
         {
             EnviarMensajeWindow ventanaMensaje = new EnviarMensajeWindow();
@@ -477,7 +501,6 @@ namespace SCCosmos
             {
                 string html = e.NewValue as string ?? "";
 
-                // AUMENTADA LA LETRA A 16px COMO DEFAULT
                 string docHtml = $@"
                 <!DOCTYPE html>
                 <html>
@@ -488,6 +511,22 @@ namespace SCCosmos
                         body {{ font-family: 'Segoe UI', sans-serif; font-size: 16px; color: white; background-color: #252528; margin: 12px; outline: none; }}
                         p {{ margin: 0 0 10px 0; }}
                     </style>
+                    <script>
+                        window.readyToSave = false;
+                        var typingTimer;
+                        function debounceSave() {{
+                            clearTimeout(typingTimer);
+                            typingTimer = setTimeout(function() {{
+                                window.readyToSave = true;
+                            }}, 1500);
+                        }}
+                        window.onload = function() {{
+                            document.body.addEventListener('input', debounceSave);
+                            document.body.addEventListener('keyup', debounceSave);
+                            document.body.addEventListener('paste', debounceSave);
+                            document.body.addEventListener('cut', debounceSave);
+                        }};
+                    </script>
                 </head>
                 <body contenteditable='true'>
                     {html}
@@ -537,8 +576,45 @@ namespace SCCosmos
         public string VarApellidoAsignado { get; set; }
         public string VarTemaAsignado { get; set; }
 
-        public string AsuntoEmail { get; set; }
-        public string PlantillaEmail { get; set; }
+        private string _asuntoEmail;
+        public string AsuntoEmail
+        {
+            get => _asuntoEmail;
+            set
+            {
+                if (_asuntoEmail != value)
+                {
+                    _asuntoEmail = value;
+                    OnPropertyChanged(nameof(AsuntoEmail));
+                    if (!string.IsNullOrEmpty(Titulo))
+                        DatabaseHelper.GuardarConfiguracion("Asunto_" + Titulo, value ?? "");
+                }
+            }
+        }
+
+        private string _plantillaEmail;
+        public string PlantillaEmail
+        {
+            get => _plantillaEmail;
+            set
+            {
+                if (_plantillaEmail != value)
+                {
+                    _plantillaEmail = value;
+                    OnPropertyChanged(nameof(PlantillaEmail));
+                }
+            }
+        }
+
+        public void ActualizarPlantillaSilencioso(string value)
+        {
+            if (_plantillaEmail != value)
+            {
+                _plantillaEmail = value;
+                if (!string.IsNullOrEmpty(Titulo))
+                    DatabaseHelper.GuardarConfiguracion("Email_" + Titulo, value ?? "");
+            }
+        }
 
         public string TagSinAlojamiento => Titulo + "|Sin alojamiento";
         public string TagConAlojamiento => Titulo + "|Con alojamiento";

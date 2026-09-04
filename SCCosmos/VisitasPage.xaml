@@ -177,7 +177,6 @@
                     </Expander.Header>
                     <StackPanel Margin="10,15,10,10">
 
-                       
                         <DataGrid x:Name="TablaPrograma" PreviewMouseWheel="UIElement_PreviewMouseWheel" FontWeight="Normal" HorizontalAlignment="Stretch" AutoGenerateColumns="False" CanUserAddRows="False"
                                   HeadersVisibility="Column" SelectionMode="Single" IsReadOnly="True" MaxHeight="800" ScrollViewer.HorizontalScrollBarVisibility="Auto"
                                   GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#20FFFFFF"
@@ -686,12 +685,11 @@
                 </Expander>
 
                 <!-- S-303 Y S-2 -->
-                <!-- S-303 Y S-2 -->
                 <Expander x:Name="ExpanderS303yS2" Header="S-303 y S-2" FontSize="16" FontWeight="Normal" HorizontalContentAlignment="Stretch" Margin="0,0,0,10">
                     <StackPanel Margin="10,15,10,10">
 
                         <!-- PARTE 1: S-303 -->
-                        <Border Background="#1A1A1C" CornerRadius="6" Padding="15" Margin="0,0,0,20" BorderBrush="#333333" BorderThickness="1">
+                        <Border Background="#1A1A1C" CornerRadius="6" Padding="15" Margin="0,0,0,15" BorderBrush="#333333" BorderThickness="1">
                             <StackPanel>
                                 <TextBlock Text="DOCUMENTO S-303" FontSize="14" FontWeight="SemiBold" Foreground="#4BA3E3" Margin="0,0,0,10"/>
                                 <ItemsControl x:Name="ListaS303">
@@ -701,10 +699,13 @@
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*"/>
                                                     <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Text="{Binding NombreVisual}" Foreground="White" VerticalAlignment="Center" TextWrapping="Wrap"/>
                                                 <Button Grid.Column="1" Content="{Binding TextoBoton}" Tag="{Binding}" Click="BtnEditarS303_Click" 
                                                         Background="#0078D4" Foreground="White" BorderThickness="0" Padding="10,5" Cursor="Hand" Margin="10,0,0,0"/>
+                                                <Button Grid.Column="2" Content="🗑️" Tag="{Binding}" Click="BtnEliminarS303_Click" Visibility="{Binding VerBotonBorrar}"
+                                                        Background="Transparent" Foreground="#FF5555" BorderThickness="0" Padding="5" Cursor="Hand" Margin="5,0,0,0" ToolTip="Eliminar PDF generado" FontSize="16"/>
                                             </Grid>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
@@ -714,12 +715,12 @@
                         </Border>
 
                         <!-- PARTE 2: S-2 (RECOMENDACIONES) -->
-                        <Border Background="#1A1A1C" CornerRadius="6" Padding="15" BorderBrush="#333333" BorderThickness="1">
+                        <Border Background="#1A1A1C" CornerRadius="6" Padding="15" Margin="0,0,0,15" BorderBrush="#333333" BorderThickness="1">
                             <StackPanel>
                                 <TextBlock Text="RECOMENDACIONES Y BAJAS PENDIENTES (S-2)" FontSize="14" FontWeight="SemiBold" Foreground="#4BA3E3" Margin="0,0,0,10"/>
 
                                 <DataGrid x:Name="TablaS2" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column" SelectionMode="Single" 
-                                          IsReadOnly="True" Background="Transparent" RowBackground="Transparent" BorderThickness="0" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#333333">
+                                          IsReadOnly="False" Background="Transparent" RowBackground="Transparent" BorderThickness="0" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#333333">
                                     <DataGrid.RowStyle>
                                         <Style TargetType="DataGridRow">
                                             <Setter Property="Background" Value="Transparent"/>
@@ -728,24 +729,72 @@
                                         </Style>
                                     </DataGrid.RowStyle>
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="Hermano" Binding="{Binding Hermano}" Width="2*" FontWeight="SemiBold"/>
-                                        <DataGridTextColumn Header="Acción" Binding="{Binding Tipo}" Width="1*"/>
-                                        <DataGridTextColumn Header="Recomendado como" Binding="{Binding RecomendadoComo}" Width="1.5*"/>
-                                        <DataGridTemplateColumn Header="Gestionar" Width="Auto">
+                                        <DataGridTemplateColumn Header="Aprobar" Width="75">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                        <Button Content="✅ Aprobar" Tag="{Binding}" Click="BtnAprobarRecomendacionVisita_Click" Background="#10893E" Foreground="White" BorderThickness="0" Padding="8,4" Cursor="Hand" Margin="0,0,5,0"/>
-                                                        <Button Content="❌ Cancelar" Tag="{Binding}" Click="BtnCancelarRecomendacionVisita_Click" Background="#E81123" Foreground="White" BorderThickness="0" Padding="8,4" Cursor="Hand"/>
-                                                    </StackPanel>
+                                                    <CheckBox IsChecked="{Binding Aprobar, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                 </DataTemplate>
                                             </DataGridTemplateColumn.CellTemplate>
                                         </DataGridTemplateColumn>
+                                        <DataGridTextColumn Header="Hermano" Binding="{Binding Hermano}" Width="2*" FontWeight="SemiBold" IsReadOnly="True"/>
+                                        <DataGridTextColumn Header="Acción" Binding="{Binding Tipo}" Width="1*" IsReadOnly="True"/>
+                                        <DataGridTextColumn Header="Recomendado como" Binding="{Binding RecomendadoComo}" Width="1.5*" IsReadOnly="True"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
+
                                 <TextBlock x:Name="TxtSinS2" Text="No hay recomendaciones ni bajas pendientes en JW Hub para esta congregación." Foreground="#AAAAAA" FontStyle="Italic" Visibility="Collapsed"/>
                             </StackPanel>
                         </Border>
+
+                        <!-- PARTE 3: MENSAJE A LA CONGREGACIÓN -->
+                        <Border Background="#1A1A1C" CornerRadius="6" Padding="15" BorderBrush="#333333" BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock Text="MENSAJE PARA LA CONGREGACIÓN" FontSize="14" FontWeight="SemiBold" Foreground="#4BA3E3" Margin="0,0,0,10"/>
+
+                                <TextBlock Text="Asunto del correo:" Foreground="#CCC" Margin="0,0,0,5"/>
+                                <ui:TextBox x:Name="TxtAsuntoEnvio" Background="#1E1E1E" Foreground="White" Margin="0,0,0,15"/>
+
+                                <TextBlock Text="Cuerpo del correo:" Foreground="#CCC" Margin="0,0,0,5"/>
+
+                                <!-- EDITOR DE TEXTO ENRIQUECIDO WEBBROWSER -->
+                                <Border BorderThickness="1" BorderBrush="#333333" CornerRadius="4" Background="#252528" Margin="0,0,0,15">
+                                    <StackPanel>
+                                        <!-- BARRA DE HERRAMIENTAS -->
+                                        <Border Background="#1E1E1E" Padding="5">
+                                            <StackPanel Orientation="Horizontal">
+                                                <Button Content="N" FontWeight="Bold" Width="30" Height="30" Margin="0,0,5,0" Tag="bold" Click="BtnFormato_Click" Background="Transparent" Foreground="White" BorderThickness="0" Cursor="Hand"/>
+                                                <Button Content="K" FontStyle="Italic" Width="30" Height="30" Margin="0,0,5,0" Tag="italic" Click="BtnFormato_Click" Background="Transparent" Foreground="White" BorderThickness="0" Cursor="Hand"/>
+
+                                                <!-- Botón S (Subrayado) con TextBlock interno -->
+                                                <Button Width="30" Height="30" Margin="0,0,10,0" Tag="underline" Click="BtnFormato_Click" Background="Transparent" BorderThickness="0" Cursor="Hand">
+                                                    <TextBlock Text="S" TextDecorations="Underline" Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                                </Button>
+
+                                                <ComboBox Width="60" Height="30" SelectionChanged="CmbTamano_SelectionChanged" SelectedIndex="2" Background="#333" Foreground="White" BorderThickness="0" Cursor="Hand">
+                                                    <ComboBoxItem Content="10" Tag="1"/>
+                                                    <ComboBoxItem Content="13" Tag="2"/>
+                                                    <ComboBoxItem Content="16" Tag="3"/>
+                                                    <ComboBoxItem Content="18" Tag="4"/>
+                                                    <ComboBoxItem Content="24" Tag="5"/>
+                                                    <ComboBoxItem Content="32" Tag="6"/>
+                                                    <ComboBoxItem Content="48" Tag="7"/>
+                                                </ComboBox>
+                                                <TextBlock Text="💡 Win + . para Emojis" Foreground="#888888" VerticalAlignment="Center" Margin="15,0,0,0" FontStyle="Italic"/>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- ÁREA WEB -->
+                                        <WebBrowser x:Name="WbEditorEnvio" Height="150"/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- CONTROLES DE ENVÍO -->
+                        <StackPanel x:Name="PanelControlesEnvio" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
+                            <CheckBox x:Name="ChkCopiaSRV" Content="Copia a SRV" Foreground="White" Margin="0,0,15,0" VerticalAlignment="Center"/>
+                            <ui:Button Content="Enviar S-303 y S-2" Appearance="Primary" Icon="{ui:SymbolIcon Send24}" Click="BtnEnviarS2_Click"/>
+                        </StackPanel>
 
                     </StackPanel>
                 </Expander>

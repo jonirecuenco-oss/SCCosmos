@@ -2,14 +2,16 @@
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:local="clr-namespace:SCCosmos"
       Title="AsambleasPage" Background="#1E1E1E">
 
     <Page.Resources>
         <!-- MOLDE PARA EL PROGRAMA DE ASAMBLEAS -->
         <DataTemplate x:Key="FilaProgramaAsambleaTemplate">
-            <Border Background="#2D2D30" Margin="0,0,0,8" CornerRadius="6" Padding="10,5" BorderBrush="#3E3E42" BorderThickness="1">
+            <Border Background="#2D2D30" Margin="0,0,0,8" CornerRadius="6" Padding="5,5,10,5" BorderBrush="#3E3E42" BorderThickness="1" AllowDrop="True" Drop="Fila_Drop">
                 <Grid>
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="35"/>
                         <ColumnDefinition Width="65"/>
                         <ColumnDefinition Width="150"/>
                         <ColumnDefinition Width="2*"/>
@@ -18,11 +20,16 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <TextBox Grid.Column="0" Text="{Binding Hora, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" HorizontalContentAlignment="Center" VerticalAlignment="Top" MaxLength="5"/>
-                    <ComboBox Grid.Column="1" ItemsSource="{Binding DataContext.TiposParte, RelativeSource={RelativeSource AncestorType=Page}}" SelectedItem="{Binding Tipo, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" Cursor="Hand" VerticalAlignment="Top"/>
-                    <TextBox Grid.Column="2" Text="{Binding Titulo, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" VerticalAlignment="Top"/>
+                    <!-- Icono de Agarre para arrastrar -->
+                    <Border Grid.Column="0" Background="Transparent" Cursor="SizeNS" MouseLeftButtonDown="DragHandle_MouseLeftButtonDown" MouseMove="DragHandle_MouseMove" Margin="0,0,5,0" ToolTip="Pincha y arrastra para mover la fila">
+                        <ui:SymbolIcon Symbol="LineHorizontal320" Foreground="#666666" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="20"/>
+                    </Border>
 
-                    <Grid Grid.Column="3" Margin="0,0,10,0" VerticalAlignment="Top">
+                    <TextBox Grid.Column="1" Text="{Binding Hora, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" HorizontalContentAlignment="Center" VerticalAlignment="Top" MaxLength="5"/>
+                    <ComboBox Grid.Column="2" ItemsSource="{Binding DataContext.TiposParte, RelativeSource={RelativeSource AncestorType=Page}}" SelectedItem="{Binding Tipo, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" Cursor="Hand" VerticalAlignment="Top"/>
+                    <TextBox Grid.Column="3" Text="{Binding Titulo, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" VerticalAlignment="Top"/>
+
+                    <Grid Grid.Column="4" Margin="0,0,10,0" VerticalAlignment="Top">
                         <ComboBox SelectedValue="{Binding AsignadoId, Mode=TwoWay}" 
                                   DisplayMemberPath="NombreMuestra" SelectedValuePath="Id"
                                   IsEditable="True" IsTextSearchEnabled="False" IsSynchronizedWithCurrentItem="False" StaysOpenOnEdit="True"
@@ -31,9 +38,9 @@
                         <ui:Button Icon="{ui:SymbolIcon Dismiss12}" Appearance="Transparent" Foreground="#888" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,22,0" Visibility="{Binding VisibilidadEnviar}" Click="BtnLimpiarAsignado_Click" Tag="{Binding}" Padding="2" ToolTip="Borrar asignación" Cursor="Hand"/>
                     </Grid>
 
-                    <TextBox Grid.Column="4" Text="{Binding Participantes, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" MinHeight="33" MaxHeight="100" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" VerticalAlignment="Top"/>
+                    <TextBox Grid.Column="5" Text="{Binding Participantes, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" MinHeight="33" MaxHeight="100" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" VerticalAlignment="Top"/>
 
-                    <StackPanel Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Top">
+                    <StackPanel Grid.Column="6" Orientation="Horizontal" VerticalAlignment="Top">
                         <ui:Button Icon="{ui:SymbolIcon Attach24}" Appearance="{Binding ColorBotonArchivo}" ToolTip="{Binding ToolTipArchivo}" Click="BtnAdjuntar_Click" Tag="{Binding}" Padding="6,4" Cursor="Hand" Margin="0"/>
                         <ui:Button Icon="{ui:SymbolIcon Mail24}" Appearance="{Binding ColorBotonEmail}" Visibility="{Binding VisibilidadEnviar}" Cursor="Hand" Click="BtnEnviarAsignacion_Click" Tag="{Binding}" Padding="6,4" ToolTip="{Binding ToolTipEmail}" Margin="0"/>
                         <ui:Button Icon="{ui:SymbolIcon Dismiss24}" Appearance="Danger" Cursor="Hand" Click="BtnEliminarParte_Click" Tag="{Binding}" Padding="6,4" ToolTip="Eliminar parte" Margin="10,0,0,0"/>
@@ -44,9 +51,10 @@
 
         <!-- MOLDE PARA EL PROGRAMA DE PRECURSORES -->
         <DataTemplate x:Key="FilaProgramaPrecursoresTemplate">
-            <Border Background="#2D2D30" Margin="0,0,0,8" CornerRadius="6" Padding="10,5" BorderBrush="#3E3E42" BorderThickness="1">
+            <Border Background="#2D2D30" Margin="0,0,0,8" CornerRadius="6" Padding="5,5,10,5" BorderBrush="#3E3E42" BorderThickness="1" AllowDrop="True" Drop="Fila_Drop">
                 <Grid>
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="35"/>
                         <ColumnDefinition Width="65"/>
                         <ColumnDefinition Width="150"/>
                         <ColumnDefinition Width="2*"/>
@@ -55,11 +63,16 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <TextBox Grid.Column="0" Text="{Binding Hora, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" HorizontalContentAlignment="Center" VerticalAlignment="Top" MaxLength="5"/>
-                    <ComboBox Grid.Column="1" ItemsSource="{Binding DataContext.TiposParte, RelativeSource={RelativeSource AncestorType=Page}}" SelectedItem="{Binding Tipo, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" Cursor="Hand" VerticalAlignment="Top"/>
-                    <TextBox Grid.Column="2" Text="{Binding Titulo, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" VerticalAlignment="Top"/>
+                    <!-- Icono de Agarre para arrastrar -->
+                    <Border Grid.Column="0" Background="Transparent" Cursor="SizeNS" MouseLeftButtonDown="DragHandle_MouseLeftButtonDown" MouseMove="DragHandle_MouseMove" Margin="0,0,5,0" ToolTip="Pincha y arrastra para mover la fila">
+                        <ui:SymbolIcon Symbol="LineHorizontal320" Foreground="#666666" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="20"/>
+                    </Border>
 
-                    <Grid Grid.Column="3" Margin="0,0,10,0" VerticalAlignment="Top">
+                    <TextBox Grid.Column="1" Text="{Binding Hora, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" HorizontalContentAlignment="Center" VerticalAlignment="Top" MaxLength="5"/>
+                    <ComboBox Grid.Column="2" ItemsSource="{Binding DataContext.TiposParte, RelativeSource={RelativeSource AncestorType=Page}}" SelectedItem="{Binding Tipo, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" Cursor="Hand" VerticalAlignment="Top"/>
+                    <TextBox Grid.Column="3" Text="{Binding Titulo, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" VerticalAlignment="Top"/>
+
+                    <Grid Grid.Column="4" Margin="0,0,10,0" VerticalAlignment="Top">
                         <ComboBox SelectedValue="{Binding AsignadoId, Mode=TwoWay}" 
                                   DisplayMemberPath="NombreMuestra" SelectedValuePath="Id"
                                   IsEditable="True" IsTextSearchEnabled="False" IsSynchronizedWithCurrentItem="False" StaysOpenOnEdit="True"
@@ -68,9 +81,9 @@
                         <ui:Button Icon="{ui:SymbolIcon Dismiss12}" Appearance="Transparent" Foreground="#888" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,22,0" Visibility="{Binding VisibilidadEnviar}" Click="BtnLimpiarAsignado_Click" Tag="{Binding}" Padding="2" ToolTip="Borrar asignación" Cursor="Hand"/>
                     </Grid>
 
-                    <TextBox Grid.Column="4" Text="{Binding Participantes, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" MinHeight="33" MaxHeight="100" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" VerticalAlignment="Top"/>
+                    <TextBox Grid.Column="5" Text="{Binding Participantes, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" MinHeight="33" MaxHeight="100" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" VerticalAlignment="Top"/>
 
-                    <StackPanel Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Top">
+                    <StackPanel Grid.Column="6" Orientation="Horizontal" VerticalAlignment="Top">
                         <ui:Button Icon="{ui:SymbolIcon Attach24}" Appearance="{Binding ColorBotonArchivo}" ToolTip="{Binding ToolTipArchivo}" Click="BtnAdjuntar_Click" Tag="{Binding}" Padding="6,4" Cursor="Hand" Margin="0"/>
                         <ui:Button Icon="{ui:SymbolIcon Mail24}" Appearance="{Binding ColorBotonEmail}" Visibility="{Binding VisibilidadEnviar}" Cursor="Hand" Click="BtnEnviarAsignacion_Click" Tag="{Binding}" Padding="6,4" ToolTip="{Binding ToolTipEmail}" Margin="0"/>
                         <ui:Button Icon="{ui:SymbolIcon Dismiss24}" Appearance="Danger" Cursor="Hand" Click="BtnEliminarParte_Click" Tag="{Binding}" Padding="6,4" ToolTip="Eliminar parte" Margin="10,0,0,0"/>
@@ -119,7 +132,7 @@
                         </ItemsControl>
 
                         <!-- Botón Añadir Auxiliar debajo del Superintendente/Auxiliares -->
-                        <ui:Button Content="Añadir auxiliar" Icon="{ui:SymbolIcon Add24}" Appearance="Secondary" HorizontalAlignment="Left" Margin="0,5,0,0" Click="BtnAñadirAuxiliar_Click" Tag="{Binding}"/>
+                        <ui:Button Content="Añadir auxiliar" Icon="{ui:SymbolIcon Add24}" Appearance="Transparent" Foreground="#A0D1FF" HorizontalAlignment="Left" Margin="0,5,0,0" Click="BtnAñadirAuxiliar_Click" Tag="{Binding}"/>
 
                         <!-- CAJA DEL AUDITOR AL FINAL (Caja dentro de la caja) -->
                         <Border Visibility="{Binding VisibilidadAuditor}" Background="#1A1A1C" CornerRadius="6" BorderBrush="#3E3E42" BorderThickness="1" Padding="12" Margin="0,20,0,0">
@@ -188,7 +201,7 @@
         </DataTemplate>
     </Page.Resources>
 
-    <Grid>
+    <Grid AllowDrop="True" PreviewDragOver="Root_PreviewDragOver">
         <!-- EL CONTENEDOR PRINCIPAL -->
         <ScrollViewer x:Name="MainScrollViewer" VerticalScrollBarVisibility="Auto">
             <Grid Margin="30" Background="Transparent">
@@ -197,7 +210,7 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Text="ASAMBLEAS Y EVENTOS" FontSize="26" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,25"/>
+                <TextBlock Grid.Row="0" Text="ASAMBLEAS" FontSize="26" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,25"/>
 
                 <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0">
 
@@ -283,6 +296,7 @@
 
                             <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
                                 <TextBlock x:Name="TxtGuardadoAsamblea" Text="✓ Guardado" Foreground="#81A1C1" VerticalAlignment="Center" Margin="0,0,15,0" Visibility="Collapsed" FontWeight="SemiBold"/>
+                                <ui:Button Content="Copiar programa de otra sección" Icon="{ui:SymbolIcon Copy24}" Appearance="Secondary" Click="BtnDuplicarPrograma_Click" Margin="0,0,10,0" ToolTip="Duplica los temas y horas de otra sección dejándolo en blanco para asignar."/>
                                 <ui:Button Content="Generar PDF" Appearance="Secondary" Icon="{ui:SymbolIcon DocumentPdf24}" Padding="15,8" FontSize="14" Cursor="Hand" Click="BtnGenerarPDFAsamblea_Click"/>
                             </StackPanel>
                         </Grid>
@@ -361,7 +375,7 @@
 
                             <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,40">
                                 <TextBlock x:Name="TxtGuardadoOrganigrama" Text="✓ Guardado" Foreground="#81A1C1" VerticalAlignment="Center" Margin="0,0,15,0" Visibility="Collapsed" FontWeight="SemiBold"/>
-                                <ui:Button Content="Enviar organigrama" Click="BtnEnviarOrganigrama_Click" Appearance="Primary"  Padding="15,8" FontSize="14" Cursor="Hand" Margin="10,0,10,0" Icon="{ui:SymbolIcon Mail24}"/> 
+                                <ui:Button Content="Enviar organigrama" Click="BtnEnviarOrganigrama_Click" Appearance="Primary"  Padding="15,8" FontSize="14" Cursor="Hand" Margin="10,0,10,0" Icon="{ui:SymbolIcon Mail24}"/>
                                 <ui:Button Content="Generar PDF (Organigrama)" Appearance="Secondary" Icon="{ui:SymbolIcon DocumentPdf24}" Padding="15,8" FontSize="14" Cursor="Hand" Click="BtnGenerarPDFOrganigrama_Click"/>
                             </StackPanel>
 
@@ -370,8 +384,133 @@
 
                     <!-- PESTAÑA 3: ORADORES -->
                     <TabItem Header="Oradores" FontSize="16" Foreground="White">
-                        <Grid Margin="0,30,0,0">
-                            <TextBlock Text="Módulo de Oradores en desarrollo..." Foreground="#888" FontSize="16" HorizontalAlignment="Center"/>
+                        <Grid Margin="0,15,0,0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <Grid Grid.Row="0" Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                    <TextBlock Text="Sección del circuito:" Foreground="#AAAAAA" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                    <ComboBox ItemsSource="{Binding ListaSeccionesMatriz}" SelectedItem="{Binding SeccionMatrizSeleccionada}" DisplayMemberPath="Nombre" SelectionChanged="FiltrosMatriz_SelectionChanged" Width="150" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" Cursor="Hand"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <ui:Button Content="Añadir participante" Icon="{ui:SymbolIcon PersonAdd24}" Appearance="Primary" Click="BtnAñadirParticipanteMatriz_Click" Cursor="Hand"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <DataGrid x:Name="TablaOradores" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False"
+                                      HeadersVisibility="Column" SelectionMode="Single" IsReadOnly="False"
+                                      GridLinesVisibility="All" HorizontalGridLinesBrush="#30FFFFFF" VerticalGridLinesBrush="#30FFFFFF"
+                                      BorderThickness="1" BorderBrush="#3E3E42" Background="#1E1E1E"
+                                      RowBackground="Transparent" AlternatingRowBackground="#0AFFFFFF">
+
+                                <DataGrid.Resources>
+                                    <!-- ESTILO DE CABECERA A 45px DE ALTURA PARA OCUPAR LAS 2 FILAS VISUALMENTE -->
+                                    <Style TargetType="DataGridColumnHeader">
+                                        <Setter Property="Background" Value="#2D2D30"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                        <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                        <Setter Property="Padding" Value="0"/>
+                                        <Setter Property="BorderBrush" Value="#3E3E42"/>
+                                        <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                                        <Setter Property="Height" Value="45"/>
+                                    </Style>
+                                    <!-- Estilo para centrar los CheckBox de Evaluación -->
+                                    <Style x:Key="CenterCheckBox" TargetType="CheckBox">
+                                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Setter Property="Cursor" Value="Hand"/>
+                                        <Setter Property="LayoutTransform">
+                                            <Setter.Value>
+                                                <ScaleTransform ScaleX="1.4" ScaleY="1.4"/>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </DataGrid.Resources>
+
+                                <DataGrid.RowStyle>
+                                    <Style TargetType="DataGridRow">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="BorderThickness" Value="0"/>
+                                        <Style.Triggers>
+                                            <!-- Quita el resaltado al hacer clic -->
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter Property="Background" Value="Transparent"/>
+                                            </Trigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="#10FFFFFF"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGrid.RowStyle>
+
+                                <DataGrid.CellStyle>
+                                    <Style TargetType="DataGridCell">
+                                        <Setter Property="BorderThickness" Value="0"/>
+                                        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter Property="Background" Value="Transparent"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGrid.CellStyle>
+
+                                <DataGrid.Columns>
+                                    <!-- COLUMNA NOMBRE MÁS ANCHA (300px) -->
+                                    <DataGridTemplateColumn Header="NOMBRE" Width="380">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Grid>
+                                                    <TextBlock Text="{Binding Nombre}" Visibility="{Binding VisTextBlock}" VerticalAlignment="Center" Margin="10,0,0,0" FontWeight="SemiBold"/>
+                                                    <ComboBox ItemsSource="{Binding OpcionesDisponibles}" DisplayMemberPath="NombreMuestra" SelectedValuePath="Id" 
+                                                              Visibility="{Binding VisComboBox}" SelectionChanged="CmbNuevoOradorMatriz_SelectionChanged" Tag="{Binding}" Margin="5,2"/>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <!-- COLUMNA BOS -->
+                                    <DataGridTextColumn Header="BOS" Binding="{Binding BOS, UpdateSourceTrigger=PropertyChanged}" Width="50">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                        <DataGridTextColumn.EditingElementStyle>
+                                            <Style TargetType="TextBox">
+                                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                            </Style>
+                                        </DataGridTextColumn.EditingElementStyle>
+                                    </DataGridTextColumn>
+
+                                    <!-- COLUMNA BORRAR (Icono de basura sin texto) -->
+                                    <DataGridTemplateColumn Header=" " Width="50">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <ui:Button Icon="{ui:SymbolIcon Delete24}" Appearance="Danger" Padding="6,4" ToolTip="Quitar participante" Click="BtnEliminarOradorMatriz_Click" Tag="{Binding}" HorizontalAlignment="Center" VerticalAlignment="Center" Cursor="Hand" Visibility="{Binding VisibilidadBorrar}"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <!-- LAS COLUMNAS DE LOS AÑOS SE GENERARÁN SOLAS DESDE C# DESPUÉS DE ESTAS 3 -->
+                                </DataGrid.Columns>
+                            </DataGrid>
                         </Grid>
                     </TabItem>
 
@@ -396,7 +535,7 @@
                                     </Grid.ColumnDefinitions>
 
                                     <StackPanel Grid.Column="0">
-                                        <TextBlock Text="Año" Foreground="#AAAAAA" Margin="0,0,0,5"/>
+                                        <TextBlock Text="Año de servicio" Foreground="#AAAAAA" Margin="0,0,0,5"/>
                                         <ComboBox ItemsSource="{Binding ListaAños}" SelectedItem="{Binding AñoPrecursoresSeleccionado}" SelectionChanged="FiltrosPrecursores_SelectionChanged" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14" Cursor="Hand"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
@@ -418,18 +557,18 @@
                                 </StackPanel>
                             </Border>
 
-                            <Border Grid.Row="2" Background="#252528" Padding="20" CornerRadius="8" BorderBrush="#3E3E42" BorderThickness="1">
-                                <StackPanel>
+                            <Border Grid.Row="2" Background="#252528" Padding="20" CornerRadius="8" BorderBrush="#3E3E42" BorderThickness="1" Visibility="{Binding VisibilidadSesionActiva}">
+                                <StackPanel DataContext="{Binding SesionPrecursoresActiva}">
                                     <Grid Margin="0,0,0,15">
                                         <TextBlock Text="📋 PROGRAMA DE LA REUNIÓN" FontSize="16" FontWeight="Bold" Foreground="#EBCB8B" VerticalAlignment="Center"/>
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                             <TextBlock Text="Viendo el programa de:" Foreground="#AAAAAA" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                            <ComboBox ItemsSource="{Binding SesionesPrecursores}" SelectedItem="{Binding SesionPrecursoresActiva, Mode=TwoWay}" 
+                                            <ComboBox ItemsSource="{Binding DataContext.SesionesPrecursores, RelativeSource={RelativeSource AncestorType=Page}}" SelectedItem="{Binding DataContext.SesionPrecursoresActiva, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Page}}" 
                                                       DisplayMemberPath="TituloSesion" Width="200" Background="#1E1E1E" Foreground="White" BorderBrush="#444" Cursor="Hand"/>
                                         </StackPanel>
                                     </Grid>
 
-                                    <ItemsControl ItemsSource="{Binding SesionPrecursoresActiva.Partes}" ItemTemplate="{StaticResource FilaProgramaPrecursoresTemplate}"/>
+                                    <ItemsControl ItemsSource="{Binding Partes}" ItemTemplate="{StaticResource FilaProgramaPrecursoresTemplate}"/>
                                     <ui:Button Content="Añadir parte al programa" Icon="{ui:SymbolIcon Add24}" Appearance="Secondary" HorizontalAlignment="Left" Margin="0,5,0,0" Click="BtnAñadirPartePrecursores_Click" Cursor="Hand"/>
                                 </StackPanel>
                             </Border>

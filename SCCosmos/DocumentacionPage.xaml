@@ -48,7 +48,8 @@
                     </StackPanel>
 
                     <TextBlock Text="Asunto del correo:" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                    <TextBox Text="{Binding AsuntoEmail, Mode=TwoWay}" LostFocus="TxtPlantillaEmail_LostFocus" Padding="8" Background="#252528" Foreground="White" BorderBrush="#444" Margin="0,0,0,15" FontSize="14"/>
+                    <!-- AQUÍ ESTÁ LA CORRECCIÓN: UpdateSourceTrigger=PropertyChanged y sin LostFocus -->
+                    <TextBox Text="{Binding AsuntoEmail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Padding="8" Background="#252528" Foreground="White" BorderBrush="#444" Margin="0,0,0,15" FontSize="14"/>
 
                     <TextBlock Text="Cuerpo del mensaje:" Foreground="#AAAAAA" Margin="0,0,0,5"/>
 

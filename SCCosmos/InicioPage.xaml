@@ -16,7 +16,7 @@
             </Grid.RowDefinitions>
 
             <!-- Saludo y Cabecera -->
-            <TextBlock Grid.Row="0" Text="¡Hola, Jonatán!" FontSize="36" FontWeight="Bold" Margin="0,0,0,5"/>
+            <TextBlock x:Name="TxtSaludo" Grid.Row="0" Text="¡Hola!" FontSize="36" FontWeight="Bold" Margin="0,0,0,5"/>
             <TextBlock Grid.Row="1" Text="Esto es lo que tienes programado para la semana actual:" FontSize="16" Foreground="#AAAAAA" Margin="0,0,0,30"/>
 
             <!-- Tarjeta de Resumen Semanal -->
@@ -117,7 +117,7 @@
                 </WrapPanel.Resources>
 
                 <!-- Cuadro 1: Precursores Regulares -->
-                <Border>
+                <Border Cursor="Hand" MouseLeftButtonUp="CardPrecReg_Click" Background="Transparent">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                             <ui:SymbolIcon Symbol="Person24" Foreground="#4BA3E3" Margin="0,0,8,0"/>
@@ -128,7 +128,7 @@
                 </Border>
 
                 <!-- Cuadro 2: Precursores Especiales -->
-                <Border>
+                <Border Cursor="Hand" MouseLeftButtonUp="CardPrecEsp_Click" Background="Transparent">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                             <ui:SymbolIcon Symbol="Star24" Foreground="#FFB900" Margin="0,0,8,0"/>
@@ -139,7 +139,7 @@
                 </Border>
 
                 <!-- Cuadro 3: Ancianos -->
-                <Border>
+                <Border Cursor="Hand" MouseLeftButtonUp="CardAncianos_Click" Background="Transparent">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                             <ui:SymbolIcon Symbol="People24" Foreground="#107C10" Margin="0,0,8,0"/>
@@ -150,7 +150,7 @@
                 </Border>
 
                 <!-- Cuadro 4: Siervos Ministeriales -->
-                <Border>
+                <Border Cursor="Hand" MouseLeftButtonUp="CardSiervos_Click" Background="Transparent">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                             <ui:SymbolIcon Symbol="Person24" Foreground="#00B294" Margin="0,0,8,0"/>
@@ -161,7 +161,7 @@
                 </Border>
 
                 <!-- Cuadro 5: Solicitudes A-2 -->
-                <Border>
+                <Border Cursor="Hand" MouseLeftButtonUp="CardA2_Click" Background="Transparent">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                             <ui:SymbolIcon Symbol="Document24" Foreground="#E81123" Margin="0,0,8,0"/>
@@ -172,13 +172,33 @@
                 </Border>
 
                 <!-- Cuadro 6: Solicitudes A-19 -->
-                <Border>
+                <Border Cursor="Hand" MouseLeftButtonUp="CardA19_Click" Background="Transparent">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                             <ui:SymbolIcon Symbol="Document24" Foreground="#E81123" Margin="0,0,8,0"/>
                             <TextBlock Text="Sol. A-19" Foreground="#AAAAAA" FontSize="13" VerticalAlignment="Center"/>
                         </StackPanel>
                         <TextBlock x:Name="TxtTotalA19" Text="-" FontSize="32" FontWeight="Bold" Foreground="White"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Cursor="Hand" MouseLeftButtonUp="CardA8_Click" Background="Transparent">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <ui:SymbolIcon Symbol="Document24" Foreground="#E81123" Margin="0,0,8,0"/>
+                            <TextBlock Text="Sol. A-8" Foreground="#AAAAAA" FontSize="13" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock x:Name="TxtTotalA8" Text="-" FontSize="32" FontWeight="Bold" Foreground="White"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Cursor="Hand" MouseLeftButtonUp="CardG8_Click" Background="Transparent">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <ui:SymbolIcon Symbol="Document24" Foreground="#E81123" Margin="0,0,8,0"/>
+                            <TextBlock Text="Sol. G-8" Foreground="#AAAAAA" FontSize="13" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock x:Name="TxtTotalG8" Text="-" FontSize="32" FontWeight="Bold" Foreground="White"/>
                     </StackPanel>
                 </Border>
 

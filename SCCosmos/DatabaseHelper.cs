@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Media;
 using Microsoft.Data.Sqlite;
+using System.IO;
 
 namespace SCCosmos
 {
@@ -91,8 +92,8 @@ namespace SCCosmos
             EjecutarQuery(connection, @"CREATE TABLE IF NOT EXISTS Congregaciones (Id INTEGER PRIMARY KEY AUTOINCREMENT, Codigo TEXT, Nombre TEXT NOT NULL, Email TEXT, SeccionId INTEGER DEFAULT 0, DireccionSR TEXT, DiaEntreSemana TEXT, HoraEntreSemana TEXT, DiaFinSemana TEXT, HoraFinSemana TEXT, Latitud REAL DEFAULT 0, Longitud REAL DEFAULT 0, Capacidad INTEGER DEFAULT 0, Poblacion INTEGER DEFAULT 0);");
             EjecutarQuery(connection, "CREATE TABLE IF NOT EXISTS SeccionesCircuito (Id INTEGER PRIMARY KEY AUTOINCREMENT, Nombre TEXT, LugarAsamblea TEXT);");
 
-            // Añadidos los campos de versionado: PersonaRaizId, MesHistorico y FechaExactaHistorico
-            EjecutarQuery(connection, @"CREATE TABLE IF NOT EXISTS Personas (Id INTEGER PRIMARY KEY AUTOINCREMENT, Nombre TEXT NOT NULL, FechaNacimiento TEXT, Sexo TEXT, FechaBautismo TEXT, Esperanza TEXT, Nombramiento TEXT, Servicio TEXT, CongregacionCodigo TEXT, Grupo INTEGER DEFAULT 0, Telefono TEXT, Email TEXT, FechaInicioPrec TEXT, FechaUltimaEscuela TEXT, NombreJWHub TEXT, Foto TEXT, FechaCreacion TEXT, FechaEliminacion TEXT, Solicitudes TEXT, Privilegios TEXT, RequisitoHoras INTEGER DEFAULT 0, NombreComun TEXT, Direccion TEXT, Latitud REAL DEFAULT 0, Longitud REAL DEFAULT 0, ConyugeId INTEGER DEFAULT 0, EmailJW TEXT, PersonaRaizId INTEGER DEFAULT 0, MesHistorico TEXT, FechaExactaHistorico TEXT);");
+            // TABLA PERSONAS
+            EjecutarQuery(connection, @"CREATE TABLE IF NOT EXISTS Personas (Id INTEGER PRIMARY KEY AUTOINCREMENT, Nombre TEXT NOT NULL, FechaNacimiento TEXT, Sexo TEXT, FechaBautismo TEXT, Esperanza TEXT, Nombramiento TEXT, Servicio TEXT, CongregacionCodigo TEXT, Grupo INTEGER DEFAULT 0, Telefono TEXT, Email TEXT, FechaInicioPrec TEXT, FechaUltimaEscuela TEXT, NombreJWHub TEXT, Foto TEXT, FechaCreacion TEXT, FechaEliminacion TEXT, Solicitudes TEXT, Privilegios TEXT, RequisitoHoras INTEGER DEFAULT 0, NombreComun TEXT, Direccion TEXT, Latitud REAL DEFAULT 0, Longitud REAL DEFAULT 0, ConyugeId INTEGER DEFAULT 0, EmailJW TEXT, PersonaRaizId INTEGER DEFAULT 0, MesHistorico TEXT, FechaExactaHistorico TEXT, Notas TEXT);");
             EjecutarQuery(connection, @"CREATE TABLE IF NOT EXISTS ActividadPersonas (Id INTEGER PRIMARY KEY AUTOINCREMENT, PersonaId INTEGER, Mes TEXT, AnioServicio TEXT, Participacion INTEGER, CursosBiblicos INTEGER, PrecursorAuxiliar INTEGER DEFAULT 0, Horas INTEGER, Notas TEXT, Cursos TEXT, UNIQUE(PersonaId, Mes, AnioServicio), FOREIGN KEY(PersonaId) REFERENCES Personas(Id) ON DELETE CASCADE);");
 
             EjecutarQuery(connection, @"CREATE TABLE IF NOT EXISTS Semanas (Id INTEGER PRIMARY KEY AUTOINCREMENT, FechaMartes DATETIME, Actividad TEXT, Congregacion TEXT, Tipo TEXT, Acompanante TEXT, Alojamiento TEXT, S302Enviado INTEGER DEFAULT 0, DocEnviada INTEGER DEFAULT 0, SeccionAsamblea TEXT, FechaAsamblea TEXT, NotificacionEnviada INTEGER DEFAULT 0, RecordatorioEnviado INTEGER DEFAULT 0, DatosImportados INTEGER DEFAULT 0);");
@@ -105,7 +106,6 @@ namespace SCCosmos
             EjecutarQuery(connection, "CREATE TABLE IF NOT EXISTS Documentos (Id INTEGER PRIMARY KEY AUTOINCREMENT, Categoria TEXT, NombreArchivo TEXT, RutaLocal TEXT);");
             EjecutarQuery(connection, "CREATE TABLE IF NOT EXISTS Configuracion (Clave TEXT PRIMARY KEY, Valor TEXT);");
 
-            // --- TABLA NUEVA PARA MAPAS KMZ ---
             EjecutarQuery(connection, "CREATE TABLE IF NOT EXISTS ElementosMapa (Id INTEGER PRIMARY KEY AUTOINCREMENT, Nombre TEXT, Tipo TEXT, Coordenadas TEXT, Descripcion TEXT);");
         }
 
@@ -147,6 +147,13 @@ namespace SCCosmos
             AsegurarColumna(connection, "Personas", "ConyugeId", "INTEGER DEFAULT 0");
             AsegurarColumna(connection, "Personas", "EmailJW", "TEXT");
 
+            AsegurarColumna(connection, "Personas", "PersonaRaizId", "INTEGER DEFAULT 0");
+            AsegurarColumna(connection, "Personas", "MesHistorico", "TEXT");
+            AsegurarColumna(connection, "Personas", "FechaExactaHistorico", "TEXT");
+
+            // <-- NUEVO CAMPO NOTAS -->
+            AsegurarColumna(connection, "Personas", "Notas", "TEXT");
+
             AsegurarColumna(connection, "Semanas", "FechaAsamblea", "TEXT");
             AsegurarColumna(connection, "Semanas", "DatosImportados", "INTEGER DEFAULT 0");
 
@@ -168,16 +175,28 @@ namespace SCCosmos
             AsegurarColumna(connection, "Congregaciones", "Longitud", "REAL DEFAULT 0");
             AsegurarColumna(connection, "Congregaciones", "Capacidad", "INTEGER DEFAULT 0");
             AsegurarColumna(connection, "Congregaciones", "Poblacion", "INTEGER DEFAULT 0");
+            AsegurarColumna(connection, "Congregaciones", "Provincia", "TEXT");
+            AsegurarColumna(connection, "Congregaciones", "Municipio", "TEXT");
             AsegurarColumna(connection, "Congregaciones", "DiaEntreSemana", "TEXT");
 
-            // --- SISTEMA DE VERSIONADO HISTÓRICO ---
-            AsegurarColumna(connection, "Personas", "PersonaRaizId", "INTEGER DEFAULT 0");
-            AsegurarColumna(connection, "Personas", "MesHistorico", "TEXT");
-            AsegurarColumna(connection, "Personas", "FechaExactaHistorico", "TEXT");
+            AsegurarColumna(connection, "Documentos", "ContenidoArchivo", "BLOB");
 
             try
             {
                 EjecutarQuery(connection, "UPDATE Personas SET NombreComun = NombreJWHub WHERE (NombreComun IS NULL OR trim(NombreComun) = '') AND NombreJWHub IS NOT NULL AND trim(NombreJWHub) != '';");
+            }
+            catch { }
+
+            // --- LIMPIEZA AUTOMÁTICA DE RECOMENDACIONES DUPLICADAS ---
+            try
+            {
+                EjecutarQuery(connection, @"
+                    DELETE FROM RecomendacionesNombramientos 
+                    WHERE Id NOT IN (
+                        SELECT MAX(Id) 
+                        FROM RecomendacionesNombramientos 
+                        GROUP BY Hermano, Congregacion, Tipo
+                    );");
             }
             catch { }
         }
@@ -226,7 +245,7 @@ namespace SCCosmos
                         using (var tx = connection.BeginTransaction())
                         {
                             EjecutarQuery(connection, "ALTER TABLE Personas RENAME TO Personas_Old;");
-                            EjecutarQuery(connection, @"CREATE TABLE Personas (Id INTEGER PRIMARY KEY AUTOINCREMENT, Nombre TEXT NOT NULL, FechaNacimiento TEXT, Sexo TEXT, FechaBautismo TEXT, Esperanza TEXT, Nombramiento TEXT, Servicio TEXT, CongregacionCodigo TEXT, Grupo INTEGER DEFAULT 0, Telefono TEXT, Email TEXT, FechaInicioPrec TEXT, FechaUltimaEscuela TEXT, NombreJWHub TEXT, Foto TEXT, FechaCreacion TEXT, FechaEliminacion TEXT, Solicitudes TEXT, Privilegios TEXT, RequisitoHoras INTEGER DEFAULT 0, NombreComun TEXT, Direccion TEXT, Latitud REAL DEFAULT 0, Longitud REAL DEFAULT 0, ConyugeId INTEGER DEFAULT 0, EmailJW TEXT, PersonaRaizId INTEGER DEFAULT 0, MesHistorico TEXT, FechaExactaHistorico TEXT);");
+                            EjecutarQuery(connection, @"CREATE TABLE Personas (Id INTEGER PRIMARY KEY AUTOINCREMENT, Nombre TEXT NOT NULL, FechaNacimiento TEXT, Sexo TEXT, FechaBautismo TEXT, Esperanza TEXT, Nombramiento TEXT, Servicio TEXT, CongregacionCodigo TEXT, Grupo INTEGER DEFAULT 0, Telefono TEXT, Email TEXT, FechaInicioPrec TEXT, FechaUltimaEscuela TEXT, NombreJWHub TEXT, Foto TEXT, FechaCreacion TEXT, FechaEliminacion TEXT, Solicitudes TEXT, Privilegios TEXT, RequisitoHoras INTEGER DEFAULT 0, NombreComun TEXT, Direccion TEXT, Latitud REAL DEFAULT 0, Longitud REAL DEFAULT 0, ConyugeId INTEGER DEFAULT 0, EmailJW TEXT, PersonaRaizId INTEGER DEFAULT 0, MesHistorico TEXT, FechaExactaHistorico TEXT, Notas TEXT);");
                             EjecutarQuery(connection, $"INSERT INTO Personas ({colsCsv}) SELECT {colsCsv} FROM Personas_Old;");
                             EjecutarQuery(connection, "DROP TABLE Personas_Old;");
                             tx.Commit();
@@ -273,14 +292,12 @@ namespace SCCosmos
 
         #region 3. GESTIÓN DE PERSONAS
 
-        // Actualiza registros existentes sin clonarlos. Ideal para la vista general.
         public static void ActualizarPersona(Persona p)
         {
             using (var connection = new SqliteConnection(ConnectionString))
             {
                 connection.Open();
 
-                // 1. Comprobar si la dirección ha cambiado para resetear coordenadas
                 string dirAnterior = "";
                 var cmdCheck = connection.CreateCommand();
                 cmdCheck.CommandText = "SELECT Direccion FROM Personas WHERE Id = $id";
@@ -289,7 +306,6 @@ namespace SCCosmos
                 if (resDir != null && resDir != DBNull.Value) dirAnterior = resDir.ToString();
 
                 bool cambiarCoords = false;
-                // Comparamos ignorando mayúsculas y espacios en blanco
                 if (!string.Equals((p.Direccion ?? "").Trim(), dirAnterior.Trim(), StringComparison.OrdinalIgnoreCase))
                 {
                     p.Latitud = 0;
@@ -301,7 +317,7 @@ namespace SCCosmos
                 command.CommandText = @"UPDATE Personas SET 
                 Nombre = $nombre, CongregacionCodigo = @CongregacionCodigo, FechaNacimiento = $fechaNacimiento, Sexo = $sexo, FechaBautismo = $fechaBautismo, Esperanza = $esperanza, Nombramiento = $nombramiento, Servicio = $servicio, Grupo = $grupo,
                 NombreJWHub = $nombreJW, NombreComun = $nombreComun, Telefono = $tlf, Email = $email, Solicitudes = $sol, Privilegios = $priv, FechaInicioPrec = $inicio, FechaUltimaEscuela = $escuela, Foto = $foto,
-                Direccion = $dir, Latitud = $lat, Longitud = $lon, ConyugeId = $conyuge, EmailJW = $emailjw
+                Direccion = $dir, Latitud = $lat, Longitud = $lon, ConyugeId = $conyuge, EmailJW = $emailjw, Notas = $notas
             WHERE Id = $id;";
                 command.Parameters.AddWithValue("$id", p.Id);
                 command.Parameters.AddWithValue("$nombre", p.Nombre ?? "");
@@ -327,11 +343,10 @@ namespace SCCosmos
                 command.Parameters.AddWithValue("$lon", p.Longitud);
                 command.Parameters.AddWithValue("$conyuge", p.ConyugeId);
                 command.Parameters.AddWithValue("$emailjw", p.EmailJW ?? "");
+                command.Parameters.AddWithValue("$notas", p.Notas ?? "");
 
                 command.ExecuteNonQuery();
 
-                // 2. Si la dirección cambió, vaciamos también las coordenadas de todos sus clones históricos
-                // para que cualquier vista histórica también vuelva a geolocalizar la nueva calle.
                 if (cambiarCoords)
                 {
                     var cmdClones = connection.CreateCommand();
@@ -343,7 +358,6 @@ namespace SCCosmos
             }
         }
 
-        // NUEVO MÉTODO CORREGIDO: Evitamos crear un clon fantasma y actualizamos siempre la raíz
         public static void ActualizarPersonaDesdeVisitas(Persona p, string mesReferencia)
         {
             ActualizarPersona(p);
@@ -371,11 +385,10 @@ namespace SCCosmos
             {
                 connection.Open();
                 var command = connection.CreateCommand();
-                // IMPORTANTE: Solo recuperamos a los originales (MesHistorico IS NULL)
-                command.CommandText = @"SELECT Id, Nombre, Nombramiento, Servicio, Grupo, FechaNacimiento, Sexo, FechaBautismo,
+                command.CommandText = @"SELECT Id, Nombre, Nombramiento, Servicio, Grupo, FechaNacimiento, Sexo, FechaBautismo, Esperanza,
                     NombreJWHub, FechaCreacion, FechaEliminacion, NombreComun, Solicitudes, Privilegios,
                     Foto, Email, Telefono, FechaInicioPrec, FechaUltimaEscuela, CongregacionCodigo,
-                    Direccion, Latitud, Longitud, ConyugeId, EmailJW, PersonaRaizId, MesHistorico, FechaExactaHistorico
+                    Direccion, Latitud, Longitud, ConyugeId, EmailJW, PersonaRaizId, MesHistorico, FechaExactaHistorico, Notas
              FROM Personas 
              WHERE CongregacionCodigo = $codigo AND MesHistorico IS NULL ORDER BY Nombre ASC;";
                 command.Parameters.AddWithValue("$codigo", congreCodigo);
@@ -394,26 +407,28 @@ namespace SCCosmos
                             FechaNacimiento = reader.IsDBNull(5) ? "" : reader.GetString(5),
                             Sexo = reader.IsDBNull(6) ? "" : reader.GetString(6),
                             FechaBautismo = reader.IsDBNull(7) ? "" : reader.GetString(7),
-                            NombreJWHub = reader.IsDBNull(8) ? "" : reader.GetString(8),
-                            FechaCreacion = reader.IsDBNull(9) ? "" : reader.GetString(9),
-                            FechaEliminacion = reader.IsDBNull(10) ? "" : reader.GetString(10),
-                            NombreComun = reader.IsDBNull(11) ? "" : reader.GetString(11),
-                            Solicitudes = reader.IsDBNull(12) ? "" : reader.GetString(12),
-                            Privilegios = reader.IsDBNull(13) ? "" : reader.GetString(13),
-                            Foto = reader.IsDBNull(14) ? "" : reader.GetString(14),
-                            Email = reader.IsDBNull(15) ? "" : reader.GetString(15),
-                            Telefono = reader.IsDBNull(16) ? "" : reader.GetString(16),
-                            FechaInicioPrec = reader.IsDBNull(17) ? "" : reader.GetString(17),
-                            FechaUltimaEscuela = reader.IsDBNull(18) ? "" : reader.GetString(18),
-                            CongregacionCodigo = reader.IsDBNull(19) ? "" : reader.GetString(19),
-                            Direccion = reader.IsDBNull(20) ? "" : reader.GetString(20),
-                            Latitud = reader.IsDBNull(21) ? 0 : reader.GetDouble(21),
-                            Longitud = reader.IsDBNull(22) ? 0 : reader.GetDouble(22),
-                            ConyugeId = reader.IsDBNull(23) ? 0 : reader.GetInt32(23),
-                            EmailJW = reader.IsDBNull(24) ? "" : reader.GetString(24),
-                            PersonaRaizId = reader.IsDBNull(25) ? 0 : reader.GetInt32(25),
-                            MesHistorico = reader.IsDBNull(26) ? null : reader.GetString(26),
-                            FechaExactaHistorico = reader.IsDBNull(27) ? "" : reader.GetString(27)
+                            Esperanza = reader.IsDBNull(8) ? "" : reader.GetString(8),
+                            NombreJWHub = reader.IsDBNull(9) ? "" : reader.GetString(9),
+                            FechaCreacion = reader.IsDBNull(10) ? "" : reader.GetString(10),
+                            FechaEliminacion = reader.IsDBNull(11) ? "" : reader.GetString(11),
+                            NombreComun = reader.IsDBNull(12) ? "" : reader.GetString(12),
+                            Solicitudes = reader.IsDBNull(13) ? "" : reader.GetString(13),
+                            Privilegios = reader.IsDBNull(14) ? "" : reader.GetString(14),
+                            Foto = reader.IsDBNull(15) ? "" : reader.GetString(15),
+                            Email = reader.IsDBNull(16) ? "" : reader.GetString(16),
+                            Telefono = reader.IsDBNull(17) ? "" : reader.GetString(17),
+                            FechaInicioPrec = reader.IsDBNull(18) ? "" : reader.GetString(18),
+                            FechaUltimaEscuela = reader.IsDBNull(19) ? "" : reader.GetString(19),
+                            CongregacionCodigo = reader.IsDBNull(20) ? "" : reader.GetString(20),
+                            Direccion = reader.IsDBNull(21) ? "" : reader.GetString(21),
+                            Latitud = reader.IsDBNull(22) ? 0 : reader.GetDouble(22),
+                            Longitud = reader.IsDBNull(23) ? 0 : reader.GetDouble(23),
+                            ConyugeId = reader.IsDBNull(24) ? 0 : reader.GetInt32(24),
+                            EmailJW = reader.IsDBNull(25) ? "" : reader.GetString(25),
+                            PersonaRaizId = reader.IsDBNull(26) ? 0 : reader.GetInt32(26),
+                            MesHistorico = reader.IsDBNull(27) ? null : reader.GetString(27),
+                            FechaExactaHistorico = reader.IsDBNull(28) ? "" : reader.GetString(28),
+                            Notas = reader.IsDBNull(29) ? "" : reader.GetString(29)
                         });
                     }
                 }
@@ -421,7 +436,6 @@ namespace SCCosmos
             return lista;
         }
 
-        // NUEVO MÉTODO HISTÓRICO: Extrae la versión de cada publicador que había en el mes solicitado
         public static List<Persona> ObtenerPersonasHistoricasPorMes(string congreCodigo, string mesReferencia)
         {
             var lista = new List<Persona>();
@@ -431,10 +445,10 @@ namespace SCCosmos
                 var command = connection.CreateCommand();
 
                 command.CommandText = @"
-                    SELECT Id, Nombre, Nombramiento, Servicio, Grupo, FechaNacimiento, Sexo, FechaBautismo,
+                    SELECT Id, Nombre, Nombramiento, Servicio, Grupo, FechaNacimiento, Sexo, FechaBautismo, Esperanza,
                            NombreJWHub, FechaCreacion, FechaEliminacion, NombreComun, Solicitudes, Privilegios,
                            Foto, Email, Telefono, FechaInicioPrec, FechaUltimaEscuela, CongregacionCodigo,
-                           Direccion, Latitud, Longitud, ConyugeId, EmailJW, PersonaRaizId, MesHistorico, FechaExactaHistorico
+                           Direccion, Latitud, Longitud, ConyugeId, EmailJW, PersonaRaizId, MesHistorico, FechaExactaHistorico, Notas
                     FROM Personas 
                     WHERE Id IN (
                         SELECT MAX(Id)
@@ -464,26 +478,28 @@ namespace SCCosmos
                             FechaNacimiento = reader.IsDBNull(5) ? "" : reader.GetString(5),
                             Sexo = reader.IsDBNull(6) ? "" : reader.GetString(6),
                             FechaBautismo = reader.IsDBNull(7) ? "" : reader.GetString(7),
-                            NombreJWHub = reader.IsDBNull(8) ? "" : reader.GetString(8),
-                            FechaCreacion = reader.IsDBNull(9) ? "" : reader.GetString(9),
-                            FechaEliminacion = reader.IsDBNull(10) ? "" : reader.GetString(10),
-                            NombreComun = reader.IsDBNull(11) ? "" : reader.GetString(11),
-                            Solicitudes = reader.IsDBNull(12) ? "" : reader.GetString(12),
-                            Privilegios = reader.IsDBNull(13) ? "" : reader.GetString(13),
-                            Foto = reader.IsDBNull(14) ? "" : reader.GetString(14),
-                            Email = reader.IsDBNull(15) ? "" : reader.GetString(15),
-                            Telefono = reader.IsDBNull(16) ? "" : reader.GetString(16),
-                            FechaInicioPrec = reader.IsDBNull(17) ? "" : reader.GetString(17),
-                            FechaUltimaEscuela = reader.IsDBNull(18) ? "" : reader.GetString(18),
-                            CongregacionCodigo = reader.IsDBNull(19) ? "" : reader.GetString(19),
-                            Direccion = reader.IsDBNull(20) ? "" : reader.GetString(20),
-                            Latitud = reader.IsDBNull(21) ? 0 : reader.GetDouble(21),
-                            Longitud = reader.IsDBNull(22) ? 0 : reader.GetDouble(22),
-                            ConyugeId = reader.IsDBNull(23) ? 0 : reader.GetInt32(23),
-                            EmailJW = reader.IsDBNull(24) ? "" : reader.GetString(24),
-                            PersonaRaizId = reader.IsDBNull(25) ? 0 : reader.GetInt32(25),
-                            MesHistorico = reader.IsDBNull(26) ? null : reader.GetString(26),
-                            FechaExactaHistorico = reader.IsDBNull(27) ? "" : reader.GetString(27)
+                            Esperanza = reader.IsDBNull(8) ? "" : reader.GetString(8),
+                            NombreJWHub = reader.IsDBNull(9) ? "" : reader.GetString(9),
+                            FechaCreacion = reader.IsDBNull(10) ? "" : reader.GetString(10),
+                            FechaEliminacion = reader.IsDBNull(11) ? "" : reader.GetString(11),
+                            NombreComun = reader.IsDBNull(12) ? "" : reader.GetString(12),
+                            Solicitudes = reader.IsDBNull(13) ? "" : reader.GetString(13),
+                            Privilegios = reader.IsDBNull(14) ? "" : reader.GetString(14),
+                            Foto = reader.IsDBNull(15) ? "" : reader.GetString(15),
+                            Email = reader.IsDBNull(16) ? "" : reader.GetString(16),
+                            Telefono = reader.IsDBNull(17) ? "" : reader.GetString(17),
+                            FechaInicioPrec = reader.IsDBNull(18) ? "" : reader.GetString(18),
+                            FechaUltimaEscuela = reader.IsDBNull(19) ? "" : reader.GetString(19),
+                            CongregacionCodigo = reader.IsDBNull(20) ? "" : reader.GetString(20),
+                            Direccion = reader.IsDBNull(21) ? "" : reader.GetString(21),
+                            Latitud = reader.IsDBNull(22) ? 0 : reader.GetDouble(22),
+                            Longitud = reader.IsDBNull(23) ? 0 : reader.GetDouble(23),
+                            ConyugeId = reader.IsDBNull(24) ? 0 : reader.GetInt32(24),
+                            EmailJW = reader.IsDBNull(25) ? "" : reader.GetString(25),
+                            PersonaRaizId = reader.IsDBNull(26) ? 0 : reader.GetInt32(26),
+                            MesHistorico = reader.IsDBNull(27) ? null : reader.GetString(27),
+                            FechaExactaHistorico = reader.IsDBNull(28) ? "" : reader.GetString(28),
+                            Notas = reader.IsDBNull(29) ? "" : reader.GetString(29)
                         };
                         lista.Add(p);
                     }
@@ -498,10 +514,10 @@ namespace SCCosmos
             {
                 connection.Open();
                 var command = connection.CreateCommand();
-                command.CommandText = @"SELECT Id, Nombre, Nombramiento, Servicio, Grupo, FechaNacimiento, Sexo, FechaBautismo,
+                command.CommandText = @"SELECT Id, Nombre, Nombramiento, Servicio, Grupo, FechaNacimiento, Sexo, FechaBautismo, Esperanza,
                     NombreJWHub, FechaCreacion, FechaEliminacion, NombreComun, Solicitudes, Privilegios,
                     Foto, Email, Telefono, FechaInicioPrec, FechaUltimaEscuela,
-                   Direccion, Latitud, Longitud, ConyugeId, EmailJW, CongregacionCodigo, PersonaRaizId, MesHistorico, FechaExactaHistorico
+                   Direccion, Latitud, Longitud, ConyugeId, EmailJW, CongregacionCodigo, PersonaRaizId, MesHistorico, FechaExactaHistorico, Notas
              FROM Personas WHERE Id = $id;";
                 command.Parameters.AddWithValue("$id", personaId);
                 using (var reader = command.ExecuteReader())
@@ -518,26 +534,28 @@ namespace SCCosmos
                             FechaNacimiento = reader.IsDBNull(5) ? "" : reader.GetString(5),
                             Sexo = reader.IsDBNull(6) ? "" : reader.GetString(6),
                             FechaBautismo = reader.IsDBNull(7) ? "" : reader.GetString(7),
-                            NombreJWHub = reader.IsDBNull(8) ? "" : reader.GetString(8),
-                            FechaCreacion = reader.IsDBNull(9) ? "" : reader.GetString(9),
-                            FechaEliminacion = reader.IsDBNull(10) ? "" : reader.GetString(10),
-                            NombreComun = reader.IsDBNull(11) ? "" : reader.GetString(11),
-                            Solicitudes = reader.IsDBNull(12) ? "" : reader.GetString(12),
-                            Privilegios = reader.IsDBNull(13) ? "" : reader.GetString(13),
-                            Foto = reader.IsDBNull(14) ? "" : reader.GetString(14),
-                            Email = reader.IsDBNull(15) ? "" : reader.GetString(15),
-                            Telefono = reader.IsDBNull(16) ? "" : reader.GetString(16),
-                            FechaInicioPrec = reader.IsDBNull(17) ? "" : reader.GetString(17),
-                            FechaUltimaEscuela = reader.IsDBNull(18) ? "" : reader.GetString(18),
-                            Direccion = reader.IsDBNull(19) ? "" : reader.GetString(19),
-                            Latitud = reader.IsDBNull(20) ? 0 : reader.GetDouble(20),
-                            Longitud = reader.IsDBNull(21) ? 0 : reader.GetDouble(21),
-                            ConyugeId = reader.IsDBNull(22) ? 0 : reader.GetInt32(22),
-                            EmailJW = reader.IsDBNull(23) ? "" : reader.GetString(23),
-                            CongregacionCodigo = reader.IsDBNull(24) ? "" : reader.GetString(24),
-                            PersonaRaizId = reader.IsDBNull(25) ? 0 : reader.GetInt32(25),
-                            MesHistorico = reader.IsDBNull(26) ? null : reader.GetString(26),
-                            FechaExactaHistorico = reader.IsDBNull(27) ? "" : reader.GetString(27)
+                            Esperanza = reader.IsDBNull(8) ? "" : reader.GetString(8),
+                            NombreJWHub = reader.IsDBNull(9) ? "" : reader.GetString(9),
+                            FechaCreacion = reader.IsDBNull(10) ? "" : reader.GetString(10),
+                            FechaEliminacion = reader.IsDBNull(11) ? "" : reader.GetString(11),
+                            NombreComun = reader.IsDBNull(12) ? "" : reader.GetString(12),
+                            Solicitudes = reader.IsDBNull(13) ? "" : reader.GetString(13),
+                            Privilegios = reader.IsDBNull(14) ? "" : reader.GetString(14),
+                            Foto = reader.IsDBNull(15) ? "" : reader.GetString(15),
+                            Email = reader.IsDBNull(16) ? "" : reader.GetString(16),
+                            Telefono = reader.IsDBNull(17) ? "" : reader.GetString(17),
+                            FechaInicioPrec = reader.IsDBNull(18) ? "" : reader.GetString(18),
+                            FechaUltimaEscuela = reader.IsDBNull(19) ? "" : reader.GetString(19),
+                            Direccion = reader.IsDBNull(20) ? "" : reader.GetString(20),
+                            Latitud = reader.IsDBNull(21) ? 0 : reader.GetDouble(21),
+                            Longitud = reader.IsDBNull(22) ? 0 : reader.GetDouble(22),
+                            ConyugeId = reader.IsDBNull(23) ? 0 : reader.GetInt32(23),
+                            EmailJW = reader.IsDBNull(24) ? "" : reader.GetString(24),
+                            CongregacionCodigo = reader.IsDBNull(25) ? "" : reader.GetString(25),
+                            PersonaRaizId = reader.IsDBNull(26) ? 0 : reader.GetInt32(26),
+                            MesHistorico = reader.IsDBNull(27) ? null : reader.GetString(27),
+                            FechaExactaHistorico = reader.IsDBNull(28) ? "" : reader.GetString(28),
+                            Notas = reader.IsDBNull(29) ? "" : reader.GetString(29)
                         };
                     }
                 }
@@ -552,7 +570,7 @@ namespace SCCosmos
             {
                 connection.Open();
                 var command = connection.CreateCommand();
-                command.CommandText = @" SELECT p.Id, p.Nombre, p.FechaNacimiento, p.Sexo, p.FechaBautismo, p.Esperanza, p.Nombramiento, p.Servicio, p.CongregacionCodigo, c.Nombre, p.Grupo, p.NombreJWHub, p.FechaCreacion, p.FechaEliminacion, p.Solicitudes, p.Privilegios, p.Foto, p.NombreComun, p.Telefono, p.Email, p.FechaInicioPrec, p.FechaUltimaEscuela, p.Direccion, p.Latitud, p.Longitud, p.ConyugeId, p.EmailJW, p.PersonaRaizId, p.MesHistorico, p.FechaExactaHistorico
+                command.CommandText = @" SELECT p.Id, p.Nombre, p.FechaNacimiento, p.Sexo, p.FechaBautismo, p.Esperanza, p.Nombramiento, p.Servicio, p.CongregacionCodigo, c.Nombre, p.Grupo, p.NombreJWHub, p.FechaCreacion, p.FechaEliminacion, p.Solicitudes, p.Privilegios, p.Foto, p.NombreComun, p.Telefono, p.Email, p.FechaInicioPrec, p.FechaUltimaEscuela, p.Direccion, p.Latitud, p.Longitud, p.ConyugeId, p.EmailJW, p.PersonaRaizId, p.MesHistorico, p.FechaExactaHistorico, p.Notas
                                          FROM Personas p LEFT JOIN Congregaciones c ON p.CongregacionCodigo = c.Codigo WHERE p.MesHistorico IS NULL ORDER BY p.Nombre ASC;";
 
                 using (var reader = command.ExecuteReader())
@@ -590,7 +608,8 @@ namespace SCCosmos
                             EmailJW = reader.IsDBNull(26) ? "" : reader.GetString(26),
                             PersonaRaizId = reader.IsDBNull(27) ? 0 : reader.GetInt32(27),
                             MesHistorico = reader.IsDBNull(28) ? null : reader.GetString(28),
-                            FechaExactaHistorico = reader.IsDBNull(29) ? "" : reader.GetString(29)
+                            FechaExactaHistorico = reader.IsDBNull(29) ? "" : reader.GetString(29),
+                            Notas = reader.IsDBNull(30) ? "" : reader.GetString(30)
                         });
                     }
                 }
@@ -605,14 +624,13 @@ namespace SCCosmos
                 connection.Open();
                 var cmd = connection.CreateCommand();
 
-                // Hemos añadido todas las columnas que faltaban (Teléfono, Email, Esperanza...)
                 cmd.CommandText = @"
-                    INSERT INTO Personas (Nombre, CongregacionCodigo, Grupo, Nombramiento, Servicio, Solicitudes, Privilegios, Foto, FechaNacimiento, Sexo, FechaBautismo, Esperanza, Telefono, Email, FechaInicioPrec, FechaUltimaEscuela, NombreJWHub, FechaCreacion, NombreComun, Direccion, Latitud, Longitud, ConyugeId, EmailJW)
-                    VALUES ($nombre, $codigo, $grupo, $nomb, $serv, $sol, $priv, $foto, $fn, $sexo, $fb, $esperanza, $tlf, $email, $inicio, $escuela, $jw, $fc, $nombreComun, $dir, $lat, $lon, $conyuge, $emailjw);
+                    INSERT INTO Personas (Nombre, CongregacionCodigo, Grupo, Nombramiento, Servicio, Solicitudes, Privilegios, Foto, FechaNacimiento, Sexo, FechaBautismo, Esperanza, Telefono, Email, FechaInicioPrec, FechaUltimaEscuela, NombreJWHub, FechaCreacion, NombreComun, Direccion, Latitud, Longitud, ConyugeId, EmailJW, Notas)
+                    VALUES ($nombre, $codigo, $grupo, $nomb, $serv, $sol, $priv, $foto, $fn, $sexo, $fb, $esperanza, $tlf, $email, $inicio, $escuela, $jw, $fc, $nombreComun, $dir, $lat, $lon, $conyuge, $emailjw, $notas);
                     SELECT last_insert_rowid();";
 
                 cmd.Parameters.AddWithValue("$nombre", p.Nombre ?? "");
-                cmd.Parameters.AddWithValue("$codigo", p.CongregacionCodigo ?? ""); // Protección anti-nulos
+                cmd.Parameters.AddWithValue("$codigo", p.CongregacionCodigo ?? "");
                 cmd.Parameters.AddWithValue("$grupo", p.Grupo);
                 cmd.Parameters.AddWithValue("$nomb", p.Nombramiento ?? "");
                 cmd.Parameters.AddWithValue("$serv", p.Servicio ?? "");
@@ -635,6 +653,7 @@ namespace SCCosmos
                 cmd.Parameters.AddWithValue("$lon", p.Longitud);
                 cmd.Parameters.AddWithValue("$conyuge", p.ConyugeId);
                 cmd.Parameters.AddWithValue("$emailjw", p.EmailJW ?? "");
+                cmd.Parameters.AddWithValue("$notas", p.Notas ?? "");
 
                 return Convert.ToInt32(cmd.ExecuteScalar());
             }
@@ -647,14 +666,12 @@ namespace SCCosmos
                 connection.Open();
                 using (var transaction = connection.BeginTransaction())
                 {
-                    // Borramos su actividad y la de sus clones
                     var cmdActividad = connection.CreateCommand();
                     cmdActividad.Transaction = transaction;
                     cmdActividad.CommandText = "DELETE FROM ActividadPersonas WHERE PersonaId = $id OR PersonaId IN (SELECT Id FROM Personas WHERE PersonaRaizId = $id);";
                     cmdActividad.Parameters.AddWithValue("$id", personaId);
                     cmdActividad.ExecuteNonQuery();
 
-                    // Borramos la persona original y todos los clones de la historia que descienden de él
                     var cmdPersona = connection.CreateCommand();
                     cmdPersona.Transaction = transaction;
                     cmdPersona.CommandText = "DELETE FROM Personas WHERE Id = $id OR PersonaRaizId = $id;";
@@ -729,10 +746,17 @@ namespace SCCosmos
 
                 if (recomendaciones.Count > 0)
                 {
-                    var cmdDelete = connection.CreateCommand();
-                    cmdDelete.CommandText = "DELETE FROM RecomendacionesNombramientos WHERE Congregacion = @congre";
-                    cmdDelete.Parameters.AddWithValue("@congre", recomendaciones[0].Congregacion);
-                    cmdDelete.ExecuteNonQuery();
+                    // SOLUCIÓN AL BUG: Extraemos TODAS las congregaciones distintas que vengan en la descarga 
+                    // y borramos sus registros antiguos para evitar duplicados.
+                    var congregacionesAfectadas = recomendaciones.Select(r => r.Congregacion).Distinct().ToList();
+
+                    foreach (var congre in congregacionesAfectadas)
+                    {
+                        var cmdDelete = connection.CreateCommand();
+                        cmdDelete.CommandText = "DELETE FROM RecomendacionesNombramientos WHERE Congregacion = @congre";
+                        cmdDelete.Parameters.AddWithValue("@congre", congre);
+                        cmdDelete.ExecuteNonQuery();
+                    }
                 }
 
                 foreach (var r in recomendaciones)
@@ -852,7 +876,6 @@ namespace SCCosmos
                 connection.Open();
                 var cmd = connection.CreateCommand();
 
-                // Si viene una dirección nueva que no esté vacía y que sea diferente, reseteamos Latitud y Longitud.
                 cmd.CommandText = @"
                     UPDATE Personas SET 
                         Servicio = CASE WHEN $servicio != '' THEN $servicio ELSE Servicio END, 
@@ -921,8 +944,8 @@ namespace SCCosmos
                             cmdClone.Transaction = transaction;
 
                             cmdClone.CommandText = @"
-                                INSERT INTO Personas (Nombre, FechaNacimiento, Sexo, FechaBautismo, Esperanza, Nombramiento, Servicio, CongregacionCodigo, Grupo, Telefono, Email, FechaInicioPrec, FechaUltimaEscuela, NombreJWHub, Foto, NombreComun, Direccion, Latitud, Longitud, ConyugeId, EmailJW, Solicitudes, Privilegios, RequisitoHoras, PersonaRaizId, MesHistorico, FechaExactaHistorico)
-                                SELECT Nombre, $fnac, $sexo, $fbaut, $esp, $nomb, $serv, CongregacionCodigo, $grupo, Telefono, Email, FechaInicioPrec, FechaUltimaEscuela, NombreJWHub, Foto, NombreComun, Direccion, Latitud, Longitud, ConyugeId, EmailJW, Solicitudes, Privilegios, RequisitoHoras, $raiz, $mesH, $fechaEx
+                                INSERT INTO Personas (Nombre, FechaNacimiento, Sexo, FechaBautismo, Esperanza, Nombramiento, Servicio, CongregacionCodigo, Grupo, Telefono, Email, FechaInicioPrec, FechaUltimaEscuela, NombreJWHub, Foto, NombreComun, Direccion, Latitud, Longitud, ConyugeId, EmailJW, Solicitudes, Privilegios, RequisitoHoras, PersonaRaizId, MesHistorico, FechaExactaHistorico, Notas)
+                                SELECT Nombre, $fnac, $sexo, $fbaut, $esp, $nomb, $serv, CongregacionCodigo, $grupo, Telefono, Email, FechaInicioPrec, FechaUltimaEscuela, NombreJWHub, Foto, NombreComun, Direccion, Latitud, Longitud, ConyugeId, EmailJW, Solicitudes, Privilegios, RequisitoHoras, $raiz, $mesH, $fechaEx, Notas
                                 FROM Personas WHERE Id = $raiz;
                                 SELECT last_insert_rowid();";
                             cmdClone.Parameters.AddWithValue("$fnac", p.FechaNacimiento ?? "");
@@ -1077,7 +1100,7 @@ namespace SCCosmos
                                 CongregacionCodigo = $congre, Grupo = $grp, Telefono = $tlf,
                                 Email = $em, EmailJW = $emjw, FechaInicioPrec = $finic, FechaUltimaEscuela = $fesc,
                                 Solicitudes = $sols, Privilegios = $priv, Foto = $foto,
-                                Direccion = $dir, Latitud = $lat, Longitud = $lon, ConyugeId = $conyuge
+                                Direccion = $dir, Latitud = $lat, Longitud = $lon, ConyugeId = $conyuge, Notas = $notas
                             WHERE Id = $idDestino;";
 
                         cmdUpdateDest.Parameters.AddWithValue("$nombre", personaDestino.Nombre ?? "");
@@ -1103,6 +1126,7 @@ namespace SCCosmos
                         cmdUpdateDest.Parameters.AddWithValue("$lat", personaDestino.Latitud);
                         cmdUpdateDest.Parameters.AddWithValue("$lon", personaDestino.Longitud);
                         cmdUpdateDest.Parameters.AddWithValue("$conyuge", personaDestino.ConyugeId);
+                        cmdUpdateDest.Parameters.AddWithValue("$notas", personaDestino.Notas ?? "");
                         cmdUpdateDest.Parameters.AddWithValue("$idDestino", personaDestino.Id);
                         cmdUpdateDest.ExecuteNonQuery();
 
@@ -1198,6 +1222,10 @@ namespace SCCosmos
         public static List<Congregacion> ObtenerCongregaciones()
         {
             var lista = new List<Congregacion>();
+
+            // Forzamos que se creen las nuevas columnas si aún no existen
+            InicializarDatabase();
+
             using (var connection = new SqliteConnection(ConnectionString))
             {
                 connection.Open();
@@ -1210,24 +1238,36 @@ namespace SCCosmos
 
                 using (var reader = cmd.ExecuteReader())
                 {
+                    // Obtenemos los nombres de las columnas que la base de datos nos ha devuelto realmente
+                    var columnas = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    for (int i = 0; i < reader.FieldCount; i++)
+                    {
+                        columnas.Add(reader.GetName(i));
+                    }
+
                     while (reader.Read())
                     {
                         lista.Add(new Congregacion
                         {
-                            Codigo = reader["Codigo"].ToString(),
-                            Nombre = reader["Nombre"].ToString(),
-                            Email = reader.IsDBNull(reader.GetOrdinal("Email")) ? "" : reader["Email"].ToString(),
-                            SeccionId = reader.IsDBNull(reader.GetOrdinal("SeccionId")) ? 0 : Convert.ToInt32(reader["SeccionId"]),
-                            NombreSeccion = reader.IsDBNull(reader.GetOrdinal("NombreSeccion")) ? "Sin asignar" : reader["NombreSeccion"].ToString(),
-                            DireccionSR = reader.IsDBNull(reader.GetOrdinal("DireccionSR")) ? "" : reader["DireccionSR"].ToString(),
-                            DiaEntreSemana = reader.IsDBNull(reader.GetOrdinal("DiaEntreSemana")) ? "" : reader["DiaEntreSemana"].ToString(),
-                            HoraEntreSemana = reader.IsDBNull(reader.GetOrdinal("HoraEntreSemana")) ? "" : reader["HoraEntreSemana"].ToString(),
-                            DiaFinSemana = reader.IsDBNull(reader.GetOrdinal("DiaFinSemana")) ? "" : reader["DiaFinSemana"].ToString(),
-                            HoraFinSemana = reader.IsDBNull(reader.GetOrdinal("HoraFinSemana")) ? "" : reader["HoraFinSemana"].ToString(),
-                            Latitud = reader.IsDBNull(reader.GetOrdinal("Latitud")) ? 0 : reader.GetDouble(reader.GetOrdinal("Latitud")),
-                            Longitud = reader.IsDBNull(reader.GetOrdinal("Longitud")) ? 0 : reader.GetDouble(reader.GetOrdinal("Longitud")),
-                            Capacidad = reader.IsDBNull(reader.GetOrdinal("Capacidad")) ? 0 : Convert.ToInt32(reader["Capacidad"]),
-                            Poblacion = reader.IsDBNull(reader.GetOrdinal("Poblacion")) ? 0 : Convert.ToInt32(reader["Poblacion"])
+                            Codigo = columnas.Contains("Codigo") ? reader["Codigo"].ToString() : "",
+                            Nombre = columnas.Contains("Nombre") ? reader["Nombre"].ToString() : "",
+                            Email = columnas.Contains("Email") && !reader.IsDBNull(reader.GetOrdinal("Email")) ? reader["Email"].ToString() : "",
+                            SeccionId = columnas.Contains("SeccionId") && !reader.IsDBNull(reader.GetOrdinal("SeccionId")) ? Convert.ToInt32(reader["SeccionId"]) : 0,
+                            NombreSeccion = columnas.Contains("NombreSeccion") && !reader.IsDBNull(reader.GetOrdinal("NombreSeccion")) ? reader["NombreSeccion"].ToString() : "Sin asignar",
+
+                            // LECTURA SEGURA: Comprueba si existe antes de intentar leerla
+                            Provincia = columnas.Contains("Provincia") && !reader.IsDBNull(reader.GetOrdinal("Provincia")) ? reader["Provincia"].ToString() : "",
+                            Municipio = columnas.Contains("Municipio") && !reader.IsDBNull(reader.GetOrdinal("Municipio")) ? reader["Municipio"].ToString() : "",
+
+                            DireccionSR = columnas.Contains("DireccionSR") && !reader.IsDBNull(reader.GetOrdinal("DireccionSR")) ? reader["DireccionSR"].ToString() : "",
+                            DiaEntreSemana = columnas.Contains("DiaEntreSemana") && !reader.IsDBNull(reader.GetOrdinal("DiaEntreSemana")) ? reader["DiaEntreSemana"].ToString() : "",
+                            HoraEntreSemana = columnas.Contains("HoraEntreSemana") && !reader.IsDBNull(reader.GetOrdinal("HoraEntreSemana")) ? reader["HoraEntreSemana"].ToString() : "",
+                            DiaFinSemana = columnas.Contains("DiaFinSemana") && !reader.IsDBNull(reader.GetOrdinal("DiaFinSemana")) ? reader["DiaFinSemana"].ToString() : "",
+                            HoraFinSemana = columnas.Contains("HoraFinSemana") && !reader.IsDBNull(reader.GetOrdinal("HoraFinSemana")) ? reader["HoraFinSemana"].ToString() : "",
+                            Latitud = columnas.Contains("Latitud") && !reader.IsDBNull(reader.GetOrdinal("Latitud")) ? reader.GetDouble(reader.GetOrdinal("Latitud")) : 0,
+                            Longitud = columnas.Contains("Longitud") && !reader.IsDBNull(reader.GetOrdinal("Longitud")) ? reader.GetDouble(reader.GetOrdinal("Longitud")) : 0,
+                            Capacidad = columnas.Contains("Capacidad") && !reader.IsDBNull(reader.GetOrdinal("Capacidad")) ? Convert.ToInt32(reader["Capacidad"]) : 0,
+                            Poblacion = columnas.Contains("Poblacion") && !reader.IsDBNull(reader.GetOrdinal("Poblacion")) ? Convert.ToInt32(reader["Poblacion"]) : 0
                         });
                     }
                 }
@@ -1242,12 +1282,14 @@ namespace SCCosmos
                 connection.Open();
                 var cmd = connection.CreateCommand();
                 cmd.CommandText = @"
-                    INSERT INTO Congregaciones (Codigo, Nombre, Email, SeccionId, DireccionSR, DiaEntreSemana, HoraEntreSemana, DiaFinSemana, HoraFinSemana, Capacidad, Poblacion)
-                    VALUES (@Codigo, @Nombre, @Email, @SeccionId, @DireccionSR, @DiaEntreSemana, @HoraEntreSemana, @DiaFinSemana, @HoraFinSemana, @Capacidad, @Poblacion)";
+                    INSERT INTO Congregaciones (Codigo, Nombre, Email, SeccionId, Provincia, Municipio, DireccionSR, DiaEntreSemana, HoraEntreSemana, DiaFinSemana, HoraFinSemana, Capacidad, Poblacion)
+                    VALUES (@Codigo, @Nombre, @Email, @SeccionId, @Provincia, @Municipio, @DireccionSR, @DiaEntreSemana, @HoraEntreSemana, @DiaFinSemana, @HoraFinSemana, @Capacidad, @Poblacion)";
                 cmd.Parameters.AddWithValue("@Codigo", cong.Codigo ?? "");
                 cmd.Parameters.AddWithValue("@Nombre", cong.Nombre ?? "");
                 cmd.Parameters.AddWithValue("@Email", cong.Email ?? "");
                 cmd.Parameters.AddWithValue("@SeccionId", cong.SeccionId);
+                cmd.Parameters.AddWithValue("@Provincia", cong.Provincia ?? "");
+                cmd.Parameters.AddWithValue("@Municipio", cong.Municipio ?? "");
                 cmd.Parameters.AddWithValue("@DireccionSR", cong.DireccionSR ?? "");
                 cmd.Parameters.AddWithValue("@DiaEntreSemana", cong.DiaEntreSemana ?? "");
                 cmd.Parameters.AddWithValue("@HoraEntreSemana", cong.HoraEntreSemana ?? "");
@@ -1268,6 +1310,7 @@ namespace SCCosmos
                 cmd.CommandText = @"
                     UPDATE Congregaciones SET 
                         Nombre = @Nombre, Email = @Email, SeccionId = @SeccionId, 
+                        Provincia = @Provincia, Municipio = @Municipio,
                         DireccionSR = @DireccionSR, DiaEntreSemana = @DiaEntreSemana, HoraEntreSemana = @HoraEntreSemana, 
                         DiaFinSemana = @DiaFinSemana, HoraFinSemana = @HoraFinSemana, Capacidad = @Capacidad, Poblacion = @Poblacion
                     WHERE Codigo = @Codigo";
@@ -1275,6 +1318,8 @@ namespace SCCosmos
                 cmd.Parameters.AddWithValue("@Nombre", cong.Nombre ?? "");
                 cmd.Parameters.AddWithValue("@Email", cong.Email ?? "");
                 cmd.Parameters.AddWithValue("@SeccionId", cong.SeccionId);
+                cmd.Parameters.AddWithValue("@Provincia", cong.Provincia ?? "");
+                cmd.Parameters.AddWithValue("@Municipio", cong.Municipio ?? "");
                 cmd.Parameters.AddWithValue("@DireccionSR", cong.DireccionSR ?? "");
                 cmd.Parameters.AddWithValue("@DiaEntreSemana", cong.DiaEntreSemana ?? "");
                 cmd.Parameters.AddWithValue("@HoraEntreSemana", cong.HoraEntreSemana ?? "");
@@ -1627,7 +1672,7 @@ namespace SCCosmos
                 new NotaVisita { SemanaId = semanaId, Cabecera = "REGISTROS", Pregunta = "¿Están ordenados y al día?", Respuesta = "" },
                 new NotaVisita { SemanaId = semanaId, Cabecera = "REGISTROS", Pregunta = "¿Se están aplicando las medidas de retención de documentos? (sfl-a)", Respuesta = "" },
                 new NotaVisita { SemanaId = semanaId, Cabecera = "REGISTROS", Pregunta = "¿Se indica en las tarjetas de publicadores inactivos (bautizados) la fecha en la que empezaron a serlo?", Respuesta = "" },
-                new NotaVisita { SemanaId = semanaId, Cabecera = "REGISTROS", Pregunta = "¿Tienen los nombres de publicadores la estructura correcta?", Respuesta = "" },
+                new NotaVisita { SemanaId = semanaId, Cabecera = "REGISTROS", Pregunta = "¿Tienen los nombres de publicadores la structure correcta?", Respuesta = "" },
                 new NotaVisita { SemanaId = semanaId, Cabecera = "REGISTROS", Pregunta = "¿Están todos los datos de contacto de los publicadores (incluidos inactivos)?", Respuesta = "" },
 
                 new NotaVisita { SemanaId = semanaId, Cabecera = "REUNIÓN CON CCA", Pregunta = "Apunta aquí los deberes para el CCA", Respuesta = "" },
@@ -1718,7 +1763,7 @@ namespace SCCosmos
                 new NotaVisita { SemanaId = semanaId, Cabecera = "SALÓN DEL REINO Y SEGURIDAD", Pregunta = "¿Hay un programa de limpieza establecido y colgado en el tablero de anuncios?", Respuesta = "" },
                 new NotaVisita { SemanaId = semanaId, Cabecera = "SALÓN DEL REINO Y SEGURIDAD", Pregunta = "¿Está el cartel de aviso transmisión colgado?", Respuesta = "" },
                 new NotaVisita { SemanaId = semanaId, Cabecera = "SALÓN DEL REINO Y SEGURIDAD", Pregunta = "¿Se hace uso de los programas grabados en JW Stream? ¿Con qué frecuencia se presentan discursos por zoom?", Respuesta = "" },
-                new NotaVisita { SemanaId = semanaId, Cabecera = "SALÓN DEL REINO Y SEGURIDAD", Pregunta = "¿Cómo es la asistencia en referencia al número de publicadores?", Respuesta = "" },
+                new NotaVisita { SemanaId = semanaId, Cabecera = "SALÓN DEL REINO Y SEGURIDAD", Pregunta = "¿Cómo es la asistencia en reference al número de publicadores?", Respuesta = "" },
                 new NotaVisita { SemanaId = semanaId, Cabecera = "SALÓN DEL REINO Y SEGURIDAD", Pregunta = "¿Ha habido algún incidente, quasi accidente, incendio, robo o allanamiento? ¿Se ha enviado el TO-5?", Respuesta = "" },
                 new NotaVisita { SemanaId = semanaId, Cabecera = "SALÓN DEL REINO Y SEGURIDAD", Pregunta = "¿Se presentan las necesidades relacionadas con la seguridad cada año?", Respuesta = "" },
                 new NotaVisita { SemanaId = semanaId, Cabecera = "SALÓN DEL REINO Y SEGURIDAD", Pregunta = "¿Cómo funciona el plan de emergencia para proteger a los publicadores con necesidades especiales y los registros?", Respuesta = "" },
@@ -2551,16 +2596,68 @@ namespace SCCosmos
 
         public static void InsertarDocumento(string categoria, string nombreArchivo, string rutaLocal)
         {
+            // 1. Leemos el archivo físico y lo convertimos a código binario
+            byte[] contenidoBinario = null;
+            if (File.Exists(rutaLocal))
+            {
+                contenidoBinario = File.ReadAllBytes(rutaLocal);
+            }
+
             using (var connection = new SqliteConnection(ConnectionString))
             {
                 connection.Open();
                 var cmd = connection.CreateCommand();
-                cmd.CommandText = "INSERT INTO Documentos (Categoria, NombreArchivo, RutaLocal) VALUES ($cat, $nom, $ruta)";
+                // 2. Guardamos el binario DENTRO de la base de datos
+                cmd.CommandText = "INSERT INTO Documentos (Categoria, NombreArchivo, RutaLocal, ContenidoArchivo) VALUES ($cat, $nom, $ruta, $blob)";
                 cmd.Parameters.AddWithValue("$cat", categoria);
                 cmd.Parameters.AddWithValue("$nom", nombreArchivo);
                 cmd.Parameters.AddWithValue("$ruta", rutaLocal);
+                cmd.Parameters.AddWithValue("$blob", contenidoBinario ?? (object)DBNull.Value);
                 cmd.ExecuteNonQuery();
             }
+        }
+
+        public static string ExtraerDocumentoDesdeBD(int documentoId, string nombreArchivo)
+        {
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                connection.Open();
+                var cmd = connection.CreateCommand();
+                cmd.CommandText = "SELECT ContenidoArchivo, RutaLocal FROM Documentos WHERE Id = $id";
+                cmd.Parameters.AddWithValue("$id", documentoId);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        // Comprobamos si tiene el archivo binario guardado
+                        if (!reader.IsDBNull(0))
+                        {
+                            byte[] fileBytes = (byte[])reader.GetValue(0);
+
+                            // Creamos una carpeta temporal en el sistema para descargar el archivo
+                            string tempPath = Path.Combine(Path.GetTempPath(), "SCCosmos", "DocumentosTemp");
+                            if (!Directory.Exists(tempPath)) Directory.CreateDirectory(tempPath);
+
+                            // Si ya existe uno con ese nombre (ej: lo abriste hace 5 minutos), lo borramos para poner el nuevo
+                            string filePath = Path.Combine(tempPath, nombreArchivo);
+                            try { if (File.Exists(filePath)) File.Delete(filePath); } catch { }
+
+                            // Reconstruimos el archivo en el disco duro
+                            File.WriteAllBytes(filePath, fileBytes);
+                            return filePath;
+                        }
+                        else
+                        {
+                            // MODO LEGACY: Si es un archivo muy antiguo que subiste antes de este cambio, 
+                            // intentará buscarlo en la ruta antigua.
+                            string rutaAntigua = reader.IsDBNull(1) ? "" : reader.GetString(1);
+                            if (File.Exists(rutaAntigua)) return rutaAntigua;
+                        }
+                    }
+                }
+            }
+            return null; // Si devuelve null, es que el archivo no existe o se ha perdido
         }
 
         public static List<ArchivoDocumento> ObtenerDocumentos(string categoria)

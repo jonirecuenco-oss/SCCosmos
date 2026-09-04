@@ -16,6 +16,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Threading;
+using System.Windows.Input;
+using System.Windows.Media;
 
 namespace SCCosmos
 {
@@ -35,7 +37,6 @@ namespace SCCosmos
             ColeccionSemanas = new ObservableCollection<SemanaCalendario>();
             _vistaAgrupada = CollectionViewSource.GetDefaultView(ColeccionSemanas);
 
-            // Mantenemos el orden por fecha para que las actividades solapadas salgan juntas
             _vistaAgrupada.SortDescriptions.Add(new SortDescription("FechaMartes", ListSortDirection.Ascending));
             _vistaAgrupada.SortDescriptions.Add(new SortDescription("Id", ListSortDirection.Ascending));
             _vistaAgrupada.GroupDescriptions.Add(new PropertyGroupDescription("Banner"));
@@ -57,8 +58,9 @@ namespace SCCosmos
                 martesActual = martesActual.AddDays(-1);
             }
 
-            _fechaLimiteAnterior = martesActual.AddDays(-4 * 7);
-            _fechaLimitePosterior = martesActual.AddDays(20 * 7);
+            // REDUCIDO DE 52 A 26 SEMANAS (6 MESES)
+            _fechaLimiteAnterior = martesActual.AddDays(-26 * 7);
+            _fechaLimitePosterior = martesActual.AddDays(26 * 7);
 
             DateTime bucleFecha = _fechaLimiteAnterior;
             while (bucleFecha <= _fechaLimitePosterior)
@@ -68,9 +70,6 @@ namespace SCCosmos
             }
         }
 
-        // ======================================================================
-        // NUEVA LÓGICA DE CARGA: Permite cargar múltiples actividades por semana
-        // ======================================================================
         private void InsertarSemanasDesdeDB(DateTime fecha, bool addToBottom)
         {
             string isoId = fecha.ToString("yyyy-MM-dd");
@@ -95,9 +94,6 @@ namespace SCCosmos
                 var s = semanasEnEstaFecha[i];
                 if (i > 0) s.EsClonada = Visibility.Visible;
 
-                // YA NO CALCULAMOS "TieneDatosImportados" DESDE LAS CONGREGACIONES
-                // Ahora esa variable viene cargada directamente desde la base de datos para esta semana concreta.
-
                 s = delayEstado(s);
 
                 if (addToBottom) ColeccionSemanas.Add(s);
@@ -105,9 +101,6 @@ namespace SCCosmos
             }
         }
 
-        // ======================================================================
-        // AÑADIR ACTIVIDAD PARALELA (SOLAPAMIENTO)
-        // ======================================================================
         private void BtnSolaparActividad_Click(object sender, RoutedEventArgs e)
         {
             var boton = sender as FrameworkElement;
@@ -142,7 +135,6 @@ namespace SCCosmos
                     }
                     else
                     {
-                        // === SI EL USUARIO CANCELA, ELIMINAMOS EL CLON VACÍO DE LA BBDD ===
                         DatabaseHelper.EliminarSemanaCalendario(ultimaInsertada.Id);
                         RecargarFechaEspecifica(semanaBase.FechaMartes);
                     }
@@ -150,9 +142,6 @@ namespace SCCosmos
             }
         }
 
-        // ======================================================================
-        // ELIMINAR ACTIVIDAD PARALELA
-        // ======================================================================
         private void BtnEliminarActividad_Click(object sender, RoutedEventArgs e)
         {
             var boton = sender as FrameworkElement;
@@ -171,7 +160,6 @@ namespace SCCosmos
 
         private void RecargarFechaEspecifica(DateTime fechaTarget)
         {
-            // Borra de la lista visual todas las que compartan fecha y las vuelve a cargar de la BD
             var aBorrar = ColeccionSemanas.Where(s => s.FechaMartes == fechaTarget).ToList();
             foreach (var item in aBorrar) ColeccionSemanas.Remove(item);
 
@@ -192,8 +180,6 @@ namespace SCCosmos
             {
                 VisitasPage.CodigoPendiente = congreCodigo;
                 VisitasPage.NombrePendiente = semanaSeleccionada.Congregacion;
-
-                // --- NUEVA LÍNEA: Pasamos el mes de la visita a la página de Visitas ---
                 VisitasPage.MesPendiente = semanaSeleccionada.FechaMartes.ToString("yyyy-MM");
 
                 var ventanaPrincipal = Application.Current.MainWindow as MainWindow;
@@ -219,10 +205,10 @@ namespace SCCosmos
         private void BtnCargarPasado_Click(object sender, RoutedEventArgs e)
         {
             var scrollViewer = ObtenerScrollViewer(TablaRuta);
-            double offsetOriginal = scrollViewer != null ? scrollViewer.VerticalOffset : 0;
-            int gruposAntes = _vistaAgrupada.Groups != null ? _vistaAgrupada.Groups.Count : 0;
+            double offsetAnterior = scrollViewer != null ? scrollViewer.VerticalOffset : 0;
+            double alturaTotalAnterior = scrollViewer != null ? scrollViewer.ExtentHeight : 0; // Guardamos la altura antes de insertar
 
-            for (int i = 0; i < 52; i++)
+            for (int i = 0; i < 26; i++)
             {
                 _fechaLimiteAnterior = _fechaLimiteAnterior.AddDays(-7);
                 InsertarSemanasDesdeDB(_fechaLimiteAnterior, addToBottom: false);
@@ -231,19 +217,22 @@ namespace SCCosmos
 
             if (scrollViewer != null)
             {
-                Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+                // Usamos DispatcherPriority.Loaded para asegurarnos de que la tabla ya se ha dibujado antes de medirla
+                Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() =>
                 {
                     TablaRuta.UpdateLayout();
-                    int gruposDespues = _vistaAgrupada.Groups != null ? _vistaAgrupada.Groups.Count : 0;
-                    int gruposAñadidos = gruposDespues - gruposAntes;
-                    scrollViewer.ScrollToVerticalOffset(offsetOriginal + 52 + gruposAñadidos);
+                    // Calculamos exactamente cuánto ha crecido la tabla "por arriba"
+                    double diferenciaAltura = scrollViewer.ExtentHeight - alturaTotalAnterior;
+                    // Desplazamos la vista exactamente esa misma cantidad hacia abajo para que quede congelada en tu posición
+                    scrollViewer.ScrollToVerticalOffset(offsetAnterior + diferenciaAltura);
                 }));
             }
         }
 
         private void BtnCargarFuturo_Click(object sender, RoutedEventArgs e)
         {
-            for (int i = 0; i < 52; i++)
+            // REDUCIDO DE 52 A 26 SEMANAS
+            for (int i = 0; i < 26; i++)
             {
                 _fechaLimitePosterior = _fechaLimitePosterior.AddDays(7);
                 InsertarSemanasDesdeDB(_fechaLimitePosterior, addToBottom: true);
@@ -331,14 +320,11 @@ namespace SCCosmos
 
             string congreCodigo = DatabaseHelper.ObtenerCodigoCongregacion(semanaSeleccionada.Congregacion);
 
-            // ABRIMOS DIRECTAMENTE LA VENTANA DE IMPORTACIÓN.
-            // Le pasamos la variable TieneDatosImportados por si la ventana de importación quiere mostrar un aviso interno.
             ImportarArchivosActividad ventanaArchivos = new ImportarArchivosActividad(congreCodigo, semanaSeleccionada.Congregacion, semanaSeleccionada.TieneDatosImportados);
             ventanaArchivos.Owner = Window.GetWindow(this);
 
             if (ventanaArchivos.ShowDialog() == true)
             {
-                // Solo si la ventana se cerró con éxito (Guardar), marcamos la semana como importada.
                 semanaSeleccionada.TieneDatosImportados = true;
                 DatabaseHelper.GuardarSemana(semanaSeleccionada);
                 _vistaAgrupada.Refresh();
@@ -359,12 +345,94 @@ namespace SCCosmos
                 return;
             }
 
-            var popup = new ConfirmarEnvioWindow($"Enviar Aviso: {semanaSeleccionada.Congregacion}", semanaSeleccionada.S302Enviado, archivosS302);
+            string congreNombre = semanaSeleccionada.Congregacion;
+            DateTime fechaMartes = semanaSeleccionada.FechaMartes;
+            string rutaPdfOriginal = archivosS302[0].RutaLocal;
+            string rutaPdfRelleno = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), $"S-302_{congreNombre}.pdf");
+
+            // ======================================================================
+            // 1. RECOPILAR DATOS PARA LOS CAMPOS DEL S-302
+            // ======================================================================
+            string nombreSC = DatabaseHelper.ObtenerConfiguracion("NombreSC", "Jonatán");
+            string apellidoSC = DatabaseHelper.ObtenerConfiguracion("ApellidoSC", "Recuenco");
+            string nombreCompletoSC = $"{nombreSC} {apellidoSC}".Trim();
+
+            string nombrePrincipalSCS = "";
+            string apellidoPrincipalSCS = "";
+
+            if (!string.IsNullOrEmpty(semanaSeleccionada.Acompanante))
+            {
+                string rawName = semanaSeleccionada.Acompanante;
+                string[] partesY = rawName.Split(new[] { " y " }, StringSplitOptions.None);
+                string maridoFull = partesY[0].Trim();
+
+                if (maridoFull.Contains(","))
+                {
+                    var partesComa = maridoFull.Split(',');
+                    apellidoPrincipalSCS = partesComa[0].Trim();
+                    nombrePrincipalSCS = partesComa[1].Trim();
+                }
+                else
+                {
+                    nombrePrincipalSCS = maridoFull;
+                }
+            }
+            string nombreComunSCS = $"{nombrePrincipalSCS} {apellidoPrincipalSCS}".Trim();
+
+            string text2Value = nombreCompletoSC;
+            if (semanaSeleccionada.Tipo != null &&
+               (semanaSeleccionada.Tipo.Contains("SCS", StringComparison.OrdinalIgnoreCase) ||
+                semanaSeleccionada.Tipo.Equals("Visita de SCS", StringComparison.OrdinalIgnoreCase)))
+            {
+                text2Value = string.IsNullOrWhiteSpace(nombreComunSCS) ? "(SCS)" : $"{nombreComunSCS} (SCS)";
+            }
+
+            string text4Value = nombreCompletoSC;
+
+            DateTime fechaInicio = fechaMartes;
+            DateTime fechaFin = fechaInicio.AddDays(5);
+            string textoFechas = $"Del {fechaInicio.ToString("dd-MMM-yy").ToLower()} al {fechaFin.ToString("dd-MMM-yy").ToLower()}";
+
+            // ======================================================================
+            // 2. RELLENAR EL PDF ANTES DE ABRIR EL POPUP
+            // ======================================================================
+            try
+            {
+                using (PdfDocument pdfDoc = new PdfDocument(new PdfReader(rutaPdfOriginal), new PdfWriter(rutaPdfRelleno)))
+                {
+                    PdfAcroForm form = PdfAcroForm.GetAcroForm(pdfDoc, true);
+                    if (form != null)
+                    {
+                        form.GetField("Text1")?.SetValue(congreNombre);
+                        form.GetField("Text2")?.SetValue(text2Value);
+                        form.GetField("Text3")?.SetValue(textoFechas);
+                        form.GetField("Text4")?.SetValue(text4Value);
+                        form.FlattenFields();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"No se pudo generar el PDF S-302.\nAsegúrate de que no está abierto en otro programa.\n\nError: {ex.Message}", "Error de PDF", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            var archivosParaPreview = new List<ArchivoDocumento>
+            {
+                new ArchivoDocumento
+                {
+                    Id = archivosS302[0].Id,
+                    NombreArchivo = $"S-302_{congreNombre}.pdf",
+                    RutaLocal = rutaPdfRelleno,
+                    Categoria = archivosS302[0].Categoria
+                }
+            };
+
+            var popup = new ConfirmarEnvioWindow($"Enviar Aviso: {congreNombre}", semanaSeleccionada.S302Enviado, archivosParaPreview);
             popup.Owner = Window.GetWindow(this);
 
             bool? procederEnvio = popup.ShowDialog();
 
-            // GUARDAR EL ESTADO SI SE MODIFICÓ MANUALMENTE Y NO SE PULSÓ "PROCEDER AL ENVÍO"
             if (popup.EstadoModificadoManual && procederEnvio != true)
             {
                 semanaSeleccionada.S302Enviado = popup.EstadoEnviadoActual;
@@ -374,12 +442,11 @@ namespace SCCosmos
 
             if (procederEnvio != true) return;
 
-            string congreNombre = semanaSeleccionada.Congregacion;
-            DateTime fechaMartes = semanaSeleccionada.FechaMartes;
+            // ======================================================================
+            // 4. PROCEDER AL ENVÍO AUTOMÁTICO (SELENIUM)
+            // ======================================================================
             string congreCodigo = DatabaseHelper.ObtenerCodigoCongregacion(congreNombre);
             string correoCongregacion = $"CONG601{congreCodigo}@jwpub.org";
-            string rutaPdfOriginal = archivosS302[0].RutaLocal;
-            string rutaPdfRelleno = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), $"S-302_{congreNombre}.pdf");
             string folderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SCCosmos", "PerfilFirefoxCorreo");
 
             string asuntoEmailS302 = DatabaseHelper.ObtenerConfiguracion("Asunto_Aviso de la visita", "Aviso de la visita");
@@ -397,20 +464,6 @@ namespace SCCosmos
             {
                 await Task.Run(() =>
                 {
-                    using (PdfDocument pdfDoc = new PdfDocument(new PdfReader(rutaPdfOriginal), new PdfWriter(rutaPdfRelleno)))
-                    {
-                        PdfAcroForm form = PdfAcroForm.GetAcroForm(pdfDoc, true);
-                        DateTime fechaInicio = fechaMartes;
-                        DateTime fechaFin = fechaInicio.AddDays(5);
-                        string textoFechas = $"Del {fechaInicio.ToString("dd-MMM-yy").ToLower()} al {fechaFin.ToString("dd-MMM-yy").ToLower()}";
-
-                        form.GetField("Text1").SetValue(congreNombre);
-                        form.GetField("Text2").SetValue("Jonatán Recuenco");
-                        form.GetField("Text3").SetValue(textoFechas);
-                        form.GetField("Text4").SetValue("Jonatán Recuenco");
-                        form.FlattenFields();
-                    }
-
                     var service = FirefoxDriverService.CreateDefaultService();
                     service.HideCommandPromptWindow = true;
 
@@ -460,10 +513,7 @@ namespace SCCosmos
                             return inputs.Count > 0 ? inputs[0] : null;
                         });
 
-                        // SUBIMOS EL ARCHIVO
                         inputArchivo.SendKeys(rutaPdfRelleno);
-
-                        // === NUEVA ESPERA EXTENDIDA (HASTA 90 SEGUNDOS) ===
                         System.Threading.Thread.Sleep(1000);
 
                         WebDriverWait waitSubida = new WebDriverWait(driver, TimeSpan.FromSeconds(90));
@@ -472,7 +522,6 @@ namespace SCCosmos
                         if (nombreCortoS302.Length > 15) nombreCortoS302 = nombreCortoS302.Substring(0, 15);
                         try { waitSubida.Until(d => d.PageSource.Contains(nombreCortoS302)); } catch { }
 
-                        // Bucle Anti-Parpadeo
                         try
                         {
                             waitSubida.Until(d => {
@@ -757,7 +806,6 @@ namespace SCCosmos
                             string rutasUnidas = string.Join("\n", archivosProcesados.Select(a => a.RutaLocal));
                             inputArchivo.SendKeys(rutasUnidas);
 
-                            // === NUEVA ESPERA EXTENDIDA (HASTA 90 SEGUNDOS) ===
                             System.Threading.Thread.Sleep(1000 * archivosProcesados.Count);
 
                             WebDriverWait waitSubida = new WebDriverWait(driver, TimeSpan.FromSeconds(90));
@@ -776,7 +824,6 @@ namespace SCCosmos
                                     var spinners = d.FindElements(By.XPath("//div[contains(@class, 'spinnerAnimation')]"));
                                     if (spinners.Count == 0)
                                     {
-                                        // Doble comprobación: si da 0, esperamos un momento y volvemos a mirar por si era un parpadeo del DOM
                                         System.Threading.Thread.Sleep(1000);
                                         return d.FindElements(By.XPath("//div[contains(@class, 'spinnerAnimation')]")).Count == 0;
                                     }
@@ -838,14 +885,12 @@ namespace SCCosmos
 
             if (semana == null) return;
 
-            // 1. ABRIR VENTANA DE CONFIRMACIÓN (Reutilizamos la de los archivos, pasando una lista vacía)
             var archivosVacios = new List<ArchivoDocumento>();
             var popup = new ConfirmarEnvioWindow($"Recordatorio Sec. {semana.SeccionAsamblea}", semana.RecordatorioEnviado, archivosVacios);
             popup.Owner = Window.GetWindow(this);
 
             bool? procederEnvio = popup.ShowDialog();
 
-            // 2. GUARDAR EL ESTADO SI SE MODIFICÓ MANUALMENTE Y SE CANCELÓ EL ENVÍO AUTOMÁTICO
             if (popup.EstadoModificadoManual && procederEnvio != true)
             {
                 semana.RecordatorioEnviado = popup.EstadoEnviadoActual;
@@ -853,10 +898,8 @@ namespace SCCosmos
                 _vistaAgrupada.Refresh();
             }
 
-            // Si el usuario canceló la ventana, cortamos la ejecución aquí
             if (procederEnvio != true) return;
 
-            // 3. LÓGICA DE ENVÍO AUTOMÁTICO (SELENIUM)
             string folderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SCCosmos", "PerfilFirefoxCorreo");
 
             if (!Directory.Exists(folderPath))
@@ -879,7 +922,6 @@ namespace SCCosmos
             }
 
             string destinatarios = string.Join(";", correosSeccion);
-
             string asunto = DatabaseHelper.ObtenerConfiguracion("Asunto_Recordatorio de asamblea de circuito", "Recordatorio de asamblea de circuito");
             string cuerpoHtml = DatabaseHelper.ObtenerConfiguracion("Email_Recordatorio de asamblea de circuito", "Queridos hermanos...");
 
@@ -977,5 +1019,51 @@ namespace SCCosmos
                 OverlayCargando.Visibility = Visibility.Collapsed;
             }
         }
+
+        private void BtnConfigurarCiclo_Click(object sender, RoutedEventArgs e)
+        {
+            CicloVisitasWindow ventanaCiclo = new CicloVisitasWindow();
+            ventanaCiclo.Owner = Window.GetWindow(this);
+            ventanaCiclo.ShowDialog();
+        }
+
+        // Función que salta al hacer clic en cualquier parte de la fila
+        private void FilaSemana_Click(object sender, MouseButtonEventArgs e)
+        {
+            // CORTAFUEGOS: Si el usuario ha hecho clic justo encima de un botón (como enviar S-302, etc), 
+            // ignoramos el evento de la fila para que no se abra la ventana de edición por accidente.
+            if (e.OriginalSource is DependencyObject source)
+            {
+                var esBotonEstandar = FindParent<Button>(source) != null;
+                var esBotonWpfUi = FindParent<Wpf.Ui.Controls.Button>(source) != null;
+
+                if (esBotonEstandar || esBotonWpfUi) return;
+            }
+
+            var row = sender as DataGridRow;
+            var semanaSeleccionada = row?.DataContext as SemanaCalendario;
+
+            if (semanaSeleccionada != null)
+            {
+                FormularioSemana ventanaForm = new FormularioSemana(semanaSeleccionada);
+                ventanaForm.Owner = Window.GetWindow(this);
+
+                if (ventanaForm.ShowDialog() == true)
+                {
+                    DatabaseHelper.GuardarSemana(semanaSeleccionada);
+                    _vistaAgrupada.Refresh();
+                }
+            }
+        }
+
+        // Función auxiliar para saber qué es lo que hay debajo del cursor del ratón (útil para el cortafuegos)
+        private T FindParent<T>(DependencyObject child) where T : DependencyObject
+        {
+            DependencyObject parentObject = VisualTreeHelper.GetParent(child);
+            if (parentObject == null) return null;
+            T parent = parentObject as T;
+            return parent ?? FindParent<T>(parentObject);
+        }
+
     }
 }

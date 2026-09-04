@@ -8,21 +8,26 @@ namespace SCCosmos
     {
         public int Id { get; set; }
         public DateTime FechaMartes { get; set; }
+
+        // Calculamos los días límite de la semana
+        public DateTime FechaLunes => FechaMartes.AddDays(-1);
         public DateTime FechaDomingo => FechaMartes.AddDays(5);
 
         // Retorna la clave para la Base de Datos (Ej: "2026-06-30")
         public string IdIso => FechaMartes.ToString("yyyy-MM-dd");
 
-        // Formato pedido: "Del 3-ago al 8-ago"
+        // =========================================================
+        // MEJORA 1: SEMANAS PASADAS GRISÁCEAS
+        // =========================================================
+        // Si la semana ya ha pasado (hoy es mayor que el domingo), reducimos su opacidad al 40% (0.4)
+        public double OpacidadSemana => DateTime.Today > FechaDomingo ? 0.4 : 1.0;
+
+        // Formato para la tabla: "Del 3-ago al 8-ago" (AHORA EMPEZANDO EN LUNES)
         public string RangoFechas
         {
             get
             {
-                // Calculamos el domingo (5 días después del martes)
-                DateTime domingo = FechaMartes.AddDays(5);
-
-                // Generamos el texto base "del 3-ago al 8-ago"
-                string formatoFechas = $"Del {FechaMartes.ToString("dd-MMM").ToLower()} al {domingo.ToString("dd-MMM").ToLower()}";
+                string formatoFechas = $"Del {FechaLunes.ToString("dd-MMM").ToLower()} al {FechaDomingo.ToString("dd-MMM").ToLower()}";
 
                 // Si es asamblea y hemos rellenado la fecha, se la pegamos al final entre paréntesis
                 if (Actividad == "Asamblea de circuito" && !string.IsNullOrEmpty(FechaAsamblea))
@@ -34,8 +39,10 @@ namespace SCCosmos
             }
         }
 
-        // Propiedad que usará el DataGrid para agrupar y poner los letreros de los meses
-        public string Banner => FechaMartes.ToString("MMMM yyyy").ToUpper();
+        // =========================================================
+        // MEJORA 2: MES BASADO EN EL LUNES (Agrupación correcta)
+        // =========================================================
+        public string Banner => FechaLunes.ToString("MMMM yyyy").ToUpper();
 
         public string Actividad { get; set; }
         public string Congregacion { get; set; }
@@ -58,24 +65,19 @@ namespace SCCosmos
             get
             {
                 DateTime hoy = DateTime.Today;
-                // Le decimos al programa que la semana empieza realmente el LUNES (1 día antes del martes)
-                DateTime lunes = FechaMartes.AddDays(-1);
-
-                return hoy >= lunes && hoy <= FechaDomingo;
+                return hoy >= FechaLunes && hoy <= FechaDomingo;
             }
         }
 
         public bool S302Enviado { get; set; }
         public bool DocEnviada { get; set; }
 
-        // Trucos visuales para los colores de los botones. 
-        // Si no se han enviado, se mantienen transparentes para respetar el color de la tabla.
+        // Trucos visuales para los colores de los botones
         public string ColorBotonNotificacion => NotificacionEnviada ? "#10893E" : "Transparent";
         public string ColorBotonRecordatorio => RecordatorioEnviado ? "#10893E" : "Transparent";
         public string ColorBotonS302 => S302Enviado ? "#10893E" : "Transparent";
         public string ColorBotonDoc => DocEnviada ? "#10893E" : "Transparent";
 
-        // Trucos visuales para la interfaz (XAML las leerá automáticamente)
         // Trucos visuales controlados desde C# para la visibilidad de los botones
         public Visibility VisibilidadVisita => Actividad == "Visita" ? Visibility.Visible : Visibility.Collapsed;
         public Visibility VisibilidadAsamblea => Actividad == "Asamblea de circuito" ? Visibility.Visible : Visibility.Collapsed;

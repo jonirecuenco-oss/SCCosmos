@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-        Title="Sincronización JW Hub" Height="650" Width="950" 
+        Title="Sincronización JW Hub" Height="650" Width="1050" 
         WindowStartupLocation="CenterOwner" Background="#1E1E1E">
     <Grid Margin="20">
         <Grid.RowDefinitions>
@@ -57,16 +57,20 @@
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Publicador" Binding="{Binding NombreVisual}" Width="3*" FontWeight="Bold"/>
                         <DataGridTextColumn Header="Resumen de Cambios" Binding="{Binding Descripcion}" Width="5*" Foreground="#AAAAAA"/>
-                        <DataGridTemplateColumn Header="Acción" Width="120">
+                        <DataGridTemplateColumn Header="Acciones" Width="200">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <ui:Button Content="Resolver" Appearance="Primary" Click="BtnResolverConflicto_Click" Tag="{Binding}" Margin="0,5"/>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <ui:Button Content="Resolver" Appearance="Primary" Click="BtnResolverConflicto_Click" Tag="{Binding}" Margin="0,0,5,0"/>
+                                        <ui:Button Content="Descartar" Appearance="Secondary" Click="BtnDescartar_Click" Tag="{Binding}"/>
+                                    </StackPanel>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
                     </DataGrid.Columns>
                 </DataGrid>
             </TabItem>
+
             <TabItem Header="✨ Nuevos en JW Hub">
                 <DataGrid x:Name="GridNuevos" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True" Background="Transparent" RowBackground="Transparent" BorderBrush="#333" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#333" Margin="0,10,0,0">
                     <DataGrid.RowStyle>
@@ -79,16 +83,20 @@
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Publicador Nuevo" Binding="{Binding NombreVisual}" Width="3*" FontWeight="Bold" Foreground="#55C855"/>
                         <DataGridTextColumn Header="Detalles" Binding="{Binding Descripcion}" Width="5*" Foreground="#AAAAAA"/>
-                        <DataGridTemplateColumn Header="Acción" Width="120">
+                        <DataGridTemplateColumn Header="Acciones" Width="210">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <ui:Button Content="Añadir a BD" Appearance="Success" Click="BtnAnadirNuevo_Click" Tag="{Binding}" Margin="0,5"/>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <ui:Button Content="Añadir a BD" Appearance="Success" Click="BtnAnadirNuevo_Click" Tag="{Binding}" Margin="0,0,5,0"/>
+                                        <ui:Button Content="Descartar" Appearance="Secondary" Click="BtnDescartar_Click" Tag="{Binding}"/>
+                                    </StackPanel>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
                     </DataGrid.Columns>
                 </DataGrid>
             </TabItem>
+
             <TabItem Header="❌ Faltan en JW Hub (Bajas)">
                 <DataGrid x:Name="GridBajas" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True" Background="Transparent" RowBackground="Transparent" BorderBrush="#333" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#333" Margin="0,10,0,0">
                     <DataGrid.RowStyle>
@@ -101,16 +109,20 @@
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Publicador en BD" Binding="{Binding NombreVisual}" Width="3*" FontWeight="Bold" Foreground="#FF5555"/>
                         <DataGridTextColumn Header="Información" Binding="{Binding Descripcion}" Width="5*" Foreground="#AAAAAA"/>
-                        <DataGridTemplateColumn Header="Acción" Width="140">
+                        <DataGridTemplateColumn Header="Acciones" Width="240">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <ui:Button Content="Confirmar Baja" Appearance="Danger" Click="BtnDarBaja_Click" Tag="{Binding}" Margin="0,5"/>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <ui:Button Content="Confirmar Baja" Appearance="Danger" Click="BtnDarBaja_Click" Tag="{Binding}" Margin="0,0,5,0"/>
+                                        <ui:Button Content="Descartar" Appearance="Secondary" Click="BtnDescartar_Click" Tag="{Binding}"/>
+                                    </StackPanel>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
                     </DataGrid.Columns>
                 </DataGrid>
             </TabItem>
+
             <TabItem Header="✅ Sin Cambios">
                 <DataGrid x:Name="GridIguales" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True" Background="Transparent" RowBackground="Transparent" BorderBrush="#333" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#333" Margin="0,10,0,0">
                     <DataGrid.RowStyle>
@@ -123,10 +135,13 @@
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Publicador" Binding="{Binding NombreVisual}" Width="3*" FontWeight="SemiBold"/>
                         <DataGridTextColumn Header="Estado" Binding="{Binding Descripcion}" Width="5*" Foreground="#AAAAAA"/>
-                        <DataGridTemplateColumn Header="Acción" Width="120">
+                        <DataGridTemplateColumn Header="Acciones" Width="200">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <ui:Button Content="Revisar" Appearance="Secondary" Click="BtnRevisarIgual_Click" Tag="{Binding}" Margin="0,5"/>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <ui:Button Content="Revisar" Appearance="Primary" Click="BtnRevisarIgual_Click" Tag="{Binding}" Margin="0,0,5,0"/>
+                                        <ui:Button Content="Descartar" Appearance="Secondary" Click="BtnDescartar_Click" Tag="{Binding}"/>
+                                    </StackPanel>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
@@ -137,8 +152,8 @@
 
         <Border Grid.Row="3" BorderBrush="#333" BorderThickness="0,1,0,0" Margin="0,15,0,0" Padding="0,15,0,0">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <ui:Button Content="Cancelar" Appearance="Secondary" Margin="0,0,10,0" Click="BtnCancelar_Click"/>
-                <ui:Button Content="Guardar todos y Cerrar" Appearance="Primary" Click="BtnFinalizar_Click"/>
+                <ui:Button Content="Cerrar" Appearance="Secondary" Margin="0,0,10,0" Click="BtnCancelar_Click"/>
+                <ui:Button Content="Guardar" Appearance="Primary" Click="BtnFinalizar_Click"/>
             </StackPanel>
         </Border>
     </Grid>

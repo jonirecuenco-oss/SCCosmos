@@ -36,5 +36,6 @@
         public int PersonaRaizId { get; set; }
         public string MesHistorico { get; set; }
         public string FechaExactaHistorico { get; set; }
+        public string Notas { get; set; }
     }
 }

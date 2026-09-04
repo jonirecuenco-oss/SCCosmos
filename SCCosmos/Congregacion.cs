@@ -14,6 +14,8 @@
     public double Longitud { get; set; }
     public int Capacidad { get; set; }
     public int Poblacion { get; set; }
+    public String Provincia { get; set; }
+    public String Municipio { get; set; }
 }
 
 public class ElementoMapa

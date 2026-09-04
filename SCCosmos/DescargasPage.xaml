@@ -3,108 +3,139 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       mc:Ignorable="d" 
       d:DesignHeight="600" d:DesignWidth="1000"
       Title="Descargas"
       Background="Transparent">
 
-    <!-- El contenedor principal (Padding y margen para que respire) -->
+    <!-- Contenedor principal -->
     <Grid Margin="30">
         <Grid.RowDefinitions>
-            <!-- Fila 0: Título de la página -->
+            <!-- Título de la página -->
             <RowDefinition Height="Auto"/>
-            <!-- Fila 1: Contenido (Las 3 columnas) -->
+            <!-- Contenido dividido en 2 columnas (Izquierda opciones, Derecha explorador) -->
             <RowDefinition Height="*"/>
-            <!-- Fila 2: Botón de descarga -->
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0" Text="DESCARGAS" FontSize="24" FontWeight="Bold" Margin="0,0,0,20" Foreground="White"/>
 
-        <!-- ScrollViewer por si la ventana se hace muy pequeña verticalmente -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="380"/>
+                <!-- Columna Izquierda: Opciones -->
+                <ColumnDefinition Width="*"/>
+                <!-- Columna Derecha: Explorador -->
+            </Grid.ColumnDefinitions>
 
-            <!-- GRID DE 3 COLUMNAS -->
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
+            <!-- ============================================== -->
+            <!-- COLUMNA IZQUIERDA: OPCIONES Y BOTÓN DE INICIO  -->
+            <!-- ============================================== -->
+            <Grid Grid.Column="0" Margin="0,0,20,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-                <!-- ============================================== -->
-                <!-- COLUMNA 1: PROGRAMAS DE BETEL                  -->
-                <!-- ============================================== -->
-                <Border Grid.Column="0" BorderBrush="#444444" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,10,20" Background="#2D2D30">
+                <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel>
-                        <TextBlock Text="PROGRAMAS DE BETEL" FontWeight="Bold" FontSize="16" Foreground="#569CD6" Margin="0,0,0,15" TextWrapping="Wrap"/>
+                        <!-- PROGRAMAS DE BETEL -->
+                        <Border BorderBrush="#444444" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,20" Background="#2D2D30">
+                            <StackPanel>
+                                <TextBlock Text="PROGRAMAS DE BETEL" FontWeight="Bold" FontSize="16" Foreground="#569CD6" Margin="0,0,0,15"/>
+                                <CheckBox x:Name="chkBetelAdoracion" IsChecked="True" Margin="0,0,0,10">
+                                    <TextBlock Text="Adoración matutina" FontSize="14" Foreground="#EEEEEE" TextWrapping="Wrap"/>
+                                </CheckBox>
+                            </StackPanel>
+                        </Border>
 
-                        <CheckBox x:Name="chkBetelAdoracion" IsChecked="True" Margin="0,0,0,10">
-                            <TextBlock Text="Adoración matutina" FontSize="14" Foreground="#EEEEEE" TextWrapping="Wrap"/>
-                        </CheckBox>
+                        <!-- PROGRAMAS TEOCRÁTICOS -->
+                        <Border BorderBrush="#444444" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,20" Background="#2D2D30">
+                            <StackPanel>
+                                <TextBlock Text="PROGRAMAS TEOCRÁTICOS" FontWeight="Bold" FontSize="16" Foreground="#569CD6" Margin="0,0,0,15"/>
+                                <CheckBox x:Name="chkTeoDiscursos" IsChecked="True" Margin="0,0,0,12">
+                                    <TextBlock Text="Discursos públicos" FontSize="14" Foreground="#EEEEEE" TextWrapping="Wrap"/>
+                                </CheckBox>
+                                <CheckBox x:Name="chkTeoAsambleaSucursal" IsChecked="True" Margin="0,0,0,12">
+                                    <TextBlock Text="AC-BR" FontSize="14" Foreground="#EEEEEE" TextWrapping="Wrap"/>
+                                </CheckBox>
+                                <CheckBox x:Name="chkTeoAsambleaSuper" IsChecked="True" Margin="0,0,0,12">
+                                    <TextBlock Text="AC-CO" FontSize="14" Foreground="#EEEEEE" TextWrapping="Wrap"/>
+                                </CheckBox>
+                                <CheckBox x:Name="chkTeoAsambleaRegional" IsChecked="True" Margin="0,0,0,12">
+                                    <TextBlock Text="Asamblea regional" FontSize="14" Foreground="#EEEEEE" TextWrapping="Wrap"/>
+                                </CheckBox>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- JW.ORG -->
+                        <Border BorderBrush="#444444" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,20" Background="#2D2D30">
+                            <StackPanel>
+                                <TextBlock Text="JW.ORG" FontWeight="Bold" FontSize="16" Foreground="#569CD6" Margin="0,0,0,15"/>
+                                <CheckBox x:Name="chkJwAdoracion" IsChecked="True" Margin="0,0,0,12">
+                                    <TextBlock Text="Adoración matutina" FontSize="14" Foreground="#EEEEEE" TextWrapping="Wrap"/>
+                                </CheckBox>
+                                <CheckBox x:Name="chkJwDiscursos" IsChecked="True" Margin="0,0,0,12">
+                                    <TextBlock Text="Discursos JW Broadcasting" FontSize="14" Foreground="#EEEEEE" TextWrapping="Wrap"/>
+                                </CheckBox>
+                                <CheckBox x:Name="chkJwGalaad" IsChecked="True" Margin="0,0,0,12">
+                                    <TextBlock Text="Graduación de Galaad" FontSize="14" Foreground="#EEEEEE" TextWrapping="Wrap"/>
+                                </CheckBox>
+                                <CheckBox x:Name="chkJwReunionAnual" IsChecked="True" Margin="0,0,0,12">
+                                    <TextBlock Text="Reunión anual" FontSize="14" Foreground="#EEEEEE" TextWrapping="Wrap"/>
+                                </CheckBox>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
-                </Border>
+                </ScrollViewer>
 
-                <!-- ============================================== -->
-                <!-- COLUMNA 2: PROGRAMAS TEOCRÁTICOS               -->
-                <!-- ============================================== -->
-                <Border Grid.Column="1" BorderBrush="#444444" BorderThickness="1" CornerRadius="5" Padding="15" Margin="10,0,10,20" Background="#2D2D30">
-                    <StackPanel>
-                        <TextBlock Text="PROGRAMAS TEOCRÁTICOS" FontWeight="Bold" FontSize="16" Foreground="#569CD6" Margin="0,0,0,15" TextWrapping="Wrap"/>
-
-                        <CheckBox x:Name="chkTeoDiscursos" IsChecked="True" Margin="0,0,0,12">
-                            <TextBlock Text="Discursos públicos" FontSize="14" Foreground="#EEEEEE" TextWrapping="Wrap"/>
-                        </CheckBox>
-
-                        <CheckBox x:Name="chkTeoAsambleaSucursal" IsChecked="True" Margin="0,0,0,12">
-                            <TextBlock Text="Asamblea de circuito con representante de la sucursal" FontSize="14" Foreground="#EEEEEE" TextWrapping="Wrap"/>
-                        </CheckBox>
-
-                        <CheckBox x:Name="chkTeoAsambleaSuper" IsChecked="True" Margin="0,0,0,12">
-                            <TextBlock Text="Asamblea de circuito con superintendente de circuito" FontSize="14" Foreground="#EEEEEE" TextWrapping="Wrap"/>
-                        </CheckBox>
-
-                        <CheckBox x:Name="chkTeoAsambleaRegional" IsChecked="True" Margin="0,0,0,12">
-                            <TextBlock Text="Asamblea regional" FontSize="14" Foreground="#EEEEEE" TextWrapping="Wrap"/>
-                        </CheckBox>
-                    </StackPanel>
-                </Border>
-
-                <!-- ============================================== -->
-                <!-- COLUMNA 3: JW.ORG (PRÓXIMAMENTE)               -->
-                <!-- ============================================== -->
-                <Border Grid.Column="2" BorderBrush="#333333" BorderThickness="1" CornerRadius="5" Padding="15" Margin="10,0,0,20" Background="#1E1E1E">
-                    <StackPanel>
-                        <TextBlock Text="JW.ORG (Próximamente)" FontWeight="Bold" FontSize="16" Foreground="#888888" Margin="0,0,0,15" TextWrapping="Wrap"/>
-
-                        <CheckBox x:Name="chkJwDiscursos" IsChecked="True" IsEnabled="False" Margin="0,0,0,12">
-                            <TextBlock Text="Discursos JW Broadcasting" FontSize="14" Foreground="#777777" TextWrapping="Wrap"/>
-                        </CheckBox>
-
-                        <CheckBox x:Name="chkJwAdoracion" IsChecked="True" IsEnabled="False" Margin="0,0,0,12">
-                            <TextBlock Text="Adoración matutina" FontSize="14" Foreground="#777777" TextWrapping="Wrap"/>
-                        </CheckBox>
-
-                        <CheckBox x:Name="chkJwGalaad" IsChecked="True" IsEnabled="False" Margin="0,0,0,12">
-                            <TextBlock Text="Graduación de Galaad" FontSize="14" Foreground="#777777" TextWrapping="Wrap"/>
-                        </CheckBox>
-                    </StackPanel>
-                </Border>
-
+                <!-- BOTÓN DE INICIO DE DESCARGAS -->
+                <Button Grid.Row="1" x:Name="btnDescargar" Content="INICIAR DESCARGAS" 
+                        Height="50" Margin="0,10,0,0" FontSize="16" FontWeight="Bold" 
+                        Background="#0078D7" Foreground="White" BorderThickness="0"
+                        Cursor="Hand" Click="btnDescargar_Click">
+                    <Button.Resources>
+                        <Style TargetType="Border">
+                            <Setter Property="CornerRadius" Value="5"/>
+                        </Style>
+                    </Button.Resources>
+                </Button>
             </Grid>
-        </ScrollViewer>
 
-        <!-- BOTÓN DE INICIO -->
-        <Button Grid.Row="2" x:Name="btnDescargar" Content="INICIAR DESCARGAS" 
-                Height="50" Margin="0,20,0,0" FontSize="16" FontWeight="Bold" 
-                Background="#0078D7" Foreground="White" BorderThickness="0"
-                Cursor="Hand" Click="btnDescargar_Click">
-            <Button.Resources>
-                <Style TargetType="Border">
-                    <Setter Property="CornerRadius" Value="5"/>
-                </Style>
-            </Button.Resources>
-        </Button>
+            <!-- ============================================== -->
+            <!-- COLUMNA DERECHA: EXPLORADOR DE ARCHIVOS        -->
+            <!-- ============================================== -->
+            <Border Grid.Column="1" Background="#212124" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="6" Padding="15">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
 
+                    <Grid Grid.Row="0" Margin="0,0,0,15">
+                        <TextBlock Text="ARCHIVOS DESCARGADOS" FontSize="16" FontWeight="Bold" Foreground="#EBCB8B" VerticalAlignment="Center"/>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <ui:Button Icon="{ui:SymbolIcon ArrowClockwise24}" Appearance="Transparent" ToolTip="Actualizar" Click="BtnActualizarExplorador_Click" Padding="4" Margin="0,0,5,0" Cursor="Hand" Foreground="#AAAAAA"/>
+                            <ui:Button Icon="{ui:SymbolIcon FolderOpen24}" Content="Abrir carpeta" Appearance="Secondary" Click="BtnAbrirCarpeta_Click" Cursor="Hand"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- ÁRBOL DEL EXPLORADOR EN 3 COLUMNAS (Doble clic para abrir un archivo) -->
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TreeView x:Name="ArbolArchivosCol1" Grid.Column="0" Background="Transparent" BorderThickness="0" Foreground="White" Margin="0,0,5,0" ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
+                        <TreeView x:Name="ArbolArchivosCol2" Grid.Column="1" Background="Transparent" BorderThickness="0" Foreground="White" Margin="5,0,5,0" ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
+                        <TreeView x:Name="ArbolArchivosCol3" Grid.Column="2" Background="Transparent" BorderThickness="0" Foreground="White" Margin="5,0,0,0" ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
+                    </Grid>
+                </Grid>
+            </Border>
+
+        </Grid>
     </Grid>
 </Page>

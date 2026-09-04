@@ -9,17 +9,108 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Margin="0,0,0,30">
+        <StackPanel Grid.Row="0" Margin="0,0,0,20">
             <TextBlock Text="CONFIGURACIÓN" FontSize="28" FontWeight="Bold"/>
             <TextBlock Text="Gestiona las preferencias y vinculaciones del sistema." Foreground="#AAAAAA" FontSize="14"/>
         </StackPanel>
 
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="0,0,15,0">
             <StackPanel>
 
-                <!-- TARJETA 1: VINCULACIÓN JW HUB -->
+                <!-- ========================================================= -->
+                <!-- BLOQUE 1: CONFIGURACIÓN GLOBAL (VIAJA POR LA NUBE/BBDD)   -->
+                <!-- ========================================================= -->
+                <TextBlock Text="🌐 GLOBAL (Sincronizado en todos tus dispositivos)" FontSize="15" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                <!-- TARJETA: DATOS PERSONALES -->
+                <ui:Card Padding="20" Margin="0,0,0,15">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <ui:SymbolIcon Grid.Column="0" Symbol="ContactCardGroup24" FontSize="36" Margin="0,0,20,0" VerticalAlignment="Top" Foreground="#4BA3E3"/>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Datos del circuito" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                            <TextBlock Text="Estos nombres y el número de circuito aparecerán en los informes y documentos oficiales (S-303, S-318...)." Foreground="#AAAAAA" FontSize="13" Margin="0,0,0,15"/>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="15"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="15"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="15"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="15"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="15"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Nº de Circuito" Foreground="#CCC" Margin="0,0,0,5"/>
+                                    <ui:TextBox x:Name="TxtNumCircuito" Background="#1E1E1E" Foreground="White" PlaceholderText="ESP-BA-01"/>
+                                </StackPanel>
+                                
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Nombre del SC" Foreground="#CCC" Margin="0,0,0,5"/>
+                                    <ui:TextBox x:Name="TxtNombre" Background="#1E1E1E" Foreground="White"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="4">
+                                    <TextBlock Text="Apellido del SC" Foreground="#CCC" Margin="0,0,0,5"/>
+                                    <ui:TextBox x:Name="TxtApellido" Background="#1E1E1E" Foreground="White"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="6">
+                                    <TextBlock Text="Nombre esposa (opcional)" Foreground="#CCC" Margin="0,0,0,5"/>
+                                    <ui:TextBox x:Name="TxtNombreEsposa" Background="#1E1E1E" Foreground="White"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="8">
+                                    <TextBlock Text="Apellido esposa (opcional)" Foreground="#CCC" Margin="0,0,0,5"/>
+                                    <ui:TextBox x:Name="TxtApellidoEsposa" Background="#1E1E1E" Foreground="White"/>
+                                </StackPanel>
+
+                                
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
+                </ui:Card>
+
+                <!-- TARJETA: ARCHIVO DEL CIRCUITO -->
+                <ui:Card Padding="20" Margin="0,0,0,30">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <ui:SymbolIcon Grid.Column="0" Symbol="Briefcase24" FontSize="36" Margin="0,0,20,0" VerticalAlignment="Center" Foreground="#4BA3E3"/>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Archivo del Circuito" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                            <TextBlock Text="Ruta general donde se guarda el archivo y correspondencia del circuito." Foreground="#AAAAAA" FontSize="13" Margin="0,0,0,10"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <ui:TextBox x:Name="TxtRutaArchivoCircuito" Grid.Column="0" IsReadOnly="True" Background="#1E1E1E" Foreground="White"/>
+                                <ui:Button Grid.Column="1" Content="Examinar" Margin="10,0,0,0" Appearance="Secondary" Icon="{ui:SymbolIcon Folder24}" Click="BtnRutaArchivoCircuito_Click"/>
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
+                </ui:Card>
+
+                <!-- ========================================================= -->
+                <!-- BLOQUE 2: CONFIGURACIÓN LOCAL (SOLO EN ESTE ORDENADOR)    -->
+                <!-- ========================================================= -->
+                <TextBlock Text="💻 LOCAL (Exclusivo de este PC)" FontSize="15" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                <!-- TARJETA: VINCULACIÓN JW HUB -->
                 <ui:Card Padding="20" Margin="0,0,0,15">
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -27,41 +118,28 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-
-                        <ui:SymbolIcon x:Name="IconoEstado" Grid.Column="0" Symbol="PersonSync24" FontSize="36" Margin="0,0,20,0" VerticalAlignment="Center"/>
-
+                        <!-- Icono en verde grisáceo si no está vinculado -->
+                        <ui:SymbolIcon x:Name="IconoEstado" Grid.Column="0" Symbol="PersonSync24" FontSize="36" Margin="0,0,20,0" VerticalAlignment="Center" Foreground="#809C80"/>
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                            <TextBlock x:Name="TxtTitulo" Text="Vinculación de cuenta JW" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,5"/>
-                            <TextBlock x:Name="TxtDescripcion" Text="Crea un perfil dedicado de Firefox para interactuar con las funciones de JW Hub." 
-                                       Foreground="#AAAAAA" TextWrapping="Wrap" FontSize="13"/>
+                            <!-- Título en verde grisáceo si no está vinculado -->
+                            <TextBlock x:Name="TxtTituloJW" Text="Cuenta de JW (No vinculada)" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="#809C80"/>
+                            <TextBlock x:Name="TxtDescripcion" Text="Crea un perfil dedicado de Firefox para interactuar con las funciones de JW Hub (sincronizar publicadores, descargar discursos...)." Foreground="#AAAAAA" TextWrapping="Wrap" FontSize="13"/>
                         </StackPanel>
-
-                        <ui:Button Grid.Column="2" 
-                                   x:Name="BtnVincularCorreo" 
-                                   Content="Vincular" 
-                                   Appearance="Primary" 
-                                   Icon="{ui:SymbolIcon PersonSync24}"
-                                   Padding="15,10"
-                                   Click="BtnVincularCorreo_Click"
-                                   VerticalAlignment="Center"/>
+                        <ui:Button Grid.Column="2" x:Name="BtnVincularCorreo" Content="Vincular" Appearance="Primary" Icon="{ui:SymbolIcon PersonSync24}" Padding="15,10" Click="BtnVincularCorreo_Click" VerticalAlignment="Center"/>
                     </Grid>
                 </ui:Card>
 
-                <!-- TARJETA 2: ALMACENAMIENTO Y SINCRONIZACIÓN -->
-                <ui:Card Padding="20">
+                <!-- TARJETA: ALMACENAMIENTO DE LA BBDD -->
+                <ui:Card Padding="20" Margin="0,0,0,15">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-
-                        <ui:SymbolIcon Grid.Column="0" Symbol="FolderSync24" FontSize="36" Margin="0,0,20,0" VerticalAlignment="Center" Foreground="#4BA3E3"/>
-
+                        <ui:SymbolIcon Grid.Column="0" Symbol="FolderSync24" FontSize="36" Margin="0,0,20,0" VerticalAlignment="Center" Foreground="#4CAF50"/>
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                             <TextBlock Text="Almacenamiento de la Base de Datos" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,5"/>
-                            <TextBlock Text="Ruta donde se guarda tu archivo de datos (sccosmos.db). Si usas varios ordenadores, establece esta ruta en una carpeta sincronizada (OneDrive, Google Drive, etc.)." 
-                                       Foreground="#AAAAAA" TextWrapping="Wrap" FontSize="13" Margin="0,0,0,10"/>
-
+                            <TextBlock Text="Ruta donde se guarda tu archivo de datos (sccosmos.db). Si usas varios ordenadores, establece esta ruta en una carpeta sincronizada (OneDrive, Google Drive, etc.)." Foreground="#AAAAAA" TextWrapping="Wrap" FontSize="13" Margin="0,0,0,10"/>
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -74,7 +152,41 @@
                     </Grid>
                 </ui:Card>
 
+                <!-- TARJETA: AUTOMATIZACIONES EN SEGUNDO PLANO -->
+                <ui:Card Padding="20" Margin="0,0,0,10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <ui:SymbolIcon Grid.Column="0" Symbol="Bot24" FontSize="36" Margin="0,0,20,0" VerticalAlignment="Top" Foreground="#4CAF50"/>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Automatizaciones en Segundo Plano" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                            <TextBlock Text="Tareas que este ordenador realizará de forma invisible." Foreground="#AAAAAA" FontSize="13" Margin="0,0,0,15"/>
+
+                            <ui:ToggleSwitch x:Name="ToggleSincronizacion" Content="Sincronizar personas de JW Hub automáticamente (Lunes)" Margin="0,0,0,10"/>
+                            <ui:ToggleSwitch x:Name="ToggleDescargas" Content="Descargar discursos automáticamente (Martes)" Margin="0,0,0,15"/>
+
+                            <TextBlock Text="Carpeta de destino para los discursos:" Foreground="#CCC" Margin="0,0,0,5"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <ui:TextBox x:Name="TxtRutaDescargas" Grid.Column="0" IsReadOnly="True" Background="#1E1E1E" Foreground="White"/>
+                                <ui:Button Grid.Column="1" Content="Examinar" Margin="10,0,0,0" Appearance="Secondary" Icon="{ui:SymbolIcon Folder24}" Click="BtnRutaDescargas_Click"/>
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
+                </ui:Card>
+
             </StackPanel>
         </ScrollViewer>
+
+        <!-- BOTÓN GUARDAR -->
+        <Border Grid.Row="2" Background="#252526" BorderThickness="0,1,0,0" BorderBrush="#333" Padding="0,15,0,0" Margin="0,10,0,0">
+            <ui:Button Content="Guardar Configuración" Appearance="Primary" Icon="{ui:SymbolIcon Save24}" HorizontalAlignment="Right" Padding="30,8" Click="BtnGuardar_Click"/>
+        </Border>
+
     </Grid>
 </Page>
