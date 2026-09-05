@@ -50,9 +50,9 @@ namespace SCCosmos
                 options.AddArgument(perfilClonado); // USAMOS EL CLON
 
                 // Oculto y a pantalla completa virtual
-                options.AddArgument("-headless");
-                options.AddArgument("--window-size=1920,1080");
-                options.AddArgument("--start-maximized");
+                //options.AddArgument("-headless");
+                //options.AddArgument("--window-size=1920,1080");
+                //options.AddArgument("--start-maximized");
 
                 string tempDownloadPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TempDownloads");
                 if (!Directory.Exists(tempDownloadPath)) Directory.CreateDirectory(tempDownloadPath);
@@ -105,10 +105,30 @@ namespace SCCosmos
                             Thread.Sleep(200);
                             ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", btnMostrarTodo);
                             EsperaDinamicaElementoVisibilidad(driver, By.CssSelector("article"), 15);
+                            Thread.Sleep(2000);
                         }
 
                         // Recorrer la lista
-                        int totalCards = driver.FindElements(By.CssSelector("article")).Count;
+                        var cardsBase = driver.FindElements(By.CssSelector("article"));
+                        int totalCards = cardsBase.Count;
+
+                        //MODO DE PRUEBAS
+                        var inputBuscador = EsperaDinamicaElementoVisibilidad(driver, By.XPath("//input[@type='search' and @placeholder='Introduzca un nombre']"), 15);
+                        if (inputBuscador != null)
+                        {
+                            inputBuscador.Clear();
+                            inputBuscador.SendKeys("gonzález, miriam");
+                            Thread.Sleep(500); // Pequeña pausa para que Angular registre el texto tecleado
+                        }
+                        var btnBuscarP = EsperaDinamicaElementoClicable(driver, By.XPath("//button[.//span[contains(text(), 'Buscar')]]"), 15);
+                        if (btnBuscarP != null)
+                        {
+                            Thread.Sleep(1000);
+                            btnBuscarP.Click();
+                        }
+                        //int totalCards = 2;
+                        //FIN DEL MODO DE PRUEBAS
+
                         string[] privilegiosPermitidos = {
                             "Instructor de la Escuela del Servicio de Precursor", "Superintendente de circuito sustituto",
                             "Miembro del CEH", "Superintendente de asamblea", "Coordinador", "Secretario",
@@ -134,6 +154,7 @@ namespace SCCosmos
                                         ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", btnMas);
                                         EsperaDinamicaElementoVisibilidad(driver, By.CssSelector("article"), 5);
                                         cards = driver.FindElements(By.CssSelector("article"));
+                                        totalCards = cards.Count;
                                     }
                                     else
                                     {
@@ -145,6 +166,7 @@ namespace SCCosmos
                                             ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", btnTodo);
                                             EsperaDinamicaElementoVisibilidad(driver, By.CssSelector("article"), 5);
                                             cards = driver.FindElements(By.CssSelector("article"));
+                                            totalCards = cards.Count;
                                         }
                                         else break;
                                     }
@@ -156,9 +178,12 @@ namespace SCCosmos
                             var card = cards[i];
 
                             var spanNombre = card.FindElements(By.CssSelector("span.transliteration__vernacular")).FirstOrDefault();
-                            if (spanNombre == null || string.IsNullOrWhiteSpace(spanNombre.Text)) { i++; continue; }
+                            if (spanNombre == null) { i++; continue; }
 
-                            string nombreReal = spanNombre.Text.Replace("\u200B", "").Trim();
+                            // Obtención robusta del texto para que procese a la primera persona
+                            string nombreReal = spanNombre.GetAttribute("textContent").Replace("\u200B", "").Trim();
+                            if (string.IsNullOrWhiteSpace(nombreReal)) { i++; continue; }
+
                             PersonaExtraida mejorExtraccion = null;
 
                             // Bucle de revisiones: Hasta 5 para errores graves (críticos), máximo 3 para conflictos de datos.
@@ -477,25 +502,21 @@ namespace SCCosmos
                                             bool dbAprox = dbDate.StartsWith("01/01/");
                                             bool hubAprox = hubDate.StartsWith("01/01/");
 
-                                            // Si las dos son exactas, deben ser idénticas
                                             if (!dbAprox && !hubAprox) return dbDate.Trim() != hubDate.Trim();
 
-                                            // Si alguna es aproximada, comprobamos la diferencia de años
                                             int yearDB = 0, yearHub = 0;
                                             if (dbDate.Length >= 4) int.TryParse(dbDate.Substring(dbDate.Length - 4), out yearDB);
                                             if (hubDate.Length >= 4) int.TryParse(hubDate.Substring(hubDate.Length - 4), out yearHub);
 
-                                            // Si la diferencia es mayor a 2 años, es imposible que sea la misma persona
                                             if (yearDB > 0 && yearHub > 0 && Math.Abs(yearDB - yearHub) > 2) return true;
 
                                             return false;
                                         };
 
-                                        // Si chocan fundamentalmente en Nacimiento o Bautismo, descartamos la coincidencia
                                         if (SonIncompatibles(p.FechaNacimiento, tempPersona.FechaNacimiento)) return false;
                                         if (SonIncompatibles(p.FechaBautismo, tempPersona.FechaBautismo)) return false;
 
-                                        return true; 
+                                        return true;
                                     });
 
                                     if (matchDB != null)
@@ -537,7 +558,6 @@ namespace SCCosmos
                             i++;
                             reintentosFallidos = 0;
 
-                            // NUEVO: Avisamos a la interfaz de que hemos avanzado una persona más
                             ProgresoCambiado?.Invoke(i, totalCards);
                         }
 
@@ -672,7 +692,7 @@ namespace SCCosmos
                                 ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", btnEditar);
                                 Thread.Sleep(3000);
 
-                                var lblCancelar = EsperaDinamicaElementoVisibilidad(driver, By.XPath("//label[.//ptrn-translate[contains(., 'Cancelar recomendación')]]"), 5);
+                                var lblCancelar = EsperaDinamicaElementoVisibilidad(driver, By.XPath("//label[.//ptrn-translate[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnopqrstuvwxyzáéíóú'), 'cancelar')]]"), 5);
                                 if (lblCancelar != null)
                                 {
                                     ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", lblCancelar);
@@ -751,7 +771,7 @@ namespace SCCosmos
                                 ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", btnEditar);
                                 Thread.Sleep(3000);
 
-                                var lblAprobar = EsperaDinamicaElementoVisibilidad(driver, By.XPath("//label[.//ptrn-translate[contains(., 'Aprobar')]]"), 5);
+                                var lblAprobar = EsperaDinamicaElementoVisibilidad(driver, By.XPath("//label[.//ptrn-translate[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnopqrstuvwxyzáéíóú'), 'aprobar') or contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnopqrstuvwxyzáéíóú'), 'confirmar')]]"), 5);
                                 if (lblAprobar != null)
                                 {
                                     ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", lblAprobar);
@@ -878,18 +898,42 @@ namespace SCCosmos
             if (!string.IsNullOrEmpty(hub.NombreCompleto) && db.NombreJWHub != hub.NombreCompleto) return true;
             if (!string.IsNullOrEmpty(hub.NombreComun) && db.NombreComun != hub.NombreComun) return true;
             if (!string.IsNullOrEmpty(codigoDet) && db.CongregacionCodigo != codigoDet) return true;
-            if (!string.IsNullOrEmpty(hub.Esperanza) && db.Esperanza != hub.Esperanza) return true;
-            if (!string.IsNullOrEmpty(hub.Nombramiento) && db.Nombramiento != hub.Nombramiento) return true;
-            if (!string.IsNullOrEmpty(hub.Servicio) && db.Servicio != hub.Servicio) return true;
+
+            string hubEsp = hub.Esperanza ?? "";
+            string dbEsp = db.Esperanza ?? "";
+            if (hubEsp != "" && dbEsp != hubEsp) return true;
+
+            // Validar pérdida de nombramiento/servicio
+            string hubNomb = hub.Nombramiento ?? "";
+            string dbNomb = db.Nombramiento ?? "";
+            if (hubNomb != dbNomb) return true;
+
+            string hubServ = hub.Servicio ?? "";
+            string dbServ = db.Servicio ?? "";
+            if (hubServ != dbServ) return true;
+
+            // Validar de forma cruzada la lista de privilegios para detectar altas O bajas
+            string[] privilegiosPermitidos = { "Instructor de la Escuela del Servicio de Precursor", "Superintendente de circuito sustituto", "Miembro del CEH", "Superintendente de asamblea", "Coordinador", "Secretario", "Miembro del GVP", "Persona que pertenece a una entidad del LDC", "Superintendente auxiliar de asamblea" };
+
+            var hubPrivs = (hub.Privilegios ?? "").Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).ToList();
+            var dbPrivs = (db.Privilegios ?? "").Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).ToList();
+
+            foreach (var p in dbPrivs)
+            {
+                if (privilegiosPermitidos.Contains(p) && !hubPrivs.Contains(p)) return true;
+            }
+            foreach (var p in hubPrivs)
+            {
+                if (privilegiosPermitidos.Contains(p) && !dbPrivs.Contains(p)) return true;
+            }
+
             if (!string.IsNullOrEmpty(hub.FechaUltimaEscuela) && db.FechaUltimaEscuela != hub.FechaUltimaEscuela) return true;
             if (!string.IsNullOrEmpty(hub.Email) && db.Email != hub.Email) return true;
             if (!string.IsNullOrEmpty(hub.EmailJW) && db.EmailJW != hub.EmailJW) return true;
             if (!string.IsNullOrEmpty(hub.Telefono) && db.Telefono != hub.Telefono) return true;
             if (!string.IsNullOrEmpty(hub.Direccion) && db.Direccion != hub.Direccion) return true;
             if (!string.IsNullOrEmpty(hub.Foto) && db.Foto != hub.Foto) return true;
-            if (!string.IsNullOrEmpty(hub.Privilegios) && (string.IsNullOrEmpty(db.Privilegios) || !db.Privilegios.Contains(hub.Privilegios))) return true;
 
-            // SOLUCIÓN FECHAS: Si es un cálculo aproximado (01/01/) ignoramos el conflicto
             if (!string.IsNullOrEmpty(hub.FechaNacimiento) && db.FechaNacimiento != hub.FechaNacimiento && !hub.FechaNacimiento.StartsWith("01/01/")) return true;
             if (!string.IsNullOrEmpty(hub.FechaBautismo) && db.FechaBautismo != hub.FechaBautismo && !hub.FechaBautismo.StartsWith("01/01/")) return true;
             if (!string.IsNullOrEmpty(hub.FechaInicioPrec) && db.FechaInicioPrec != hub.FechaInicioPrec && !hub.FechaInicioPrec.StartsWith("01/01/")) return true;

@@ -69,7 +69,6 @@ namespace SCCosmos
                     });
                 }
 
-                // A partir de aquí sigue el código original que comprueba los conflictos...
                 if (matchDB != null)
                 {
                     procesadosDB.Add(matchDB.Id);
@@ -85,7 +84,7 @@ namespace SCCosmos
                 }
                 else
                 {
-                    // Si no hubo Match (porque el Juan López que encontró era el padre y este es el hijo) entra aquí como NUEVO.
+                    // Si no hubo Match entra aquí como NUEVO.
                     _nuevos.Add(new SyncItemHub { PersonaDB = null, PersonaHub = hubItem, NombreVisual = hubItem.Nombre, Descripcion = "Aparece en JW Hub pero no está en la Base de Datos." });
                 }
             }
@@ -197,10 +196,14 @@ namespace SCCosmos
         {
             if (sender is Button btn && btn.Tag is SyncItemHub item)
             {
-                if (MessageBox.Show($"¿Estás seguro de que deseas dar de baja a {item.NombreVisual}?\nNo se borrará su historial, pero dejará de aparecer en las listas actuales.", "Confirmar Baja", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+                if (MessageBox.Show($"¿Estás seguro de que deseas dar de baja a {item.NombreVisual}?\n\nSe marcará su fecha de baja para ocultarlo de las listas actuales, pero conservará todos sus datos e historial intactos en la base de datos.", "Confirmar Baja", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
                 {
+                    // 1. Soft Delete real: Solo marcamos la fecha de eliminación oficial
                     item.PersonaDB.FechaEliminacion = DateTime.Now.ToString("dd/MM/yyyy");
+
+                    // 2. Guardamos los cambios sin borrar sus privilegios ni congregación
                     DatabaseHelper.ActualizarPersona(item.PersonaDB);
+
                     _bajas.Remove(item);
                     ActualizarListasUI();
                 }
@@ -218,7 +221,7 @@ namespace SCCosmos
         }
 
         // ==========================================
-        // NUEVA FUNCIÓN: DESCARTAR ITEM
+        // FUNCION: DESCARTAR ITEM
         // ==========================================
         private void BtnDescartar_Click(object sender, RoutedEventArgs e)
         {
