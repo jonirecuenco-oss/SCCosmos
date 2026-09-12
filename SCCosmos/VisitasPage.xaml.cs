@@ -1802,6 +1802,8 @@ namespace SCCosmos
 
                 });
 
+                DatabaseHelper.GuardarConfiguracion($"S303Enviado_{_congreCodigo}_{mesRef}", "1");
+
                 MessageBox.Show("El correo con el S-303 se ha enviado con éxito.", "Envío completado", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)

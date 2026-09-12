@@ -104,7 +104,7 @@ namespace SCCosmos
                     int porcentaje = (int)Math.Round(((double)actual / total) * 100);
 
                     // Suponiendo que tu botón se llame BtnSincronizar:
-                    BtnSincronizarHub.Content = $"Sintonizando... {porcentaje}%";
+                    BtnSincronizarHub.Content = $"Sincronizando... {porcentaje}%";
                 }
             });
         }

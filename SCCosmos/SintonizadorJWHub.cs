@@ -50,9 +50,9 @@ namespace SCCosmos
                 options.AddArgument(perfilClonado); // USAMOS EL CLON
 
                 // Oculto y a pantalla completa virtual
-                //options.AddArgument("-headless");
-                //options.AddArgument("--window-size=1920,1080");
-                //options.AddArgument("--start-maximized");
+                options.AddArgument("-headless");
+                options.AddArgument("--window-size=1920,1080");
+                options.AddArgument("--start-maximized");
 
                 string tempDownloadPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TempDownloads");
                 if (!Directory.Exists(tempDownloadPath)) Directory.CreateDirectory(tempDownloadPath);
@@ -74,6 +74,19 @@ namespace SCCosmos
 
                         string urlPersonas = urlBase + "/congregation-persons/es/circuits/512bc4a5-94aa-ea11-815e-0050560012f5/records";
                         driver.Navigate().GoToUrl(urlPersonas);
+
+                        //MODO DE PRUEBAS
+                        
+                        /*var inputBuscador = EsperaDinamicaElementoVisibilidad(driver, By.XPath("//input[@type='search' and @placeholder='Introduzca un nombre']"), 15);
+                        if (inputBuscador != null)
+                        {
+                            inputBuscador.Clear();
+                            inputBuscador.SendKeys("guzmán, rosa julia");
+                            Thread.Sleep(500); // Pequeña pausa para que Angular registre el texto tecleado
+                        }*/
+                        
+                        //int totalCards = 2;
+                        //FIN DEL MODO DE PRUEBAS
 
                         var btnBuscar = EsperaDinamicaElementoClicable(driver, By.XPath("//button[.//span[contains(text(), 'Buscar')]]"), 15);
                         if (btnBuscar != null)
@@ -111,23 +124,6 @@ namespace SCCosmos
                         // Recorrer la lista
                         var cardsBase = driver.FindElements(By.CssSelector("article"));
                         int totalCards = cardsBase.Count;
-
-                        //MODO DE PRUEBAS
-                        var inputBuscador = EsperaDinamicaElementoVisibilidad(driver, By.XPath("//input[@type='search' and @placeholder='Introduzca un nombre']"), 15);
-                        if (inputBuscador != null)
-                        {
-                            inputBuscador.Clear();
-                            inputBuscador.SendKeys("gonzález, miriam");
-                            Thread.Sleep(500); // Pequeña pausa para que Angular registre el texto tecleado
-                        }
-                        var btnBuscarP = EsperaDinamicaElementoClicable(driver, By.XPath("//button[.//span[contains(text(), 'Buscar')]]"), 15);
-                        if (btnBuscarP != null)
-                        {
-                            Thread.Sleep(1000);
-                            btnBuscarP.Click();
-                        }
-                        //int totalCards = 2;
-                        //FIN DEL MODO DE PRUEBAS
 
                         string[] privilegiosPermitidos = {
                             "Instructor de la Escuela del Servicio de Precursor", "Superintendente de circuito sustituto",
@@ -433,7 +429,7 @@ namespace SCCosmos
                                                 {
                                                     btnEducacion.Click();
                                                     Thread.Sleep(2000);
-                                                    var headerEscuela = driver.FindElements(By.XPath("//h2[contains(., 'Pioneer Service School') or contains(., 'Escuela del Servicio de Precursor') or contains(., 'Escuela para Evangelizadores')]")).FirstOrDefault();
+                                                    var headerEscuela = driver.FindElements(By.XPath("//h2[contains(., 'Pioneer Service School') or contains(., 'Escuela del Servicio de Precursor')]")).FirstOrDefault();
                                                     if (headerEscuela != null)
                                                     {
                                                         var cardEscuela = headerEscuela.FindElement(By.XPath("./ancestor::article[contains(@class, 'card')]"));

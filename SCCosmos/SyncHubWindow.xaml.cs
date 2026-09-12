@@ -119,9 +119,35 @@ namespace SCCosmos
             if (!string.IsNullOrEmpty(hub.NombreComun) && db.NombreComun != hub.NombreComun) return true;
             if (!string.IsNullOrEmpty(hub.Nombre) && db.Nombre != hub.Nombre) return true;
             if (!string.IsNullOrEmpty(hub.Sexo) && db.Sexo != hub.Sexo) return true;
-            if (!string.IsNullOrEmpty(hub.Esperanza) && db.Esperanza != hub.Esperanza) return true;
-            if (!string.IsNullOrEmpty(hub.Nombramiento) && db.Nombramiento != hub.Nombramiento) return true;
-            if (!string.IsNullOrEmpty(hub.Servicio) && db.Servicio != hub.Servicio) return true;
+
+            string hubEsp = hub.Esperanza ?? "";
+            string dbEsp = db.Esperanza ?? "";
+            if (hubEsp != "" && dbEsp != hubEsp) return true;
+
+            // DETECCIÓN DE PÉRDIDAS (Nombramientos y Servicios)
+            // Al quitar el "IsNullOrEmpty", obligamos a que detecte si el Hub viene vacío y la BBDD no.
+            string hubNomb = hub.Nombramiento ?? "";
+            string dbNomb = db.Nombramiento ?? "";
+            if (hubNomb != dbNomb) return true;
+
+            string hubServ = hub.Servicio ?? "";
+            string dbServ = db.Servicio ?? "";
+            if (hubServ != dbServ) return true;
+
+            // DETECCIÓN DE PÉRDIDAS (Privilegios como LDC, CEH, etc.)
+            string[] privilegiosPermitidos = { "Instructor de la Escuela del Servicio de Precursor", "Superintendente de circuito sustituto", "Miembro del CEH", "Superintendente de asamblea", "Coordinador", "Secretario", "Miembro del GVP", "Persona que pertenece a una entidad del LDC", "Superintendente auxiliar de asamblea" };
+
+            var hubPrivs = (hub.Privilegios ?? "").Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).ToList();
+            var dbPrivs = (db.Privilegios ?? "").Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).ToList();
+
+            foreach (var p in dbPrivs)
+            {
+                if (privilegiosPermitidos.Contains(p) && !hubPrivs.Contains(p)) return true; // Lo tenía en BD y ya no en Hub
+            }
+            foreach (var p in hubPrivs)
+            {
+                if (privilegiosPermitidos.Contains(p) && !dbPrivs.Contains(p)) return true; // Lo tiene en Hub y no en BD
+            }
 
             // Ignorar falsos positivos si la fecha es aproximada (01/01/YYYY)
             if (!string.IsNullOrEmpty(hub.FechaNacimiento) && db.FechaNacimiento != hub.FechaNacimiento && !hub.FechaNacimiento.StartsWith("01/01/")) return true;
@@ -135,8 +161,6 @@ namespace SCCosmos
             if (!string.IsNullOrEmpty(hub.Telefono) && db.Telefono != hub.Telefono) return true;
             if (!string.IsNullOrEmpty(hub.Direccion) && db.Direccion != hub.Direccion) return true;
             if (!string.IsNullOrEmpty(hub.Foto) && db.Foto != hub.Foto) return true;
-
-            if (!string.IsNullOrEmpty(hub.Privilegios) && (string.IsNullOrEmpty(db.Privilegios) || !db.Privilegios.Contains(hub.Privilegios))) return true;
 
             string hubSols = hub.Solicitudes ?? "";
             string dbSols = db.Solicitudes ?? "";

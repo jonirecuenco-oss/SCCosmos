@@ -96,7 +96,9 @@ namespace SCCosmos
             EjecutarQuery(connection, @"CREATE TABLE IF NOT EXISTS Personas (Id INTEGER PRIMARY KEY AUTOINCREMENT, Nombre TEXT NOT NULL, FechaNacimiento TEXT, Sexo TEXT, FechaBautismo TEXT, Esperanza TEXT, Nombramiento TEXT, Servicio TEXT, CongregacionCodigo TEXT, Grupo INTEGER DEFAULT 0, Telefono TEXT, Email TEXT, FechaInicioPrec TEXT, FechaUltimaEscuela TEXT, NombreJWHub TEXT, Foto TEXT, FechaCreacion TEXT, FechaEliminacion TEXT, Solicitudes TEXT, Privilegios TEXT, RequisitoHoras INTEGER DEFAULT 0, NombreComun TEXT, Direccion TEXT, Latitud REAL DEFAULT 0, Longitud REAL DEFAULT 0, ConyugeId INTEGER DEFAULT 0, EmailJW TEXT, PersonaRaizId INTEGER DEFAULT 0, MesHistorico TEXT, FechaExactaHistorico TEXT, Notas TEXT);");
             EjecutarQuery(connection, @"CREATE TABLE IF NOT EXISTS ActividadPersonas (Id INTEGER PRIMARY KEY AUTOINCREMENT, PersonaId INTEGER, Mes TEXT, AnioServicio TEXT, Participacion INTEGER, CursosBiblicos INTEGER, PrecursorAuxiliar INTEGER DEFAULT 0, Horas INTEGER, Notas TEXT, Cursos TEXT, UNIQUE(PersonaId, Mes, AnioServicio), FOREIGN KEY(PersonaId) REFERENCES Personas(Id) ON DELETE CASCADE);");
 
-            EjecutarQuery(connection, @"CREATE TABLE IF NOT EXISTS Semanas (Id INTEGER PRIMARY KEY AUTOINCREMENT, FechaMartes DATETIME, Actividad TEXT, Congregacion TEXT, Tipo TEXT, Acompanante TEXT, Alojamiento TEXT, S302Enviado INTEGER DEFAULT 0, DocEnviada INTEGER DEFAULT 0, SeccionAsamblea TEXT, FechaAsamblea TEXT, NotificacionEnviada INTEGER DEFAULT 0, RecordatorioEnviado INTEGER DEFAULT 0, DatosImportados INTEGER DEFAULT 0);");
+            // TABLA SEMANAS (Añadidas las 4 columnas nuevas al final)
+            EjecutarQuery(connection, @"CREATE TABLE IF NOT EXISTS Semanas (Id INTEGER PRIMARY KEY AUTOINCREMENT, FechaMartes DATETIME, Actividad TEXT, Congregacion TEXT, Tipo TEXT, Acompanante TEXT, Alojamiento TEXT, S302Enviado INTEGER DEFAULT 0, DocEnviada INTEGER DEFAULT 0, SeccionAsamblea TEXT, FechaAsamblea TEXT, NotificacionEnviada INTEGER DEFAULT 0, RecordatorioEnviado INTEGER DEFAULT 0, DatosImportados INTEGER DEFAULT 0, TipoAsamblea TEXT, RepBetelNombre TEXT, RepBetelTelefono TEXT, RepBetelEmail TEXT, RepBetelMensajeEnviado INTEGER DEFAULT 0);");
+
             EjecutarQuery(connection, @"CREATE TABLE IF NOT EXISTS NotasVisita (Id INTEGER PRIMARY KEY AUTOINCREMENT, SemanaId INTEGER, Cabecera TEXT, Pregunta TEXT, Respuesta TEXT, EsAlerta INTEGER DEFAULT 0);");
             EjecutarQuery(connection, @"CREATE TABLE IF NOT EXISTS ProgramaVisitaV2 (Id INTEGER PRIMARY KEY AUTOINCREMENT, CongreCodigo TEXT NOT NULL, MesReferencia TEXT NOT NULL, DiaSemana TEXT NOT NULL, Turno TEXT NOT NULL, Responsable TEXT NOT NULL, TipoActividad TEXT, Hora TEXT, NotasLibro TEXT, CompaneroId INTEGER);");
 
@@ -150,12 +152,17 @@ namespace SCCosmos
             AsegurarColumna(connection, "Personas", "PersonaRaizId", "INTEGER DEFAULT 0");
             AsegurarColumna(connection, "Personas", "MesHistorico", "TEXT");
             AsegurarColumna(connection, "Personas", "FechaExactaHistorico", "TEXT");
-
-            // <-- NUEVO CAMPO NOTAS -->
             AsegurarColumna(connection, "Personas", "Notas", "TEXT");
 
             AsegurarColumna(connection, "Semanas", "FechaAsamblea", "TEXT");
             AsegurarColumna(connection, "Semanas", "DatosImportados", "INTEGER DEFAULT 0");
+            AsegurarColumna(connection, "Semanas", "RepBetelMensajeEnviado", "INTEGER DEFAULT 0");
+
+            // NUEVOS CAMPOS DE ASAMBLEA (MIGRACIÓN)
+            AsegurarColumna(connection, "Semanas", "TipoAsamblea", "TEXT");
+            AsegurarColumna(connection, "Semanas", "RepBetelNombre", "TEXT");
+            AsegurarColumna(connection, "Semanas", "RepBetelTelefono", "TEXT");
+            AsegurarColumna(connection, "Semanas", "RepBetelEmail", "TEXT");
 
             AsegurarColumna(connection, "ActividadPersonas", "Cursos", "TEXT");
             AsegurarColumna(connection, "ActividadPersonas", "PrecursorAuxiliar", "INTEGER DEFAULT 0");
@@ -1553,6 +1560,13 @@ namespace SCCosmos
                             NotificacionEnviada = !reader.IsDBNull(reader.GetOrdinal("NotificacionEnviada")) && reader.GetInt32(reader.GetOrdinal("NotificacionEnviada")) == 1,
                             RecordatorioEnviado = !reader.IsDBNull(reader.GetOrdinal("RecordatorioEnviado")) && reader.GetInt32(reader.GetOrdinal("RecordatorioEnviado")) == 1,
                             TieneDatosImportados = !reader.IsDBNull(reader.GetOrdinal("DatosImportados")) && reader.GetInt32(reader.GetOrdinal("DatosImportados")) == 1,
+
+                            // NUEVOS DATOS LECTURA
+                            TipoAsamblea = reader.IsDBNull(reader.GetOrdinal("TipoAsamblea")) ? "" : reader.GetString(reader.GetOrdinal("TipoAsamblea")),
+                            RepBetelNombre = reader.IsDBNull(reader.GetOrdinal("RepBetelNombre")) ? "" : reader.GetString(reader.GetOrdinal("RepBetelNombre")),
+                            RepBetelTelefono = reader.IsDBNull(reader.GetOrdinal("RepBetelTelefono")) ? "" : reader.GetString(reader.GetOrdinal("RepBetelTelefono")),
+                            RepBetelEmail = reader.IsDBNull(reader.GetOrdinal("RepBetelEmail")) ? "" : reader.GetString(reader.GetOrdinal("RepBetelEmail")),
+                            RepBetelMensajeEnviado = !reader.IsDBNull(reader.GetOrdinal("RepBetelMensajeEnviado")) && reader.GetInt32(reader.GetOrdinal("RepBetelMensajeEnviado")) == 1,
                             EsClonada = Visibility.Collapsed
                         });
                     }
@@ -1589,7 +1603,13 @@ namespace SCCosmos
                             FechaAsamblea = reader.IsDBNull(reader.GetOrdinal("FechaAsamblea")) ? "" : reader.GetString(reader.GetOrdinal("FechaAsamblea")),
                             NotificacionEnviada = !reader.IsDBNull(reader.GetOrdinal("NotificacionEnviada")) && reader.GetInt32(reader.GetOrdinal("NotificacionEnviada")) == 1,
                             RecordatorioEnviado = !reader.IsDBNull(reader.GetOrdinal("RecordatorioEnviado")) && reader.GetInt32(reader.GetOrdinal("RecordatorioEnviado")) == 1,
-                            TieneDatosImportados = !reader.IsDBNull(reader.GetOrdinal("DatosImportados")) && reader.GetInt32(reader.GetOrdinal("DatosImportados")) == 1
+                            TieneDatosImportados = !reader.IsDBNull(reader.GetOrdinal("DatosImportados")) && reader.GetInt32(reader.GetOrdinal("DatosImportados")) == 1,
+
+                            // NUEVOS DATOS LECTURA
+                            TipoAsamblea = reader.IsDBNull(reader.GetOrdinal("TipoAsamblea")) ? "" : reader.GetString(reader.GetOrdinal("TipoAsamblea")),
+                            RepBetelNombre = reader.IsDBNull(reader.GetOrdinal("RepBetelNombre")) ? "" : reader.GetString(reader.GetOrdinal("RepBetelNombre")),
+                            RepBetelTelefono = reader.IsDBNull(reader.GetOrdinal("RepBetelTelefono")) ? "" : reader.GetString(reader.GetOrdinal("RepBetelTelefono")),
+                            RepBetelEmail = reader.IsDBNull(reader.GetOrdinal("RepBetelEmail")) ? "" : reader.GetString(reader.GetOrdinal("RepBetelEmail"))
                         };
                     }
                 }
@@ -1610,7 +1630,8 @@ namespace SCCosmos
                         UPDATE Semanas SET 
                             Actividad = @Actividad, Congregacion = @Congregacion, Tipo = @Tipo, Acompanante = @Acompanante, Alojamiento = @Alojamiento, 
                             S302Enviado = @S302Enviado, DocEnviada = @DocEnviada, SeccionAsamblea = @SeccionAsamblea, FechaAsamblea = @FechaAsamblea, 
-                            NotificacionEnviada = @NotificacionEnviada, RecordatorioEnviado = @RecordatorioEnviado, DatosImportados = @DatosImportados
+                            NotificacionEnviada = @NotificacionEnviada, RecordatorioEnviado = @RecordatorioEnviado, DatosImportados = @DatosImportados,
+                            TipoAsamblea = @TipoAsamblea, RepBetelNombre = @RepBetelNombre, RepBetelTelefono = @RepBetelTelefono, RepBetelEmail = @RepBetelEmail
                         WHERE Id = @Id";
                     cmdUpdate.Parameters.AddWithValue("@Id", semana.Id);
                     cmdUpdate.Parameters.AddWithValue("@Actividad", semana.Actividad ?? "");
@@ -1625,6 +1646,13 @@ namespace SCCosmos
                     cmdUpdate.Parameters.AddWithValue("@NotificacionEnviada", semana.NotificacionEnviada ? 1 : 0);
                     cmdUpdate.Parameters.AddWithValue("@RecordatorioEnviado", semana.RecordatorioEnviado ? 1 : 0);
                     cmdUpdate.Parameters.AddWithValue("@DatosImportados", semana.TieneDatosImportados ? 1 : 0);
+
+                    // NUEVOS PARÁMETROS UPDATE
+                    cmdUpdate.Parameters.AddWithValue("@TipoAsamblea", semana.TipoAsamblea ?? "");
+                    cmdUpdate.Parameters.AddWithValue("@RepBetelNombre", semana.RepBetelNombre ?? "");
+                    cmdUpdate.Parameters.AddWithValue("@RepBetelTelefono", semana.RepBetelTelefono ?? "");
+                    cmdUpdate.Parameters.AddWithValue("@RepBetelEmail", semana.RepBetelEmail ?? "");
+                    cmdUpdate.Parameters.AddWithValue("@RepBetelMensajeEnviado", semana.RepBetelMensajeEnviado ? 1 : 0);
                     cmdUpdate.ExecuteNonQuery();
                 }
                 else
@@ -1632,9 +1660,9 @@ namespace SCCosmos
                     var cmdInsert = connection.CreateCommand();
                     cmdInsert.CommandText = @"
                         INSERT INTO Semanas 
-                        (FechaMartes, Actividad, Congregacion, Tipo, Acompanante, Alojamiento, S302Enviado, DocEnviada, SeccionAsamblea, FechaAsamblea, NotificacionEnviada, RecordatorioEnviado, DatosImportados)
+                        (FechaMartes, Actividad, Congregacion, Tipo, Acompanante, Alojamiento, S302Enviado, DocEnviada, SeccionAsamblea, FechaAsamblea, NotificacionEnviada, RecordatorioEnviado, DatosImportados, TipoAsamblea, RepBetelNombre, RepBetelTelefono, RepBetelEmail)
                         VALUES 
-                        (@FechaMartes, @Actividad, @Congregacion, @Tipo, @Acompanante, @Alojamiento, @S302Enviado, @DocEnviada, @SeccionAsamblea, @FechaAsamblea, @NotificacionEnviada, @RecordatorioEnviado, @DatosImportados)";
+                        (@FechaMartes, @Actividad, @Congregacion, @Tipo, @Acompanante, @Alojamiento, @S302Enviado, @DocEnviada, @SeccionAsamblea, @FechaAsamblea, @NotificacionEnviada, @RecordatorioEnviado, @DatosImportados, @TipoAsamblea, @RepBetelNombre, @RepBetelTelefono, @RepBetelEmail)";
                     cmdInsert.Parameters.AddWithValue("@FechaMartes", semana.FechaMartes);
                     cmdInsert.Parameters.AddWithValue("@Actividad", semana.Actividad ?? "");
                     cmdInsert.Parameters.AddWithValue("@Congregacion", semana.Congregacion ?? "");
@@ -1648,6 +1676,13 @@ namespace SCCosmos
                     cmdInsert.Parameters.AddWithValue("@NotificacionEnviada", semana.NotificacionEnviada ? 1 : 0);
                     cmdInsert.Parameters.AddWithValue("@RecordatorioEnviado", semana.RecordatorioEnviado ? 1 : 0);
                     cmdInsert.Parameters.AddWithValue("@DatosImportados", semana.TieneDatosImportados ? 1 : 0);
+
+                    // NUEVOS PARÁMETROS INSERT
+                    cmdInsert.Parameters.AddWithValue("@TipoAsamblea", semana.TipoAsamblea ?? "");
+                    cmdInsert.Parameters.AddWithValue("@RepBetelNombre", semana.RepBetelNombre ?? "");
+                    cmdInsert.Parameters.AddWithValue("@RepBetelTelefono", semana.RepBetelTelefono ?? "");
+                    cmdInsert.Parameters.AddWithValue("@RepBetelEmail", semana.RepBetelEmail ?? "");
+                    cmdInsert.Parameters.AddWithValue("@RepBetelMensajeEnviado", semana.RepBetelMensajeEnviado ? 1 : 0);
                     cmdInsert.ExecuteNonQuery();
                 }
             }

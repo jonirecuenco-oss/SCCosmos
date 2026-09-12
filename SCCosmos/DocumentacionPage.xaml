@@ -44,11 +44,10 @@
                 <StackPanel Grid.Column="0">
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
                         <ui:SymbolIcon Symbol="Mail24" Foreground="#4BA3E3" Margin="0,0,8,0"/>
-                        <TextBlock Text="CONFIGURACIÓN DEL CORREO" FontSize="14" FontWeight="SemiBold" Foreground="#4BA3E3" VerticalAlignment="Center"/>
+                        <TextBlock Text="CONFIGURACIÓN DEL CORREO / MENSAJE" FontSize="14" FontWeight="SemiBold" Foreground="#4BA3E3" VerticalAlignment="Center"/>
                     </StackPanel>
 
                     <TextBlock Text="Asunto del correo:" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                    <!-- AQUÍ ESTÁ LA CORRECCIÓN: UpdateSourceTrigger=PropertyChanged y sin LostFocus -->
                     <TextBox Text="{Binding AsuntoEmail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Padding="8" Background="#252528" Foreground="White" BorderBrush="#444" Margin="0,0,0,15" FontSize="14"/>
 
                     <TextBlock Text="Cuerpo del mensaje:" Foreground="#AAAAAA" Margin="0,0,0,5"/>

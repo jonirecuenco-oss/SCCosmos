@@ -71,8 +71,6 @@ namespace SCCosmos
 
                 if (plana.Count > 0)
                 {
-                    // CORRECCIÓN 1: Solo contamos las visitas "Oficiales" que hacen avanzar el ciclo 
-                    // (Ignoramos Pastoreo y Visitas de SCS para que el índice no se desfase)
                     int visitasPasadas = todasLasVisitas.Count(v =>
                         v.FechaMartes < semana.FechaMartes &&
                         (v.Tipo == "Visita SC" || v.Tipo == "Visita (con SCS)"));
@@ -84,7 +82,6 @@ namespace SCCosmos
                         int checkIdx = (startIndex + i) % plana.Count;
                         string candidato = plana[checkIdx];
 
-                        // CORRECCIÓN 2: Reducimos el radar a 75 días (2.5 meses). 
                         bool yaProgramadaCerca = todasLasVisitas.Any(v =>
                             v.Congregacion.Trim() == candidato &&
                             v.FechaMartes != semana.FechaMartes &&
@@ -270,6 +267,27 @@ namespace SCCosmos
                 }
             }
 
+            // NUEVA CARGA DE DATOS DE ASAMBLEA
+            if (!string.IsNullOrEmpty(semana.TipoAsamblea))
+            {
+                foreach (ComboBoxItem item in ComboTipoAsamblea.Items)
+                {
+                    if (item.Content.ToString() == semana.TipoAsamblea)
+                    {
+                        ComboTipoAsamblea.SelectedItem = item;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                ComboTipoAsamblea.SelectedIndex = 0; // AC-CO por defecto
+            }
+
+            TxtRepBetelNombre.Text = semana.RepBetelNombre ?? "";
+            TxtRepBetelTelefono.Text = semana.RepBetelTelefono ?? "";
+            TxtRepBetelEmail.Text = semana.RepBetelEmail ?? "";
+
             _inicializando = false;
         }
 
@@ -362,6 +380,22 @@ namespace SCCosmos
             }
         }
 
+        private void ComboTipoAsamblea_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ComboTipoAsamblea.SelectedItem == null || PanelRepBetel == null) return;
+
+            string tipoAsamblea = ((ComboBoxItem)ComboTipoAsamblea.SelectedItem).Content.ToString();
+
+            if (tipoAsamblea == "AC-BR")
+            {
+                PanelRepBetel.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                PanelRepBetel.Visibility = Visibility.Collapsed;
+            }
+        }
+
         private void CargarListaSCS()
         {
             var todasLasPersonas = DatabaseHelper.ObtenerPersonas();
@@ -441,6 +475,10 @@ namespace SCCosmos
 
                 _semanaActual.SeccionAsamblea = "";
                 _semanaActual.FechaAsamblea = "";
+                _semanaActual.TipoAsamblea = "";
+                _semanaActual.RepBetelNombre = "";
+                _semanaActual.RepBetelTelefono = "";
+                _semanaActual.RepBetelEmail = "";
             }
             else if (_semanaActual.Actividad == "Asamblea de circuito")
             {
@@ -448,6 +486,23 @@ namespace SCCosmos
 
                 var asambleaDiaItem = ComboDiaAsamblea.SelectedItem as ComboBoxItem;
                 _semanaActual.FechaAsamblea = asambleaDiaItem != null ? asambleaDiaItem.Content.ToString() : "";
+
+                // NUEVOS CAMPOS GUARDADOS
+                var tipoAsambleaItem = ComboTipoAsamblea.SelectedItem as ComboBoxItem;
+                _semanaActual.TipoAsamblea = tipoAsambleaItem != null ? tipoAsambleaItem.Content.ToString() : "AC-CO";
+
+                if (_semanaActual.TipoAsamblea == "AC-BR")
+                {
+                    _semanaActual.RepBetelNombre = TxtRepBetelNombre.Text.Trim();
+                    _semanaActual.RepBetelTelefono = TxtRepBetelTelefono.Text.Trim();
+                    _semanaActual.RepBetelEmail = TxtRepBetelEmail.Text.Trim();
+                }
+                else
+                {
+                    _semanaActual.RepBetelNombre = "";
+                    _semanaActual.RepBetelTelefono = "";
+                    _semanaActual.RepBetelEmail = "";
+                }
 
                 _semanaActual.Congregacion = "";
                 _semanaActual.Tipo = "";
@@ -462,6 +517,10 @@ namespace SCCosmos
                 _semanaActual.Acompanante = "";
                 _semanaActual.SeccionAsamblea = "";
                 _semanaActual.FechaAsamblea = "";
+                _semanaActual.TipoAsamblea = "";
+                _semanaActual.RepBetelNombre = "";
+                _semanaActual.RepBetelTelefono = "";
+                _semanaActual.RepBetelEmail = "";
             }
 
             this.DialogResult = true;

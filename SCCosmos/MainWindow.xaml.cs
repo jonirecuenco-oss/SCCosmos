@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO; // Soluciona el error de 'Path'
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls; // Soluciona 'ScrollViewer' y 'ScrollBarVisibility'
-using System.Windows.Controls.Primitives; // Soluciona 'DragDeltaEventArgs'
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
@@ -16,7 +16,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using System.Text.Json;
-using System.Net.NetworkInformation; // Para el ping de Internet
+using System.Net.NetworkInformation;
 using Wpf.Ui.Controls;
 using Microsoft.Data.Sqlite;
 
@@ -54,7 +54,6 @@ namespace SCCosmos
                 };
                 _timerTareasFondo.Start();
 
-                // NUEVO: Escuchar al sistema operativo cuando vuelva el Internet
                 NetworkChange.NetworkAvailabilityChanged += (senderNet, argsNet) =>
                 {
                     if (argsNet.IsAvailable)
@@ -67,7 +66,6 @@ namespace SCCosmos
                     }
                 };
 
-                // Comprobamos inmediatamente al abrir el programa
                 RevisarDescargasMartes();
                 RevisarSincronizacionLunes();
             };
@@ -85,7 +83,6 @@ namespace SCCosmos
             {
                 using (var ping = new Ping())
                 {
-                    // Hacemos ping a los DNS de Google. Si responde, hay internet real.
                     var reply = await ping.SendPingAsync("8.8.8.8", 2000);
                     return reply.Status == IPStatus.Success;
                 }
@@ -101,7 +98,6 @@ namespace SCCosmos
         {
             if (DateTime.Today.DayOfWeek == DayOfWeek.Tuesday)
             {
-                // Si no hay red, abortamos en silencio. Se volverá a intentar en 1h o al reconectar.
                 if (!await HayConexionReal()) return;
 
                 string rutaAppData = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SCCosmos");
@@ -167,7 +163,6 @@ namespace SCCosmos
             string ruta = "";
             try
             {
-                // Vamos a la misma carpeta donde ConfiguracionPage guarda el archivo
                 string rutaAppData = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SCCosmos");
                 string rutaArchivo = System.IO.Path.Combine(rutaAppData, "local_settings.json");
 
@@ -184,7 +179,6 @@ namespace SCCosmos
             }
             catch { }
 
-            // Fallback de seguridad si no hay ruta configurada o no existe la carpeta
             if (string.IsNullOrWhiteSpace(ruta) || !Directory.Exists(ruta))
             {
                 ruta = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DescargasStream");
@@ -198,7 +192,6 @@ namespace SCCosmos
         {
             if (DateTime.Today.DayOfWeek == DayOfWeek.Monday)
             {
-                // Si no hay red, abortamos en silencio. 
                 if (!await HayConexionReal()) return;
 
                 string rutaAppData = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SCCosmos");
@@ -231,7 +224,6 @@ namespace SCCosmos
                     {
                         string perfil = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SCCosmos", "PerfilFirefoxCorreo");
 
-                        // NUEVO: Pasamos 'modoSilencioso: true' para que no muestre avisos de error por pantalla
                         var personasExtraidas = SincronizadorJWHub.SincronizarGlobal(perfil, modoSilencioso: true);
 
                         if (personasExtraidas != null && personasExtraidas.Count > 0)
@@ -330,7 +322,6 @@ namespace SCCosmos
         // =========================================================
         private void MainWindow_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
-            // Hemos cambiado el HitTest por OriginalSource. Así respeta los menús flotantes.
             DependencyObject obj = e.OriginalSource as DependencyObject;
             ScrollViewer scrollViewerDestino = null;
 
@@ -371,11 +362,11 @@ namespace SCCosmos
             public string Descripcion { get; set; }
             public string ColorBorde { get; set; }
             public int Dias { get; set; }
-            public string TipoAlerta { get; set; } // Identificador para la acción al hacer clic
+            public string TipoAlerta { get; set; }
         }
 
         private List<AlertaItem> _alertasActuales = new List<AlertaItem>();
-        private int _cantidadAlertasVistas = 0; // Memoria para saber cuándo volverla gris
+        private int _cantidadAlertasVistas = 0;
 
         private void BtnAlertas_Click(object sender, RoutedEventArgs e)
         {
@@ -385,21 +376,15 @@ namespace SCCosmos
 
         private void BtnAlertas_MouseEnter(object sender, MouseEventArgs e)
         {
-            // ¡Se abrirá al instante al posar el cursor sobre la campana!
             PopupAlertas.IsOpen = true;
             ApagarCampana();
         }
 
         private void ApagarCampana()
         {
-            // Apaga el punto rojo y la pone en gris
-            //BadgeAlertas.Visibility = Visibility.Collapsed;
             BtnAlertas.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#AAAAAA"));
-
-            // Memoriza cuántas alertas había para no volver a encenderse hasta que haya nuevas
             _cantidadAlertasVistas = _alertasActuales.Count;
 
-            // Borra la notificación de "Nuevas descargas listas" en BD si existía
             if (DatabaseHelper.ObtenerConfiguracion("AlertaNuevasDescargas", "0") != "0")
             {
                 DatabaseHelper.GuardarConfiguracion("AlertaNuevasDescargas", "0");
@@ -417,7 +402,6 @@ namespace SCCosmos
 
             string tipoAlerta = border.Tag?.ToString() ?? "";
 
-            // Si el usuario hace clic en la alerta morada del Lunes
             if (tipoAlerta == "SincronizacionJWHub")
             {
                 string rutaAppData = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SCCosmos");
@@ -430,9 +414,8 @@ namespace SCCosmos
                         string json = System.IO.File.ReadAllText(tempFile);
                         var personasPendientes = JsonSerializer.Deserialize<List<Persona>>(json);
 
-                        PopupAlertas.IsOpen = false; // Cerramos el menú flotante para que no estorbe
+                        PopupAlertas.IsOpen = false;
 
-                        // Abrimos la ventana de revisión visual de cambios (la tuya original)
                         var ventana = new SyncHubWindow(personasPendientes);
                         ventana.Owner = this;
                         ventana.ShowDialog();
@@ -442,9 +425,19 @@ namespace SCCosmos
                     catch { }
                 }
             }
+            else if (tipoAlerta == "S303Pendiente")
+            {
+                PopupAlertas.IsOpen = false;
+                MenuPrincipal.Navigate(typeof(VisitasPage));
+            }
+            // NUEVA ACCIÓN: Navegar a la Ruta si pinchas en la alerta del Rep. Betel
+            else if (tipoAlerta == "RepBetel")
+            {
+                PopupAlertas.IsOpen = false;
+                MenuPrincipal.Navigate(typeof(CalendarioPage));
+            }
         }
 
-        // Parámetro para recalcular sin volver a pintar de amarillo la campana recién apagada
         private void VerificarAlertas(bool soloSilencioso = false)
         {
             _alertasActuales.Clear();
@@ -491,7 +484,8 @@ namespace SCCosmos
                     connection.Open();
                     var cmd = connection.CreateCommand();
 
-                    cmd.CommandText = "SELECT FechaMartes, Actividad, Congregacion, SeccionAsamblea, S302Enviado, DocEnviada, RecordatorioEnviado FROM Semanas WHERE date(FechaMartes) >= date('now')";
+                    // CORRECCIÓN: Añadidas TipoAsamblea y RepBetelMensajeEnviado a la consulta SQL
+                    cmd.CommandText = "SELECT FechaMartes, Actividad, Congregacion, SeccionAsamblea, S302Enviado, DocEnviada, RecordatorioEnviado, Tipo, Id, TipoAsamblea, RepBetelMensajeEnviado FROM Semanas WHERE date(FechaMartes) >= date('now', '-14 days')";
 
                     using (var reader = cmd.ExecuteReader())
                     {
@@ -506,47 +500,107 @@ namespace SCCosmos
                             bool doc = !reader.IsDBNull(5) && reader.GetInt32(5) == 1;
                             bool rec = !reader.IsDBNull(6) && reader.GetInt32(6) == 1;
 
+                            string tipoActividad = reader.IsDBNull(7) ? "" : reader.GetString(7);
+                            string idSemana = reader.GetInt32(8).ToString();
+
+                            // NUEVOS CAMPOS LEÍDOS
+                            string tipoAsamblea = reader.IsDBNull(9) ? "" : reader.GetString(9);
+                            bool repBetelEnviado = !reader.IsDBNull(10) && reader.GetInt32(10) == 1;
+
                             int diasFaltantes = (fechaMartes - hoy).Days;
                             string nombreCon = string.IsNullOrEmpty(congregacion) ? "una congregación sin asignar" : congregacion;
 
-                            if (actividad == "Visita")
+                            // Comprobamos si las alertas futuras siguen en pie (solo si es fecha futura)
+                            if (diasFaltantes >= 0)
                             {
-                                if (!s302 && diasFaltantes <= 90)
+                                if (actividad == "Visita")
                                 {
-                                    _alertasActuales.Add(new AlertaItem
+                                    if (!s302 && diasFaltantes <= 90)
                                     {
-                                        Titulo = "S-302 pendiente",
-                                        Descripcion = $"Quedan {diasFaltantes} días para la visita a {nombreCon}.",
-                                        ColorBorde = "#FFA500", // Naranja
-                                        Dias = diasFaltantes,
-                                        TipoAlerta = "S302"
-                                    });
-                                }
+                                        _alertasActuales.Add(new AlertaItem
+                                        {
+                                            Titulo = "S-302 pendiente",
+                                            Descripcion = $"Quedan {diasFaltantes} días para la visita a {nombreCon}.",
+                                            ColorBorde = "#FFA500", // Naranja
+                                            Dias = diasFaltantes,
+                                            TipoAlerta = "S302"
+                                        });
+                                    }
 
-                                if (!doc && diasFaltantes <= 42)
-                                {
-                                    _alertasActuales.Add(new AlertaItem
+                                    if (!doc && diasFaltantes <= 42)
                                     {
-                                        Titulo = "Documentación de visita",
-                                        Descripcion = $"Quedan {diasFaltantes} días para la visita a {nombreCon}.",
-                                        ColorBorde = "#D13438", // Rojo
-                                        Dias = diasFaltantes,
-                                        TipoAlerta = "Documentacion"
-                                    });
+                                        _alertasActuales.Add(new AlertaItem
+                                        {
+                                            Titulo = "Documentación de visita",
+                                            Descripcion = $"Quedan {diasFaltantes} días para la visita a {nombreCon}.",
+                                            ColorBorde = "#D13438", // Rojo
+                                            Dias = diasFaltantes,
+                                            TipoAlerta = "Documentacion"
+                                        });
+                                    }
+                                }
+                                else if (actividad == "Asamblea de circuito")
+                                {
+                                    // Alerta genérica del recordatorio a la sección
+                                    if (!rec && diasFaltantes <= 60)
+                                    {
+                                        _alertasActuales.Add(new AlertaItem
+                                        {
+                                            Titulo = "Recordatorio de asamblea",
+                                            Descripcion = $"Quedan {diasFaltantes} días para la asamblea de la Sección {seccion}.",
+                                            ColorBorde = "#0078D4", // Azul
+                                            Dias = diasFaltantes,
+                                            TipoAlerta = "Recordatorio"
+                                        });
+                                    }
+
+                                    // NUEVA ALERTA: Mensaje al representante de Betel
+                                    // 30 días = aproximadamente 1 mes
+                                    if (tipoAsamblea == "AC-BR" && !repBetelEnviado && diasFaltantes <= 30)
+                                    {
+                                        _alertasActuales.Add(new AlertaItem
+                                        {
+                                            Titulo = "Mensaje a Rep. de Betel",
+                                            Descripcion = $"Quedan {diasFaltantes} días para la asamblea AC-BR (Sec. {seccion}). Aún no has enviado el email al representante.",
+                                            ColorBorde = "#8A2BE2", // Púrpura elegante
+                                            Dias = diasFaltantes,
+                                            TipoAlerta = "RepBetel"
+                                        });
+                                    }
                                 }
                             }
-                            else if (actividad == "Asamblea de circuito")
+
+                            // =========================================================
+                            // ALERTA S-303 PENDIENTE DE ENVÍO
+                            // =========================================================
+                            if (actividad == "Visita" && !string.IsNullOrEmpty(congregacion))
                             {
-                                if (!rec && diasFaltantes <= 60)
+                                bool esSCS = tipoActividad.Contains("SCS", StringComparison.OrdinalIgnoreCase) || tipoActividad.Equals("Visita de SCS", StringComparison.OrdinalIgnoreCase);
+
+                                if (!esSCS)
                                 {
-                                    _alertasActuales.Add(new AlertaItem
+                                    DateTime domingoVisita = fechaMartes.AddDays(5);
+                                    DateTime limiteEnvio = domingoVisita.AddHours(17);
+
+                                    if (DateTime.Now >= limiteEnvio && (DateTime.Now - limiteEnvio).TotalDays <= 14)
                                     {
-                                        Titulo = "Recordatorio de asamblea",
-                                        Descripcion = $"Quedan {diasFaltantes} días para la asamblea de la Sección {seccion}.",
-                                        ColorBorde = "#0078D4", // Azul
-                                        Dias = diasFaltantes,
-                                        TipoAlerta = "Recordatorio"
-                                    });
+                                        string mesRef = fechaMartes.ToString("yyyy-MM");
+                                        string congreCodigo = DatabaseHelper.ObtenerCodigoCongregacion(congregacion);
+
+                                        bool s303Enviado = DatabaseHelper.ObtenerConfiguracion($"S303Enviado_{congreCodigo}_{mesRef}", "0") == "1";
+
+                                        if (!s303Enviado)
+                                        {
+                                            _alertasActuales.Add(new AlertaItem
+                                            {
+                                                Titulo = "S-303 Pendiente de envío",
+                                                Descripcion = $"La visita a {nombreCon} ha concluido. Recuerda completar y enviar el informe S-303.",
+                                                ColorBorde = "#E81123", // Rojo Fuerte
+                                                Dias = -100 + diasFaltantes,
+                                                TipoAlerta = "S303Pendiente"
+                                            });
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -555,12 +609,8 @@ namespace SCCosmos
             }
             catch { }
 
-            // Actualizamos la interfaz del Popup y de la campana
             if (_alertasActuales.Count > 0)
             {
-                //BadgeAlertas.Visibility = Visibility.Visible;
-
-                // Si hay notificaciones nuevas que el usuario no ha visto, pintamos la campana de amarillo
                 if (!soloSilencioso && _alertasActuales.Count > _cantidadAlertasVistas)
                 {
                     BtnAlertas.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFD700")); // Dorado
@@ -573,7 +623,6 @@ namespace SCCosmos
             }
             else
             {
-                //BadgeAlertas.Visibility = Visibility.Collapsed;
                 BtnAlertas.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#AAAAAA")); // Campana normal
                 _cantidadAlertasVistas = 0;
 
@@ -584,9 +633,6 @@ namespace SCCosmos
             }
         }
 
-        // =========================================================
-        // LÓGICA PARA ARRASTRAR Y CAMBIAR EL ANCHO DEL MENÚ
-        // =========================================================
         private void MenuSplitter_DragDelta(object sender, DragDeltaEventArgs e)
         {
             double nuevoAncho = MenuPrincipal.OpenPaneLength + e.HorizontalChange;
