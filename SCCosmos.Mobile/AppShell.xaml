@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<Shell
+    x:Class="SCCosmos.Mobile.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:SCCosmos.Mobile.Views"
+
+    FlyoutBehavior="Flyout"
+
+    BackgroundColor="#17191E"
+    ForegroundColor="White"
+    TitleColor="White"
+    UnselectedColor="#A8ADB5"
+
+    FlyoutBackgroundColor="#17191E">
+
+    <Shell.FlyoutHeader>
+
+        <Grid
+            HeightRequest="125"
+            Padding="22,20"
+            BackgroundColor="#121419">
+
+            <VerticalStackLayout
+                VerticalOptions="End"
+                Spacing="3">
+
+                <Label
+                    Text="SCCosmos"
+                    TextColor="White"
+                    FontSize="26"
+                    FontAttributes="Bold"/>
+
+                <Label
+                    Text="Gestión del circuito"
+                    TextColor="#9EA4AE"
+                    FontSize="13"/>
+
+            </VerticalStackLayout>
+
+        </Grid>
+
+    </Shell.FlyoutHeader>
+
+    <FlyoutItem
+        Title="Inicio"
+        Route="inicio">
+
+        <ShellContent
+            Title="Inicio"
+            ContentTemplate="{DataTemplate views:InicioPage}" />
+
+    </FlyoutItem>
+
+    <FlyoutItem
+        Title="Personas"
+        Route="personas">
+
+        <ShellContent
+            Title="Personas"
+            ContentTemplate="{DataTemplate views:PersonasPage}" />
+
+    </FlyoutItem>
+
+    <FlyoutItem
+        Title="Configuración"
+        Route="configuracion">
+
+        <ShellContent
+            Title="Configuración"
+            ContentTemplate="{DataTemplate views:ConfiguracionPage}" />
+
+    </FlyoutItem>
+
+</Shell>

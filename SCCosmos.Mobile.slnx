@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="SCCosmos.Mobile/SCCosmos.Mobile.csproj">
+    <Deploy Solution="Debug|*" />
+  </Project>
+</Solution>

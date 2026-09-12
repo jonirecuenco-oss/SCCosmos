@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="SCCosmos.Mobile.Views.JwHubLoginPage"
+    Title="Sesión JW Hub"
+    BackgroundColor="#101216">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <Border
+            Grid.Row="0"
+            Margin="12,10,12,8"
+            Padding="14"
+            BackgroundColor="#191D23"
+            Stroke="#303640">
+
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="14"/>
+            </Border.StrokeShape>
+
+            <VerticalStackLayout Spacing="5">
+
+                <Label
+                    Text="Acceso a JW Hub"
+                    TextColor="White"
+                    FontSize="18"
+                    FontAttributes="Bold"/>
+
+                <Label
+                    x:Name="LblEstado"
+                    Text="Inicia sesión normalmente. SCCosmos conservará la sesión de este navegador."
+                    TextColor="#AAB0B9"
+                    FontSize="13"/>
+
+            </VerticalStackLayout>
+
+        </Border>
+
+        <WebView
+            x:Name="HubWebView"
+            Grid.Row="1"
+            Loaded="HubWebView_Loaded"
+            Navigated="HubWebView_Navigated"/>
+
+        <Grid
+            Grid.Row="2"
+            ColumnDefinitions="*,*"
+            ColumnSpacing="10"
+            Padding="12"
+            BackgroundColor="#171A1F">
+
+            <Button
+                Grid.Column="0"
+                Text="Cerrar"
+                BackgroundColor="#30343B"
+                Clicked="BtnCerrar_Click"/>
+
+            <Button
+                Grid.Column="1"
+                Text="Comprobar sesión"
+                BackgroundColor="#2478B5"
+                TextColor="White"
+                FontAttributes="Bold"
+                Clicked="BtnComprobar_Click"/>
+
+        </Grid>
+
+    </Grid>
+
+</ContentPage>

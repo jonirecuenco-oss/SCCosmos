@@ -1,0 +1,554 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="SCCosmos.Mobile.Views.PersonaDetallePage"
+    Title="Persona"
+    BackgroundColor="#101216">
+
+    <ContentPage.ToolbarItems>
+
+        <ToolbarItem
+            x:Name="BtnEditar"
+            Text="Editar"
+            Clicked="BtnEditar_Click"/>
+
+    </ContentPage.ToolbarItems>
+
+    <Grid RowDefinitions="*,Auto">
+
+        <ScrollView Grid.Row="0">
+
+            <VerticalStackLayout
+                Padding="20,15,20,30"
+                Spacing="20">
+
+                <!-- CABECERA -->
+
+                <VerticalStackLayout
+                    HorizontalOptions="Center"
+                    Spacing="10">
+
+                    <Border
+                        WidthRequest="112"
+                        HeightRequest="112"
+                        BackgroundColor="#252B34"
+                        Stroke="#373E49"
+                        StrokeThickness="1">
+
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="56"/>
+                        </Border.StrokeShape>
+
+                        <Grid>
+
+                            <Label
+                                x:Name="LblSinFoto"
+                                Text="👤"
+                                FontSize="44"
+                                HorizontalOptions="Center"
+                                VerticalOptions="Center"/>
+
+                            <Image
+                                x:Name="ImgFoto"
+                                Aspect="AspectFill"
+                                WidthRequest="112"
+                                HeightRequest="112"/>
+
+                        </Grid>
+
+                    </Border>
+
+                    <Label
+                        x:Name="LblNombreCabecera"
+                        Text=""
+                        TextColor="White"
+                        FontSize="23"
+                        FontAttributes="Bold"
+                        HorizontalTextAlignment="Center"/>
+
+                    <Label
+                        x:Name="LblCongregacionCabecera"
+                        Text=""
+                        TextColor="#9299A3"
+                        FontSize="14"
+                        HorizontalTextAlignment="Center"/>
+
+                    <HorizontalStackLayout
+                        x:Name="PanelBotonesFoto"
+                        IsVisible="False"
+                        HorizontalOptions="Center"
+                        Spacing="8">
+
+                        <Button
+                            Text="Cambiar foto"
+                            Clicked="BtnCambiarFoto_Click"/>
+
+                        <Button
+                            Text="Borrar"
+                            BackgroundColor="#6A3030"
+                            Clicked="BtnBorrarFoto_Click"/>
+
+                    </HorizontalStackLayout>
+
+                </VerticalStackLayout>
+
+                <!-- FORMULARIO -->
+
+                <VerticalStackLayout
+                    x:Name="PanelFormulario"
+                    IsEnabled="False"
+                    Spacing="18">
+
+                    <!-- IDENTIDAD -->
+
+                    <Border
+                        BackgroundColor="#191D23"
+                        Stroke="#303640"
+                        Padding="16">
+
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="16"/>
+                        </Border.StrokeShape>
+
+                        <VerticalStackLayout Spacing="14">
+
+                            <Label
+                                Text="DATOS PERSONALES"
+                                TextColor="#4BA3E3"
+                                FontSize="12"
+                                FontAttributes="Bold"
+                                CharacterSpacing="1"/>
+
+                            <Label Text="Nombre completo"
+                                   TextColor="#9299A3"
+                                   FontSize="12"/>
+
+                            <Entry
+                                x:Name="TxtNombre"
+                                TextColor="White"/>
+
+                            <Label Text="Nombre común"
+                                   TextColor="#9299A3"
+                                   FontSize="12"/>
+
+                            <Entry
+                                x:Name="TxtNombreComun"
+                                TextColor="White"/>
+
+                            <Label Text="Nombre JW Hub"
+                                   TextColor="#9299A3"
+                                   FontSize="12"/>
+
+                            <Entry
+                                x:Name="TxtNombreJW"
+                                TextColor="White"/>
+
+                            <Label Text="Congregación"
+                                   TextColor="#9299A3"
+                                   FontSize="12"/>
+
+                            <Picker
+                                x:Name="PickerCongregacion"
+                                TextColor="White"
+                                ItemDisplayBinding="{Binding Nombre}"
+                                SelectedIndexChanged="PickerCongregacion_SelectedIndexChanged"/>
+
+                            <Grid
+                                ColumnDefinitions="*,*"
+                                ColumnSpacing="12">
+
+                                <VerticalStackLayout
+                                    Grid.Column="0"
+                                    Spacing="5">
+
+                                    <Label
+                                        Text="Sexo"
+                                        TextColor="#9299A3"
+                                        FontSize="12"/>
+
+                                    <Picker
+                                        x:Name="PickerSexo"
+                                        TextColor="White"
+                                        SelectedIndexChanged="PickerSexo_SelectedIndexChanged"/>
+
+                                </VerticalStackLayout>
+
+                                <VerticalStackLayout
+                                    Grid.Column="1"
+                                    Spacing="5">
+
+                                    <Label
+                                        Text="Cónyuge"
+                                        TextColor="#9299A3"
+                                        FontSize="12"/>
+
+                                    <Picker
+                                        x:Name="PickerConyuge"
+                                        TextColor="White"
+                                        ItemDisplayBinding="{Binding NombreMostrarTabla}"/>
+
+                                </VerticalStackLayout>
+
+                            </Grid>
+
+                            <Grid
+                                ColumnDefinitions="*,*"
+                                ColumnSpacing="12">
+
+                                <VerticalStackLayout
+                                    Grid.Column="0"
+                                    Spacing="5">
+
+                                    <Label
+                                        Text="Esperanza"
+                                        TextColor="#9299A3"
+                                        FontSize="12"/>
+
+                                    <Picker
+                                        x:Name="PickerEsperanza"
+                                        TextColor="White"/>
+
+                                </VerticalStackLayout>
+
+                                <VerticalStackLayout
+                                    Grid.Column="1"
+                                    Spacing="5">
+
+                                    <Label
+                                        Text="Grupo"
+                                        TextColor="#9299A3"
+                                        FontSize="12"/>
+
+                                    <Entry
+                                        x:Name="TxtGrupo"
+                                        Keyboard="Numeric"
+                                        TextColor="White"/>
+
+                                </VerticalStackLayout>
+
+                            </Grid>
+
+                        </VerticalStackLayout>
+
+                    </Border>
+
+                    <!-- SERVICIO -->
+
+                    <Border
+                        BackgroundColor="#191D23"
+                        Stroke="#303640"
+                        Padding="16">
+
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="16"/>
+                        </Border.StrokeShape>
+
+                        <VerticalStackLayout Spacing="14">
+
+                            <Label
+                                Text="SERVICIO"
+                                TextColor="#4BA3E3"
+                                FontSize="12"
+                                FontAttributes="Bold"
+                                CharacterSpacing="1"/>
+
+                            <Label
+                                Text="Nombramiento"
+                                TextColor="#9299A3"
+                                FontSize="12"/>
+
+                            <Picker
+                                x:Name="PickerNombramiento"
+                                TextColor="White"/>
+
+                            <Label
+                                Text="Servicio"
+                                TextColor="#9299A3"
+                                FontSize="12"/>
+
+                            <Picker
+                                x:Name="PickerServicio"
+                                TextColor="White"/>
+
+                            <Grid
+                                ColumnDefinitions="*,*"
+                                ColumnSpacing="12">
+
+                                <VerticalStackLayout
+                                    Grid.Column="0"
+                                    Spacing="5">
+
+                                    <Label
+                                        Text="Fecha nacimiento"
+                                        TextColor="#9299A3"
+                                        FontSize="12"/>
+
+                                    <Entry
+                                        x:Name="TxtFechaNacimiento"
+                                        Placeholder="dd/MM/aaaa"
+                                        TextColor="White"/>
+
+                                </VerticalStackLayout>
+
+                                <VerticalStackLayout
+                                    Grid.Column="1"
+                                    Spacing="5">
+
+                                    <Label
+                                        Text="Fecha bautismo"
+                                        TextColor="#9299A3"
+                                        FontSize="12"/>
+
+                                    <Entry
+                                        x:Name="TxtFechaBautismo"
+                                        Placeholder="dd/MM/aaaa"
+                                        TextColor="White"/>
+
+                                </VerticalStackLayout>
+
+                            </Grid>
+
+                            <Grid
+                                ColumnDefinitions="*,*"
+                                ColumnSpacing="12">
+
+                                <VerticalStackLayout
+                                    Grid.Column="0"
+                                    Spacing="5">
+
+                                    <Label
+                                        Text="Inicio precursorado"
+                                        TextColor="#9299A3"
+                                        FontSize="12"/>
+
+                                    <Entry
+                                        x:Name="TxtInicioPrec"
+                                        TextColor="White"/>
+
+                                </VerticalStackLayout>
+
+                                <VerticalStackLayout
+                                    Grid.Column="1"
+                                    Spacing="5">
+
+                                    <Label
+                                        Text="Última escuela"
+                                        TextColor="#9299A3"
+                                        FontSize="12"/>
+
+                                    <Entry
+                                        x:Name="TxtUltimaEscuela"
+                                        TextColor="White"/>
+
+                                </VerticalStackLayout>
+
+                            </Grid>
+
+                        </VerticalStackLayout>
+
+                    </Border>
+
+                    <!-- CONTACTO -->
+
+                    <Border
+                        BackgroundColor="#191D23"
+                        Stroke="#303640"
+                        Padding="16">
+
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="16"/>
+                        </Border.StrokeShape>
+
+                        <VerticalStackLayout Spacing="12">
+
+                            <Label
+                                Text="CONTACTO"
+                                TextColor="#4BA3E3"
+                                FontSize="12"
+                                FontAttributes="Bold"
+                                CharacterSpacing="1"/>
+
+                            <Label Text="Teléfono"
+                                   TextColor="#9299A3"
+                                   FontSize="12"/>
+
+                            <Entry
+                                x:Name="TxtTelefono"
+                                Keyboard="Telephone"
+                                TextColor="White"/>
+
+                            <Label Text="Email personal"
+                                   TextColor="#9299A3"
+                                   FontSize="12"/>
+
+                            <Entry
+                                x:Name="TxtEmail"
+                                Keyboard="Email"
+                                TextColor="White"/>
+
+                            <Label Text="Email JW"
+                                   TextColor="#9299A3"
+                                   FontSize="12"/>
+
+                            <Entry
+                                x:Name="TxtEmailJW"
+                                Keyboard="Email"
+                                TextColor="White"/>
+
+                            <Label Text="Dirección"
+                                   TextColor="#9299A3"
+                                   FontSize="12"/>
+
+                            <Entry
+                                x:Name="TxtDireccion"
+                                TextColor="White"/>
+
+                        </VerticalStackLayout>
+
+                    </Border>
+
+                    <!-- SOLICITUDES -->
+
+                    <Border
+                        BackgroundColor="#191D23"
+                        Stroke="#303640"
+                        Padding="16">
+
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="16"/>
+                        </Border.StrokeShape>
+
+                        <VerticalStackLayout Spacing="12">
+
+                            <Label
+                                Text="SOLICITUDES"
+                                TextColor="#D7B65A"
+                                FontSize="12"
+                                FontAttributes="Bold"
+                                CharacterSpacing="1"/>
+
+                            <Grid
+                                ColumnDefinitions="*,*"
+                                RowDefinitions="Auto,Auto">
+
+                                <HorizontalStackLayout>
+                                    <CheckBox x:Name="ChkA2"/>
+                                    <Label Text="A-2"
+                                           TextColor="White"
+                                           VerticalOptions="Center"/>
+                                </HorizontalStackLayout>
+
+                                <HorizontalStackLayout Grid.Column="1">
+                                    <CheckBox x:Name="ChkA19"/>
+                                    <Label Text="A-19"
+                                           TextColor="White"
+                                           VerticalOptions="Center"/>
+                                </HorizontalStackLayout>
+
+                                <HorizontalStackLayout Grid.Row="1">
+                                    <CheckBox x:Name="ChkA8"/>
+                                    <Label Text="A-8"
+                                           TextColor="White"
+                                           VerticalOptions="Center"/>
+                                </HorizontalStackLayout>
+
+                                <HorizontalStackLayout
+                                    Grid.Row="1"
+                                    Grid.Column="1">
+
+                                    <CheckBox x:Name="ChkG8"/>
+                                    <Label Text="G-8"
+                                           TextColor="White"
+                                           VerticalOptions="Center"/>
+                                </HorizontalStackLayout>
+
+                            </Grid>
+
+                        </VerticalStackLayout>
+
+                    </Border>
+
+                    <!-- PRIVILEGIOS Y NOTAS -->
+
+                    <Border
+                        BackgroundColor="#191D23"
+                        Stroke="#303640"
+                        Padding="16">
+
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="16"/>
+                        </Border.StrokeShape>
+
+                        <VerticalStackLayout Spacing="12">
+
+                            <Label
+                                Text="PRIVILEGIOS Y NOTAS"
+                                TextColor="#4BA3E3"
+                                FontSize="12"
+                                FontAttributes="Bold"
+                                CharacterSpacing="1"/>
+
+                            <Label
+                                Text="Privilegios"
+                                TextColor="#9299A3"
+                                FontSize="12"/>
+
+                            <Editor
+                                x:Name="TxtPrivilegios"
+                                AutoSize="TextChanges"
+                                MinimumHeightRequest="85"
+                                TextColor="White"/>
+
+                            <Label
+                                Text="Notas personales"
+                                TextColor="#9299A3"
+                                FontSize="12"/>
+
+                            <Editor
+                                x:Name="TxtNotas"
+                                AutoSize="TextChanges"
+                                MinimumHeightRequest="100"
+                                TextColor="White"/>
+
+                        </VerticalStackLayout>
+
+                    </Border>
+
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+
+        </ScrollView>
+
+        <!-- BOTONES EDICIÓN -->
+
+        <Grid
+            Grid.Row="1"
+            x:Name="PanelEdicion"
+            IsVisible="False"
+            ColumnDefinitions="*,*"
+            ColumnSpacing="10"
+            Padding="18,10,18,16"
+            BackgroundColor="#171A1F">
+
+            <Button
+                Grid.Column="0"
+                Text="Cancelar"
+                BackgroundColor="#30343B"
+                Clicked="BtnCancelar_Click"/>
+
+            <Button
+                Grid.Column="1"
+                Text="Guardar"
+                BackgroundColor="#2478B5"
+                TextColor="White"
+                FontAttributes="Bold"
+                Clicked="BtnGuardar_Click"/>
+
+        </Grid>
+
+    </Grid>
+
+</ContentPage>

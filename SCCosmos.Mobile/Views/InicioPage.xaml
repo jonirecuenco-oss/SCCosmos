@@ -1,0 +1,548 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="SCCosmos.Mobile.Views.InicioPage"
+    Title="Inicio"
+    BackgroundColor="#101216">
+
+    <ScrollView>
+
+        <VerticalStackLayout
+            Padding="20,18,20,35"
+            Spacing="20">
+
+            <!-- SALUDO -->
+
+            <VerticalStackLayout Spacing="2">
+
+                <Label
+                    x:Name="TxtSaludo"
+                    Text="¡Hola!"
+                    TextColor="White"
+                    FontSize="29"
+                    FontAttributes="Bold"/>
+
+                <Label
+                    Text="Este es el resumen de tu circuito"
+                    TextColor="#8F959F"
+                    FontSize="14"/>
+
+            </VerticalStackLayout>
+
+
+            <!-- SEMANA ACTUAL -->
+
+            <Label
+                Text="TU SEMANA"
+                TextColor="#858C96"
+                FontSize="12"
+                FontAttributes="Bold"
+                CharacterSpacing="1.5"/>
+
+            <Border
+                BackgroundColor="#191D23"
+                Stroke="#303640"
+                StrokeThickness="1"
+                Padding="18">
+
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="18"/>
+                </Border.StrokeShape>
+
+                <VerticalStackLayout Spacing="14">
+
+                    <Grid
+                        ColumnDefinitions="*,Auto">
+
+                        <VerticalStackLayout
+                            Grid.Column="0"
+                            Spacing="3">
+
+                            <Label
+                                x:Name="LblTipoSemana"
+                                Text="Actividad"
+                                TextColor="#4BA3E3"
+                                FontSize="12"
+                                FontAttributes="Bold"/>
+
+                            <Label
+                                x:Name="LblActividad"
+                                Text="Cargando..."
+                                TextColor="White"
+                                FontSize="22"
+                                FontAttributes="Bold"/>
+
+                        </VerticalStackLayout>
+
+                        <Border
+                            Grid.Column="1"
+                            BackgroundColor="#222832"
+                            Padding="11"
+                            StrokeThickness="0">
+
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="12"/>
+                            </Border.StrokeShape>
+
+                            <Label
+                                x:Name="LblIconoSemana"
+                                Text="●"
+                                TextColor="#4BA3E3"
+                                FontSize="20"/>
+
+                        </Border>
+
+                    </Grid>
+
+                    <Label
+                        x:Name="LblFechas"
+                        Text=""
+                        TextColor="#AAB0B9"
+                        FontSize="14"/>
+
+                    <!-- VISITA -->
+
+                    <VerticalStackLayout
+                        x:Name="PanelVisita"
+                        IsVisible="False"
+                        Spacing="7">
+
+                        <BoxView
+                            HeightRequest="1"
+                            Color="#303640"/>
+
+                        <Label
+                            Text="CONGREGACIÓN"
+                            TextColor="#777E89"
+                            FontSize="11"
+                            FontAttributes="Bold"
+                            Margin="0,6,0,0"/>
+
+                        <Label
+                            x:Name="LblCongregacion"
+                            Text=""
+                            TextColor="White"
+                            FontSize="18"
+                            FontAttributes="Bold"/>
+
+                        <Label
+                            x:Name="LblAcompanante"
+                            Text=""
+                            TextColor="#AAB0B9"
+                            FontSize="14"
+                            IsVisible="False"/>
+
+                    </VerticalStackLayout>
+
+                    <!-- OTRA ACTIVIDAD -->
+
+                    <VerticalStackLayout
+                        x:Name="PanelOtraActividad"
+                        IsVisible="False"
+                        Spacing="5">
+
+                        <BoxView
+                            HeightRequest="1"
+                            Color="#303640"/>
+
+                        <Label
+                            x:Name="LblOtraActividad"
+                            Text=""
+                            TextColor="#C3C7CD"
+                            FontSize="15"
+                            Margin="0,6,0,0"/>
+
+                    </VerticalStackLayout>
+
+                    <!-- SIN DATOS -->
+
+                    <Label
+                        x:Name="TxtSinDatos"
+                        Text="No hay ninguna actividad registrada para esta semana."
+                        TextColor="#AAB0B9"
+                        FontSize="14"
+                        IsVisible="False"/>
+
+                </VerticalStackLayout>
+
+            </Border>
+
+
+            <!-- PROGRAMA DE HOY -->
+
+            <VerticalStackLayout
+                x:Name="PanelProgramaDia"
+                IsVisible="False"
+                Spacing="11">
+
+                <Label
+                    Text="HOY"
+                    TextColor="#858C96"
+                    FontSize="12"
+                    FontAttributes="Bold"
+                    CharacterSpacing="1.5"/>
+
+                <Border
+                    BackgroundColor="#191D23"
+                    Stroke="#303640"
+                    StrokeThickness="1"
+                    Padding="6">
+
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="18"/>
+                    </Border.StrokeShape>
+
+                    <VerticalStackLayout
+                        x:Name="ListaProgramaHoy"
+                        BindableLayout.ItemsSource="{Binding ProgramaHoy}">
+
+                        <BindableLayout.ItemTemplate>
+
+                            <DataTemplate>
+
+                                <Grid
+                                    Padding="12"
+                                    ColumnDefinitions="65,*"
+                                    RowDefinitions="Auto,Auto">
+
+                                    <Label
+                                        Grid.RowSpan="2"
+                                        Text="{Binding Hora}"
+                                        TextColor="#4BA3E3"
+                                        FontSize="15"
+                                        FontAttributes="Bold"
+                                        VerticalOptions="Start"/>
+
+                                    <Label
+                                        Grid.Column="1"
+                                        Text="{Binding TipoActividad}"
+                                        TextColor="White"
+                                        FontSize="15"
+                                        FontAttributes="Bold"/>
+
+                                    <Label
+                                        Grid.Row="1"
+                                        Grid.Column="1"
+                                        Text="{Binding CompaneroNombre, StringFormat='con {0}'}"
+                                        TextColor="#9299A3"
+                                        FontSize="13"
+                                        IsVisible="{Binding VerCompanero}"/>
+
+                                </Grid>
+
+                            </DataTemplate>
+
+                        </BindableLayout.ItemTemplate>
+
+                    </VerticalStackLayout>
+
+                </Border>
+
+            </VerticalStackLayout>
+
+
+            <!-- ESTADÍSTICAS -->
+
+            <Label
+                Text="RESUMEN DEL CIRCUITO"
+                TextColor="#858C96"
+                FontSize="12"
+                FontAttributes="Bold"
+                CharacterSpacing="1.5"
+                Margin="0,5,0,0"/>
+
+            <Grid
+                ColumnDefinitions="*,*"
+                RowDefinitions="Auto,Auto,Auto,Auto"
+                ColumnSpacing="12"
+                RowSpacing="12">
+
+                <!-- PREC REG -->
+
+                <Border
+                    Grid.Row="0"
+                    Grid.Column="0"
+                    BackgroundColor="#191D23"
+                    Stroke="#303640"
+                    Padding="16">
+
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16"/>
+                    </Border.StrokeShape>
+
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer
+            Tapped="TarjetaEstadistica_Tapped"
+            CommandParameter="Servicio|Precursor regular"/>
+                    </Border.GestureRecognizers>
+
+                    <VerticalStackLayout Spacing="4">
+                        <Label
+                            Text="P. regulares"
+                            TextColor="#AAB0B9"
+                            FontSize="13"/>
+                        <Label
+                            x:Name="TxtTotalPrecReg"
+                            Text="—"
+                            TextColor="White"
+                            FontSize="27"
+                            FontAttributes="Bold"/>
+                    </VerticalStackLayout>
+
+                </Border>
+
+                <!-- PREC ESP -->
+
+                <Border
+                    Grid.Row="0"
+                    Grid.Column="1"
+                    BackgroundColor="#191D23"
+                    Stroke="#303640"
+                    Padding="16">
+
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16"/>
+                    </Border.StrokeShape>
+
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer
+        Tapped="TarjetaEstadistica_Tapped"
+        CommandParameter="Servicio|Precursor especial"/>
+                    </Border.GestureRecognizers>
+
+                    <VerticalStackLayout Spacing="4">
+                        <Label
+                            Text="P. especiales"
+                            TextColor="#AAB0B9"
+                            FontSize="13"/>
+                        <Label
+                            x:Name="TxtTotalPrecEsp"
+                            Text="—"
+                            TextColor="White"
+                            FontSize="27"
+                            FontAttributes="Bold"/>
+                    </VerticalStackLayout>
+
+                </Border>
+
+                <!-- ANCIANOS -->
+
+                <Border
+                    Grid.Row="1"
+                    Grid.Column="0"
+                    BackgroundColor="#191D23"
+                    Stroke="#303640"
+                    Padding="16">
+                    
+
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16"/>
+                    </Border.StrokeShape>
+
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer
+        Tapped="TarjetaEstadistica_Tapped"
+        CommandParameter="Nombramiento|Anciano"/>
+                    </Border.GestureRecognizers>
+
+                    <VerticalStackLayout Spacing="4">
+                        <Label
+                            Text="Ancianos"
+                            TextColor="#AAB0B9"
+                            FontSize="13"/>
+                        <Label
+                            x:Name="TxtTotalAncianos"
+                            Text="—"
+                            TextColor="White"
+                            FontSize="27"
+                            FontAttributes="Bold"/>
+                    </VerticalStackLayout>
+
+                </Border>
+
+                <!-- SIERVOS -->
+
+                <Border
+                    Grid.Row="1"
+                    Grid.Column="1"
+                    BackgroundColor="#191D23"
+                    Stroke="#303640"
+                    Padding="16">
+
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16"/>
+                    </Border.StrokeShape>
+
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer
+        Tapped="TarjetaEstadistica_Tapped"
+        CommandParameter="Nombramiento|Siervo ministerial"/>
+                    </Border.GestureRecognizers>
+
+                    <VerticalStackLayout Spacing="4">
+                        <Label
+                            Text="Siervos M."
+                            TextColor="#AAB0B9"
+                            FontSize="13"/>
+                        <Label
+                            x:Name="TxtTotalSM"
+                            Text="—"
+                            TextColor="White"
+                            FontSize="27"
+                            FontAttributes="Bold"/>
+                    </VerticalStackLayout>
+
+                </Border>
+
+                <!-- A2 -->
+
+                <Border
+                    Grid.Row="2"
+                    Grid.Column="0"
+                    BackgroundColor="#191D23"
+                    Stroke="#303640"
+                    Padding="16">
+
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16"/>
+                    </Border.StrokeShape>
+
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer
+        Tapped="TarjetaEstadistica_Tapped"
+        CommandParameter="Solicitud|A-2"/>
+                    </Border.GestureRecognizers>
+
+                    <VerticalStackLayout Spacing="4">
+                        <Label
+                            Text="Sol. A-2"
+                            TextColor="#AAB0B9"
+                            FontSize="13"/>
+                        <Label
+                            x:Name="TxtTotalA2"
+                            Text="—"
+                            TextColor="White"
+                            FontSize="27"
+                            FontAttributes="Bold"/>
+                    </VerticalStackLayout>
+
+                </Border>
+
+                <!-- A19 -->
+
+                <Border
+                    Grid.Row="2"
+                    Grid.Column="1"
+                    BackgroundColor="#191D23"
+                    Stroke="#303640"
+                    Padding="16">
+
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16"/>
+                    </Border.StrokeShape>
+
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer
+        Tapped="TarjetaEstadistica_Tapped"
+        CommandParameter="Solicitud|A-19"/>
+                    </Border.GestureRecognizers>
+
+                    <VerticalStackLayout Spacing="4">
+                        <Label
+                            Text="Sol. A-19"
+                            TextColor="#AAB0B9"
+                            FontSize="13"/>
+                        <Label
+                            x:Name="TxtTotalA19"
+                            Text="—"
+                            TextColor="White"
+                            FontSize="27"
+                            FontAttributes="Bold"/>
+                    </VerticalStackLayout>
+
+                </Border>
+
+                <!-- A8 -->
+
+                <Border
+                    Grid.Row="3"
+                    Grid.Column="0"
+                    BackgroundColor="#191D23"
+                    Stroke="#303640"
+                    Padding="16">
+
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16"/>
+                    </Border.StrokeShape>
+
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer
+        Tapped="TarjetaEstadistica_Tapped"
+        CommandParameter="Solicitud|A-8"/>
+                    </Border.GestureRecognizers>
+
+                    <VerticalStackLayout Spacing="4">
+                        <Label
+                            Text="Sol. A-8"
+                            TextColor="#AAB0B9"
+                            FontSize="13"/>
+                        <Label
+                            x:Name="TxtTotalA8"
+                            Text="—"
+                            TextColor="White"
+                            FontSize="27"
+                            FontAttributes="Bold"/>
+                    </VerticalStackLayout>
+
+                </Border>
+
+                <!-- G8 -->
+
+                <Border
+                    Grid.Row="3"
+                    Grid.Column="1"
+                    BackgroundColor="#191D23"
+                    Stroke="#303640"
+                    Padding="16">
+
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16"/>
+                    </Border.StrokeShape>
+
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer
+        Tapped="TarjetaEstadistica_Tapped"
+        CommandParameter="Solicitud|G-8"/>
+                    </Border.GestureRecognizers>
+
+                    <VerticalStackLayout Spacing="4">
+                        <Label
+                            Text="Sol. G-8"
+                            TextColor="#AAB0B9"
+                            FontSize="13"/>
+                        <Label
+                            x:Name="TxtTotalG8"
+                            Text="—"
+                            TextColor="White"
+                            FontSize="27"
+                            FontAttributes="Bold"/>
+                    </VerticalStackLayout>
+
+                </Border>
+
+            </Grid>
+
+            <Label
+                x:Name="LblError"
+                Text=""
+                TextColor="#FF7070"
+                FontSize="13"
+                IsVisible="False"/>
+
+        </VerticalStackLayout>
+
+    </ScrollView>
+
+</ContentPage>

@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.JwHubSyncConflictPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Resolver conflicto"
+    BackgroundColor="#101216">
+
+    <Grid
+        Padding="16"
+        RowDefinitions="Auto,Auto,*,Auto"
+        RowSpacing="14">
+
+        <VerticalStackLayout
+            Grid.Row="0"
+            Spacing="4">
+
+            <Label
+                Text="Resolver conflicto"
+                FontSize="25"
+                FontAttributes="Bold"
+                TextColor="White"/>
+
+            <Label
+                x:Name="LblNombre"
+                Text=""
+                FontSize="18"
+                FontAttributes="Bold"
+                TextColor="#FFCC55"/>
+
+            <Label
+                Text="Selecciona qué valor quieres conservar en cada campo."
+                FontSize="13"
+                TextColor="#A5ABB4"
+                LineBreakMode="WordWrap"/>
+
+        </VerticalStackLayout>
+
+        <Grid
+            Grid.Row="1"
+            ColumnDefinitions="*,*"
+            ColumnSpacing="8">
+
+            <Border
+                Grid.Column="0"
+                Padding="10,7"
+                BackgroundColor="#1A2733"
+                Stroke="#386587"
+                StrokeThickness="1">
+
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="8"/>
+                </Border.StrokeShape>
+
+                <Label
+                    Text="BASE DE DATOS"
+                    FontSize="11"
+                    FontAttributes="Bold"
+                    TextColor="#85C5F0"
+                    HorizontalTextAlignment="Center"/>
+
+            </Border>
+
+            <Border
+                Grid.Column="1"
+                Padding="10,7"
+                BackgroundColor="#19301F"
+                Stroke="#377849"
+                StrokeThickness="1">
+
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="8"/>
+                </Border.StrokeShape>
+
+                <Label
+                    Text="JW HUB"
+                    FontSize="11"
+                    FontAttributes="Bold"
+                    TextColor="#7DDB96"
+                    HorizontalTextAlignment="Center"/>
+
+            </Border>
+
+        </Grid>
+
+        <CollectionView
+            x:Name="ListaCampos"
+            Grid.Row="2"
+            SelectionMode="None">
+
+            <CollectionView.EmptyView>
+
+                <VerticalStackLayout
+                    Padding="30"
+                    Spacing="8">
+
+                    <Label
+                        Text="✓"
+                        FontSize="34"
+                        TextColor="#6ABF7B"
+                        HorizontalTextAlignment="Center"/>
+
+                    <Label
+                        Text="Ya no se detectan campos en conflicto."
+                        TextColor="#AAAAAA"
+                        HorizontalTextAlignment="Center"/>
+
+                </VerticalStackLayout>
+
+            </CollectionView.EmptyView>
+
+            <CollectionView.ItemTemplate>
+
+                <DataTemplate>
+
+                    <Border
+                        Margin="0,0,0,12"
+                        Padding="13"
+                        BackgroundColor="#191D23"
+                        Stroke="#343B45"
+                        StrokeThickness="1">
+
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="13"/>
+                        </Border.StrokeShape>
+
+                        <VerticalStackLayout
+                            Spacing="10">
+
+                            <Label
+                                Text="{Binding Nombre}"
+                                FontSize="16"
+                                FontAttributes="Bold"
+                                TextColor="White"/>
+
+                            <Grid
+                                ColumnDefinitions="*,*"
+                                ColumnSpacing="8">
+
+                                <Border
+                                    Grid.Column="0"
+                                    Padding="10"
+                                    BackgroundColor="#141D25"
+                                    Stroke="#2D526B"
+                                    StrokeThickness="1">
+
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="8"/>
+                                    </Border.StrokeShape>
+
+                                    <VerticalStackLayout
+                                        Spacing="7">
+
+                                        <Label
+                                            Text="BD"
+                                            FontSize="10"
+                                            FontAttributes="Bold"
+                                            TextColor="#78BCE8"/>
+
+                                        <Label
+                                            IsVisible="{Binding EsTexto}"
+                                            Text="{Binding ValorBdVisual}"
+                                            FontSize="13"
+                                            TextColor="White"
+                                            LineBreakMode="WordWrap"/>
+
+                                        <Image
+                                            IsVisible="{Binding TieneFotoBd}"
+                                            Source="{Binding FotoBdSource}"
+                                            HeightRequest="150"
+                                            Aspect="AspectFit"
+                                            HorizontalOptions="Fill"/>
+
+                                        <Label
+                                            IsVisible="{Binding FotoBdVacia}"
+                                            Text="(Sin fotografía)"
+                                            FontSize="13"
+                                            TextColor="#A5ABB4"
+                                            HorizontalTextAlignment="Center"
+                                            VerticalTextAlignment="Center"
+                                            HeightRequest="80"/>
+
+                                    </VerticalStackLayout>
+
+                                </Border>
+
+                                <Border
+                                    Grid.Column="1"
+                                    Padding="10"
+                                    BackgroundColor="#15251A"
+                                    Stroke="#315E3B"
+                                    StrokeThickness="1">
+
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="8"/>
+                                    </Border.StrokeShape>
+
+                                    <VerticalStackLayout
+                                        Spacing="7">
+
+                                        <Label
+                                            Text="JW HUB"
+                                            FontSize="10"
+                                            FontAttributes="Bold"
+                                            TextColor="#73D18A"/>
+
+                                        <Label
+                                            IsVisible="{Binding EsTexto}"
+                                            Text="{Binding ValorHubVisual}"
+                                            FontSize="13"
+                                            TextColor="White"
+                                            LineBreakMode="WordWrap"/>
+
+                                        <Image
+                                            IsVisible="{Binding TieneFotoHub}"
+                                            Source="{Binding FotoHubSource}"
+                                            HeightRequest="150"
+                                            Aspect="AspectFit"
+                                            HorizontalOptions="Fill"/>
+
+                                        <Label
+                                            IsVisible="{Binding FotoHubVacia}"
+                                            Text="(Sin fotografía)"
+                                            FontSize="13"
+                                            TextColor="#A5ABB4"
+                                            HorizontalTextAlignment="Center"
+                                            VerticalTextAlignment="Center"
+                                            HeightRequest="80"/>
+
+                                    </VerticalStackLayout>
+
+                                </Border>
+
+                            </Grid>
+
+                            <Grid
+                                ColumnDefinitions="Auto,*"
+                                ColumnSpacing="10">
+
+                                <Label
+                                    Grid.Column="0"
+                                    Text="Conservar:"
+                                    TextColor="#A5ABB4"
+                                    FontSize="13"
+                                    VerticalOptions="Center"/>
+
+                                <Picker
+                                    Grid.Column="1"
+                                    ItemsSource="{Binding Opciones}"
+                                    SelectedItem="{Binding Seleccion, Mode=TwoWay}"
+                                    TextColor="White"
+                                    BackgroundColor="#252B33"
+                                    Title="Selecciona un valor"
+                                    TitleColor="#A5ABB4"
+                                    HorizontalOptions="Fill"/>
+
+                            </Grid>
+
+                        </VerticalStackLayout>
+
+                    </Border>
+
+                </DataTemplate>
+
+            </CollectionView.ItemTemplate>
+
+        </CollectionView>
+
+        <Grid
+            Grid.Row="3"
+            ColumnDefinitions="*,*"
+            ColumnSpacing="10">
+
+            <Button
+                Grid.Column="0"
+                Text="Cancelar"
+                HeightRequest="48"
+                BackgroundColor="#353A42"
+                TextColor="White"
+                CornerRadius="9"
+                Clicked="BtnCancelar_Clicked"/>
+
+            <Button
+                x:Name="BtnGuardar"
+                Grid.Column="1"
+                Text="Guardar resolución"
+                HeightRequest="48"
+                BackgroundColor="#2478B5"
+                TextColor="White"
+                FontAttributes="Bold"
+                CornerRadius="9"
+                Clicked="BtnGuardar_Clicked"/>
+
+        </Grid>
+
+    </Grid>
+
+</ContentPage>

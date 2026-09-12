@@ -1,0 +1,402 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.JwHubSyncReviewPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Revisión JW Hub"
+    BackgroundColor="#1E1E1E">
+
+    <Grid
+        Padding="16"
+        RowDefinitions="Auto,Auto,Auto,*,Auto"
+        RowSpacing="14">
+
+
+        <!-- CABECERA -->
+
+        <VerticalStackLayout
+            Grid.Row="0"
+            Spacing="4">
+
+            <Label
+                Text="Sincronización con JW Hub"
+                FontSize="24"
+                FontAttributes="Bold"
+                TextColor="White"/>
+
+            <Label
+                Text="Revisa el resultado antes de aplicar cambios."
+                FontSize="13"
+                TextColor="#AAAAAA"/>
+
+        </VerticalStackLayout>
+
+
+        <!-- CONTADORES -->
+
+        <ScrollView
+            Grid.Row="1"
+            Orientation="Horizontal"
+            HorizontalScrollBarVisibility="Never">
+
+            <HorizontalStackLayout
+                Spacing="10">
+
+                <Border
+                    WidthRequest="125"
+                    Padding="12"
+                    BackgroundColor="#332B00"
+                    Stroke="#FFB900">
+
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="10"/>
+                    </Border.StrokeShape>
+
+                    <VerticalStackLayout Spacing="3">
+
+                        <Label
+                            Text="⚠ CONFLICTOS"
+                            FontSize="11"
+                            FontAttributes="Bold"
+                            TextColor="#FFB900"/>
+
+                        <Label
+                            x:Name="TxtNumConflictos"
+                            Text="0"
+                            FontSize="26"
+                            FontAttributes="Bold"
+                            TextColor="White"/>
+
+                    </VerticalStackLayout>
+
+                </Border>
+
+
+                <Border
+                    WidthRequest="125"
+                    Padding="12"
+                    BackgroundColor="#003311"
+                    Stroke="#10893E">
+
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="10"/>
+                    </Border.StrokeShape>
+
+                    <VerticalStackLayout Spacing="3">
+
+                        <Label
+                            Text="✨ NUEVOS"
+                            FontSize="11"
+                            FontAttributes="Bold"
+                            TextColor="#55C855"/>
+
+                        <Label
+                            x:Name="TxtNumNuevos"
+                            Text="0"
+                            FontSize="26"
+                            FontAttributes="Bold"
+                            TextColor="White"/>
+
+                    </VerticalStackLayout>
+
+                </Border>
+
+
+                <Border
+                    WidthRequest="145"
+                    Padding="12"
+                    BackgroundColor="#330000"
+                    Stroke="#FF5555">
+
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="10"/>
+                    </Border.StrokeShape>
+
+                    <VerticalStackLayout Spacing="3">
+
+                        <Label
+                            Text="❌ POSIBLES BAJAS"
+                            FontSize="11"
+                            FontAttributes="Bold"
+                            TextColor="#FF5555"/>
+
+                        <Label
+                            x:Name="TxtNumBajas"
+                            Text="0"
+                            FontSize="26"
+                            FontAttributes="Bold"
+                            TextColor="White"/>
+
+                    </VerticalStackLayout>
+
+                </Border>
+
+
+                <Border
+                    WidthRequest="135"
+                    Padding="12"
+                    BackgroundColor="#252526"
+                    Stroke="#555555">
+
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="10"/>
+                    </Border.StrokeShape>
+
+                    <VerticalStackLayout Spacing="3">
+
+                        <Label
+                            Text="✅ SIN CAMBIOS"
+                            FontSize="11"
+                            FontAttributes="Bold"
+                            TextColor="#AAAAAA"/>
+
+                        <Label
+                            x:Name="TxtNumIguales"
+                            Text="0"
+                            FontSize="26"
+                            FontAttributes="Bold"
+                            TextColor="White"/>
+
+                    </VerticalStackLayout>
+
+                </Border>
+
+            </HorizontalStackLayout>
+
+        </ScrollView>
+
+
+        <!-- CATEGORÍAS -->
+
+        <ScrollView
+            Grid.Row="2"
+            Orientation="Horizontal"
+            HorizontalScrollBarVisibility="Never">
+
+            <HorizontalStackLayout Spacing="8">
+
+                <Button
+                    x:Name="BtnConflictos"
+                    Text="⚠ Conflictos"
+                    FontSize="12"
+                    TextColor="White"
+                    BackgroundColor="#8A6500"
+                    CornerRadius="8"
+                    Clicked="BtnConflictos_Clicked"/>
+
+                <Button
+                    x:Name="BtnNuevos"
+                    Text="✨ Nuevos"
+                    FontSize="12"
+                    TextColor="White"
+                    BackgroundColor="#155724"
+                    CornerRadius="8"
+                    Clicked="BtnNuevos_Clicked"/>
+
+                <Button
+                    x:Name="BtnBajas"
+                    Text="❌ Bajas"
+                    FontSize="12"
+                    TextColor="White"
+                    BackgroundColor="#7A2020"
+                    CornerRadius="8"
+                    Clicked="BtnBajas_Clicked"/>
+
+                <Button
+                    x:Name="BtnIguales"
+                    Text="✅ Sin cambios"
+                    FontSize="12"
+                    TextColor="White"
+                    BackgroundColor="#3A3A3A"
+                    CornerRadius="8"
+                    Clicked="BtnIguales_Clicked"/>
+
+            </HorizontalStackLayout>
+
+        </ScrollView>
+
+
+        <!-- LISTADO -->
+
+        <Grid
+            Grid.Row="3"
+            RowDefinitions="Auto,*"
+            RowSpacing="8">
+
+            <Label
+                x:Name="LblTituloLista"
+                Grid.Row="0"
+                Text="Conflictos"
+                FontSize="17"
+                FontAttributes="Bold"
+                TextColor="White"/>
+
+
+            <CollectionView
+                x:Name="ListaResultados"
+                Grid.Row="1"
+                SelectionMode="None">
+
+                <CollectionView.EmptyView>
+
+                    <VerticalStackLayout
+                        Padding="20"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center">
+
+                        <Label
+                            Text="✓"
+                            FontSize="32"
+                            HorizontalTextAlignment="Center"
+                            TextColor="#888888"/>
+
+                        <Label
+                            Text="No hay elementos en esta categoría."
+                            TextColor="#888888"
+                            HorizontalTextAlignment="Center"/>
+
+                    </VerticalStackLayout>
+
+                </CollectionView.EmptyView>
+
+
+                <CollectionView.ItemTemplate>
+
+                    <DataTemplate>
+
+                        <Border
+                            Margin="0,0,0,8"
+                            Padding="14"
+                            BackgroundColor="#252526"
+                            Stroke="#3A3A3A">
+
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="10"/>
+                            </Border.StrokeShape>
+
+
+                            <VerticalStackLayout
+    Spacing="8">
+
+                                <!-- ACCIONES ESPECÍFICAS -->
+
+                                <HorizontalStackLayout
+        Spacing="8">
+
+                                    <Button
+            Text="Resolver conflicto"
+            IsVisible="{Binding EsConflicto}"
+            BackgroundColor="#8A6500"
+            TextColor="White"
+            FontAttributes="Bold"
+            CornerRadius="8"
+            CommandParameter="{Binding .}"
+            Clicked="BtnResolverConflicto_Clicked"/>
+
+
+                                    <Button
+            Text="Revisar y añadir"
+            IsVisible="{Binding EsNuevo}"
+            BackgroundColor="#267A42"
+            TextColor="White"
+            FontAttributes="Bold"
+            CornerRadius="8"
+            CommandParameter="{Binding .}"
+            Clicked="BtnAnadirNuevo_Clicked"/>
+
+
+                                    <Button
+            Text="Confirmar baja"
+            IsVisible="{Binding EsBaja}"
+            IsEnabled="{Binding PuedeConfirmarBaja}"
+            BackgroundColor="#8A2D2D"
+            TextColor="White"
+            FontAttributes="Bold"
+            CornerRadius="8"
+            CommandParameter="{Binding .}"
+            Clicked="BtnConfirmarBaja_Clicked"/>
+
+                                </HorizontalStackLayout>
+
+
+                                <!-- AVISO MODO PRUEBA -->
+
+                                <Label
+        Text="Modo de prueba: la baja está bloqueada hasta realizar una sintonización completa."
+        IsVisible="{Binding MostrarAvisoBajaPrueba}"
+        TextColor="#E0A35B"
+        FontSize="11"
+        LineBreakMode="WordWrap"/>
+
+
+                                <!-- DESCARTAR -->
+
+                                <Button
+        Text="Descartar de la revisión"
+        BackgroundColor="Transparent"
+        BorderColor="#555B65"
+        BorderWidth="1"
+        TextColor="#AEB4BD"
+        FontSize="12"
+        CornerRadius="8"
+        HorizontalOptions="Start"
+        CommandParameter="{Binding .}"
+        Clicked="BtnDescartar_Clicked"/>
+
+                            </VerticalStackLayout>
+
+                        </Border>
+
+                    </DataTemplate>
+
+                </CollectionView.ItemTemplate>
+
+            </CollectionView>
+
+        </Grid>
+
+
+        <!-- PIE -->
+
+        <Grid
+    Grid.Row="4"
+    ColumnDefinitions="*,Auto,Auto"
+    ColumnSpacing="8">
+
+            <Label
+        x:Name="LblEstado"
+        Grid.Column="0"
+        Text=""
+        FontSize="12"
+        TextColor="#AAAAAA"
+        VerticalOptions="Center"
+        LineBreakMode="WordWrap"/>
+
+
+            <Button
+        x:Name="BtnFinalizar"
+        Grid.Column="1"
+        Text="Finalizar"
+        BackgroundColor="#267A42"
+        TextColor="White"
+        FontAttributes="Bold"
+        CornerRadius="8"
+        Padding="15,10"
+        Clicked="BtnFinalizar_Clicked"/>
+
+
+            <Button
+        Grid.Column="2"
+        Text="Cerrar"
+        BackgroundColor="#3A3A3A"
+        TextColor="White"
+        CornerRadius="8"
+        Padding="15,10"
+        Clicked="BtnCerrar_Clicked"/>
+
+        </Grid>
+
+    </Grid>
+
+</ContentPage>

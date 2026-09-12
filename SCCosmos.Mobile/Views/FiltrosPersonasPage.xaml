@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="SCCosmos.Mobile.Views.FiltrosPersonasPage"
+    BackgroundColor="#101216">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- CABECERA -->
+
+        <Grid
+            Grid.Row="0"
+            ColumnDefinitions="Auto,*,Auto"
+            Padding="16,14"
+            BackgroundColor="#171A1F">
+
+            <Button
+                Text="Cancelar"
+                BackgroundColor="Transparent"
+                TextColor="#AAB0B9"
+                Padding="5"
+                Clicked="BtnCancelar_Click"/>
+
+            <Label
+                Grid.Column="1"
+                Text="Filtros"
+                TextColor="White"
+                FontSize="20"
+                FontAttributes="Bold"
+                HorizontalOptions="Center"
+                VerticalOptions="Center"/>
+
+            <Button
+                Grid.Column="2"
+                Text="Limpiar"
+                BackgroundColor="Transparent"
+                TextColor="#FF7777"
+                Padding="5"
+                Clicked="BtnLimpiar_Click"/>
+
+        </Grid>
+
+        <!-- CONTENIDO -->
+
+        <ScrollView Grid.Row="1">
+
+            <VerticalStackLayout
+                Padding="20"
+                Spacing="22">
+
+                <!-- NOMBRAMIENTO -->
+
+                <VerticalStackLayout Spacing="7">
+
+                    <Label
+                        Text="Nombramiento"
+                        TextColor="#9299A3"
+                        FontSize="12"
+                        FontAttributes="Bold"/>
+
+                    <Picker
+                        x:Name="PickerNombramiento"
+                        Title="Todos"
+                        TextColor="White"
+                        TitleColor="#777E89"
+                        BackgroundColor="#1A1E24"/>
+
+                </VerticalStackLayout>
+
+                <!-- SEXO / ESPERANZA -->
+
+                <Grid
+                    ColumnDefinitions="*,*"
+                    ColumnSpacing="12">
+
+                    <VerticalStackLayout
+                        Grid.Column="0"
+                        Spacing="7">
+
+                        <Label
+                            Text="Sexo"
+                            TextColor="#9299A3"
+                            FontSize="12"
+                            FontAttributes="Bold"/>
+
+                        <Picker
+                            x:Name="PickerSexo"
+                            Title="Todos"
+                            TextColor="White"
+                            TitleColor="#777E89"
+                            BackgroundColor="#1A1E24"/>
+
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout
+                        Grid.Column="1"
+                        Spacing="7">
+
+                        <Label
+                            Text="Esperanza"
+                            TextColor="#9299A3"
+                            FontSize="12"
+                            FontAttributes="Bold"/>
+
+                        <Picker
+                            x:Name="PickerEsperanza"
+                            Title="Todas"
+                            TextColor="White"
+                            TitleColor="#777E89"
+                            BackgroundColor="#1A1E24"/>
+
+                    </VerticalStackLayout>
+
+                </Grid>
+
+                <!-- CONGREGACIONES -->
+
+                <VerticalStackLayout Spacing="9">
+
+                    <Label
+                        Text="Congregaciones"
+                        TextColor="White"
+                        FontSize="16"
+                        FontAttributes="Bold"/>
+
+                    <Label
+                        Text="Puedes seleccionar varias."
+                        TextColor="#777E89"
+                        FontSize="12"/>
+
+                    <VerticalStackLayout
+                        x:Name="PanelCongregaciones"
+                        Spacing="3"/>
+
+                </VerticalStackLayout>
+
+                <!-- SERVICIO -->
+
+                <VerticalStackLayout Spacing="9">
+
+                    <Label
+                        Text="Servicio"
+                        TextColor="White"
+                        FontSize="16"
+                        FontAttributes="Bold"/>
+
+                    <VerticalStackLayout
+                        x:Name="PanelServicios"
+                        Spacing="3"/>
+
+                </VerticalStackLayout>
+
+                <!-- SOLICITUDES -->
+
+                <VerticalStackLayout Spacing="9">
+
+                    <Label
+                        Text="Solicitudes"
+                        TextColor="White"
+                        FontSize="16"
+                        FontAttributes="Bold"/>
+
+                    <VerticalStackLayout
+                        x:Name="PanelSolicitudes"
+                        Spacing="3"/>
+
+                </VerticalStackLayout>
+
+                <!-- PRIVILEGIOS -->
+
+                <VerticalStackLayout Spacing="9">
+
+                    <Label
+                        Text="Privilegios"
+                        TextColor="White"
+                        FontSize="16"
+                        FontAttributes="Bold"/>
+
+                    <VerticalStackLayout
+                        x:Name="PanelPrivilegios"
+                        Spacing="3"/>
+
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+
+        </ScrollView>
+
+        <!-- APLICAR -->
+
+        <Grid
+            Grid.Row="2"
+            Padding="20,12,20,18"
+            BackgroundColor="#171A1F">
+
+            <Button
+                Text="Aplicar filtros"
+                HeightRequest="50"
+                BackgroundColor="#2478B5"
+                TextColor="White"
+                FontAttributes="Bold"
+                CornerRadius="12"
+                Clicked="BtnAplicar_Click"/>
+
+        </Grid>
+
+    </Grid>
+
+</ContentPage>
