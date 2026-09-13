@@ -50,9 +50,9 @@ namespace SCCosmos
                 options.AddArgument(perfilClonado); // USAMOS EL CLON
 
                 // Oculto y a pantalla completa virtual
-                //options.AddArgument("-headless");
-                //options.AddArgument("--window-size=1920,1080");
-                //options.AddArgument("--start-maximized");
+                options.AddArgument("-headless");
+                options.AddArgument("--window-size=1920,1080");
+                options.AddArgument("--start-maximized");
 
                 string tempDownloadPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TempDownloads");
                 if (!Directory.Exists(tempDownloadPath)) Directory.CreateDirectory(tempDownloadPath);
@@ -113,6 +113,7 @@ namespace SCCosmos
                         int totalCards = cardsBase.Count;
 
                         //MODO DE PRUEBAS
+                        /*
                         var inputBuscador = EsperaDinamicaElementoVisibilidad(driver, By.XPath("//input[@type='search' and @placeholder='Introduzca un nombre']"), 15);
                         if (inputBuscador != null)
                         {
@@ -127,6 +128,7 @@ namespace SCCosmos
                             btnBuscarP.Click();
                         }
                         //int totalCards = 2;
+                        */
                         //FIN DEL MODO DE PRUEBAS
 
                         string[] privilegiosPermitidos = {
