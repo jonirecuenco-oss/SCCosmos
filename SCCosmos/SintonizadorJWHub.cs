@@ -1104,5 +1104,6 @@ namespace SCCosmos
         public string Foto { get; set; }
         public string FechaNacimiento { get; set; }
         public string Esperanza { get; set; }
+        //hola
     }
 }
