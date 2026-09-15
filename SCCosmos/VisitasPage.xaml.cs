@@ -1,4 +1,4 @@
-﻿using iText.Forms;
+using iText.Forms;
 using iText.Kernel.Pdf;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Firefox;
@@ -32,6 +32,10 @@ namespace SCCosmos
         public static string MesPendiente = "";
 
         private bool _cargandoDatos = false;
+        // Territorios se carga de forma independiente de Ministerio y del resto
+        // de módulos. Usar la bandera global aquí hacía que no se cargase al abrir
+        // la página si Ministerio seguía procesando datos en segundo plano.
+        private bool _cargandoTerritorios = false;
 
         private List<FilaVisitaPublisher> _filasVisitasGlobal = new List<FilaVisitaPublisher>();
         private List<FilaTablaTerritorio> _territoriosGlobal = new List<FilaTablaTerritorio>();
@@ -199,33 +203,128 @@ namespace SCCosmos
         // --- PROGRAMA ---
         private void ActualizarUI_MesPrograma()
         {
-            if (!_cargandoDatos) CargarPrograma(_mesPrograma);
+            // Programa es un módulo independiente. No debe quedar bloqueado
+            // mientras otro módulo (por ejemplo Ministerio) está cargando.
+            CargarPrograma(_mesPrograma);
         }
 
         // --- NOTAS ---
         private void ActualizarUI_MesNotas()
         {
-            if (!_cargandoDatos) CargarNotas(_mesNotas);
+            // Notas es un módulo independiente. No debe quedar bloqueado
+            // por la bandera global usada durante otras cargas asíncronas.
+            CargarNotas(_mesNotas);
         }
 
-        // --- TERRITORIOS ---
+        // --- TERRITORIOS / AÑO DE SERVICIO ---
         private async void ActualizarUI_MesTerritorios()
         {
-            if (TxtMesTerritorios != null) TxtMesTerritorios.Text = FormatearMes(_mesTerritorios);
-            if (_cargandoDatos) return;
-            _cargandoDatos = true;
+            // Territorios no debe depender de la carga de Ministerio.
+            // Solo evitamos que se lancen dos cargas de Territorios a la vez.
+            if (_cargandoTerritorios) return;
+
+            _cargandoTerritorios = true;
+
             try
             {
-                DateTime inicio6m = _mesTerritorios.AddMonths(-5);
-                DateTime fin6m = _mesTerritorios.AddMonths(1).AddDays(-1);
+                int anioServicio =
+                    ObtenerAnioServicio(
+                        _mesTerritorios);
 
-                var listadoHermanosHistorico = DatabaseHelper.ObtenerPersonasHistoricasPorMes(_congreCodigo, _mesTerritorios.ToString("yyyy-MM"));
-                await CargarTerritorios(_mesTerritorios, inicio6m, fin6m, listadoHermanosHistorico);
+                DateTime inicioAnioServicio =
+                    new DateTime(
+                        anioServicio - 1,
+                        9,
+                        1);
+
+                DateTime finAnioServicio =
+                    new DateTime(
+                        anioServicio,
+                        8,
+                        31);
+
+                if (TxtMesTerritorios != null)
+                {
+                    TxtMesTerritorios.Text =
+                        $"Año de servicio {anioServicio}";
+                }
+
+                // Para disponer de los nombres S-21 usamos la instantánea
+                // más cercana posible dentro del año seleccionado.
+                DateTime fechaPersonas =
+                    DateTime.Today < inicioAnioServicio
+                        ? inicioAnioServicio
+                        : (
+                            DateTime.Today > finAnioServicio
+                                ? finAnioServicio
+                                : DateTime.Today
+                          );
+
+                var listadoHermanosHistorico =
+                    DatabaseHelper
+                        .ObtenerPersonasHistoricasPorMes(
+                            _congreCodigo,
+                            fechaPersonas.ToString(
+                                "yyyy-MM"));
+
+                await CargarTerritorios(
+                    anioServicio,
+                    inicioAnioServicio,
+                    finAnioServicio,
+                    listadoHermanosHistorico);
             }
-            finally { _cargandoDatos = false; }
+            finally
+            {
+                _cargandoTerritorios = false;
+            }
         }
-        private void BtnMesAntTerritorios_Click(object sender, RoutedEventArgs e) { _mesTerritorios = _mesTerritorios.AddMonths(-1); ActualizarUI_MesTerritorios(); }
-        private void BtnMesSigTerritorios_Click(object sender, RoutedEventArgs e) { _mesTerritorios = _mesTerritorios.AddMonths(1); ActualizarUI_MesTerritorios(); }
+
+        private static int ObtenerAnioServicio(
+            DateTime fecha)
+        {
+            // El año de servicio termina en agosto del año indicado.
+            // Ejemplo: año de servicio 2026 = 01/09/2025 a 31/08/2026.
+            return
+                fecha.Month >= 9
+                    ? fecha.Year + 1
+                    : fecha.Year;
+        }
+
+        private static int ObtenerNumeroTerritorio(string nombre)
+        {
+            if (string.IsNullOrWhiteSpace(nombre)) return int.MaxValue;
+
+            // Orden natural: 1, 2, 3, ... 10, 11... aunque el nombre
+            // contenga texto (por ejemplo "Territorio 10").
+            var match = System.Text.RegularExpressions.Regex.Match(nombre, @"\d+");
+            if (match.Success && int.TryParse(match.Value, out int numero))
+            {
+                return numero;
+            }
+
+            // Los nombres sin número se muestran después de los numerados.
+            return int.MaxValue;
+        }
+
+        private void BtnMesAntTerritorios_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            _mesTerritorios =
+                _mesTerritorios.AddYears(-1);
+
+            ActualizarUI_MesTerritorios();
+        }
+
+        private void BtnMesSigTerritorios_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            _mesTerritorios =
+                _mesTerritorios.AddYears(1);
+
+            ActualizarUI_MesTerritorios();
+        }
 
         // --- CONTABILIDAD ---
         private void ActualizarUI_MesContabilidad()
@@ -292,7 +391,13 @@ namespace SCCosmos
                     .Select(g => new CategoriaNotas { Cabecera = g.Key, Preguntas = g.ToList() }).ToList();
 
                 var panelNotas = this.FindName("PanelNotas") as FrameworkElement;
-                if (panelNotas != null) panelNotas.DataContext = this;
+                if (panelNotas != null)
+                {
+                    // La página no notifica cambios de MisNotasAgrupadas.
+                    // Forzamos que el binding se reevalúe también al cambiar de visita/mes.
+                    panelNotas.DataContext = null;
+                    panelNotas.DataContext = this;
+                }
             }
         }
 
@@ -342,8 +447,29 @@ namespace SCCosmos
                 var comp = DatabaseHelper.ObtenerPersonaPorId(act.CompaneroId);
                 string nombreComp = comp != null ? comp.Nombre.Split(' ')[0] : "Alguien";
 
-                string texto = responsable == "Comida" || responsable == "Cenar" || responsable == "Dormir" ? $"{act.Hora} - {nombreComp}" : $"{act.Hora} - {act.TipoActividad} ({nombreComp})";
-                celda.ListaActividades.Add(new BotonActividadUI { Texto = texto, Dia = dia, Turno = turnoLimpio, Responsable = responsable, ActividadDB = act });
+                string texto =
+                    responsable == "Comida"
+                    || responsable == "Cenar"
+                    || responsable == "Dormir"
+                        ? $"{act.Hora} - {nombreComp}"
+                        : $"{act.Hora} - {act.TipoActividad} ({nombreComp})";
+
+                if (!string.IsNullOrWhiteSpace(
+                        act.Direccion))
+                {
+                    texto +=
+                        $"\n📍 {act.Direccion}";
+                }
+
+                celda.ListaActividades.Add(
+                    new BotonActividadUI
+                    {
+                        Texto = texto,
+                        Dia = dia,
+                        Turno = turnoLimpio,
+                        Responsable = responsable,
+                        ActividadDB = act
+                    });
             }
 
             if ((responsable == "Comida" || responsable == "Cenar" || responsable == "Dormir") && celda.ListaActividades.Count > 0) celda.VerBotonAnadir = Visibility.Collapsed;
@@ -356,100 +482,130 @@ namespace SCCosmos
         {
             if (sender is Button btn && btn.Tag is CeldaPrograma celda)
             {
-                var ventana = new ProgramarActividadWindow(celda.Responsable, celda.Turno, celda.Dia, _congreCodigo, _mesPrograma.ToString("yyyy-MM"));
-                if (ventana.ShowDialog() == true) ActualizarUI_MesPrograma();
-            }
-        }
+                var ventana =
+                    new ProgramarActividadWindow(
+                        celda.Responsable,
+                        celda.Turno,
+                        celda.Dia,
+                        _congreCodigo,
+                        _mesPrograma.ToString(
+                            "yyyy-MM"));
 
-        private void BtnEliminarActividad_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button btn && btn.Tag is BotonActividadUI ui)
-            {
-                if (MessageBox.Show($"¿Eliminar actividad de {ui.Responsable} a las {ui.ActividadDB.Hora}?", "Confirmar Eliminación", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+                ventana.Owner =
+                    Window.GetWindow(this);
+
+                if (ventana.ShowDialog() == true)
                 {
-                    using (var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={DatabaseHelper.RutaDirectorioDatos}\\sccosmos.db"))
-                    {
-                        connection.Open();
-                        var cmd = connection.CreateCommand();
-                        cmd.CommandText = "DELETE FROM ProgramaVisitaV2 WHERE CongreCodigo=@c AND MesReferencia=@m AND DiaSemana=@d AND Turno=@t AND Responsable=@r AND Hora=@h";
-                        cmd.Parameters.AddWithValue("@c", _congreCodigo);
-                        cmd.Parameters.AddWithValue("@m", _mesPrograma.ToString("yyyy-MM"));
-                        cmd.Parameters.AddWithValue("@d", ui.Dia);
-                        cmd.Parameters.AddWithValue("@t", ui.Turno);
-                        cmd.Parameters.AddWithValue("@r", ui.Responsable);
-                        cmd.Parameters.AddWithValue("@h", ui.ActividadDB.Hora);
-                        cmd.ExecuteNonQuery();
-                    }
                     ActualizarUI_MesPrograma();
                 }
             }
         }
 
-        private void BtnEditarActividad_Click(object sender, RoutedEventArgs e)
+        private void BtnEliminarActividad_Click(
+            object sender,
+            RoutedEventArgs e)
         {
-            if (sender is Button btn && btn.Tag is BotonActividadUI ui)
+            if (sender is Button btn
+                &&
+                btn.Tag is BotonActividadUI ui)
             {
-                var inputWin = new Window { Title = "Editar Actividad", Width = 350, Height = 320, WindowStartupLocation = WindowStartupLocation.CenterScreen, WindowStyle = WindowStyle.ToolWindow, Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)) };
-                var grid = new StackPanel { Margin = new Thickness(20) };
-
-                // 1. Selector de Acompañante
-                grid.Children.Add(new TextBlock { Text = "Acompañante / Familia:", Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 5) });
-                var listaHermanos = DatabaseHelper.ObtenerPersonasHistoricasPorMes(_congreCodigo, _mesPrograma.ToString("yyyy-MM")).OrderBy(p => p.Nombre).ToList();
-                var cmbAcompanante = new ComboBox
+                if (MessageBox.Show(
+                        $"¿Eliminar actividad de {ui.Responsable} a las {ui.ActividadDB.Hora}?",
+                        "Confirmar Eliminación",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Warning)
+                    != MessageBoxResult.Yes)
                 {
-                    ItemsSource = listaHermanos,
-                    DisplayMemberPath = "Nombre",
-                    SelectedValuePath = "Id",
-                    Padding = new Thickness(8),
-                    Background = new SolidColorBrush(Color.FromRgb(42, 42, 42)),
-                    Foreground = Brushes.White,
-                    BorderThickness = new Thickness(0),
-                    SelectedValue = ui.ActividadDB.CompaneroId
-                };
-                grid.Children.Add(cmbAcompanante);
+                    return;
+                }
 
-                // 2. Hora
-                grid.Children.Add(new TextBlock { Text = "Hora (ej. 10:00):", Foreground = Brushes.White, Margin = new Thickness(0, 10, 0, 5) });
-                var txtHora = new TextBox { Text = ui.ActividadDB.Hora, Padding = new Thickness(8), Background = new SolidColorBrush(Color.FromRgb(42, 42, 42)), Foreground = Brushes.White, BorderThickness = new Thickness(0) };
-                grid.Children.Add(txtHora);
-
-                // 3. Tipo de Actividad
-                grid.Children.Add(new TextBlock { Text = "Tipo de Actividad / Notas:", Foreground = Brushes.White, Margin = new Thickness(0, 10, 0, 5) });
-                var txtTipo = new TextBox { Text = ui.ActividadDB.TipoActividad, Padding = new Thickness(8), Background = new SolidColorBrush(Color.FromRgb(42, 42, 42)), Foreground = Brushes.White, BorderThickness = new Thickness(0) };
-                grid.Children.Add(txtTipo);
-
-                var btnSave = new Button { Content = "Guardar Cambios", Width = 120, Margin = new Thickness(0, 15, 0, 0), Background = new SolidColorBrush(Color.FromRgb(0, 120, 212)), Foreground = Brushes.White, Padding = new Thickness(8), BorderThickness = new Thickness(0), Cursor = Cursors.Hand };
-                btnSave.Click += (s, args) => {
-                    if (!string.IsNullOrWhiteSpace(txtHora.Text) && cmbAcompanante.SelectedValue != null)
+                if (ui.ActividadDB.Id > 0)
+                {
+                    DatabaseHelper
+                        .EliminarActividadPrograma(
+                            ui.ActividadDB.Id);
+                }
+                else
+                {
+                    // Compatibilidad con registros/código antiguo.
+                    using (
+                        var connection =
+                            new Microsoft.Data.Sqlite
+                                .SqliteConnection(
+                                    $"Data Source={DatabaseHelper.RutaDirectorioDatos}\\sccosmos.db"))
                     {
-                        using (var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={DatabaseHelper.RutaDirectorioDatos}\\sccosmos.db"))
-                        {
-                            connection.Open();
-                            var cmd = connection.CreateCommand();
-                            cmd.CommandText = "UPDATE ProgramaVisitaV2 SET Hora=@nh, TipoActividad=@nt, CompaneroId=@ncomp WHERE CongreCodigo=@c AND MesReferencia=@m AND DiaSemana=@d AND Turno=@t AND Responsable=@r AND Hora=@h";
-                            cmd.Parameters.AddWithValue("@nh", txtHora.Text.Trim());
-                            cmd.Parameters.AddWithValue("@nt", txtTipo.Text.Trim());
-                            cmd.Parameters.AddWithValue("@ncomp", cmbAcompanante.SelectedValue);
-                            cmd.Parameters.AddWithValue("@c", _congreCodigo);
-                            cmd.Parameters.AddWithValue("@m", _mesPrograma.ToString("yyyy-MM"));
-                            cmd.Parameters.AddWithValue("@d", ui.Dia);
-                            cmd.Parameters.AddWithValue("@t", ui.Turno);
-                            cmd.Parameters.AddWithValue("@r", ui.Responsable);
-                            cmd.Parameters.AddWithValue("@h", ui.ActividadDB.Hora);
-                            cmd.ExecuteNonQuery();
-                        }
-                        inputWin.DialogResult = true;
-                        inputWin.Close();
-                    }
-                    else
-                    {
-                        MessageBox.Show("Debes indicar una hora y seleccionar un acompañante.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    }
-                };
-                grid.Children.Add(btnSave);
-                inputWin.Content = grid;
+                        connection.Open();
 
-                if (inputWin.ShowDialog() == true) ActualizarUI_MesPrograma();
+                        var cmd =
+                            connection.CreateCommand();
+
+                        cmd.CommandText =
+                            "DELETE FROM ProgramaVisitaV2 " +
+                            "WHERE CongreCodigo=@c " +
+                            "AND MesReferencia=@m " +
+                            "AND DiaSemana=@d " +
+                            "AND Turno=@t " +
+                            "AND Responsable=@r " +
+                            "AND Hora=@h";
+
+                        cmd.Parameters.AddWithValue(
+                            "@c",
+                            _congreCodigo);
+
+                        cmd.Parameters.AddWithValue(
+                            "@m",
+                            _mesPrograma.ToString(
+                                "yyyy-MM"));
+
+                        cmd.Parameters.AddWithValue(
+                            "@d",
+                            ui.Dia);
+
+                        cmd.Parameters.AddWithValue(
+                            "@t",
+                            ui.Turno);
+
+                        cmd.Parameters.AddWithValue(
+                            "@r",
+                            ui.Responsable);
+
+                        cmd.Parameters.AddWithValue(
+                            "@h",
+                            ui.ActividadDB.Hora);
+
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+
+                ActualizarUI_MesPrograma();
+            }
+        }
+
+        private void BtnEditarActividad_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            if (sender is Button btn
+                &&
+                btn.Tag is BotonActividadUI ui)
+            {
+                var ventana =
+                    new ProgramarActividadWindow(
+                        ui.Responsable,
+                        ui.Turno,
+                        ui.Dia,
+                        _congreCodigo,
+                        _mesPrograma.ToString(
+                            "yyyy-MM"),
+                        ui.ActividadDB);
+
+                ventana.Owner =
+                    Window.GetWindow(this);
+
+                if (ventana.ShowDialog() == true)
+                {
+                    ActualizarUI_MesPrograma();
+                }
             }
         }
 
@@ -548,7 +704,22 @@ namespace SCCosmos
                 if (fElim.HasValue && new DateTime(fElim.Value.Year, fElim.Value.Month, 1) < mesReferenciaGrid) continue;
 
                 DateTime? fCrea = ParsearFecha(h.FechaCreacion);
-                if (fCrea.HasValue && new DateTime(fCrea.Value.Year, fCrea.Value.Month, 1) > mesReferenciaGrid) continue;
+
+                // Las personas creadas manualmente en SCCosmos pueden no tener
+                // cuenta de JW (NombreJWHub/EmailJW vacíos). En ese caso
+                // FechaCreacion es la fecha de alta técnica en la aplicación, no
+                // necesariamente la fecha en que empezaron a formar parte de la
+                // congregación. No debemos ocultarlas de la página de visita.
+                bool personaSinCuentaJW =
+                    string.IsNullOrWhiteSpace(h.NombreJWHub)
+                    && string.IsNullOrWhiteSpace(h.EmailJW);
+
+                if (!personaSinCuentaJW
+                    && fCrea.HasValue
+                    && new DateTime(fCrea.Value.Year, fCrea.Value.Month, 1) > mesReferenciaGrid)
+                {
+                    continue;
+                }
 
                 contadorRespiro++;
                 if (contadorRespiro % 10 == 0) await Task.Delay(1);
@@ -824,102 +995,562 @@ namespace SCCosmos
             }
         }
 
-        private async Task CargarTerritorios(DateTime mesReferencia, DateTime fechaInicio, DateTime fechaFin, List<Persona> personasMes)
+        private async Task CargarTerritorios(
+            int anioServicio,
+            DateTime inicioAnioServicio,
+            DateTime finAnioServicio,
+            List<Persona> personasMes)
         {
-            var listaPlana = DatabaseHelper.ObtenerTerritoriosPorCongregacion(_congreCodigo);
-            var grupos = listaPlana.GroupBy(t => t.Nombre).ToList();
+            var listaPlana =
+                DatabaseHelper
+                    .ObtenerTerritoriosPorCongregacion(
+                        _congreCodigo);
 
-            var nombresS21Disponibles = personasMes
-                .Where(p => p.Grupo > 0 || string.IsNullOrWhiteSpace(p.NombreJWHub) || p.Nombre != p.NombreJWHub)
-                .Select(p => p.Nombre).OrderBy(n => n).ToList();
-            nombresS21Disponibles.Insert(0, "-- Sin Asignar --");
+            var grupos =
+                listaPlana
+                    .GroupBy(
+                        t =>
+                            t.Nombre)
+                    .ToList();
 
-            var filasGrid = new List<FilaTablaTerritorio>();
+            var nombresS21Disponibles =
+                personasMes
+                    .Where(
+                        p =>
+                            p.Grupo > 0
+                            ||
+                            string.IsNullOrWhiteSpace(
+                                p.NombreJWHub)
+                            ||
+                            p.Nombre !=
+                                p.NombreJWHub)
+                    .Select(
+                        p =>
+                            p.Nombre)
+                    .Where(
+                        n =>
+                            !string.IsNullOrWhiteSpace(
+                                n))
+                    .Distinct(
+                        StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(
+                        n =>
+                            n)
+                    .ToList();
 
-            DateTime fechaBaseStats = mesReferencia;
-            DateTime fecha6MesesAntes = fechaBaseStats.AddMonths(-6);
-            DateTime fecha4MesesAntes = fechaBaseStats.AddMonths(-4);
+            nombresS21Disponibles.Insert(
+                0,
+                "-- Sin Asignar --");
 
-            int totalTerritorios = 0, trabajados6Meses = 0, trabajandoseAhora = 0;
-            int caducados = 0, sinTrabajar1Ano = 0, sinTrabajar2Anos = 0;
+            var filasGrid =
+                new List<FilaTablaTerritorio>();
 
-            var cacheFuzzy = new Dictionary<string, string>();
-            int contadorRespiro = 0;
 
-            foreach (var grupo in grupos)
+            // Para un año pasado, las estadísticas se calculan
+            // al 31 de agosto. Para el año de servicio actual,
+            // se calculan hasta hoy.
+            DateTime fechaCorte;
+
+            if (DateTime.Today <
+                inicioAnioServicio)
             {
-                contadorRespiro++;
-                if (contadorRespiro % 10 == 0) await Task.Delay(1);
-
-                DateTime? fElim = ParsearFecha(grupo.FirstOrDefault()?.FechaEliminacion);
-                if (fElim.HasValue && new DateTime(fElim.Value.Year, fElim.Value.Month, 1) < fechaBaseStats) continue;
-
-                DateTime? fechaCreacion = ParsearFecha(grupo.FirstOrDefault()?.FechaCreacion);
-                if (fechaCreacion.HasValue && new DateTime(fechaCreacion.Value.Year, fechaCreacion.Value.Month, 1) > fechaBaseStats) continue;
-
-                totalTerritorios++;
-                var asignaciones = grupo.ToList();
-                var fila = new FilaTablaTerritorio { Nombre = grupo.Key, UltimaVez = grupo.FirstOrDefault()?.UltimaFechaCompletado };
-
-                var asignacionesFiltradas = asignaciones.Where(a => EsFechaEnRango(a.FechaAsignado, fechaInicio, fechaFin)).ToList();
-                fila.Vuelta1 = CrearCeldaVuelta(asignacionesFiltradas.ElementAtOrDefault(0), nombresS21Disponibles, cacheFuzzy);
-                fila.Vuelta2 = CrearCeldaVuelta(asignacionesFiltradas.ElementAtOrDefault(1), nombresS21Disponibles, cacheFuzzy);
-                fila.Vuelta3 = CrearCeldaVuelta(asignacionesFiltradas.ElementAtOrDefault(2), nombresS21Disponibles, cacheFuzzy);
-                fila.Vuelta4 = CrearCeldaVuelta(asignacionesFiltradas.ElementAtOrDefault(3), nombresS21Disponibles, cacheFuzzy);
-
-                filasGrid.Add(fila);
-
-                bool trabajadoEn6Meses = false; bool enCurso = false; bool caducado = false;
-                DateTime? ultimaDevolucionValida = null;
-
-                foreach (var asig in asignaciones)
-                {
-                    DateTime? fAsig = ParsearFecha(asig.FechaAsignado);
-                    DateTime? fComp = ParsearFecha(asig.FechaCompletado);
-
-                    if (fComp.HasValue && fComp.Value >= fecha6MesesAntes && fComp.Value < fechaBaseStats) trabajadoEn6Meses = true;
-
-                    if (fAsig.HasValue && fAsig.Value < fechaBaseStats && (!fComp.HasValue || fComp.Value >= fechaBaseStats))
-                    {
-                        enCurso = true;
-                        if (fAsig.Value <= fecha4MesesAntes) caducado = true;
-                    }
-
-                    if (fComp.HasValue && fComp.Value < fechaBaseStats)
-                    {
-                        if (!ultimaDevolucionValida.HasValue || fComp.Value > ultimaDevolucionValida.Value) ultimaDevolucionValida = fComp.Value;
-                    }
-                }
-
-                if (trabajadoEn6Meses) trabajados6Meses++;
-                if (enCurso) trabajandoseAhora++;
-                if (caducado) caducados++;
-
-                DateTime fechaReferenciaParaInactividad = ultimaDevolucionValida ?? fechaCreacion ?? DateTime.MinValue;
-
-                if (fechaReferenciaParaInactividad != DateTime.MinValue)
-                {
-                    double diasInactivo = (fechaBaseStats - fechaReferenciaParaInactividad).TotalDays;
-                    if (diasInactivo >= 730) sinTrabajar2Anos++;
-                    else if (diasInactivo >= 365) sinTrabajar1Ano++;
-                }
-                else sinTrabajar2Anos++;
+                fechaCorte =
+                    inicioAnioServicio;
+            }
+            else if (DateTime.Today >
+                     finAnioServicio)
+            {
+                fechaCorte =
+                    finAnioServicio;
+            }
+            else
+            {
+                fechaCorte =
+                    DateTime.Today;
             }
 
-            _territoriosGlobal = filasGrid;
-            MostrarPaginaTerritorios(1);
 
-            if (TxtTotalTerritorios != null) TxtTotalTerritorios.Text = totalTerritorios.ToString();
-            if (TxtTerritoriosTrabajados != null) TxtTerritoriosTrabajados.Text = trabajados6Meses.ToString();
-            if (TxtTerritoriosEnCurso != null) TxtTerritoriosEnCurso.Text = trabajandoseAhora.ToString();
-            if (TxtTerritoriosCaducados != null) TxtTerritoriosCaducados.Text = caducados.ToString();
-            if (TxtTerritorios1Ano != null) TxtTerritorios1Ano.Text = sinTrabajar1Ano.ToString();
-            if (TxtTerritorios2Anos != null) TxtTerritorios2Anos.Text = sinTrabajar2Anos.ToString();
+            // Esta estadística es móvil y NO debe limitarse al año de
+            // servicio seleccionado. Por ejemplo, a 31/01/2026 debe poder
+            // contar trabajos de agosto-diciembre de 2025 aunque parte de ese
+            // intervalo pertenezca al año de servicio anterior.
+            DateTime inicioUltimos6Meses =
+                fechaCorte.AddMonths(-6).AddDays(1);
+
+
+            DateTime fecha4MesesAntes =
+                fechaCorte.AddMonths(-4);
+
+
+            int totalTerritorios =
+                0;
+
+            int trabajados6Meses =
+                0;
+
+            int trabajadosAnioServicio =
+                0;
+
+            int trabajandoseAhora =
+                0;
+
+            int caducados =
+                0;
+
+            int sinTrabajar1Ano =
+                0;
+
+            int sinTrabajar2Anos =
+                0;
+
+
+            var cacheFuzzy =
+                new Dictionary<string, string>();
+
+            int contadorRespiro =
+                0;
+
+
+            foreach (var grupo
+                     in grupos)
+            {
+                contadorRespiro++;
+
+                if (contadorRespiro % 10 == 0)
+                {
+                    await Task.Delay(1);
+                }
+
+
+                var asignaciones =
+                    grupo
+                        .ToList();
+
+
+                DateTime? fechaCreacion =
+                    asignaciones
+                        .Select(
+                            a =>
+                                ParsearFecha(
+                                    a.FechaCreacion))
+                        .Where(
+                            f =>
+                                f.HasValue)
+                        .Select(
+                            f =>
+                                f.Value)
+                        .DefaultIfEmpty(
+                            DateTime.MinValue)
+                        .Min();
+
+                if (fechaCreacion ==
+                    DateTime.MinValue)
+                {
+                    fechaCreacion =
+                        null;
+                }
+
+
+                DateTime? fechaEliminacion =
+                    asignaciones
+                        .Select(
+                            a =>
+                                ParsearFecha(
+                                    a.FechaEliminacion))
+                        .Where(
+                            f =>
+                                f.HasValue)
+                        .Select(
+                            f =>
+                                f.Value)
+                        .DefaultIfEmpty(
+                            DateTime.MaxValue)
+                        .Min();
+
+                if (fechaEliminacion ==
+                    DateTime.MaxValue)
+                {
+                    fechaEliminacion =
+                        null;
+                }
+
+
+                // Primero obtenemos los registros que realmente pertenecen
+                // al año de servicio seleccionado. El año de servicio 2026,
+                // por ejemplo, abarca del 01/09/2025 al 31/08/2026.
+                var asignacionesAnio =
+                    asignaciones
+                        .Where(
+                            a =>
+                                AsignacionIntersecaRango(
+                                    a,
+                                    inicioAnioServicio,
+                                    finAnioServicio))
+                        .OrderBy(
+                            a =>
+                                ParsearFecha(
+                                    a.FechaAsignado)
+                                ??
+                                ParsearFecha(
+                                    a.FechaCompletado)
+                                ??
+                                DateTime.MinValue)
+                        .ToList();
+
+
+                // Un territorio debe aparecer y computar aunque no tenga
+                // ninguna asignación dentro del año de servicio seleccionado.
+                // FechaCreacion puede ser solo la fecha de importación a SCCosmos,
+                // por lo que nunca la usamos para ocultar años históricos.
+                // Sí respetamos una eliminación explícita anterior al periodo.
+                if (fechaEliminacion.HasValue
+                    && fechaEliminacion.Value.Date < inicioAnioServicio.Date)
+                {
+                    continue;
+                }
+
+
+                totalTerritorios++;
+
+
+                DateTime? ultimaVez =
+                    asignaciones
+                        .Select(
+                            a =>
+                                ParsearFecha(
+                                    a.FechaCompletado))
+                        .Where(
+                            f =>
+                                f.HasValue
+                                &&
+                                f.Value.Date <=
+                                fechaCorte.Date)
+                        .Select(
+                            f =>
+                                (DateTime?)f.Value)
+                        .OrderByDescending(
+                            f =>
+                                f)
+                        .FirstOrDefault();
+
+
+                var fila =
+                    new FilaTablaTerritorio
+                    {
+                        Nombre =
+                            grupo.Key,
+
+                        UltimaVez =
+                            ultimaVez.HasValue
+                                ? ultimaVez.Value
+                                    .ToString(
+                                        "dd/MM/yyyy")
+                                : (
+                                    asignaciones
+                                        .FirstOrDefault()
+                                        ?.UltimaFechaCompletado
+                                    ??
+                                    ""
+                                  ),
+
+                        RegistrosAnioServicio =
+                            asignacionesAnio
+                                .Select(
+                                    a =>
+                                        CrearCeldaVuelta(
+                                            a,
+                                            nombresS21Disponibles,
+                                            cacheFuzzy))
+                                .ToList()
+                    };
+
+
+                filasGrid.Add(
+                    fila);
+
+
+                bool trabajadoEn6Meses =
+                    false;
+
+                bool trabajadoEnAnio =
+                    false;
+
+                bool enCurso =
+                    false;
+
+                bool caducado =
+                    false;
+
+                // UltimaFechaCompletado del JSON puede contener una devolución
+                // anterior que no exista como registro independiente en la lista
+                // importada. La incorporamos para que las estadísticas móviles
+                // puedan mirar correctamente al año de servicio anterior.
+                DateTime? ultimaDevolucionValida =
+                    asignaciones
+                        .Select(a => ParsearFecha(a.UltimaFechaCompletado))
+                        .Where(f => f.HasValue && f.Value.Date <= fechaCorte.Date)
+                        .Select(f => (DateTime?)f.Value)
+                        .OrderByDescending(f => f)
+                        .FirstOrDefault();
+
+
+                foreach (var asig
+                         in asignaciones)
+                {
+                    DateTime? fAsig =
+                        ParsearFecha(
+                            asig.FechaAsignado);
+
+                    DateTime? fComp =
+                        ParsearFecha(
+                            asig.FechaCompletado);
+
+                    DateTime? fUltimaCompJson =
+                        ParsearFecha(
+                            asig.UltimaFechaCompletado);
+
+
+                    if (fComp.HasValue
+                        &&
+                        fComp.Value.Date >=
+                        inicioAnioServicio.Date
+                        &&
+                        fComp.Value.Date <=
+                        fechaCorte.Date)
+                    {
+                        trabajadoEnAnio =
+                            true;
+                    }
+
+
+                    if ((fComp.HasValue
+                         && fComp.Value.Date >= inicioUltimos6Meses.Date
+                         && fComp.Value.Date <= fechaCorte.Date)
+                        ||
+                        (fUltimaCompJson.HasValue
+                         && fUltimaCompJson.Value.Date >= inicioUltimos6Meses.Date
+                         && fUltimaCompJson.Value.Date <= fechaCorte.Date))
+                    {
+                        trabajadoEn6Meses =
+                            true;
+                    }
+
+
+                    if (fAsig.HasValue
+                        &&
+                        fAsig.Value.Date <=
+                        fechaCorte.Date
+                        &&
+                        (
+                            !fComp.HasValue
+                            ||
+                            fComp.Value.Date >
+                            fechaCorte.Date
+                        ))
+                    {
+                        enCurso =
+                            true;
+
+                        if (fAsig.Value.Date <=
+                            fecha4MesesAntes.Date)
+                        {
+                            caducado =
+                                true;
+                        }
+                    }
+
+
+                    if (fComp.HasValue
+                        &&
+                        fComp.Value.Date <=
+                        fechaCorte.Date)
+                    {
+                        if (!ultimaDevolucionValida
+                                .HasValue
+                            ||
+                            fComp.Value >
+                            ultimaDevolucionValida
+                                .Value)
+                        {
+                            ultimaDevolucionValida =
+                                fComp.Value;
+                        }
+                    }
+                }
+
+
+                if (trabajadoEn6Meses)
+                {
+                    trabajados6Meses++;
+                }
+
+                if (trabajadoEnAnio)
+                {
+                    trabajadosAnioServicio++;
+                }
+
+                if (enCurso)
+                {
+                    trabajandoseAhora++;
+                }
+
+                if (caducado)
+                {
+                    caducados++;
+                }
+
+
+                // Para inactividad usamos la última devolución real conocida.
+                // No usamos FechaCreacion porque puede ser únicamente la fecha
+                // de importación en SCCosmos y falsearía los >1 / >2 años.
+                DateTime fechaReferenciaParaInactividad =
+                    ultimaDevolucionValida
+                    ??
+                    DateTime.MinValue;
+
+
+                if (fechaReferenciaParaInactividad
+                    !=
+                    DateTime.MinValue)
+                {
+                    double diasInactivo =
+                        (
+                            fechaCorte
+                            -
+                            fechaReferenciaParaInactividad
+                        )
+                        .TotalDays;
+
+                    if (diasInactivo >=
+                        730)
+                    {
+                        sinTrabajar2Anos++;
+                    }
+                    else if (diasInactivo >=
+                             365)
+                    {
+                        sinTrabajar1Ano++;
+                    }
+                }
+                else
+                {
+                    sinTrabajar2Anos++;
+                }
+            }
+
+
+            _territoriosGlobal =
+                filasGrid
+                    .OrderBy(
+                        f =>
+                            ObtenerNumeroTerritorio(f.Nombre))
+                    .ThenBy(
+                        f =>
+                            f.Nombre,
+                        StringComparer.CurrentCultureIgnoreCase)
+                    .ToList();
+
+            MostrarPaginaTerritorios(
+                1);
+
+
+            if (TxtTotalTerritorios != null)
+            {
+                TxtTotalTerritorios.Text =
+                    totalTerritorios.ToString();
+            }
+
+            if (TxtTerritoriosTrabajados != null)
+            {
+                TxtTerritoriosTrabajados.Text =
+                    trabajados6Meses.ToString();
+            }
+
+            if (TxtTerritoriosTrabajadosAnio != null)
+            {
+                TxtTerritoriosTrabajadosAnio.Text =
+                    trabajadosAnioServicio.ToString();
+            }
+
+            if (TxtTerritoriosEnCurso != null)
+            {
+                TxtTerritoriosEnCurso.Text =
+                    trabajandoseAhora.ToString();
+            }
+
+            if (TxtTerritoriosCaducados != null)
+            {
+                TxtTerritoriosCaducados.Text =
+                    caducados.ToString();
+            }
+
+            if (TxtTerritorios1Ano != null)
+            {
+                TxtTerritorios1Ano.Text =
+                    sinTrabajar1Ano.ToString();
+            }
+
+            if (TxtTerritorios2Anos != null)
+            {
+                TxtTerritorios2Anos.Text =
+                    sinTrabajar2Anos.ToString();
+            }
         }
+
+
+        private bool AsignacionIntersecaRango(
+            TerritorioJSON asignacion,
+            DateTime inicio,
+            DateTime fin)
+        {
+            DateTime? fechaAsignado =
+                ParsearFecha(
+                    asignacion.FechaAsignado);
+
+            DateTime? fechaCompletado =
+                ParsearFecha(
+                    asignacion.FechaCompletado);
+
+
+            if (!fechaAsignado.HasValue
+                &&
+                !fechaCompletado.HasValue)
+            {
+                return false;
+            }
+
+
+            DateTime inicioRegistro =
+                fechaAsignado
+                ??
+                fechaCompletado.Value;
+
+            DateTime finRegistro =
+                fechaCompletado
+                ??
+                fin;
+
+
+            return
+                inicioRegistro.Date <=
+                fin.Date
+                &&
+                finRegistro.Date >=
+                inicio.Date;
+        }
+
 
         private void MostrarPaginaTerritorios(int pagina)
         {
-            if (_territoriosGlobal == null || !_territoriosGlobal.Any()) return;
+            // Si no hay territorios para el año seleccionado, limpiamos la vista
+            // en lugar de dejar datos/paginación de una carga anterior.
+            if (_territoriosGlobal == null || !_territoriosGlobal.Any())
+            {
+                _paginaActual = 1;
+                if (TablaTerritorios != null) TablaTerritorios.ItemsSource = null;
+                if (PanelPaginacion != null) PanelPaginacion.Children.Clear();
+                return;
+            }
 
             int totalPaginas = (int)Math.Ceiling(_territoriosGlobal.Count / (double)_itemsPorPagina);
             if (pagina < 1) pagina = 1;
@@ -951,79 +1582,115 @@ namespace SCCosmos
             if (sender is Button btn && btn.Tag is int paginaTarget) MostrarPaginaTerritorios(paginaTarget);
         }
 
-        private async void ExpanderMapa_Expanded(object sender, RoutedEventArgs e)
+        private async void ExpanderMapa_Expanded(
+            object sender,
+            RoutedEventArgs e)
         {
-            MapaWebBrowser.Visibility = Visibility.Visible;
-
-            var expander = sender as Expander;
-            if (expander != null && expander.IsExpanded)
+            if (sender is not Expander expander)
             {
-                if (_mapaCargado && !string.IsNullOrEmpty(_htmlMapaCache))
+                return;
+            }
+
+            // WebBrowser es un HWND nativo y no participa en el z-order
+            // normal de WPF. Si se hace visible durante el primer cálculo
+            // de tamaño del Expander puede dibujarse temporalmente fuera de
+            // su hueco. Lo mantenemos oculto hasta que ScrollViewer y
+            // Expander hayan terminado su layout.
+            MapaWebBrowser.Visibility =
+                Visibility.Collapsed;
+
+            expander.UpdateLayout();
+            MainScrollViewer?.UpdateLayout();
+
+            await Dispatcher.InvokeAsync(
+                () => { },
+                DispatcherPriority.Loaded);
+
+            await Task.Delay(120);
+
+            expander.UpdateLayout();
+            MainScrollViewer?.UpdateLayout();
+
+            if (!expander.IsExpanded)
+            {
+                return;
+            }
+
+            MapaWebBrowser.Visibility =
+                Visibility.Visible;
+
+            MapaWebBrowser.UpdateLayout();
+
+            if (_mapaCargado
+                &&
+                !string.IsNullOrEmpty(
+                    _htmlMapaCache))
+            {
+                MapaWebBrowser.NavigateToString(
+                    _htmlMapaCache);
+
+                return;
+            }
+
+            var personasActivas = DatabaseHelper.ObtenerPersonasPorCongregacion(_congreCodigo);
+            // Si la latitud es 999, es que ya la buscamos y no existe, no la volvemos a buscar
+            var pendientes = personasActivas.Where(p => !string.IsNullOrWhiteSpace(p.Direccion) && p.Latitud == 0 && p.Longitud == 0).ToList();
+
+            if (pendientes.Count > 0)
+            {
+                string htmlCarga = $@"
+                <!DOCTYPE html>
+                <html><head>
+                    <meta charset='UTF-8'>
+                    <style>body{{margin:0;padding:0;overflow:hidden;background:#252526;color:#4BA3E3;display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:'Segoe UI',sans-serif;text-align:center;}}</style>
+                </head><body>
+                    <h2>Geolocalizando direcciones en el mapa...</h2>
+                    <p>Convirtiendo textos a coordenadas ({pendientes.Count} pendientes).</p>
+                </body></html>";
+
+                MapaWebBrowser.NavigateToString(htmlCarga);
+
+                using (var client = new HttpClient())
                 {
-                    MapaWebBrowser.NavigateToString(_htmlMapaCache);
-                    return;
-                }
+                    client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 SCCosmos/1.0");
 
-                var personasActivas = DatabaseHelper.ObtenerPersonasPorCongregacion(_congreCodigo);
-                // Si la latitud es 999, es que ya la buscamos y no existe, no la volvemos a buscar
-                var pendientes = personasActivas.Where(p => !string.IsNullOrWhiteSpace(p.Direccion) && p.Latitud == 0 && p.Longitud == 0).ToList();
-
-                if (pendientes.Count > 0)
-                {
-                    string htmlCarga = $@"
-                    <!DOCTYPE html>
-                    <html><head>
-                        <meta charset='UTF-8'>
-                        <style>body{{margin:0;padding:0;overflow:hidden;background:#252526;color:#4BA3E3;display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:'Segoe UI',sans-serif;text-align:center;}}</style>
-                    </head><body>
-                        <h2>Geolocalizando direcciones en el mapa...</h2>
-                        <p>Convirtiendo textos a coordenadas ({pendientes.Count} pendientes).</p>
-                    </body></html>";
-
-                    MapaWebBrowser.NavigateToString(htmlCarga);
-
-                    using (var client = new HttpClient())
+                    foreach (var p in pendientes)
                     {
-                        client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 SCCosmos/1.0");
-
-                        foreach (var p in pendientes)
+                        try
                         {
-                            try
+                            string url = $"https://nominatim.openstreetmap.org/search?q={Uri.EscapeDataString(p.Direccion)}&format=json&limit=1&countrycodes=es";
+                            string response = await client.GetStringAsync(url);
+                            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                            var resultados = JsonSerializer.Deserialize<List<NominatimResult>>(response, options);
+
+                            double lat = 999, lon = 999;
+
+                            if (resultados != null && resultados.Count > 0)
                             {
-                                string url = $"https://nominatim.openstreetmap.org/search?q={Uri.EscapeDataString(p.Direccion)}&format=json&limit=1&countrycodes=es";
-                                string response = await client.GetStringAsync(url);
-                                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                                var resultados = JsonSerializer.Deserialize<List<NominatimResult>>(response, options);
-
-                                double lat = 999, lon = 999;
-
-                                if (resultados != null && resultados.Count > 0)
-                                {
-                                    if (double.TryParse(resultados[0].lat, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double latP)) lat = latP;
-                                    if (double.TryParse(resultados[0].lon, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double lonP)) lon = lonP;
-                                }
-
-                                p.Latitud = lat;
-                                p.Longitud = lon;
-
-                                using (var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={DatabaseHelper.RutaDirectorioDatos}\\sccosmos.db"))
-                                {
-                                    connection.Open();
-                                    var cmd = connection.CreateCommand();
-                                    cmd.CommandText = "UPDATE Personas SET Latitud=@lat, Longitud=@lon WHERE Id=@id OR PersonaRaizId=@id OR Id=(SELECT PersonaRaizId FROM Personas WHERE Id=@id)";
-                                    cmd.Parameters.AddWithValue("@lat", lat);
-                                    cmd.Parameters.AddWithValue("@lon", lon);
-                                    cmd.Parameters.AddWithValue("@id", p.Id);
-                                    cmd.ExecuteNonQuery();
-                                }
+                                if (double.TryParse(resultados[0].lat, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double latP)) lat = latP;
+                                if (double.TryParse(resultados[0].lon, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double lonP)) lon = lonP;
                             }
-                            catch { break; }
-                            await Task.Delay(1500);
+
+                            p.Latitud = lat;
+                            p.Longitud = lon;
+
+                            using (var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={DatabaseHelper.RutaDirectorioDatos}\\sccosmos.db"))
+                            {
+                                connection.Open();
+                                var cmd = connection.CreateCommand();
+                                cmd.CommandText = "UPDATE Personas SET Latitud=@lat, Longitud=@lon WHERE Id=@id OR PersonaRaizId=@id OR Id=(SELECT PersonaRaizId FROM Personas WHERE Id=@id)";
+                                cmd.Parameters.AddWithValue("@lat", lat);
+                                cmd.Parameters.AddWithValue("@lon", lon);
+                                cmd.Parameters.AddWithValue("@id", p.Id);
+                                cmd.ExecuteNonQuery();
+                            }
                         }
+                        catch { break; }
+                        await Task.Delay(1500);
                     }
                 }
-                DibujarMapa(personasActivas);
             }
+            DibujarMapa(personasActivas);
         }
 
         private void ExpanderMapa_Collapsed(object sender, RoutedEventArgs e)
@@ -1195,7 +1862,9 @@ namespace SCCosmos
 
         private void CmbVinculacion_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (_cargandoDatos) return;
+            // Ignoramos los SelectionChanged que genera la propia carga de
+            // Territorios, pero no los bloqueamos porque Ministerio esté cargando.
+            if (_cargandoTerritorios) return;
             if (sender is ComboBox combo && combo.DataContext is CeldaVuelta celda)
             {
                 if (!combo.IsLoaded) return;
@@ -1884,10 +2553,11 @@ namespace SCCosmos
         {
             public string Nombre { get; set; }
             public string UltimaVez { get; set; }
-            public CeldaVuelta Vuelta1 { get; set; }
-            public CeldaVuelta Vuelta2 { get; set; }
-            public CeldaVuelta Vuelta3 { get; set; }
-            public CeldaVuelta Vuelta4 { get; set; }
+
+            public List<CeldaVuelta>
+                RegistrosAnioServicio
+            { get; set; } =
+                new List<CeldaVuelta>();
         }
 
         public class CeldaVuelta

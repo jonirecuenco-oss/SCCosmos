@@ -71,6 +71,17 @@ namespace SCCosmos
 
         public bool S302Enviado { get; set; }
         public bool DocEnviada { get; set; }
+        public string TipoAsamblea { get; set; }
+        public string RepBetelNombre { get; set; }
+        public string RepBetelTelefono { get; set; }
+        public string RepBetelEmail { get; set; }
+        public bool RepBetelMensajeEnviado { get; set; }
+
+        // Regla: El botón solo aparece si es asamblea y de tipo AC-BR
+        public Visibility VisibilidadAsambleaBR => (Actividad == "Asamblea de circuito" && TipoAsamblea == "AC-BR") ? Visibility.Visible : Visibility.Collapsed;
+
+        // Opcional: Para que el botón se ponga gris si ya lo has enviado (si usas esta lógica)
+        public string ColorBotonRepBetel => RepBetelMensajeEnviado ? "#15FFFFFF" : "#252528";
 
         // Trucos visuales para los colores de los botones
         public string ColorBotonNotificacion => NotificacionEnviada ? "#10893E" : "Transparent";

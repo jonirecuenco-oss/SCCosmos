@@ -96,6 +96,19 @@ namespace SCCosmos
             aviso.RecargarArchivos();
             listaVisitas.Add(aviso);
 
+            var avisoSCS = new CategoriaVista
+            {
+                Titulo = "Aviso S-302 (visita de SCS)",
+                Descripcion = "Archivos que se enviarán específicamente para anunciar la visita de un Superintendente de Circuito Sustituto.",
+                VisibilidadSimple = Visibility.Visible,
+                VisibilidadColumnas = Visibility.Collapsed,
+                VisibilidadAlojamientoEspecial = Visibility.Collapsed
+            };
+            avisoSCS.AsuntoEmail = DatabaseHelper.ObtenerConfiguracion("Asunto_" + avisoSCS.Titulo, "Aviso de la visita (SCS)");
+            avisoSCS.PlantillaEmail = DatabaseHelper.ObtenerConfiguracion("Email_" + avisoSCS.Titulo, "Queridos compañeros,<br><br>Os dejo adjunto el formulario S-302 con la fecha de la próxima visita del Superintendente de Circuito Sustituto.<br><br>Recibid un fuerte abrazo.");
+            avisoSCS.RecargarArchivos();
+            listaVisitas.Add(avisoSCS);
+
             listaVisitas.Add(CrearCategoriaColumnas("Documentación", "Para subir varios archivos: Carta para los ancianos, programa de actividad, S-61, u otros."));
             listaVisitas.Add(CrearCategoriaColumnas("Documentación (con SCS)", "Para subir varios archivos para la visita con el SCS."));
             listaVisitas.Add(CrearCategoriaColumnas("Documentación (con visita de pastoreo)", "Para subir varios archivos para la visita de pastoreo."));
@@ -126,13 +139,26 @@ namespace SCCosmos
             envioS303.RecargarArchivos();
             listaVisitas.Add(envioS303);
 
+            var whatsappCCA = new CategoriaVista
+            {
+                Titulo = "WhatsApp al CCA",
+                Descripcion = "En esta sección no necesitas subir ningún archivo. Aquí defines la plantilla del mensaje de WhatsApp que se abrirá al pulsar el botón verde de la página RUTA.",
+                VisibilidadSimple = Visibility.Collapsed, // Colapsado porque no admite archivos
+                VisibilidadColumnas = Visibility.Collapsed,
+                VisibilidadAlojamientoEspecial = Visibility.Collapsed
+            };
+            whatsappCCA.AsuntoEmail = DatabaseHelper.ObtenerConfiguracion("Asunto_" + whatsappCCA.Titulo, "(Este asunto se ignora en WhatsApp)");
+            whatsappCCA.PlantillaEmail = DatabaseHelper.ObtenerConfiguracion("Email_" + whatsappCCA.Titulo, "Querido hermano [Coordinador], te escribo en relación a la próxima visita...");
+            whatsappCCA.RecargarArchivos();
+            listaVisitas.Add(whatsappCCA);
+
             CategoriasVisitas = listaVisitas;
 
             var listaAsambleas = new ObservableCollection<CategoriaVista>();
 
             var notificacionAsamblea = new CategoriaVista
             {
-                Titulo = "Notificación de asamblea de circuito",
+                Titulo = "Notificación AC",
                 Descripcion = "Archivos que se enviarán para anunciar la asamblea.",
                 VisibilidadSimple = Visibility.Visible,
                 VisibilidadColumnas = Visibility.Collapsed,
@@ -145,7 +171,7 @@ namespace SCCosmos
 
             var recordatorioAsamblea = new CategoriaVista
             {
-                Titulo = "Recordatorio de asamblea de circuito",
+                Titulo = "Recordatorio AC",
                 Descripcion = "Archivos que se enviarán como recordatorio de la asamblea.",
                 VisibilidadSimple = Visibility.Visible,
                 VisibilidadColumnas = Visibility.Collapsed,
@@ -203,6 +229,19 @@ namespace SCCosmos
             envioOrganigrama.PlantillaEmail = DatabaseHelper.ObtenerConfiguracion("Email_" + envioOrganigrama.Titulo, "Queridos compañeros,<br><br>Os dejo adjunto el organigrama de la próxima asamblea de circuito.<br><br>Recibid un fuerte abrazo.");
             envioOrganigrama.RecargarArchivos();
             listaAsambleas.Add(envioOrganigrama);
+
+            var mensajeRepBetel = new CategoriaVista
+            {
+                Titulo = "Mensaje a rep. de Betel",
+                Descripcion = "Archivos y plantilla del correo que se enviarán al representante de Betel en las asambleas AC-BR.",
+                VisibilidadSimple = Visibility.Visible,
+                VisibilidadColumnas = Visibility.Collapsed,
+                VisibilidadAlojamientoEspecial = Visibility.Collapsed
+            };
+            mensajeRepBetel.AsuntoEmail = DatabaseHelper.ObtenerConfiguracion("Asunto_" + mensajeRepBetel.Titulo, "Información de la asamblea de circuito");
+            mensajeRepBetel.PlantillaEmail = DatabaseHelper.ObtenerConfiguracion("Email_" + mensajeRepBetel.Titulo, "Querido hermano [Representante],<br><br>Te enviamos adjunta información útil para nuestra próxima asamblea de circuito.<br><br>Recibe un abrazo.");
+            mensajeRepBetel.RecargarArchivos();
+            listaAsambleas.Add(mensajeRepBetel);
 
             CategoriasAsambleas = listaAsambleas;
         }

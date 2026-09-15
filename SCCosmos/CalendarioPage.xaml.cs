@@ -1,14 +1,12 @@
 ﻿using iText.Forms;
 using iText.Kernel.Pdf;
 using OpenQA.Selenium;
-using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Firefox;
 using OpenQA.Selenium.Support.UI;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -18,6 +16,7 @@ using System.Windows.Data;
 using System.Windows.Threading;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Runtime.InteropServices;
 
 namespace SCCosmos
 {
@@ -29,6 +28,12 @@ namespace SCCosmos
         private DateTime _fechaLimiteAnterior;
         private DateTime _fechaLimitePosterior;
         private ScrollViewer _scrollPadreFantasma;
+
+        // Importación nativa de Windows para simular el teclado
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, int dwExtraInfo);
+        private const byte VK_RETURN = 0x0D; // Código de la tecla ENTER
+        private const int KEYEVENTF_KEYUP = 0x0002;
 
         public CalendarioPage()
         {
@@ -58,7 +63,6 @@ namespace SCCosmos
                 martesActual = martesActual.AddDays(-1);
             }
 
-            // REDUCIDO DE 52 A 26 SEMANAS (6 MESES)
             _fechaLimiteAnterior = martesActual.AddDays(-26 * 7);
             _fechaLimitePosterior = martesActual.AddDays(26 * 7);
 
@@ -190,6 +194,67 @@ namespace SCCosmos
             }
         }
 
+        // ==========================================
+        // NUEVO MÉTODOS DE WHATSAPP
+        // ==========================================
+        private async void BtnWhatsAppCoordinador_Click(object sender, RoutedEventArgs e)
+        {
+            var btn = sender as FrameworkElement;
+            var semana = btn?.DataContext as SemanaCalendario;
+            if (semana == null || string.IsNullOrEmpty(semana.Congregacion)) return;
+
+            var congregacion = DatabaseHelper.ObtenerPersonas().Where(p => p.CongregacionNombre == semana.Congregacion).ToList();
+            var coordinador = congregacion.FirstOrDefault(p => !string.IsNullOrEmpty(p.Privilegios) && p.Privilegios.Contains("Coordinador"));
+
+            if (coordinador == null || string.IsNullOrEmpty(coordinador.Telefono))
+            {
+                MessageBox.Show($"No se ha encontrado el teléfono del coordinador para la congregación {semana.Congregacion} en la Base de Datos.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            //string telefono = coordinador.Telefono.Replace(" ", "").Replace("+", "").Replace("-", "");
+            //if (!telefono.StartsWith("34") && telefono.Length == 9) telefono = "34" + telefono;
+
+            string telefono = "34600394693";
+            // RECUPERAR PLANTILLA DE WHATSAPP
+            string plantillaHtml = DatabaseHelper.ObtenerConfiguracion("Email_WhatsApp al CCA", "Querido hermano [Coordinador], te escribo en relación a la próxima visita...");
+
+            // CONVERSIÓN DE HTML A FORMATO WHATSAPP
+            // 1. Reemplazamos los saltos de línea web por saltos reales
+            string mensajePlano = plantillaHtml.Replace("<br>", "\n").Replace("<br/>", "\n").Replace("<br />", "\n").Replace("</p>", "\n\n");
+
+            // 2. Convertimos el estilo enriquecido (WPF suele inyectar B, STRONG, I, EM) al de WhatsApp
+            mensajePlano = mensajePlano.Replace("<b>", "*").Replace("</b>", "*")
+                                       .Replace("<strong>", "*").Replace("</strong>", "*")
+                                       .Replace("<i>", "_").Replace("</i>", "_")
+                                       .Replace("<em>", "_").Replace("</em>", "_");
+
+            // 3. Eliminamos el resto de la "basura" HTML que no soporta WhatsApp (U, FONT, P, DIV...)
+            mensajePlano = System.Text.RegularExpressions.Regex.Replace(mensajePlano, "<.*?>", string.Empty);
+
+            // 4. Decodificamos entidades HTML (ej: &nbsp;, &amp;)
+            mensajePlano = System.Net.WebUtility.HtmlDecode(mensajePlano);
+
+            // 5. Inyectamos la variable [Coordinador] y limpiamos los espacios extras en blanco al final e inicio
+            string nombreHermano = !string.IsNullOrEmpty(coordinador.NombreComun) ? coordinador.NombreComun : coordinador.Nombre;
+            string mensajeFinal = mensajePlano.Replace("[Coordinador]", nombreHermano).Trim();
+
+            // LANZAR WHATSAPP
+            string url = $"https://wa.me/{telefono}?text={Uri.EscapeDataString(mensajeFinal)}";
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
+
+                // 1. Esperamos 3 segundos a que cargue WhatsApp Desktop
+                await Task.Delay(3000);
+
+                // 2. Simulamos la pulsación física de ENTER de forma nativa
+                keybd_event(VK_RETURN, 0, 0, 0);             // Pulsar tecla
+                keybd_event(VK_RETURN, 0, KEYEVENTF_KEYUP, 0); // Soltar tecla
+            }
+            catch { }
+        }
+
         private ScrollViewer ObtenerScrollViewer(DependencyObject depObj)
         {
             if (depObj is ScrollViewer viewer) return viewer;
@@ -206,7 +271,7 @@ namespace SCCosmos
         {
             var scrollViewer = ObtenerScrollViewer(TablaRuta);
             double offsetAnterior = scrollViewer != null ? scrollViewer.VerticalOffset : 0;
-            double alturaTotalAnterior = scrollViewer != null ? scrollViewer.ExtentHeight : 0; // Guardamos la altura antes de insertar
+            double alturaTotalAnterior = scrollViewer != null ? scrollViewer.ExtentHeight : 0;
 
             for (int i = 0; i < 26; i++)
             {
@@ -217,13 +282,10 @@ namespace SCCosmos
 
             if (scrollViewer != null)
             {
-                // Usamos DispatcherPriority.Loaded para asegurarnos de que la tabla ya se ha dibujado antes de medirla
                 Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() =>
                 {
                     TablaRuta.UpdateLayout();
-                    // Calculamos exactamente cuánto ha crecido la tabla "por arriba"
                     double diferenciaAltura = scrollViewer.ExtentHeight - alturaTotalAnterior;
-                    // Desplazamos la vista exactamente esa misma cantidad hacia abajo para que quede congelada en tu posición
                     scrollViewer.ScrollToVerticalOffset(offsetAnterior + diferenciaAltura);
                 }));
             }
@@ -231,7 +293,6 @@ namespace SCCosmos
 
         private void BtnCargarFuturo_Click(object sender, RoutedEventArgs e)
         {
-            // REDUCIDO DE 52 A 26 SEMANAS
             for (int i = 0; i < 26; i++)
             {
                 _fechaLimitePosterior = _fechaLimitePosterior.AddDays(7);
@@ -337,11 +398,15 @@ namespace SCCosmos
             var semanaSeleccionada = boton.DataContext as SemanaCalendario;
             if (semanaSeleccionada == null) return;
 
-            var archivosS302 = DatabaseHelper.ObtenerDocumentos("Aviso de la visita");
+            // NUEVA LÓGICA DE DETECCIÓN
+            bool esSCS = semanaSeleccionada.Tipo != null && (semanaSeleccionada.Tipo.Contains("SCS", StringComparison.OrdinalIgnoreCase) || semanaSeleccionada.Tipo.Equals("Visita de SCS", StringComparison.OrdinalIgnoreCase));
+            string categoriaS302 = esSCS ? "Aviso S-302 (visita de SCS)" : "Aviso de la visita"; // Usamos la pestaña normal o la nueva según toque
+
+            var archivosS302 = DatabaseHelper.ObtenerDocumentos(categoriaS302);
 
             if (archivosS302 == null || archivosS302.Count == 0)
             {
-                MessageBox.Show("No has subido ningún archivo en el apartado Documentación > Aviso de la visita.\n\nPor favor, sube el archivo S-302 maestro antes de continuar.", "Envío bloqueado", MessageBoxButton.OK, MessageBoxImage.Stop);
+                MessageBox.Show($"No has subido ningún archivo en el apartado Documentación > {categoriaS302}.\n\nPor favor, sube el archivo S-302 maestro antes de continuar.", "Envío bloqueado", MessageBoxButton.OK, MessageBoxImage.Stop);
                 return;
             }
 
@@ -350,9 +415,6 @@ namespace SCCosmos
             string rutaPdfOriginal = archivosS302[0].RutaLocal;
             string rutaPdfRelleno = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), $"S-302_{congreNombre}.pdf");
 
-            // ======================================================================
-            // 1. RECOPILAR DATOS PARA LOS CAMPOS DEL S-302
-            // ======================================================================
             string nombreSC = DatabaseHelper.ObtenerConfiguracion("NombreSC", "Jonatán");
             string apellidoSC = DatabaseHelper.ObtenerConfiguracion("ApellidoSC", "Recuenco");
             string nombreCompletoSC = $"{nombreSC} {apellidoSC}".Trim();
@@ -384,7 +446,8 @@ namespace SCCosmos
                (semanaSeleccionada.Tipo.Contains("SCS", StringComparison.OrdinalIgnoreCase) ||
                 semanaSeleccionada.Tipo.Equals("Visita de SCS", StringComparison.OrdinalIgnoreCase)))
             {
-                text2Value = string.IsNullOrWhiteSpace(nombreComunSCS) ? "(SCS)" : $"{nombreComunSCS} (SCS)";
+                // CORRECCIÓN: Si es visita de SCS, escribimos estrictamente "SCS"
+                text2Value = "SCS";
             }
 
             string text4Value = nombreCompletoSC;
@@ -393,9 +456,6 @@ namespace SCCosmos
             DateTime fechaFin = fechaInicio.AddDays(5);
             string textoFechas = $"Del {fechaInicio.ToString("dd-MMM-yy").ToLower()} al {fechaFin.ToString("dd-MMM-yy").ToLower()}";
 
-            // ======================================================================
-            // 2. RELLENAR EL PDF ANTES DE ABRIR EL POPUP
-            // ======================================================================
             try
             {
                 using (PdfDocument pdfDoc = new PdfDocument(new PdfReader(rutaPdfOriginal), new PdfWriter(rutaPdfRelleno)))
@@ -428,7 +488,16 @@ namespace SCCosmos
                 }
             };
 
-            var popup = new ConfirmarEnvioWindow($"Enviar Aviso: {congreNombre}", semanaSeleccionada.S302Enviado, archivosParaPreview);
+            // EXTRAER CONFIGURACIÓN DEL EMAIL DINÁMICO SEGÚN LA CATEGORÍA (Normal o SCS)
+            string asuntoEmailS302 = DatabaseHelper.ObtenerConfiguracion("Asunto_" + categoriaS302, "Aviso de la visita");
+            string mensajeHtmlS302 = DatabaseHelper.ObtenerConfiguracion("Email_" + categoriaS302, "Queridos compañeros,<br><br>Os dejo adjunto el formulario S-302 con la fecha de la próxima visita.");
+            
+            // Reemplazamos posibles etiquetas dinámicas
+            asuntoEmailS302 = asuntoEmailS302.Replace("[Congregacion]", congreNombre);
+            mensajeHtmlS302 = mensajeHtmlS302.Replace("[Congregacion]", congreNombre);
+
+            // PASAMOS LOS DATOS A LA VENTANA
+            var popup = new ConfirmarEnvioWindow($"Enviar Aviso: {congreNombre}", semanaSeleccionada.S302Enviado, archivosParaPreview, asuntoEmailS302, mensajeHtmlS302);
             popup.Owner = Window.GetWindow(this);
 
             bool? procederEnvio = popup.ShowDialog();
@@ -442,15 +511,13 @@ namespace SCCosmos
 
             if (procederEnvio != true) return;
 
-            // ======================================================================
-            // 4. PROCEDER AL ENVÍO AUTOMÁTICO (SELENIUM)
-            // ======================================================================
+            // RECUPERAMOS LOS DATOS EDITADOS
+            asuntoEmailS302 = popup.AsuntoFinal;
+            mensajeHtmlS302 = popup.CuerpoFinal;
+
             string congreCodigo = DatabaseHelper.ObtenerCodigoCongregacion(congreNombre);
             string correoCongregacion = $"CONG601{congreCodigo}@jwpub.org";
             string folderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SCCosmos", "PerfilFirefoxCorreo");
-
-            string asuntoEmailS302 = DatabaseHelper.ObtenerConfiguracion("Asunto_Aviso de la visita", "Aviso de la visita");
-            string mensajeHtmlS302 = DatabaseHelper.ObtenerConfiguracion("Email_Aviso de la visita", "Queridos compañeros,<br><br>Os dejo adjunto el formulario S-302 con la fecha de la próxima visita.");
 
             if (!Directory.Exists(folderPath))
             {
@@ -668,9 +735,6 @@ namespace SCCosmos
             string varApellidoPast = DatabaseHelper.ObtenerConfiguracion("VarApPastoreo", "$_APELLIDO_VISITA");
             string varEspPast = DatabaseHelper.ObtenerConfiguracion("VarEsposaPastoreo", "$_ESPOSA_VISITA");
 
-            string asuntoEmailDoc = DatabaseHelper.ObtenerConfiguracion("Asunto_" + categoriaBase, "Documentación de la visita");
-            string mensajeHtmlDoc = DatabaseHelper.ObtenerConfiguracion("Email_" + categoriaBase, "Queridos hermanos,<br><br>Adjuntamos la documentación.");
-
             string carpetaTemp = Path.Combine(Path.GetTempPath(), "SCCosmos_Docs_" + semanaSeleccionada.Congregacion);
             if (Directory.Exists(carpetaTemp)) Directory.Delete(carpetaTemp, true);
             Directory.CreateDirectory(carpetaTemp);
@@ -721,7 +785,15 @@ namespace SCCosmos
                 });
             }
 
-            var popup = new ConfirmarEnvioWindow($"Doc: {semanaSeleccionada.Congregacion}", semanaSeleccionada.DocEnviada, archivosProcesados);
+            // EXTRAER CONFIGURACIÓN DEL EMAIL
+            string asuntoEmailDoc = DatabaseHelper.ObtenerConfiguracion("Asunto_" + categoriaBase, "Documentación de la visita");
+            string mensajeHtmlDoc = DatabaseHelper.ObtenerConfiguracion("Email_" + categoriaBase, "Queridos hermanos,<br><br>Adjuntamos la documentación.");
+
+            asuntoEmailDoc = asuntoEmailDoc.Replace("[Congregacion]", semanaSeleccionada.Congregacion);
+            mensajeHtmlDoc = mensajeHtmlDoc.Replace("[Congregacion]", semanaSeleccionada.Congregacion);
+
+            // PASAMOS LOS DATOS A LA VENTANA
+            var popup = new ConfirmarEnvioWindow($"Doc: {semanaSeleccionada.Congregacion}", semanaSeleccionada.DocEnviada, archivosProcesados, asuntoEmailDoc, mensajeHtmlDoc);
             popup.Owner = Window.GetWindow(this);
 
             bool? procederEnvio = popup.ShowDialog();
@@ -735,6 +807,10 @@ namespace SCCosmos
 
             if (procederEnvio == true)
             {
+                // RECUPERAMOS LOS DATOS EDITADOS
+                asuntoEmailDoc = popup.AsuntoFinal;
+                mensajeHtmlDoc = popup.CuerpoFinal;
+
                 string congreNombre = semanaSeleccionada.Congregacion;
                 string congreCodigo = DatabaseHelper.ObtenerCodigoCongregacion(congreNombre);
                 string correoCongregacion = $"CONG601{congreCodigo}@jwpub.org";
@@ -802,7 +878,6 @@ namespace SCCosmos
                                 return inputs.Count > 0 ? inputs[0] : null;
                             });
 
-                            // SUBIMOS TODOS LOS ARCHIVOS
                             string rutasUnidas = string.Join("\n", archivosProcesados.Select(a => a.RutaLocal));
                             inputArchivo.SendKeys(rutasUnidas);
 
@@ -817,7 +892,6 @@ namespace SCCosmos
                                 try { waitSubida.Until(d => d.PageSource.Contains(nombreCorto)); } catch { }
                             }
 
-                            // Bucle Anti-Parpadeo
                             try
                             {
                                 waitSubida.Until(d => {
@@ -875,6 +949,186 @@ namespace SCCosmos
                 {
                     OverlayCargando.Visibility = Visibility.Collapsed;
                 }
+            }
+        }
+
+        private async void BtnEnviarRepBetel_Click(object sender, RoutedEventArgs e)
+        {
+            var boton = sender as FrameworkElement;
+            var semana = boton?.DataContext as SemanaCalendario;
+            if (semana == null) return;
+
+            if (string.IsNullOrWhiteSpace(semana.RepBetelEmail))
+            {
+                MessageBox.Show("No has introducido ningún correo electrónico para el representante de Betel en la configuración de esta semana.", "Falta el Email", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var archivosRepBetel = DatabaseHelper.ObtenerDocumentos("Mensaje a rep. de Betel") ?? new List<ArchivoDocumento>();
+
+            // EXTRAER CONFIGURACIÓN DEL EMAIL
+            string asuntoEmail = DatabaseHelper.ObtenerConfiguracion("Asunto_Mensaje a rep. de Betel", "Información de la asamblea de circuito");
+            string mensajeHtml = DatabaseHelper.ObtenerConfiguracion("Email_Mensaje a rep. de Betel", "Querido hermano [Representante],<br><br>Te enviamos adjunta información útil para la asamblea.");
+
+            // Reemplazamos variables dinámicas
+            string nombreRep = string.IsNullOrWhiteSpace(semana.RepBetelNombre) ? "hermano" : semana.RepBetelNombre;
+            asuntoEmail = asuntoEmail.Replace("[Representante]", nombreRep).Replace("[Seccion]", semana.SeccionAsamblea);
+            mensajeHtml = mensajeHtml.Replace("[Representante]", nombreRep).Replace("[Seccion]", semana.SeccionAsamblea);
+
+            // VENTANA DE PREVISUALIZACIÓN Y EDICIÓN
+            var popup = new ConfirmarEnvioWindow($"Mensaje al Rep. Betel", semana.RepBetelMensajeEnviado, archivosRepBetel, asuntoEmail, mensajeHtml);
+            popup.Owner = Window.GetWindow(this);
+
+            bool? procederEnvio = popup.ShowDialog();
+
+            if (popup.EstadoModificadoManual && procederEnvio != true)
+            {
+                semana.RepBetelMensajeEnviado = popup.EstadoEnviadoActual;
+                DatabaseHelper.GuardarSemana(semana);
+                _vistaAgrupada.Refresh();
+            }
+
+            if (procederEnvio != true) return;
+
+            // RECUPERAMOS LOS TEXTOS EDITADOS
+            asuntoEmail = popup.AsuntoFinal;
+            mensajeHtml = popup.CuerpoFinal;
+
+            string folderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SCCosmos", "PerfilFirefoxCorreo");
+            if (!Directory.Exists(folderPath))
+            {
+                MessageBox.Show("Debes ir a 'Configuración' y vincular tu cuenta de correo primero.", "Perfil no encontrado", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            OverlayCargando.Visibility = Visibility.Visible;
+
+            try
+            {
+                await Task.Run(() =>
+                {
+                    var service = OpenQA.Selenium.Firefox.FirefoxDriverService.CreateDefaultService();
+                    service.HideCommandPromptWindow = true;
+
+                    var options = new OpenQA.Selenium.Firefox.FirefoxOptions();
+                    options.AddArgument("-profile");
+                    options.AddArgument(folderPath);
+                    options.AddArgument("-no-remote");
+
+                    OpenQA.Selenium.IWebDriver driver = new OpenQA.Selenium.Firefox.FirefoxDriver(service, options);
+
+                    try
+                    {
+                        driver.Navigate().GoToUrl("https://mail.jwpub.org/owa/#path=/mail");
+                        WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(20));
+
+                        IWebElement btnNuevo = wait.Until(d => {
+                            var botones = d.FindElements(By.XPath("//button[contains(@title, 'Escribir un mensaje nuevo') or .//span[text()='Nuevo']]"));
+                            foreach (var b in botones) { if (b.Displayed && b.Enabled) return b; }
+                            return null;
+                        });
+                        ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", btnNuevo);
+
+                        IWebElement inputCorreo = wait.Until(d => {
+                            var inputs = d.FindElements(By.XPath("//input[@aria-label='Para' and @role='textbox']"));
+                            foreach (var input in inputs) { if (input.Displayed && input.Enabled) return input; }
+                            return null;
+                        });
+
+                        System.Threading.Thread.Sleep(500);
+                        ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].focus(); arguments[0].click();", inputCorreo);
+
+                        inputCorreo.SendKeys(semana.RepBetelEmail.Trim());
+                        System.Threading.Thread.Sleep(500);
+                        inputCorreo.SendKeys(OpenQA.Selenium.Keys.Return);
+                        System.Threading.Thread.Sleep(200);
+                        inputCorreo.SendKeys(OpenQA.Selenium.Keys.Tab);
+
+                        IWebElement inputAsunto = wait.Until(d => {
+                            var inputs = d.FindElements(By.XPath("//input[contains(@aria-label, 'Asunto') or @placeholder='Agregar un asunto']"));
+                            foreach (var input in inputs) { if (input.Displayed && input.Enabled) return input; }
+                            return null;
+                        });
+                        ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].focus(); arguments[0].click();", inputAsunto);
+                        inputAsunto.SendKeys(asuntoEmail);
+
+                        if (archivosRepBetel.Count > 0)
+                        {
+                            IWebElement inputArchivo = wait.Until(d => {
+                                var inputs = d.FindElements(By.XPath("//input[@type='file']"));
+                                return inputs.Count > 0 ? inputs[0] : null;
+                            });
+
+                            string rutasUnidas = string.Join("\n", archivosRepBetel.Select(a => a.RutaLocal));
+                            inputArchivo.SendKeys(rutasUnidas);
+
+                            System.Threading.Thread.Sleep(1000 * archivosRepBetel.Count);
+
+                            WebDriverWait waitSubida = new WebDriverWait(driver, TimeSpan.FromSeconds(90));
+                            foreach (var arch in archivosRepBetel)
+                            {
+                                string nombreCorto = Path.GetFileNameWithoutExtension(arch.NombreArchivo);
+                                if (nombreCorto.Length > 15) nombreCorto = nombreCorto.Substring(0, 15);
+                                try { waitSubida.Until(d => d.PageSource.Contains(nombreCorto)); } catch { }
+                            }
+
+                            try
+                            {
+                                waitSubida.Until(d => {
+                                    var spinners = d.FindElements(By.XPath("//div[contains(@class, 'spinnerAnimation')]"));
+                                    if (spinners.Count == 0)
+                                    {
+                                        System.Threading.Thread.Sleep(1000);
+                                        return d.FindElements(By.XPath("//div[contains(@class, 'spinnerAnimation')]")).Count == 0;
+                                    }
+                                    return false;
+                                });
+                            }
+                            catch { }
+
+                            System.Threading.Thread.Sleep(2000);
+                        }
+
+                        IWebElement inputCuerpo = wait.Until(d => {
+                            var inputs = d.FindElements(By.XPath("//div[@role='textbox' and @aria-label='Cuerpo del mensaje']"));
+                            foreach (var input in inputs) { if (input.Displayed && input.Enabled) return input; }
+                            return null;
+                        });
+
+                        ((IJavaScriptExecutor)driver).ExecuteScript(
+                            "arguments[0].focus(); document.execCommand('insertHTML', false, arguments[1]);",
+                            inputCuerpo, mensajeHtml);
+
+                        System.Threading.Thread.Sleep(1000);
+
+                        IWebElement btnEnviar = wait.Until(d => {
+                            var botones = d.FindElements(By.XPath("//button[@aria-label='Enviar' or @title='Enviar']"));
+                            foreach (var b in botones) { if (b.Displayed && b.Enabled) return b; }
+                            return null;
+                        });
+                        ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", btnEnviar);
+
+                        System.Threading.Thread.Sleep(4000);
+                    }
+                    finally
+                    {
+                        if (driver != null) driver.Quit();
+                    }
+                });
+
+                semana.RepBetelMensajeEnviado = true;
+                DatabaseHelper.GuardarSemana(semana);
+                _vistaAgrupada.Refresh();
+
+                MessageBox.Show("Mensaje procesado y enviado con éxito al representante de Betel.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Hubo un error al procesar el archivo o abrir el navegador:\n\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                OverlayCargando.Visibility = Visibility.Collapsed;
             }
         }
 
@@ -1027,11 +1281,8 @@ namespace SCCosmos
             ventanaCiclo.ShowDialog();
         }
 
-        // Función que salta al hacer clic en cualquier parte de la fila
         private void FilaSemana_Click(object sender, MouseButtonEventArgs e)
         {
-            // CORTAFUEGOS: Si el usuario ha hecho clic justo encima de un botón (como enviar S-302, etc), 
-            // ignoramos el evento de la fila para que no se abra la ventana de edición por accidente.
             if (e.OriginalSource is DependencyObject source)
             {
                 var esBotonEstandar = FindParent<Button>(source) != null;
@@ -1056,7 +1307,6 @@ namespace SCCosmos
             }
         }
 
-        // Función auxiliar para saber qué es lo que hay debajo del cursor del ratón (útil para el cortafuegos)
         private T FindParent<T>(DependencyObject child) where T : DependencyObject
         {
             DependencyObject parentObject = VisualTreeHelper.GetParent(child);
@@ -1064,6 +1314,5 @@ namespace SCCosmos
             T parent = parentObject as T;
             return parent ?? FindParent<T>(parentObject);
         }
-
     }
 }

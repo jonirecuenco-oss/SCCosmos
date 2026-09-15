@@ -204,29 +204,38 @@
                                         <ui:Button Icon="{ui:SymbolIcon DocumentArrowRight24}" Appearance="Secondary" Padding="6" Cursor="Hand" Click="BtnEnviarDoc_Click" ToolTip="Enviar documentación de la visita" Background="{Binding ColorBotonDoc}"/>
                                     </ContentControl>
 
+                                    <ContentControl Margin="0,0,5,0" Visibility="{Binding VisibilidadVisita}">
+                                        <ui:Button Icon="{ui:SymbolIcon Chat24}" Appearance="Primary" Background="#25D366" BorderThickness="0" Padding="6" Cursor="Hand" Click="BtnWhatsAppCoordinador_Click" ToolTip="WhatsApp al Coordinador"/>
+                                    </ContentControl>
+
                                     <!-- Botones de ASAMBLEA -->
                                     <ContentControl Margin="0,0,5,0" Visibility="{Binding VisibilidadAsamblea}">
                                         <ui:Button Icon="{ui:SymbolIcon MailAlert24}" Appearance="Secondary" Padding="6" Cursor="Hand" Click="BtnEnviarRecordatorio_Click" ToolTip="Enviar recordatorio asamblea" Background="{Binding ColorBotonRecordatorio}"/>
                                     </ContentControl>
 
+                                    <!-- Botón Mensaje a Rep. de Betel (SOLO AC-BR) -->
+                                    <ContentControl Margin="0,0,5,0" Visibility="{Binding VisibilidadAsambleaBR}">
+                                        <ui:Button Icon="{ui:SymbolIcon PersonMail24}" Appearance="Secondary" Padding="6" Cursor="Hand" Click="BtnEnviarRepBetel_Click" ToolTip="Enviar mensaje a Rep. de Betel" Background="{Binding ColorBotonRepBetel}"/>
+                                    </ContentControl>
+                                    
                                     <!-- Botones de HERRAMIENTAS: Importar -->
                                     <ContentControl Margin="0,0,5,0" Visibility="{Binding VisibilidadVisita}">
                                         <ui:Button Icon="{ui:SymbolIcon ArrowImport24}" Appearance="Secondary" Padding="6" Cursor="Hand" Click="BtnImportar_Click" ToolTip="Importar archivos (S-21 / Territorios)"/>
                                     </ContentControl>
 
-                                    <!-- BOTÓN DEL OJO: Ahora C# decide si aparece o no -->
+                                    <!-- BOTÓN DEL OJO -->
                                     <ContentControl Margin="0,0,5,0" Visibility="{Binding VisibilidadVerVisita}">
                                         <ui:Button Icon="{ui:SymbolIcon Eye24}" Appearance="Success" Padding="6" Cursor="Hand" Click="BtnVerVisita_Click" ToolTip="Ver datos de la congregación"/>
                                     </ContentControl>
 
                                     <ui:Button Icon="{ui:SymbolIcon Delete24}" 
-                                       Appearance="Transparent" 
-                                       Foreground="#D13438"
-                                       Padding="6" 
-                                       Cursor="Hand" 
-                                       Click="BtnEliminarActividad_Click" 
-                                       ToolTip="Eliminar esta actividad extra"
-                                       Visibility="{Binding EsClonada}"/>
+                                               Appearance="Transparent" 
+                                               Foreground="#D13438"
+                                               Padding="6" 
+                                               Cursor="Hand" 
+                                               Click="BtnEliminarActividad_Click" 
+                                               ToolTip="Eliminar esta actividad extra"
+                                               Visibility="{Binding EsClonada}"/>
 
                                     <!-- Botones de SOLAPAMIENTO DE ACTIVIDADES -->
                                     <ui:Button 
@@ -239,7 +248,6 @@
                                                ToolTip="Solapar otra actividad en la misma semana"
                                                Visibility="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsMouseOver, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
-                                   
                                 </StackPanel>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>

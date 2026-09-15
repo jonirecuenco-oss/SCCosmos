@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.ComponentModel;
@@ -98,7 +98,7 @@ namespace SCCosmos
 
             EjecutarQuery(connection, @"CREATE TABLE IF NOT EXISTS Semanas (Id INTEGER PRIMARY KEY AUTOINCREMENT, FechaMartes DATETIME, Actividad TEXT, Congregacion TEXT, Tipo TEXT, Acompanante TEXT, Alojamiento TEXT, S302Enviado INTEGER DEFAULT 0, DocEnviada INTEGER DEFAULT 0, SeccionAsamblea TEXT, FechaAsamblea TEXT, NotificacionEnviada INTEGER DEFAULT 0, RecordatorioEnviado INTEGER DEFAULT 0, DatosImportados INTEGER DEFAULT 0);");
             EjecutarQuery(connection, @"CREATE TABLE IF NOT EXISTS NotasVisita (Id INTEGER PRIMARY KEY AUTOINCREMENT, SemanaId INTEGER, Cabecera TEXT, Pregunta TEXT, Respuesta TEXT, EsAlerta INTEGER DEFAULT 0);");
-            EjecutarQuery(connection, @"CREATE TABLE IF NOT EXISTS ProgramaVisitaV2 (Id INTEGER PRIMARY KEY AUTOINCREMENT, CongreCodigo TEXT NOT NULL, MesReferencia TEXT NOT NULL, DiaSemana TEXT NOT NULL, Turno TEXT NOT NULL, Responsable TEXT NOT NULL, TipoActividad TEXT, Hora TEXT, NotasLibro TEXT, CompaneroId INTEGER);");
+            EjecutarQuery(connection, @"CREATE TABLE IF NOT EXISTS ProgramaVisitaV2 (Id INTEGER PRIMARY KEY AUTOINCREMENT, CongreCodigo TEXT NOT NULL, MesReferencia TEXT NOT NULL, DiaSemana TEXT NOT NULL, Turno TEXT NOT NULL, Responsable TEXT NOT NULL, TipoActividad TEXT, Hora TEXT, NotasLibro TEXT, CompaneroId INTEGER, Direccion TEXT, Latitud REAL DEFAULT 0, Longitud REAL DEFAULT 0);");
 
             EjecutarQuery(connection, @"CREATE TABLE IF NOT EXISTS TerritoriosVisitaV3 (Id INTEGER PRIMARY KEY AUTOINCREMENT, CongregacionCodigo TEXT, Nombre TEXT, UltimaFechaCompletado TEXT, AsignadoA TEXT, FechaAsignado TEXT, FechaCompletado TEXT, NombreVinculado TEXT, FechaCreacion TEXT, FechaEliminacion TEXT);");
             EjecutarQuery(connection, "CREATE TABLE IF NOT EXISTS MapeoS13S21 (Id INTEGER PRIMARY KEY AUTOINCREMENT, CongregacionCodigo TEXT, NombreS13 TEXT, NombreS21 TEXT);");
@@ -162,6 +162,11 @@ namespace SCCosmos
             AsegurarColumna(connection, "ActividadPersonas", "Notas", "TEXT");
 
             AsegurarColumna(connection, "NotasVisita", "EsAlerta", "INTEGER DEFAULT 0");
+
+            // Programa de la visita: ubicación del evento.
+            AsegurarColumna(connection, "ProgramaVisitaV2", "Direccion", "TEXT");
+            AsegurarColumna(connection, "ProgramaVisitaV2", "Latitud", "REAL DEFAULT 0");
+            AsegurarColumna(connection, "ProgramaVisitaV2", "Longitud", "REAL DEFAULT 0");
 
             AsegurarColumna(connection, "ProgramaAsambleasPartes", "Tipo", "TEXT");
             AsegurarColumna(connection, "ProgramaAsambleasPartes", "Enviado", "INTEGER DEFAULT 0");
@@ -1829,6 +1834,12 @@ namespace SCCosmos
                 lista = GenerarPlantillaNotas(semanaId);
                 GuardarNotasVisita(semanaId, lista);
 
+                // La plantilla recién creada contiene objetos con Id = 0.
+                // Antes de volver a leer desde SQLite hay que vaciar la lista;
+                // de lo contrario se devuelven duplicadas las notas y las primeras
+                // no se pueden actualizar porque ActualizarNotaVisitaUnica ignora Id = 0.
+                lista.Clear();
+
                 using (var connection = new SqliteConnection(ConnectionString))
                 {
                     connection.Open();
@@ -1965,13 +1976,83 @@ namespace SCCosmos
             }
         }
 
-        public static void GuardarActividadPrograma(string congreCodigo, string mesReferenciaStr, string dia, string turno, string responsable, string tipoActividad, string hora, string notasLibro, int companeroId)
+        public static void GuardarActividadPrograma(
+            string congreCodigo,
+            string mesReferenciaStr,
+            string dia,
+            string turno,
+            string responsable,
+            string tipoActividad,
+            string hora,
+            string notasLibro,
+            int companeroId)
+        {
+            GuardarActividadPrograma(
+                congreCodigo,
+                mesReferenciaStr,
+                dia,
+                turno,
+                responsable,
+                tipoActividad,
+                hora,
+                notasLibro,
+                companeroId,
+                "",
+                0,
+                0);
+        }
+
+        public static void GuardarActividadPrograma(
+            string congreCodigo,
+            string mesReferenciaStr,
+            string dia,
+            string turno,
+            string responsable,
+            string tipoActividad,
+            string hora,
+            string notasLibro,
+            int companeroId,
+            string direccion,
+            double latitud,
+            double longitud)
         {
             using (var connection = new SqliteConnection(ConnectionString))
             {
                 connection.Open();
+
                 var cmd = connection.CreateCommand();
-                cmd.CommandText = "INSERT INTO ProgramaVisitaV2 (CongreCodigo, MesReferencia, DiaSemana, Turno, Responsable, TipoActividad, Hora, NotasLibro, CompaneroId) VALUES ($codigo, $mes, $dia, $turno, $responsable, $tipo, $hora, $notas, $comp);";
+                cmd.CommandText = @"
+                    INSERT INTO ProgramaVisitaV2
+                    (
+                        CongreCodigo,
+                        MesReferencia,
+                        DiaSemana,
+                        Turno,
+                        Responsable,
+                        TipoActividad,
+                        Hora,
+                        NotasLibro,
+                        CompaneroId,
+                        Direccion,
+                        Latitud,
+                        Longitud
+                    )
+                    VALUES
+                    (
+                        $codigo,
+                        $mes,
+                        $dia,
+                        $turno,
+                        $responsable,
+                        $tipo,
+                        $hora,
+                        $notas,
+                        $comp,
+                        $direccion,
+                        $latitud,
+                        $longitud
+                    );";
+
                 cmd.Parameters.AddWithValue("$codigo", congreCodigo);
                 cmd.Parameters.AddWithValue("$mes", mesReferenciaStr);
                 cmd.Parameters.AddWithValue("$dia", dia);
@@ -1981,18 +2062,103 @@ namespace SCCosmos
                 cmd.Parameters.AddWithValue("$hora", hora ?? "");
                 cmd.Parameters.AddWithValue("$notas", notasLibro ?? "");
                 cmd.Parameters.AddWithValue("$comp", companeroId);
+                cmd.Parameters.AddWithValue("$direccion", direccion ?? "");
+                cmd.Parameters.AddWithValue("$latitud", latitud);
+                cmd.Parameters.AddWithValue("$longitud", longitud);
+
                 cmd.ExecuteNonQuery();
             }
         }
 
-        public static List<ActividadPrograma> ObtenerActividadesPrograma(string congreCodigo, string mesReferenciaStr, string dia, string turno, string responsable)
+        public static void ActualizarActividadPrograma(
+            int actividadId,
+            string tipoActividad,
+            string hora,
+            string notasLibro,
+            int companeroId,
+            string direccion,
+            double latitud,
+            double longitud)
         {
-            var lista = new List<ActividadPrograma>();
             using (var connection = new SqliteConnection(ConnectionString))
             {
                 connection.Open();
+
                 var cmd = connection.CreateCommand();
-                cmd.CommandText = "SELECT TipoActividad, Hora, NotasLibro, CompaneroId FROM ProgramaVisitaV2 WHERE CongreCodigo = $codigo AND MesReferencia = $mes AND DiaSemana = $dia AND Turno = $turno AND Responsable = $responsable ORDER BY Hora ASC;";
+                cmd.CommandText = @"
+                    UPDATE ProgramaVisitaV2
+                    SET
+                        TipoActividad = $tipo,
+                        Hora = $hora,
+                        NotasLibro = $notas,
+                        CompaneroId = $comp,
+                        Direccion = $direccion,
+                        Latitud = $latitud,
+                        Longitud = $longitud
+                    WHERE Id = $id;";
+
+                cmd.Parameters.AddWithValue("$tipo", tipoActividad ?? "");
+                cmd.Parameters.AddWithValue("$hora", hora ?? "");
+                cmd.Parameters.AddWithValue("$notas", notasLibro ?? "");
+                cmd.Parameters.AddWithValue("$comp", companeroId);
+                cmd.Parameters.AddWithValue("$direccion", direccion ?? "");
+                cmd.Parameters.AddWithValue("$latitud", latitud);
+                cmd.Parameters.AddWithValue("$longitud", longitud);
+                cmd.Parameters.AddWithValue("$id", actividadId);
+
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        public static void EliminarActividadPrograma(
+            int actividadId)
+        {
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                connection.Open();
+
+                var cmd = connection.CreateCommand();
+                cmd.CommandText =
+                    "DELETE FROM ProgramaVisitaV2 WHERE Id = $id;";
+                cmd.Parameters.AddWithValue("$id", actividadId);
+
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        public static List<ActividadPrograma> ObtenerActividadesPrograma(
+            string congreCodigo,
+            string mesReferenciaStr,
+            string dia,
+            string turno,
+            string responsable)
+        {
+            var lista = new List<ActividadPrograma>();
+
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                connection.Open();
+
+                var cmd = connection.CreateCommand();
+                cmd.CommandText = @"
+                    SELECT
+                        Id,
+                        TipoActividad,
+                        Hora,
+                        NotasLibro,
+                        CompaneroId,
+                        Direccion,
+                        Latitud,
+                        Longitud
+                    FROM ProgramaVisitaV2
+                    WHERE
+                        CongreCodigo = $codigo
+                        AND MesReferencia = $mes
+                        AND DiaSemana = $dia
+                        AND Turno = $turno
+                        AND Responsable = $responsable
+                    ORDER BY Hora ASC;";
+
                 cmd.Parameters.AddWithValue("$codigo", congreCodigo);
                 cmd.Parameters.AddWithValue("$mes", mesReferenciaStr);
                 cmd.Parameters.AddWithValue("$dia", dia);
@@ -2003,16 +2169,51 @@ namespace SCCosmos
                 {
                     while (reader.Read())
                     {
-                        lista.Add(new ActividadPrograma
-                        {
-                            TipoActividad = reader.GetString(0),
-                            Hora = reader.GetString(1),
-                            NotasLibro = reader.GetString(2),
-                            CompaneroId = reader.GetInt32(3)
-                        });
+                        lista.Add(
+                            new ActividadPrograma
+                            {
+                                Id =
+                                    reader.GetInt32(0),
+
+                                TipoActividad =
+                                    reader.IsDBNull(1)
+                                        ? ""
+                                        : reader.GetString(1),
+
+                                Hora =
+                                    reader.IsDBNull(2)
+                                        ? ""
+                                        : reader.GetString(2),
+
+                                NotasLibro =
+                                    reader.IsDBNull(3)
+                                        ? ""
+                                        : reader.GetString(3),
+
+                                CompaneroId =
+                                    reader.IsDBNull(4)
+                                        ? 0
+                                        : reader.GetInt32(4),
+
+                                Direccion =
+                                    reader.IsDBNull(5)
+                                        ? ""
+                                        : reader.GetString(5),
+
+                                Latitud =
+                                    reader.IsDBNull(6)
+                                        ? 0
+                                        : reader.GetDouble(6),
+
+                                Longitud =
+                                    reader.IsDBNull(7)
+                                        ? 0
+                                        : reader.GetDouble(7)
+                            });
                     }
                 }
             }
+
             return lista;
         }
 
@@ -2470,7 +2671,17 @@ namespace SCCosmos
                     cmdSelect.Transaction = transaction;
                     cmdSelect.CommandText = "SELECT Nombre, FechaCreacion FROM TerritoriosVisitaV3 WHERE CongregacionCodigo = $codigo AND FechaCreacion IS NOT NULL;";
                     cmdSelect.Parameters.AddWithValue("$codigo", congreCodigo);
-                    using (var reader = cmdSelect.ExecuteReader()) { while (reader.Read()) dictCreacion[reader.GetString(0)] = reader.IsDBNull(1) ? "" : reader.GetString(1); }
+                    using (var reader = cmdSelect.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            string nombre = reader.IsDBNull(0) ? "" : reader.GetString(0);
+                            if (!string.IsNullOrWhiteSpace(nombre))
+                            {
+                                dictCreacion[nombre] = reader.IsDBNull(1) ? "" : reader.GetString(1);
+                            }
+                        }
+                    }
 
                     var cmdDelete = connection.CreateCommand();
                     cmdDelete.Transaction = transaction;
@@ -2519,11 +2730,11 @@ namespace SCCosmos
                         lista.Add(new TerritorioJSON
                         {
                             Id = reader.GetInt32(0),
-                            Nombre = reader.GetString(1),
-                            UltimaFechaCompletado = reader.GetString(2),
-                            AsignadoA = reader.GetString(3),
-                            FechaAsignado = reader.GetString(4),
-                            FechaCompletado = reader.GetString(5),
+                            Nombre = reader.IsDBNull(1) ? "" : reader.GetString(1),
+                            UltimaFechaCompletado = reader.IsDBNull(2) ? "" : reader.GetString(2),
+                            AsignadoA = reader.IsDBNull(3) ? "" : reader.GetString(3),
+                            FechaAsignado = reader.IsDBNull(4) ? "" : reader.GetString(4),
+                            FechaCompletado = reader.IsDBNull(5) ? "" : reader.GetString(5),
                             NombreVinculado = reader.IsDBNull(6) ? "" : reader.GetString(6),
                             FechaCreacion = reader.IsDBNull(7) ? "" : reader.GetString(7),
                             FechaEliminacion = reader.IsDBNull(8) ? "" : reader.GetString(8)
@@ -2863,10 +3074,14 @@ namespace SCCosmos
 
         public class ActividadPrograma
         {
+            public int Id { get; set; }
             public string TipoActividad { get; set; }
             public string Hora { get; set; }
             public string NotasLibro { get; set; }
             public int CompaneroId { get; set; }
+            public string Direccion { get; set; }
+            public double Latitud { get; set; }
+            public double Longitud { get; set; }
         }
 
         #endregion

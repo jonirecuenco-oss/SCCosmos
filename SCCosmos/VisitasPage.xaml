@@ -1,4 +1,4 @@
-﻿<Page x:Class="SCCosmos.VisitasPage"
+<Page x:Class="SCCosmos.VisitasPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
@@ -131,7 +131,7 @@
                             </DataGrid.RowStyle>
 
                             <DataGrid.Columns>
-                                <DataGridTemplateColumn Header="Nombre" Width="16*" MinWidth="220" SortMemberPath="NombreComun">
+                                <DataGridTemplateColumn Header="Nombre" Width="16*" MinWidth="200" SortMemberPath="NombreComun">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,0,0">
@@ -159,13 +159,32 @@
                 </Expander>
 
                 <!-- MAPA DEL TERRITORIO -->
-                <Expander Header="MAPA DEL TERRITORIO Y SALÓN" FontSize="16" FontWeight="Normal" HorizontalContentAlignment="Stretch" Margin="0,0,0,10" Expanded="ExpanderMapa_Expanded" Collapsed="ExpanderMapa_Collapsed">
-                    <StackPanel Margin="10,15,10,10">
-                        <!-- El WebBrowser no admite esquinas redondeadas sin romper el renderizado (Airspace issue). Lo hacemos cuadrado. -->
-                        <Border BorderBrush="#333333" BorderThickness="1" Height="550">
-                            <WebBrowser x:Name="MapaWebBrowser" Margin="0" Visibility="Collapsed"/>
+                <Expander x:Name="ExpanderMapa"
+                          Header="MAPA DEL TERRITORIO Y SALÓN"
+                          FontSize="16"
+                          FontWeight="Normal"
+                          HorizontalContentAlignment="Stretch"
+                          Margin="0,0,0,10"
+                          Expanded="ExpanderMapa_Expanded"
+                          Collapsed="ExpanderMapa_Collapsed">
+                    <Grid Margin="10,15,10,10"
+                          Height="550"
+                          ClipToBounds="True">
+                        <!--
+                            WebBrowser es un control HWND. Se mantiene
+                            colapsado mientras el Expander termina su layout
+                            para evitar que aparezca temporalmente por encima
+                            del resto de la página.
+                        -->
+                        <Border BorderBrush="#333333"
+                                BorderThickness="1"
+                                Background="#252526"
+                                ClipToBounds="True">
+                            <WebBrowser x:Name="MapaWebBrowser"
+                                        Margin="0"
+                                        Visibility="Collapsed"/>
                         </Border>
-                    </StackPanel>
+                    </Grid>
                 </Expander>
 
                 <!-- PROGRAMA DE LA VISITA -->
@@ -490,149 +509,364 @@
                 </Expander>
 
                 <!-- TERRITORIOS -->
-                <Expander FontSize="16" FontWeight="Normal" HorizontalContentAlignment="Stretch" Margin="0,0,0,10">
+                <Expander FontSize="16"
+                          FontWeight="Normal"
+                          HorizontalContentAlignment="Stretch"
+                          Margin="0,0,0,10">
                     <Expander.Header>
                         <Grid>
-                            <TextBlock Text="TERRITORIOS (S-13)" VerticalAlignment="Center"/>
+                            <TextBlock Text="TERRITORIOS (S-13)"
+                                       VerticalAlignment="Center"/>
                         </Grid>
                     </Expander.Header>
+
                     <StackPanel Margin="10,15,10,10">
 
-                        <!-- CINTA DE MES INDIVIDUAL -->
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,15">
-                            <TextBlock Text="Mes de cálculo (últ. 6 meses):" Foreground="Gray" FontSize="14" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <ui:Button Icon="{ui:SymbolIcon ChevronLeft24}" Appearance="Transparent" Padding="4" Margin="0,0,5,0" Cursor="Hand" Click="BtnMesAntTerritorios_Click"/>
-                            <Border Background="#2A2A2A" CornerRadius="4" Padding="15,6" MinWidth="140">
-                                <TextBlock x:Name="TxtMesTerritorios" Text="Mes" Foreground="White" FontSize="14" FontWeight="SemiBold" TextAlignment="Center" VerticalAlignment="Center"/>
+                        <!-- SELECTOR DE AÑO DE SERVICIO -->
+                        <StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Right"
+                                    Margin="0,0,0,15">
+                            <TextBlock Text="Año de servicio:"
+                                       Foreground="Gray"
+                                       FontSize="14"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,10,0"/>
+
+                            <ui:Button Icon="{ui:SymbolIcon ChevronLeft24}"
+                                       Appearance="Transparent"
+                                       Padding="4"
+                                       Margin="0,0,5,0"
+                                       Cursor="Hand"
+                                       Click="BtnMesAntTerritorios_Click"/>
+
+                            <Border Background="#2A2A2A"
+                                    CornerRadius="4"
+                                    Padding="15,6"
+                                    MinWidth="190">
+                                <TextBlock x:Name="TxtMesTerritorios"
+                                           Text="Año de servicio"
+                                           Foreground="White"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
+                                           TextAlignment="Center"
+                                           VerticalAlignment="Center"/>
                             </Border>
-                            <ui:Button Icon="{ui:SymbolIcon ChevronRight24}" Appearance="Transparent" Padding="4" Margin="5,0,0,0" Cursor="Hand" Click="BtnMesSigTerritorios_Click"/>
+
+                            <ui:Button Icon="{ui:SymbolIcon ChevronRight24}"
+                                       Appearance="Transparent"
+                                       Padding="4"
+                                       Margin="5,0,0,0"
+                                       Cursor="Hand"
+                                       Click="BtnMesSigTerritorios_Click"/>
                         </StackPanel>
 
-                        <WrapPanel Margin="0,0,0,15" Orientation="Horizontal">
-                            <Border Background="#1AFFFFFF" CornerRadius="6" Padding="15" Margin="0,0,10,10" Width="180">
+
+                        <!-- ESTADÍSTICAS -->
+                        <WrapPanel Margin="0,0,0,15"
+                                   Orientation="Horizontal">
+
+                            <Border Background="#1AFFFFFF"
+                                    CornerRadius="6"
+                                    Padding="15"
+                                    Margin="0,0,10,10"
+                                    Width="180">
                                 <StackPanel>
-                                    <TextBlock Text="Nº Territorios" Foreground="#AAAAAA" FontSize="12"/>
-                                    <TextBlock x:Name="TxtTotalTerritorios" Text="0" FontWeight="Bold" FontSize="22" Foreground="White"/>
+                                    <TextBlock Text="Nº Territorios"
+                                               Foreground="#AAAAAA"
+                                               FontSize="12"/>
+                                    <TextBlock x:Name="TxtTotalTerritorios"
+                                               Text="0"
+                                               FontWeight="Bold"
+                                               FontSize="22"
+                                               Foreground="White"/>
                                 </StackPanel>
                             </Border>
-                            <Border Background="#1A32CD32" CornerRadius="6" Padding="15" Margin="0,0,10,10" Width="180">
+
+                            <Border Background="#1A32CD32"
+                                    CornerRadius="6"
+                                    Padding="15"
+                                    Margin="0,0,10,10"
+                                    Width="190">
                                 <StackPanel>
-                                    <TextBlock Text="Trabajados (últ. 6 meses)" Foreground="#AAAAAA" FontSize="12"/>
-                                    <TextBlock x:Name="TxtTerritoriosTrabajados" Text="0" FontWeight="Bold" FontSize="22" Foreground="#32CD32"/>
+                                    <TextBlock Text="Trabajados (últ. 6 meses)"
+                                               Foreground="#AAAAAA"
+                                               FontSize="12"/>
+                                    <TextBlock x:Name="TxtTerritoriosTrabajados"
+                                               Text="0"
+                                               FontWeight="Bold"
+                                               FontSize="22"
+                                               Foreground="#32CD32"/>
                                 </StackPanel>
                             </Border>
-                            <Border Background="#1A1E90FF" CornerRadius="6" Padding="15" Margin="0,0,10,10" Width="180">
+
+                            <Border Background="#1A32CD32"
+                                    CornerRadius="6"
+                                    Padding="15"
+                                    Margin="0,0,10,10"
+                                    Width="205">
                                 <StackPanel>
-                                    <TextBlock Text="Trabajándose Ahora" Foreground="#AAAAAA" FontSize="12"/>
-                                    <TextBlock x:Name="TxtTerritoriosEnCurso" Text="0" FontWeight="Bold" FontSize="22" Foreground="#1E90FF"/>
+                                    <TextBlock Text="Trabajados (año de servicio)"
+                                               Foreground="#AAAAAA"
+                                               FontSize="12"/>
+                                    <TextBlock x:Name="TxtTerritoriosTrabajadosAnio"
+                                               Text="0"
+                                               FontWeight="Bold"
+                                               FontSize="22"
+                                               Foreground="#32CD32"/>
                                 </StackPanel>
                             </Border>
-                            <Border Background="#1AFF8C00" CornerRadius="6" Padding="15" Margin="0,0,10,10" Width="180">
+
+                            <Border Background="#1A1E90FF"
+                                    CornerRadius="6"
+                                    Padding="15"
+                                    Margin="0,0,10,10"
+                                    Width="180">
                                 <StackPanel>
-                                    <TextBlock Text="Caducados (>= 4 meses)" Foreground="#AAAAAA" FontSize="12"/>
-                                    <TextBlock x:Name="TxtTerritoriosCaducados" Text="0" FontWeight="Bold" FontSize="22" Foreground="#FF8C00"/>
+                                    <TextBlock Text="Trabajándose en la fecha de corte"
+                                               Foreground="#AAAAAA"
+                                               FontSize="12"
+                                               TextWrapping="Wrap"/>
+                                    <TextBlock x:Name="TxtTerritoriosEnCurso"
+                                               Text="0"
+                                               FontWeight="Bold"
+                                               FontSize="22"
+                                               Foreground="#1E90FF"/>
                                 </StackPanel>
                             </Border>
-                            <Border Background="#1AFF4500" CornerRadius="6" Padding="15" Margin="0,0,10,10" Width="180">
+
+                            <Border Background="#1AFF8C00"
+                                    CornerRadius="6"
+                                    Padding="15"
+                                    Margin="0,0,10,10"
+                                    Width="180">
                                 <StackPanel>
-                                    <TextBlock Text="Sin trabajar > 1 año" Foreground="#AAAAAA" FontSize="12"/>
-                                    <TextBlock x:Name="TxtTerritorios1Ano" Text="0" FontWeight="Bold" FontSize="22" Foreground="#FF4500"/>
+                                    <TextBlock Text="Caducados (≥ 4 meses)"
+                                               Foreground="#AAAAAA"
+                                               FontSize="12"/>
+                                    <TextBlock x:Name="TxtTerritoriosCaducados"
+                                               Text="0"
+                                               FontWeight="Bold"
+                                               FontSize="22"
+                                               Foreground="#FF8C00"/>
                                 </StackPanel>
                             </Border>
-                            <Border Background="#1AE6192B" CornerRadius="6" Padding="15" Margin="0,0,10,10" Width="180">
+
+                            <Border Background="#1AFF4500"
+                                    CornerRadius="6"
+                                    Padding="15"
+                                    Margin="0,0,10,10"
+                                    Width="180">
                                 <StackPanel>
-                                    <TextBlock Text="Sin trabajar > 2 años" Foreground="#AAAAAA" FontSize="12"/>
-                                    <TextBlock x:Name="TxtTerritorios2Anos" Text="0" FontWeight="Bold" FontSize="22" Foreground="#E6192B"/>
+                                    <TextBlock Text="Sin trabajar > 1 año"
+                                               Foreground="#AAAAAA"
+                                               FontSize="12"/>
+                                    <TextBlock x:Name="TxtTerritorios1Ano"
+                                               Text="0"
+                                               FontWeight="Bold"
+                                               FontSize="22"
+                                               Foreground="#FF4500"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Background="#1AE6192B"
+                                    CornerRadius="6"
+                                    Padding="15"
+                                    Margin="0,0,10,10"
+                                    Width="180">
+                                <StackPanel>
+                                    <TextBlock Text="Sin trabajar > 2 años"
+                                               Foreground="#AAAAAA"
+                                               FontSize="12"/>
+                                    <TextBlock x:Name="TxtTerritorios2Anos"
+                                               Text="0"
+                                               FontWeight="Bold"
+                                               FontSize="22"
+                                               Foreground="#E6192B"/>
                                 </StackPanel>
                             </Border>
                         </WrapPanel>
 
-                        <DataGrid x:Name="TablaTerritorios" PreviewMouseWheel="UIElement_PreviewMouseWheel" FontWeight="Normal" HorizontalAlignment="Stretch" AutoGenerateColumns="False" CanUserAddRows="False"
-                                  HeadersVisibility="Column" SelectionMode="Single" IsReadOnly="False" MaxHeight="600" ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                  GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#20FFFFFF"
-                                  BorderThickness="1" BorderBrush="#20FFFFFF" Background="Transparent" RowBackground="Transparent">
+
+                        <!--
+                            Una fila por territorio y, dentro de ella,
+                            TODOS los registros que intersectan el año de
+                            servicio seleccionado. Ya no existe el límite
+                            visual V1..V4.
+                        -->
+                        <DataGrid x:Name="TablaTerritorios"
+                                  PreviewMouseWheel="UIElement_PreviewMouseWheel"
+                                  FontWeight="Normal"
+                                  HorizontalAlignment="Stretch"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  HeadersVisibility="Column"
+                                  SelectionMode="Single"
+                                  IsReadOnly="False"
+                                  MaxHeight="650"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                  GridLinesVisibility="Horizontal"
+                                  HorizontalGridLinesBrush="#20FFFFFF"
+                                  BorderThickness="1"
+                                  BorderBrush="#20FFFFFF"
+                                  Background="Transparent"
+                                  RowBackground="Transparent">
+
                             <DataGrid.RowStyle>
                                 <Style TargetType="DataGridRow">
-                                    <Setter Property="Background" Value="Transparent"/>
-                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Background"
+                                            Value="Transparent"/>
+                                    <Setter Property="Foreground"
+                                            Value="White"/>
                                 </Style>
                             </DataGrid.RowStyle>
-                            <DataGrid.Resources>
-                                <DataTemplate x:Key="PlantillaVuelta">
-                                    <StackPanel Margin="4" Visibility="{Binding EsVisible}">
-                                        <Grid Margin="0,0,0,4">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="{Binding NombreS13}" Foreground="#AAAAAA" FontSize="11" VerticalAlignment="Center" Margin="0,0,6,0" ToolTip="Nombre en el S-13 original"/>
-                                            <ComboBox Grid.Column="1" ItemsSource="{Binding ListaNombresS21}" SelectedItem="{Binding NombreS21, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-                                                      SelectionChanged="CmbVinculacion_SelectionChanged" Padding="4,2" FontSize="11" Cursor="Hand"
-                                                      IsEditable="True" IsTextSearchEnabled="True"/>
-                                        </Grid>
-                                        <TextBlock Text="{Binding Fechas}" Foreground="#888888" FontSize="10" TextWrapping="Wrap"/>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </DataGrid.Resources>
+
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="Territorio" Binding="{Binding Nombre}" Width="15*" IsReadOnly="True">
+
+                                <DataGridTextColumn Header="Territorio"
+                                                    Binding="{Binding Nombre}"
+                                                    Width="13*"
+                                                    MinWidth="120"
+                                                    IsReadOnly="True">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
-                                            <Setter Property="VerticalAlignment" Value="Center"/>
-                                            <Setter Property="Margin" Value="4"/>
+                                            <Setter Property="VerticalAlignment"
+                                                    Value="Center"/>
+                                            <Setter Property="Margin"
+                                                    Value="8"/>
+                                            <Setter Property="FontWeight"
+                                                    Value="SemiBold"/>
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="Últ. Vez" Binding="{Binding UltimaVez}" Width="9*" IsReadOnly="True">
+
+                                <DataGridTextColumn Header="Últ. vez"
+                                                    Binding="{Binding UltimaVez}"
+                                                    Width="9*"
+                                                    MinWidth="95"
+                                                    IsReadOnly="True">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
-                                            <Setter Property="VerticalAlignment" Value="Center"/>
-                                            <Setter Property="Margin" Value="4"/>
+                                            <Setter Property="VerticalAlignment"
+                                                    Value="Center"/>
+                                            <Setter Property="Margin"
+                                                    Value="6"/>
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTemplateColumn Header="V1" Width="19*">
+
+                                <DataGridTemplateColumn Header="Registros del año de servicio"
+                                                        Width="60*"
+                                                        MinWidth="450">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <ContentControl Content="{Binding Vuelta1}" ContentTemplate="{StaticResource PlantillaVuelta}"/>
+                                            <ItemsControl ItemsSource="{Binding RegistrosAnioServicio}"
+                                                          Margin="2,1">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <WrapPanel Orientation="Horizontal"/>
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Background="#1AFFFFFF"
+                                                                BorderBrush="#333333"
+                                                                BorderThickness="1"
+                                                                CornerRadius="4"
+                                                                Padding="5,2"
+                                                                Margin="0,1,6,1"
+                                                                MinWidth="500">
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                </Grid.ColumnDefinitions>
+
+                                                                <!-- Nombre tal como viene del JSON (S-13) -->
+                                                                <TextBlock Grid.Column="0"
+                                                                           Text="{Binding NombreS13}"
+                                                                           Foreground="White"
+                                                                           FontSize="11"
+                                                                           FontWeight="SemiBold"
+                                                                           VerticalAlignment="Center"
+                                                                           TextTrimming="CharacterEllipsis"
+                                                                           MaxWidth="150"
+                                                                           ToolTip="{Binding NombreS13}"/>
+
+                                                                <TextBlock Grid.Column="1"
+                                                                           Text="→"
+                                                                           Foreground="#777777"
+                                                                           Margin="6,0"
+                                                                           VerticalAlignment="Center"/>
+
+                                                                <!-- Equivalente en la BBDD (S-21), seleccionable -->
+                                                                <ComboBox Grid.Column="2"
+                                                                          ItemsSource="{Binding ListaNombresS21}"
+                                                                          SelectedItem="{Binding NombreS21, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                          SelectionChanged="CmbVinculacion_SelectionChanged"
+                                                                          Padding="4,0"
+                                                                          FontSize="11"
+                                                                          MinHeight="22"
+                                                                          Cursor="Hand"
+                                                                          IsEditable="True"
+                                                                          IsTextSearchEnabled="True"
+                                                                          MinWidth="220"
+                                                                          VerticalAlignment="Center"/>
+
+                                                                <TextBlock Grid.Column="3"
+                                                                           Text="{Binding Fechas}"
+                                                                           Foreground="#999999"
+                                                                           FontSize="11"
+                                                                           Margin="8,0,0,0"
+                                                                           VerticalAlignment="Center"
+                                                                           TextWrapping="NoWrap"/>
+                                                            </Grid>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="V2" Width="19*">
+
+                                <DataGridTemplateColumn Header="Acciones"
+                                                        Width="9*"
+                                                        MinWidth="90">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <ContentControl Content="{Binding Vuelta2}" ContentTemplate="{StaticResource PlantillaVuelta}"/>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="V3" Width="19*">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <ContentControl Content="{Binding Vuelta3}" ContentTemplate="{StaticResource PlantillaVuelta}"/>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="V4" Width="19*">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <ContentControl Content="{Binding Vuelta4}" ContentTemplate="{StaticResource PlantillaVuelta}"/>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="Acciones" Width="10*">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                <Button Content="✏️" ToolTip="Renombrar Territorio" Click="BtnEditarTerritorio_Click" Background="Transparent" BorderThickness="0" Cursor="Hand" Margin="2,0,8,0" FontSize="14"/>
-                                                <Button Content="🗑️" ToolTip="Eliminar Territorio" Click="BtnEliminarTerritorio_Click" Background="Transparent" BorderThickness="0" Cursor="Hand" Margin="0,0,2,0" FontSize="14"/>
+                                            <StackPanel Orientation="Horizontal"
+                                                        HorizontalAlignment="Center">
+                                                <Button Content="✏️"
+                                                        ToolTip="Renombrar Territorio"
+                                                        Click="BtnEditarTerritorio_Click"
+                                                        Background="Transparent"
+                                                        BorderThickness="0"
+                                                        Cursor="Hand"
+                                                        Margin="2,0,8,0"
+                                                        FontSize="14"/>
+
+                                                <Button Content="🗑️"
+                                                        ToolTip="Eliminar Territorio"
+                                                        Click="BtnEliminarTerritorio_Click"
+                                                        Background="Transparent"
+                                                        BorderThickness="0"
+                                                        Cursor="Hand"
+                                                        Margin="0,0,2,0"
+                                                        FontSize="14"/>
                                             </StackPanel>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
+
                             </DataGrid.Columns>
                         </DataGrid>
 
-                        <StackPanel x:Name="PanelPaginacion" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,15,0,0"/>
+                        <StackPanel x:Name="PanelPaginacion"
+                                    Orientation="Horizontal"
+                                    HorizontalAlignment="Center"
+                                    Margin="0,15,0,0"/>
 
                     </StackPanel>
                 </Expander>

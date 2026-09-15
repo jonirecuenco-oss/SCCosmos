@@ -1,53 +1,186 @@
-﻿<Window x:Class="SCCosmos.ProgramarActividadWindow"
+<Window x:Class="SCCosmos.ProgramarActividadWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Programar Actividad" Height="500" Width="400" 
-        Background="#1E1E1E" WindowStartupLocation="CenterOwner" WindowStyle="ToolWindow">
-    <Grid Margin="20">
+        Title="Programar actividad"
+        Width="620"
+        Height="720"
+        MinWidth="560"
+        MinHeight="620"
+        WindowStartupLocation="CenterOwner"
+        Background="#1E1E1E"
+        Foreground="White">
+
+    <Grid Margin="24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock x:Name="TxtTitulo" Text="PROGRAMAR ACTIVIDAD" FontWeight="Bold" FontSize="18" Foreground="White" Margin="0,0,0,20" HorizontalAlignment="Center"/>
+        <StackPanel Grid.Row="0"
+                    Margin="0,0,0,18">
+            <TextBlock x:Name="TxtTitulo"
+                       Text="PROGRAMAR ACTIVIDAD"
+                       FontSize="22"
+                       FontWeight="SemiBold"
+                       Foreground="White"/>
 
-        <StackPanel Grid.Row="1">
-
-            <!-- CONTENEDOR ACTIVIDAD (Se ocultará si es Comida) -->
-            <StackPanel x:Name="PanelActividad" Margin="0,0,0,15">
-                <TextBlock Text="Tipo de Actividad:" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                <ComboBox x:Name="CmbActividad" SelectionChanged="CmbActividad_SelectionChanged" Padding="8,6" Background="#2A2A2A" Foreground="White" BorderThickness="0" FontSize="14"/>
-            </StackPanel>
-
-            <!-- CONTENEDOR LIBRO (Se ocultará si no es Curso Bíblico) -->
-            <StackPanel x:Name="PanelLibro" Margin="0,0,0,15" Visibility="Collapsed">
-                <TextBlock Text="Libro y Lección:" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                <TextBox x:Name="TxtLibro" Padding="8,6" Background="#2A2A2A" Foreground="White" BorderThickness="0" FontSize="14"/>
-            </StackPanel>
-
-            <!-- CONTENEDOR CON QUIÉN -->
-            <StackPanel Margin="0,0,0,15">
-                <TextBlock Text="Acompañante / Familia:" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                <ComboBox x:Name="CmbAcompanante" DisplayMemberPath="Nombre" SelectedValuePath="Id" Padding="8,6" Background="#2A2A2A" Foreground="White" BorderThickness="0" FontSize="14" IsEditable="True" IsTextSearchEnabled="True"/>
-            </StackPanel>
-
-            <!-- CONTENEDOR HORA (Usamos 2 combos para simular un reloj preciso) -->
-            <StackPanel Margin="0,0,0,15">
-                <TextBlock Text="Hora de inicio:" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                <StackPanel Orientation="Horizontal">
-                    <ComboBox x:Name="CmbHora" Width="70" Padding="8,6" Background="#2A2A2A" Foreground="White" BorderThickness="0" FontSize="14"/>
-                    <TextBlock Text=":" Foreground="White" FontSize="18" FontWeight="Bold" VerticalAlignment="Center" Margin="5,0"/>
-                    <ComboBox x:Name="CmbMinutos" Width="70" Padding="8,6" Background="#2A2A2A" Foreground="White" BorderThickness="0" FontSize="14"/>
-                </StackPanel>
-            </StackPanel>
-
+            <TextBlock x:Name="TxtContexto"
+                       Margin="0,5,0,0"
+                       Foreground="#AAAAAA"
+                       FontSize="13"/>
         </StackPanel>
 
-        <!-- BOTONES -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-            <Button Content="Cancelar" Width="100" Padding="8" Margin="0,0,10,0" Background="#333333" Foreground="White" BorderThickness="0" Cursor="Hand" Click="BtnCancelar_Click"/>
-            <Button Content="Guardar" Width="100" Padding="8" Background="#0078D4" Foreground="White" BorderThickness="0" Cursor="Hand" FontWeight="Bold" Click="BtnGuardar_Click"/>
+
+        <ScrollViewer Grid.Row="1"
+                      VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+
+                <TextBlock Text="Acompañante / familia"
+                           Foreground="#AAAAAA"
+                           Margin="0,0,0,5"/>
+
+                <ComboBox x:Name="CmbAcompanante"
+                          Height="38"
+                          Padding="8,4"
+                          Background="#2A2A2A"
+                          Foreground="White"
+                          BorderBrush="#444444"
+                          DisplayMemberPath="Nombre"
+                          SelectedValuePath="Id"
+                          SelectionChanged="CmbAcompanante_SelectionChanged"/>
+
+
+                <TextBlock Text="Hora"
+                           Foreground="#AAAAAA"
+                           Margin="0,15,0,5"/>
+
+                <TextBox x:Name="TxtHora"
+                         Height="38"
+                         Padding="8"
+                         FontSize="14"
+                         Background="#2A2A2A"
+                         Foreground="White"
+                         BorderBrush="#444444"
+                         ToolTip="Ejemplo: 10:00"/>
+
+
+                <TextBlock Text="Tipo de actividad / descripción"
+                           Foreground="#AAAAAA"
+                           Margin="0,15,0,5"/>
+
+                <TextBox x:Name="TxtTipoActividad"
+                         MinHeight="54"
+                         Padding="8"
+                         AcceptsReturn="True"
+                         TextWrapping="Wrap"
+                         Background="#2A2A2A"
+                         Foreground="White"
+                         BorderBrush="#444444"/>
+
+
+                <TextBlock Text="Notas"
+                           Foreground="#AAAAAA"
+                           Margin="0,15,0,5"/>
+
+                <TextBox x:Name="TxtNotas"
+                         MinHeight="58"
+                         Padding="8"
+                         AcceptsReturn="True"
+                         TextWrapping="Wrap"
+                         Background="#2A2A2A"
+                         Foreground="White"
+                         BorderBrush="#444444"/>
+
+
+                <Grid Margin="0,18,0,5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0"
+                               Text="Dirección / ubicación"
+                               Foreground="#AAAAAA"
+                               VerticalAlignment="Center"/>
+
+                    <Button Grid.Column="1"
+                            Content="Usar la del acompañante"
+                            Click="BtnUsarDireccionAcompanante_Click"
+                            Padding="9,5"
+                            Margin="10,0,0,0"
+                            Background="#333333"
+                            Foreground="White"
+                            BorderBrush="#555555"
+                            Cursor="Hand"/>
+                </Grid>
+
+                <TextBox x:Name="TxtDireccion"
+                         MinHeight="54"
+                         Padding="8"
+                         AcceptsReturn="True"
+                         TextWrapping="Wrap"
+                         Background="#2A2A2A"
+                         Foreground="White"
+                         BorderBrush="#444444"
+                         TextChanged="TxtDireccion_TextChanged"/>
+
+                <Grid Margin="0,8,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock x:Name="TxtCoordenadas"
+                               Grid.Column="0"
+                               Text="Coordenadas: sin fijar"
+                               Foreground="#888888"
+                               VerticalAlignment="Center"/>
+
+                    <Button x:Name="BtnBuscarCoordenadas"
+                            Grid.Column="1"
+                            Content="Buscar coordenadas"
+                            Click="BtnBuscarCoordenadas_Click"
+                            Padding="10,6"
+                            Background="#333333"
+                            Foreground="White"
+                            BorderBrush="#555555"
+                            Cursor="Hand"/>
+                </Grid>
+
+                <TextBlock Text="Si eliges un acompañante, se cargan automáticamente su dirección y sus coordenadas si están guardadas. Puedes escribir otra dirección; al guardar se intentará geolocalizar."
+                           Foreground="#777777"
+                           FontSize="11"
+                           TextWrapping="Wrap"
+                           Margin="0,7,0,0"/>
+
+            </StackPanel>
+        </ScrollViewer>
+
+
+        <StackPanel Grid.Row="2"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0,20,0,0">
+
+            <Button Content="Cancelar"
+                    Click="BtnCancelar_Click"
+                    Padding="18,8"
+                    Margin="0,0,10,0"
+                    Background="#333333"
+                    Foreground="White"
+                    BorderBrush="#555555"
+                    Cursor="Hand"/>
+
+            <Button x:Name="BtnGuardar"
+                    Content="Guardar"
+                    Click="BtnGuardar_Click"
+                    Padding="20,8"
+                    Background="#0078D4"
+                    Foreground="White"
+                    BorderThickness="0"
+                    Cursor="Hand"/>
         </StackPanel>
+
     </Grid>
 </Window>

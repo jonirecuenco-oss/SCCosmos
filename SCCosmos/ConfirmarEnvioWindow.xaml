@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-        Title="Confirmar envío" Height="450" Width="550"
+        Title="Confirmar envío" Height="700" Width="650"
         WindowStartupLocation="CenterOwner"
         Background="#1E1E1E" Foreground="White" ResizeMode="NoResize">
     <Grid Margin="20">
@@ -10,44 +10,83 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <!-- Lista de archivos adaptable -->
             <RowDefinition Height="Auto"/>
+            <!-- Editor de correo -->
             <RowDefinition Height="Auto"/>
+            <!-- Checkbox -->
+            <RowDefinition Height="Auto"/>
+            <!-- Botones -->
         </Grid.RowDefinitions>
 
         <TextBlock x:Name="TxtTitulo" Text="Confirmar envío" FontSize="22" FontWeight="SemiBold" Margin="0,0,0,15"/>
 
         <!-- AVISO DE DUPLICIDAD (Detección en tiempo real) -->
-        <Border x:Name="PanelAvisoEnviado" Background="#4A1515" BorderBrush="#D13438" BorderThickness="1" Padding="15" Margin="0,0,0,15" Visibility="Collapsed" CornerRadius="4">
+        <Border Grid.Row="1" x:Name="PanelAvisoEnviado" Background="#4A1515" BorderBrush="#D13438" BorderThickness="1" Padding="15" Margin="0,0,0,15" Visibility="Collapsed" CornerRadius="4">
             <TextBlock Text="⚠️ ATENCIÓN: Esta acción ya consta como realizada anteriormente. ¿Deseas volver a procesar y enviar los archivos de nuevo?" Foreground="#FFB0B0" TextWrapping="Wrap" FontWeight="SemiBold"/>
         </Border>
 
-        <TextBlock Text="Archivos que se van a procesar y enviar:" Foreground="#AAAAAA" Margin="0,0,0,10" Grid.Row="2"/>
+        <!-- ZONA DE ARCHIVOS -->
+        <Grid Grid.Row="2" Margin="0,0,0,15">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <TextBlock Text="Archivos que se van a procesar y enviar:" Foreground="#AAAAAA" Margin="0,0,0,10"/>
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                <ItemsControl x:Name="ListaArchivos">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="#2D2D30" Padding="10" Margin="0,0,0,5" CornerRadius="4">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding NombreArchivo}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0" FontWeight="Medium"/>
+                                    <ui:Button Grid.Column="1" Content="Ver archivo" Icon="{ui:SymbolIcon Eye24}" Click="BtnVerArchivo_Click" Tag="{Binding RutaLocal}" Cursor="Hand" Background="#3E3E42" BorderThickness="0"/>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Grid>
 
-        <ScrollViewer Grid.Row="2" Margin="0,25,0,15">
-            <ItemsControl x:Name="ListaArchivos">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <Border Background="#2D2D30" Padding="10" Margin="0,0,0,5" CornerRadius="4">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="{Binding NombreArchivo}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0" FontWeight="Medium"/>
-                                <ui:Button Grid.Column="1" Content="Ver archivo" Icon="{ui:SymbolIcon Eye24}" Click="BtnVerArchivo_Click" Tag="{Binding RutaLocal}" Cursor="Hand" Background="#3E3E42" BorderThickness="0"/>
-                            </Grid>
+        <!-- NUEVA ZONA DE EDICIÓN DEL CORREO -->
+        <Border Grid.Row="3" Background="#1A1A1C" CornerRadius="6" Padding="15" BorderBrush="#333333" BorderThickness="1" Margin="0,0,0,15">
+            <StackPanel>
+                <TextBlock Text="Asunto del correo:" Foreground="#CCC" Margin="0,0,0,5"/>
+                <ui:TextBox x:Name="TxtAsunto" Background="#1E1E1E" Foreground="White" Margin="0,0,0,15" Padding="5"/>
+
+                <TextBlock Text="Cuerpo del correo:" Foreground="#CCC" Margin="0,0,0,5"/>
+                <Border BorderThickness="1" BorderBrush="#333333" CornerRadius="4" Background="#252528">
+                    <StackPanel>
+                        <!-- BARRA DE HERRAMIENTAS -->
+                        <Border Background="#1E1E1E" Padding="5">
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="N" FontWeight="Bold" Width="30" Height="30" Margin="0,0,5,0" Tag="bold" Click="BtnFormato_Click" Background="Transparent" Foreground="White" BorderThickness="0" Cursor="Hand"/>
+                                <Button Content="K" FontStyle="Italic" Width="30" Height="30" Margin="0,0,5,0" Tag="italic" Click="BtnFormato_Click" Background="Transparent" Foreground="White" BorderThickness="0" Cursor="Hand"/>
+                                <Button Width="30" Height="30" Margin="0,0,10,0" Tag="underline" Click="BtnFormato_Click" Background="Transparent" BorderThickness="0" Cursor="Hand">
+                                    <TextBlock Text="S" TextDecorations="Underline" Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                </Button>
+                                <TextBlock Text="💡 Puedes editar este mensaje antes de que se envíe a la congregación" Foreground="#888888" VerticalAlignment="Center" Margin="15,0,0,0" FontStyle="Italic"/>
+                            </StackPanel>
                         </Border>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </ScrollViewer>
+
+                        <!-- ÁREA WEB -->
+                        <WebBrowser x:Name="WbEditorConfirmacion" Height="150"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Border>
 
         <!-- CASILLA DE MARCADO MANUAL -->
-        <CheckBox x:Name="ChkEnviado" Grid.Row="3" Content="Marcar esta tarea como completada (útil si enviaste manualmente)" 
+        <CheckBox x:Name="ChkEnviado" Grid.Row="4" Content="Marcar esta tarea como completada (útil si enviaste manualmente)" 
                   Foreground="White" FontSize="14" Margin="0,0,0,20" Cursor="Hand" Click="ChkEnviado_Click"/>
 
         <!-- BOTONES INFERIORES -->
-        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right">
+        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right">
             <ui:Button Content="Cancelar / Cerrar" Click="BtnCancelar_Click" Margin="0,0,10,0" Padding="20,8" Cursor="Hand"/>
             <ui:Button x:Name="BtnConfirmar" Content="Proceder al envío automático" Appearance="Primary" Click="BtnConfirmar_Click" Padding="20,8" Cursor="Hand" Icon="{ui:SymbolIcon Send24}"/>
         </StackPanel>

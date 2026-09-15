@@ -11,7 +11,11 @@ namespace SCCosmos
         public bool EstadoEnviadoActual => ChkEnviado.IsChecked == true;
         public bool EstadoModificadoManual { get; private set; } = false;
 
-        public ConfirmarEnvioWindow(string titulo, bool yaEnviado, List<ArchivoDocumento> archivos)
+        // Nuevas propiedades para recuperar el texto editado
+        public string AsuntoFinal { get; private set; }
+        public string CuerpoFinal { get; private set; }
+
+        public ConfirmarEnvioWindow(string titulo, bool yaEnviado, List<ArchivoDocumento> archivos, string asunto = "", string cuerpoHTML = "")
         {
             InitializeComponent();
             TxtTitulo.Text = titulo;
@@ -23,6 +27,20 @@ namespace SCCosmos
             if (yaEnviado) PanelAvisoEnviado.Visibility = Visibility.Visible;
 
             ListaArchivos.ItemsSource = archivos;
+
+            // Cargamos los datos del email en el editor
+            TxtAsunto.Text = asunto;
+
+            // Inyectamos la plantilla HTML en el WebBrowser
+            if (!string.IsNullOrEmpty(cuerpoHTML))
+            {
+                WbEditorHelper.SetHtml(WbEditorConfirmacion, cuerpoHTML);
+            }
+            else
+            {
+                // Si viene vacío (ej: botón de enviar recordatorio), cargamos el motor visual base para poder escribir en blanco
+                WbEditorHelper.SetHtml(WbEditorConfirmacion, "");
+            }
         }
 
         private void ChkEnviado_Click(object sender, RoutedEventArgs e)
@@ -34,9 +52,17 @@ namespace SCCosmos
             PanelAvisoEnviado.Visibility = ChkEnviado.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
         }
 
+        private void BtnFormato_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is string comando)
+            {
+                try { WbEditorConfirmacion.InvokeScript("eval", $"document.execCommand('{comando}', false, null);"); } catch { }
+            }
+        }
+
         private void BtnVerArchivo_Click(object sender, RoutedEventArgs e)
         {
-            var boton = sender as Button;
+            var boton = sender as Button ?? sender as Wpf.Ui.Controls.Button;
             string ruta = boton?.Tag?.ToString();
 
             if (!string.IsNullOrEmpty(ruta) && System.IO.File.Exists(ruta))
@@ -56,6 +82,19 @@ namespace SCCosmos
 
         private void BtnConfirmar_Click(object sender, RoutedEventArgs e)
         {
+            // Recuperamos el texto del asunto
+            AsuntoFinal = TxtAsunto.Text;
+
+            // Recuperamos el HTML que el usuario haya editado en la pantalla
+            try
+            {
+                CuerpoFinal = WbEditorConfirmacion.InvokeScript("eval", "document.body.innerHTML").ToString();
+            }
+            catch
+            {
+                CuerpoFinal = "";
+            }
+
             this.DialogResult = true;
         }
     }
