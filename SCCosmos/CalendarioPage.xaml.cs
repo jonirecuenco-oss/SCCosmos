@@ -1,4 +1,4 @@
-﻿using iText.Forms;
+using iText.Forms;
 using iText.Kernel.Pdf;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Firefox;
@@ -381,7 +381,12 @@ namespace SCCosmos
 
             string congreCodigo = DatabaseHelper.ObtenerCodigoCongregacion(semanaSeleccionada.Congregacion);
 
-            ImportarArchivosActividad ventanaArchivos = new ImportarArchivosActividad(congreCodigo, semanaSeleccionada.Congregacion, semanaSeleccionada.TieneDatosImportados);
+            string mesReferencia = semanaSeleccionada.FechaMartes.ToString("yyyy-MM");
+            ImportarArchivosActividad ventanaArchivos = new ImportarArchivosActividad(
+                congreCodigo,
+                semanaSeleccionada.Congregacion,
+                semanaSeleccionada.TieneDatosImportados,
+                mesReferencia);
             ventanaArchivos.Owner = Window.GetWindow(this);
 
             if (ventanaArchivos.ShowDialog() == true)

@@ -40,7 +40,12 @@ namespace SCCosmos
         private List<FilaVisitaPublisher> _filasVisitasGlobal = new List<FilaVisitaPublisher>();
         private List<FilaTablaTerritorio> _territoriosGlobal = new List<FilaTablaTerritorio>();
         private int _paginaActual = 1;
-        private const int _itemsPorPagina = 20;
+        private const int _itemsPorPagina = 10;
+
+        // Filtro de las tarjetas-resumen de Territorios. Solo puede haber
+        // uno activo a la vez. Al desactivarlo recuperamos la página anterior.
+        private string _filtroTerritoriosActivo = "";
+        private int _paginaAntesFiltroTerritorios = 1;
 
         // Variables de estado independientes para cada módulo
         private DateTime _mesMinisterio;
@@ -249,29 +254,21 @@ namespace SCCosmos
                         $"Año de servicio {anioServicio}";
                 }
 
-                // Para disponer de los nombres S-21 usamos la instantánea
-                // más cercana posible dentro del año seleccionado.
-                DateTime fechaPersonas =
-                    DateTime.Today < inicioAnioServicio
-                        ? inicioAnioServicio
-                        : (
-                            DateTime.Today > finAnioServicio
-                                ? finAnioServicio
-                                : DateTime.Today
-                          );
-
-                var listadoHermanosHistorico =
+                // El selector de Territorios debe partir del MISMO conjunto
+                // de personas que "MINISTERIO Y PUBLICADORES".
+                // Los nombres visibles se hidratan después desde la ficha raíz actual.
+                var listadoHermanosReferencia =
                     DatabaseHelper
                         .ObtenerPersonasHistoricasPorMes(
                             _congreCodigo,
-                            fechaPersonas.ToString(
+                            _mesMinisterio.ToString(
                                 "yyyy-MM"));
 
                 await CargarTerritorios(
                     anioServicio,
                     inicioAnioServicio,
                     finAnioServicio,
-                    listadoHermanosHistorico);
+                    listadoHermanosReferencia);
             }
             finally
             {
@@ -348,29 +345,230 @@ namespace SCCosmos
         {
             string mesRefStr = mesReferencia.ToString("yyyy-MM");
 
-            string[] turnos = { "1. MAÑANA", "2. MEDIODÍA", "3. TARDE", "4. NOCHE" };
-            var filasPrograma = new List<FilaPrograma>();
+            var actividadesDB =
+                DatabaseHelper.ObtenerActividadesProgramaMes(
+                    _congreCodigo,
+                    mesRefStr);
 
-            foreach (var turno in turnos)
+            string[] dias =
             {
-                if (turno == "2. MEDIODÍA") filasPrograma.Add(CrearFilaPrograma(mesRefStr, turno, "Comida"));
-                else if (turno == "4. NOCHE")
+                "Miércoles",
+                "Jueves",
+                "Viernes",
+                "Sábado",
+                "Domingo"
+            };
+
+            var diasPrograma = new List<DiaProgramaUI>();
+
+            foreach (string dia in dias)
+            {
+                var actividadesDia =
+                    actividadesDB
+                        .Where(a =>
+                            string.Equals(
+                                a.DiaSemana?.Trim(),
+                                dia,
+                                StringComparison.OrdinalIgnoreCase))
+                        .OrderBy(a => ObtenerOrdenHoraPrograma(a.Hora))
+                        .ThenBy(a => a.Id)
+                        .Select(a =>
+                        {
+                            Persona acompanante =
+                                ObtenerPersonaActualParaPrograma(
+                                    a.CompaneroId);
+
+                            string nombreAcompanante =
+                                ObtenerNombrePreferidoPrograma(
+                                    acompanante);
+
+                            string tipo =
+                                a.TipoActividad?.Trim() ?? "";
+
+                            // Compatibilidad con el programa antiguo:
+                            // Comida/Cenar/Dormir estaban guardados como "Responsable".
+                            if (string.IsNullOrWhiteSpace(tipo)
+                                &&
+                                (
+                                    string.Equals(a.Responsable, "Comida", StringComparison.OrdinalIgnoreCase)
+                                    ||
+                                    string.Equals(a.Responsable, "Cenar", StringComparison.OrdinalIgnoreCase)
+                                    ||
+                                    string.Equals(a.Responsable, "Dormir", StringComparison.OrdinalIgnoreCase)
+                                ))
+                            {
+                                tipo = a.Responsable;
+                            }
+
+                            if (string.IsNullOrWhiteSpace(tipo))
+                            {
+                                tipo = "Actividad";
+                            }
+
+                            string responsable =
+                                NormalizarResponsablePrograma(
+                                    a.Responsable);
+
+                            return new BotonActividadUI
+                            {
+                                Hora =
+                                    string.IsNullOrWhiteSpace(a.Hora)
+                                        ? "--:--"
+                                        : a.Hora.Trim(),
+
+                                TipoActividad = tipo,
+                                Acompanante =
+                                    string.IsNullOrWhiteSpace(nombreAcompanante)
+                                        ? "Sin acompañante"
+                                        : nombreAcompanante,
+
+                                Ubicacion =
+                                    string.IsNullOrWhiteSpace(a.Direccion)
+                                        ? "Sin ubicación"
+                                        : "📍 " + a.Direccion.Trim(),
+
+                                Notas =
+                                    a.NotasLibro?.Trim() ?? "",
+
+                                Dia = dia,
+                                Turno = "General",
+                                Responsable = responsable,
+                                ActividadDB = a
+                            };
+                        })
+                        .ToList();
+
+                diasPrograma.Add(
+                    new DiaProgramaUI
+                    {
+                        Dia = dia,
+                        Actividades = actividadesDia
+                    });
+            }
+
+            ListaProgramaDias.ItemsSource = diasPrograma;
+
+        }
+
+        private Persona ObtenerPersonaActualParaPrograma(int personaId)
+        {
+            if (personaId <= 0)
+            {
+                return null;
+            }
+
+            Persona persona =
+                DatabaseHelper.ObtenerPersonaPorId(
+                    personaId);
+
+            if (persona != null
+                &&
+                persona.PersonaRaizId > 0)
+            {
+                Persona raiz =
+                    DatabaseHelper.ObtenerPersonaPorId(
+                        persona.PersonaRaizId);
+
+                if (raiz != null)
                 {
-                    filasPrograma.Add(CrearFilaPrograma(mesRefStr, turno, "Cenar"));
-                    filasPrograma.Add(CrearFilaPrograma(mesRefStr, turno, "Dormir"));
-                }
-                else
-                {
-                    filasPrograma.Add(CrearFilaPrograma(mesRefStr, turno, "Joni"));
-                    filasPrograma.Add(CrearFilaPrograma(mesRefStr, turno, "Rebe"));
+                    persona = raiz;
                 }
             }
 
-            var collectionView = CollectionViewSource.GetDefaultView(filasPrograma);
-            collectionView.GroupDescriptions.Clear();
-            collectionView.GroupDescriptions.Add(new PropertyGroupDescription("Turno"));
-            TablaPrograma.ItemsSource = collectionView;
+            return persona;
         }
+
+        private static string ObtenerNombrePreferidoPrograma(Persona persona)
+        {
+            if (persona == null)
+            {
+                return "";
+            }
+
+            if (!string.IsNullOrWhiteSpace(persona.NombreComun))
+            {
+                return persona.NombreComun.Trim();
+            }
+
+            if (!string.IsNullOrWhiteSpace(persona.NombreJWHub))
+            {
+                return persona.NombreJWHub.Trim();
+            }
+
+            return persona.Nombre?.Trim() ?? "";
+        }
+
+        private static string NormalizarResponsablePrograma(string responsable)
+        {
+            string valor =
+                responsable?.Trim() ?? "";
+
+            if (string.Equals(
+                    valor,
+                    "Ambos",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return "Ambos";
+            }
+
+            if (string.Equals(
+                    valor,
+                    "Rebe",
+                    StringComparison.OrdinalIgnoreCase)
+                ||
+                string.Equals(
+                    valor,
+                    "Esposa",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return "Esposa";
+            }
+
+            // En el programa anterior había registros de Comida/Cenar/Dormir
+            // cuyo campo Responsable no representaba realmente a una persona.
+            // Al mostrarlos en el nuevo programa se asignan al SC y su antiguo
+            // valor se conserva como descripción de la actividad.
+            return "SC";
+        }
+
+        private static int ObtenerOrdenHoraPrograma(string hora)
+        {
+            if (string.IsNullOrWhiteSpace(hora))
+            {
+                return int.MaxValue;
+            }
+
+            string valor = hora.Trim();
+
+            string[] formatos =
+            {
+                @"h\:mm",
+                @"hh\:mm",
+                @"h\.mm",
+                @"hh\.mm"
+            };
+
+            if (TimeSpan.TryParseExact(
+                    valor,
+                    formatos,
+                    CultureInfo.InvariantCulture,
+                    out TimeSpan ts))
+            {
+                return (int)ts.TotalMinutes;
+            }
+
+            if (DateTime.TryParse(
+                    valor,
+                    CultureInfo.GetCultureInfo("es-ES"),
+                    DateTimeStyles.NoCurrentDateDefault,
+                    out DateTime dt))
+            {
+                return dt.Hour * 60 + dt.Minute;
+            }
+
+            return int.MaxValue - 1;
+        }
+
 
         private void CargarNotas(DateTime mesReferencia)
         {
@@ -386,7 +584,19 @@ namespace SCCosmos
 
             if (idVisita > 0)
             {
-                var notasPlanas = DatabaseHelper.ObtenerNotasVisita(idVisita);
+                var notasPlanas = DatabaseHelper.ObtenerNotasVisita(idVisita)
+                    .Where(n =>
+                    {
+                        string pregunta = n.Pregunta?.Trim() ?? "";
+                        return !pregunta.Equals(
+                                   "¿Tienen los nombres de publicadores la structure correcta?",
+                                   StringComparison.OrdinalIgnoreCase)
+                               && !pregunta.Equals(
+                                   "¿Tienen los nombres de publicadores la estructura correcta?",
+                                   StringComparison.OrdinalIgnoreCase);
+                    })
+                    .ToList();
+
                 MisNotasAgrupadas = notasPlanas.GroupBy(n => n.Cabecera)
                     .Select(g => new CategoriaNotas { Cabecera = g.Key, Preguntas = g.ToList() }).ToList();
 
@@ -480,16 +690,19 @@ namespace SCCosmos
 
         private void BtnProgramarActividad_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button btn && btn.Tag is CeldaPrograma celda)
+            if (sender is Button btn
+                &&
+                btn.Tag is string dia
+                &&
+                !string.IsNullOrWhiteSpace(dia))
             {
                 var ventana =
                     new ProgramarActividadWindow(
-                        celda.Responsable,
-                        celda.Turno,
-                        celda.Dia,
+                        "SC",
+                        "General",
+                        dia,
                         _congreCodigo,
-                        _mesPrograma.ToString(
-                            "yyyy-MM"));
+                        _mesPrograma.ToString("yyyy-MM"));
 
                 ventana.Owner =
                     Window.GetWindow(this);
@@ -501,17 +714,25 @@ namespace SCCosmos
             }
         }
 
+
         private void BtnEliminarActividad_Click(
             object sender,
             RoutedEventArgs e)
         {
             if (sender is Button btn
                 &&
-                btn.Tag is BotonActividadUI ui)
+                btn.Tag is BotonActividadUI ui
+                &&
+                ui.ActividadDB != null)
             {
+                string descripcion =
+                    string.IsNullOrWhiteSpace(ui.TipoActividad)
+                        ? "esta actividad"
+                        : $"'{ui.TipoActividad}'";
+
                 if (MessageBox.Show(
-                        $"¿Eliminar actividad de {ui.Responsable} a las {ui.ActividadDB.Hora}?",
-                        "Confirmar Eliminación",
+                        $"¿Eliminar {descripcion} del {ui.Dia} a las {ui.Hora}?",
+                        "Confirmar eliminación",
                         MessageBoxButton.YesNo,
                         MessageBoxImage.Warning)
                     != MessageBoxResult.Yes)
@@ -521,65 +742,14 @@ namespace SCCosmos
 
                 if (ui.ActividadDB.Id > 0)
                 {
-                    DatabaseHelper
-                        .EliminarActividadPrograma(
-                            ui.ActividadDB.Id);
-                }
-                else
-                {
-                    // Compatibilidad con registros/código antiguo.
-                    using (
-                        var connection =
-                            new Microsoft.Data.Sqlite
-                                .SqliteConnection(
-                                    $"Data Source={DatabaseHelper.RutaDirectorioDatos}\\sccosmos.db"))
-                    {
-                        connection.Open();
-
-                        var cmd =
-                            connection.CreateCommand();
-
-                        cmd.CommandText =
-                            "DELETE FROM ProgramaVisitaV2 " +
-                            "WHERE CongreCodigo=@c " +
-                            "AND MesReferencia=@m " +
-                            "AND DiaSemana=@d " +
-                            "AND Turno=@t " +
-                            "AND Responsable=@r " +
-                            "AND Hora=@h";
-
-                        cmd.Parameters.AddWithValue(
-                            "@c",
-                            _congreCodigo);
-
-                        cmd.Parameters.AddWithValue(
-                            "@m",
-                            _mesPrograma.ToString(
-                                "yyyy-MM"));
-
-                        cmd.Parameters.AddWithValue(
-                            "@d",
-                            ui.Dia);
-
-                        cmd.Parameters.AddWithValue(
-                            "@t",
-                            ui.Turno);
-
-                        cmd.Parameters.AddWithValue(
-                            "@r",
-                            ui.Responsable);
-
-                        cmd.Parameters.AddWithValue(
-                            "@h",
-                            ui.ActividadDB.Hora);
-
-                        cmd.ExecuteNonQuery();
-                    }
+                    DatabaseHelper.EliminarActividadPrograma(
+                        ui.ActividadDB.Id);
                 }
 
                 ActualizarUI_MesPrograma();
             }
         }
+
 
         private void BtnEditarActividad_Click(
             object sender,
@@ -587,16 +757,17 @@ namespace SCCosmos
         {
             if (sender is Button btn
                 &&
-                btn.Tag is BotonActividadUI ui)
+                btn.Tag is BotonActividadUI ui
+                &&
+                ui.ActividadDB != null)
             {
                 var ventana =
                     new ProgramarActividadWindow(
                         ui.Responsable,
-                        ui.Turno,
+                        "General",
                         ui.Dia,
                         _congreCodigo,
-                        _mesPrograma.ToString(
-                            "yyyy-MM"),
+                        _mesPrograma.ToString("yyyy-MM"),
                         ui.ActividadDB);
 
                 ventana.Owner =
@@ -608,6 +779,7 @@ namespace SCCosmos
                 }
             }
         }
+
 
         // ==========================================
         // CREADORES DE MÓDULOS (MINISTERIO Y TERRITORIOS)
@@ -698,6 +870,15 @@ namespace SCCosmos
 
             int contadorRespiro = 0;
 
+            // Las instantáneas históricas conservan los datos ministeriales del mes,
+            // pero los datos de identidad se muestran desde la ficha raíz actual.
+            var personasActualesPorId =
+                DatabaseHelper
+                    .ObtenerPersonasPorCongregacion(_congreCodigo)
+                    .ToDictionary(
+                        p => p.Id,
+                        p => p);
+
             foreach (var h in listadoHermanos)
             {
                 DateTime? fElim = ParsearFecha(h.FechaEliminacion);
@@ -724,9 +905,34 @@ namespace SCCosmos
                 contadorRespiro++;
                 if (contadorRespiro % 10 == 0) await Task.Delay(1);
 
-                string nombreLimpio = !string.IsNullOrWhiteSpace(h.Nombre) ? h.Nombre.Trim() : "";
-                string nombreComunLimpio = !string.IsNullOrWhiteSpace(h.NombreComun) ? h.NombreComun.Trim() : nombreLimpio;
-                string jwHubLimpio = !string.IsNullOrWhiteSpace(h.NombreJWHub) ? h.NombreJWHub.Trim() : "";
+                int idRaizActual =
+                    h.PersonaRaizId > 0
+                        ? h.PersonaRaizId
+                        : h.Id;
+
+                personasActualesPorId.TryGetValue(
+                    idRaizActual,
+                    out Persona personaActual);
+
+                string nombreLimpio =
+                    !string.IsNullOrWhiteSpace(personaActual?.Nombre)
+                        ? personaActual.Nombre.Trim()
+                        : (!string.IsNullOrWhiteSpace(h.Nombre) ? h.Nombre.Trim() : "");
+
+                string nombreComunLimpio =
+                    !string.IsNullOrWhiteSpace(personaActual?.NombreComun)
+                        ? personaActual.NombreComun.Trim()
+                        : (!string.IsNullOrWhiteSpace(h.NombreComun)
+                            ? h.NombreComun.Trim()
+                            : nombreLimpio);
+
+                string jwHubLimpio =
+                    !string.IsNullOrWhiteSpace(personaActual?.NombreJWHub)
+                        ? personaActual.NombreJWHub.Trim()
+                        : (!string.IsNullOrWhiteSpace(h.NombreJWHub)
+                            ? h.NombreJWHub.Trim()
+                            : "");
+
                 string nombramientoLimpio = !string.IsNullOrWhiteSpace(h.Nombramiento) ? h.Nombramiento.Trim() : "";
                 string servicioLimpio = !string.IsNullOrWhiteSpace(h.Servicio) ? h.Servicio.Trim() : "";
                 string sexoLimpio = !string.IsNullOrWhiteSpace(h.Sexo) ? h.Sexo.Trim() : "-";
@@ -801,12 +1007,60 @@ namespace SCCosmos
                 }
 
                 int requisitoAnual = h.RequisitoHoras;
+                string srv = servicioLimpio.ToLower();
+                bool esPrecursorRegular = srv.Contains("precursor regular");
 
-                if (requisitoAnual == 0 && esPrec)
+                DateTime inicioAnioServicioGrid =
+                    new DateTime(int.Parse(anioServicioGrid) - 1, 9, 1);
+
+                DateTime finAnioServicioGrid =
+                    new DateTime(int.Parse(anioServicioGrid), 8, 31);
+
+                DateTime inicioMetaPrecursor = inicioAnioServicioGrid;
+
+                // Para los precursores regulares la meta es de 50 h por cada mes
+                // en el que ya tenían el precursorado dentro del año de servicio.
+                // Ej.: inicio 01/06/2026 => junio, julio y agosto = 150 h.
+                if (esPrecursorRegular)
                 {
-                    string srv = servicioLimpio.ToLower();
-                    if (srv.Contains("precursor regular")) requisitoAnual = 600;
-                    else if (srv.Contains("especial") || srv.Contains("misionero"))
+                    DateTime? fechaInicioPrecursor = ParsearFecha(h.FechaInicioPrec);
+
+                    if (fechaInicioPrecursor.HasValue)
+                    {
+                        DateTime primerMesPrecursor =
+                            new DateTime(
+                                fechaInicioPrecursor.Value.Year,
+                                fechaInicioPrecursor.Value.Month,
+                                1);
+
+                        if (primerMesPrecursor > inicioMetaPrecursor)
+                            inicioMetaPrecursor = primerMesPrecursor;
+                    }
+
+                    if (inicioMetaPrecursor > finAnioServicioGrid)
+                    {
+                        requisitoAnual = 0;
+                    }
+                    else
+                    {
+                        int mesesComoPrecursor =
+                            ((finAnioServicioGrid.Year - inicioMetaPrecursor.Year) * 12)
+                            + finAnioServicioGrid.Month
+                            - inicioMetaPrecursor.Month
+                            + 1;
+
+                        requisitoAnual = Math.Max(0, mesesComoPrecursor) * 50;
+                    }
+
+                    if (h.RequisitoHoras != requisitoAnual)
+                    {
+                        h.RequisitoHoras = requisitoAnual;
+                        DatabaseHelper.ActualizarRequisitoSilencioso((int)idParaActividad, requisitoAnual);
+                    }
+                }
+                else if (requisitoAnual == 0 && esPrec)
+                {
+                    if (srv.Contains("especial") || srv.Contains("misionero"))
                     {
                         requisitoAnual = 1200;
                         if (sexoLimpio.ToLower() == "mujer" && fn.HasValue)
@@ -816,31 +1070,98 @@ namespace SCCosmos
                             if (edadPrec >= 40) requisitoAnual = 1080;
                         }
                     }
+
                     if (requisitoAnual > 0)
                     {
                         h.RequisitoHoras = requisitoAnual;
-                        DatabaseHelper.ActualizarRequisitoSilencioso(h.Id, requisitoAnual);
+                        DatabaseHelper.ActualizarRequisitoSilencioso((int)idParaActividad, requisitoAnual);
                     }
                 }
 
+                // Todos los nombres parten del mismo margen/alineación.
+                // La condición de precursor se representa con negrita en XAML,
+                // no añadiendo espacios al texto.
                 string nombreMostrar = nombreComunLimpio;
-                if (esPrec) nombreMostrar = "   " + nombreMostrar;
 
                 string tooltipAlerta = null;
 
                 if (requisitoAnual > 0)
                 {
-                    double metaProrrateada = (requisitoAnual / 12.0) * mesesTranscurridos;
+                    double metaProrrateada;
+
+                    if (esPrecursorRegular)
+                    {
+                        DateTime mesCorteMeta =
+                            new DateTime(
+                                mesReferenciaGrid.Year,
+                                mesReferenciaGrid.Month,
+                                1);
+
+                        DateTime ultimoMesServicio =
+                            new DateTime(
+                                finAnioServicioGrid.Year,
+                                finAnioServicioGrid.Month,
+                                1);
+
+                        if (mesCorteMeta > ultimoMesServicio)
+                            mesCorteMeta = ultimoMesServicio;
+
+                        if (mesCorteMeta < inicioMetaPrecursor)
+                        {
+                            metaProrrateada = 0;
+                        }
+                        else
+                        {
+                            int mesesMetaHastaCorte =
+                                ((mesCorteMeta.Year - inicioMetaPrecursor.Year) * 12)
+                                + mesCorteMeta.Month
+                                - inicioMetaPrecursor.Month
+                                + 1;
+
+                            metaProrrateada = Math.Max(0, mesesMetaHastaCorte) * 50.0;
+                        }
+                    }
+                    else
+                    {
+                        metaProrrateada =
+                            (requisitoAnual / 12.0) * mesesTranscurridos;
+                    }
+
                     double horasTotales = 0;
 
                     foreach (var act in informesHistoricos.Where(a => a.AnioServicio == anioServicioGrid))
                     {
                         int numMesAct = Array.IndexOf(nombresMesesJson, act.Mes.ToLower()) + 1;
                         int ordenMesAct = (numMesAct >= 9) ? numMesAct - 8 : numMesAct + 4;
-                        if (ordenMesAct <= mesesTranscurridos)
+
+                        bool mesDentroMeta = ordenMesAct <= mesesTranscurridos;
+
+                        if (esPrecursorRegular && numMesAct > 0)
+                        {
+                            int anioMesActividad =
+                                numMesAct >= 9
+                                    ? int.Parse(anioServicioGrid) - 1
+                                    : int.Parse(anioServicioGrid);
+
+                            DateTime fechaMesActividad =
+                                new DateTime(anioMesActividad, numMesAct, 1);
+
+                            mesDentroMeta =
+                                mesDentroMeta
+                                && fechaMesActividad >= inicioMetaPrecursor;
+                        }
+
+                        if (mesDentroMeta)
                         {
                             string hrClean = act.Horas?.Replace(" ", "").Trim();
-                            if (double.TryParse(hrClean?.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double hMes)) horasTotales += hMes;
+                            if (double.TryParse(
+                                    hrClean?.Replace(",", "."),
+                                    System.Globalization.NumberStyles.Any,
+                                    System.Globalization.CultureInfo.InvariantCulture,
+                                    out double hMes))
+                            {
+                                horasTotales += hMes;
+                            }
                         }
                     }
 
@@ -848,7 +1169,12 @@ namespace SCCosmos
                     {
                         nombreMostrar += "  ⚠️";
                         double deficit = Math.Round(metaProrrateada - horasTotales, 1);
-                        tooltipAlerta = $"ATENCIÓN: Atraso de Horas\n\nMeta prorrateada (hasta {mesReferenciaGrid.ToString("MMMM")}): {Math.Round(metaProrrateada, 1)}h\nHoras logradas: {horasTotales}h\n\nDéficit actual: -{deficit}h\nMeta anual asignada: {requisitoAnual}h";
+                        tooltipAlerta =
+                            $"ATENCIÓN: Atraso de Horas\n\n" +
+                            $"Meta hasta {mesReferenciaGrid.ToString("MMMM")}: {Math.Round(metaProrrateada, 1)}h\n" +
+                            $"Horas logradas: {horasTotales}h\n\n" +
+                            $"Déficit actual: -{deficit}h\n" +
+                            $"Meta del año de servicio: {requisitoAnual}h";
                     }
                 }
 
@@ -876,7 +1202,7 @@ namespace SCCosmos
                     AniosBautizado = (fb.HasValue && fb.Value.Year > 1900 && bautNumerica > 0 && bautNumerica <= 120) ? bautNumerica.ToString("0.0") : "-",
                     Sexo = sexoLimpio,
                     FechaNacimientoReal = fn ?? DateTime.MaxValue,
-                    Foto = h.Foto,
+                    Foto = personaActual?.Foto ?? h.Foto,
 
                     ActividadM1 = act1.Valor,
                     NotasM1 = act1.Notas,
@@ -995,6 +1321,55 @@ namespace SCCosmos
             }
         }
 
+        private bool PersonaVisibleEnMesMinisterio(
+            Persona persona,
+            DateTime mesReferencia)
+        {
+            if (persona == null) return false;
+
+            DateTime mesRef =
+                new DateTime(
+                    mesReferencia.Year,
+                    mesReferencia.Month,
+                    1);
+
+            DateTime? fElim =
+                ParsearFecha(
+                    persona.FechaEliminacion);
+
+            if (fElim.HasValue
+                && new DateTime(
+                    fElim.Value.Year,
+                    fElim.Value.Month,
+                    1) < mesRef)
+            {
+                return false;
+            }
+
+            DateTime? fCrea =
+                ParsearFecha(
+                    persona.FechaCreacion);
+
+            bool personaSinCuentaJW =
+                string.IsNullOrWhiteSpace(
+                    persona.NombreJWHub)
+                &&
+                string.IsNullOrWhiteSpace(
+                    persona.EmailJW);
+
+            if (!personaSinCuentaJW
+                && fCrea.HasValue
+                && new DateTime(
+                    fCrea.Value.Year,
+                    fCrea.Value.Month,
+                    1) > mesRef)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         private async Task CargarTerritorios(
             int anioServicio,
             DateTime inicioAnioServicio,
@@ -1006,15 +1381,40 @@ namespace SCCosmos
                     .ObtenerTerritoriosPorCongregacion(
                         _congreCodigo);
 
+            // Los territorios se muestran por orden de alta en la BBDD.
+            // Como cada territorio puede tener varias asignaciones, usamos el
+            // menor Id de sus registros como posición de creación del territorio.
             var grupos =
                 listaPlana
                     .GroupBy(
                         t =>
                             t.Nombre)
+                    .OrderBy(
+                        g =>
+                            g.Min(t => t.Id))
                     .ToList();
 
-            var nombresS21Disponibles =
+            // Mismo conjunto histórico que Ministerio, pero nombres actuales de la raíz.
+            var personasActualesTerritorio =
+                DatabaseHelper
+                    .ObtenerPersonasPorCongregacion(_congreCodigo)
+                    .ToDictionary(
+                        p => p.Id,
+                        p => p);
+
+            DateTime mesReferenciaPersonas =
+                new DateTime(
+                    _mesMinisterio.Year,
+                    _mesMinisterio.Month,
+                    1);
+
+            var personasS21Disponibles =
                 personasMes
+                    .Where(
+                        p =>
+                            PersonaVisibleEnMesMinisterio(
+                                p,
+                                mesReferenciaPersonas))
                     .Where(
                         p =>
                             p.Grupo > 0
@@ -1026,21 +1426,67 @@ namespace SCCosmos
                                 p.NombreJWHub)
                     .Select(
                         p =>
-                            p.Nombre)
+                        {
+                            int idRaiz =
+                                p.PersonaRaizId > 0
+                                    ? p.PersonaRaizId
+                                    : p.Id;
+
+                            personasActualesTerritorio.TryGetValue(
+                                idRaiz,
+                                out Persona actual);
+
+                            string nombreActual =
+                                !string.IsNullOrWhiteSpace(actual?.Nombre)
+                                    ? actual.Nombre.Trim()
+                                    : (p.Nombre?.Trim() ?? "");
+
+                            string nombreComunActual =
+                                !string.IsNullOrWhiteSpace(actual?.NombreComun)
+                                    ? actual.NombreComun.Trim()
+                                    : (p.NombreComun?.Trim() ?? "");
+
+                            string nombreJwActual =
+                                !string.IsNullOrWhiteSpace(actual?.NombreJWHub)
+                                    ? actual.NombreJWHub.Trim()
+                                    : (p.NombreJWHub?.Trim() ?? "");
+
+                            return new OpcionPersonaTerritorio
+                            {
+                                PersonaId = idRaiz,
+                                NombreS21 = nombreActual,
+                                NombreComun = nombreComunActual,
+                                NombreJWHub = nombreJwActual
+                            };
+                        })
                     .Where(
-                        n =>
+                        p =>
                             !string.IsNullOrWhiteSpace(
-                                n))
-                    .Distinct(
+                                p.NombreS21))
+                    .GroupBy(
+                        p =>
+                            p.PersonaId > 0
+                                ? $"ID:{p.PersonaId}"
+                                : $"NOMBRE:{p.NombreS21}",
                         StringComparer.OrdinalIgnoreCase)
+                    .Select(
+                        g => g.First())
                     .OrderBy(
-                        n =>
-                            n)
+                        p => p.NombreVisible,
+                        StringComparer.CurrentCultureIgnoreCase)
+                    .ThenBy(
+                        p =>
+                            p.NombreS21,
+                        StringComparer.CurrentCultureIgnoreCase)
                     .ToList();
 
-            nombresS21Disponibles.Insert(
+            personasS21Disponibles.Insert(
                 0,
-                "-- Sin Asignar --");
+                new OpcionPersonaTerritorio
+                {
+                    NombreS21 = "-- Sin Asignar --",
+                    NombreComun = ""
+                });
 
             var filasGrid =
                 new List<FilaTablaTerritorio>();
@@ -1070,12 +1516,25 @@ namespace SCCosmos
             }
 
 
-            // Esta estadística es móvil y NO debe limitarse al año de
-            // servicio seleccionado. Por ejemplo, a 31/01/2026 debe poder
-            // contar trabajos de agosto-diciembre de 2025 aunque parte de ese
-            // intervalo pertenezca al año de servicio anterior.
+            // "Últimos 6 meses" es una ventana móvil real respecto a la fecha
+            // de corte. Puede atravesar el 1 de septiembre y, por tanto, incluir
+            // devoluciones del año de servicio anterior si siguen estando dentro
+            // de esos seis meses. Esta estadística es independiente de la tarjeta
+            // "trabajados en el año de servicio", que sí se limita a septiembre-agosto.
             DateTime inicioUltimos6Meses =
                 fechaCorte.AddMonths(-6).AddDays(1);
+
+            // Mostramos de forma explícita la fecha a la que se refiere
+            // "Trabajándose en...".
+            if (TxtEtiquetaTerritoriosEnCurso != null)
+            {
+                string mesCorte = fechaCorte.ToString("MMM yyyy", new CultureInfo("es-ES"));
+                if (!string.IsNullOrEmpty(mesCorte))
+                {
+                    mesCorte = char.ToUpper(mesCorte[0]) + mesCorte.Substring(1);
+                }
+                TxtEtiquetaTerritoriosEnCurso.Text = $"Trabajándose en {mesCorte}";
+            }
 
 
             DateTime fecha4MesesAntes =
@@ -1259,7 +1718,7 @@ namespace SCCosmos
                                     a =>
                                         CrearCeldaVuelta(
                                             a,
-                                            nombresS21Disponibles,
+                                            personasS21Disponibles,
                                             cacheFuzzy))
                                 .ToList()
                     };
@@ -1310,29 +1769,37 @@ namespace SCCosmos
                             asig.UltimaFechaCompletado);
 
 
-                    if (fComp.HasValue
-                        &&
-                        fComp.Value.Date >=
-                        inicioAnioServicio.Date
-                        &&
-                        fComp.Value.Date <=
-                        fechaCorte.Date)
+                    // Las dos estadísticas de "trabajados" deben usar las
+                    // mismas fuentes de fecha. FechaCompletado es la devolución
+                    // del registro actual y UltimaFechaCompletado puede contener
+                    // una devolución anterior que el S-13 no trae como fila
+                    // independiente.
+                    bool completadoEnAnio =
+                        (fComp.HasValue
+                         && fComp.Value.Date >= inicioAnioServicio.Date
+                         && fComp.Value.Date <= fechaCorte.Date)
+                        ||
+                        (fUltimaCompJson.HasValue
+                         && fUltimaCompJson.Value.Date >= inicioAnioServicio.Date
+                         && fUltimaCompJson.Value.Date <= fechaCorte.Date);
+
+                    if (completadoEnAnio)
                     {
-                        trabajadoEnAnio =
-                            true;
+                        trabajadoEnAnio = true;
                     }
 
-
-                    if ((fComp.HasValue
+                    bool completadoEn6Meses =
+                        (fComp.HasValue
                          && fComp.Value.Date >= inicioUltimos6Meses.Date
                          && fComp.Value.Date <= fechaCorte.Date)
                         ||
                         (fUltimaCompJson.HasValue
                          && fUltimaCompJson.Value.Date >= inicioUltimos6Meses.Date
-                         && fUltimaCompJson.Value.Date <= fechaCorte.Date))
+                         && fUltimaCompJson.Value.Date <= fechaCorte.Date);
+
+                    if (completadoEn6Meses)
                     {
-                        trabajadoEn6Meses =
-                            true;
+                        trabajadoEn6Meses = true;
                     }
 
 
@@ -1408,6 +1875,8 @@ namespace SCCosmos
                     ??
                     DateTime.MinValue;
 
+                bool territorioSinTrabajar1Ano = false;
+                bool territorioSinTrabajar2Anos = false;
 
                 if (fechaReferenciaParaInactividad
                     !=
@@ -1424,34 +1893,47 @@ namespace SCCosmos
                     if (diasInactivo >=
                         730)
                     {
+                        territorioSinTrabajar2Anos = true;
                         sinTrabajar2Anos++;
                     }
                     else if (diasInactivo >=
                              365)
                     {
+                        territorioSinTrabajar1Ano = true;
                         sinTrabajar1Ano++;
                     }
                 }
                 else
                 {
+                    territorioSinTrabajar2Anos = true;
                     sinTrabajar2Anos++;
                 }
+
+                // Guardamos en la propia fila las mismas condiciones que se
+                // usan para los contadores. Así, al pulsar una tarjeta, el
+                // filtro muestra exactamente los territorios que la componen.
+                fila.TrabajadoUltimos6Meses = trabajadoEn6Meses;
+                fila.TrabajadoAnioServicio = trabajadoEnAnio;
+                fila.TrabajandoseEnFechaCorte = enCurso;
+                fila.Caducado = caducado;
+                fila.SinTrabajar1Ano = territorioSinTrabajar1Ano;
+                fila.SinTrabajar2Anos = territorioSinTrabajar2Anos;
             }
 
 
+            // filasGrid ya se ha construido siguiendo el primer Id de cada
+            // territorio en TerritoriosVisitaV3. No aplicamos ningún orden
+            // alfabético ni numérico adicional.
             _territoriosGlobal =
-                filasGrid
-                    .OrderBy(
-                        f =>
-                            ObtenerNumeroTerritorio(f.Nombre))
-                    .ThenBy(
-                        f =>
-                            f.Nombre,
-                        StringComparer.CurrentCultureIgnoreCase)
-                    .ToList();
+                filasGrid.ToList();
 
+            ActualizarEstadoTarjetasFiltroTerritorios();
+
+            // Conservamos la página actual al refrescar los territorios.
+            // MostrarPaginaTerritorios ya limita automáticamente el número
+            // si la página actual deja de existir.
             MostrarPaginaTerritorios(
-                1);
+                _paginaActual);
 
 
             if (TxtTotalTerritorios != null)
@@ -1540,11 +2022,156 @@ namespace SCCosmos
         }
 
 
+        private List<FilaTablaTerritorio> ObtenerTerritoriosFiltrados()
+        {
+            IEnumerable<FilaTablaTerritorio> consulta =
+                _territoriosGlobal ?? new List<FilaTablaTerritorio>();
+
+            switch (_filtroTerritoriosActivo)
+            {
+                case "Ultimos6Meses":
+                    consulta = consulta.Where(t => t.TrabajadoUltimos6Meses);
+                    break;
+
+                case "AnioServicio":
+                    consulta = consulta.Where(t => t.TrabajadoAnioServicio);
+                    break;
+
+                case "EnCurso":
+                    consulta = consulta.Where(t => t.TrabajandoseEnFechaCorte);
+                    break;
+
+                case "Caducados":
+                    consulta = consulta.Where(t => t.Caducado);
+                    break;
+
+                case "SinTrabajar1Ano":
+                    consulta = consulta.Where(t => t.SinTrabajar1Ano);
+                    break;
+
+                case "SinTrabajar2Anos":
+                    consulta = consulta.Where(t => t.SinTrabajar2Anos);
+                    break;
+            }
+
+            return consulta.ToList();
+        }
+
+        private void CardFiltroTerritorio_MouseLeftButtonUp(
+            object sender,
+            MouseButtonEventArgs e)
+        {
+            if (!(sender is Border card))
+                return;
+
+            string filtro = card.Tag?.ToString() ?? "";
+
+            // La tarjeta Nº Territorios funciona también como "mostrar todos".
+            if (string.Equals(filtro, "Todos", StringComparison.Ordinal))
+            {
+                if (!string.IsNullOrEmpty(_filtroTerritoriosActivo))
+                {
+                    _filtroTerritoriosActivo = "";
+                    _paginaActual = Math.Max(1, _paginaAntesFiltroTerritorios);
+                }
+            }
+            else if (string.Equals(
+                         _filtroTerritoriosActivo,
+                         filtro,
+                         StringComparison.Ordinal))
+            {
+                // Segundo clic sobre la misma tarjeta: desmarcar.
+                _filtroTerritoriosActivo = "";
+                _paginaActual = Math.Max(1, _paginaAntesFiltroTerritorios);
+            }
+            else
+            {
+                // Al activar el primer filtro recordamos en qué página estaba
+                // el listado completo. Cambiar de una tarjeta a otra no la pisa.
+                if (string.IsNullOrEmpty(_filtroTerritoriosActivo))
+                {
+                    _paginaAntesFiltroTerritorios = _paginaActual;
+                }
+
+                _filtroTerritoriosActivo = filtro;
+                _paginaActual = 1;
+            }
+
+            ActualizarEstadoTarjetasFiltroTerritorios();
+            MostrarPaginaTerritorios(_paginaActual);
+            e.Handled = true;
+        }
+
+        private void ActualizarEstadoTarjetasFiltroTerritorios()
+        {
+            ActualizarTarjetaFiltroTerritorio(
+                CardTotalTerritorios,
+                string.IsNullOrEmpty(_filtroTerritoriosActivo),
+                "#B0B0B0");
+
+            ActualizarTarjetaFiltroTerritorio(
+                CardTerritoriosTrabajados6M,
+                _filtroTerritoriosActivo == "Ultimos6Meses",
+                "#32CD32");
+
+            ActualizarTarjetaFiltroTerritorio(
+                CardTerritoriosTrabajadosAnio,
+                _filtroTerritoriosActivo == "AnioServicio",
+                "#32CD32");
+
+            ActualizarTarjetaFiltroTerritorio(
+                CardTerritoriosEnCurso,
+                _filtroTerritoriosActivo == "EnCurso",
+                "#1E90FF");
+
+            ActualizarTarjetaFiltroTerritorio(
+                CardTerritoriosCaducados,
+                _filtroTerritoriosActivo == "Caducados",
+                "#FF8C00");
+
+            ActualizarTarjetaFiltroTerritorio(
+                CardTerritorios1Ano,
+                _filtroTerritoriosActivo == "SinTrabajar1Ano",
+                "#FF4500");
+
+            ActualizarTarjetaFiltroTerritorio(
+                CardTerritorios2Anos,
+                _filtroTerritoriosActivo == "SinTrabajar2Anos",
+                "#E6192B");
+        }
+
+        private static void ActualizarTarjetaFiltroTerritorio(
+            Border tarjeta,
+            bool activa,
+            string color)
+        {
+            if (tarjeta == null)
+                return;
+
+            if (activa)
+            {
+                tarjeta.BorderThickness = new Thickness(2);
+                tarjeta.BorderBrush =
+                    new SolidColorBrush(
+                        (Color)ColorConverter.ConvertFromString(color));
+            }
+            else
+            {
+                tarjeta.BorderThickness = new Thickness(1);
+                tarjeta.BorderBrush =
+                    new SolidColorBrush(
+                        Color.FromArgb(32, 255, 255, 255));
+            }
+        }
+
         private void MostrarPaginaTerritorios(int pagina)
         {
-            // Si no hay territorios para el año seleccionado, limpiamos la vista
-            // en lugar de dejar datos/paginación de una carga anterior.
-            if (_territoriosGlobal == null || !_territoriosGlobal.Any())
+            var territoriosMostrar = ObtenerTerritoriosFiltrados();
+
+            // Si el filtro activo no tiene coincidencias, limpiamos la tabla
+            // pero mantenemos la tarjeta seleccionada para que quede claro qué
+            // se está buscando.
+            if (territoriosMostrar == null || !territoriosMostrar.Any())
             {
                 _paginaActual = 1;
                 if (TablaTerritorios != null) TablaTerritorios.ItemsSource = null;
@@ -1552,13 +2179,22 @@ namespace SCCosmos
                 return;
             }
 
-            int totalPaginas = (int)Math.Ceiling(_territoriosGlobal.Count / (double)_itemsPorPagina);
+            int totalPaginas =
+                (int)Math.Ceiling(
+                    territoriosMostrar.Count /
+                    (double)_itemsPorPagina);
+
             if (pagina < 1) pagina = 1;
             if (pagina > totalPaginas) pagina = totalPaginas;
 
             _paginaActual = pagina;
 
-            var datosPagina = _territoriosGlobal.Skip((pagina - 1) * _itemsPorPagina).Take(_itemsPorPagina).ToList();
+            var datosPagina =
+                territoriosMostrar
+                    .Skip((pagina - 1) * _itemsPorPagina)
+                    .Take(_itemsPorPagina)
+                    .ToList();
+
             TablaTerritorios.ItemsSource = datosPagina;
 
             PanelPaginacion.Children.Clear();
@@ -1570,8 +2206,11 @@ namespace SCCosmos
                     Content = i.ToString(),
                     Tag = i,
                     Style = (Style)this.FindResource("EstiloBotonPaginacion"),
-                    Background = i == _paginaActual ? (SolidColorBrush)new BrushConverter().ConvertFrom("#0078D4") : (SolidColorBrush)new BrushConverter().ConvertFrom("#333333")
+                    Background = i == _paginaActual
+                        ? (SolidColorBrush)new BrushConverter().ConvertFrom("#0078D4")
+                        : (SolidColorBrush)new BrushConverter().ConvertFrom("#333333")
                 };
+
                 btn.Click += BtnPaginaTerritorio_Click;
                 PanelPaginacion.Children.Add(btn);
             }
@@ -1789,7 +2428,20 @@ namespace SCCosmos
 
         private void BtnEditarPersona_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button btn && btn.DataContext is FilaVisitaPublisher fila) AbrirFormularioPersona(fila.PersonaId);
+            if (sender is Button btn
+                && btn.DataContext is FilaVisitaPublisher fila)
+            {
+                // VISITAS puede mostrar una instantánea histórica.
+                // La edición manual siempre abre la ficha raíz actual,
+                // que es la misma que utiliza PersonasPage.
+                int personaRaizId =
+                    fila.PersonaRaizId > 0
+                        ? fila.PersonaRaizId
+                        : fila.PersonaId;
+
+                AbrirFormularioPersona(
+                    personaRaizId);
+            }
         }
 
         private void BtnNuevaPersona_Click(object sender, RoutedEventArgs e)
@@ -1815,7 +2467,35 @@ namespace SCCosmos
 
             if (persona != null)
             {
-                var listaPersonasEsteMes = _filasVisitasGlobal.Select(f => new Persona { Id = f.PersonaId, NombreComun = f.NombreVisual, Nombre = f.Nombre }).ToList();
+                // Los candidatos de vinculación también deben ser fichas raíz,
+                // nunca IDs de instantáneas históricas.
+                var personasActuales =
+                    DatabaseHelper
+                        .ObtenerPersonasPorCongregacion(
+                            _congreCodigo)
+                        .ToDictionary(
+                            p => p.Id,
+                            p => p);
+
+                var idsMes =
+                    _filasVisitasGlobal
+                        .Select(
+                            f =>
+                                f.PersonaRaizId > 0
+                                    ? f.PersonaRaizId
+                                    : f.PersonaId)
+                        .Distinct()
+                        .ToHashSet();
+
+                var listaPersonasEsteMes =
+                    personasActuales
+                        .Where(
+                            kv =>
+                                idsMes.Contains(
+                                    kv.Key))
+                        .Select(
+                            kv => kv.Value)
+                        .ToList();
 
                 var ventana = new FormularioPersonaWindow(persona, listaPersonasEsteMes);
                 ventana.Owner = Window.GetWindow(this);
@@ -1829,6 +2509,9 @@ namespace SCCosmos
                     _htmlMapaCache = "";
 
                     ActualizarUI_MesMinisterio();
+
+                    // Territorios muestra los mismos publicadores y nombres actuales.
+                    ActualizarUI_MesTerritorios();
                 }
                 else if (personaId == 0)
                 {
@@ -1845,9 +2528,23 @@ namespace SCCosmos
 
                 if (resultado == MessageBoxResult.Yes)
                 {
-                    DatabaseHelper.EliminarPersona(fila.PersonaId);
+                    // En meses históricos la fila puede corresponder a una instantánea.
+                    // Debemos borrar siempre la persona raíz para que se eliminen también
+                    // sus copias históricas y su actividad.
+                    int personaRaizId =
+                        fila.PersonaRaizId > 0
+                            ? fila.PersonaRaizId
+                            : fila.PersonaId;
 
-                    // --- NUEVO: Vaciamos la caché del mapa para que desaparezca la chincheta de la persona borrada ---
+                    DatabaseHelper.EliminarPersona(personaRaizId);
+
+                    // Quitamos también la fila de la caché visual inmediatamente.
+                    _filasVisitasGlobal.RemoveAll(
+                        f =>
+                            f.PersonaId == personaRaizId
+                            || f.PersonaRaizId == personaRaizId);
+
+                    // Vaciamos la caché del mapa para que desaparezca la chincheta.
                     _mapaCargado = false;
                     _htmlMapaCache = "";
 
@@ -1860,23 +2557,359 @@ namespace SCCosmos
         // RESTO DEL CÓDIGO (Territorios y Cursos)
         // =====================================
 
-        private void CmbVinculacion_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void CmbVinculacion_SelectionChanged(
+            object sender,
+            SelectionChangedEventArgs e)
         {
             // Ignoramos los SelectionChanged que genera la propia carga de
             // Territorios, pero no los bloqueamos porque Ministerio esté cargando.
             if (_cargandoTerritorios) return;
-            if (sender is ComboBox combo && combo.DataContext is CeldaVuelta celda)
+
+            if (sender is ComboBox combo
+                && combo.DataContext is CeldaVuelta celda)
             {
                 if (!combo.IsLoaded) return;
-                if (!combo.IsDropDownOpen && !combo.IsKeyboardFocusWithin) return;
+                if (!combo.IsDropDownOpen
+                    && !combo.IsKeyboardFocusWithin)
+                {
+                    return;
+                }
 
-                string nombreSeleccionado = (e.AddedItems.Count > 0) ? e.AddedItems[0].ToString() : (combo.SelectedItem?.ToString() ?? "");
-                string nombreGuardar = nombreSeleccionado == "-- Sin Asignar --" ? "" : nombreSeleccionado;
+                string nombreSeleccionado = "";
 
-                DatabaseHelper.ActualizarVinculacionTerritorio(celda.RegistroId, nombreGuardar);
+                if (e.AddedItems.Count > 0
+                    && e.AddedItems[0] is OpcionPersonaTerritorio opcion)
+                {
+                    nombreSeleccionado = opcion.NombreS21;
+                }
+                else if (combo.SelectedValue is string valorSeleccionado)
+                {
+                    nombreSeleccionado = valorSeleccionado;
+                }
+
+                if (string.IsNullOrWhiteSpace(nombreSeleccionado))
+                    return;
+
+                string nombreGuardar =
+                    nombreSeleccionado == "-- Sin Asignar --"
+                        ? ""
+                        : nombreSeleccionado;
+
+                DatabaseHelper.ActualizarVinculacionTerritorio(
+                    celda.RegistroId,
+                    nombreGuardar);
+
                 celda.NombreS21 = nombreGuardar;
 
                 ActualizarUI_MesTerritorios();
+            }
+        }
+
+        private void CmbVinculacion_KeyUp(
+            object sender,
+            KeyEventArgs e)
+        {
+            if (_cargandoTerritorios) return;
+
+            if (!(sender is ComboBox combo)
+                || !(combo.DataContext is CeldaVuelta celda))
+            {
+                return;
+            }
+
+            // Las teclas de navegación/confirmación no cambian el filtro.
+            // Así podemos movernos por los resultados y seleccionar con Enter
+            // sin que el desplegable se reconstruya continuamente.
+            if (e.Key == Key.Up
+                || e.Key == Key.Down
+                || e.Key == Key.Left
+                || e.Key == Key.Right
+                || e.Key == Key.Enter
+                || e.Key == Key.Tab
+                || e.Key == Key.Escape)
+            {
+                return;
+            }
+
+            var txt =
+                combo.Template.FindName(
+                    "PART_EditableTextBox",
+                    combo) as TextBox;
+
+            if (txt == null || !txt.IsKeyboardFocusWithin)
+                return;
+
+            string busqueda = (txt.Text ?? "").Trim();
+
+            ICollectionView vista =
+                CollectionViewSource.GetDefaultView(
+                    celda.ListaPersonasS21);
+
+            if (string.IsNullOrWhiteSpace(busqueda))
+            {
+                vista.Filter = null;
+            }
+            else
+            {
+                vista.Filter = obj =>
+                {
+                    if (!(obj is OpcionPersonaTerritorio p))
+                        return false;
+
+                    // Dejamos siempre disponible la opción de quitar la
+                    // asignación y buscamos por cualquiera de los nombres.
+                    return
+                        p.NombreS21 == "-- Sin Asignar --"
+                        || ContieneTextoTerritorio(p.NombreComun, busqueda)
+                        || ContieneTextoTerritorio(p.NombreJWHub, busqueda)
+                        || ContieneTextoTerritorio(p.NombreS21, busqueda)
+                        || ContieneTextoTerritorio(p.NombreVisible, busqueda);
+                };
+            }
+
+            vista.Refresh();
+
+            // No tocamos txt.Text ni ItemsSource. Solo abrimos el desplegable.
+            // Esto evita el bucle de TextChanged que provocaba las pulsaciones
+            // y búsquedas aparentemente "a lo loco".
+            combo.IsDropDownOpen = true;
+        }
+
+        private static List<OpcionPersonaTerritorio> OrdenarPersonasTerritorioPorSimilitud(
+            IEnumerable<OpcionPersonaTerritorio> personas,
+            string nombreReferencia)
+        {
+            var resultado = new List<OpcionPersonaTerritorio>();
+
+            var sinAsignar = personas
+                .FirstOrDefault(p => p.NombreS21 == "-- Sin Asignar --");
+
+            if (sinAsignar != null)
+            {
+                resultado.Add(new OpcionPersonaTerritorio
+                {
+                    NombreS21 = sinAsignar.NombreS21,
+                    NombreComun = sinAsignar.NombreComun,
+                    NombreJWHub = sinAsignar.NombreJWHub,
+                    Coincidencia = -1
+                });
+            }
+
+            var ordenadas = personas
+                .Where(p => p.NombreS21 != "-- Sin Asignar --")
+                .Select(p =>
+                {
+                    int similitudNombreCompleto =
+                        CalcularSimilitudTerritorio(nombreReferencia, p.NombreS21);
+                    int similitudNombreComun =
+                        CalcularSimilitudTerritorio(nombreReferencia, p.NombreComun);
+                    int similitudJWHub =
+                        CalcularSimilitudTerritorio(nombreReferencia, p.NombreJWHub);
+
+                    return new OpcionPersonaTerritorio
+                    {
+                        NombreS21 = p.NombreS21,
+                        NombreComun = p.NombreComun,
+                        NombreJWHub = p.NombreJWHub,
+                        Coincidencia = Math.Max(
+                            similitudNombreCompleto,
+                            Math.Max(similitudNombreComun, similitudJWHub))
+                    };
+                })
+                .OrderByDescending(p => p.Coincidencia)
+                .ThenBy(p => p.NombreVisible, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+
+            resultado.AddRange(ordenadas);
+            return resultado;
+        }
+
+        private static int CalcularSimilitudTerritorio(
+            string referencia,
+            string candidato)
+        {
+            string a = NormalizarNombreTerritorio(referencia);
+            string b = NormalizarNombreTerritorio(candidato);
+
+            if (string.IsNullOrEmpty(a) || string.IsNullOrEmpty(b))
+                return 0;
+
+            if (a == b)
+                return 100;
+
+            // Igual que en FormularioPersonaWindow: combinamos parecido directo,
+            // parecido con las palabras ordenadas y coincidencia por tokens.
+            double directa = SimilitudLevenshteinTerritorio(a, b);
+
+            string tokensA = string.Join(
+                " ",
+                a.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                    .OrderBy(x => x));
+
+            string tokensB = string.Join(
+                " ",
+                b.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                    .OrderBy(x => x));
+
+            double porTokensOrdenados =
+                SimilitudLevenshteinTerritorio(tokensA, tokensB);
+
+            var setA = new HashSet<string>(
+                a.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries));
+
+            var setB = new HashSet<string>(
+                b.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries));
+
+            int union = setA.Union(setB).Count();
+            int interseccion = setA.Intersect(setB).Count();
+
+            double coincidenciaTokens =
+                union == 0
+                    ? 0
+                    : (double)interseccion / union;
+
+            double mejor =
+                Math.Max(
+                    directa,
+                    Math.Max(porTokensOrdenados, coincidenciaTokens));
+
+            return Math.Max(
+                0,
+                Math.Min(100, (int)Math.Round(mejor * 100)));
+        }
+
+        private static string NormalizarNombreTerritorio(string texto)
+        {
+            if (string.IsNullOrWhiteSpace(texto))
+                return "";
+
+            string descompuesto =
+                texto.Trim()
+                    .ToLowerInvariant()
+                    .Normalize(System.Text.NormalizationForm.FormD);
+
+            var sb = new System.Text.StringBuilder();
+            bool ultimoEraEspacio = false;
+
+            foreach (char c in descompuesto)
+            {
+                UnicodeCategory categoria =
+                    CharUnicodeInfo.GetUnicodeCategory(c);
+
+                if (categoria == UnicodeCategory.NonSpacingMark)
+                    continue;
+
+                if (char.IsLetterOrDigit(c))
+                {
+                    sb.Append(c);
+                    ultimoEraEspacio = false;
+                }
+                else if (!ultimoEraEspacio && sb.Length > 0)
+                {
+                    sb.Append(' ');
+                    ultimoEraEspacio = true;
+                }
+            }
+
+            return sb.ToString()
+                .Trim()
+                .Normalize(System.Text.NormalizationForm.FormC);
+        }
+
+        private static double SimilitudLevenshteinTerritorio(
+            string a,
+            string b)
+        {
+            if (a == b)
+                return 1.0;
+
+            if (a.Length == 0 || b.Length == 0)
+                return 0.0;
+
+            int[] anterior = new int[b.Length + 1];
+            int[] actual = new int[b.Length + 1];
+
+            for (int j = 0; j <= b.Length; j++)
+                anterior[j] = j;
+
+            for (int i = 1; i <= a.Length; i++)
+            {
+                actual[0] = i;
+
+                for (int j = 1; j <= b.Length; j++)
+                {
+                    int coste = a[i - 1] == b[j - 1] ? 0 : 1;
+
+                    actual[j] = Math.Min(
+                        Math.Min(
+                            actual[j - 1] + 1,
+                            anterior[j] + 1),
+                        anterior[j - 1] + coste);
+                }
+
+                var temp = anterior;
+                anterior = actual;
+                actual = temp;
+            }
+
+            int distancia = anterior[b.Length];
+            int maximo = Math.Max(a.Length, b.Length);
+
+            return 1.0 - ((double)distancia / maximo);
+        }
+
+        private static bool ContieneTextoTerritorio(
+            string texto,
+            string busqueda)
+        {
+            if (string.IsNullOrWhiteSpace(busqueda))
+                return true;
+
+            if (string.IsNullOrWhiteSpace(texto))
+                return false;
+
+            return CultureInfo
+                       .GetCultureInfo("es-ES")
+                       .CompareInfo
+                       .IndexOf(
+                           texto,
+                           busqueda,
+                           CompareOptions.IgnoreCase
+                           | CompareOptions.IgnoreNonSpace)
+                   >= 0;
+        }
+
+        private void BtnEliminarRegistroTerritorio_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.DataContext is CeldaVuelta celda && celda.RegistroId > 0)
+            {
+                string nombre = string.IsNullOrWhiteSpace(celda.NombreS13)
+                    ? "(sin nombre)"
+                    : celda.NombreS13;
+
+                string fechas = string.IsNullOrWhiteSpace(celda.Fechas)
+                    ? "sin fechas"
+                    : celda.Fechas;
+
+                var resultado = MessageBox.Show(
+                    $"¿Quieres borrar este registro de territorio?\n\n" +
+                    $"Nombre original: {nombre}\n" +
+                    $"Fechas: {fechas}\n\n" +
+                    "Solo se eliminará este registro concreto. El resto de registros del territorio no se modificarán.",
+                    "Borrar registro de territorio",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+
+                if (resultado == MessageBoxResult.Yes)
+                {
+                    DatabaseHelper.EliminarRegistroTerritorio(celda.RegistroId);
+
+                    // Conservamos el filtro y la página actuales siempre que
+                    // sigan existiendo después de eliminar el registro.
+                    ActualizarUI_MesTerritorios();
+                }
+
+                e.Handled = true;
             }
         }
 
@@ -2031,33 +3064,108 @@ namespace SCCosmos
             return false;
         }
 
-        private CeldaVuelta CrearCeldaVuelta(TerritorioJSON asig, List<string> nombresS21, Dictionary<string, string> cacheFuzzy)
+        private CeldaVuelta CrearCeldaVuelta(
+            TerritorioJSON asig,
+            List<OpcionPersonaTerritorio> personasS21,
+            Dictionary<string, string> cacheFuzzy)
         {
-            var celda = new CeldaVuelta { ListaNombresS21 = nombresS21 };
-            if (asig == null || string.IsNullOrWhiteSpace(asig.AsignadoA)) return celda;
+            var celda =
+                new CeldaVuelta();
+
+            if (asig == null || string.IsNullOrWhiteSpace(asig.AsignadoA))
+            {
+                celda.ListaPersonasS21 = personasS21;
+                return celda;
+            }
+
+            // Cada registro de S-13 recibe su propia lista de candidatos,
+            // ordenada de mayor a menor parecido con el nombre del registro.
+            // Las opciones se clonan para que el porcentaje sea específico
+            // de este registro y no se comparta con otras filas.
+            celda.ListaPersonasS21 =
+                OrdenarPersonasTerritorioPorSimilitud(
+                    personasS21,
+                    asig.AsignadoA);
 
             celda.EsVisible = Visibility.Visible;
             celda.RegistroId = asig.Id;
             celda.NombreS13 = asig.AsignadoA;
-            celda.Fechas = $"{(string.IsNullOrWhiteSpace(asig.FechaAsignado) ? "--" : asig.FechaAsignado)} al {(string.IsNullOrWhiteSpace(asig.FechaCompletado) ? "--" : asig.FechaCompletado)}";
+            celda.Fechas =
+                $"{(string.IsNullOrWhiteSpace(asig.FechaAsignado) ? "--" : asig.FechaAsignado)} " +
+                $"al {(string.IsNullOrWhiteSpace(asig.FechaCompletado) ? "--" : asig.FechaCompletado)}";
 
-            if (!string.IsNullOrWhiteSpace(asig.NombreVinculado) && nombresS21.Contains(asig.NombreVinculado)) celda.NombreS21 = asig.NombreVinculado;
+            if (!string.IsNullOrWhiteSpace(asig.NombreVinculado)
+                && personasS21.Any(
+                    p =>
+                        string.Equals(
+                            p.NombreS21,
+                            asig.NombreVinculado,
+                            StringComparison.OrdinalIgnoreCase)))
+            {
+                celda.NombreS21 = asig.NombreVinculado;
+            }
+            else if (cacheFuzzy.ContainsKey(asig.AsignadoA))
+            {
+                celda.NombreS21 = cacheFuzzy[asig.AsignadoA];
+            }
             else
             {
-                if (cacheFuzzy.ContainsKey(asig.AsignadoA)) celda.NombreS21 = cacheFuzzy[asig.AsignadoA];
+                string mejorMatch = "";
+                int mayorSim = 0;
+                int menorDif = 999;
+
+                foreach (var persona in celda.ListaPersonasS21.Skip(1))
+                {
+                    int similitudNombre =
+                        CalcularSimilitudTerritorio(
+                            asig.AsignadoA,
+                            persona.NombreS21);
+
+                    int similitudNombreComun =
+                        CalcularSimilitudTerritorio(
+                            asig.AsignadoA,
+                            persona.NombreComun);
+
+                    int similitudJWHub =
+                        CalcularSimilitudTerritorio(
+                            asig.AsignadoA,
+                            persona.NombreJWHub);
+
+                    int sim =
+                        Math.Max(
+                            similitudNombre,
+                            Math.Max(
+                                similitudNombreComun,
+                                similitudJWHub));
+
+                    int dif =
+                        Math.Abs(
+                            asig.AsignadoA.Length
+                            - persona.NombreS21.Length);
+
+                    if (sim > mayorSim
+                        || (sim == mayorSim && dif < menorDif))
+                    {
+                        mayorSim = sim;
+                        menorDif = dif;
+                        mejorMatch = persona.NombreS21;
+                    }
+                }
+
+                if (mayorSim >= 50)
+                {
+                    celda.NombreS21 = mejorMatch;
+                    cacheFuzzy[asig.AsignadoA] = mejorMatch;
+                    DatabaseHelper.ActualizarVinculacionTerritorio(
+                        asig.Id,
+                        mejorMatch);
+                }
                 else
                 {
-                    string mejorMatch = ""; int mayorSim = 0, menorDif = 999;
-                    foreach (var s21 in nombresS21.Skip(1))
-                    {
-                        int sim = DatabaseHelper.CalcularSimilitud(asig.AsignadoA, s21);
-                        int dif = Math.Abs(asig.AsignadoA.Length - s21.Length);
-                        if (sim > mayorSim || (sim == mayorSim && dif < menorDif)) { mayorSim = sim; menorDif = dif; mejorMatch = s21; }
-                    }
-                    if (mayorSim >= 50) { celda.NombreS21 = mejorMatch; cacheFuzzy[asig.AsignadoA] = mejorMatch; DatabaseHelper.ActualizarVinculacionTerritorio(asig.Id, mejorMatch); }
-                    else { cacheFuzzy[asig.AsignadoA] = ""; }
+                    cacheFuzzy[asig.AsignadoA] = "";
                 }
             }
+
             return celda;
         }
 
@@ -2554,6 +3662,15 @@ namespace SCCosmos
             public string Nombre { get; set; }
             public string UltimaVez { get; set; }
 
+            // Estados calculados con exactamente las mismas reglas que las
+            // tarjetas-resumen. Se usan para filtrar el listado al pulsarlas.
+            public bool TrabajadoUltimos6Meses { get; set; }
+            public bool TrabajadoAnioServicio { get; set; }
+            public bool TrabajandoseEnFechaCorte { get; set; }
+            public bool Caducado { get; set; }
+            public bool SinTrabajar1Ano { get; set; }
+            public bool SinTrabajar2Anos { get; set; }
+
             public List<CeldaVuelta>
                 RegistrosAnioServicio
             { get; set; } =
@@ -2566,8 +3683,51 @@ namespace SCCosmos
             public string NombreS13 { get; set; }
             public string NombreS21 { get; set; }
             public string Fechas { get; set; }
-            public List<string> ListaNombresS21 { get; set; }
+            public List<OpcionPersonaTerritorio> ListaPersonasS21 { get; set; } =
+                new List<OpcionPersonaTerritorio>();
             public Visibility EsVisible { get; set; } = Visibility.Collapsed;
+        }
+
+        public class OpcionPersonaTerritorio
+        {
+            public int PersonaId { get; set; }
+            public string NombreS21 { get; set; }
+            public string NombreComun { get; set; }
+            public string NombreJWHub { get; set; }
+            public int Coincidencia { get; set; }
+
+            // Para mostrar una persona en Territorios usamos este orden:
+            // 1) Nombre común, 2) Nombre JW Hub, 3) Nombre completo/S-21.
+            public string NombreVisible
+            {
+                get
+                {
+                    if (!string.IsNullOrWhiteSpace(NombreComun))
+                        return NombreComun.Trim();
+
+                    if (!string.IsNullOrWhiteSpace(NombreJWHub))
+                        return NombreJWHub.Trim();
+
+                    return NombreS21?.Trim() ?? "";
+                }
+            }
+
+            public string TextoMostrar
+            {
+                get
+                {
+                    if (NombreS21 == "-- Sin Asignar --")
+                        return NombreS21;
+
+                    string nombre = NombreVisible;
+
+                    return Coincidencia >= 0
+                        ? $"{nombre} — {Coincidencia}%"
+                        : nombre;
+                }
+            }
+
+            public override string ToString() => TextoMostrar;
         }
 
         public class EstadisticasGrupo
@@ -2609,6 +3769,18 @@ namespace SCCosmos
             public List<NotaVisita> Preguntas { get; set; }
         }
 
+        public class DiaProgramaUI
+        {
+            public string Dia { get; set; }
+            public List<BotonActividadUI> Actividades { get; set; } =
+                new List<BotonActividadUI>();
+
+            public Visibility VerSinActividades =>
+                Actividades == null || Actividades.Count == 0
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+        }
+
         public class FilaPrograma
         {
             public string Turno { get; set; }
@@ -2643,6 +3815,14 @@ namespace SCCosmos
 
         public class BotonActividadUI
         {
+            public string Hora { get; set; }
+            public string TipoActividad { get; set; }
+            public string Acompanante { get; set; }
+            public string Ubicacion { get; set; }
+            public string Notas { get; set; }
+
+            // Se mantienen estas propiedades por compatibilidad con código
+            // histórico del programa de la visita.
             public string Texto { get; set; }
             public string Dia { get; set; }
             public string Turno { get; set; }

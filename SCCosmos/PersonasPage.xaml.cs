@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -455,9 +455,14 @@ namespace SCCosmos
 
                         return new Persona
                         {
+                            // NombreCompleto puede venir ya consolidado desde BBDD/S-21.
+                            // NombreJWHub conserva siempre el texto real leído en Hub.
                             Nombre = pe.NombreCompleto,
-                            NombreJWHub = pe.NombreCompleto,
+                            NombreJWHub = !string.IsNullOrWhiteSpace(pe.NombreJWHub) ? pe.NombreJWHub : pe.NombreCompleto,
                             NombreComun = pe.NombreComun,
+
+                            // JW Hub no es fuente para Grupo ni Sexo.
+                            Grupo = 0,
                             Sexo = "",
                             Esperanza = pe.Esperanza,
                             FechaNacimiento = pe.FechaNacimiento,

@@ -93,7 +93,7 @@ namespace SCCosmos
             EjecutarQuery(connection, "CREATE TABLE IF NOT EXISTS SeccionesCircuito (Id INTEGER PRIMARY KEY AUTOINCREMENT, Nombre TEXT, LugarAsamblea TEXT);");
 
             // TABLA PERSONAS
-            EjecutarQuery(connection, @"CREATE TABLE IF NOT EXISTS Personas (Id INTEGER PRIMARY KEY AUTOINCREMENT, Nombre TEXT NOT NULL, FechaNacimiento TEXT, Sexo TEXT, FechaBautismo TEXT, Esperanza TEXT, Nombramiento TEXT, Servicio TEXT, CongregacionCodigo TEXT, Grupo INTEGER DEFAULT 0, Telefono TEXT, Email TEXT, FechaInicioPrec TEXT, FechaUltimaEscuela TEXT, NombreJWHub TEXT, Foto TEXT, FechaCreacion TEXT, FechaEliminacion TEXT, Solicitudes TEXT, Privilegios TEXT, RequisitoHoras INTEGER DEFAULT 0, NombreComun TEXT, Direccion TEXT, Latitud REAL DEFAULT 0, Longitud REAL DEFAULT 0, ConyugeId INTEGER DEFAULT 0, EmailJW TEXT, PersonaRaizId INTEGER DEFAULT 0, MesHistorico TEXT, FechaExactaHistorico TEXT, Notas TEXT);");
+            EjecutarQuery(connection, @"CREATE TABLE IF NOT EXISTS Personas (Id INTEGER PRIMARY KEY AUTOINCREMENT, Nombre TEXT NOT NULL, FechaNacimiento TEXT, Sexo TEXT, FechaBautismo TEXT, Esperanza TEXT, Nombramiento TEXT, Servicio TEXT, CongregacionCodigo TEXT, Grupo INTEGER DEFAULT 0, Telefono TEXT, Email TEXT, FechaInicioPrec TEXT, FechaUltimaEscuela TEXT, NombreJWHub TEXT, Foto TEXT, FechaCreacion TEXT, FechaEliminacion TEXT, Solicitudes TEXT, Privilegios TEXT, RequisitoHoras INTEGER DEFAULT 0, NombreComun TEXT, Direccion TEXT, Latitud REAL DEFAULT 0, Longitud REAL DEFAULT 0, ConyugeId INTEGER DEFAULT 0, EmailJW TEXT, PersonaRaizId INTEGER DEFAULT 0, MesHistorico TEXT, FechaExactaHistorico TEXT, Notas TEXT, OrigenRegistro TEXT DEFAULT 'DESCONOCIDO', AprobadoExhibidores INTEGER DEFAULT 0);");
             EjecutarQuery(connection, @"CREATE TABLE IF NOT EXISTS ActividadPersonas (Id INTEGER PRIMARY KEY AUTOINCREMENT, PersonaId INTEGER, Mes TEXT, AnioServicio TEXT, Participacion INTEGER, CursosBiblicos INTEGER, PrecursorAuxiliar INTEGER DEFAULT 0, Horas INTEGER, Notas TEXT, Cursos TEXT, UNIQUE(PersonaId, Mes, AnioServicio), FOREIGN KEY(PersonaId) REFERENCES Personas(Id) ON DELETE CASCADE);");
 
             EjecutarQuery(connection, @"CREATE TABLE IF NOT EXISTS Semanas (Id INTEGER PRIMARY KEY AUTOINCREMENT, FechaMartes DATETIME, Actividad TEXT, Congregacion TEXT, Tipo TEXT, Acompanante TEXT, Alojamiento TEXT, S302Enviado INTEGER DEFAULT 0, DocEnviada INTEGER DEFAULT 0, SeccionAsamblea TEXT, FechaAsamblea TEXT, NotificacionEnviada INTEGER DEFAULT 0, RecordatorioEnviado INTEGER DEFAULT 0, DatosImportados INTEGER DEFAULT 0);");
@@ -153,6 +153,18 @@ namespace SCCosmos
 
             // <-- NUEVO CAMPO NOTAS -->
             AsegurarColumna(connection, "Personas", "Notas", "TEXT");
+
+            // Origen del registro y autorización para predicar con exhibidores.
+            AsegurarColumna(connection, "Personas", "OrigenRegistro", "TEXT DEFAULT 'DESCONOCIDO'");
+            AsegurarColumna(connection, "Personas", "AprobadoExhibidores", "INTEGER DEFAULT 0");
+
+            // Las bases de datos anteriores no conocían el origen. No intentamos adivinarlo:
+            // se irá completando de forma segura al volver a sincronizar con S-21 o JW Hub.
+            try
+            {
+                EjecutarQuery(connection, "UPDATE Personas SET OrigenRegistro = 'DESCONOCIDO' WHERE OrigenRegistro IS NULL OR trim(OrigenRegistro) = '';");
+            }
+            catch { }
 
             AsegurarColumna(connection, "Semanas", "FechaAsamblea", "TEXT");
             AsegurarColumna(connection, "Semanas", "DatosImportados", "INTEGER DEFAULT 0");
@@ -250,7 +262,7 @@ namespace SCCosmos
                         using (var tx = connection.BeginTransaction())
                         {
                             EjecutarQuery(connection, "ALTER TABLE Personas RENAME TO Personas_Old;");
-                            EjecutarQuery(connection, @"CREATE TABLE Personas (Id INTEGER PRIMARY KEY AUTOINCREMENT, Nombre TEXT NOT NULL, FechaNacimiento TEXT, Sexo TEXT, FechaBautismo TEXT, Esperanza TEXT, Nombramiento TEXT, Servicio TEXT, CongregacionCodigo TEXT, Grupo INTEGER DEFAULT 0, Telefono TEXT, Email TEXT, FechaInicioPrec TEXT, FechaUltimaEscuela TEXT, NombreJWHub TEXT, Foto TEXT, FechaCreacion TEXT, FechaEliminacion TEXT, Solicitudes TEXT, Privilegios TEXT, RequisitoHoras INTEGER DEFAULT 0, NombreComun TEXT, Direccion TEXT, Latitud REAL DEFAULT 0, Longitud REAL DEFAULT 0, ConyugeId INTEGER DEFAULT 0, EmailJW TEXT, PersonaRaizId INTEGER DEFAULT 0, MesHistorico TEXT, FechaExactaHistorico TEXT, Notas TEXT);");
+                            EjecutarQuery(connection, @"CREATE TABLE Personas (Id INTEGER PRIMARY KEY AUTOINCREMENT, Nombre TEXT NOT NULL, FechaNacimiento TEXT, Sexo TEXT, FechaBautismo TEXT, Esperanza TEXT, Nombramiento TEXT, Servicio TEXT, CongregacionCodigo TEXT, Grupo INTEGER DEFAULT 0, Telefono TEXT, Email TEXT, FechaInicioPrec TEXT, FechaUltimaEscuela TEXT, NombreJWHub TEXT, Foto TEXT, FechaCreacion TEXT, FechaEliminacion TEXT, Solicitudes TEXT, Privilegios TEXT, RequisitoHoras INTEGER DEFAULT 0, NombreComun TEXT, Direccion TEXT, Latitud REAL DEFAULT 0, Longitud REAL DEFAULT 0, ConyugeId INTEGER DEFAULT 0, EmailJW TEXT, PersonaRaizId INTEGER DEFAULT 0, MesHistorico TEXT, FechaExactaHistorico TEXT, Notas TEXT, OrigenRegistro TEXT DEFAULT 'DESCONOCIDO', AprobadoExhibidores INTEGER DEFAULT 0);");
                             EjecutarQuery(connection, $"INSERT INTO Personas ({colsCsv}) SELECT {colsCsv} FROM Personas_Old;");
                             EjecutarQuery(connection, "DROP TABLE Personas_Old;");
                             tx.Commit();
@@ -322,7 +334,12 @@ namespace SCCosmos
                 command.CommandText = @"UPDATE Personas SET 
                 Nombre = $nombre, CongregacionCodigo = @CongregacionCodigo, FechaNacimiento = $fechaNacimiento, Sexo = $sexo, FechaBautismo = $fechaBautismo, Esperanza = $esperanza, Nombramiento = $nombramiento, Servicio = $servicio, Grupo = $grupo,
                 NombreJWHub = $nombreJW, NombreComun = $nombreComun, Telefono = $tlf, Email = $email, Solicitudes = $sol, Privilegios = $priv, FechaInicioPrec = $inicio, FechaUltimaEscuela = $escuela, Foto = $foto,
-                Direccion = $dir, Latitud = $lat, Longitud = $lon, ConyugeId = $conyuge, EmailJW = $emailjw, Notas = $notas
+                Direccion = $dir, Latitud = $lat, Longitud = $lon, ConyugeId = $conyuge, EmailJW = $emailjw, Notas = $notas,
+                FechaEliminacion = $fechaEliminacion,
+                OrigenRegistro = CASE
+                    WHEN $origenRegistro IS NULL OR trim($origenRegistro) = '' OR upper($origenRegistro) = 'DESCONOCIDO' THEN OrigenRegistro
+                    ELSE $origenRegistro END,
+                AprobadoExhibidores = $aprobadoExhibidores
             WHERE Id = $id;";
                 command.Parameters.AddWithValue("$id", p.Id);
                 command.Parameters.AddWithValue("$nombre", p.Nombre ?? "");
@@ -349,6 +366,9 @@ namespace SCCosmos
                 command.Parameters.AddWithValue("$conyuge", p.ConyugeId);
                 command.Parameters.AddWithValue("$emailjw", p.EmailJW ?? "");
                 command.Parameters.AddWithValue("$notas", p.Notas ?? "");
+                command.Parameters.AddWithValue("$fechaEliminacion", p.FechaEliminacion ?? "");
+                command.Parameters.AddWithValue("$origenRegistro", string.IsNullOrWhiteSpace(p.OrigenRegistro) ? "DESCONOCIDO" : p.OrigenRegistro);
+                command.Parameters.AddWithValue("$aprobadoExhibidores", p.AprobadoExhibidores ? 1 : 0);
 
                 command.ExecuteNonQuery();
 
@@ -393,7 +413,7 @@ namespace SCCosmos
                 command.CommandText = @"SELECT Id, Nombre, Nombramiento, Servicio, Grupo, FechaNacimiento, Sexo, FechaBautismo, Esperanza,
                     NombreJWHub, FechaCreacion, FechaEliminacion, NombreComun, Solicitudes, Privilegios,
                     Foto, Email, Telefono, FechaInicioPrec, FechaUltimaEscuela, CongregacionCodigo,
-                    Direccion, Latitud, Longitud, ConyugeId, EmailJW, PersonaRaizId, MesHistorico, FechaExactaHistorico, Notas
+                    Direccion, Latitud, Longitud, ConyugeId, EmailJW, PersonaRaizId, MesHistorico, FechaExactaHistorico, Notas, OrigenRegistro, AprobadoExhibidores
              FROM Personas 
              WHERE CongregacionCodigo = $codigo AND MesHistorico IS NULL ORDER BY Nombre ASC;";
                 command.Parameters.AddWithValue("$codigo", congreCodigo);
@@ -433,7 +453,9 @@ namespace SCCosmos
                             PersonaRaizId = reader.IsDBNull(26) ? 0 : reader.GetInt32(26),
                             MesHistorico = reader.IsDBNull(27) ? null : reader.GetString(27),
                             FechaExactaHistorico = reader.IsDBNull(28) ? "" : reader.GetString(28),
-                            Notas = reader.IsDBNull(29) ? "" : reader.GetString(29)
+                            Notas = reader.IsDBNull(29) ? "" : reader.GetString(29),
+                            OrigenRegistro = reader.IsDBNull(30) ? "DESCONOCIDO" : reader.GetString(30),
+                            AprobadoExhibidores = !reader.IsDBNull(31) && reader.GetInt32(31) == 1
                         });
                     }
                 }
@@ -453,7 +475,7 @@ namespace SCCosmos
                     SELECT Id, Nombre, Nombramiento, Servicio, Grupo, FechaNacimiento, Sexo, FechaBautismo, Esperanza,
                            NombreJWHub, FechaCreacion, FechaEliminacion, NombreComun, Solicitudes, Privilegios,
                            Foto, Email, Telefono, FechaInicioPrec, FechaUltimaEscuela, CongregacionCodigo,
-                           Direccion, Latitud, Longitud, ConyugeId, EmailJW, PersonaRaizId, MesHistorico, FechaExactaHistorico, Notas
+                           Direccion, Latitud, Longitud, ConyugeId, EmailJW, PersonaRaizId, MesHistorico, FechaExactaHistorico, Notas, OrigenRegistro, AprobadoExhibidores
                     FROM Personas 
                     WHERE Id IN (
                         SELECT MAX(Id)
@@ -504,7 +526,9 @@ namespace SCCosmos
                             PersonaRaizId = reader.IsDBNull(26) ? 0 : reader.GetInt32(26),
                             MesHistorico = reader.IsDBNull(27) ? null : reader.GetString(27),
                             FechaExactaHistorico = reader.IsDBNull(28) ? "" : reader.GetString(28),
-                            Notas = reader.IsDBNull(29) ? "" : reader.GetString(29)
+                            Notas = reader.IsDBNull(29) ? "" : reader.GetString(29),
+                            OrigenRegistro = reader.IsDBNull(30) ? "DESCONOCIDO" : reader.GetString(30),
+                            AprobadoExhibidores = !reader.IsDBNull(31) && reader.GetInt32(31) == 1
                         };
                         lista.Add(p);
                     }
@@ -522,7 +546,7 @@ namespace SCCosmos
                 command.CommandText = @"SELECT Id, Nombre, Nombramiento, Servicio, Grupo, FechaNacimiento, Sexo, FechaBautismo, Esperanza,
                     NombreJWHub, FechaCreacion, FechaEliminacion, NombreComun, Solicitudes, Privilegios,
                     Foto, Email, Telefono, FechaInicioPrec, FechaUltimaEscuela,
-                   Direccion, Latitud, Longitud, ConyugeId, EmailJW, CongregacionCodigo, PersonaRaizId, MesHistorico, FechaExactaHistorico, Notas
+                   Direccion, Latitud, Longitud, ConyugeId, EmailJW, CongregacionCodigo, PersonaRaizId, MesHistorico, FechaExactaHistorico, Notas, OrigenRegistro, AprobadoExhibidores
              FROM Personas WHERE Id = $id;";
                 command.Parameters.AddWithValue("$id", personaId);
                 using (var reader = command.ExecuteReader())
@@ -560,7 +584,9 @@ namespace SCCosmos
                             PersonaRaizId = reader.IsDBNull(26) ? 0 : reader.GetInt32(26),
                             MesHistorico = reader.IsDBNull(27) ? null : reader.GetString(27),
                             FechaExactaHistorico = reader.IsDBNull(28) ? "" : reader.GetString(28),
-                            Notas = reader.IsDBNull(29) ? "" : reader.GetString(29)
+                            Notas = reader.IsDBNull(29) ? "" : reader.GetString(29),
+                            OrigenRegistro = reader.IsDBNull(30) ? "DESCONOCIDO" : reader.GetString(30),
+                            AprobadoExhibidores = !reader.IsDBNull(31) && reader.GetInt32(31) == 1
                         };
                     }
                 }
@@ -575,7 +601,7 @@ namespace SCCosmos
             {
                 connection.Open();
                 var command = connection.CreateCommand();
-                command.CommandText = @" SELECT p.Id, p.Nombre, p.FechaNacimiento, p.Sexo, p.FechaBautismo, p.Esperanza, p.Nombramiento, p.Servicio, p.CongregacionCodigo, c.Nombre, p.Grupo, p.NombreJWHub, p.FechaCreacion, p.FechaEliminacion, p.Solicitudes, p.Privilegios, p.Foto, p.NombreComun, p.Telefono, p.Email, p.FechaInicioPrec, p.FechaUltimaEscuela, p.Direccion, p.Latitud, p.Longitud, p.ConyugeId, p.EmailJW, p.PersonaRaizId, p.MesHistorico, p.FechaExactaHistorico, p.Notas
+                command.CommandText = @" SELECT p.Id, p.Nombre, p.FechaNacimiento, p.Sexo, p.FechaBautismo, p.Esperanza, p.Nombramiento, p.Servicio, p.CongregacionCodigo, c.Nombre, p.Grupo, p.NombreJWHub, p.FechaCreacion, p.FechaEliminacion, p.Solicitudes, p.Privilegios, p.Foto, p.NombreComun, p.Telefono, p.Email, p.FechaInicioPrec, p.FechaUltimaEscuela, p.Direccion, p.Latitud, p.Longitud, p.ConyugeId, p.EmailJW, p.PersonaRaizId, p.MesHistorico, p.FechaExactaHistorico, p.Notas, p.OrigenRegistro, p.AprobadoExhibidores
                                          FROM Personas p LEFT JOIN Congregaciones c ON p.CongregacionCodigo = c.Codigo WHERE p.MesHistorico IS NULL ORDER BY p.Nombre ASC;";
 
                 using (var reader = command.ExecuteReader())
@@ -614,7 +640,9 @@ namespace SCCosmos
                             PersonaRaizId = reader.IsDBNull(27) ? 0 : reader.GetInt32(27),
                             MesHistorico = reader.IsDBNull(28) ? null : reader.GetString(28),
                             FechaExactaHistorico = reader.IsDBNull(29) ? "" : reader.GetString(29),
-                            Notas = reader.IsDBNull(30) ? "" : reader.GetString(30)
+                            Notas = reader.IsDBNull(30) ? "" : reader.GetString(30),
+                            OrigenRegistro = reader.IsDBNull(31) ? "DESCONOCIDO" : reader.GetString(31),
+                            AprobadoExhibidores = !reader.IsDBNull(32) && reader.GetInt32(32) == 1
                         });
                     }
                 }
@@ -630,8 +658,8 @@ namespace SCCosmos
                 var cmd = connection.CreateCommand();
 
                 cmd.CommandText = @"
-                    INSERT INTO Personas (Nombre, CongregacionCodigo, Grupo, Nombramiento, Servicio, Solicitudes, Privilegios, Foto, FechaNacimiento, Sexo, FechaBautismo, Esperanza, Telefono, Email, FechaInicioPrec, FechaUltimaEscuela, NombreJWHub, FechaCreacion, NombreComun, Direccion, Latitud, Longitud, ConyugeId, EmailJW, Notas)
-                    VALUES ($nombre, $codigo, $grupo, $nomb, $serv, $sol, $priv, $foto, $fn, $sexo, $fb, $esperanza, $tlf, $email, $inicio, $escuela, $jw, $fc, $nombreComun, $dir, $lat, $lon, $conyuge, $emailjw, $notas);
+                    INSERT INTO Personas (Nombre, CongregacionCodigo, Grupo, Nombramiento, Servicio, Solicitudes, Privilegios, Foto, FechaNacimiento, Sexo, FechaBautismo, Esperanza, Telefono, Email, FechaInicioPrec, FechaUltimaEscuela, NombreJWHub, FechaCreacion, NombreComun, Direccion, Latitud, Longitud, ConyugeId, EmailJW, Notas, OrigenRegistro, AprobadoExhibidores)
+                    VALUES ($nombre, $codigo, $grupo, $nomb, $serv, $sol, $priv, $foto, $fn, $sexo, $fb, $esperanza, $tlf, $email, $inicio, $escuela, $jw, $fc, $nombreComun, $dir, $lat, $lon, $conyuge, $emailjw, $notas, $origenRegistro, $aprobadoExhibidores);
                     SELECT last_insert_rowid();";
 
                 cmd.Parameters.AddWithValue("$nombre", p.Nombre ?? "");
@@ -659,9 +687,65 @@ namespace SCCosmos
                 cmd.Parameters.AddWithValue("$conyuge", p.ConyugeId);
                 cmd.Parameters.AddWithValue("$emailjw", p.EmailJW ?? "");
                 cmd.Parameters.AddWithValue("$notas", p.Notas ?? "");
+                cmd.Parameters.AddWithValue("$origenRegistro", string.IsNullOrWhiteSpace(p.OrigenRegistro) ? "Manual" : p.OrigenRegistro);
+                cmd.Parameters.AddWithValue("$aprobadoExhibidores", p.AprobadoExhibidores ? 1 : 0);
 
                 return Convert.ToInt32(cmd.ExecuteScalar());
             }
+        }
+
+        /// <summary>
+        /// Añade un origen al registro sin borrar los que ya tuviera.
+        /// Valores habituales: Manual, S21 y JWHub.
+        /// </summary>
+        public static void MarcarOrigenPersona(int personaId, string origen)
+        {
+            if (personaId <= 0 || string.IsNullOrWhiteSpace(origen)) return;
+
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                connection.Open();
+
+                string actual = "DESCONOCIDO";
+                using (var cmdGet = connection.CreateCommand())
+                {
+                    cmdGet.CommandText = "SELECT OrigenRegistro FROM Personas WHERE Id = $id;";
+                    cmdGet.Parameters.AddWithValue("$id", personaId);
+                    var obj = cmdGet.ExecuteScalar();
+                    if (obj != null && obj != DBNull.Value && !string.IsNullOrWhiteSpace(obj.ToString()))
+                        actual = obj.ToString();
+                }
+
+                string combinado = CombinarOrigenes(actual, origen);
+                using (var cmd = connection.CreateCommand())
+                {
+                    cmd.CommandText = "UPDATE Personas SET OrigenRegistro = $origen WHERE Id = $id;";
+                    cmd.Parameters.AddWithValue("$origen", combinado);
+                    cmd.Parameters.AddWithValue("$id", personaId);
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
+        public static string CombinarOrigenes(string origenActual, string nuevoOrigen)
+        {
+            var origenes = new List<string>();
+
+            Action<string> agregar = valor =>
+            {
+                if (string.IsNullOrWhiteSpace(valor)) return;
+                foreach (var parte in valor.Split(new[] { '+', ',', ';' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    string limpia = parte.Trim();
+                    if (limpia.Equals("DESCONOCIDO", StringComparison.OrdinalIgnoreCase)) continue;
+                    if (!origenes.Any(x => x.Equals(limpia, StringComparison.OrdinalIgnoreCase))) origenes.Add(limpia);
+                }
+            };
+
+            agregar(origenActual);
+            agregar(nuevoOrigen);
+
+            return origenes.Count == 0 ? "DESCONOCIDO" : string.Join("+", origenes);
         }
 
         public static void EliminarPersona(int personaId)
@@ -851,8 +935,8 @@ namespace SCCosmos
                 connection.Open();
                 var cmd = connection.CreateCommand();
                 cmd.CommandText = @"
-                    INSERT INTO Personas (Nombre, Servicio, Nombramiento, Telefono, Email, EmailJW, Direccion, FechaInicioPrec, FechaUltimaEscuela, CongregacionCodigo, Grupo, NombreJWHub, FechaNacimiento, Solicitudes, Privilegios, Foto, FechaCreacion, NombreComun, Latitud, Longitud)
-                    VALUES ($nombre, $servicio, $nombramiento, $tlf, $email, $emailjw, $dir, $inicio, $escuela, $codigo, 0, $nombreJW, $fechaNac, $sol, $priv, $foto, $fc, $nombreComun, 0, 0);";
+                    INSERT INTO Personas (Nombre, Servicio, Nombramiento, Telefono, Email, EmailJW, Direccion, FechaInicioPrec, FechaUltimaEscuela, CongregacionCodigo, Grupo, NombreJWHub, FechaNacimiento, Solicitudes, Privilegios, Foto, FechaCreacion, NombreComun, Latitud, Longitud, OrigenRegistro, AprobadoExhibidores)
+                    VALUES ($nombre, $servicio, $nombramiento, $tlf, $email, $emailjw, $dir, $inicio, $escuela, $codigo, 0, $nombreJW, $fechaNac, $sol, $priv, $foto, $fc, $nombreComun, 0, 0, 'JWHub', $aprobadoExhibidores);";
                 cmd.Parameters.AddWithValue("$nombre", p.Nombre ?? "");
                 cmd.Parameters.AddWithValue("$servicio", p.Servicio ?? "");
                 cmd.Parameters.AddWithValue("$nombramiento", p.Nombramiento ?? "");
@@ -870,6 +954,7 @@ namespace SCCosmos
                 cmd.Parameters.AddWithValue("$foto", p.Foto ?? "");
                 cmd.Parameters.AddWithValue("$fc", p.FechaCreacion ?? "");
                 cmd.Parameters.AddWithValue("$nombreComun", p.NombreComun ?? "");
+                cmd.Parameters.AddWithValue("$aprobadoExhibidores", p.AprobadoExhibidores ? 1 : 0);
                 cmd.ExecuteNonQuery();
             }
         }
@@ -899,7 +984,11 @@ namespace SCCosmos
                         Direccion = CASE WHEN $dir != '' THEN $dir ELSE Direccion END,
                         FechaInicioPrec = CASE WHEN $inicio != '' THEN $inicio ELSE FechaInicioPrec END,
                         FechaUltimaEscuela = CASE WHEN $escuela != '' THEN $escuela ELSE FechaUltimaEscuela END,
-                        FechaNacimiento = CASE WHEN (FechaNacimiento IS NULL OR FechaNacimiento = '' OR FechaNacimiento LIKE '01/01/%') AND $fechaNac != '' THEN $fechaNac ELSE FechaNacimiento END
+                        FechaNacimiento = CASE WHEN (FechaNacimiento IS NULL OR FechaNacimiento = '' OR FechaNacimiento LIKE '01/01/%') AND $fechaNac != '' THEN $fechaNac ELSE FechaNacimiento END,
+                        OrigenRegistro = CASE
+                            WHEN OrigenRegistro IS NULL OR trim(OrigenRegistro) = '' OR upper(OrigenRegistro) = 'DESCONOCIDO' THEN 'JWHub'
+                            WHEN instr(lower(OrigenRegistro), 'jwhub') = 0 THEN OrigenRegistro || '+JWHub'
+                            ELSE OrigenRegistro END
                     WHERE Id = $id;";
 
                 cmd.Parameters.AddWithValue("$servicio", prec.Servicio ?? "");
@@ -949,8 +1038,8 @@ namespace SCCosmos
                             cmdClone.Transaction = transaction;
 
                             cmdClone.CommandText = @"
-                                INSERT INTO Personas (Nombre, FechaNacimiento, Sexo, FechaBautismo, Esperanza, Nombramiento, Servicio, CongregacionCodigo, Grupo, Telefono, Email, FechaInicioPrec, FechaUltimaEscuela, NombreJWHub, Foto, NombreComun, Direccion, Latitud, Longitud, ConyugeId, EmailJW, Solicitudes, Privilegios, RequisitoHoras, PersonaRaizId, MesHistorico, FechaExactaHistorico, Notas)
-                                SELECT Nombre, $fnac, $sexo, $fbaut, $esp, $nomb, $serv, CongregacionCodigo, $grupo, Telefono, Email, FechaInicioPrec, FechaUltimaEscuela, NombreJWHub, Foto, NombreComun, Direccion, Latitud, Longitud, ConyugeId, EmailJW, Solicitudes, Privilegios, RequisitoHoras, $raiz, $mesH, $fechaEx, Notas
+                                INSERT INTO Personas (Nombre, FechaNacimiento, Sexo, FechaBautismo, Esperanza, Nombramiento, Servicio, CongregacionCodigo, Grupo, Telefono, Email, FechaInicioPrec, FechaUltimaEscuela, NombreJWHub, Foto, NombreComun, Direccion, Latitud, Longitud, ConyugeId, EmailJW, Solicitudes, Privilegios, RequisitoHoras, PersonaRaizId, MesHistorico, FechaExactaHistorico, Notas, OrigenRegistro, AprobadoExhibidores)
+                                SELECT Nombre, $fnac, $sexo, $fbaut, $esp, $nomb, $serv, CongregacionCodigo, $grupo, Telefono, Email, FechaInicioPrec, FechaUltimaEscuela, NombreJWHub, Foto, NombreComun, Direccion, Latitud, Longitud, ConyugeId, EmailJW, Solicitudes, Privilegios, RequisitoHoras, $raiz, $mesH, $fechaEx, Notas, OrigenRegistro, AprobadoExhibidores
                                 FROM Personas WHERE Id = $raiz;
                                 SELECT last_insert_rowid();";
                             cmdClone.Parameters.AddWithValue("$fnac", p.FechaNacimiento ?? "");
@@ -967,7 +1056,12 @@ namespace SCCosmos
 
                             var cmdUpd = connection.CreateCommand();
                             cmdUpd.Transaction = transaction;
-                            cmdUpd.CommandText = "UPDATE Personas SET FechaNacimiento = $fnac, Sexo = $sexo, FechaBautismo = $fbaut, Esperanza = $esp, Nombramiento = $nomb, Servicio = $serv, Grupo = $grupo WHERE Id = $id";
+                            cmdUpd.CommandText = @"UPDATE Personas SET FechaNacimiento = $fnac, Sexo = $sexo, FechaBautismo = $fbaut, Esperanza = $esp, Nombramiento = $nomb, Servicio = $serv, Grupo = $grupo,
+                                OrigenRegistro = CASE
+                                    WHEN OrigenRegistro IS NULL OR trim(OrigenRegistro) = '' OR upper(OrigenRegistro) = 'DESCONOCIDO' THEN 'S21'
+                                    WHEN instr(lower(OrigenRegistro), 's21') = 0 THEN OrigenRegistro || '+S21'
+                                    ELSE OrigenRegistro END
+                                WHERE Id = $id";
                             cmdUpd.Parameters.AddWithValue("$fnac", p.FechaNacimiento ?? "");
                             cmdUpd.Parameters.AddWithValue("$sexo", p.Sexo ?? "");
                             cmdUpd.Parameters.AddWithValue("$fbaut", p.FechaBautismo ?? "");
@@ -983,8 +1077,8 @@ namespace SCCosmos
                             var cmdInsert = connection.CreateCommand();
                             cmdInsert.Transaction = transaction;
                             cmdInsert.CommandText = @"
-                                INSERT INTO Personas (Nombre, FechaNacimiento, Sexo, FechaBautismo, Esperanza, Nombramiento, Servicio, CongregacionCodigo, Grupo)
-                                VALUES ($nombre, $fechaNacimiento, $sexo, $fechaBautismo, $esperanza, $nombramiento, $servicio, $congreCodigo, $grupo);
+                                INSERT INTO Personas (Nombre, FechaNacimiento, Sexo, FechaBautismo, Esperanza, Nombramiento, Servicio, CongregacionCodigo, Grupo, OrigenRegistro)
+                                VALUES ($nombre, $fechaNacimiento, $sexo, $fechaBautismo, $esperanza, $nombramiento, $servicio, $congreCodigo, $grupo, 'S21');
                                 SELECT last_insert_rowid();";
                             cmdInsert.Parameters.AddWithValue("$grupo", p.Grupo);
                             cmdInsert.Parameters.AddWithValue("$nombre", p.Nombre);
@@ -1007,18 +1101,20 @@ namespace SCCosmos
                                 var cmdInf = connection.CreateCommand();
                                 cmdInf.Transaction = transaction;
                                 cmdInf.CommandText = @"
-                                    INSERT INTO ActividadPersonas (PersonaId, Mes, AnioServicio, Participacion, CursosBiblicos, PrecursorAuxiliar, Horas, Notas)
-                                    VALUES ($personaId, $mes, $anio, $part, $cursos, $prec, $horas, $notas)
+                                    INSERT INTO ActividadPersonas (PersonaId, Mes, AnioServicio, Participacion, CursosBiblicos, Cursos, PrecursorAuxiliar, Horas, Notas)
+                                    VALUES ($personaId, $mes, $anio, $part, $cursos, $cursosTexto, $prec, $horas, $notas)
                                     ON CONFLICT(PersonaId, Mes, AnioServicio) DO UPDATE SET
-                                        Participacion = $part, CursosBiblicos = $cursos, PrecursorAuxiliar = $prec, Horas = $horas, Notas = $notas;";
+                                        Participacion = $part, CursosBiblicos = $cursos, Cursos = $cursosTexto, PrecursorAuxiliar = $prec, Horas = $horas, Notas = $notas;";
 
                                 long idParaActividad = idObj != null ? (long)idObj : personaActualId;
                                 cmdInf.Parameters.AddWithValue("$personaId", idParaActividad);
                                 cmdInf.Parameters.AddWithValue("$mes", inf.Mes ?? "");
                                 cmdInf.Parameters.AddWithValue("$anio", p.AnioServicio ?? "");
                                 cmdInf.Parameters.AddWithValue("$part", inf.Participacion ? 1 : 0);
-                                int cursosEnteros = 0; if (!string.IsNullOrWhiteSpace(inf.CursosBiblicos?.ToString())) int.TryParse(inf.CursosBiblicos.ToString(), out cursosEnteros);
+                                string cursosTexto = inf.CursosBiblicos?.ToString() ?? "";
+                                int cursosEnteros = 0; if (!string.IsNullOrWhiteSpace(cursosTexto)) int.TryParse(cursosTexto, out cursosEnteros);
                                 cmdInf.Parameters.AddWithValue("$cursos", cursosEnteros);
+                                cmdInf.Parameters.AddWithValue("$cursosTexto", cursosTexto);
                                 cmdInf.Parameters.AddWithValue("$prec", inf.PrecursorAuxiliar ? 1 : 0);
                                 int horasEnteras = 0; if (!string.IsNullOrWhiteSpace(inf.Horas?.ToString())) int.TryParse(inf.Horas.ToString(), out horasEnteras);
                                 cmdInf.Parameters.AddWithValue("$horas", horasEnteras);
@@ -1089,6 +1185,33 @@ namespace SCCosmos
                         }
                         catch { }
 
+                        // Si la persona origen tenía cónyuge, la ficha del cónyuge puede
+                        // seguir apuntando al Id que vamos a borrar. Redirigimos esa referencia
+                        // al Id destino para conservar la relación en ambos sentidos.
+                        try
+                        {
+                            var cmdConyuge = connection.CreateCommand();
+                            cmdConyuge.Transaction = transaction;
+                            cmdConyuge.CommandText = "UPDATE Personas SET ConyugeId = $idDestino WHERE ConyugeId = $idOrigen;";
+                            cmdConyuge.Parameters.AddWithValue("$idDestino", personaDestino.Id);
+                            cmdConyuge.Parameters.AddWithValue("$idOrigen", idOrigen);
+                            cmdConyuge.ExecuteNonQuery();
+                        }
+                        catch { }
+
+                        // Conservamos la procedencia de ambos registros al fusionarlos.
+                        try
+                        {
+                            var cmdOrigen = connection.CreateCommand();
+                            cmdOrigen.Transaction = transaction;
+                            cmdOrigen.CommandText = "SELECT OrigenRegistro FROM Personas WHERE Id = $idOrigen;";
+                            cmdOrigen.Parameters.AddWithValue("$idOrigen", idOrigen);
+                            var origenObj = cmdOrigen.ExecuteScalar();
+                            if (origenObj != null && origenObj != DBNull.Value)
+                                personaDestino.OrigenRegistro = CombinarOrigenes(personaDestino.OrigenRegistro, origenObj.ToString());
+                        }
+                        catch { }
+
                         var cmdDelete = connection.CreateCommand();
                         cmdDelete.Transaction = transaction;
                         cmdDelete.CommandText = "DELETE FROM Personas WHERE Id = $idOrigen OR PersonaRaizId = $idOrigen;";
@@ -1105,7 +1228,8 @@ namespace SCCosmos
                                 CongregacionCodigo = $congre, Grupo = $grp, Telefono = $tlf,
                                 Email = $em, EmailJW = $emjw, FechaInicioPrec = $finic, FechaUltimaEscuela = $fesc,
                                 Solicitudes = $sols, Privilegios = $priv, Foto = $foto,
-                                Direccion = $dir, Latitud = $lat, Longitud = $lon, ConyugeId = $conyuge, Notas = $notas
+                                Direccion = $dir, Latitud = $lat, Longitud = $lon, ConyugeId = $conyuge, Notas = $notas,
+                                OrigenRegistro = $origenRegistro, AprobadoExhibidores = $aprobadoExhibidores
                             WHERE Id = $idDestino;";
 
                         cmdUpdateDest.Parameters.AddWithValue("$nombre", personaDestino.Nombre ?? "");
@@ -1132,6 +1256,8 @@ namespace SCCosmos
                         cmdUpdateDest.Parameters.AddWithValue("$lon", personaDestino.Longitud);
                         cmdUpdateDest.Parameters.AddWithValue("$conyuge", personaDestino.ConyugeId);
                         cmdUpdateDest.Parameters.AddWithValue("$notas", personaDestino.Notas ?? "");
+                        cmdUpdateDest.Parameters.AddWithValue("$origenRegistro", string.IsNullOrWhiteSpace(personaDestino.OrigenRegistro) ? "DESCONOCIDO" : personaDestino.OrigenRegistro);
+                        cmdUpdateDest.Parameters.AddWithValue("$aprobadoExhibidores", personaDestino.AprobadoExhibidores ? 1 : 0);
                         cmdUpdateDest.Parameters.AddWithValue("$idDestino", personaDestino.Id);
                         cmdUpdateDest.ExecuteNonQuery();
 
@@ -1157,7 +1283,18 @@ namespace SCCosmos
             {
                 connection.Open();
                 var command = connection.CreateCommand();
-                command.CommandText = "SELECT Mes, AnioServicio, Participacion, CursosBiblicos, PrecursorAuxiliar, Horas, Notas FROM ActividadPersonas WHERE PersonaId = $id ORDER BY AnioServicio DESC;";
+                command.CommandText = @"
+                    SELECT Mes, AnioServicio, Participacion,
+                           COALESCE(NULLIF(Cursos, ''), CAST(CursosBiblicos AS TEXT), ''),
+                           PrecursorAuxiliar, Horas, Notas
+                    FROM ActividadPersonas
+                    WHERE PersonaId = $id
+                    ORDER BY CAST(AnioServicio AS INTEGER) DESC,
+                             CASE lower(Mes)
+                                 WHEN 'agosto' THEN 12 WHEN 'julio' THEN 11 WHEN 'junio' THEN 10 WHEN 'mayo' THEN 9
+                                 WHEN 'abril' THEN 8 WHEN 'marzo' THEN 7 WHEN 'febrero' THEN 6 WHEN 'enero' THEN 5
+                                 WHEN 'diciembre' THEN 4 WHEN 'noviembre' THEN 3 WHEN 'octubre' THEN 2 WHEN 'septiembre' THEN 1
+                                 ELSE 0 END DESC;";
                 command.Parameters.AddWithValue("$id", personaId);
                 using (var reader = command.ExecuteReader())
                 {
@@ -1188,11 +1325,11 @@ namespace SCCosmos
                 cmd.CommandText = @"
                     UPDATE ActividadPersonas 
                     SET Horas = $horas, Participacion = $participacion, 
-                        Cursos = $cursos, PrecursorAuxiliar = $precAux, Notas = $notas
+                        Cursos = $cursos, CursosBiblicos = $cursosNumerico, PrecursorAuxiliar = $precAux, Notas = $notas
                     WHERE PersonaId = $id AND Mes = $mes AND AnioServicio = $anio;
                     
-                    INSERT INTO ActividadPersonas (PersonaId, Mes, AnioServicio, Horas, Participacion, Cursos, PrecursorAuxiliar, Notas)
-                    SELECT $id, $mes, $anio, $horas, $participacion, $cursos, $precAux, $notas
+                    INSERT INTO ActividadPersonas (PersonaId, Mes, AnioServicio, Horas, Participacion, Cursos, CursosBiblicos, PrecursorAuxiliar, Notas)
+                    SELECT $id, $mes, $anio, $horas, $participacion, $cursos, $cursosNumerico, $precAux, $notas
                     WHERE (SELECT changes() = 0);
                 ";
                 cmd.Parameters.AddWithValue("$id", personaId);
@@ -1201,6 +1338,9 @@ namespace SCCosmos
                 cmd.Parameters.AddWithValue("$horas", horas ?? "");
                 cmd.Parameters.AddWithValue("$participacion", participacion);
                 cmd.Parameters.AddWithValue("$cursos", cursos ?? "");
+                int cursosNumerico = 0;
+                int.TryParse(cursos ?? "", out cursosNumerico);
+                cmd.Parameters.AddWithValue("$cursosNumerico", cursosNumerico);
                 cmd.Parameters.AddWithValue("$precAux", precAux ? 1 : 0);
                 cmd.Parameters.AddWithValue("$notas", notas ?? "");
                 cmd.ExecuteNonQuery();
@@ -2110,6 +2250,77 @@ namespace SCCosmos
             }
         }
 
+        public static void ActualizarActividadPrograma(
+            int actividadId,
+            string responsable,
+            string tipoActividad,
+            string hora,
+            string notasLibro,
+            int companeroId,
+            string direccion,
+            double latitud,
+            double longitud)
+        {
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                connection.Open();
+
+                var cmd = connection.CreateCommand();
+                cmd.CommandText = @"
+                    UPDATE ProgramaVisitaV2
+                    SET
+                        Turno = 'General',
+                        Responsable = $responsable,
+                        TipoActividad = $tipo,
+                        Hora = $hora,
+                        NotasLibro = $notas,
+                        CompaneroId = $comp,
+                        Direccion = $direccion,
+                        Latitud = $latitud,
+                        Longitud = $longitud
+                    WHERE Id = $id;";
+
+                cmd.Parameters.AddWithValue(
+                    "$responsable",
+                    responsable ?? "SC");
+
+                cmd.Parameters.AddWithValue(
+                    "$tipo",
+                    tipoActividad ?? "");
+
+                cmd.Parameters.AddWithValue(
+                    "$hora",
+                    hora ?? "");
+
+                cmd.Parameters.AddWithValue(
+                    "$notas",
+                    notasLibro ?? "");
+
+                cmd.Parameters.AddWithValue(
+                    "$comp",
+                    companeroId);
+
+                cmd.Parameters.AddWithValue(
+                    "$direccion",
+                    direccion ?? "");
+
+                cmd.Parameters.AddWithValue(
+                    "$latitud",
+                    latitud);
+
+                cmd.Parameters.AddWithValue(
+                    "$longitud",
+                    longitud);
+
+                cmd.Parameters.AddWithValue(
+                    "$id",
+                    actividadId);
+
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+
         public static void EliminarActividadPrograma(
             int actividadId)
         {
@@ -2124,6 +2335,126 @@ namespace SCCosmos
 
                 cmd.ExecuteNonQuery();
             }
+        }
+
+        public static List<ActividadPrograma> ObtenerActividadesProgramaMes(
+            string congreCodigo,
+            string mesReferenciaStr)
+        {
+            var lista =
+                new List<ActividadPrograma>();
+
+            using (var connection =
+                   new SqliteConnection(ConnectionString))
+            {
+                connection.Open();
+
+                var cmd =
+                    connection.CreateCommand();
+
+                cmd.CommandText = @"
+                    SELECT
+                        Id,
+                        DiaSemana,
+                        Turno,
+                        Responsable,
+                        TipoActividad,
+                        Hora,
+                        NotasLibro,
+                        CompaneroId,
+                        Direccion,
+                        Latitud,
+                        Longitud
+                    FROM ProgramaVisitaV2
+                    WHERE
+                        CongreCodigo = $codigo
+                        AND MesReferencia = $mes
+                    ORDER BY
+                        CASE DiaSemana
+                            WHEN 'Miércoles' THEN 1
+                            WHEN 'Jueves' THEN 2
+                            WHEN 'Viernes' THEN 3
+                            WHEN 'Sábado' THEN 4
+                            WHEN 'Domingo' THEN 5
+                            ELSE 99
+                        END,
+                        Hora ASC,
+                        Id ASC;";
+
+                cmd.Parameters.AddWithValue(
+                    "$codigo",
+                    congreCodigo ?? "");
+
+                cmd.Parameters.AddWithValue(
+                    "$mes",
+                    mesReferenciaStr ?? "");
+
+                using (var reader =
+                       cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        lista.Add(
+                            new ActividadPrograma
+                            {
+                                Id =
+                                    reader.GetInt32(0),
+
+                                DiaSemana =
+                                    reader.IsDBNull(1)
+                                        ? ""
+                                        : reader.GetString(1),
+
+                                Turno =
+                                    reader.IsDBNull(2)
+                                        ? ""
+                                        : reader.GetString(2),
+
+                                Responsable =
+                                    reader.IsDBNull(3)
+                                        ? ""
+                                        : reader.GetString(3),
+
+                                TipoActividad =
+                                    reader.IsDBNull(4)
+                                        ? ""
+                                        : reader.GetString(4),
+
+                                Hora =
+                                    reader.IsDBNull(5)
+                                        ? ""
+                                        : reader.GetString(5),
+
+                                NotasLibro =
+                                    reader.IsDBNull(6)
+                                        ? ""
+                                        : reader.GetString(6),
+
+                                CompaneroId =
+                                    reader.IsDBNull(7)
+                                        ? 0
+                                        : reader.GetInt32(7),
+
+                                Direccion =
+                                    reader.IsDBNull(8)
+                                        ? ""
+                                        : reader.GetString(8),
+
+                                Latitud =
+                                    reader.IsDBNull(9)
+                                        ? 0
+                                        : reader.GetDouble(9),
+
+                                Longitud =
+                                    reader.IsDBNull(10)
+                                        ? 0
+                                        : reader.GetDouble(10)
+                            });
+                    }
+                }
+            }
+
+            return lista;
         }
 
         public static List<ActividadPrograma> ObtenerActividadesPrograma(
@@ -2745,6 +3076,20 @@ namespace SCCosmos
             return lista;
         }
 
+        public static void EliminarRegistroTerritorio(int idRegistro)
+        {
+            if (idRegistro <= 0) return;
+
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                connection.Open();
+                var cmd = connection.CreateCommand();
+                cmd.CommandText = "DELETE FROM TerritoriosVisitaV3 WHERE Id = $id;";
+                cmd.Parameters.AddWithValue("$id", idRegistro);
+                cmd.ExecuteNonQuery();
+            }
+        }
+
         public static void ActualizarVinculacionTerritorio(int idRegistro, string nuevoNombreVinculado)
         {
             using (var connection = new SqliteConnection(ConnectionString))
@@ -3074,6 +3419,10 @@ namespace SCCosmos
 
         public class ActividadPrograma
         {
+            public string DiaSemana { get; set; }
+            public string Turno { get; set; }
+            public string Responsable { get; set; }
+
             public int Id { get; set; }
             public string TipoActividad { get; set; }
             public string Hora { get; set; }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -34,7 +34,8 @@ namespace SCCosmos
             {
                 // 1. Buscamos a TODOS los que tengan el mismo nombre en esa congregación
                 var posiblesMatches = personasDB.Where(p =>
-                    (p.Nombre == hubItem.Nombre || p.NombreJWHub == hubItem.Nombre) &&
+                    (string.Equals(p.Nombre, hubItem.Nombre, StringComparison.OrdinalIgnoreCase) ||
+                     string.Equals(p.NombreJWHub, hubItem.Nombre, StringComparison.OrdinalIgnoreCase)) &&
                     p.CongregacionCodigo == hubItem.CongregacionCodigo
                 ).ToList();
 
@@ -91,7 +92,10 @@ namespace SCCosmos
 
             foreach (var dbItem in personasDB)
             {
-                if (!procesadosDB.Contains(dbItem.Id))
+                // Solo se consideran posibles bajas los registros que alguna vez se hayan
+                // confirmado como procedentes de JW Hub. Los creados únicamente por S-21
+                // no deben aparecer aquí.
+                if (!procesadosDB.Contains(dbItem.Id) && dbItem.TieneOrigenJWHub)
                 {
                     _bajas.Add(new SyncItemHub { PersonaDB = dbItem, PersonaHub = null, NombreVisual = dbItem.NombreComun, Descripcion = "Ya no aparece en JW Hub. ¿Se ha dado de baja o mudado?" });
                 }
@@ -115,10 +119,15 @@ namespace SCCosmos
 
         private bool HayConflicto(Persona db, Persona hub)
         {
+            // NombreJWHub sí pertenece a Hub y puede actualizarse.
             if (!string.IsNullOrEmpty(hub.NombreJWHub) && db.NombreJWHub != hub.NombreJWHub) return true;
-            if (!string.IsNullOrEmpty(hub.NombreComun) && db.NombreComun != hub.NombreComun) return true;
-            if (!string.IsNullOrEmpty(hub.Nombre) && db.Nombre != hub.Nombre) return true;
-            if (!string.IsNullOrEmpty(hub.Sexo) && db.Sexo != hub.Sexo) return true;
+
+            // Nombre completo y nombre común ya rellenos se consideran consolidados.
+            // Hub únicamente los aporta cuando el campo de BBDD está vacío.
+            if (string.IsNullOrWhiteSpace(db.Nombre) && !string.IsNullOrWhiteSpace(hub.Nombre)) return true;
+            if (string.IsNullOrWhiteSpace(db.NombreComun) && !string.IsNullOrWhiteSpace(hub.NombreComun)) return true;
+
+            // Grupo y Sexo se ignoran completamente en la sincronización con JW Hub.
 
             string hubEsp = hub.Esperanza ?? "";
             string dbEsp = db.Esperanza ?? "";
@@ -134,24 +143,36 @@ namespace SCCosmos
             string dbServ = db.Servicio ?? "";
             if (hubServ != dbServ) return true;
 
-            // DETECCIÓN DE PÉRDIDAS (Privilegios como LDC, CEH, etc.)
-            string[] privilegiosPermitidos = { "Instructor de la Escuela del Servicio de Precursor", "Superintendente de circuito sustituto", "Miembro del CEH", "Superintendente de asamblea", "Coordinador", "Secretario", "Miembro del GVP", "Persona que pertenece a una entidad del LDC", "Superintendente auxiliar de asamblea" };
+            // PRIVILEGIOS: cualquier diferencia debe llegar al formulario de resolución.
+            // Antes solo se comprobaba un subconjunto y podían pasar cambios sin marcarse.
+            var hubPrivs = (hub.Privilegios ?? "")
+                .Replace("\r", "")
+                .Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(p => p.Trim())
+                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(p => p, StringComparer.Ordinal)
+                .ToList();
 
-            var hubPrivs = (hub.Privilegios ?? "").Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).ToList();
-            var dbPrivs = (db.Privilegios ?? "").Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()).ToList();
+            var dbPrivs = (db.Privilegios ?? "")
+                .Replace("\r", "")
+                .Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(p => p.Trim())
+                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(p => p, StringComparer.Ordinal)
+                .ToList();
 
-            foreach (var p in dbPrivs)
+            if (!hubPrivs.SequenceEqual(dbPrivs, StringComparer.Ordinal)) return true;
+
+            // Nacimiento y bautismo importados desde S-21/JSON son definitivos.
+            // Si no hay origen S21, seguimos ignorando fechas aproximadas 01/01/YYYY.
+            if (!db.TieneOrigenS21)
             {
-                if (privilegiosPermitidos.Contains(p) && !hubPrivs.Contains(p)) return true; // Lo tenía en BD y ya no en Hub
-            }
-            foreach (var p in hubPrivs)
-            {
-                if (privilegiosPermitidos.Contains(p) && !dbPrivs.Contains(p)) return true; // Lo tiene en Hub y no en BD
+                if (!string.IsNullOrEmpty(hub.FechaNacimiento) && db.FechaNacimiento != hub.FechaNacimiento && !hub.FechaNacimiento.StartsWith("01/01/")) return true;
+                if (!string.IsNullOrEmpty(hub.FechaBautismo) && db.FechaBautismo != hub.FechaBautismo && !hub.FechaBautismo.StartsWith("01/01/")) return true;
             }
 
-            // Ignorar falsos positivos si la fecha es aproximada (01/01/YYYY)
-            if (!string.IsNullOrEmpty(hub.FechaNacimiento) && db.FechaNacimiento != hub.FechaNacimiento && !hub.FechaNacimiento.StartsWith("01/01/")) return true;
-            if (!string.IsNullOrEmpty(hub.FechaBautismo) && db.FechaBautismo != hub.FechaBautismo && !hub.FechaBautismo.StartsWith("01/01/")) return true;
             if (!string.IsNullOrEmpty(hub.FechaInicioPrec) && db.FechaInicioPrec != hub.FechaInicioPrec && !hub.FechaInicioPrec.StartsWith("01/01/")) return true;
 
             if (!string.IsNullOrEmpty(hub.FechaUltimaEscuela) && db.FechaUltimaEscuela != hub.FechaUltimaEscuela) return true;
@@ -185,7 +206,9 @@ namespace SCCosmos
 
                 if (ventana.ShowDialog() == true)
                 {
+                    ventana.PersonaActualizada.OrigenRegistro = DatabaseHelper.CombinarOrigenes(ventana.PersonaActualizada.OrigenRegistro, "JWHub");
                     DatabaseHelper.ActualizarPersona(ventana.PersonaActualizada);
+                    DatabaseHelper.MarcarOrigenPersona(ventana.PersonaActualizada.Id, "JWHub");
                     _conflictos.Remove(item);
                     item.Descripcion = "Resuelto manualmente.";
                     _iguales.Add(item);
@@ -198,11 +221,13 @@ namespace SCCosmos
         {
             if (sender is Button btn && btn.Tag is SyncItemHub item)
             {
+                item.PersonaHub.OrigenRegistro = DatabaseHelper.CombinarOrigenes(item.PersonaHub.OrigenRegistro, "JWHub");
                 int nuevoId = DatabaseHelper.InsertarPersonaNueva(item.PersonaHub);
                 item.PersonaHub.Id = nuevoId;
 
                 var ventana = new FormularioPersonaWindow(item.PersonaHub);
                 ventana.Owner = Window.GetWindow(this);
+                ventana.ConfigurarOrigenSincronizacion("JWHub");
 
                 if (ventana.ShowDialog() == true)
                 {
@@ -240,7 +265,13 @@ namespace SCCosmos
             {
                 var ventana = new FormularioPersonaWindow(item.PersonaDB);
                 ventana.Owner = Window.GetWindow(this);
-                if (ventana.ShowDialog() == true) DatabaseHelper.ActualizarPersona(ventana.PersonaActualizada);
+                ventana.ConfigurarOrigenSincronizacion("JWHub");
+                if (ventana.ShowDialog() == true)
+                {
+                    ventana.PersonaActualizada.OrigenRegistro = DatabaseHelper.CombinarOrigenes(ventana.PersonaActualizada.OrigenRegistro, "JWHub");
+                    DatabaseHelper.ActualizarPersona(ventana.PersonaActualizada);
+                    DatabaseHelper.MarcarOrigenPersona(ventana.PersonaActualizada.Id, "JWHub");
+                }
             }
         }
 
@@ -263,9 +294,23 @@ namespace SCCosmos
 
         private void BtnFinalizar_Click(object sender, RoutedEventArgs e)
         {
-            // Iteramos sobre todos los "Nuevos" que aún no se hayan añadido manualmente a la BD
+            // Los registros que sí hemos visto en JW Hub quedan vinculados a ese origen.
+            // Esto permite que una sincronización futura solo proponga como baja a personas
+            // que realmente habían sido confirmadas previamente en JW Hub.
+            foreach (var item in _iguales)
+            {
+                if (item.PersonaDB != null) DatabaseHelper.MarcarOrigenPersona(item.PersonaDB.Id, "JWHub");
+            }
+
+            foreach (var item in _conflictos)
+            {
+                if (item.PersonaDB != null) DatabaseHelper.MarcarOrigenPersona(item.PersonaDB.Id, "JWHub");
+            }
+
+            // Iteramos sobre todos los "Nuevos" que aún no se hayan añadido manualmente a la BD.
             foreach (var itemNuevo in _nuevos)
             {
+                itemNuevo.PersonaHub.OrigenRegistro = DatabaseHelper.CombinarOrigenes(itemNuevo.PersonaHub.OrigenRegistro, "JWHub");
                 DatabaseHelper.InsertarPersonaNueva(itemNuevo.PersonaHub);
             }
 

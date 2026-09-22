@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Text.Json;
@@ -13,16 +13,19 @@ namespace SCCosmos
         private bool _yaImportado;
         private string _rutaS21;
         private string _rutaTerritorios;
+        private readonly string _mesReferencia;
 
-        public ImportarArchivosActividad(string congreCodigo, string congreNombre, bool yaImportado)
+        public ImportarArchivosActividad(string congreCodigo, string congreNombre, bool yaImportado, string mesReferencia = null)
         {
             InitializeComponent();
             _congreCodigo = congreCodigo;
             _congreNombre = congreNombre;
             _yaImportado = yaImportado;
+            _mesReferencia = string.IsNullOrWhiteSpace(mesReferencia)
+                ? DateTime.Now.ToString("yyyy-MM")
+                : mesReferencia;
             TxtSubtitulo.Text = $"{congreNombre.ToUpper()}";
 
-            // Mostramos el aviso de que ya existen datos si aplica
             if (_yaImportado)
             {
                 PanelAviso.Visibility = Visibility.Visible;
@@ -86,8 +89,7 @@ namespace SCCosmos
 
                 if (listaPersonas != null)
                 {
-                    // ABRIMOS EL NUEVO DASHBOARD DE SINCRONIZACIÓN EN LUGAR DE GUARDAR A CIEGAS
-                    var syncDashboard = new SyncJsonWindow(_congreCodigo, listaPersonas, listaTerritorios);
+                    var syncDashboard = new SyncJsonWindow(_congreCodigo, listaPersonas, listaTerritorios, _mesReferencia);
                     syncDashboard.Owner = Window.GetWindow(this);
 
                     if (syncDashboard.ShowDialog() == true)

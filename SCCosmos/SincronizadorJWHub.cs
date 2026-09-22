@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -215,21 +215,14 @@ namespace SCCosmos
 
                                 try
                                 {
-                                    var tempPersona = new PersonaExtraida { NombreCompleto = nombreReal };
-                                    string[] partesNombre = nombreReal.Split(',');
-
-                                    if (partesNombre.Length >= 2)
+                                    // NombreJWHub conserva SIEMPRE el texto real leído en Hub.
+                                    // NombreCompleto y NombreComun se resolverán después de identificar
+                                    // a la persona en BBDD: si ya existen, no se recalculan ni se pisan.
+                                    var tempPersona = new PersonaExtraida
                                     {
-                                        string apellidos = partesNombre[0].Trim();
-                                        string nombrePila = partesNombre[1].Trim();
-                                        tempPersona.NombreComun = $"{nombrePila} {apellidos}";
-                                        tempPersona.Apellidos = apellidos;
-                                    }
-                                    else
-                                    {
-                                        tempPersona.NombreComun = nombreReal.Trim();
-                                        tempPersona.Apellidos = "";
-                                    }
+                                        NombreJWHub = nombreReal,
+                                        NombreCompleto = nombreReal
+                                    };
 
                                     var badges = card.FindElements(By.CssSelector("ptrn-badges .badge"));
                                     foreach (var badge in badges)
@@ -473,25 +466,7 @@ namespace SCCosmos
                                     }
 
                                     // =========================================================
-                                    // 1º VALIDACIÓN CRÍTICA (Se intenta hasta 5 veces)
-                                    // =========================================================
-                                    bool faltanDatosGrave = string.IsNullOrWhiteSpace(tempPersona.Congregacion) ||
-                                                            string.IsNullOrWhiteSpace(tempPersona.FechaNacimiento) ||
-                                                            string.IsNullOrWhiteSpace(tempPersona.FechaBautismo);
-
-                                    if (faltanDatosGrave)
-                                    {
-                                        if (revision >= 5) break; // Da por fallida la extracción y descarta a la persona
-                                        throw new Exception("Faltan datos obligatorios. Forzando reintento crítico...");
-                                    }
-
-                                    // =========================================================
-                                    // 2º GUARDAR A LA PERSONA EN MEMORIA (Seguro)
-                                    // =========================================================
-                                    mejorExtraccion = tempPersona;
-
-                                    // =========================================================
-                                    // 3º VERIFICACIÓN DE CONFLICTOS NO CRÍTICOS (Máx 3 intentos)
+                                    // IDENTIFICAR PRIMERO LA FICHA ACTUAL DE BBDD
                                     // =========================================================
                                     string codigoDet = "";
                                     if (!string.IsNullOrWhiteSpace(tempPersona.Congregacion))
@@ -503,14 +478,19 @@ namespace SCCosmos
 
                                     var matchDB = personasDB.FirstOrDefault(p =>
                                     {
-                                        // 1. Coincidencia Básica
-                                        bool mismoNombre = (!string.IsNullOrEmpty(p.NombreJWHub) && p.NombreJWHub == tempPersona.NombreCompleto) ||
-                                                           (p.Nombre == tempPersona.NombreCompleto);
-                                        bool mismaCongre = p.CongregacionCodigo == codigoDet;
+                                        // Coincidencia de identidad: el nombre de Hub se usa para localizar,
+                                        // pero NO para sustituir Nombre/NombreComun ya consolidados.
+                                        bool mismoNombre =
+                                            (!string.IsNullOrEmpty(p.NombreJWHub) &&
+                                             string.Equals(p.NombreJWHub, nombreReal, StringComparison.OrdinalIgnoreCase)) ||
+                                            (!string.IsNullOrEmpty(p.Nombre) &&
+                                             string.Equals(p.Nombre, nombreReal, StringComparison.OrdinalIgnoreCase));
 
+                                        bool mismaCongre = p.CongregacionCodigo == codigoDet;
                                         if (!mismoNombre || !mismaCongre) return false;
 
-                                        // 2. FILTRO ANTI-HOMÓNIMOS (Padre e Hijo)
+                                        // Filtro anti-homónimos (padre/hijo). Una fecha 01/01/YYYY
+                                        // procedente de edad/años bautizado es aproximada.
                                         Func<string, string, bool> SonIncompatibles = (dbDate, hubDate) =>
                                         {
                                             if (string.IsNullOrWhiteSpace(dbDate) || string.IsNullOrWhiteSpace(hubDate)) return false;
@@ -524,9 +504,7 @@ namespace SCCosmos
                                             if (dbDate.Length >= 4) int.TryParse(dbDate.Substring(dbDate.Length - 4), out yearDB);
                                             if (hubDate.Length >= 4) int.TryParse(hubDate.Substring(hubDate.Length - 4), out yearHub);
 
-                                            if (yearDB > 0 && yearHub > 0 && Math.Abs(yearDB - yearHub) > 2) return true;
-
-                                            return false;
+                                            return yearDB > 0 && yearHub > 0 && Math.Abs(yearDB - yearHub) > 2;
                                         };
 
                                         if (SonIncompatibles(p.FechaNacimiento, tempPersona.FechaNacimiento)) return false;
@@ -535,20 +513,52 @@ namespace SCCosmos
                                         return true;
                                     });
 
+                                    // NOMBRES: si la ficha actual ya los tiene, se conservan tal cual.
+                                    // Solo calculamos valores de Hub cuando realmente faltan en BBDD.
+                                    AplicarNombresConservadores(tempPersona, matchDB, nombreReal);
+
                                     if (matchDB != null)
                                     {
-                                        // Restaurar fechas flotantes para no generar falsos conflictos
-                                        if (!string.IsNullOrEmpty(tempPersona.FechaNacimiento) && tempPersona.FechaNacimiento.StartsWith("01/01/") && !string.IsNullOrEmpty(matchDB.FechaNacimiento))
+                                        // FECHAS DEFINITIVAS DEL S-21/JSON:
+                                        // si la persona tiene origen S21, nacimiento y bautismo de BBDD
+                                        // prevalecen SIEMPRE sobre cálculos de edad/años bautizado de Hub.
+                                        if (matchDB.TieneOrigenS21 && !string.IsNullOrWhiteSpace(matchDB.FechaNacimiento))
                                             tempPersona.FechaNacimiento = matchDB.FechaNacimiento;
-                                        if (!string.IsNullOrEmpty(tempPersona.FechaBautismo) && tempPersona.FechaBautismo.StartsWith("01/01/") && !string.IsNullOrEmpty(matchDB.FechaBautismo))
+                                        else if (!string.IsNullOrEmpty(tempPersona.FechaNacimiento) && tempPersona.FechaNacimiento.StartsWith("01/01/") && !string.IsNullOrEmpty(matchDB.FechaNacimiento))
+                                            tempPersona.FechaNacimiento = matchDB.FechaNacimiento;
+
+                                        if (matchDB.TieneOrigenS21 && !string.IsNullOrWhiteSpace(matchDB.FechaBautismo))
                                             tempPersona.FechaBautismo = matchDB.FechaBautismo;
+                                        else if (!string.IsNullOrEmpty(tempPersona.FechaBautismo) && tempPersona.FechaBautismo.StartsWith("01/01/") && !string.IsNullOrEmpty(matchDB.FechaBautismo))
+                                            tempPersona.FechaBautismo = matchDB.FechaBautismo;
+
+                                        // Inicio de precursorado mantiene la protección previa para fechas aproximadas.
                                         if (!string.IsNullOrEmpty(tempPersona.FechaInicioPrec) && tempPersona.FechaInicioPrec.StartsWith("01/01/") && !string.IsNullOrEmpty(matchDB.FechaInicioPrec))
                                             tempPersona.FechaInicioPrec = matchDB.FechaInicioPrec;
+                                    }
 
+                                    // =========================================================
+                                    // VALIDACIÓN CRÍTICA
+                                    // =========================================================
+                                    bool faltanDatosGrave = string.IsNullOrWhiteSpace(tempPersona.Congregacion) ||
+                                                            string.IsNullOrWhiteSpace(tempPersona.FechaNacimiento) ||
+                                                            string.IsNullOrWhiteSpace(tempPersona.FechaBautismo);
+
+                                    if (faltanDatosGrave)
+                                    {
+                                        if (revision >= 5) break;
+                                        throw new Exception("Faltan datos obligatorios. Forzando reintento crítico...");
+                                    }
+
+                                    // Guardamos la mejor extracción antes de evaluar cambios no críticos.
+                                    mejorExtraccion = tempPersona;
+
+                                    if (matchDB != null)
+                                    {
                                         bool hayConflicto = DetectarConflictoSincronizador(matchDB, tempPersona, codigoDet);
                                         if (hayConflicto)
                                         {
-                                            if (revision >= 3) break; // Si hay conflicto tras 3 veces, lo aceptamos
+                                            if (revision >= 3) break;
                                             throw new Exception("Posible actualización de datos detectada. Forzando re-evaluación (Intento " + revision + "/3)...");
                                         }
                                     }
@@ -909,10 +919,53 @@ namespace SCCosmos
         // MÉTODOS DE RESOLUCIÓN Y UTILIDADES
         // =========================================================================
 
+        private static void AplicarNombresConservadores(PersonaExtraida destino, Persona existente, string nombreHub)
+        {
+            destino.NombreJWHub = nombreHub ?? "";
+
+            // Nombre completo: si BBDD ya lo conoce (por ejemplo, desde S-21),
+            // no lo recalculamos desde Hub.
+            destino.NombreCompleto = existente != null && !string.IsNullOrWhiteSpace(existente.Nombre)
+                ? existente.Nombre
+                : (nombreHub ?? "").Trim();
+
+            // Nombre común: si ya existe, se conserva. Solo se deriva del nombre
+            // de Hub cuando el campo está realmente vacío.
+            if (existente != null && !string.IsNullOrWhiteSpace(existente.NombreComun))
+            {
+                destino.NombreComun = existente.NombreComun;
+                destino.Apellidos = "";
+                return;
+            }
+
+            string nombre = (nombreHub ?? "").Trim();
+            string[] partes = nombre.Split(',');
+
+            if (partes.Length >= 2)
+            {
+                string apellidos = partes[0].Trim();
+                string nombrePila = partes[1].Trim();
+                destino.NombreComun = $"{nombrePila} {apellidos}".Trim();
+                destino.Apellidos = apellidos;
+            }
+            else
+            {
+                destino.NombreComun = nombre;
+                destino.Apellidos = "";
+            }
+        }
+
         private static bool DetectarConflictoSincronizador(Persona db, PersonaExtraida hub, string codigoDet)
         {
-            if (!string.IsNullOrEmpty(hub.NombreCompleto) && db.NombreJWHub != hub.NombreCompleto) return true;
-            if (!string.IsNullOrEmpty(hub.NombreComun) && db.NombreComun != hub.NombreComun) return true;
+            // El texto real de Hub se compara únicamente con NombreJWHub.
+            if (!string.IsNullOrEmpty(hub.NombreJWHub) && db.NombreJWHub != hub.NombreJWHub) return true;
+
+            // Nombre y NombreComun ya rellenos en BBDD se consideran consolidados.
+            // Hub solo debe aportarlos cuando estén vacíos.
+            if (string.IsNullOrWhiteSpace(db.Nombre) && !string.IsNullOrWhiteSpace(hub.NombreCompleto)) return true;
+            if (string.IsNullOrWhiteSpace(db.NombreComun) && !string.IsNullOrWhiteSpace(hub.NombreComun)) return true;
+
+            // Grupo y Sexo se ignoran expresamente en la sincronización con JW Hub.
             if (!string.IsNullOrEmpty(codigoDet) && db.CongregacionCodigo != codigoDet) return true;
 
             string hubEsp = hub.Esperanza ?? "";
@@ -950,8 +1003,15 @@ namespace SCCosmos
             if (!string.IsNullOrEmpty(hub.Direccion) && db.Direccion != hub.Direccion) return true;
             if (!string.IsNullOrEmpty(hub.Foto) && db.Foto != hub.Foto) return true;
 
-            if (!string.IsNullOrEmpty(hub.FechaNacimiento) && db.FechaNacimiento != hub.FechaNacimiento && !hub.FechaNacimiento.StartsWith("01/01/")) return true;
-            if (!string.IsNullOrEmpty(hub.FechaBautismo) && db.FechaBautismo != hub.FechaBautismo && !hub.FechaBautismo.StartsWith("01/01/")) return true;
+            // Si las fechas definitivas proceden de S-21/JSON, Hub no puede generar
+            // conflicto ni sustituirlas. Para el resto seguimos ignorando 01/01/YYYY,
+            // que es solo una aproximación calculada a partir de la edad.
+            if (!db.TieneOrigenS21)
+            {
+                if (!string.IsNullOrEmpty(hub.FechaNacimiento) && db.FechaNacimiento != hub.FechaNacimiento && !hub.FechaNacimiento.StartsWith("01/01/")) return true;
+                if (!string.IsNullOrEmpty(hub.FechaBautismo) && db.FechaBautismo != hub.FechaBautismo && !hub.FechaBautismo.StartsWith("01/01/")) return true;
+            }
+
             if (!string.IsNullOrEmpty(hub.FechaInicioPrec) && db.FechaInicioPrec != hub.FechaInicioPrec && !hub.FechaInicioPrec.StartsWith("01/01/")) return true;
 
             string hubSols = hub.Solicitudes ?? "";
@@ -1106,6 +1166,9 @@ namespace SCCosmos
     public class PersonaExtraida
     {
         public string NombreCompleto { get; set; }
+        // Texto exacto del nombre tal como aparece en JW Hub. Se mantiene separado
+        // de NombreCompleto para no pisar el nombre consolidado de S-21/BBDD.
+        public string NombreJWHub { get; set; }
         public string NombreComun { get; set; }
         public string Apellidos { get; set; }
         public string FechaInicioPrec { get; set; }

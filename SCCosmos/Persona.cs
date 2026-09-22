@@ -1,4 +1,6 @@
-﻿namespace SCCosmos
+using System;
+
+namespace SCCosmos
 {
     public class Persona
     {
@@ -28,6 +30,10 @@
         public string AnioNacimiento { get; set; }
         public string NombreComun { get; set; }
         public string NombreMostrarTabla => !string.IsNullOrWhiteSpace(NombreComun) ? NombreComun : Nombre;
+
+        // Solo para la interfaz de vinculación: no se guarda en la base de datos.
+        public int CoincidenciaVinculacion { get; set; }
+        public string NombreMostrarVinculacion => $"{NombreMostrarTabla} — {CoincidenciaVinculacion}%";
         public string Direccion { get; set; }
         public double Latitud { get; set; }
         public double Longitud { get; set; }
@@ -37,5 +43,20 @@
         public string MesHistorico { get; set; }
         public string FechaExactaHistorico { get; set; }
         public string Notas { get; set; }
+
+        // Origen/orígenes confirmados del registro. Puede contener, por ejemplo:
+        // "Manual", "S21", "JWHub", "S21+JWHub".
+        public string OrigenRegistro { get; set; } = "DESCONOCIDO";
+
+        // Indica si la persona está aprobada para participar en la predicación con exhibidores.
+        public bool AprobadoExhibidores { get; set; }
+
+        public bool TieneOrigenJWHub =>
+            !string.IsNullOrWhiteSpace(OrigenRegistro) &&
+            OrigenRegistro.IndexOf("JWHub", StringComparison.OrdinalIgnoreCase) >= 0;
+
+        public bool TieneOrigenS21 =>
+            !string.IsNullOrWhiteSpace(OrigenRegistro) &&
+            OrigenRegistro.IndexOf("S21", StringComparison.OrdinalIgnoreCase) >= 0;
     }
 }

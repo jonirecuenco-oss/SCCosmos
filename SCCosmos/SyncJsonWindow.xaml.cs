@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -23,9 +24,18 @@ namespace SCCosmos
         {
             InitializeComponent();
             _congreCodigo = congreCodigo;
-            _listaJson = listaPersonas;
+            _listaJson = listaPersonas ?? new List<PersonaJson>();
             _listaTerritorios = listaTerritorios;
             _mesReferencia = mesReferencia ?? DateTime.Now.ToString("yyyy-MM");
+
+            // Normalizamos las fechas del S-21 una sola vez al entrar. De este modo
+            // tanto la comparación como cualquier guardado posterior usan dd/MM/yyyy.
+            foreach (var personaJson in _listaJson)
+            {
+                if (personaJson == null) continue;
+                personaJson.FechaNacimiento = FormatearFechaS21(personaJson.FechaNacimiento);
+                personaJson.FechaBautismo = FormatearFechaS21(personaJson.FechaBautismo);
+            }
 
             AnalizarDatos();
         }
@@ -44,10 +54,13 @@ namespace SCCosmos
                 // Convierte el JSON en un objeto Persona "falso" para usarlo luego en la fusión
                 Persona personaDesdeJson = ConvertirJsonAPersona(jsonItem);
 
-                // Buscamos coincidencia (Primero por JW Hub, luego por Nombre Completo)
+                // Buscamos coincidencia usando el nombre del S-21 contra los dos campos
+                // que normalmente pueden contener el nombre oficial. No dependemos de
+                // PersonaFakeJSON.NombreJWHub porque el S-21 no confirma que exista Hub.
                 var matchDB = personasDB.FirstOrDefault(p =>
-                    (!string.IsNullOrEmpty(p.NombreJWHub) && p.NombreJWHub == personaDesdeJson.NombreJWHub) ||
-                    p.Nombre == personaDesdeJson.Nombre);
+                    string.Equals(p.Nombre, jsonItem.Nombre, StringComparison.OrdinalIgnoreCase) ||
+                    (!string.IsNullOrWhiteSpace(p.NombreJWHub) &&
+                     string.Equals(p.NombreJWHub, jsonItem.Nombre, StringComparison.OrdinalIgnoreCase)));
 
                 if (matchDB != null)
                 {
@@ -66,16 +79,16 @@ namespace SCCosmos
                 else
                 {
                     // No está en la BD -> Es NUEVO
-                    _nuevos.Add(new SyncItem { PersonaDB = null, PersonaFakeJSON = personaDesdeJson, NombreVisual = personaDesdeJson.NombreJWHub, Descripcion = "Aparece en el JSON pero no está en el programa." });
+                    _nuevos.Add(new SyncItem { PersonaDB = null, PersonaFakeJSON = personaDesdeJson, NombreVisual = personaDesdeJson.Nombre, Descripcion = "Aparece en el JSON pero no está en el programa." });
                 }
             }
 
             // Los que están en la BD pero no han sido procesados por el JSON -> BAJAS
             foreach (var dbItem in personasDB)
             {
-                if (!procesadosDB.Contains(dbItem.Id))
+                if (!procesadosDB.Contains(dbItem.Id) && dbItem.TieneOrigenS21)
                 {
-                    _bajas.Add(new SyncItem { PersonaDB = dbItem, PersonaFakeJSON = null, NombreVisual = dbItem.NombreComun, Descripcion = "No aparece en el JSON. ¿Se ha mudado o borrado?" });
+                    _bajas.Add(new SyncItem { PersonaDB = dbItem, PersonaFakeJSON = null, NombreVisual = dbItem.NombreComun, Descripcion = "No aparece en el JSON S-21. ¿Se ha mudado o borrado?" });
                 }
             }
 
@@ -104,27 +117,36 @@ namespace SCCosmos
             return new Persona
             {
                 CongregacionCodigo = _congreCodigo,
-                Nombre = json.Nombre,        // Nombre completo oficial
-                NombreJWHub = json.Nombre,   // El JW Hub será el oficial del JSON
+                Nombre = json.Nombre,        // Nombre completo oficial del S-21
+                NombreJWHub = "",            // El S-21 no confirma que exista un registro en JW Hub
                 NombreComun = json.Nombre,   // Por defecto igual, por si es un nuevo publicador
                 Sexo = json.Sexo,
                 Esperanza = json.Esperanza,
                 Nombramiento = json.Nombramiento,
                 Servicio = json.Servicio,
-                FechaNacimiento = json.FechaNacimiento,
-                FechaBautismo = json.FechaBautismo,
-                Grupo = json.Grupo             // AÑADIDO: ¡Ahora también importamos el grupo!
+                FechaNacimiento = FormatearFechaS21(json.FechaNacimiento),
+                FechaBautismo = FormatearFechaS21(json.FechaBautismo),
+                Grupo = json.Grupo,            // AÑADIDO: ¡Ahora también importamos el grupo!
+                OrigenRegistro = "S21"
             };
         }
 
         private bool HayConflicto(Persona db, Persona json)
         {
-            // Textos (Ignoramos mayúsculas y minúsculas por si acaso)
-            if (!string.IsNullOrEmpty(json.NombreJWHub) && !string.Equals(db.NombreJWHub, json.NombreJWHub, StringComparison.OrdinalIgnoreCase)) return true;
-            if (!string.IsNullOrEmpty(json.Sexo) && !string.Equals(db.Sexo, json.Sexo, StringComparison.OrdinalIgnoreCase)) return true;
-            if (!string.IsNullOrEmpty(json.Esperanza) && !string.Equals(db.Esperanza, json.Esperanza, StringComparison.OrdinalIgnoreCase)) return true;
-            if (!string.IsNullOrEmpty(json.Nombramiento) && !string.Equals(db.Nombramiento, json.Nombramiento, StringComparison.OrdinalIgnoreCase)) return true;
-            if (!string.IsNullOrEmpty(json.Servicio) && !string.Equals(db.Servicio, json.Servicio, StringComparison.OrdinalIgnoreCase)) return true;
+            // NOMBRES: el S-21 es la fuente preferente SOLO para Nombre completo.
+            // Nunca usamos el nombre del JSON para sustituir NombreJWHub y tampoco
+            // intentamos reemplazar NombreComun, que se prefiere conservar desde JW Hub.
+            if (!string.IsNullOrWhiteSpace(json.Nombre))
+            {
+                string nombreS21 = json.Nombre.Trim();
+                if (!string.Equals(db.Nombre?.Trim(), nombreS21, StringComparison.Ordinal)) return true;
+            }
+
+            // Textos: toda diferencia, incluida solo mayúsculas/minúsculas, es conflicto.
+            if (!string.IsNullOrEmpty(json.Sexo) && !string.Equals(db.Sexo, json.Sexo, StringComparison.Ordinal)) return true;
+            if (!string.IsNullOrEmpty(json.Esperanza) && !string.Equals(db.Esperanza, json.Esperanza, StringComparison.Ordinal)) return true;
+            if (!string.IsNullOrEmpty(json.Nombramiento) && !string.Equals(db.Nombramiento, json.Nombramiento, StringComparison.Ordinal)) return true;
+            if (!string.IsNullOrEmpty(json.Servicio) && !string.Equals(db.Servicio, json.Servicio, StringComparison.Ordinal)) return true;
 
             // Fechas
             if (!string.IsNullOrEmpty(json.FechaNacimiento) && db.FechaNacimiento != json.FechaNacimiento) return true;
@@ -144,15 +166,19 @@ namespace SCCosmos
         {
             if (sender is Button btn && btn.Tag is SyncItem item)
             {
-                // Le mandamos al Formulario nuestra PersonaDB actual, pero le decimos que el "candidato" a fusionar es la PersonaJSON
-                var listaFusionJson = new List<Persona> { item.PersonaFakeJSON };
-                var ventana = new FormularioPersonaWindow(item.PersonaDB, listaFusionJson);
+                // Resolver un conflicto S-21 no es una fusión con un registro ficticio.
+                // Abrimos la persona real y cargamos los valores del JSON como opciones
+                // amarillas para escoger campo por campo.
+                var ventana = new FormularioPersonaWindow(item.PersonaDB);
                 ventana.Owner = Window.GetWindow(this);
+                ventana.CargarConflictosDesdeJson(item.PersonaFakeJSON);
 
                 if (ventana.ShowDialog() == true)
                 {
                     // Llama al motor histórico para clonar la persona si es necesario en lugar de sobrescribirla
+                    ventana.PersonaActualizada.OrigenRegistro = DatabaseHelper.CombinarOrigenes(ventana.PersonaActualizada.OrigenRegistro, "S21");
                     DatabaseHelper.ActualizarPersonaDesdeVisitas(ventana.PersonaActualizada, _mesReferencia);
+                    DatabaseHelper.MarcarOrigenPersona(ventana.PersonaActualizada.Id, "S21");
 
                     // Si se resuelve, lo quitamos de conflictos y lo pasamos a iguales
                     _conflictos.Remove(item);
@@ -173,10 +199,13 @@ namespace SCCosmos
 
                 var ventana = new FormularioPersonaWindow(item.PersonaFakeJSON);
                 ventana.Owner = Window.GetWindow(this);
+                ventana.ConfigurarOrigenSincronizacion("S21");
 
                 if (ventana.ShowDialog() == true)
                 {
+                    ventana.PersonaActualizada.OrigenRegistro = DatabaseHelper.CombinarOrigenes(ventana.PersonaActualizada.OrigenRegistro, "S21");
                     DatabaseHelper.ActualizarPersonaDesdeVisitas(ventana.PersonaActualizada, _mesReferencia);
+                    DatabaseHelper.MarcarOrigenPersona(ventana.PersonaActualizada.Id, "S21");
                     _nuevos.Remove(item);
                     item.Descripcion = "Añadido correctamente.";
                     _iguales.Add(item);
@@ -207,9 +236,12 @@ namespace SCCosmos
             {
                 var ventana = new FormularioPersonaWindow(item.PersonaDB);
                 ventana.Owner = Window.GetWindow(this);
+                ventana.ConfigurarOrigenSincronizacion("S21");
                 if (ventana.ShowDialog() == true)
                 {
+                    ventana.PersonaActualizada.OrigenRegistro = DatabaseHelper.CombinarOrigenes(ventana.PersonaActualizada.OrigenRegistro, "S21");
                     DatabaseHelper.ActualizarPersonaDesdeVisitas(ventana.PersonaActualizada, _mesReferencia);
+                    DatabaseHelper.MarcarOrigenPersona(ventana.PersonaActualizada.Id, "S21");
                 }
             }
         }
@@ -240,6 +272,34 @@ namespace SCCosmos
         {
             this.DialogResult = false;
             this.Close();
+        }
+
+        private string FormatearFechaS21(string fecha)
+        {
+            if (string.IsNullOrWhiteSpace(fecha)) return fecha;
+
+            string valor = fecha.Trim();
+
+            // Formatos habituales que pueden llegar en los JSON S-21.
+            string[] formatos =
+            {
+                "yyyy-MM-dd", "yyyy/MM/dd",
+                "dd/MM/yyyy", "d/M/yyyy", "dd/M/yyyy", "d/MM/yyyy",
+                "dd-MM-yyyy", "d-M-yyyy", "dd-M-yyyy", "d-MM-yyyy",
+                "yyyy-MM-ddTHH:mm:ss", "yyyy-MM-ddTHH:mm:ss.FFF",
+                "yyyy-MM-ddTHH:mm:ssK", "yyyy-MM-ddTHH:mm:ss.FFFK"
+            };
+
+            if (DateTime.TryParseExact(valor, formatos, CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out DateTime fechaExacta))
+                return fechaExacta.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
+
+            // Último intento con cultura española, para no perder fechas válidas
+            // que incluyan separadores o componentes no contemplados arriba.
+            if (DateTime.TryParse(valor, new CultureInfo("es-ES"), DateTimeStyles.AllowWhiteSpaces, out DateTime fechaEs))
+                return fechaEs.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
+
+            // Si no puede interpretarse, conservamos el dato original en vez de borrarlo.
+            return valor;
         }
 
         private DateTime? ParsearFechaSegura(string fechaStr)

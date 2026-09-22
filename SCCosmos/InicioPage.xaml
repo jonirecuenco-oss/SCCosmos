@@ -1,4 +1,4 @@
-﻿<Page x:Class="SCCosmos.InicioPage"
+<Page x:Class="SCCosmos.InicioPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
@@ -19,84 +19,231 @@
             <TextBlock x:Name="TxtSaludo" Grid.Row="0" Text="¡Hola!" FontSize="36" FontWeight="Bold" Margin="0,0,0,5"/>
             <TextBlock Grid.Row="1" Text="Esto es lo que tienes programado para la semana actual:" FontSize="16" Foreground="#AAAAAA" Margin="0,0,0,30"/>
 
-            <!-- Tarjeta de Resumen Semanal -->
-            <ui:Card Grid.Row="2" VerticalAlignment="Top" Padding="30" Background="#0AFFFFFF" BorderBrush="#1AFFFFFF" Margin="0,0,0,40">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
+            <!-- DOS TARJETAS INDEPENDIENTES: semana + programa del día -->
+            <WrapPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,25">
 
-                    <!-- Icono dinámico gigante -->
-                    <ui:SymbolIcon x:Name="IconoActividad" Grid.Column="0" Symbol="Calendar24" FontSize="60" Foreground="#0078D4" Margin="0,0,30,0" VerticalAlignment="Center"/>
+                <!-- TARJETA 1: ACTIVIDAD DE LA SEMANA -->
+                <ui:Card Width="520"
+                         MinHeight="190"
+                         VerticalAlignment="Top"
+                         Padding="30"
+                         Background="#0AFFFFFF"
+                         BorderBrush="#1AFFFFFF"
+                         Margin="0,0,20,15">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
 
-                    <!-- PANEL 1: DISEÑO PARA VISITAS -->
-                    <StackPanel x:Name="PanelVisita" Grid.Column="1" VerticalAlignment="Center" Visibility="Collapsed">
-                        <TextBlock Text="VISITA A CONGREGACIÓN" FontSize="12" FontWeight="Bold" Foreground="#0078D4" Margin="0,0,0,5"/>
-                        <TextBlock Text="{Binding Congregacion}" FontSize="28" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,5"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                            <ui:SymbolIcon Symbol="CalendarClock24" Foreground="#AAAAAA" Margin="0,0,8,0"/>
-                            <TextBlock Text="{Binding FechaMartes, StringFormat='Del {0:dd MMM} al '}" Foreground="#AAAAAA" FontSize="14"/>
-                            <TextBlock Text="{Binding FechaDomingo, StringFormat='{}{0:dd MMM yyyy}'}" Foreground="#AAAAAA" FontSize="14"/>
-                        </StackPanel>
+                        <!-- Icono dinámico solo para actividades que no son visita -->
+                        <ui:SymbolIcon x:Name="IconoActividad"
+                                       Grid.Column="0"
+                                       Symbol="Calendar24"
+                                       FontSize="60"
+                                       Foreground="#0078D4"
+                                       Margin="0,0,30,0"
+                                       VerticalAlignment="Center"/>
 
-                        <!-- NUEVO: PROGRAMA DEL DÍA -->
-                        <Border x:Name="PanelProgramaDia" Background="#1A000000" CornerRadius="8" Padding="15" Margin="0,5,0,0" HorizontalAlignment="Left" MinWidth="400" Visibility="Collapsed">
-                            <StackPanel>
-                                <TextBlock Text="TU PROGRAMA DE HOY" FontSize="12" FontWeight="Bold" Foreground="#FFB900" Margin="0,0,0,10"/>
-                                <ItemsControl x:Name="ListaProgramaHoy">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Grid Margin="0,0,0,8">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="80"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                </Grid.ColumnDefinitions>
-                                                <!-- Hora -->
-                                                <TextBlock Grid.Column="0" Text="{Binding Hora}" FontWeight="SemiBold" Foreground="White" FontSize="15" VerticalAlignment="Center"/>
-                                                <!-- Separador Visual -->
-                                                <Border Grid.Column="1" Width="3" Background="#0078D4" Margin="0,0,15,0" CornerRadius="1"/>
-                                                <!-- Actividad y Compañero -->
-                                                <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                                                    <TextBlock Text="{Binding TipoActividad}" Foreground="White" FontSize="14" FontWeight="SemiBold"/>
-                                                    <TextBlock Text="{Binding CompaneroNombre, StringFormat='Con {0}'}" Foreground="#AAAAAA" FontSize="13" Visibility="{Binding VerCompanero}"/>
-                                                </StackPanel>
-                                            </Grid>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
+                        <!-- VISITA -->
+                        <StackPanel x:Name="PanelVisita"
+                                    Grid.Column="0"
+                                    Grid.ColumnSpan="2"
+                                    VerticalAlignment="Center"
+                                    Visibility="Collapsed">
+                            <TextBlock Text="VISITA A CONGREGACIÓN"
+                                       FontSize="12"
+                                       FontWeight="Bold"
+                                       Foreground="#0078D4"
+                                       Margin="0,0,0,8"/>
+
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0"
+                                           Text="{Binding Congregacion}"
+                                           FontSize="28"
+                                           FontWeight="SemiBold"
+                                           TextWrapping="Wrap"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,12,0"/>
+
+                                <ui:Button x:Name="BtnVerVisita"
+                                           Grid.Column="1"
+                                           Appearance="Success"
+                                           Icon="{ui:SymbolIcon Eye24}"
+                                           ToolTip="Ver datos de la congregación"
+                                           Padding="9"
+                                           Cursor="Hand"
+                                           VerticalAlignment="Center"
+                                           Visibility="Collapsed"
+                                           Click="BtnVerVisita_Click"/>
+                            </Grid>
+
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="CalendarClock24"
+                                               Foreground="#AAAAAA"
+                                               Margin="0,0,8,0"/>
+                                <TextBlock x:Name="TxtRangoSemanaVisita"
+                                           Foreground="#AAAAAA"
+                                           FontSize="14"/>
                             </StackPanel>
-                        </Border>
-                    </StackPanel>
-
-                    <!-- PANEL 2: DISEÑO PARA OTRAS ACTIVIDADES -->
-                    <StackPanel x:Name="PanelOtraActividad" Grid.Column="1" VerticalAlignment="Center" Visibility="Collapsed">
-                        <TextBlock Text="ACTIVIDAD PROGRAMADA" FontSize="12" FontWeight="Bold" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                        <TextBlock Text="{Binding Actividad}" FontSize="28" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,5"/>
-                        <StackPanel Orientation="Horizontal">
-                            <ui:SymbolIcon Symbol="CalendarClock24" Foreground="#AAAAAA" Margin="0,0,8,0"/>
-                            <TextBlock Text="{Binding FechaMartes, StringFormat='Semana del {0:dd de MMMM}'}" Foreground="#AAAAAA" FontSize="14"/>
                         </StackPanel>
+
+                        <!-- OTRAS ACTIVIDADES -->
+                        <StackPanel x:Name="PanelOtraActividad"
+                                    Grid.Column="1"
+                                    VerticalAlignment="Center"
+                                    Visibility="Collapsed">
+                            <TextBlock Text="ACTIVIDAD PROGRAMADA"
+                                       FontSize="12"
+                                       FontWeight="Bold"
+                                       Foreground="#AAAAAA"
+                                       Margin="0,0,0,5"/>
+                            <TextBlock Text="{Binding Actividad}"
+                                       FontSize="28"
+                                       FontWeight="SemiBold"
+                                       TextWrapping="Wrap"
+                                       Margin="0,0,0,5"/>
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="CalendarClock24"
+                                               Foreground="#AAAAAA"
+                                               Margin="0,0,8,0"/>
+                                <TextBlock x:Name="TxtRangoSemanaOtra"
+                                           Foreground="#AAAAAA"
+                                           FontSize="14"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <TextBlock x:Name="TxtSinDatos"
+                                   Grid.Column="1"
+                                   Text="No se ha detectado ninguna actividad para la semana actual."
+                                   Foreground="#AAAAAA"
+                                   FontSize="16"
+                                   TextWrapping="Wrap"
+                                   HorizontalAlignment="Left"
+                                   VerticalAlignment="Center"
+                                   Visibility="Collapsed"/>
+                    </Grid>
+                </ui:Card>
+
+                <!-- TARJETA 2: PROGRAMA DEL DÍA -->
+                <ui:Card x:Name="PanelProgramaDia"
+                         Width="760"
+                         MinHeight="190"
+                         VerticalAlignment="Top"
+                         Padding="18"
+                         Background="#0AFFFFFF"
+                         BorderBrush="#1AFFFFFF"
+                         Margin="0,0,0,15"
+                         Visibility="Collapsed">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <ui:Button x:Name="BtnProgramaDiaAnterior"
+                                       Grid.Column="0"
+                                       Icon="{ui:SymbolIcon ChevronLeft24}"
+                                       Appearance="Transparent"
+                                       Padding="6"
+                                       Cursor="Hand"
+                                       ToolTip="Día anterior"
+                                       Click="BtnProgramaDiaAnterior_Click"/>
+
+                            <TextBlock x:Name="TxtFechaProgramaDia"
+                                       Grid.Column="1"
+                                       Foreground="#FFB900"
+                                       FontSize="14"
+                                       FontWeight="Bold"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
+
+                            <ui:Button x:Name="BtnProgramaDiaSiguiente"
+                                       Grid.Column="2"
+                                       Icon="{ui:SymbolIcon ChevronRight24}"
+                                       Appearance="Transparent"
+                                       Padding="6"
+                                       Cursor="Hand"
+                                       ToolTip="Día siguiente"
+                                       Click="BtnProgramaDiaSiguiente_Click"/>
+                        </Grid>
+
+                        <TextBlock x:Name="TxtSinProgramaDia"
+                                   Text="No hay actividades programadas para este día."
+                                   Foreground="#777777"
+                                   FontSize="13"
+                                   FontStyle="Italic"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,8,0,4"
+                                   Visibility="Collapsed"/>
+
+                        <ItemsControl x:Name="ListaProgramaHoy">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#202023"
+                                            BorderBrush="#333338"
+                                            BorderThickness="1"
+                                            CornerRadius="6"
+                                            Padding="10"
+                                            Margin="0,0,0,8">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="70"/>
+                                                <ColumnDefinition Width="75"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <TextBlock Grid.Column="0"
+                                                       Text="{Binding Hora}"
+                                                       FontWeight="Bold"
+                                                       Foreground="#4BA3E3"
+                                                       FontSize="15"
+                                                       VerticalAlignment="Center"/>
+
+                                            <Border Grid.Column="1"
+                                                    Background="#333338"
+                                                    CornerRadius="4"
+                                                    Padding="6,3"
+                                                    Margin="0,0,10,0"
+                                                    HorizontalAlignment="Left"
+                                                    VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Responsable}"
+                                                           Foreground="#EBCB8B"
+                                                           FontSize="12"
+                                                           FontWeight="SemiBold"/>
+                                            </Border>
+
+                                            <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding TipoActividad}"
+                                                           Foreground="White"
+                                                           FontSize="14"
+                                                           FontWeight="SemiBold"
+                                                           TextWrapping="Wrap"/>
+                                                <TextBlock Text="{Binding CompaneroNombre, StringFormat='Con {0}'}"
+                                                           Foreground="#AAAAAA"
+                                                           FontSize="13"
+                                                           Visibility="{Binding VerCompanero}"/>
+                                                <TextBlock Text="{Binding Ubicacion}"
+                                                           Foreground="#888888"
+                                                           FontSize="12"
+                                                           TextWrapping="Wrap"
+                                                           Visibility="{Binding VerUbicacion}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                     </StackPanel>
-
-                    <!-- Mensaje por si no hay ninguna semana marcada como actual -->
-                    <TextBlock x:Name="TxtSinDatos" Grid.Column="1" Text="No se ha detectado ninguna actividad para la semana actual." 
-                               Foreground="#AAAAAA" FontSize="16" HorizontalAlignment="Left" VerticalAlignment="Center" Visibility="Collapsed"/>
-
-                    <!-- Botón de Acción (Solo visible si es visita) -->
-                    <ui:Button x:Name="BtnVerVisita" Grid.Column="2" 
-                               Content="Ver detalles de la visita" 
-                               Appearance="Primary" 
-                               Icon="{ui:SymbolIcon ArrowRight24}" 
-                               Padding="20,12" 
-                               FontSize="14"
-                               VerticalAlignment="Center"
-                               Visibility="Collapsed"
-                               Click="BtnVerVisita_Click"/>
-                </Grid>
-            </ui:Card>
+                </ui:Card>
+            </WrapPanel>
 
             <!-- Título Estadísticas -->
             <TextBlock Grid.Row="3" Text="Resumen del circuito" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,15"/>

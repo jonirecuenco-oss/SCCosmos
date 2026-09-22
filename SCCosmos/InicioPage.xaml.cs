@@ -1,227 +1,591 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using Microsoft.Data.Sqlite;
-using System.Threading.Tasks;
-using System.Collections.Generic;
 
 namespace SCCosmos
 {
     public partial class InicioPage : Page
     {
+        private SemanaCalendario _semanaActual;
+        private DateTime _lunesSemanaActual;
+        private DateTime _domingoSemanaActual;
+        private DateTime _fechaProgramaSeleccionada;
+        private string _codigoCongregacionPrograma = "";
+        private string _mesReferenciaPrograma = "";
+
         public InicioPage()
         {
             InitializeComponent();
             TxtSaludo.Text = $"¡Hola, {DatabaseHelper.ObtenerConfiguracion("NombreSC", "Jonatán")}!";
             CargarSemanaActual();
             _ = CargarEstadisticasAsync();
-
         }
 
+        // =====================================================
+        // SEMANA ACTUAL: LUNES A DOMINGO
+        // =====================================================
         private void CargarSemanaActual()
         {
             try
             {
-                // 1. CALCULAMOS QUÉ FECHA FUE EL MARTES DE ESTA SEMANA
                 DateTime hoy = DateTime.Today;
-                int diferencia = hoy.DayOfWeek - DayOfWeek.Tuesday;
 
-                // Si hoy es lunes, lo asociamos a la semana que empezó el martes anterior
-                if (diferencia < 0) diferencia += 7;
+                // DayOfWeek usa Sunday=0. Esta fórmula devuelve cuántos días
+                // han pasado desde el lunes de la semana natural actual.
+                int diasDesdeLunes =
+                    ((int)hoy.DayOfWeek - (int)DayOfWeek.Monday + 7) % 7;
 
-                DateTime martesDeEstaSemana = hoy.AddDays(-diferencia).Date;
+                _lunesSemanaActual =
+                    hoy.AddDays(-diasDesdeLunes).Date;
 
-                // 2. Convertimos el martes al formato exacto de tu base de datos (Ej: "2026-10-27")
-                string fechaIso = martesDeEstaSemana.ToString("yyyy-MM-dd");
+                _domingoSemanaActual =
+                    _lunesSemanaActual.AddDays(6).Date;
 
-                // 3. Usamos tu método exacto pasando esa fecha
-                var semanaActual = DatabaseHelper.ObtenerSemana(fechaIso);
+                // La tabla Semanas conserva históricamente FechaMartes como
+                // fecha identificadora. Para una semana lunes-domingo, el
+                // martes asociado es simplemente lunes + 1.
+                DateTime martesIdentificador =
+                    _lunesSemanaActual.AddDays(1);
 
-                if (semanaActual == null)
+                string fechaIso =
+                    martesIdentificador.ToString("yyyy-MM-dd");
+
+                _semanaActual =
+                    DatabaseHelper.ObtenerSemana(fechaIso);
+
+                PanelVisita.Visibility = Visibility.Collapsed;
+                PanelOtraActividad.Visibility = Visibility.Collapsed;
+                PanelProgramaDia.Visibility = Visibility.Collapsed;
+                BtnVerVisita.Visibility = Visibility.Collapsed;
+                TxtSinDatos.Visibility = Visibility.Collapsed;
+                IconoActividad.Visibility = Visibility.Visible;
+
+                if (_semanaActual == null)
                 {
-                    // Si no hay datos guardados en la BD para la semana en curso, mostramos el aviso
                     TxtSinDatos.Visibility = Visibility.Visible;
                     IconoActividad.Visibility = Visibility.Collapsed;
                     return;
                 }
 
-                // 4. Vinculamos los datos encontrados al diseño de la página
-                this.DataContext = semanaActual;
+                DataContext = _semanaActual;
 
-                // 5. LÓGICA VISUAL
-                if (semanaActual.Actividad == "Visita")
+                string rango =
+                    $"Del {_lunesSemanaActual:dd MMM} al {_domingoSemanaActual:dd MMM yyyy}";
+
+                if (TxtRangoSemanaVisita != null)
+                {
+                    TxtRangoSemanaVisita.Text = rango;
+                }
+
+                if (TxtRangoSemanaOtra != null)
+                {
+                    TxtRangoSemanaOtra.Text =
+                        $"Semana del {_lunesSemanaActual:dd 'de' MMMM}";
+                }
+
+                if (string.Equals(
+                        _semanaActual.Actividad,
+                        "Visita",
+                        StringComparison.OrdinalIgnoreCase))
                 {
                     PanelVisita.Visibility = Visibility.Visible;
                     BtnVerVisita.Visibility = Visibility.Visible;
-                    IconoActividad.Symbol = Wpf.Ui.Controls.SymbolRegular.Building24;
+                    IconoActividad.Visibility = Visibility.Collapsed;
 
-                    // NUEVO: Cargar el programa del día si existe
-                    string congreCodigo = DatabaseHelper.ObtenerCodigoCongregacion(semanaActual.Congregacion);
-                    string mesReferenciaStr = martesDeEstaSemana.ToString("yyyy-MM");
-                    CargarProgramaDelDia(congreCodigo, mesReferenciaStr, hoy.DayOfWeek);
+                    _codigoCongregacionPrograma =
+                        DatabaseHelper.ObtenerCodigoCongregacion(
+                            _semanaActual.Congregacion);
+
+                    // El programa de la visita se guarda con el mes de la
+                    // semana/visita (FechaMartes), incluso cuando el domingo
+                    // cae en el mes siguiente.
+                    _mesReferenciaPrograma =
+                        _semanaActual.FechaMartes.ToString("yyyy-MM");
+
+                    _fechaProgramaSeleccionada = hoy.Date;
+                    CargarProgramaFecha(_fechaProgramaSeleccionada);
                 }
                 else
                 {
                     PanelOtraActividad.Visibility = Visibility.Visible;
-                    IconoActividad.Symbol = Wpf.Ui.Controls.SymbolRegular.CalendarStar24;
-                    IconoActividad.Foreground = new System.Windows.Media.SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#AAAAAA"));
+                    IconoActividad.Visibility = Visibility.Visible;
+                    IconoActividad.Symbol =
+                        Wpf.Ui.Controls.SymbolRegular.CalendarStar24;
+                    IconoActividad.Foreground =
+                        new System.Windows.Media.SolidColorBrush(
+                            (System.Windows.Media.Color)
+                            System.Windows.Media.ColorConverter.ConvertFromString(
+                                "#AAAAAA"));
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"No se pudo cargar la información de la semana actual: {ex.Message}");
+                MessageBox.Show(
+                    $"No se pudo cargar la información de la semana actual: {ex.Message}");
             }
         }
 
-        private void CargarProgramaDelDia(string congreCodigo, string mesReferenciaStr, DayOfWeek diaHoy)
+        // =====================================================
+        // PROGRAMA DEL DÍA
+        // =====================================================
+        private void CargarProgramaFecha(DateTime fecha)
         {
-            // Traducimos el DayOfWeek al formato string que usa la base de datos del Programa
-            string diaDbStr = "";
-            switch (diaHoy)
+            if (_semanaActual == null
+                || !string.Equals(
+                    _semanaActual.Actividad,
+                    "Visita",
+                    StringComparison.OrdinalIgnoreCase))
             {
-                case DayOfWeek.Wednesday: diaDbStr = "Miércoles"; break;
-                case DayOfWeek.Thursday: diaDbStr = "Jueves"; break;
-                case DayOfWeek.Friday: diaDbStr = "Viernes"; break;
-                case DayOfWeek.Saturday: diaDbStr = "Sábado"; break;
-                case DayOfWeek.Sunday: diaDbStr = "Domingo"; break;
-                default: return; // Lunes y Martes no tienen programa de predicación guardado
+                PanelProgramaDia.Visibility = Visibility.Collapsed;
+                return;
             }
 
-            var programaDeHoy = new List<ActividadHoy>();
-            string[] turnos = { "1. MAÑANA", "2. MEDIODÍA", "3. TARDE", "4. NOCHE" };
+            _fechaProgramaSeleccionada = fecha.Date;
 
-            // Extraemos todo lo programado para este día exacto
-            foreach (var turno in turnos)
+            if (_fechaProgramaSeleccionada < _lunesSemanaActual)
             {
-                string turnoLimpio = turno.Substring(3); // Quita el "1. "
+                _fechaProgramaSeleccionada = _lunesSemanaActual;
+            }
+            else if (_fechaProgramaSeleccionada > _domingoSemanaActual)
+            {
+                _fechaProgramaSeleccionada = _domingoSemanaActual;
+            }
 
-                // Recopilamos a Joni, Rebe y Comidas del mismo turno
-                var responsables = new[] { "Joni", "Rebe", "Comida", "Cenar", "Dormir" };
+            BtnProgramaDiaAnterior.IsEnabled =
+                _fechaProgramaSeleccionada > _lunesSemanaActual;
 
-                foreach (var resp in responsables)
+            BtnProgramaDiaSiguiente.IsEnabled =
+                _fechaProgramaSeleccionada < _domingoSemanaActual;
+
+            TxtFechaProgramaDia.Text =
+                FormatearFechaPrograma(
+                    _fechaProgramaSeleccionada);
+
+            string diaDb =
+                ObtenerNombreDiaPrograma(
+                    _fechaProgramaSeleccionada.DayOfWeek);
+
+            var actividadesMes =
+                string.IsNullOrWhiteSpace(_codigoCongregacionPrograma)
+                    ? new List<DatabaseHelper.ActividadPrograma>()
+                    : DatabaseHelper.ObtenerActividadesProgramaMes(
+                        _codigoCongregacionPrograma,
+                        _mesReferenciaPrograma);
+
+            var programa =
+                actividadesMes
+                    .Where(a =>
+                        string.Equals(
+                            a.DiaSemana?.Trim(),
+                            diaDb,
+                            StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(a => ObtenerOrdenHora(a.Hora))
+                    .ThenBy(a => a.Id)
+                    .Select(CrearActividadInicio)
+                    .ToList();
+
+            ListaProgramaHoy.ItemsSource = programa;
+            TxtSinProgramaDia.Visibility =
+                programa.Count == 0
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+
+            // Durante una visita el panel siempre se muestra, incluso si el
+            // día elegido está vacío, para que las flechas sigan disponibles.
+            PanelProgramaDia.Visibility = Visibility.Visible;
+        }
+
+        private ActividadHoy CrearActividadInicio(
+            DatabaseHelper.ActividadPrograma actividad)
+        {
+            string responsable =
+                NormalizarResponsablePrograma(
+                    actividad.Responsable);
+
+            string tipo =
+                actividad.TipoActividad?.Trim() ?? "";
+
+            if (string.IsNullOrWhiteSpace(tipo)
+                && EsActividadLegacy(actividad.Responsable))
+            {
+                tipo = actividad.Responsable.Trim();
+            }
+
+            if (string.IsNullOrWhiteSpace(tipo))
+            {
+                tipo = "Actividad";
+            }
+
+            Persona acompanante =
+                ObtenerPersonaActual(
+                    actividad.CompaneroId);
+
+            string nombreAcompanante =
+                ObtenerNombrePreferido(
+                    acompanante);
+
+            string ubicacion =
+                actividad.Direccion?.Trim() ?? "";
+
+            return new ActividadHoy
+            {
+                Hora =
+                    string.IsNullOrWhiteSpace(actividad.Hora)
+                        ? "--:--"
+                        : actividad.Hora.Trim(),
+                Responsable = responsable,
+                TipoActividad = tipo,
+                CompaneroNombre =
+                    string.IsNullOrWhiteSpace(nombreAcompanante)
+                        ? "Sin acompañante"
+                        : nombreAcompanante,
+                Ubicacion =
+                    string.IsNullOrWhiteSpace(ubicacion)
+                        ? ""
+                        : "📍 " + ubicacion,
+                VerCompanero = Visibility.Visible,
+                VerUbicacion =
+                    string.IsNullOrWhiteSpace(ubicacion)
+                        ? Visibility.Collapsed
+                        : Visibility.Visible
+            };
+        }
+
+        private void BtnProgramaDiaAnterior_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            if (_fechaProgramaSeleccionada > _lunesSemanaActual)
+            {
+                CargarProgramaFecha(
+                    _fechaProgramaSeleccionada.AddDays(-1));
+            }
+        }
+
+        private void BtnProgramaDiaSiguiente_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            if (_fechaProgramaSeleccionada < _domingoSemanaActual)
+            {
+                CargarProgramaFecha(
+                    _fechaProgramaSeleccionada.AddDays(1));
+            }
+        }
+
+        private static string ObtenerNombreDiaPrograma(
+            DayOfWeek dia)
+        {
+            switch (dia)
+            {
+                case DayOfWeek.Monday: return "Lunes";
+                case DayOfWeek.Tuesday: return "Martes";
+                case DayOfWeek.Wednesday: return "Miércoles";
+                case DayOfWeek.Thursday: return "Jueves";
+                case DayOfWeek.Friday: return "Viernes";
+                case DayOfWeek.Saturday: return "Sábado";
+                case DayOfWeek.Sunday: return "Domingo";
+                default: return "";
+            }
+        }
+
+        private static string FormatearFechaPrograma(
+            DateTime fecha)
+        {
+            CultureInfo es =
+                CultureInfo.GetCultureInfo("es-ES");
+
+            string texto =
+                fecha.ToString(
+                    "dddd, d 'de' MMMM 'de' yyyy",
+                    es);
+
+            return char.ToUpper(texto[0]) + texto.Substring(1);
+        }
+
+        private static int ObtenerOrdenHora(string hora)
+        {
+            if (string.IsNullOrWhiteSpace(hora))
+            {
+                return int.MaxValue;
+            }
+
+            string[] formatos =
+            {
+                @"h\:mm",
+                @"hh\:mm",
+                @"h\.mm",
+                @"hh\.mm"
+            };
+
+            if (TimeSpan.TryParseExact(
+                    hora.Trim(),
+                    formatos,
+                    CultureInfo.InvariantCulture,
+                    out TimeSpan ts))
+            {
+                return (int)ts.TotalMinutes;
+            }
+
+            if (DateTime.TryParse(
+                    hora,
+                    CultureInfo.GetCultureInfo("es-ES"),
+                    DateTimeStyles.NoCurrentDateDefault,
+                    out DateTime dt))
+            {
+                return dt.Hour * 60 + dt.Minute;
+            }
+
+            return int.MaxValue - 1;
+        }
+
+        private static string NormalizarResponsablePrograma(
+            string responsable)
+        {
+            string valor =
+                responsable?.Trim() ?? "";
+
+            if (string.Equals(
+                    valor,
+                    "Ambos",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return "Ambos";
+            }
+
+            if (string.Equals(
+                    valor,
+                    "Rebe",
+                    StringComparison.OrdinalIgnoreCase)
+                || string.Equals(
+                    valor,
+                    "Esposa",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return "Esposa";
+            }
+
+            return "SC";
+        }
+
+        private static bool EsActividadLegacy(string responsable)
+        {
+            string valor =
+                responsable?.Trim() ?? "";
+
+            return
+                string.Equals(valor, "Comida", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(valor, "Cenar", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(valor, "Dormir", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static Persona ObtenerPersonaActual(int personaId)
+        {
+            if (personaId <= 0)
+            {
+                return null;
+            }
+
+            Persona persona =
+                DatabaseHelper.ObtenerPersonaPorId(personaId);
+
+            if (persona != null
+                && persona.PersonaRaizId > 0)
+            {
+                Persona raiz =
+                    DatabaseHelper.ObtenerPersonaPorId(
+                        persona.PersonaRaizId);
+
+                if (raiz != null)
                 {
-                    var actividades = DatabaseHelper.ObtenerActividadesPrograma(congreCodigo, mesReferenciaStr, diaDbStr, turnoLimpio, resp);
-                    foreach (var act in actividades)
-                    {
-                        var comp = DatabaseHelper.ObtenerPersonaPorId(act.CompaneroId);
-                        string nombreComp = comp != null ? comp.Nombre.Split(' ')[0] : "Alguien";
-
-                        programaDeHoy.Add(new ActividadHoy
-                        {
-                            Hora = act.Hora,
-                            TipoActividad = act.TipoActividad,
-                            CompaneroNombre = nombreComp,
-                            VerCompanero = (resp == "Comida" || resp == "Cenar" || resp == "Dormir") ? Visibility.Collapsed : Visibility.Visible
-                        });
-                    }
+                    persona = raiz;
                 }
             }
 
-            if (programaDeHoy.Count > 0)
-            {
-                // Ordenamos por hora para que quede un planning secuencial perfecto
-                var programaOrdenado = programaDeHoy.OrderBy(a => a.Hora).ToList();
-                ListaProgramaHoy.ItemsSource = programaOrdenado;
-                PanelProgramaDia.Visibility = Visibility.Visible;
-            }
+            return persona;
         }
 
-        private void BtnVerVisita_Click(object sender, RoutedEventArgs e)
+        private static string ObtenerNombrePreferido(Persona persona)
+        {
+            if (persona == null)
+            {
+                return "";
+            }
+
+            if (!string.IsNullOrWhiteSpace(persona.NombreComun))
+            {
+                return persona.NombreComun.Trim();
+            }
+
+            if (!string.IsNullOrWhiteSpace(persona.NombreJWHub))
+            {
+                return persona.NombreJWHub.Trim();
+            }
+
+            return persona.Nombre?.Trim() ?? "";
+        }
+
+        private void BtnVerVisita_Click(
+            object sender,
+            RoutedEventArgs e)
         {
             try
             {
-                var semanaActual = this.DataContext as SemanaCalendario;
+                var semanaActual =
+                    DataContext as SemanaCalendario;
 
-                if (semanaActual != null && !string.IsNullOrEmpty(semanaActual.Congregacion))
+                if (semanaActual != null
+                    && !string.IsNullOrEmpty(
+                        semanaActual.Congregacion))
                 {
-                    string congreCodigo = DatabaseHelper.ObtenerCodigoCongregacion(semanaActual.Congregacion);
-                    VisitasPage.CodigoPendiente = congreCodigo;
-                    VisitasPage.NombrePendiente = semanaActual.Congregacion;
-                    VisitasPage.MesPendiente = semanaActual.FechaMartes.ToString("yyyy-MM");
+                    string congreCodigo =
+                        DatabaseHelper.ObtenerCodigoCongregacion(
+                            semanaActual.Congregacion);
 
-                    var ventanaPrincipal = Application.Current.MainWindow as MainWindow;
-                    if (ventanaPrincipal != null)
-                    {
-                        ventanaPrincipal.MenuPrincipal.Navigate(typeof(VisitasPage));
-                    }
+                    VisitasPage.CodigoPendiente = congreCodigo;
+                    VisitasPage.NombrePendiente =
+                        semanaActual.Congregacion;
+                    VisitasPage.MesPendiente =
+                        semanaActual.FechaMartes.ToString("yyyy-MM");
+
+                    var ventanaPrincipal =
+                        Application.Current.MainWindow as MainWindow;
+
+                    ventanaPrincipal
+                        ?.MenuPrincipal
+                        .Navigate(typeof(VisitasPage));
                 }
                 else
                 {
-                    System.Windows.MessageBox.Show("No hay datos de una congregación válida para esta semana.");
+                    MessageBox.Show(
+                        "No hay datos de una congregación válida para esta semana.");
                 }
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show($"Error al intentar abrir la visita: {ex.Message}");
+                MessageBox.Show(
+                    $"Error al intentar abrir la visita: {ex.Message}");
             }
         }
 
-        // ==========================================
-        // CÁLCULO DE ESTADÍSTICAS DEL CIRCUITO
-        // ==========================================
+        // =====================================================
+        // ESTADÍSTICAS DEL CIRCUITO: SOLO FICHAS ACTUALES
+        // =====================================================
         private async Task CargarEstadisticasAsync()
         {
-            // Usamos Task.Run para que las consultas SQL se hagan en segundo plano sin congelar la UI
-            var stats = await Task.Run(() => ObtenerContadoresDesdeBD());
+            var stats =
+                await Task.Run(
+                    ObtenerContadoresDesdeBD);
 
-            // Una vez terminadas las consultas, actualizamos la interfaz gráfica
-            TxtTotalPrecReg.Text = stats.PrecRegulares.ToString();
-            TxtTotalPrecEsp.Text = stats.PrecEspeciales.ToString();
-            TxtTotalAncianos.Text = stats.Ancianos.ToString();
-            TxtTotalSM.Text = stats.SiervosM.ToString();
-            TxtTotalA2.Text = stats.SolA2.ToString();
-            TxtTotalA19.Text = stats.SolA19.ToString();
-            TxtTotalA8.Text = stats.SolA8.ToString();
-            TxtTotalG8.Text = stats.SolG8.ToString();
+            TxtTotalPrecReg.Text =
+                stats.PrecRegulares.ToString();
+            TxtTotalPrecEsp.Text =
+                stats.PrecEspeciales.ToString();
+            TxtTotalAncianos.Text =
+                stats.Ancianos.ToString();
+            TxtTotalSM.Text =
+                stats.SiervosM.ToString();
+            TxtTotalA2.Text =
+                stats.SolA2.ToString();
+            TxtTotalA19.Text =
+                stats.SolA19.ToString();
+            TxtTotalA8.Text =
+                stats.SolA8.ToString();
+            TxtTotalG8.Text =
+                stats.SolG8.ToString();
         }
 
         private EstadisticasCircuito ObtenerContadoresDesdeBD()
         {
-            var res = new EstadisticasCircuito();
-
-            // Nos conectamos a la BD usando la ruta oficial de tu DatabaseHelper
-            string dbPath = System.IO.Path.Combine(DatabaseHelper.RutaDirectorioDatos, "sccosmos.db");
-            string connectionString = $"Data Source={dbPath}";
+            var res =
+                new EstadisticasCircuito();
 
             try
             {
-                using (var connection = new SqliteConnection(connectionString))
-                {
-                    connection.Open();
+                // ObtenerPersonas() es la misma fuente que usa PersonasPage y
+                // devuelve solo las filas actuales (MesHistorico IS NULL).
+                List<Persona> personasActuales =
+                    DatabaseHelper.ObtenerPersonas();
 
-                    res.PrecRegulares = EjecutarCount(connection, "SELECT COUNT(*) FROM Personas WHERE Servicio LIKE '%Precursor regular%';");
-                    res.PrecEspeciales = EjecutarCount(connection, "SELECT COUNT(*) FROM Personas WHERE Servicio LIKE '%Precursor especial%';");
+                res.PrecRegulares =
+                    personasActuales.Count(p =>
+                        Contiene(
+                            p.Servicio,
+                            "Precursor regular"));
 
-                    res.Ancianos = EjecutarCount(connection, "SELECT COUNT(*) FROM Personas WHERE Nombramiento LIKE '%Anciano%';");
-                    res.SiervosM = EjecutarCount(connection, "SELECT COUNT(*) FROM Personas WHERE Nombramiento LIKE '%Siervo ministerial%';");
+                res.PrecEspeciales =
+                    personasActuales.Count(p =>
+                        Contiene(
+                            p.Servicio,
+                            "Precursor especial"));
 
-                    res.SolA2 = EjecutarCount(connection, "SELECT COUNT(*) FROM Personas WHERE Solicitudes LIKE '%A-2%';");
-                    res.SolA19 = EjecutarCount(connection, "SELECT COUNT(*) FROM Personas WHERE Solicitudes LIKE '%A-19%';");
+                res.Ancianos =
+                    personasActuales.Count(p =>
+                        Contiene(
+                            p.Nombramiento,
+                            "Anciano"));
 
-                    res.SolA8 = EjecutarCount(connection, "SELECT COUNT(*) FROM Personas WHERE Solicitudes LIKE '%A-8%';");
-                    res.SolG8 = EjecutarCount(connection, "SELECT COUNT(*) FROM Personas WHERE Solicitudes LIKE '%G-8%';");
-                }
+                res.SiervosM =
+                    personasActuales.Count(p =>
+                        Contiene(
+                            p.Nombramiento,
+                            "Siervo ministerial"));
+
+                res.SolA2 =
+                    personasActuales.Count(p =>
+                        Contiene(
+                            p.Solicitudes,
+                            "A-2"));
+
+                res.SolA19 =
+                    personasActuales.Count(p =>
+                        Contiene(
+                            p.Solicitudes,
+                            "A-19"));
+
+                res.SolA8 =
+                    personasActuales.Count(p =>
+                        Contiene(
+                            p.Solicitudes,
+                            "A-8"));
+
+                res.SolG8 =
+                    personasActuales.Count(p =>
+                        Contiene(
+                            p.Solicitudes,
+                            "G-8"));
             }
-            catch { } // Si la BD aún no está inicializada o falla, se quedarán en 0.
+            catch
+            {
+                // Si la BD aún no está inicializada, se muestran ceros.
+            }
 
             return res;
         }
 
-        private int EjecutarCount(SqliteConnection connection, string query)
+        private static bool Contiene(
+            string texto,
+            string valor)
         {
-            using (var cmd = connection.CreateCommand())
-            {
-                cmd.CommandText = query;
-                var resultado = cmd.ExecuteScalar();
-                return resultado != null && resultado != DBNull.Value ? Convert.ToInt32(resultado) : 0;
-            }
+            return
+                !string.IsNullOrWhiteSpace(texto)
+                && texto.IndexOf(
+                    valor,
+                    StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private void NavegarAPersonas()
         {
-            var ventanaPrincipal = Application.Current.MainWindow as MainWindow;
-            ventanaPrincipal?.MenuPrincipal.Navigate(typeof(PersonasPage));
+            var ventanaPrincipal =
+                Application.Current.MainWindow as MainWindow;
+
+            ventanaPrincipal
+                ?.MenuPrincipal
+                .Navigate(typeof(PersonasPage));
         }
 
         private void CardPrecReg_Click(object sender, System.Windows.Input.MouseButtonEventArgs e) { PersonasPage.FiltroPendienteServicio = "Precursor regular"; NavegarAPersonas(); }
@@ -233,27 +597,27 @@ namespace SCCosmos
         private void CardA8_Click(object sender, System.Windows.Input.MouseButtonEventArgs e) { PersonasPage.FiltroPendienteSolicitud = "A-8"; NavegarAPersonas(); }
         private void CardG8_Click(object sender, System.Windows.Input.MouseButtonEventArgs e) { PersonasPage.FiltroPendienteSolicitud = "G-8"; NavegarAPersonas(); }
 
-        // ==========================================
-        // CLASES DE DATOS
-        // ==========================================
         private class EstadisticasCircuito
         {
-            public int PrecRegulares { get; set; } = 0;
-            public int PrecEspeciales { get; set; } = 0;
-            public int Ancianos { get; set; } = 0;
-            public int SiervosM { get; set; } = 0;
-            public int SolA2 { get; set; } = 0;
-            public int SolA19 { get; set; } = 0;
-            public int SolA8 { get; set; } = 0; // NUEVO
-            public int SolG8 { get; set; } = 0; // NUEVO
+            public int PrecRegulares { get; set; }
+            public int PrecEspeciales { get; set; }
+            public int Ancianos { get; set; }
+            public int SiervosM { get; set; }
+            public int SolA2 { get; set; }
+            public int SolA19 { get; set; }
+            public int SolA8 { get; set; }
+            public int SolG8 { get; set; }
         }
 
         public class ActividadHoy
         {
             public string Hora { get; set; }
+            public string Responsable { get; set; }
             public string TipoActividad { get; set; }
             public string CompaneroNombre { get; set; }
+            public string Ubicacion { get; set; }
             public Visibility VerCompanero { get; set; }
+            public Visibility VerUbicacion { get; set; }
         }
     }
 }

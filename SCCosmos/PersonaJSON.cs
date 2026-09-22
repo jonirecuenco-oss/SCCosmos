@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace SCCosmos
@@ -34,7 +34,6 @@ namespace SCCosmos
 
         [JsonPropertyName("informe")]
         public List<InformeJson> Informe { get; set; }
-
     }
 
     public class InformeJson
