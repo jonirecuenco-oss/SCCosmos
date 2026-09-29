@@ -62,7 +62,7 @@
 
                         <TextBlock Grid.Row="0"
                                    Grid.Column="2"
-                                   Text="Acompañante / familia"
+                                   Text="Acompañante / familia (opcional)"
                                    Foreground="#AAAAAA"
                                    FontSize="12"
                                    Margin="0,0,0,6"/>
@@ -123,7 +123,7 @@
 
                         <TextBlock Grid.Row="0"
                                    Grid.Column="2"
-                                   Text="Actividad / descripción"
+                                   Text="Tipo de actividad"
                                    Foreground="#AAAAAA"
                                    FontSize="12"
                                    Margin="0,0,0,6"/>
@@ -139,15 +139,28 @@
                                  BorderBrush="#444444"
                                  ToolTip="Ejemplo: 10:00"/>
 
-                        <TextBox x:Name="TxtTipoActividad"
-                                 Grid.Row="1"
-                                 Grid.Column="2"
-                                 MinHeight="40"
-                                 Padding="9"
-                                 TextWrapping="Wrap"
-                                 Background="#2A2A2A"
-                                 Foreground="White"
-                                 BorderBrush="#444444"/>
+                        <ComboBox x:Name="TxtTipoActividad"
+                                  Grid.Row="1"
+                                  Grid.Column="2"
+                                  Height="40"
+                                  Padding="9,4"
+                                  IsEditable="True"
+                                  IsTextSearchEnabled="False"
+                                  Background="#2A2A2A"
+                                  Foreground="White"
+                                  BorderBrush="#444444"
+                                  ToolTip="Selecciona un tipo predefinido o escribe uno personalizado">
+                            <ComboBoxItem Content="RSC"/>
+                            <ComboBoxItem Content="Predicación"/>
+                            <ComboBoxItem Content="Visita de pastoreo"/>
+                            <ComboBoxItem Content="Reunión entre semana"/>
+                            <ComboBoxItem Content="Reunión fin de semana"/>
+                            <ComboBoxItem Content="Reunión de precursores"/>
+                            <ComboBoxItem Content="Reunión A/SM"/>
+                            <ComboBoxItem Content="Comida"/>
+                            <ComboBoxItem Content="Alojamiento"/>
+                            <ComboBoxItem Content="Otra"/>
+                        </ComboBox>
 
                         <TextBlock Grid.Row="2"
                                    Grid.Column="0"
@@ -227,6 +240,7 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
                             <TextBlock x:Name="TxtCoordenadas"
@@ -240,13 +254,86 @@
                                     Content="Buscar coordenadas"
                                     Click="BtnBuscarCoordenadas_Click"
                                     Padding="11,6"
+                                    Margin="8,0,0,0"
+                                    Background="#333333"
+                                    Foreground="White"
+                                    BorderBrush="#555555"
+                                    Cursor="Hand"/>
+
+                            <Button x:Name="BtnCoordenadasManuales"
+                                    Grid.Column="2"
+                                    Content="Fijar manualmente"
+                                    Click="BtnCoordenadasManuales_Click"
+                                    Padding="11,6"
+                                    Margin="8,0,0,0"
                                     Background="#333333"
                                     Foreground="White"
                                     BorderBrush="#555555"
                                     Cursor="Hand"/>
                         </Grid>
 
-                        <TextBlock Text="Puedes usar la dirección del acompañante o la del Salón del Reino. Si escribes una ubicación manualmente, al guardar se intentará geolocalizar."
+                        <Border x:Name="PanelCoordenadasManuales"
+                                Visibility="Collapsed"
+                                Background="#202023"
+                                BorderBrush="#3A3A3E"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                Padding="12"
+                                Margin="0,10,0,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0"
+                                           Text="Latitud"
+                                           Foreground="#AAAAAA"
+                                           FontSize="11"
+                                           Margin="0,0,0,5"/>
+                                <TextBlock Grid.Row="0" Grid.Column="2"
+                                           Text="Longitud"
+                                           Foreground="#AAAAAA"
+                                           FontSize="11"
+                                           Margin="0,0,0,5"/>
+
+                                <TextBox x:Name="TxtLatitudManual"
+                                         Grid.Row="1" Grid.Column="0"
+                                         Height="36"
+                                         Padding="8"
+                                         Background="#2A2A2A"
+                                         Foreground="White"
+                                         BorderBrush="#444444"
+                                         ToolTip="Ejemplo: 38.722252"/>
+
+                                <TextBox x:Name="TxtLongitudManual"
+                                         Grid.Row="1" Grid.Column="2"
+                                         Height="36"
+                                         Padding="8"
+                                         Background="#2A2A2A"
+                                         Foreground="White"
+                                         BorderBrush="#444444"
+                                         ToolTip="Ejemplo: -6.537110"/>
+
+                                <Button Grid.Row="1" Grid.Column="3"
+                                        Content="Aplicar"
+                                        Click="BtnAplicarCoordenadasManuales_Click"
+                                        Padding="12,7"
+                                        Margin="10,0,0,0"
+                                        Background="#0078D4"
+                                        Foreground="White"
+                                        BorderThickness="0"
+                                        Cursor="Hand"/>
+                            </Grid>
+                        </Border>
+
+                        <TextBlock Text="Puedes usar la dirección del acompañante o la del Salón del Reino. Si la dirección completa (por ejemplo, con piso o puerta) no se puede geolocalizar, puedes conservarla tal cual y fijar las coordenadas manualmente."
                                    Foreground="#777777"
                                    FontSize="11"
                                    TextWrapping="Wrap"
@@ -265,6 +352,16 @@
 
             <Button Content="Cancelar"
                     Click="BtnCancelar_Click"
+                    Padding="18,9"
+                    Margin="0,0,10,0"
+                    Background="#333333"
+                    Foreground="White"
+                    BorderBrush="#555555"
+                    Cursor="Hand"/>
+
+            <Button x:Name="BtnReplicarTodosDias"
+                    Content="Replicar todos los días"
+                    Click="BtnReplicarTodosDias_Click"
                     Padding="18,9"
                     Margin="0,0,10,0"
                     Background="#333333"

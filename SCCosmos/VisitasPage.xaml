@@ -204,6 +204,43 @@
                     </Expander.Header>
 
                     <StackPanel Margin="10,15,10,10">
+                        <Border Background="#1C1C1F"
+                                BorderBrush="#303035"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="12,9"
+                                Margin="0,0,0,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="Programa semanal"
+                                               Foreground="White"
+                                               FontWeight="SemiBold"
+                                               FontSize="13"/>
+                                    <TextBlock Text="Puedes añadir actividades manualmente o importar toda la semana desde un archivo JSON."
+                                               Foreground="#888888"
+                                               FontSize="11"
+                                               Margin="0,2,12,0"
+                                               TextWrapping="Wrap"/>
+                                </StackPanel>
+
+                                <Button Grid.Column="1"
+                                        Content="⇧ Importar JSON"
+                                        Click="BtnImportarProgramaJson_Click"
+                                        Padding="12,7"
+                                        Background="#2D5F8B"
+                                        Foreground="White"
+                                        BorderThickness="0"
+                                        Cursor="Hand"
+                                        VerticalAlignment="Center"
+                                        ToolTip="Importar actividades de miércoles a domingo"/>
+                            </Grid>
+                        </Border>
+
                         <ItemsControl x:Name="ListaProgramaDias"
                                       PreviewMouseWheel="UIElement_PreviewMouseWheel">
                             <ItemsControl.ItemTemplate>
@@ -501,6 +538,22 @@
                                                    FontSize="22"
                                                    FontWeight="Bold"
                                                    VerticalAlignment="Center"/>
+
+                                        <Border Width="1"
+                                                Height="26"
+                                                Background="#405A5A60"
+                                                Margin="14,0"/>
+
+                                        <TextBlock Text="Cursos bíblicos"
+                                                   Foreground="#AAAAAA"
+                                                   FontSize="12"
+                                                   VerticalAlignment="Center"
+                                                   Margin="0,0,10,0"/>
+                                        <TextBlock Text="{Binding TotalCursos}"
+                                                   Foreground="#FFB900"
+                                                   FontSize="22"
+                                                   FontWeight="Bold"
+                                                   VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Border>
                             </Grid>
@@ -608,6 +661,7 @@
                                                 <RowDefinition Height="Auto"/>
                                                 <RowDefinition Height="Auto"/>
                                                 <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
                                             </Grid.RowDefinitions>
                                             <TextBlock Text="Precursores regulares" Foreground="#AAAAAA" Margin="0,4"/>
                                             <TextBlock Grid.Column="1" Text="{Binding PrecursoresRegulares}" Foreground="White" FontWeight="SemiBold" Margin="12,4,0,4"/>
@@ -620,40 +674,14 @@
 
                                             <TextBlock Grid.Row="3" Text="Auxiliares últ. 6 meses" Foreground="#AAAAAA" Margin="0,4"/>
                                             <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Auxiliares6Meses}" Foreground="White" FontWeight="SemiBold" Margin="12,4,0,4"/>
+
+                                            <TextBlock Grid.Row="4" Text="Media CB / publicador" Foreground="#AAAAAA" Margin="0,4"/>
+                                            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding MediaCursos}" Foreground="#CCCCCC" FontWeight="SemiBold" Margin="12,4,0,4"/>
                                         </Grid>
                                     </StackPanel>
                                 </Border>
                             </UniformGrid>
 
-                            <Border Background="#1C1C1F"
-                                    BorderBrush="#303035"
-                                    BorderThickness="1"
-                                    CornerRadius="8"
-                                    Padding="14,10">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="18"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <TextBlock Text="Cursos bíblicos del mes"
-                                               Foreground="#AAAAAA"
-                                               VerticalAlignment="Center"/>
-                                    <TextBlock Grid.Column="1"
-                                               Text="{Binding TotalCursos}"
-                                               Foreground="White"
-                                               FontSize="18"
-                                               FontWeight="Bold"
-                                               VerticalAlignment="Center"/>
-
-                                    <TextBlock Grid.Column="3"
-                                               Text="{Binding MediaCursos, StringFormat='Media por publicador: {0}'}"
-                                               Foreground="#CCCCCC"
-                                               VerticalAlignment="Center"/>
-                                </Grid>
-                            </Border>
                         </StackPanel>
                     </Border>
                 </Expander>
@@ -1237,11 +1265,35 @@
                             </DataGrid.RowStyle>
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Mes" Binding="{Binding NombreMesVisual}" IsReadOnly="True" Width="2*" FontWeight="Bold"/>
-                                <DataGridTextColumn Header="Gastos" Binding="{Binding Gastos}" Width="1.5*"/>
-                                <DataGridTextColumn Header="Mantenim." Binding="{Binding Mantenimiento}" Width="1.5*"/>
-                                <DataGridTextColumn Header="Obra Mund." Binding="{Binding ObraMundial}" Width="1.5*"/>
-                                <DataGridTextColumn Header="Resolución" Binding="{Binding ObraResolucion}" Width="1.5*"/>
-                                <DataGridTextColumn Header="Saldo" Binding="{Binding Saldo}" Width="1.5*" FontWeight="Bold" Foreground="#55C855"/>
+                                <DataGridTextColumn Header="Gastos" Binding="{Binding Gastos, UpdateSourceTrigger=PropertyChanged}" Width="1.4*"/>
+                                <DataGridTextColumn Header="Mantenim." Binding="{Binding Mantenimiento, UpdateSourceTrigger=PropertyChanged}" Width="1.4*"/>
+                                <DataGridTextColumn Header="Obra Mund." Binding="{Binding ObraMundial, UpdateSourceTrigger=PropertyChanged}" Width="1.4*"/>
+                                <DataGridTextColumn Header="Resolución" Binding="{Binding ObraResolucion, UpdateSourceTrigger=PropertyChanged}" Width="1.4*"/>
+                                <DataGridTextColumn Header="Saldo máx." Binding="{Binding SaldoMaximo, UpdateSourceTrigger=PropertyChanged}" Width="1.4*"/>
+                                <DataGridTextColumn Header="Saldo" Binding="{Binding Saldo, UpdateSourceTrigger=PropertyChanged}" Width="1.4*" FontWeight="Bold">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="#55C855"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SaldoSuperaMaximo}" Value="True">
+                                                    <Setter Property="Foreground" Value="#FF5A5A"/>
+                                                    <Setter Property="FontWeight" Value="Bold"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                    <DataGridTextColumn.EditingElementStyle>
+                                        <Style TargetType="TextBox">
+                                            <Setter Property="Foreground" Value="#55C855"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SaldoSuperaMaximo}" Value="True">
+                                                    <Setter Property="Foreground" Value="#FF5A5A"/>
+                                                    <Setter Property="FontWeight" Value="Bold"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </DataGridTextColumn.EditingElementStyle>
+                                </DataGridTextColumn>
                                 <DataGridTextColumn Header="Promedio" Binding="{Binding Promedio}" IsReadOnly="True" Width="1.5*" Foreground="#FFB900" FontWeight="Bold"/>
                             </DataGrid.Columns>
                         </DataGrid>
@@ -1264,11 +1316,15 @@
                                                     <ColumnDefinition Width="*"/>
                                                     <ColumnDefinition Width="Auto"/>
                                                     <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Text="{Binding NombreVisual}" Foreground="White" VerticalAlignment="Center" TextWrapping="Wrap"/>
                                                 <Button Grid.Column="1" Content="{Binding TextoBoton}" Tag="{Binding}" Click="BtnEditarS303_Click" 
                                                         Background="#0078D4" Foreground="White" BorderThickness="0" Padding="10,5" Cursor="Hand" Margin="10,0,0,0"/>
-                                                <Button Grid.Column="2" Content="🗑️" Tag="{Binding}" Click="BtnEliminarS303_Click" Visibility="{Binding VerBotonBorrar}"
+                                                <Button Grid.Column="2" Content="💾" Tag="{Binding}" Click="BtnGuardarS303BD_Click" Visibility="{Binding VerBotonBorrar}"
+                                                        Background="Transparent" Foreground="#55C855" BorderThickness="0" Padding="5" Cursor="Hand" Margin="5,0,0,0"
+                                                        ToolTip="Guardar los cambios actuales del PDF en la base de datos" FontSize="16"/>
+                                                <Button Grid.Column="3" Content="🗑️" Tag="{Binding}" Click="BtnEliminarS303_Click" Visibility="{Binding VerBotonBorrar}"
                                                         Background="Transparent" Foreground="#FF5555" BorderThickness="0" Padding="5" Cursor="Hand" Margin="5,0,0,0" ToolTip="Eliminar PDF generado" FontSize="16"/>
                                             </Grid>
                                         </DataTemplate>

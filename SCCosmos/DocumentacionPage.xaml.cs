@@ -1,9 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -17,8 +18,6 @@ namespace SCCosmos
     {
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-
-        private readonly string _carpetaDestino = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ArchivosDocumentacion");
 
         // Diccionario para gestionar los Auto-Saves sin fugas de memoria
         private Dictionary<WebBrowser, DispatcherTimer> _wbTimers = new Dictionary<WebBrowser, DispatcherTimer>();
@@ -43,8 +42,9 @@ namespace SCCosmos
 
             this.DataContext = this;
 
-            if (!Directory.Exists(_carpetaDestino))
-                Directory.CreateDirectory(_carpetaDestino);
+            // Crea/migra una sola vez las variables que antes estaban fijas en código.
+            DatabaseHelper.InicializarVariablesCorrespondencia();
+            DatabaseHelper.MigrarDocumentosLegacyABlob();
 
             CargarCategorias();
         }
@@ -189,7 +189,8 @@ namespace SCCosmos
                 VisibilidadSimple = Visibility.Visible,
                 VisibilidadColumnas = Visibility.Collapsed,
                 VisibilidadAlojamientoEspecial = Visibility.Collapsed,
-                VisibilidadVariablesAsignacion = Visibility.Visible
+                VisibilidadVariablesAsignacion = Visibility.Visible,
+                GestionVariablesHabilitada = true
             };
             asigAsamblea.VarNombreAsignado = DatabaseHelper.ObtenerConfiguracion("VarNomAsig", "$_NOMBRE_ORADOR");
             asigAsamblea.VarApellidoAsignado = DatabaseHelper.ObtenerConfiguracion("VarApAsig", "$_APELLIDO_ORADOR");
@@ -197,6 +198,7 @@ namespace SCCosmos
             asigAsamblea.AsuntoEmail = DatabaseHelper.ObtenerConfiguracion("Asunto_" + asigAsamblea.Titulo, "Asignación para la asamblea de circuito");
             asigAsamblea.PlantillaEmail = DatabaseHelper.ObtenerConfiguracion("Email_" + asigAsamblea.Titulo, "Querido hermano,<br><br>Te enviamos adjunta tu asignación para la asamblea de circuito.<br><br>Un abrazo.");
             asigAsamblea.RecargarArchivos();
+            asigAsamblea.CargarVariables();
             listaAsambleas.Add(asigAsamblea);
 
             var asigPrec = new CategoriaVista
@@ -207,7 +209,8 @@ namespace SCCosmos
                 VisibilidadColumnas = Visibility.Collapsed,
                 VisibilidadAlojamientoEspecial = Visibility.Collapsed,
                 VisibilidadVariablesAsignacion = Visibility.Visible,
-                VisibilidadAsignacionPrec = Visibility.Visible
+                VisibilidadAsignacionPrec = Visibility.Visible,
+                GestionVariablesHabilitada = true
             };
             asigPrec.VarNombreAsignado = DatabaseHelper.ObtenerConfiguracion("VarNomAsigPrec", "$_NOMBRE_ORADOR");
             asigPrec.VarApellidoAsignado = DatabaseHelper.ObtenerConfiguracion("VarApAsigPrec", "$_APELLIDO_ORADOR");
@@ -215,6 +218,7 @@ namespace SCCosmos
             asigPrec.AsuntoEmail = DatabaseHelper.ObtenerConfiguracion("Asunto_" + asigPrec.Titulo, "Asignación reunión precursores");
             asigPrec.PlantillaEmail = DatabaseHelper.ObtenerConfiguracion("Email_" + asigPrec.Titulo, "Querido hermano,<br><br>Te enviamos adjunta tu asignación para la reunión de precursores.<br><br>Un abrazo.");
             asigPrec.RecargarArchivos();
+            asigPrec.CargarVariables();
             listaAsambleas.Add(asigPrec);
 
             var envioOrganigrama = new CategoriaVista
@@ -274,6 +278,7 @@ namespace SCCosmos
             }
             else if (titulo == "Documentación (con SCS)")
             {
+                cat.GestionVariablesHabilitada = true;
                 cat.VisibilidadVariablesSCS = Visibility.Visible;
                 cat.VarNombreSCS = DatabaseHelper.ObtenerConfiguracion("VarSCS", "$_NOMBRE_SCS");
                 cat.VarApellidoSCS = DatabaseHelper.ObtenerConfiguracion("VarApSCS", "$_APELLIDO_SCS");
@@ -281,6 +286,7 @@ namespace SCCosmos
             }
             else if (titulo == "Documentación (con visita de pastoreo)")
             {
+                cat.GestionVariablesHabilitada = true;
                 cat.VisibilidadVariablesPastoreo = Visibility.Visible;
                 cat.VarNombrePastoreo = DatabaseHelper.ObtenerConfiguracion("VarPastoreo", "$_NOMBRE_VISITA");
                 cat.VarApellidoPastoreo = DatabaseHelper.ObtenerConfiguracion("VarApPastoreo", "$_APELLIDO_VISITA");
@@ -290,6 +296,7 @@ namespace SCCosmos
             cat.AsuntoEmail = DatabaseHelper.ObtenerConfiguracion("Asunto_" + titulo, "Documentación de la visita");
             cat.PlantillaEmail = DatabaseHelper.ObtenerConfiguracion("Email_" + titulo, "Queridos hermanos,<br><br>Os enviamos adjunta la documentación para la próxima visita.<br><br>Recibid un fuerte abrazo.");
             cat.RecargarArchivos();
+            cat.CargarVariables();
 
             return cat;
         }
@@ -306,27 +313,46 @@ namespace SCCosmos
         private void BtnSubirArchivo_Click(object sender, RoutedEventArgs e)
         {
             var boton = sender as Button ?? sender as Wpf.Ui.Controls.Button;
-            if (boton == null) return;
+            if (boton == null || boton.Tag == null) return;
 
             string categoriaDBSave = boton.Tag.ToString();
-            OpenFileDialog ofd = new OpenFileDialog { Title = "Seleccionar documento", Filter = "Todos los archivos (*.*)|*.*|Documentos PDF (*.pdf)|*.pdf|Documentos Word (*.docx)|*.docx" };
 
-            if (ofd.ShowDialog() == true)
+            OpenFileDialog ofd = new OpenFileDialog
+            {
+                Title = "Seleccionar documentos",
+                Filter = "Todos los archivos (*.*)|*.*|Documentos PDF (*.pdf)|*.pdf|Documentos Word (*.docx)|*.docx",
+                Multiselect = true
+            };
+
+            if (ofd.ShowDialog() != true) return;
+
+            int guardados = 0;
+            var errores = new List<string>();
+
+            foreach (string ruta in ofd.FileNames)
             {
                 try
                 {
-                    string nombreArchivo = Path.GetFileName(ofd.FileName);
-                    string nombreUnico = Guid.NewGuid().ToString().Substring(0, 5) + "_" + nombreArchivo;
-                    string rutaFinal = Path.Combine(_carpetaDestino, nombreUnico);
-
-                    File.Copy(ofd.FileName, rutaFinal);
-                    DatabaseHelper.InsertarDocumento(categoriaDBSave, nombreArchivo, rutaFinal);
-                    RecargarSoloArchivos();
+                    // Se guarda el contenido binario directamente en SQLite.
+                    // RutaLocal queda únicamente como dato de compatibilidad legacy.
+                    DatabaseHelper.InsertarDocumentoDesdeArchivo(categoriaDBSave, ruta);
+                    guardados++;
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Error al subir el archivo: " + ex.Message);
+                    errores.Add($"{Path.GetFileName(ruta)}: {ex.Message}");
                 }
+            }
+
+            RecargarSoloArchivos();
+
+            if (errores.Count > 0)
+            {
+                MessageBox.Show(
+                    $"Se guardaron {guardados} archivo(s), pero {errores.Count} no pudieron añadirse:\n\n{string.Join("\n", errores)}",
+                    "Carga de documentos",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
             }
         }
 
@@ -371,6 +397,230 @@ namespace SCCosmos
         }
 
         // ==========================================
+        // VARIABLES DISPONIBLES
+        // ==========================================
+        private void BtnAnadirVariable_Click(object sender, RoutedEventArgs e)
+        {
+            var fe = sender as FrameworkElement;
+            var categoria = fe?.Tag as CategoriaVista;
+            if (categoria == null) return;
+
+            VariableCorrespondencia variable =
+                CrearVariablePredeterminadaDisponible(categoria);
+
+            if (variable == null)
+            {
+                MessageBox.Show(
+                    "Ya están añadidas todas las variables disponibles para esta categoría.\n\nPuedes editar sus nombres o códigos, o eliminar una para volver a añadirla.",
+                    "Variables",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                return;
+            }
+
+            variable.Id =
+                DatabaseHelper.InsertarVariableCorrespondencia(variable);
+
+            DatabaseHelper.GuardarConfiguracion(
+                variable.ClaveSistema,
+                variable.Token ?? "");
+
+            categoria.CargarVariables();
+        }
+
+        private VariableCorrespondencia CrearVariablePredeterminadaDisponible(
+            CategoriaVista categoria)
+        {
+            if (categoria == null)
+                return null;
+
+            var opciones =
+                new List<Tuple<string, string, string>>();
+
+            switch (categoria.Titulo)
+            {
+                case "Documentación (con SCS)":
+                    opciones.Add(
+                        Tuple.Create(
+                            "VarSCS",
+                            "Nombre SCS",
+                            "$_NOMBRE_SCS"));
+                    opciones.Add(
+                        Tuple.Create(
+                            "VarApSCS",
+                            "Apellido SCS",
+                            "$_APELLIDO_SCS"));
+                    opciones.Add(
+                        Tuple.Create(
+                            "VarEsposaSCS",
+                            "Su esposa",
+                            "$_ESPOSA_SCS"));
+                    break;
+
+                case "Documentación (con visita de pastoreo)":
+                    opciones.Add(
+                        Tuple.Create(
+                            "VarPastoreo",
+                            "Hermano",
+                            "$_NOMBRE_VISITA"));
+                    opciones.Add(
+                        Tuple.Create(
+                            "VarApPastoreo",
+                            "Apellido",
+                            "$_APELLIDO_VISITA"));
+                    opciones.Add(
+                        Tuple.Create(
+                            "VarEsposaPastoreo",
+                            "Esposa",
+                            "$_ESPOSA_VISITA"));
+                    break;
+
+                case "Asignación asamblea circuito":
+                    opciones.Add(
+                        Tuple.Create(
+                            "VarNomAsig",
+                            "Nombre orador",
+                            "$_NOMBRE_ORADOR"));
+                    opciones.Add(
+                        Tuple.Create(
+                            "VarApAsig",
+                            "Apellido orador",
+                            "$_APELLIDO_ORADOR"));
+                    opciones.Add(
+                        Tuple.Create(
+                            "VarTemaAsig",
+                            "Tema asignado",
+                            "$_TEMA_ASIGNADO"));
+                    break;
+
+                case "Asignación reunión precursores":
+                    opciones.Add(
+                        Tuple.Create(
+                            "VarNomAsigPrec",
+                            "Nombre orador",
+                            "$_NOMBRE_ORADOR"));
+                    opciones.Add(
+                        Tuple.Create(
+                            "VarApAsigPrec",
+                            "Apellido orador",
+                            "$_APELLIDO_ORADOR"));
+                    opciones.Add(
+                        Tuple.Create(
+                            "VarTemaAsigPrec",
+                            "Tema asignado",
+                            "$_TEMA_ASIGNADO"));
+                    break;
+            }
+
+            foreach (var opcion in opciones)
+            {
+                bool existe =
+                    categoria.VariablesDisponibles != null
+                    && categoria.VariablesDisponibles.Any(
+                        v => string.Equals(
+                            v.ClaveSistema,
+                            opcion.Item1,
+                            StringComparison.OrdinalIgnoreCase));
+
+                if (existe)
+                    continue;
+
+                return new VariableCorrespondencia
+                {
+                    Categoria = categoria.Titulo,
+                    Etiqueta = opcion.Item2,
+                    Token = opcion.Item3,
+                    ClaveSistema = opcion.Item1,
+                    Orden = categoria.VariablesDisponibles?.Count ?? 0
+                };
+            }
+
+            return null;
+        }
+
+        private void Variable_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (!(sender is FrameworkElement fe) || !(fe.Tag is VariableCorrespondencia variable))
+                return;
+
+            variable.Etiqueta = (variable.Etiqueta ?? "").Trim();
+            variable.Token = (variable.Token ?? "").Trim();
+
+            if (string.IsNullOrWhiteSpace(variable.Etiqueta)
+                || string.IsNullOrWhiteSpace(variable.Token))
+            {
+                MessageBox.Show(
+                    "El nombre y el código de la variable no pueden estar vacíos.",
+                    "Variable incompleta",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                BuscarCategoria(variable.Categoria)?.CargarVariables();
+                return;
+            }
+
+            try
+            {
+                DatabaseHelper.ActualizarVariableCorrespondencia(variable);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "No se pudo guardar la variable. " + ex.Message,
+                    "Variables",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                BuscarCategoria(variable.Categoria)?.CargarVariables();
+            }
+        }
+
+        private void BtnEliminarVariable_Click(object sender, RoutedEventArgs e)
+        {
+            var fe = sender as FrameworkElement;
+            var variable = fe?.Tag as VariableCorrespondencia;
+            if (variable == null) return;
+
+            if (MessageBox.Show(
+                    $"¿Eliminar la variable '{variable.Etiqueta}' ({variable.Token})?",
+                    "Eliminar variable",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question) != MessageBoxResult.Yes)
+                return;
+
+            DatabaseHelper.EliminarVariableCorrespondencia(variable.Id);
+            BuscarCategoria(variable.Categoria)?.CargarVariables();
+        }
+
+        private void BtnCopiarVariable_Click(object sender, RoutedEventArgs e)
+        {
+            var fe = sender as FrameworkElement;
+            var variable = fe?.Tag as VariableCorrespondencia;
+            if (variable == null || string.IsNullOrWhiteSpace(variable.Token)) return;
+
+            Clipboard.SetText(variable.Token);
+        }
+
+        private CategoriaVista BuscarCategoria(string titulo)
+        {
+            if (CategoriasVisitas != null)
+            {
+                foreach (var cat in CategoriasVisitas)
+                    if (string.Equals(cat.Titulo, titulo, StringComparison.Ordinal))
+                        return cat;
+            }
+
+            if (CategoriasAsambleas != null)
+            {
+                foreach (var cat in CategoriasAsambleas)
+                    if (string.Equals(cat.Titulo, titulo, StringComparison.Ordinal))
+                        return cat;
+            }
+
+            return null;
+        }
+
+        // ==========================================
         // LÓGICA DEL EDITOR DE TEXTO ENRIQUECIDO (CON AUTOGUARDADO DE JAVASCRIPT)
         // ==========================================
         private void WbEditor_Loaded(object sender, RoutedEventArgs e)
@@ -399,7 +649,7 @@ namespace SCCosmos
                             if (isReady is bool ready && ready)
                             {
                                 wb.InvokeScript("eval", "window.readyToSave = false;");
-                                string html = wb.InvokeScript("eval", "document.body.innerHTML").ToString();
+                                string html = ObtenerHtmlLimpio(wb);
 
                                 if (!string.IsNullOrWhiteSpace(html) && html != currentCat.PlantillaEmail)
                                 {
@@ -443,7 +693,7 @@ namespace SCCosmos
                 {
                     try
                     {
-                        string html = wb.InvokeScript("eval", "document.body.innerHTML").ToString();
+                        string html = ObtenerHtmlLimpio(wb);
                         if (!string.IsNullOrWhiteSpace(html) && html != currentCat.PlantillaEmail)
                         {
                             currentCat.ActualizarPlantillaSilencioso(html);
@@ -451,6 +701,22 @@ namespace SCCosmos
                     }
                     catch { }
                 }
+            }
+        }
+
+        private string ObtenerHtmlLimpio(WebBrowser wb)
+        {
+            try
+            {
+                object resultado = wb.InvokeScript(
+                    "eval",
+                    "window.getCleanHtml ? window.getCleanHtml() : document.body.innerHTML");
+
+                return (resultado?.ToString() ?? "").Trim();
+            }
+            catch
+            {
+                return "";
             }
         }
 
@@ -559,6 +825,26 @@ namespace SCCosmos
                                 window.readyToSave = true;
                             }}, 1500);
                         }}
+                        function limpiarBordes() {{
+                            var body = document.body;
+
+                            while (body.firstChild
+                                   && body.firstChild.nodeType === 3
+                                   && body.firstChild.nodeValue.trim() === '') {{
+                                body.removeChild(body.firstChild);
+                            }}
+
+                            while (body.lastChild
+                                   && body.lastChild.nodeType === 3
+                                   && body.lastChild.nodeValue.trim() === '') {{
+                                body.removeChild(body.lastChild);
+                            }}
+
+                            return body.innerHTML;
+                        }}
+
+                        window.getCleanHtml = limpiarBordes;
+
                         window.onload = function() {{
                             document.body.addEventListener('input', debounceSave);
                             document.body.addEventListener('keyup', debounceSave);
@@ -567,9 +853,7 @@ namespace SCCosmos
                         }};
                     </script>
                 </head>
-                <body contenteditable='true'>
-                    {html}
-                </body>
+                <body contenteditable='true'>{html}</body>
                 </html>";
 
                 wb.NavigateToString(docHtml);
@@ -614,6 +898,34 @@ namespace SCCosmos
         public string VarNombreAsignado { get; set; }
         public string VarApellidoAsignado { get; set; }
         public string VarTemaAsignado { get; set; }
+
+        private ObservableCollection<VariableCorrespondencia> _variablesDisponibles =
+            new ObservableCollection<VariableCorrespondencia>();
+
+        public ObservableCollection<VariableCorrespondencia> VariablesDisponibles
+        {
+            get => _variablesDisponibles;
+            set
+            {
+                _variablesDisponibles = value ?? new ObservableCollection<VariableCorrespondencia>();
+                OnPropertyChanged(nameof(VariablesDisponibles));
+                OnPropertyChanged(nameof(VisibilidadVariables));
+            }
+        }
+
+        public bool GestionVariablesHabilitada { get; set; }
+
+        public Visibility VisibilidadVariables =>
+            GestionVariablesHabilitada
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+
+        public void CargarVariables()
+        {
+            VariablesDisponibles =
+                new ObservableCollection<VariableCorrespondencia>(
+                    DatabaseHelper.ObtenerVariablesCorrespondencia(Titulo));
+        }
 
         private string _asuntoEmail;
         public string AsuntoEmail
@@ -704,6 +1016,46 @@ namespace SCCosmos
             ArchivosOracionInicial = new ObservableCollection<ArchivoDocumento>(DatabaseHelper.ObtenerDocumentos(TagOracionInicial));
             ArchivosDiscurso = new ObservableCollection<ArchivoDocumento>(DatabaseHelper.ObtenerDocumentos(TagDiscurso));
             ArchivosDiscursoSerie = new ObservableCollection<ArchivoDocumento>(DatabaseHelper.ObtenerDocumentos(TagDiscursoSerie));
+        }
+    }
+
+    public class VariableCorrespondencia : INotifyPropertyChanged
+    {
+        public event PropertyChangedEventHandler PropertyChanged;
+        private void OnPropertyChanged(string name) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
+        public int Id { get; set; }
+        public string Categoria { get; set; }
+        public string ClaveSistema { get; set; }
+        public int Orden { get; set; }
+
+        private string _etiqueta;
+        public string Etiqueta
+        {
+            get => _etiqueta;
+            set
+            {
+                if (_etiqueta != value)
+                {
+                    _etiqueta = value;
+                    OnPropertyChanged(nameof(Etiqueta));
+                }
+            }
+        }
+
+        private string _token;
+        public string Token
+        {
+            get => _token;
+            set
+            {
+                if (_token != value)
+                {
+                    _token = value;
+                    OnPropertyChanged(nameof(Token));
+                }
+            }
         }
     }
 }

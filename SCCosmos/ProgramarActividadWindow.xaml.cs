@@ -17,6 +17,15 @@ namespace SCCosmos
         private readonly string _mesReferencia;
         private readonly int _actividadEditarId;
 
+        private static readonly string[] DiasPrograma =
+        {
+            "Miércoles",
+            "Jueves",
+            "Viernes",
+            "Sábado",
+            "Domingo"
+        };
+
         private double _latitud;
         private double _longitud;
 
@@ -318,8 +327,21 @@ namespace SCCosmos
                         StringComparer.CurrentCultureIgnoreCase)
                     .ToList();
 
+            // El acompañante es opcional. Añadimos una opción explícita
+            // para poder dejar el evento sin acompañante o quitar uno existente.
+            _personas.Insert(
+                0,
+                new OpcionPersonaPrograma
+                {
+                    Id = 0,
+                    Texto = "— Sin acompañante —",
+                    Persona = null
+                });
+
             CmbAcompanante.ItemsSource =
                 _personas;
+
+            CmbAcompanante.SelectedIndex = 0;
         }
 
         private static string ObtenerNombrePreferido(
@@ -505,6 +527,86 @@ namespace SCCosmos
                 mostrarMensajes: true);
         }
 
+        private void BtnCoordenadasManuales_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            bool mostrar =
+                PanelCoordenadasManuales.Visibility != Visibility.Visible;
+
+            PanelCoordenadasManuales.Visibility =
+                mostrar
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+
+            if (mostrar)
+            {
+                TxtLatitudManual.Text =
+                    CoordenadasValidas(_latitud, _longitud)
+                        ? _latitud.ToString("0.######", CultureInfo.InvariantCulture)
+                        : "";
+
+                TxtLongitudManual.Text =
+                    CoordenadasValidas(_latitud, _longitud)
+                        ? _longitud.ToString("0.######", CultureInfo.InvariantCulture)
+                        : "";
+
+                TxtLatitudManual.Focus();
+                TxtLatitudManual.SelectAll();
+            }
+        }
+
+        private void BtnAplicarCoordenadasManuales_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            if (!TryParseCoordenada(
+                    TxtLatitudManual.Text,
+                    out double latitud)
+                ||
+                !TryParseCoordenada(
+                    TxtLongitudManual.Text,
+                    out double longitud)
+                ||
+                !CoordenadasValidas(latitud, longitud))
+            {
+                MessageBox.Show(
+                    "Introduce unas coordenadas válidas.\n\n"
+                    + "Latitud: entre -90 y 90.\n"
+                    + "Longitud: entre -180 y 180.",
+                    "Coordenadas manuales",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return;
+            }
+
+            _latitud = latitud;
+            _longitud = longitud;
+            ActualizarTextoCoordenadas();
+            PanelCoordenadasManuales.Visibility = Visibility.Collapsed;
+        }
+
+        private static bool TryParseCoordenada(
+            string texto,
+            out double valor)
+        {
+            valor = 0;
+
+            if (string.IsNullOrWhiteSpace(texto))
+            {
+                return false;
+            }
+
+            string normalizado =
+                texto.Trim().Replace(',', '.');
+
+            return double.TryParse(
+                normalizado,
+                NumberStyles.Float,
+                CultureInfo.InvariantCulture,
+                out valor);
+        }
+
         private async Task<bool> BuscarCoordenadasAsync(
             bool mostrarMensajes)
         {
@@ -675,6 +777,35 @@ namespace SCCosmos
             object sender,
             RoutedEventArgs e)
         {
+            await GuardarActividadAsync(
+                replicarTodosLosDias: false);
+        }
+
+        private async void BtnReplicarTodosDias_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            MessageBoxResult confirmar =
+                MessageBox.Show(
+                    "Se guardará este mismo evento de miércoles a domingo.\n\n"
+                    + "Si ya existe una copia idéntica en alguno de esos días, no se duplicará.\n\n"
+                    + "¿Quieres continuar?",
+                    "Replicar todos los días",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+
+            if (confirmar != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            await GuardarActividadAsync(
+                replicarTodosLosDias: true);
+        }
+
+        private async Task GuardarActividadAsync(
+            bool replicarTodosLosDias)
+        {
             string hora =
                 TxtHora.Text?.Trim() ?? "";
 
@@ -691,25 +822,24 @@ namespace SCCosmos
             OpcionPersonaPrograma opcionAcompanante =
                 ObtenerOpcionPersonaSeleccionada();
 
-            Persona acompanante =
-                opcionAcompanante?.Persona;
-
-            if (acompanante == null)
-            {
-                MessageBox.Show(
-                    "Debes seleccionar un acompañante o familia.",
-                    "Programa de la visita",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
-                return;
-            }
+            // El acompañante es opcional. Id 0 representa "sin acompañante".
+            int companeroId =
+                opcionAcompanante?.Id ?? 0;
 
             string responsable =
                 ObtenerResponsableSeleccionado();
 
+            string tipoActividad =
+                TxtTipoActividad.Text?.Trim() ?? "";
+
+            string notas =
+                TxtNotas.Text?.Trim() ?? "";
+
             string direccion =
                 TxtDireccion.Text?.Trim() ?? "";
 
+            // Si el usuario ya fijó coordenadas manualmente, se respetan aunque
+            // la dirección completa incluya piso, puerta u otros detalles.
             if (!string.IsNullOrWhiteSpace(direccion)
                 &&
                 !CoordenadasValidas(
@@ -725,6 +855,7 @@ namespace SCCosmos
                     MessageBoxResult continuar =
                         MessageBox.Show(
                             "No se pudieron obtener coordenadas para la dirección indicada.\n\n"
+                            + "Puedes fijarlas manualmente con el botón 'Fijar manualmente'.\n\n"
                             + "¿Quieres guardar la actividad con la dirección, pero sin coordenadas?",
                             "Dirección sin coordenadas",
                             MessageBoxButton.YesNo,
@@ -739,39 +870,100 @@ namespace SCCosmos
             }
 
             BtnGuardar.IsEnabled = false;
+            BtnReplicarTodosDias.IsEnabled = false;
 
             try
             {
-                if (_actividadEditarId > 0)
+                if (!replicarTodosLosDias)
                 {
-                    DatabaseHelper
-                        .ActualizarActividadPrograma(
-                            _actividadEditarId,
+                    if (_actividadEditarId > 0)
+                    {
+                        DatabaseHelper
+                            .ActualizarActividadPrograma(
+                                _actividadEditarId,
+                                responsable,
+                                tipoActividad,
+                                hora,
+                                notas,
+                                companeroId,
+                                direccion,
+                                _latitud,
+                                _longitud);
+                    }
+                    else
+                    {
+                        GuardarCopiaActividad(
+                            _dia,
                             responsable,
-                            TxtTipoActividad.Text?.Trim() ?? "",
+                            tipoActividad,
                             hora,
-                            TxtNotas.Text?.Trim() ?? "",
-                            opcionAcompanante.Id,
-                            direccion,
-                            _latitud,
-                            _longitud);
+                            notas,
+                            companeroId,
+                            direccion);
+                    }
                 }
                 else
                 {
-                    DatabaseHelper
-                        .GuardarActividadPrograma(
+                    // Si estamos editando, conservamos el Id original y
+                    // actualizamos primero el evento del día actual.
+                    if (_actividadEditarId > 0)
+                    {
+                        DatabaseHelper
+                            .ActualizarActividadPrograma(
+                                _actividadEditarId,
+                                responsable,
+                                tipoActividad,
+                                hora,
+                                notas,
+                                companeroId,
+                                direccion,
+                                _latitud,
+                                _longitud);
+                    }
+
+                    var existentes =
+                        DatabaseHelper.ObtenerActividadesProgramaMes(
                             _congreCodigo,
-                            _mesReferencia,
-                            _dia,
-                            "General",
-                            responsable,
-                            TxtTipoActividad.Text?.Trim() ?? "",
-                            hora,
-                            TxtNotas.Text?.Trim() ?? "",
-                            opcionAcompanante.Id,
-                            direccion,
-                            _latitud,
-                            _longitud);
+                            _mesReferencia);
+
+                    foreach (string dia in DiasPrograma)
+                    {
+                        if (_actividadEditarId > 0
+                            &&
+                            string.Equals(
+                                dia,
+                                _dia,
+                                StringComparison.OrdinalIgnoreCase))
+                        {
+                            continue;
+                        }
+
+                        bool yaExiste =
+                            existentes.Any(a =>
+                                EsMismaActividadReplicada(
+                                    a,
+                                    dia,
+                                    responsable,
+                                    tipoActividad,
+                                    hora,
+                                    notas,
+                                    companeroId,
+                                    direccion,
+                                    _latitud,
+                                    _longitud));
+
+                        if (!yaExiste)
+                        {
+                            GuardarCopiaActividad(
+                                dia,
+                                responsable,
+                                tipoActividad,
+                                hora,
+                                notas,
+                                companeroId,
+                                direccion);
+                        }
+                    }
                 }
 
                 DialogResult = true;
@@ -789,7 +981,88 @@ namespace SCCosmos
             finally
             {
                 BtnGuardar.IsEnabled = true;
+                BtnReplicarTodosDias.IsEnabled = true;
             }
+        }
+
+        private void GuardarCopiaActividad(
+            string dia,
+            string responsable,
+            string tipoActividad,
+            string hora,
+            string notas,
+            int companeroId,
+            string direccion)
+        {
+            DatabaseHelper
+                .GuardarActividadPrograma(
+                    _congreCodigo,
+                    _mesReferencia,
+                    dia,
+                    "General",
+                    responsable,
+                    tipoActividad,
+                    hora,
+                    notas,
+                    companeroId,
+                    direccion,
+                    _latitud,
+                    _longitud);
+        }
+
+        private static bool EsMismaActividadReplicada(
+            DatabaseHelper.ActividadPrograma actividad,
+            string dia,
+            string responsable,
+            string tipoActividad,
+            string hora,
+            string notas,
+            int companeroId,
+            string direccion,
+            double latitud,
+            double longitud)
+        {
+            if (actividad == null)
+            {
+                return false;
+            }
+
+            return
+                string.Equals(
+                    actividad.DiaSemana?.Trim(),
+                    dia?.Trim(),
+                    StringComparison.OrdinalIgnoreCase)
+                &&
+                string.Equals(
+                    NormalizarResponsable(actividad.Responsable),
+                    responsable,
+                    StringComparison.OrdinalIgnoreCase)
+                &&
+                string.Equals(
+                    actividad.TipoActividad?.Trim() ?? "",
+                    tipoActividad ?? "",
+                    StringComparison.OrdinalIgnoreCase)
+                &&
+                string.Equals(
+                    actividad.Hora?.Trim() ?? "",
+                    hora ?? "",
+                    StringComparison.OrdinalIgnoreCase)
+                &&
+                string.Equals(
+                    actividad.NotasLibro?.Trim() ?? "",
+                    notas ?? "",
+                    StringComparison.Ordinal)
+                &&
+                actividad.CompaneroId == companeroId
+                &&
+                string.Equals(
+                    actividad.Direccion?.Trim() ?? "",
+                    direccion ?? "",
+                    StringComparison.OrdinalIgnoreCase)
+                &&
+                Math.Abs(actividad.Latitud - latitud) < 0.000001
+                &&
+                Math.Abs(actividad.Longitud - longitud) < 0.000001;
         }
 
         private void BtnCancelar_Click(

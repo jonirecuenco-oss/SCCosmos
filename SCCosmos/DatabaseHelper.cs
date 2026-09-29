@@ -93,7 +93,7 @@ namespace SCCosmos
             EjecutarQuery(connection, "CREATE TABLE IF NOT EXISTS SeccionesCircuito (Id INTEGER PRIMARY KEY AUTOINCREMENT, Nombre TEXT, LugarAsamblea TEXT);");
 
             // TABLA PERSONAS
-            EjecutarQuery(connection, @"CREATE TABLE IF NOT EXISTS Personas (Id INTEGER PRIMARY KEY AUTOINCREMENT, Nombre TEXT NOT NULL, FechaNacimiento TEXT, Sexo TEXT, FechaBautismo TEXT, Esperanza TEXT, Nombramiento TEXT, Servicio TEXT, CongregacionCodigo TEXT, Grupo INTEGER DEFAULT 0, Telefono TEXT, Email TEXT, FechaInicioPrec TEXT, FechaUltimaEscuela TEXT, NombreJWHub TEXT, Foto TEXT, FechaCreacion TEXT, FechaEliminacion TEXT, Solicitudes TEXT, Privilegios TEXT, RequisitoHoras INTEGER DEFAULT 0, NombreComun TEXT, Direccion TEXT, Latitud REAL DEFAULT 0, Longitud REAL DEFAULT 0, ConyugeId INTEGER DEFAULT 0, EmailJW TEXT, PersonaRaizId INTEGER DEFAULT 0, MesHistorico TEXT, FechaExactaHistorico TEXT, Notas TEXT, OrigenRegistro TEXT DEFAULT 'DESCONOCIDO', AprobadoExhibidores INTEGER DEFAULT 0);");
+            EjecutarQuery(connection, @"CREATE TABLE IF NOT EXISTS Personas (Id INTEGER PRIMARY KEY AUTOINCREMENT, Nombre TEXT NOT NULL, FechaNacimiento TEXT, Sexo TEXT, FechaBautismo TEXT, Esperanza TEXT, Nombramiento TEXT, Servicio TEXT, CongregacionCodigo TEXT, Grupo INTEGER DEFAULT 0, Telefono TEXT, Email TEXT, FechaInicioPrec TEXT, FechaUltimaEscuela TEXT, NombreJWHub TEXT, Foto TEXT, FechaCreacion TEXT, FechaEliminacion TEXT, Solicitudes TEXT, Privilegios TEXT, RequisitoHoras INTEGER DEFAULT 0, NombreComun TEXT, Direccion TEXT, Latitud REAL DEFAULT 0, Longitud REAL DEFAULT 0, ConyugeId INTEGER DEFAULT 0, EmailJW TEXT, PersonaRaizId INTEGER DEFAULT 0, MesHistorico TEXT, FechaExactaHistorico TEXT, Notas TEXT, OrigenRegistro TEXT DEFAULT 'DESCONOCIDO', AprobadoExhibidores INTEGER DEFAULT 0, TrasladoAnteriorId INTEGER DEFAULT 0, TrasladoSiguienteId INTEGER DEFAULT 0, FechaTraslado TEXT);");
             EjecutarQuery(connection, @"CREATE TABLE IF NOT EXISTS ActividadPersonas (Id INTEGER PRIMARY KEY AUTOINCREMENT, PersonaId INTEGER, Mes TEXT, AnioServicio TEXT, Participacion INTEGER, CursosBiblicos INTEGER, PrecursorAuxiliar INTEGER DEFAULT 0, Horas INTEGER, Notas TEXT, Cursos TEXT, UNIQUE(PersonaId, Mes, AnioServicio), FOREIGN KEY(PersonaId) REFERENCES Personas(Id) ON DELETE CASCADE);");
 
             EjecutarQuery(connection, @"CREATE TABLE IF NOT EXISTS Semanas (Id INTEGER PRIMARY KEY AUTOINCREMENT, FechaMartes DATETIME, Actividad TEXT, Congregacion TEXT, Tipo TEXT, Acompanante TEXT, Alojamiento TEXT, S302Enviado INTEGER DEFAULT 0, DocEnviada INTEGER DEFAULT 0, SeccionAsamblea TEXT, FechaAsamblea TEXT, NotificacionEnviada INTEGER DEFAULT 0, RecordatorioEnviado INTEGER DEFAULT 0, DatosImportados INTEGER DEFAULT 0);");
@@ -102,9 +102,17 @@ namespace SCCosmos
 
             EjecutarQuery(connection, @"CREATE TABLE IF NOT EXISTS TerritoriosVisitaV3 (Id INTEGER PRIMARY KEY AUTOINCREMENT, CongregacionCodigo TEXT, Nombre TEXT, UltimaFechaCompletado TEXT, AsignadoA TEXT, FechaAsignado TEXT, FechaCompletado TEXT, NombreVinculado TEXT, FechaCreacion TEXT, FechaEliminacion TEXT);");
             EjecutarQuery(connection, "CREATE TABLE IF NOT EXISTS MapeoS13S21 (Id INTEGER PRIMARY KEY AUTOINCREMENT, CongregacionCodigo TEXT, NombreS13 TEXT, NombreS21 TEXT);");
-            EjecutarQuery(connection, @"CREATE TABLE IF NOT EXISTS ContabilidadMes (CongreCodigo TEXT, MesReferencia TEXT, Gastos REAL, Mantenimiento REAL, ObraMundial REAL, ObraResolucion REAL, Saldo REAL, PRIMARY KEY(CongreCodigo, MesReferencia));");
+            EjecutarQuery(connection, @"CREATE TABLE IF NOT EXISTS ContabilidadMes (CongreCodigo TEXT, MesReferencia TEXT, Gastos REAL, Mantenimiento REAL, ObraMundial REAL, ObraResolucion REAL, Saldo REAL, SaldoMaximo REAL DEFAULT 0, PRIMARY KEY(CongreCodigo, MesReferencia));");
             EjecutarQuery(connection, "CREATE TABLE IF NOT EXISTS Documentos (Id INTEGER PRIMARY KEY AUTOINCREMENT, Categoria TEXT, NombreArchivo TEXT, RutaLocal TEXT);");
             EjecutarQuery(connection, "CREATE TABLE IF NOT EXISTS Configuracion (Clave TEXT PRIMARY KEY, Valor TEXT);");
+            EjecutarQuery(connection, @"CREATE TABLE IF NOT EXISTS VariablesCorrespondencia (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                Categoria TEXT NOT NULL,
+                Etiqueta TEXT NOT NULL,
+                Token TEXT NOT NULL,
+                ClaveSistema TEXT,
+                Orden INTEGER DEFAULT 0
+            );");
 
             EjecutarQuery(connection, "CREATE TABLE IF NOT EXISTS ElementosMapa (Id INTEGER PRIMARY KEY AUTOINCREMENT, Nombre TEXT, Tipo TEXT, Coordenadas TEXT, Descripcion TEXT);");
         }
@@ -158,6 +166,12 @@ namespace SCCosmos
             AsegurarColumna(connection, "Personas", "OrigenRegistro", "TEXT DEFAULT 'DESCONOCIDO'");
             AsegurarColumna(connection, "Personas", "AprobadoExhibidores", "INTEGER DEFAULT 0");
 
+            // Historial de traslados. Las fichas de congregaciones distintas no se
+            // fusionan: quedan enlazadas en cadena para conservar cada etapa.
+            AsegurarColumna(connection, "Personas", "TrasladoAnteriorId", "INTEGER DEFAULT 0");
+            AsegurarColumna(connection, "Personas", "TrasladoSiguienteId", "INTEGER DEFAULT 0");
+            AsegurarColumna(connection, "Personas", "FechaTraslado", "TEXT");
+
             // Las bases de datos anteriores no conocían el origen. No intentamos adivinarlo:
             // se irá completando de forma segura al volver a sincronizar con S-21 o JW Hub.
             try
@@ -197,6 +211,7 @@ namespace SCCosmos
             AsegurarColumna(connection, "Congregaciones", "DiaEntreSemana", "TEXT");
 
             AsegurarColumna(connection, "Documentos", "ContenidoArchivo", "BLOB");
+            AsegurarColumna(connection, "ContabilidadMes", "SaldoMaximo", "REAL DEFAULT 0");
 
             try
             {
@@ -262,7 +277,7 @@ namespace SCCosmos
                         using (var tx = connection.BeginTransaction())
                         {
                             EjecutarQuery(connection, "ALTER TABLE Personas RENAME TO Personas_Old;");
-                            EjecutarQuery(connection, @"CREATE TABLE Personas (Id INTEGER PRIMARY KEY AUTOINCREMENT, Nombre TEXT NOT NULL, FechaNacimiento TEXT, Sexo TEXT, FechaBautismo TEXT, Esperanza TEXT, Nombramiento TEXT, Servicio TEXT, CongregacionCodigo TEXT, Grupo INTEGER DEFAULT 0, Telefono TEXT, Email TEXT, FechaInicioPrec TEXT, FechaUltimaEscuela TEXT, NombreJWHub TEXT, Foto TEXT, FechaCreacion TEXT, FechaEliminacion TEXT, Solicitudes TEXT, Privilegios TEXT, RequisitoHoras INTEGER DEFAULT 0, NombreComun TEXT, Direccion TEXT, Latitud REAL DEFAULT 0, Longitud REAL DEFAULT 0, ConyugeId INTEGER DEFAULT 0, EmailJW TEXT, PersonaRaizId INTEGER DEFAULT 0, MesHistorico TEXT, FechaExactaHistorico TEXT, Notas TEXT, OrigenRegistro TEXT DEFAULT 'DESCONOCIDO', AprobadoExhibidores INTEGER DEFAULT 0);");
+                            EjecutarQuery(connection, @"CREATE TABLE Personas (Id INTEGER PRIMARY KEY AUTOINCREMENT, Nombre TEXT NOT NULL, FechaNacimiento TEXT, Sexo TEXT, FechaBautismo TEXT, Esperanza TEXT, Nombramiento TEXT, Servicio TEXT, CongregacionCodigo TEXT, Grupo INTEGER DEFAULT 0, Telefono TEXT, Email TEXT, FechaInicioPrec TEXT, FechaUltimaEscuela TEXT, NombreJWHub TEXT, Foto TEXT, FechaCreacion TEXT, FechaEliminacion TEXT, Solicitudes TEXT, Privilegios TEXT, RequisitoHoras INTEGER DEFAULT 0, NombreComun TEXT, Direccion TEXT, Latitud REAL DEFAULT 0, Longitud REAL DEFAULT 0, ConyugeId INTEGER DEFAULT 0, EmailJW TEXT, PersonaRaizId INTEGER DEFAULT 0, MesHistorico TEXT, FechaExactaHistorico TEXT, Notas TEXT, OrigenRegistro TEXT DEFAULT 'DESCONOCIDO', AprobadoExhibidores INTEGER DEFAULT 0, TrasladoAnteriorId INTEGER DEFAULT 0, TrasladoSiguienteId INTEGER DEFAULT 0, FechaTraslado TEXT);");
                             EjecutarQuery(connection, $"INSERT INTO Personas ({colsCsv}) SELECT {colsCsv} FROM Personas_Old;");
                             EjecutarQuery(connection, "DROP TABLE Personas_Old;");
                             tx.Commit();
@@ -413,7 +428,7 @@ namespace SCCosmos
                 command.CommandText = @"SELECT Id, Nombre, Nombramiento, Servicio, Grupo, FechaNacimiento, Sexo, FechaBautismo, Esperanza,
                     NombreJWHub, FechaCreacion, FechaEliminacion, NombreComun, Solicitudes, Privilegios,
                     Foto, Email, Telefono, FechaInicioPrec, FechaUltimaEscuela, CongregacionCodigo,
-                    Direccion, Latitud, Longitud, ConyugeId, EmailJW, PersonaRaizId, MesHistorico, FechaExactaHistorico, Notas, OrigenRegistro, AprobadoExhibidores
+                    Direccion, Latitud, Longitud, ConyugeId, EmailJW, PersonaRaizId, MesHistorico, FechaExactaHistorico, Notas, OrigenRegistro, AprobadoExhibidores, TrasladoAnteriorId, TrasladoSiguienteId, FechaTraslado
              FROM Personas 
              WHERE CongregacionCodigo = $codigo AND MesHistorico IS NULL ORDER BY Nombre ASC;";
                 command.Parameters.AddWithValue("$codigo", congreCodigo);
@@ -455,7 +470,10 @@ namespace SCCosmos
                             FechaExactaHistorico = reader.IsDBNull(28) ? "" : reader.GetString(28),
                             Notas = reader.IsDBNull(29) ? "" : reader.GetString(29),
                             OrigenRegistro = reader.IsDBNull(30) ? "DESCONOCIDO" : reader.GetString(30),
-                            AprobadoExhibidores = !reader.IsDBNull(31) && reader.GetInt32(31) == 1
+                            AprobadoExhibidores = !reader.IsDBNull(31) && reader.GetInt32(31) == 1,
+                            TrasladoAnteriorId = reader.IsDBNull(32) ? 0 : reader.GetInt32(32),
+                            TrasladoSiguienteId = reader.IsDBNull(33) ? 0 : reader.GetInt32(33),
+                            FechaTraslado = reader.IsDBNull(34) ? "" : reader.GetString(34)
                         });
                     }
                 }
@@ -475,7 +493,7 @@ namespace SCCosmos
                     SELECT Id, Nombre, Nombramiento, Servicio, Grupo, FechaNacimiento, Sexo, FechaBautismo, Esperanza,
                            NombreJWHub, FechaCreacion, FechaEliminacion, NombreComun, Solicitudes, Privilegios,
                            Foto, Email, Telefono, FechaInicioPrec, FechaUltimaEscuela, CongregacionCodigo,
-                           Direccion, Latitud, Longitud, ConyugeId, EmailJW, PersonaRaizId, MesHistorico, FechaExactaHistorico, Notas, OrigenRegistro, AprobadoExhibidores
+                           Direccion, Latitud, Longitud, ConyugeId, EmailJW, PersonaRaizId, MesHistorico, FechaExactaHistorico, Notas, OrigenRegistro, AprobadoExhibidores, TrasladoAnteriorId, TrasladoSiguienteId, FechaTraslado
                     FROM Personas 
                     WHERE Id IN (
                         SELECT MAX(Id)
@@ -528,7 +546,10 @@ namespace SCCosmos
                             FechaExactaHistorico = reader.IsDBNull(28) ? "" : reader.GetString(28),
                             Notas = reader.IsDBNull(29) ? "" : reader.GetString(29),
                             OrigenRegistro = reader.IsDBNull(30) ? "DESCONOCIDO" : reader.GetString(30),
-                            AprobadoExhibidores = !reader.IsDBNull(31) && reader.GetInt32(31) == 1
+                            AprobadoExhibidores = !reader.IsDBNull(31) && reader.GetInt32(31) == 1,
+                            TrasladoAnteriorId = reader.IsDBNull(32) ? 0 : reader.GetInt32(32),
+                            TrasladoSiguienteId = reader.IsDBNull(33) ? 0 : reader.GetInt32(33),
+                            FechaTraslado = reader.IsDBNull(34) ? "" : reader.GetString(34)
                         };
                         lista.Add(p);
                     }
@@ -546,7 +567,7 @@ namespace SCCosmos
                 command.CommandText = @"SELECT Id, Nombre, Nombramiento, Servicio, Grupo, FechaNacimiento, Sexo, FechaBautismo, Esperanza,
                     NombreJWHub, FechaCreacion, FechaEliminacion, NombreComun, Solicitudes, Privilegios,
                     Foto, Email, Telefono, FechaInicioPrec, FechaUltimaEscuela,
-                   Direccion, Latitud, Longitud, ConyugeId, EmailJW, CongregacionCodigo, PersonaRaizId, MesHistorico, FechaExactaHistorico, Notas, OrigenRegistro, AprobadoExhibidores
+                   Direccion, Latitud, Longitud, ConyugeId, EmailJW, CongregacionCodigo, PersonaRaizId, MesHistorico, FechaExactaHistorico, Notas, OrigenRegistro, AprobadoExhibidores, TrasladoAnteriorId, TrasladoSiguienteId, FechaTraslado
              FROM Personas WHERE Id = $id;";
                 command.Parameters.AddWithValue("$id", personaId);
                 using (var reader = command.ExecuteReader())
@@ -586,7 +607,10 @@ namespace SCCosmos
                             FechaExactaHistorico = reader.IsDBNull(28) ? "" : reader.GetString(28),
                             Notas = reader.IsDBNull(29) ? "" : reader.GetString(29),
                             OrigenRegistro = reader.IsDBNull(30) ? "DESCONOCIDO" : reader.GetString(30),
-                            AprobadoExhibidores = !reader.IsDBNull(31) && reader.GetInt32(31) == 1
+                            AprobadoExhibidores = !reader.IsDBNull(31) && reader.GetInt32(31) == 1,
+                            TrasladoAnteriorId = reader.IsDBNull(32) ? 0 : reader.GetInt32(32),
+                            TrasladoSiguienteId = reader.IsDBNull(33) ? 0 : reader.GetInt32(33),
+                            FechaTraslado = reader.IsDBNull(34) ? "" : reader.GetString(34)
                         };
                     }
                 }
@@ -601,7 +625,7 @@ namespace SCCosmos
             {
                 connection.Open();
                 var command = connection.CreateCommand();
-                command.CommandText = @" SELECT p.Id, p.Nombre, p.FechaNacimiento, p.Sexo, p.FechaBautismo, p.Esperanza, p.Nombramiento, p.Servicio, p.CongregacionCodigo, c.Nombre, p.Grupo, p.NombreJWHub, p.FechaCreacion, p.FechaEliminacion, p.Solicitudes, p.Privilegios, p.Foto, p.NombreComun, p.Telefono, p.Email, p.FechaInicioPrec, p.FechaUltimaEscuela, p.Direccion, p.Latitud, p.Longitud, p.ConyugeId, p.EmailJW, p.PersonaRaizId, p.MesHistorico, p.FechaExactaHistorico, p.Notas, p.OrigenRegistro, p.AprobadoExhibidores
+                command.CommandText = @" SELECT p.Id, p.Nombre, p.FechaNacimiento, p.Sexo, p.FechaBautismo, p.Esperanza, p.Nombramiento, p.Servicio, p.CongregacionCodigo, c.Nombre, p.Grupo, p.NombreJWHub, p.FechaCreacion, p.FechaEliminacion, p.Solicitudes, p.Privilegios, p.Foto, p.NombreComun, p.Telefono, p.Email, p.FechaInicioPrec, p.FechaUltimaEscuela, p.Direccion, p.Latitud, p.Longitud, p.ConyugeId, p.EmailJW, p.PersonaRaizId, p.MesHistorico, p.FechaExactaHistorico, p.Notas, p.OrigenRegistro, p.AprobadoExhibidores, p.TrasladoAnteriorId, p.TrasladoSiguienteId, p.FechaTraslado
                                          FROM Personas p LEFT JOIN Congregaciones c ON p.CongregacionCodigo = c.Codigo WHERE p.MesHistorico IS NULL ORDER BY p.Nombre ASC;";
 
                 using (var reader = command.ExecuteReader())
@@ -642,7 +666,10 @@ namespace SCCosmos
                             FechaExactaHistorico = reader.IsDBNull(29) ? "" : reader.GetString(29),
                             Notas = reader.IsDBNull(30) ? "" : reader.GetString(30),
                             OrigenRegistro = reader.IsDBNull(31) ? "DESCONOCIDO" : reader.GetString(31),
-                            AprobadoExhibidores = !reader.IsDBNull(32) && reader.GetInt32(32) == 1
+                            AprobadoExhibidores = !reader.IsDBNull(32) && reader.GetInt32(32) == 1,
+                            TrasladoAnteriorId = reader.IsDBNull(33) ? 0 : reader.GetInt32(33),
+                            TrasladoSiguienteId = reader.IsDBNull(34) ? 0 : reader.GetInt32(34),
+                            FechaTraslado = reader.IsDBNull(35) ? "" : reader.GetString(35)
                         });
                     }
                 }
@@ -691,6 +718,200 @@ namespace SCCosmos
                 cmd.Parameters.AddWithValue("$aprobadoExhibidores", p.AprobadoExhibidores ? 1 : 0);
 
                 return Convert.ToInt32(cmd.ExecuteScalar());
+            }
+        }
+
+        /// <summary>
+        /// Registra un traslado entre congregaciones sin fusionar las fichas.
+        /// La ficha anterior se marca como baja y la nueva queda enlazada a ella.
+        /// La actividad mensual NO se copia: cada congregación conserva su propia etapa.
+        /// </summary>
+        public static int RegistrarTraslado(Persona personaAnterior, Persona personaHubNueva, DateTime fechaTraslado)
+        {
+            if (personaAnterior == null) throw new ArgumentNullException(nameof(personaAnterior));
+            if (personaHubNueva == null) throw new ArgumentNullException(nameof(personaHubNueva));
+            if (personaAnterior.Id <= 0) throw new ArgumentException("La persona anterior no tiene un Id válido.");
+            if (string.IsNullOrWhiteSpace(personaHubNueva.CongregacionCodigo)) throw new ArgumentException("La nueva congregación no es válida.");
+            if (string.Equals(personaAnterior.CongregacionCodigo, personaHubNueva.CongregacionCodigo, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("Un traslado debe realizarse entre congregaciones distintas.");
+
+            string fecha = fechaTraslado.ToString("dd/MM/yyyy");
+
+            string Elegir(string preferido, string alternativo)
+                => !string.IsNullOrWhiteSpace(preferido) ? preferido : (alternativo ?? "");
+
+            // Nombre completo y nombre común consolidados se conservan de la ficha anterior.
+            // NombreJWHub sí se toma de la nueva lectura de Hub para mantener la identidad Hub.
+            string nombre = Elegir(personaAnterior.Nombre, personaHubNueva.Nombre);
+            string nombreComun = Elegir(personaAnterior.NombreComun, personaHubNueva.NombreComun);
+            string nombreJw = !string.IsNullOrWhiteSpace(personaHubNueva.NombreJWHub)
+                ? personaHubNueva.NombreJWHub
+                : (!string.IsNullOrWhiteSpace(personaHubNueva.Nombre) ? personaHubNueva.Nombre : (personaAnterior.NombreJWHub ?? ""));
+
+            string fechaNacimiento = Elegir(personaAnterior.FechaNacimiento, personaHubNueva.FechaNacimiento);
+            string fechaBautismo = Elegir(personaAnterior.FechaBautismo, personaHubNueva.FechaBautismo);
+            string sexo = Elegir(personaAnterior.Sexo, personaHubNueva.Sexo);
+            string esperanza = Elegir(personaHubNueva.Esperanza, personaAnterior.Esperanza);
+
+            // Para campos personales/contacto, Hub aporta el dato actual si existe;
+            // si la extracción viene vacía, conservamos el dato anterior.
+            string telefono = Elegir(personaHubNueva.Telefono, personaAnterior.Telefono);
+            string email = Elegir(personaHubNueva.Email, personaAnterior.Email);
+            string emailJw = Elegir(personaHubNueva.EmailJW, personaAnterior.EmailJW);
+            string direccion = Elegir(personaHubNueva.Direccion, personaAnterior.Direccion);
+            string foto = Elegir(personaHubNueva.Foto, personaAnterior.Foto);
+            string inicioPrec = Elegir(personaHubNueva.FechaInicioPrec, personaAnterior.FechaInicioPrec);
+            string ultimaEscuela = Elegir(personaHubNueva.FechaUltimaEscuela, personaAnterior.FechaUltimaEscuela);
+
+            double latitud = personaHubNueva.Latitud;
+            double longitud = personaHubNueva.Longitud;
+            if ((Math.Abs(latitud) < 0.000001 && Math.Abs(longitud) < 0.000001)
+                && string.Equals((direccion ?? "").Trim(), (personaAnterior.Direccion ?? "").Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                latitud = personaAnterior.Latitud;
+                longitud = personaAnterior.Longitud;
+            }
+
+            string origen = CombinarOrigenes(personaAnterior.OrigenRegistro, personaHubNueva.OrigenRegistro);
+            origen = CombinarOrigenes(origen, "JWHub");
+
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                connection.Open();
+                using (var transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        int yaTrasladadoA = 0;
+                        using (var cmdCheck = connection.CreateCommand())
+                        {
+                            cmdCheck.Transaction = transaction;
+                            cmdCheck.CommandText = "SELECT COALESCE(TrasladoSiguienteId, 0) FROM Personas WHERE Id = $id;";
+                            cmdCheck.Parameters.AddWithValue("$id", personaAnterior.Id);
+                            object obj = cmdCheck.ExecuteScalar();
+                            if (obj == null || obj == DBNull.Value)
+                                throw new InvalidOperationException("La ficha anterior ya no existe.");
+                            yaTrasladadoA = Convert.ToInt32(obj);
+                        }
+
+                        if (yaTrasladadoA > 0)
+                            throw new InvalidOperationException("Esta ficha ya tiene registrado un traslado posterior.");
+
+                        // Si el cónyuge también se trasladó previamente, enlazamos con su nueva ficha.
+                        int conyugeNuevoId = 0;
+                        if (personaAnterior.ConyugeId > 0)
+                        {
+                            using (var cmdConyuge = connection.CreateCommand())
+                            {
+                                cmdConyuge.Transaction = transaction;
+                                cmdConyuge.CommandText = "SELECT COALESCE(TrasladoSiguienteId, 0) FROM Personas WHERE Id = $id;";
+                                cmdConyuge.Parameters.AddWithValue("$id", personaAnterior.ConyugeId);
+                                object obj = cmdConyuge.ExecuteScalar();
+                                if (obj != null && obj != DBNull.Value) conyugeNuevoId = Convert.ToInt32(obj);
+                            }
+                        }
+
+                        int nuevoId;
+                        using (var cmdInsert = connection.CreateCommand())
+                        {
+                            cmdInsert.Transaction = transaction;
+                            cmdInsert.CommandText = @"
+                                INSERT INTO Personas
+                                (
+                                    Nombre, CongregacionCodigo, Grupo, Nombramiento, Servicio,
+                                    Solicitudes, Privilegios, Foto, FechaNacimiento, Sexo,
+                                    FechaBautismo, Esperanza, Telefono, Email, FechaInicioPrec,
+                                    FechaUltimaEscuela, NombreJWHub, FechaCreacion, FechaEliminacion,
+                                    NombreComun, Direccion, Latitud, Longitud, ConyugeId, EmailJW,
+                                    Notas, OrigenRegistro, AprobadoExhibidores, RequisitoHoras,
+                                    TrasladoAnteriorId, TrasladoSiguienteId, FechaTraslado
+                                )
+                                VALUES
+                                (
+                                    $nombre, $codigo, 0, $nomb, $serv,
+                                    $sol, $priv, $foto, $fn, $sexo,
+                                    $fb, $esperanza, $tlf, $email, $inicio,
+                                    $escuela, $jw, $fc, '',
+                                    $nombreComun, $dir, $lat, $lon, $conyuge, $emailjw,
+                                    $notas, $origen, $aprobado, $requisito,
+                                    $anteriorId, 0, $fechaTraslado
+                                );
+                                SELECT last_insert_rowid();";
+
+                            cmdInsert.Parameters.AddWithValue("$nombre", nombre ?? "");
+                            cmdInsert.Parameters.AddWithValue("$codigo", personaHubNueva.CongregacionCodigo ?? "");
+                            // Nombramiento/servicio/solicitudes/privilegios reflejan el estado actual
+                            // de Hub. Un vacío aquí puede representar que el privilegio terminó.
+                            cmdInsert.Parameters.AddWithValue("$nomb", personaHubNueva.Nombramiento ?? "");
+                            cmdInsert.Parameters.AddWithValue("$serv", personaHubNueva.Servicio ?? "");
+                            cmdInsert.Parameters.AddWithValue("$sol", personaHubNueva.Solicitudes ?? "");
+                            cmdInsert.Parameters.AddWithValue("$priv", personaHubNueva.Privilegios ?? "");
+                            cmdInsert.Parameters.AddWithValue("$foto", foto ?? "");
+                            cmdInsert.Parameters.AddWithValue("$fn", fechaNacimiento ?? "");
+                            cmdInsert.Parameters.AddWithValue("$sexo", sexo ?? "");
+                            cmdInsert.Parameters.AddWithValue("$fb", fechaBautismo ?? "");
+                            cmdInsert.Parameters.AddWithValue("$esperanza", esperanza ?? "");
+                            cmdInsert.Parameters.AddWithValue("$tlf", telefono ?? "");
+                            cmdInsert.Parameters.AddWithValue("$email", email ?? "");
+                            cmdInsert.Parameters.AddWithValue("$inicio", inicioPrec ?? "");
+                            cmdInsert.Parameters.AddWithValue("$escuela", ultimaEscuela ?? "");
+                            cmdInsert.Parameters.AddWithValue("$jw", nombreJw ?? "");
+                            cmdInsert.Parameters.AddWithValue("$fc", fecha);
+                            cmdInsert.Parameters.AddWithValue("$nombreComun", nombreComun ?? "");
+                            cmdInsert.Parameters.AddWithValue("$dir", direccion ?? "");
+                            cmdInsert.Parameters.AddWithValue("$lat", latitud);
+                            cmdInsert.Parameters.AddWithValue("$lon", longitud);
+                            cmdInsert.Parameters.AddWithValue("$conyuge", conyugeNuevoId);
+                            cmdInsert.Parameters.AddWithValue("$emailjw", emailJw ?? "");
+                            cmdInsert.Parameters.AddWithValue("$notas", personaAnterior.Notas ?? "");
+                            cmdInsert.Parameters.AddWithValue("$origen", origen);
+                            cmdInsert.Parameters.AddWithValue("$aprobado", personaAnterior.AprobadoExhibidores ? 1 : 0);
+                            int requisito = personaHubNueva.RequisitoHoras > 0 ? personaHubNueva.RequisitoHoras : personaAnterior.RequisitoHoras;
+                            cmdInsert.Parameters.AddWithValue("$requisito", requisito);
+                            cmdInsert.Parameters.AddWithValue("$anteriorId", personaAnterior.Id);
+                            cmdInsert.Parameters.AddWithValue("$fechaTraslado", fecha);
+
+                            nuevoId = Convert.ToInt32(cmdInsert.ExecuteScalar());
+                        }
+
+                        using (var cmdAnterior = connection.CreateCommand())
+                        {
+                            cmdAnterior.Transaction = transaction;
+                            cmdAnterior.CommandText = @"
+                                UPDATE Personas
+                                SET FechaEliminacion = $fecha,
+                                    TrasladoSiguienteId = $nuevoId,
+                                    FechaTraslado = $fecha
+                                WHERE Id = $anteriorId;";
+                            cmdAnterior.Parameters.AddWithValue("$fecha", fecha);
+                            cmdAnterior.Parameters.AddWithValue("$nuevoId", nuevoId);
+                            cmdAnterior.Parameters.AddWithValue("$anteriorId", personaAnterior.Id);
+                            cmdAnterior.ExecuteNonQuery();
+                        }
+
+                        // Si el cónyuge también tiene una nueva ficha, reconstruimos la relación
+                        // entre las dos fichas actuales y no dejamos referencias a las antiguas.
+                        if (conyugeNuevoId > 0)
+                        {
+                            using (var cmdPareja = connection.CreateCommand())
+                            {
+                                cmdPareja.Transaction = transaction;
+                                cmdPareja.CommandText = "UPDATE Personas SET ConyugeId = $nuevoId WHERE Id = $conyugeNuevoId;";
+                                cmdPareja.Parameters.AddWithValue("$nuevoId", nuevoId);
+                                cmdPareja.Parameters.AddWithValue("$conyugeNuevoId", conyugeNuevoId);
+                                cmdPareja.ExecuteNonQuery();
+                            }
+                        }
+
+                        transaction.Commit();
+                        return nuevoId;
+                    }
+                    catch
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
+                }
             }
         }
 
@@ -755,6 +976,16 @@ namespace SCCosmos
                 connection.Open();
                 using (var transaction = connection.BeginTransaction())
                 {
+                    // Si se elimina físicamente una ficha, limpiamos los enlaces de
+                    // traslado para no dejar Ids colgantes en la cadena histórica.
+                    var cmdTraslados = connection.CreateCommand();
+                    cmdTraslados.Transaction = transaction;
+                    cmdTraslados.CommandText = @"
+                        UPDATE Personas SET TrasladoAnteriorId = 0 WHERE TrasladoAnteriorId = $id;
+                        UPDATE Personas SET TrasladoSiguienteId = 0 WHERE TrasladoSiguienteId = $id;";
+                    cmdTraslados.Parameters.AddWithValue("$id", personaId);
+                    cmdTraslados.ExecuteNonQuery();
+
                     var cmdActividad = connection.CreateCommand();
                     cmdActividad.Transaction = transaction;
                     cmdActividad.CommandText = "DELETE FROM ActividadPersonas WHERE PersonaId = $id OR PersonaId IN (SELECT Id FROM Personas WHERE PersonaRaizId = $id);";
@@ -1199,6 +1430,66 @@ namespace SCCosmos
                         }
                         catch { }
 
+                        // Si una de las dos fichas forma parte de una cadena de traslados,
+                        // trasladamos esos enlaces al Id que sobrevivirá a la fusión. Esto es
+                        // importante cuando una ficha recién trasladada se vincula después con
+                        // un registro S-21 de la misma congregación.
+                        int trasladoAnteriorFinal = personaDestino.TrasladoAnteriorId;
+                        int trasladoSiguienteFinal = personaDestino.TrasladoSiguienteId;
+                        string fechaTrasladoFinal = personaDestino.FechaTraslado ?? "";
+                        try
+                        {
+                            int anteriorDestino = 0, siguienteDestino = 0;
+                            string fechaDestino = "";
+                            using (var cmdLinksDest = connection.CreateCommand())
+                            {
+                                cmdLinksDest.Transaction = transaction;
+                                cmdLinksDest.CommandText = "SELECT COALESCE(TrasladoAnteriorId,0), COALESCE(TrasladoSiguienteId,0), COALESCE(FechaTraslado,'') FROM Personas WHERE Id=$id;";
+                                cmdLinksDest.Parameters.AddWithValue("$id", personaDestino.Id);
+                                using (var reader = cmdLinksDest.ExecuteReader())
+                                {
+                                    if (reader.Read())
+                                    {
+                                        anteriorDestino = reader.GetInt32(0);
+                                        siguienteDestino = reader.GetInt32(1);
+                                        fechaDestino = reader.GetString(2);
+                                    }
+                                }
+                            }
+
+                            int anteriorOrigen = 0, siguienteOrigen = 0;
+                            string fechaOrigen = "";
+                            using (var cmdLinksOrigen = connection.CreateCommand())
+                            {
+                                cmdLinksOrigen.Transaction = transaction;
+                                cmdLinksOrigen.CommandText = "SELECT COALESCE(TrasladoAnteriorId,0), COALESCE(TrasladoSiguienteId,0), COALESCE(FechaTraslado,'') FROM Personas WHERE Id=$id;";
+                                cmdLinksOrigen.Parameters.AddWithValue("$id", idOrigen);
+                                using (var reader = cmdLinksOrigen.ExecuteReader())
+                                {
+                                    if (reader.Read())
+                                    {
+                                        anteriorOrigen = reader.GetInt32(0);
+                                        siguienteOrigen = reader.GetInt32(1);
+                                        fechaOrigen = reader.GetString(2);
+                                    }
+                                }
+                            }
+
+                            trasladoAnteriorFinal = anteriorDestino > 0 ? anteriorDestino : anteriorOrigen;
+                            trasladoSiguienteFinal = siguienteDestino > 0 ? siguienteDestino : siguienteOrigen;
+                            fechaTrasladoFinal = !string.IsNullOrWhiteSpace(fechaDestino) ? fechaDestino : fechaOrigen;
+
+                            var cmdRedirectLinks = connection.CreateCommand();
+                            cmdRedirectLinks.Transaction = transaction;
+                            cmdRedirectLinks.CommandText = @"
+                                UPDATE Personas SET TrasladoSiguienteId = $destino WHERE TrasladoSiguienteId = $origen;
+                                UPDATE Personas SET TrasladoAnteriorId = $destino WHERE TrasladoAnteriorId = $origen;";
+                            cmdRedirectLinks.Parameters.AddWithValue("$destino", personaDestino.Id);
+                            cmdRedirectLinks.Parameters.AddWithValue("$origen", idOrigen);
+                            cmdRedirectLinks.ExecuteNonQuery();
+                        }
+                        catch { }
+
                         // Conservamos la procedencia de ambos registros al fusionarlos.
                         try
                         {
@@ -1229,7 +1520,8 @@ namespace SCCosmos
                                 Email = $em, EmailJW = $emjw, FechaInicioPrec = $finic, FechaUltimaEscuela = $fesc,
                                 Solicitudes = $sols, Privilegios = $priv, Foto = $foto,
                                 Direccion = $dir, Latitud = $lat, Longitud = $lon, ConyugeId = $conyuge, Notas = $notas,
-                                OrigenRegistro = $origenRegistro, AprobadoExhibidores = $aprobadoExhibidores
+                                OrigenRegistro = $origenRegistro, AprobadoExhibidores = $aprobadoExhibidores,
+                                TrasladoAnteriorId = $trasladoAnterior, TrasladoSiguienteId = $trasladoSiguiente, FechaTraslado = $fechaTraslado
                             WHERE Id = $idDestino;";
 
                         cmdUpdateDest.Parameters.AddWithValue("$nombre", personaDestino.Nombre ?? "");
@@ -1258,6 +1550,9 @@ namespace SCCosmos
                         cmdUpdateDest.Parameters.AddWithValue("$notas", personaDestino.Notas ?? "");
                         cmdUpdateDest.Parameters.AddWithValue("$origenRegistro", string.IsNullOrWhiteSpace(personaDestino.OrigenRegistro) ? "DESCONOCIDO" : personaDestino.OrigenRegistro);
                         cmdUpdateDest.Parameters.AddWithValue("$aprobadoExhibidores", personaDestino.AprobadoExhibidores ? 1 : 0);
+                        cmdUpdateDest.Parameters.AddWithValue("$trasladoAnterior", trasladoAnteriorFinal);
+                        cmdUpdateDest.Parameters.AddWithValue("$trasladoSiguiente", trasladoSiguienteFinal);
+                        cmdUpdateDest.Parameters.AddWithValue("$fechaTraslado", fechaTrasladoFinal ?? "");
                         cmdUpdateDest.Parameters.AddWithValue("$idDestino", personaDestino.Id);
                         cmdUpdateDest.ExecuteNonQuery();
 
@@ -1326,7 +1621,7 @@ namespace SCCosmos
                     UPDATE ActividadPersonas 
                     SET Horas = $horas, Participacion = $participacion, 
                         Cursos = $cursos, CursosBiblicos = $cursosNumerico, PrecursorAuxiliar = $precAux, Notas = $notas
-                    WHERE PersonaId = $id AND Mes = $mes AND AnioServicio = $anio;
+                    WHERE PersonaId = $id AND lower(Mes) = lower($mes) AND AnioServicio = $anio;
                     
                     INSERT INTO ActividadPersonas (PersonaId, Mes, AnioServicio, Horas, Participacion, Cursos, CursosBiblicos, PrecursorAuxiliar, Notas)
                     SELECT $id, $mes, $anio, $horas, $participacion, $cursos, $cursosNumerico, $precAux, $notas
@@ -1343,6 +1638,78 @@ namespace SCCosmos
                 cmd.Parameters.AddWithValue("$cursosNumerico", cursosNumerico);
                 cmd.Parameters.AddWithValue("$precAux", precAux ? 1 : 0);
                 cmd.Parameters.AddWithValue("$notas", notas ?? "");
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        public static void ReemplazarActividadPersona(int personaId, List<ActividadMensual> actividad)
+        {
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                connection.Open();
+                using (var transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        var cmdDelete = connection.CreateCommand();
+                        cmdDelete.Transaction = transaction;
+                        cmdDelete.CommandText = "DELETE FROM ActividadPersonas WHERE PersonaId = $id;";
+                        cmdDelete.Parameters.AddWithValue("$id", personaId);
+                        cmdDelete.ExecuteNonQuery();
+
+                        foreach (var item in actividad ?? new List<ActividadMensual>())
+                        {
+                            var cmdInsert = connection.CreateCommand();
+                            cmdInsert.Transaction = transaction;
+                            cmdInsert.CommandText = @"
+                                INSERT INTO ActividadPersonas
+                                    (PersonaId, Mes, AnioServicio, Participacion, CursosBiblicos,
+                                     PrecursorAuxiliar, Horas, Notas, Cursos)
+                                VALUES
+                                    ($id, $mes, $anio, $participacion, $cursosNumerico,
+                                     $precAux, $horas, $notas, $cursos);";
+
+                            string cursos = item.CursosBiblicos ?? "";
+                            int cursosNumerico = 0;
+                            int.TryParse(cursos, out cursosNumerico);
+
+                            cmdInsert.Parameters.AddWithValue("$id", personaId);
+                            cmdInsert.Parameters.AddWithValue("$mes", (item.Mes ?? "").Trim().ToLowerInvariant());
+                            cmdInsert.Parameters.AddWithValue("$anio", (item.AnioServicio ?? "").Trim());
+                            cmdInsert.Parameters.AddWithValue("$participacion", item.Participacion ? 1 : 0);
+                            cmdInsert.Parameters.AddWithValue("$cursosNumerico", cursosNumerico);
+                            cmdInsert.Parameters.AddWithValue("$precAux", item.PrecursorAuxiliar ? 1 : 0);
+                            cmdInsert.Parameters.AddWithValue("$horas", item.Horas ?? "");
+                            cmdInsert.Parameters.AddWithValue("$notas", item.Notas ?? "");
+                            cmdInsert.Parameters.AddWithValue("$cursos", cursos);
+                            cmdInsert.ExecuteNonQuery();
+                        }
+
+                        transaction.Commit();
+                    }
+                    catch
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
+                }
+            }
+        }
+
+        public static void EliminarActividadMensual(int personaId, string mes, string anioServicio)
+        {
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                connection.Open();
+                var cmd = connection.CreateCommand();
+                cmd.CommandText = @"
+                    DELETE FROM ActividadPersonas
+                    WHERE PersonaId = $id
+                      AND lower(Mes) = lower($mes)
+                      AND AnioServicio = $anio;";
+                cmd.Parameters.AddWithValue("$id", personaId);
+                cmd.Parameters.AddWithValue("$mes", (mes ?? "").Trim());
+                cmd.Parameters.AddWithValue("$anio", (anioServicio ?? "").Trim());
                 cmd.ExecuteNonQuery();
             }
         }
@@ -2337,6 +2704,76 @@ namespace SCCosmos
             }
         }
 
+        public static void ImportarProgramaVisita(
+            string congreCodigo,
+            string mesReferenciaStr,
+            IEnumerable<ActividadPrograma> actividades,
+            bool reemplazarExistente)
+        {
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                connection.Open();
+                using (var transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        if (reemplazarExistente)
+                        {
+                            var borrar = connection.CreateCommand();
+                            borrar.Transaction = transaction;
+                            borrar.CommandText = @"
+                                DELETE FROM ProgramaVisitaV2
+                                WHERE CongreCodigo = $codigo
+                                  AND MesReferencia = $mes;";
+                            borrar.Parameters.AddWithValue("$codigo", congreCodigo ?? "");
+                            borrar.Parameters.AddWithValue("$mes", mesReferenciaStr ?? "");
+                            borrar.ExecuteNonQuery();
+                        }
+
+                        foreach (var actividad in actividades ?? Enumerable.Empty<ActividadPrograma>())
+                        {
+                            var cmd = connection.CreateCommand();
+                            cmd.Transaction = transaction;
+                            cmd.CommandText = @"
+                                INSERT INTO ProgramaVisitaV2
+                                (
+                                    CongreCodigo, MesReferencia, DiaSemana, Turno,
+                                    Responsable, TipoActividad, Hora, NotasLibro,
+                                    CompaneroId, Direccion, Latitud, Longitud
+                                )
+                                VALUES
+                                (
+                                    $codigo, $mes, $dia, 'General',
+                                    $responsable, $tipo, $hora, $notas,
+                                    $comp, $direccion, $latitud, $longitud
+                                );";
+
+                            cmd.Parameters.AddWithValue("$codigo", congreCodigo ?? "");
+                            cmd.Parameters.AddWithValue("$mes", mesReferenciaStr ?? "");
+                            cmd.Parameters.AddWithValue("$dia", actividad?.DiaSemana ?? "");
+                            cmd.Parameters.AddWithValue("$responsable", actividad?.Responsable ?? "SC");
+                            cmd.Parameters.AddWithValue("$tipo", actividad?.TipoActividad ?? "");
+                            cmd.Parameters.AddWithValue("$hora", actividad?.Hora ?? "");
+                            cmd.Parameters.AddWithValue("$notas", actividad?.NotasLibro ?? "");
+                            cmd.Parameters.AddWithValue("$comp", actividad?.CompaneroId ?? 0);
+                            cmd.Parameters.AddWithValue("$direccion", actividad?.Direccion ?? "");
+                            cmd.Parameters.AddWithValue("$latitud", actividad?.Latitud ?? 0);
+                            cmd.Parameters.AddWithValue("$longitud", actividad?.Longitud ?? 0);
+                            cmd.ExecuteNonQuery();
+                        }
+
+                        transaction.Commit();
+                    }
+                    catch
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
+                }
+            }
+        }
+
+
         public static List<ActividadPrograma> ObtenerActividadesProgramaMes(
             string congreCodigo,
             string mesReferenciaStr)
@@ -2554,7 +2991,7 @@ namespace SCCosmos
             {
                 connection.Open();
                 var cmd = connection.CreateCommand();
-                cmd.CommandText = "SELECT Gastos, Mantenimiento, ObraMundial, ObraResolucion, Saldo FROM ContabilidadMes WHERE CongreCodigo = $codigo AND MesReferencia = $mes;";
+                cmd.CommandText = "SELECT Gastos, Mantenimiento, ObraMundial, ObraResolucion, Saldo, COALESCE(SaldoMaximo, 0) FROM ContabilidadMes WHERE CongreCodigo = $codigo AND MesReferencia = $mes;";
                 cmd.Parameters.AddWithValue("$codigo", congreCodigo);
                 cmd.Parameters.AddWithValue("$mes", mesReferencia);
                 using (var reader = cmd.ExecuteReader())
@@ -2563,11 +3000,12 @@ namespace SCCosmos
                     {
                         return new ContabilidadMes
                         {
-                            Gastos = reader.GetDouble(0),
-                            Mantenimiento = reader.GetDouble(1),
-                            ObraMundial = reader.GetDouble(2),
-                            ObraResolucion = reader.GetDouble(3),
-                            Saldo = reader.GetDouble(4)
+                            Gastos = reader.IsDBNull(0) ? 0 : reader.GetDouble(0),
+                            Mantenimiento = reader.IsDBNull(1) ? 0 : reader.GetDouble(1),
+                            ObraMundial = reader.IsDBNull(2) ? 0 : reader.GetDouble(2),
+                            ObraResolucion = reader.IsDBNull(3) ? 0 : reader.GetDouble(3),
+                            Saldo = reader.IsDBNull(4) ? 0 : reader.GetDouble(4),
+                            SaldoMaximo = reader.IsDBNull(5) ? 0 : reader.GetDouble(5)
                         };
                     }
                 }
@@ -2582,10 +3020,15 @@ namespace SCCosmos
                 connection.Open();
                 var cmd = connection.CreateCommand();
                 cmd.CommandText = @"
-                    INSERT INTO ContabilidadMes (CongreCodigo, MesReferencia, Gastos, Mantenimiento, ObraMundial, ObraResolucion, Saldo)
-                    VALUES ($codigo, $mes, $g, $m, $om, $or, $s)
+                    INSERT INTO ContabilidadMes (CongreCodigo, MesReferencia, Gastos, Mantenimiento, ObraMundial, ObraResolucion, Saldo, SaldoMaximo)
+                    VALUES ($codigo, $mes, $g, $m, $om, $or, $s, $smax)
                     ON CONFLICT(CongreCodigo, MesReferencia) DO UPDATE SET 
-                    Gastos = $g, Mantenimiento = $m, ObraMundial = $om, ObraResolucion = $or, Saldo = $s;";
+                    Gastos = $g,
+                    Mantenimiento = $m,
+                    ObraMundial = $om,
+                    ObraResolucion = $or,
+                    Saldo = $s,
+                    SaldoMaximo = $smax;";
 
                 cmd.Parameters.AddWithValue("$codigo", congreCodigo);
                 cmd.Parameters.AddWithValue("$mes", mesReferencia);
@@ -2594,6 +3037,7 @@ namespace SCCosmos
                 cmd.Parameters.AddWithValue("$om", datos.ObraMundial);
                 cmd.Parameters.AddWithValue("$or", datos.ObraResolucion);
                 cmd.Parameters.AddWithValue("$s", datos.Saldo);
+                cmd.Parameters.AddWithValue("$smax", datos.SaldoMaximo);
                 cmd.ExecuteNonQuery();
             }
         }
@@ -3152,105 +3596,848 @@ namespace SCCosmos
 
         public static void InsertarDocumento(string categoria, string nombreArchivo, string rutaLocal)
         {
-            // 1. Leemos el archivo físico y lo convertimos a código binario
             byte[] contenidoBinario = null;
-            if (File.Exists(rutaLocal))
-            {
-                contenidoBinario = File.ReadAllBytes(rutaLocal);
-            }
 
-            using (var connection = new SqliteConnection(ConnectionString))
-            {
-                connection.Open();
-                var cmd = connection.CreateCommand();
-                // 2. Guardamos el binario DENTRO de la base de datos
-                cmd.CommandText = "INSERT INTO Documentos (Categoria, NombreArchivo, RutaLocal, ContenidoArchivo) VALUES ($cat, $nom, $ruta, $blob)";
-                cmd.Parameters.AddWithValue("$cat", categoria);
-                cmd.Parameters.AddWithValue("$nom", nombreArchivo);
-                cmd.Parameters.AddWithValue("$ruta", rutaLocal);
-                cmd.Parameters.AddWithValue("$blob", contenidoBinario ?? (object)DBNull.Value);
-                cmd.ExecuteNonQuery();
-            }
+            if (!string.IsNullOrWhiteSpace(rutaLocal) && File.Exists(rutaLocal))
+                contenidoBinario = File.ReadAllBytes(rutaLocal);
+
+            InsertarDocumentoInterno(
+                categoria,
+                nombreArchivo,
+                rutaLocal,
+                contenidoBinario);
         }
 
-        public static string ExtraerDocumentoDesdeBD(int documentoId, string nombreArchivo)
+        public static void InsertarDocumentoDesdeArchivo(string categoria, string rutaArchivo)
+        {
+            if (string.IsNullOrWhiteSpace(rutaArchivo) || !File.Exists(rutaArchivo))
+                throw new FileNotFoundException("No se encuentra el archivo seleccionado.", rutaArchivo);
+
+            string nombreArchivo = Path.GetFileName(rutaArchivo);
+            byte[] contenidoBinario = File.ReadAllBytes(rutaArchivo);
+
+            InsertarDocumentoInterno(
+                categoria,
+                nombreArchivo,
+                rutaArchivo,
+                contenidoBinario);
+        }
+
+        private static void InsertarDocumentoInterno(
+            string categoria,
+            string nombreArchivo,
+            string rutaLocal,
+            byte[] contenidoBinario)
         {
             using (var connection = new SqliteConnection(ConnectionString))
             {
                 connection.Open();
+
                 var cmd = connection.CreateCommand();
-                cmd.CommandText = "SELECT ContenidoArchivo, RutaLocal FROM Documentos WHERE Id = $id";
+                cmd.CommandText = @"
+                    INSERT INTO Documentos
+                    (
+                        Categoria,
+                        NombreArchivo,
+                        RutaLocal,
+                        ContenidoArchivo
+                    )
+                    VALUES
+                    (
+                        $cat,
+                        $nom,
+                        $ruta,
+                        $blob
+                    );";
+
+                cmd.Parameters.AddWithValue("$cat", categoria ?? "");
+                cmd.Parameters.AddWithValue("$nom", nombreArchivo ?? "");
+                cmd.Parameters.AddWithValue("$ruta", rutaLocal ?? "");
+                cmd.Parameters.AddWithValue(
+                    "$blob",
+                    contenidoBinario != null
+                        ? (object)contenidoBinario
+                        : DBNull.Value);
+
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        private static string LimpiarNombreArchivoTemporal(
+            string nombreArchivo)
+        {
+            string limpio =
+                string.IsNullOrWhiteSpace(nombreArchivo)
+                    ? "documento"
+                    : nombreArchivo;
+
+            foreach (char c in Path.GetInvalidFileNameChars())
+                limpio = limpio.Replace(c, '_');
+
+            return limpio;
+        }
+
+        private static string ObtenerDirectorioDocumentoTemporal(
+            int documentoId)
+        {
+            return Path.Combine(
+                Path.GetTempPath(),
+                "SCCosmos",
+                "DocumentosTemp",
+                documentoId.ToString());
+        }
+
+        private static string MaterializarDocumentoTemporal(
+            int documentoId,
+            string nombreArchivo,
+            byte[] contenido)
+        {
+            if (contenido == null || contenido.Length == 0)
+                return null;
+
+            string tempPath =
+                ObtenerDirectorioDocumentoTemporal(documentoId);
+
+            if (!Directory.Exists(tempPath))
+                Directory.CreateDirectory(tempPath);
+
+            string filePath = Path.Combine(
+                tempPath,
+                LimpiarNombreArchivoTemporal(nombreArchivo));
+
+            bool escribir = true;
+
+            try
+            {
+                if (File.Exists(filePath))
+                {
+                    var info = new FileInfo(filePath);
+                    escribir = info.Length != contenido.LongLength;
+                }
+            }
+            catch
+            {
+                escribir = true;
+            }
+
+            if (escribir)
+                File.WriteAllBytes(filePath, contenido);
+
+            return filePath;
+        }
+
+        public static string ExtraerDocumentoDesdeBD(
+            int documentoId,
+            string nombreArchivo)
+        {
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                connection.Open();
+
+                var cmd = connection.CreateCommand();
+                cmd.CommandText = @"
+                    SELECT
+                        ContenidoArchivo,
+                        RutaLocal
+                    FROM Documentos
+                    WHERE Id = $id;";
+
                 cmd.Parameters.AddWithValue("$id", documentoId);
 
                 using (var reader = cmd.ExecuteReader())
                 {
-                    if (reader.Read())
+                    if (!reader.Read())
+                        return null;
+
+                    if (!reader.IsDBNull(0))
                     {
-                        // Comprobamos si tiene el archivo binario guardado
-                        if (!reader.IsDBNull(0))
-                        {
-                            byte[] fileBytes = (byte[])reader.GetValue(0);
+                        byte[] fileBytes =
+                            (byte[])reader.GetValue(0);
 
-                            // Creamos una carpeta temporal en el sistema para descargar el archivo
-                            string tempPath = Path.Combine(Path.GetTempPath(), "SCCosmos", "DocumentosTemp");
-                            if (!Directory.Exists(tempPath)) Directory.CreateDirectory(tempPath);
-
-                            // Si ya existe uno con ese nombre (ej: lo abriste hace 5 minutos), lo borramos para poner el nuevo
-                            string filePath = Path.Combine(tempPath, nombreArchivo);
-                            try { if (File.Exists(filePath)) File.Delete(filePath); } catch { }
-
-                            // Reconstruimos el archivo en el disco duro
-                            File.WriteAllBytes(filePath, fileBytes);
-                            return filePath;
-                        }
-                        else
-                        {
-                            // MODO LEGACY: Si es un archivo muy antiguo que subiste antes de este cambio, 
-                            // intentará buscarlo en la ruta antigua.
-                            string rutaAntigua = reader.IsDBNull(1) ? "" : reader.GetString(1);
-                            if (File.Exists(rutaAntigua)) return rutaAntigua;
-                        }
+                        return MaterializarDocumentoTemporal(
+                            documentoId,
+                            nombreArchivo,
+                            fileBytes);
                     }
+
+                    // Compatibilidad con documentos antiguos que solo
+                    // guardaban una ruta local.
+                    string rutaAntigua =
+                        reader.IsDBNull(1)
+                            ? ""
+                            : reader.GetString(1);
+
+                    return File.Exists(rutaAntigua)
+                        ? rutaAntigua
+                        : null;
                 }
             }
-            return null; // Si devuelve null, es que el archivo no existe o se ha perdido
         }
 
-        public static List<ArchivoDocumento> ObtenerDocumentos(string categoria)
+        public static List<ArchivoDocumento> ObtenerDocumentos(
+            string categoria)
         {
-            var lista = new List<ArchivoDocumento>();
+            var lista =
+                new List<ArchivoDocumento>();
+
             using (var connection = new SqliteConnection(ConnectionString))
             {
                 connection.Open();
+
                 var cmd = connection.CreateCommand();
-                cmd.CommandText = "SELECT Id, NombreArchivo, RutaLocal FROM Documentos WHERE Categoria = $cat";
-                cmd.Parameters.AddWithValue("$cat", categoria);
+                cmd.CommandText = @"
+                    SELECT
+                        Id,
+                        NombreArchivo,
+                        RutaLocal,
+                        ContenidoArchivo
+                    FROM Documentos
+                    WHERE Categoria = $cat
+                    ORDER BY Id ASC;";
+
+                cmd.Parameters.AddWithValue(
+                    "$cat",
+                    categoria ?? "");
+
                 using (var reader = cmd.ExecuteReader())
                 {
                     while (reader.Read())
                     {
-                        lista.Add(new ArchivoDocumento
+                        int id = reader.GetInt32(0);
+                        string nombre =
+                            reader.IsDBNull(1)
+                                ? ""
+                                : reader.GetString(1);
+
+                        string rutaLocal =
+                            reader.IsDBNull(2)
+                                ? ""
+                                : reader.GetString(2);
+
+                        // Si existe BLOB, RutaLocal se sustituye por una
+                        // copia temporal válida EN ESTE DISPOSITIVO.
+                        // De este modo, cualquier código legacy que todavía
+                        // use ArchivoDocumento.RutaLocal sigue funcionando
+                        // aunque la base de datos venga de otro equipo.
+                        if (!reader.IsDBNull(3))
                         {
-                            Id = reader.GetInt32(0),
-                            NombreArchivo = reader.GetString(1),
-                            RutaLocal = reader.GetString(2),
-                            Categoria = categoria
-                        });
+                            byte[] contenido =
+                                (byte[])reader.GetValue(3);
+
+                            string temporal =
+                                MaterializarDocumentoTemporal(
+                                    id,
+                                    nombre,
+                                    contenido);
+
+                            if (!string.IsNullOrWhiteSpace(temporal))
+                                rutaLocal = temporal;
+                        }
+
+                        lista.Add(
+                            new ArchivoDocumento
+                            {
+                                Id = id,
+                                NombreArchivo = nombre,
+                                RutaLocal = rutaLocal,
+                                Categoria = categoria
+                            });
                     }
                 }
             }
+
             return lista;
+        }
+
+        public static void ActualizarDocumentoDesdeArchivo(
+            int documentoId,
+            string rutaArchivo)
+        {
+            if (documentoId <= 0)
+                throw new ArgumentOutOfRangeException(nameof(documentoId));
+
+            if (string.IsNullOrWhiteSpace(rutaArchivo) || !File.Exists(rutaArchivo))
+                throw new FileNotFoundException("No se encuentra el archivo que se quiere guardar en la base de datos.", rutaArchivo);
+
+            byte[] contenido = File.ReadAllBytes(rutaArchivo);
+
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                connection.Open();
+
+                var cmd = connection.CreateCommand();
+                cmd.CommandText = @"
+                    UPDATE Documentos
+                    SET ContenidoArchivo = $blob,
+                        RutaLocal = $ruta
+                    WHERE Id = $id;";
+
+                cmd.Parameters.AddWithValue("$id", documentoId);
+                cmd.Parameters.AddWithValue("$ruta", rutaArchivo);
+                cmd.Parameters.AddWithValue("$blob", contenido);
+                cmd.ExecuteNonQuery();
+            }
         }
 
         public static void EliminarDocumento(int id)
         {
+            string nombre = "";
+
             using (var connection = new SqliteConnection(ConnectionString))
             {
                 connection.Open();
+
+                var cmdNombre = connection.CreateCommand();
+                cmdNombre.CommandText =
+                    "SELECT NombreArchivo FROM Documentos WHERE Id = $id;";
+                cmdNombre.Parameters.AddWithValue("$id", id);
+
+                object nombreObj = cmdNombre.ExecuteScalar();
+                if (nombreObj != null && nombreObj != DBNull.Value)
+                    nombre = nombreObj.ToString();
+
                 var cmd = connection.CreateCommand();
-                cmd.CommandText = "DELETE FROM Documentos WHERE Id = $id";
+                cmd.CommandText =
+                    "DELETE FROM Documentos WHERE Id = $id;";
                 cmd.Parameters.AddWithValue("$id", id);
                 cmd.ExecuteNonQuery();
+            }
+
+            // Limpieza únicamente de la copia temporal local.
+            try
+            {
+                string tempDir =
+                    ObtenerDirectorioDocumentoTemporal(id);
+
+                if (Directory.Exists(tempDir))
+                    Directory.Delete(tempDir, true);
+            }
+            catch
+            {
+            }
+        }
+
+        public static int MigrarDocumentosLegacyABlob()
+        {
+            int migrados = 0;
+            var pendientes = new List<Tuple<int, string>>();
+
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                connection.Open();
+
+                var cmd = connection.CreateCommand();
+                cmd.CommandText = @"
+                    SELECT Id, RutaLocal
+                    FROM Documentos
+                    WHERE ContenidoArchivo IS NULL
+                      AND RutaLocal IS NOT NULL
+                      AND trim(RutaLocal) <> '';";
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        pendientes.Add(
+                            Tuple.Create(
+                                reader.GetInt32(0),
+                                reader.IsDBNull(1)
+                                    ? ""
+                                    : reader.GetString(1)));
+                    }
+                }
+            }
+
+            foreach (var item in pendientes)
+            {
+                try
+                {
+                    if (!File.Exists(item.Item2))
+                        continue;
+
+                    byte[] contenido = File.ReadAllBytes(item.Item2);
+
+                    using (var connection = new SqliteConnection(ConnectionString))
+                    {
+                        connection.Open();
+
+                        var cmd = connection.CreateCommand();
+                        cmd.CommandText = @"
+                            UPDATE Documentos
+                            SET ContenidoArchivo = $blob
+                            WHERE Id = $id
+                              AND ContenidoArchivo IS NULL;";
+
+                        cmd.Parameters.AddWithValue("$id", item.Item1);
+                        cmd.Parameters.AddWithValue("$blob", contenido);
+
+                        if (cmd.ExecuteNonQuery() > 0)
+                            migrados++;
+                    }
+                }
+                catch
+                {
+                    // Un archivo legacy inaccesible se conserva sin tocar.
+                }
+            }
+
+            return migrados;
+        }
+
+        // =====================================================
+        // VARIABLES EDITABLES DE CORRESPONDENCIA
+        // =====================================================
+        public static void InicializarVariablesCorrespondencia()
+        {
+            InicializarDatabase();
+
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                connection.Open();
+
+                var cmdTabla = connection.CreateCommand();
+                cmdTabla.CommandText = @"
+                    CREATE TABLE IF NOT EXISTS VariablesCorrespondencia
+                    (
+                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        Categoria TEXT NOT NULL,
+                        Etiqueta TEXT NOT NULL,
+                        Token TEXT NOT NULL,
+                        ClaveSistema TEXT,
+                        Orden INTEGER DEFAULT 0
+                    );";
+                cmdTabla.ExecuteNonQuery();
+            }
+
+            string migrada =
+                ObtenerConfiguracion(
+                    "VariablesCorrespondenciaMigradas",
+                    "0");
+
+            if (migrada == "1")
+                return;
+
+            // Las variables existentes se conservan exactamente como estaban
+            // configuradas antes de esta migración.
+            InsertarVariableCorrespondenciaSiNoExiste(
+                "Documentación (con SCS)",
+                "Nombre SCS",
+                ObtenerConfiguracion(
+                    "VarSCS",
+                    "$_NOMBRE_SCS"),
+                "VarSCS",
+                0);
+
+            InsertarVariableCorrespondenciaSiNoExiste(
+                "Documentación (con SCS)",
+                "Apellido SCS",
+                ObtenerConfiguracion(
+                    "VarApSCS",
+                    "$_APELLIDO_SCS"),
+                "VarApSCS",
+                1);
+
+            InsertarVariableCorrespondenciaSiNoExiste(
+                "Documentación (con SCS)",
+                "Su esposa",
+                ObtenerConfiguracion(
+                    "VarEsposaSCS",
+                    "$_ESPOSA_SCS"),
+                "VarEsposaSCS",
+                2);
+
+            InsertarVariableCorrespondenciaSiNoExiste(
+                "Documentación (con visita de pastoreo)",
+                "Hermano",
+                ObtenerConfiguracion(
+                    "VarPastoreo",
+                    "$_NOMBRE_VISITA"),
+                "VarPastoreo",
+                0);
+
+            InsertarVariableCorrespondenciaSiNoExiste(
+                "Documentación (con visita de pastoreo)",
+                "Apellido",
+                ObtenerConfiguracion(
+                    "VarApPastoreo",
+                    "$_APELLIDO_VISITA"),
+                "VarApPastoreo",
+                1);
+
+            InsertarVariableCorrespondenciaSiNoExiste(
+                "Documentación (con visita de pastoreo)",
+                "Esposa",
+                ObtenerConfiguracion(
+                    "VarEsposaPastoreo",
+                    "$_ESPOSA_VISITA"),
+                "VarEsposaPastoreo",
+                2);
+
+            InsertarVariableCorrespondenciaSiNoExiste(
+                "Asignación asamblea circuito",
+                "Nombre orador",
+                ObtenerConfiguracion(
+                    "VarNomAsig",
+                    "$_NOMBRE_ORADOR"),
+                "VarNomAsig",
+                0);
+
+            InsertarVariableCorrespondenciaSiNoExiste(
+                "Asignación asamblea circuito",
+                "Apellido orador",
+                ObtenerConfiguracion(
+                    "VarApAsig",
+                    "$_APELLIDO_ORADOR"),
+                "VarApAsig",
+                1);
+
+            InsertarVariableCorrespondenciaSiNoExiste(
+                "Asignación asamblea circuito",
+                "Tema asignado",
+                ObtenerConfiguracion(
+                    "VarTemaAsig",
+                    "$_TEMA_ASIGNADO"),
+                "VarTemaAsig",
+                2);
+
+            InsertarVariableCorrespondenciaSiNoExiste(
+                "Asignación reunión precursores",
+                "Nombre orador",
+                ObtenerConfiguracion(
+                    "VarNomAsigPrec",
+                    "$_NOMBRE_ORADOR"),
+                "VarNomAsigPrec",
+                0);
+
+            InsertarVariableCorrespondenciaSiNoExiste(
+                "Asignación reunión precursores",
+                "Apellido orador",
+                ObtenerConfiguracion(
+                    "VarApAsigPrec",
+                    "$_APELLIDO_ORADOR"),
+                "VarApAsigPrec",
+                1);
+
+            InsertarVariableCorrespondenciaSiNoExiste(
+                "Asignación reunión precursores",
+                "Tema asignado",
+                ObtenerConfiguracion(
+                    "VarTemaAsigPrec",
+                    "$_TEMA_ASIGNADO"),
+                "VarTemaAsigPrec",
+                2);
+
+            GuardarConfiguracion(
+                "VariablesCorrespondenciaMigradas",
+                "1");
+        }
+
+        private static void InsertarVariableCorrespondenciaSiNoExiste(
+            string categoria,
+            string etiqueta,
+            string token,
+            string claveSistema,
+            int orden)
+        {
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                connection.Open();
+
+                var check = connection.CreateCommand();
+                check.CommandText = @"
+                    SELECT COUNT(*)
+                    FROM VariablesCorrespondencia
+                    WHERE Categoria = $categoria
+                      AND ClaveSistema = $clave;";
+
+                check.Parameters.AddWithValue(
+                    "$categoria",
+                    categoria ?? "");
+                check.Parameters.AddWithValue(
+                    "$clave",
+                    claveSistema ?? "");
+
+                long existe =
+                    Convert.ToInt64(
+                        check.ExecuteScalar() ?? 0);
+
+                if (existe > 0)
+                    return;
+
+                var cmd = connection.CreateCommand();
+                cmd.CommandText = @"
+                    INSERT INTO VariablesCorrespondencia
+                    (
+                        Categoria,
+                        Etiqueta,
+                        Token,
+                        ClaveSistema,
+                        Orden
+                    )
+                    VALUES
+                    (
+                        $categoria,
+                        $etiqueta,
+                        $token,
+                        $clave,
+                        $orden
+                    );";
+
+                cmd.Parameters.AddWithValue(
+                    "$categoria",
+                    categoria ?? "");
+                cmd.Parameters.AddWithValue(
+                    "$etiqueta",
+                    etiqueta ?? "");
+                cmd.Parameters.AddWithValue(
+                    "$token",
+                    token ?? "");
+                cmd.Parameters.AddWithValue(
+                    "$clave",
+                    claveSistema ?? "");
+                cmd.Parameters.AddWithValue(
+                    "$orden",
+                    orden);
+
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        public static List<VariableCorrespondencia>
+            ObtenerVariablesCorrespondencia(string categoria)
+        {
+            var lista =
+                new List<VariableCorrespondencia>();
+
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                connection.Open();
+
+                var cmd = connection.CreateCommand();
+                cmd.CommandText = @"
+                    SELECT
+                        Id,
+                        Categoria,
+                        Etiqueta,
+                        Token,
+                        ClaveSistema,
+                        Orden
+                    FROM VariablesCorrespondencia
+                    WHERE Categoria = $categoria
+                    ORDER BY Orden, Id;";
+
+                cmd.Parameters.AddWithValue(
+                    "$categoria",
+                    categoria ?? "");
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        lista.Add(
+                            new VariableCorrespondencia
+                            {
+                                Id = reader.GetInt32(0),
+                                Categoria =
+                                    reader.IsDBNull(1)
+                                        ? ""
+                                        : reader.GetString(1),
+                                Etiqueta =
+                                    reader.IsDBNull(2)
+                                        ? ""
+                                        : reader.GetString(2),
+                                Token =
+                                    reader.IsDBNull(3)
+                                        ? ""
+                                        : reader.GetString(3),
+                                ClaveSistema =
+                                    reader.IsDBNull(4)
+                                        ? ""
+                                        : reader.GetString(4),
+                                Orden =
+                                    reader.IsDBNull(5)
+                                        ? 0
+                                        : reader.GetInt32(5)
+                            });
+                    }
+                }
+            }
+
+            return lista;
+        }
+
+        public static int InsertarVariableCorrespondencia(
+            VariableCorrespondencia variable)
+        {
+            if (variable == null)
+                throw new ArgumentNullException(nameof(variable));
+
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                connection.Open();
+
+                var check = connection.CreateCommand();
+                check.CommandText = @"
+                    SELECT COUNT(*)
+                    FROM VariablesCorrespondencia
+                    WHERE Categoria = $categoria
+                      AND Token = $token;";
+                check.Parameters.AddWithValue(
+                    "$categoria",
+                    variable.Categoria ?? "");
+                check.Parameters.AddWithValue(
+                    "$token",
+                    variable.Token ?? "");
+
+                if (Convert.ToInt64(check.ExecuteScalar() ?? 0) > 0)
+                    throw new InvalidOperationException(
+                        "Ya existe una variable con ese código en esta categoría.");
+
+                var cmd = connection.CreateCommand();
+                cmd.CommandText = @"
+                    INSERT INTO VariablesCorrespondencia
+                    (
+                        Categoria,
+                        Etiqueta,
+                        Token,
+                        ClaveSistema,
+                        Orden
+                    )
+                    VALUES
+                    (
+                        $categoria,
+                        $etiqueta,
+                        $token,
+                        $clave,
+                        $orden
+                    );";
+
+                cmd.Parameters.AddWithValue(
+                    "$categoria",
+                    variable.Categoria ?? "");
+                cmd.Parameters.AddWithValue(
+                    "$etiqueta",
+                    variable.Etiqueta ?? "");
+                cmd.Parameters.AddWithValue(
+                    "$token",
+                    variable.Token ?? "");
+                cmd.Parameters.AddWithValue(
+                    "$clave",
+                    variable.ClaveSistema ?? "");
+                cmd.Parameters.AddWithValue(
+                    "$orden",
+                    variable.Orden);
+
+                cmd.ExecuteNonQuery();
+
+                var cmdId = connection.CreateCommand();
+                cmdId.CommandText = "SELECT last_insert_rowid();";
+
+                return Convert.ToInt32(cmdId.ExecuteScalar());
+            }
+        }
+
+        public static void ActualizarVariableCorrespondencia(
+            VariableCorrespondencia variable)
+        {
+            if (variable == null || variable.Id <= 0)
+                return;
+
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                connection.Open();
+
+                var check = connection.CreateCommand();
+                check.CommandText = @"
+                    SELECT COUNT(*)
+                    FROM VariablesCorrespondencia
+                    WHERE Categoria = $categoria
+                      AND Token = $token
+                      AND Id <> $id;";
+                check.Parameters.AddWithValue(
+                    "$categoria",
+                    variable.Categoria ?? "");
+                check.Parameters.AddWithValue(
+                    "$token",
+                    variable.Token ?? "");
+                check.Parameters.AddWithValue(
+                    "$id",
+                    variable.Id);
+
+                if (Convert.ToInt64(check.ExecuteScalar() ?? 0) > 0)
+                    throw new InvalidOperationException(
+                        "Ya existe una variable con ese código en esta categoría.");
+
+                var cmd = connection.CreateCommand();
+                cmd.CommandText = @"
+                    UPDATE VariablesCorrespondencia
+                    SET
+                        Etiqueta = $etiqueta,
+                        Token = $token,
+                        Orden = $orden
+                    WHERE Id = $id;";
+
+                cmd.Parameters.AddWithValue(
+                    "$id",
+                    variable.Id);
+                cmd.Parameters.AddWithValue(
+                    "$etiqueta",
+                    variable.Etiqueta ?? "");
+                cmd.Parameters.AddWithValue(
+                    "$token",
+                    variable.Token ?? "");
+                cmd.Parameters.AddWithValue(
+                    "$orden",
+                    variable.Orden);
+
+                cmd.ExecuteNonQuery();
+            }
+
+            // Las variables originales siguen alimentando las claves
+            // legacy usadas por otros módulos del programa.
+            if (!string.IsNullOrWhiteSpace(variable.ClaveSistema))
+            {
+                GuardarConfiguracion(
+                    variable.ClaveSistema,
+                    variable.Token ?? "");
+            }
+        }
+
+        public static void EliminarVariableCorrespondencia(int id)
+        {
+            string claveSistema = "";
+
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                connection.Open();
+
+                var get = connection.CreateCommand();
+                get.CommandText = @"
+                    SELECT ClaveSistema
+                    FROM VariablesCorrespondencia
+                    WHERE Id = $id;";
+                get.Parameters.AddWithValue("$id", id);
+
+                object claveObj = get.ExecuteScalar();
+                if (claveObj != null && claveObj != DBNull.Value)
+                    claveSistema = claveObj.ToString();
+
+                var cmd = connection.CreateCommand();
+                cmd.CommandText = @"
+                    DELETE FROM VariablesCorrespondencia
+                    WHERE Id = $id;";
+                cmd.Parameters.AddWithValue("$id", id);
+                cmd.ExecuteNonQuery();
+            }
+
+            // Si era una variable del sistema, dejamos una marca imposible
+            // de encontrar en los documentos para que al eliminarla deje de
+            // aplicarse en módulos legacy que todavía leen Configuracion.
+            if (!string.IsNullOrWhiteSpace(claveSistema))
+            {
+                GuardarConfiguracion(
+                    claveSistema,
+                    "$_VARIABLE_DESACTIVADA_" + id);
             }
         }
 
@@ -3415,6 +4602,7 @@ namespace SCCosmos
             public double ObraMundial { get; set; }
             public double ObraResolucion { get; set; }
             public double Saldo { get; set; }
+            public double SaldoMaximo { get; set; }
         }
 
         public class ActividadPrograma

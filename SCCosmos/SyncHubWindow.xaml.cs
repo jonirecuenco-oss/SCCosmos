@@ -13,6 +13,7 @@ namespace SCCosmos
         private List<SyncItemHub> _conflictos = new List<SyncItemHub>();
         private List<SyncItemHub> _nuevos = new List<SyncItemHub>();
         private List<SyncItemHub> _bajas = new List<SyncItemHub>();
+        private List<SyncItemHub> _traslados = new List<SyncItemHub>();
         private List<SyncItemHub> _iguales = new List<SyncItemHub>();
 
         public SyncHubWindow(List<Persona> personasHubDescargadas)
@@ -101,7 +102,144 @@ namespace SCCosmos
                 }
             }
 
+            DetectarPosiblesTraslados();
             ActualizarListasUI();
+        }
+
+        private void DetectarPosiblesTraslados()
+        {
+            _traslados.Clear();
+
+            var nuevosProcesados = new HashSet<SyncItemHub>();
+            var bajasProcesadas = new HashSet<SyncItemHub>();
+
+            foreach (var nuevo in _nuevos.ToList())
+            {
+                if (nuevo.PersonaHub == null) continue;
+
+                var candidatos = _bajas
+                    .Where(b =>
+                        b.PersonaDB != null
+                        && !string.Equals(
+                            b.PersonaDB.CongregacionCodigo,
+                            nuevo.PersonaHub.CongregacionCodigo,
+                            StringComparison.OrdinalIgnoreCase)
+                        && EsMismaPersonaParaTraslado(b.PersonaDB, nuevo.PersonaHub))
+                    .ToList();
+
+                // Por seguridad, solo proponemos traslado automático cuando hay
+                // una única ficha anterior compatible. Si hay homónimos, se deja
+                // como alta/baja normal para que el usuario decida manualmente.
+                if (candidatos.Count != 1) continue;
+
+                var baja = candidatos[0];
+                if (bajasProcesadas.Contains(baja)) continue;
+
+                string nombre = ObtenerNombrePreferido(baja.PersonaDB);
+                string origen = baja.PersonaDB.CongregacionNombre;
+                if (string.IsNullOrWhiteSpace(origen)) origen = baja.PersonaDB.CongregacionCodigo;
+                string destino = nuevo.PersonaHub.CongregacionCodigo ?? "";
+
+                _traslados.Add(new SyncItemHub
+                {
+                    PersonaDB = baja.PersonaDB,
+                    PersonaHub = nuevo.PersonaHub,
+                    NombreVisual = nombre,
+                    Descripcion = $"Posible traslado: {origen} → {destino}. Se conservarán ambas fichas enlazadas."
+                });
+
+                nuevosProcesados.Add(nuevo);
+                bajasProcesadas.Add(baja);
+            }
+
+            foreach (var item in nuevosProcesados) _nuevos.Remove(item);
+            foreach (var item in bajasProcesadas) _bajas.Remove(item);
+        }
+
+        private static bool EsMismaPersonaParaTraslado(Persona anterior, Persona nueva)
+        {
+            if (anterior == null || nueva == null) return false;
+
+            bool mismoEmailJw =
+                !string.IsNullOrWhiteSpace(anterior.EmailJW)
+                && !string.IsNullOrWhiteSpace(nueva.EmailJW)
+                && string.Equals(anterior.EmailJW.Trim(), nueva.EmailJW.Trim(), StringComparison.OrdinalIgnoreCase);
+
+            bool mismoEmail =
+                !string.IsNullOrWhiteSpace(anterior.Email)
+                && !string.IsNullOrWhiteSpace(nueva.Email)
+                && string.Equals(anterior.Email.Trim(), nueva.Email.Trim(), StringComparison.OrdinalIgnoreCase);
+
+            string[] nombresAnterior =
+            {
+                anterior.NombreJWHub ?? "",
+                anterior.Nombre ?? ""
+            };
+
+            string[] nombresNueva =
+            {
+                nueva.NombreJWHub ?? "",
+                nueva.Nombre ?? ""
+            };
+
+            bool mismoNombre = nombresAnterior
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Any(a => nombresNueva.Any(n =>
+                    !string.IsNullOrWhiteSpace(n)
+                    && string.Equals(a.Trim(), n.Trim(), StringComparison.OrdinalIgnoreCase)));
+
+            // Hace falta una señal fuerte de identidad. El nombre de Hub suele ser
+            // estable durante el traslado; los correos son todavía más concluyentes.
+            if (!mismoEmailJw && !mismoEmail && !mismoNombre) return false;
+
+            if (FechasIncompatiblesTraslado(anterior.FechaNacimiento, nueva.FechaNacimiento)) return false;
+            if (FechasIncompatiblesTraslado(anterior.FechaBautismo, nueva.FechaBautismo)) return false;
+
+            return true;
+        }
+
+        private static bool FechasIncompatiblesTraslado(string anterior, string nueva)
+        {
+            if (string.IsNullOrWhiteSpace(anterior) || string.IsNullOrWhiteSpace(nueva)) return false;
+
+            int anioAnterior = ExtraerAnio(anterior);
+            int anioNueva = ExtraerAnio(nueva);
+
+            if (anioAnterior > 0 && anioNueva > 0 && Math.Abs(anioAnterior - anioNueva) > 2)
+                return true;
+
+            bool aproxAnterior = anterior.Trim().StartsWith("01/01/", StringComparison.Ordinal);
+            bool aproxNueva = nueva.Trim().StartsWith("01/01/", StringComparison.Ordinal);
+
+            // Si ambas son fechas definitivas, una discrepancia completa sí sirve
+            // para descartar homónimos. Si alguna es aproximada, solo miramos el año.
+            if (!aproxAnterior && !aproxNueva)
+            {
+                return !string.Equals(anterior.Trim(), nueva.Trim(), StringComparison.Ordinal);
+            }
+
+            return false;
+        }
+
+        private static int ExtraerAnio(string fecha)
+        {
+            if (string.IsNullOrWhiteSpace(fecha)) return 0;
+            for (int i = fecha.Length - 4; i >= 0; i--)
+            {
+                if (i + 4 <= fecha.Length
+                    && int.TryParse(fecha.Substring(i, 4), out int anio)
+                    && anio >= 1900 && anio <= 2100)
+                    return anio;
+            }
+            return 0;
+        }
+
+        private static string ObtenerNombrePreferido(Persona p)
+        {
+            if (p == null) return "";
+            if (!string.IsNullOrWhiteSpace(p.NombreComun)) return p.NombreComun.Trim();
+            if (!string.IsNullOrWhiteSpace(p.NombreJWHub)) return p.NombreJWHub.Trim();
+            return p.Nombre?.Trim() ?? "";
         }
 
         private void ActualizarListasUI()
@@ -109,11 +247,13 @@ namespace SCCosmos
             GridConflictos.ItemsSource = null; GridConflictos.ItemsSource = _conflictos;
             GridNuevos.ItemsSource = null; GridNuevos.ItemsSource = _nuevos;
             GridBajas.ItemsSource = null; GridBajas.ItemsSource = _bajas;
+            GridTraslados.ItemsSource = null; GridTraslados.ItemsSource = _traslados;
             GridIguales.ItemsSource = null; GridIguales.ItemsSource = _iguales;
 
             TxtNumConflictos.Text = _conflictos.Count.ToString();
             TxtNumNuevos.Text = _nuevos.Count.ToString();
             TxtNumBajas.Text = _bajas.Count.ToString();
+            TxtNumTraslados.Text = _traslados.Count.ToString();
             TxtNumIguales.Text = _iguales.Count.ToString();
         }
 
@@ -259,6 +399,94 @@ namespace SCCosmos
             }
         }
 
+        private void BtnConfirmarTraslado_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button btn || btn.Tag is not SyncItemHub item) return;
+            if (item.PersonaDB == null || item.PersonaHub == null) return;
+
+            string nombre = ObtenerNombrePreferido(item.PersonaDB);
+            string origen = !string.IsNullOrWhiteSpace(item.PersonaDB.CongregacionNombre)
+                ? item.PersonaDB.CongregacionNombre
+                : item.PersonaDB.CongregacionCodigo;
+            string destino = item.PersonaHub.CongregacionCodigo ?? "";
+
+            var respuesta = MessageBox.Show(
+                $"¿Confirmas el traslado de {nombre}?\n\n" +
+                $"{origen}  →  {destino}\n\n" +
+                "La ficha anterior se dará de baja y se conservará para las visitas históricas. " +
+                "Se creará una ficha nueva enlazada en la congregación de destino.\n\n" +
+                "La actividad mensual NO se copiará a la ficha nueva.",
+                "Confirmar traslado",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (respuesta != MessageBoxResult.Yes) return;
+
+            try
+            {
+                int nuevoId = DatabaseHelper.RegistrarTraslado(
+                    item.PersonaDB,
+                    item.PersonaHub,
+                    DateTime.Today);
+
+                item.PersonaHub.Id = nuevoId;
+                item.PersonaDB.FechaEliminacion = DateTime.Today.ToString("dd/MM/yyyy");
+                item.PersonaDB.TrasladoSiguienteId = nuevoId;
+                item.PersonaDB.FechaTraslado = DateTime.Today.ToString("dd/MM/yyyy");
+                item.PersonaHub.TrasladoAnteriorId = item.PersonaDB.Id;
+                item.PersonaHub.FechaTraslado = DateTime.Today.ToString("dd/MM/yyyy");
+
+                Persona nuevaGuardada = DatabaseHelper.ObtenerPersonaPorId(nuevoId) ?? item.PersonaHub;
+                nuevaGuardada.TrasladoAnteriorId = item.PersonaDB.Id;
+                nuevaGuardada.FechaTraslado = DateTime.Today.ToString("dd/MM/yyyy");
+
+                _traslados.Remove(item);
+                _iguales.Add(new SyncItemHub
+                {
+                    PersonaDB = nuevaGuardada,
+                    PersonaHub = item.PersonaHub,
+                    NombreVisual = ObtenerNombrePreferido(nuevaGuardada),
+                    Descripcion = $"Traslado registrado: {origen} → {destino}."
+                });
+
+                ActualizarListasUI();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "No se pudo registrar el traslado.\n\n" + ex.Message,
+                    "Traslado",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+        }
+
+        private void BtnNoEsTraslado_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button btn || btn.Tag is not SyncItemHub item) return;
+            if (item.PersonaDB == null || item.PersonaHub == null) return;
+
+            _traslados.Remove(item);
+
+            _nuevos.Add(new SyncItemHub
+            {
+                PersonaDB = null,
+                PersonaHub = item.PersonaHub,
+                NombreVisual = ObtenerNombrePreferido(item.PersonaHub),
+                Descripcion = "Aparece en JW Hub pero no está en la Base de Datos."
+            });
+
+            _bajas.Add(new SyncItemHub
+            {
+                PersonaDB = item.PersonaDB,
+                PersonaHub = null,
+                NombreVisual = ObtenerNombrePreferido(item.PersonaDB),
+                Descripcion = "Ya no aparece en JW Hub. ¿Se ha dado de baja o mudado?"
+            });
+
+            ActualizarListasUI();
+        }
+
         private void BtnRevisarIgual_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button btn && btn.Tag is SyncItemHub item)
@@ -286,6 +514,7 @@ namespace SCCosmos
                 if (_conflictos.Contains(item)) _conflictos.Remove(item);
                 else if (_nuevos.Contains(item)) _nuevos.Remove(item);
                 else if (_bajas.Contains(item)) _bajas.Remove(item);
+                else if (_traslados.Contains(item)) _traslados.Remove(item);
                 else if (_iguales.Contains(item)) _iguales.Remove(item);
 
                 ActualizarListasUI();
@@ -294,6 +523,16 @@ namespace SCCosmos
 
         private void BtnFinalizar_Click(object sender, RoutedEventArgs e)
         {
+            if (_traslados.Count > 0)
+            {
+                MessageBox.Show(
+                    $"Quedan {_traslados.Count} posibles traslados por revisar.\n\nConfirma cada traslado o pulsa 'No es traslado' antes de guardar.",
+                    "Traslados pendientes",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                return;
+            }
+
             // Los registros que sí hemos visto en JW Hub quedan vinculados a ese origen.
             // Esto permite que una sincronización futura solo proponga como baja a personas
             // que realmente habían sido confirmadas previamente en JW Hub.

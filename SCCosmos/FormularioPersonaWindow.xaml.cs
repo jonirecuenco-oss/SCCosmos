@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -31,7 +32,8 @@ namespace SCCosmos
         private List<Persona> _listaVincularCompleta;
         private bool _esUnaFusion = false;
         private List<Persona> _candidatosPredefinidos;
-        private List<ActividadMensual> _actividadEditada = new List<ActividadMensual>();
+        private ObservableCollection<ActividadEditable> _actividadEditada = new ObservableCollection<ActividadEditable>();
+        private readonly List<ClaveActividad> _actividadEliminada = new List<ClaveActividad>();
 
         // Evita que el ComboBox editable pierda la selección al refrescar su ItemsSource.
         private bool _actualizandoSelectorVincular = false;
@@ -46,6 +48,29 @@ namespace SCCosmos
         private readonly string _nombreJWHubOriginal;
         private readonly bool _teniaOrigenS21;
         private readonly bool _teniaOrigenJWHub;
+
+        private sealed class ActividadEditable
+        {
+            public string Mes { get; set; } = "";
+            public string AnioServicio { get; set; } = "";
+            public bool Participacion { get; set; }
+            public string CursosBiblicos { get; set; } = "";
+            public bool PrecursorAuxiliar { get; set; }
+            public string Horas { get; set; } = "";
+            public string Notas { get; set; } = "";
+
+            // Clave con la que el registro existe actualmente en la BBDD.
+            // Permite cambiar Mes/Año sin dejar detrás el registro antiguo.
+            public string MesOriginal { get; set; } = "";
+            public string AnioServicioOriginal { get; set; } = "";
+            public bool EsNuevo { get; set; }
+        }
+
+        private sealed class ClaveActividad
+        {
+            public string Mes { get; set; } = "";
+            public string AnioServicio { get; set; } = "";
+        }
 
         public FormularioPersonaWindow(Persona personaInicial)
             : this(personaInicial, null)
@@ -1286,23 +1311,39 @@ namespace SCCosmos
 
         private void CargarActividadEnInterfaz()
         {
-            _actividadEditada = new List<ActividadMensual>();
+            _actividadEditada = new ObservableCollection<ActividadEditable>();
+            _actividadEliminada.Clear();
 
             if (PersonaActualizada.Id <= 0)
             {
                 GridActividad.ItemsSource = _actividadEditada;
-                TxtEstadoActividad.Text = "Guarda primero la persona para poder consultar su actividad.";
+                TxtEstadoActividad.Text = "Guarda primero la persona para poder consultar o añadir actividad.";
                 return;
             }
 
             try
             {
-                _actividadEditada = DatabaseHelper.ObtenerActividadPersona(PersonaActualizada.Id) ?? new List<ActividadMensual>();
-                GridActividad.ItemsSource = _actividadEditada;
+                var actividadDb = DatabaseHelper.ObtenerActividadPersona(PersonaActualizada.Id) ?? new List<ActividadMensual>();
 
-                TxtEstadoActividad.Text = _actividadEditada.Count == 0
-                    ? "No hay actividad importada desde S-21 para esta persona."
-                    : $"{_actividadEditada.Count} registros cargados. Los cambios se guardan con el botón Guardar.";
+                foreach (var item in actividadDb)
+                {
+                    _actividadEditada.Add(new ActividadEditable
+                    {
+                        Mes = NormalizarMesActividad(item.Mes),
+                        AnioServicio = item.AnioServicio ?? "",
+                        Participacion = item.Participacion,
+                        CursosBiblicos = item.CursosBiblicos ?? "",
+                        PrecursorAuxiliar = item.PrecursorAuxiliar,
+                        Horas = item.Horas ?? "",
+                        Notas = item.Notas ?? "",
+                        MesOriginal = NormalizarMesActividad(item.Mes),
+                        AnioServicioOriginal = item.AnioServicio ?? "",
+                        EsNuevo = false
+                    });
+                }
+
+                GridActividad.ItemsSource = _actividadEditada;
+                ActualizarEstadoActividad();
             }
             catch (Exception ex)
             {
@@ -1313,30 +1354,104 @@ namespace SCCosmos
             }
         }
 
+        private void BtnAgregarActividad_Click(object sender, RoutedEventArgs e)
+        {
+            if (PersonaActualizada.Id <= 0)
+            {
+                MessageBox.Show("Guarda primero la persona antes de añadir actividad manualmente.",
+                    "Actividad", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            DateTime hoy = DateTime.Today;
+            string mes = hoy.ToString("MMMM", CultureInfo.GetCultureInfo("es-ES")).ToLowerInvariant();
+            string anioServicio = (hoy.Month >= 9 ? hoy.Year + 1 : hoy.Year).ToString();
+
+            // Si el mes actual ya existe, proponemos el primer mes/año libre cercano.
+            BuscarPrimeraClaveActividadLibre(ref mes, ref anioServicio);
+
+            var nuevo = new ActividadEditable
+            {
+                Mes = mes,
+                AnioServicio = anioServicio,
+                Participacion = false,
+                CursosBiblicos = "",
+                PrecursorAuxiliar = false,
+                Horas = "",
+                Notas = "",
+                EsNuevo = true
+            };
+
+            _actividadEditada.Add(nuevo);
+            GridActividad.SelectedItem = nuevo;
+            GridActividad.ScrollIntoView(nuevo);
+            ActualizarEstadoActividad();
+        }
+
+        private void BtnEliminarActividad_Click(object sender, RoutedEventArgs e)
+        {
+            if (!(sender is FrameworkElement elemento) || !(elemento.DataContext is ActividadEditable item))
+                return;
+
+            string descripcion = $"{CapitalizarMes(item.Mes)} · año de servicio {item.AnioServicio}";
+            if (MessageBox.Show($"¿Eliminar el registro de {descripcion}?\n\nEl borrado no será definitivo hasta que pulses Guardar.",
+                "Eliminar actividad", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+                return;
+
+            if (!item.EsNuevo && !string.IsNullOrWhiteSpace(item.MesOriginal) && !string.IsNullOrWhiteSpace(item.AnioServicioOriginal))
+            {
+                _actividadEliminada.Add(new ClaveActividad
+                {
+                    Mes = item.MesOriginal,
+                    AnioServicio = item.AnioServicioOriginal
+                });
+            }
+
+            _actividadEditada.Remove(item);
+            ActualizarEstadoActividad();
+        }
+
         private bool GuardarActividadEditada()
         {
             if (PersonaActualizada.Id <= 0) return true;
 
             try
             {
-                // Fuerza al DataGrid a volcar el valor de la celda que se esté editando
-                // antes de leer los objetos de la lista.
+                // Fuerza al DataGrid a volcar la celda/row actualmente editada.
                 GridActividad.CommitEdit(DataGridEditingUnit.Cell, true);
                 GridActividad.CommitEdit(DataGridEditingUnit.Row, true);
 
+                if (!ValidarActividadAntesDeGuardar())
+                    return false;
+
+                // Guardamos toda la actividad de la persona en una sola transacción.
+                // Así cambiar Mes/Año, añadir y eliminar son operaciones atómicas: si
+                // algo falla, la actividad anterior permanece intacta.
+                var registrosGuardar = _actividadEditada.Select(item => new ActividadMensual
+                {
+                    Mes = NormalizarMesActividad(item.Mes),
+                    AnioServicio = (item.AnioServicio ?? "").Trim(),
+                    Participacion = item.Participacion,
+                    CursosBiblicos = item.CursosBiblicos ?? "",
+                    PrecursorAuxiliar = item.PrecursorAuxiliar,
+                    Horas = item.Horas ?? "",
+                    Notas = item.Notas ?? ""
+                }).ToList();
+
+                DatabaseHelper.ReemplazarActividadPersona(
+                    PersonaActualizada.Id,
+                    registrosGuardar);
+
                 foreach (var item in _actividadEditada)
                 {
-                    DatabaseHelper.GuardarActividadMensualEditada(
-                        PersonaActualizada.Id,
-                        item.Mes,
-                        item.AnioServicio,
-                        item.Horas,
-                        item.Participacion,
-                        item.CursosBiblicos,
-                        item.PrecursorAuxiliar,
-                        item.Notas);
+                    item.Mes = NormalizarMesActividad(item.Mes);
+                    item.AnioServicio = (item.AnioServicio ?? "").Trim();
+                    item.MesOriginal = item.Mes;
+                    item.AnioServicioOriginal = item.AnioServicio;
+                    item.EsNuevo = false;
                 }
 
+                _actividadEliminada.Clear();
                 return true;
             }
             catch (Exception ex)
@@ -1345,6 +1460,114 @@ namespace SCCosmos
                     "Actividad", MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
             }
+        }
+
+        private bool ValidarActividadAntesDeGuardar()
+        {
+            string[] mesesValidos =
+            {
+                "enero", "febrero", "marzo", "abril", "mayo", "junio",
+                "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+            };
+
+            var claves = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var item in _actividadEditada)
+            {
+                string mes = NormalizarMesActividad(item.Mes);
+                string anio = (item.AnioServicio ?? "").Trim();
+
+                if (!mesesValidos.Contains(mes, StringComparer.OrdinalIgnoreCase))
+                {
+                    MessageBox.Show(
+                        $"El mes '{item.Mes}' no es válido. Escribe el nombre completo del mes, por ejemplo 'septiembre'.",
+                        "Actividad", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    GridActividad.SelectedItem = item;
+                    GridActividad.ScrollIntoView(item);
+                    return false;
+                }
+
+                if (!int.TryParse(anio, out int anioNumero) || anioNumero < 1900 || anioNumero > 2200)
+                {
+                    MessageBox.Show(
+                        $"El año de servicio '{item.AnioServicio}' no es válido. Debe ser un año de cuatro cifras.",
+                        "Actividad", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    GridActividad.SelectedItem = item;
+                    GridActividad.ScrollIntoView(item);
+                    return false;
+                }
+
+                string clave = mes + "|" + anio;
+                if (!claves.Add(clave))
+                {
+                    MessageBox.Show(
+                        $"Hay dos registros para {CapitalizarMes(mes)} del año de servicio {anio}. Cada mes/año solo puede aparecer una vez.",
+                        "Actividad", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    GridActividad.SelectedItem = item;
+                    GridActividad.ScrollIntoView(item);
+                    return false;
+                }
+
+                item.Mes = mes;
+                item.AnioServicio = anio;
+            }
+
+            return true;
+        }
+
+        private void ActualizarEstadoActividad()
+        {
+            if (TxtEstadoActividad == null) return;
+
+            if (_actividadEditada.Count == 0)
+            {
+                TxtEstadoActividad.Text = _actividadEliminada.Count > 0
+                    ? "No quedan registros. El borrado se aplicará al pulsar Guardar."
+                    : "No hay actividad registrada. Puedes añadirla manualmente con 'Añadir registro'.";
+                return;
+            }
+
+            string pendientes = _actividadEliminada.Count > 0
+                ? $" · {_actividadEliminada.Count} borrado(s) pendiente(s)"
+                : "";
+
+            TxtEstadoActividad.Text = $"{_actividadEditada.Count} registro(s){pendientes}. Los cambios se guardan con el botón Guardar.";
+        }
+
+        private void BuscarPrimeraClaveActividadLibre(ref string mes, ref string anioServicio)
+        {
+            DateTime fecha = DateTime.Today;
+            for (int i = 0; i < 36; i++)
+            {
+                string mesCandidato = fecha.ToString("MMMM", CultureInfo.GetCultureInfo("es-ES")).ToLowerInvariant();
+                string anioCandidato = (fecha.Month >= 9 ? fecha.Year + 1 : fecha.Year).ToString();
+
+                bool existe = _actividadEditada.Any(a =>
+                    string.Equals(NormalizarMesActividad(a.Mes), mesCandidato, StringComparison.OrdinalIgnoreCase)
+                    && string.Equals((a.AnioServicio ?? "").Trim(), anioCandidato, StringComparison.Ordinal));
+
+                if (!existe)
+                {
+                    mes = mesCandidato;
+                    anioServicio = anioCandidato;
+                    return;
+                }
+
+                fecha = fecha.AddMonths(-1);
+            }
+        }
+
+        private static string NormalizarMesActividad(string mes)
+        {
+            return (mes ?? "").Trim().ToLowerInvariant();
+        }
+
+        private static string CapitalizarMes(string mes)
+        {
+            string valor = NormalizarMesActividad(mes);
+            return string.IsNullOrWhiteSpace(valor)
+                ? "(sin mes)"
+                : char.ToUpper(valor[0]) + valor.Substring(1);
         }
 
         private void BtnFijarMapa_Click(object sender, RoutedEventArgs e)

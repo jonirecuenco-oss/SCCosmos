@@ -263,6 +263,90 @@
                     </Style>
                 </WrapPanel.Resources>
 
+                <!-- NUEVAS TARJETAS GENERALES DEL CIRCUITO -->
+                <Border ToolTip="Personas actuales y activas del circuito (sin históricos ni bajas)" Background="Transparent">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <ui:SymbolIcon Symbol="People24" Foreground="#4BA3E3" Margin="0,0,8,0"/>
+                            <TextBlock Text="Personas" Foreground="#AAAAAA" FontSize="13" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock x:Name="TxtTotalPersonas" Text="-" FontSize="32" FontWeight="Bold" Foreground="White"/>
+                    </StackPanel>
+                </Border>
+
+                <Border ToolTip="Hombres entre las personas actuales y activas" Background="Transparent">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <ui:SymbolIcon Symbol="Person24" Foreground="#5B9BD5" Margin="0,0,8,0"/>
+                            <TextBlock Text="Hombres" Foreground="#AAAAAA" FontSize="13" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock x:Name="TxtTotalHombres" Text="-" FontSize="32" FontWeight="Bold" Foreground="White"/>
+                    </StackPanel>
+                </Border>
+
+                <Border ToolTip="Mujeres entre las personas actuales y activas" Background="Transparent">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <ui:SymbolIcon Symbol="Person24" Foreground="#C586C0" Margin="0,0,8,0"/>
+                            <TextBlock Text="Mujeres" Foreground="#AAAAAA" FontSize="13" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock x:Name="TxtTotalMujeres" Text="-" FontSize="32" FontWeight="Bold" Foreground="White"/>
+                    </StackPanel>
+                </Border>
+
+                <Border ToolTip="Publicadores actuales sin fecha de bautismo" Background="Transparent">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <ui:SymbolIcon Symbol="Person24" Foreground="#FFB900" Margin="0,0,8,0"/>
+                            <TextBlock Text="Pubs no bautizados" Foreground="#AAAAAA" FontSize="12" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock x:Name="TxtNoBautizados" Text="-" FontSize="32" FontWeight="Bold" Foreground="White"/>
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="CardCBs" Background="Transparent">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <ui:SymbolIcon Symbol="Document24" Foreground="#00B294" Margin="0,0,8,0"/>
+                            <TextBlock Text="CBs" Foreground="#AAAAAA" FontSize="13" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock x:Name="TxtTotalCBs" Text="-" FontSize="32" FontWeight="Bold" Foreground="White"/>
+                        <TextBlock x:Name="TxtMesCBs" Text="último mes con datos" Foreground="#777777" FontSize="10" TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                </Border>
+
+                <Border ToolTip="Media de edad de las personas actuales con fecha de nacimiento válida" Background="Transparent">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <ui:SymbolIcon Symbol="People24" Foreground="#B4A0FF" Margin="0,0,8,0"/>
+                            <TextBlock Text="Media de edad" Foreground="#AAAAAA" FontSize="13" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock x:Name="TxtMediaEdad" Text="-" FontSize="32" FontWeight="Bold" Foreground="White"/>
+                        <TextBlock Text="años" Foreground="#777777" FontSize="10"/>
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="CardAuxiliaresMedia" Background="Transparent">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <ui:SymbolIcon Symbol="Star24" Foreground="#FFB900" Margin="0,0,8,0"/>
+                            <TextBlock Text="Auxiliares (media/mes)" Foreground="#AAAAAA" FontSize="11" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock x:Name="TxtMediaAuxiliares" Text="-" FontSize="32" FontWeight="Bold" Foreground="White"/>
+                        <TextBlock x:Name="TxtPeriodoAuxiliares" Text="últimos meses con datos" Foreground="#777777" FontSize="10" TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                </Border>
+
+                <Border ToolTip="Personas con el privilegio Asesor de Betel o Voluntario a distancia" Background="Transparent">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <ui:SymbolIcon Symbol="Star24" Foreground="#EBCB8B" Margin="0,0,8,0"/>
+                            <TextBlock Text="Betel" Foreground="#AAAAAA" FontSize="13" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <TextBlock x:Name="TxtTotalBetel" Text="-" FontSize="32" FontWeight="Bold" Foreground="White"/>
+                    </StackPanel>
+                </Border>
+
                 <!-- Cuadro 1: Precursores Regulares -->
                 <Border Cursor="Hand" MouseLeftButtonUp="CardPrecReg_Click" Background="Transparent">
                     <StackPanel>

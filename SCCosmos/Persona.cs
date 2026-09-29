@@ -51,6 +51,15 @@ namespace SCCosmos
         // Indica si la persona está aprobada para participar en la predicación con exhibidores.
         public bool AprobadoExhibidores { get; set; }
 
+        // Enlace histórico entre fichas cuando una persona se traslada de congregación.
+        // No se fusionan las fichas: la anterior queda de baja y la nueva queda activa.
+        public int TrasladoAnteriorId { get; set; }
+        public int TrasladoSiguienteId { get; set; }
+        public string FechaTraslado { get; set; }
+
+        public bool TieneTrasladoAnterior => TrasladoAnteriorId > 0;
+        public bool TieneTrasladoSiguiente => TrasladoSiguienteId > 0;
+
         public bool TieneOrigenJWHub =>
             !string.IsNullOrWhiteSpace(OrigenRegistro) &&
             OrigenRegistro.IndexOf("JWHub", StringComparison.OrdinalIgnoreCase) >= 0;

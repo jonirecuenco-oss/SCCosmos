@@ -715,6 +715,590 @@ namespace SCCosmos
         }
 
 
+        private void BtnImportarProgramaJson_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            var dialogo = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "Importar programa de la visita",
+                Filter = "Archivos JSON (*.json)|*.json|Todos los archivos (*.*)|*.*",
+                Multiselect = false
+            };
+
+            if (dialogo.ShowDialog() != true)
+            {
+                return;
+            }
+
+            try
+            {
+                string contenido = File.ReadAllText(dialogo.FileName);
+
+                using (JsonDocument documento = JsonDocument.Parse(contenido))
+                {
+                    JsonElement raiz = documento.RootElement;
+                    JsonElement listaJson;
+
+                    if (raiz.ValueKind == JsonValueKind.Array)
+                    {
+                        listaJson = raiz;
+                    }
+                    else if (raiz.ValueKind == JsonValueKind.Object
+                             && TryObtenerPropiedadJson(
+                                 raiz,
+                                 out JsonElement actividadesElement,
+                                 "actividades",
+                                 "programa",
+                                 "eventos"))
+                    {
+                        listaJson = actividadesElement;
+                    }
+                    else
+                    {
+                        throw new InvalidDataException(
+                            "El JSON debe ser un array de actividades o un objeto con una propiedad 'actividades'.");
+                    }
+
+                    if (listaJson.ValueKind != JsonValueKind.Array)
+                    {
+                        throw new InvalidDataException(
+                            "La propiedad de actividades del JSON debe contener una lista.");
+                    }
+
+                    var personas =
+                        DatabaseHelper
+                            .ObtenerPersonasPorCongregacion(_congreCodigo)
+                            .Where(p =>
+                                p != null
+                                && string.IsNullOrWhiteSpace(p.FechaEliminacion))
+                            .ToList();
+
+                    var importadas =
+                        new List<DatabaseHelper.ActividadPrograma>();
+
+                    var avisos =
+                        new List<string>();
+
+                    int numeroRegistro = 0;
+
+                    foreach (JsonElement item in listaJson.EnumerateArray())
+                    {
+                        numeroRegistro++;
+
+                        if (item.ValueKind != JsonValueKind.Object)
+                        {
+                            avisos.Add(
+                                $"Registro {numeroRegistro}: no es un objeto y se ha omitido.");
+                            continue;
+                        }
+
+                        string dia =
+                            NormalizarDiaProgramaJson(
+                                LeerTextoJson(
+                                    item,
+                                    "dia",
+                                    "día",
+                                    "diaSemana",
+                                    "díaSemana"));
+
+                        string hora =
+                            LeerTextoJson(
+                                item,
+                                "hora");
+
+                        if (string.IsNullOrWhiteSpace(dia))
+                        {
+                            avisos.Add(
+                                $"Registro {numeroRegistro}: día no válido. Solo se admiten miércoles, jueves, viernes, sábado y domingo.");
+                            continue;
+                        }
+
+                        if (string.IsNullOrWhiteSpace(hora))
+                        {
+                            avisos.Add(
+                                $"Registro {numeroRegistro} ({dia}): falta la hora y se ha omitido.");
+                            continue;
+                        }
+
+                        string tipo =
+                            NormalizarTipoProgramaJson(
+                                LeerTextoJson(
+                                    item,
+                                    "tipoActividad",
+                                    "tipo",
+                                    "actividad"));
+
+                        if (string.IsNullOrWhiteSpace(tipo))
+                        {
+                            tipo = "Otra";
+                        }
+
+                        string responsableRaw =
+                            LeerTextoJson(
+                                item,
+                                "responsable");
+
+                        string responsable =
+                            NormalizarResponsablePrograma(
+                                string.IsNullOrWhiteSpace(responsableRaw)
+                                    ? "SC"
+                                    : responsableRaw);
+
+                        string nombreAcompanante =
+                            LeerTextoJson(
+                                item,
+                                "acompanante",
+                                "acompañante",
+                                "companero",
+                                "compañero");
+
+                        int companeroId =
+                            ResolverAcompananteProgramaJson(
+                                personas,
+                                nombreAcompanante,
+                                out bool acompananteAmbiguo);
+
+                        if (!string.IsNullOrWhiteSpace(nombreAcompanante)
+                            &&
+                            !EsTextoSinAcompanante(nombreAcompanante)
+                            &&
+                            companeroId <= 0)
+                        {
+                            avisos.Add(
+                                acompananteAmbiguo
+                                    ? $"Registro {numeroRegistro} ({dia} {hora}): hay más de una coincidencia para el acompañante '{nombreAcompanante}'. Se importó sin acompañante."
+                                    : $"Registro {numeroRegistro} ({dia} {hora}): no se encontró el acompañante '{nombreAcompanante}'. Se importó sin acompañante.");
+                        }
+
+                        importadas.Add(
+                            new DatabaseHelper.ActividadPrograma
+                            {
+                                DiaSemana = dia,
+                                Turno = "General",
+                                Responsable = responsable,
+                                TipoActividad = tipo,
+                                Hora = hora.Trim(),
+                                NotasLibro =
+                                    LeerTextoJson(
+                                        item,
+                                        "notas",
+                                        "nota"),
+                                CompaneroId = companeroId,
+                                Direccion =
+                                    LeerTextoJson(
+                                        item,
+                                        "direccion",
+                                        "dirección",
+                                        "ubicacion",
+                                        "ubicación"),
+                                Latitud =
+                                    LeerNumeroJson(
+                                        item,
+                                        "latitud",
+                                        "lat"),
+                                Longitud =
+                                    LeerNumeroJson(
+                                        item,
+                                        "longitud",
+                                        "lon",
+                                        "lng")
+                            });
+                    }
+
+                    if (importadas.Count == 0)
+                    {
+                        MessageBox.Show(
+                            "No se ha encontrado ninguna actividad válida para importar.",
+                            "Importar programa",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Warning);
+                        return;
+                    }
+
+                    string mesReferencia =
+                        _mesPrograma.ToString("yyyy-MM");
+
+                    var existentes =
+                        DatabaseHelper.ObtenerActividadesProgramaMes(
+                            _congreCodigo,
+                            mesReferencia);
+
+                    bool reemplazar = false;
+
+                    if (existentes.Count > 0)
+                    {
+                        MessageBoxResult decision =
+                            MessageBox.Show(
+                                "Ya existe actividad en el programa de esta visita.\n\n"
+                                + "Sí = reemplazar todo el programa de la semana.\n"
+                                + "No = añadir las actividades del JSON al programa actual.\n"
+                                + "Cancelar = no importar.",
+                                "Importar programa JSON",
+                                MessageBoxButton.YesNoCancel,
+                                MessageBoxImage.Question);
+
+                        if (decision == MessageBoxResult.Cancel)
+                        {
+                            return;
+                        }
+
+                        reemplazar =
+                            decision == MessageBoxResult.Yes;
+
+                        if (!reemplazar)
+                        {
+                            importadas =
+                                importadas
+                                    .Where(nueva =>
+                                        !existentes.Any(actual =>
+                                            SonActividadesProgramaIguales(
+                                                actual,
+                                                nueva)))
+                                    .ToList();
+
+                            if (importadas.Count == 0)
+                            {
+                                MessageBox.Show(
+                                    "Todas las actividades del JSON ya existen en el programa.",
+                                    "Importar programa",
+                                    MessageBoxButton.OK,
+                                    MessageBoxImage.Information);
+                                return;
+                            }
+                        }
+                    }
+
+                    DatabaseHelper.ImportarProgramaVisita(
+                        _congreCodigo,
+                        mesReferencia,
+                        importadas,
+                        reemplazar);
+
+                    ActualizarUI_MesPrograma();
+
+                    string resumen =
+                        $"Se han importado {importadas.Count} actividades.";
+
+                    if (avisos.Count > 0)
+                    {
+                        resumen +=
+                            "\n\nAvisos:\n• "
+                            + string.Join(
+                                "\n• ",
+                                avisos.Take(8));
+
+                        if (avisos.Count > 8)
+                        {
+                            resumen +=
+                                $"\n• … y {avisos.Count - 8} aviso(s) más.";
+                        }
+                    }
+
+                    MessageBox.Show(
+                        resumen,
+                        "Programa importado",
+                        MessageBoxButton.OK,
+                        avisos.Count == 0
+                            ? MessageBoxImage.Information
+                            : MessageBoxImage.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "No se pudo importar el programa JSON.\n\n"
+                    + ex.Message,
+                    "Importar programa",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+        }
+
+        private static bool TryObtenerPropiedadJson(
+            JsonElement elemento,
+            out JsonElement valor,
+            params string[] nombres)
+        {
+            if (elemento.ValueKind == JsonValueKind.Object)
+            {
+                foreach (JsonProperty propiedad in elemento.EnumerateObject())
+                {
+                    if (nombres.Any(n =>
+                        string.Equals(
+                            propiedad.Name,
+                            n,
+                            StringComparison.OrdinalIgnoreCase)))
+                    {
+                        valor = propiedad.Value;
+                        return true;
+                    }
+                }
+            }
+
+            valor = default(JsonElement);
+            return false;
+        }
+
+        private static string LeerTextoJson(
+            JsonElement elemento,
+            params string[] nombres)
+        {
+            if (!TryObtenerPropiedadJson(
+                    elemento,
+                    out JsonElement valor,
+                    nombres))
+            {
+                return "";
+            }
+
+            if (valor.ValueKind == JsonValueKind.String)
+            {
+                return valor.GetString()?.Trim() ?? "";
+            }
+
+            if (valor.ValueKind == JsonValueKind.Null
+                || valor.ValueKind == JsonValueKind.Undefined)
+            {
+                return "";
+            }
+
+            return valor.ToString().Trim();
+        }
+
+        private static double LeerNumeroJson(
+            JsonElement elemento,
+            params string[] nombres)
+        {
+            if (!TryObtenerPropiedadJson(
+                    elemento,
+                    out JsonElement valor,
+                    nombres))
+            {
+                return 0;
+            }
+
+            if (valor.ValueKind == JsonValueKind.Number
+                && valor.TryGetDouble(out double numero))
+            {
+                return numero;
+            }
+
+            string texto =
+                valor.ValueKind == JsonValueKind.String
+                    ? valor.GetString()
+                    : valor.ToString();
+
+            if (double.TryParse(
+                    (texto ?? "").Replace(",", "."),
+                    NumberStyles.Any,
+                    CultureInfo.InvariantCulture,
+                    out double resultado))
+            {
+                return resultado;
+            }
+
+            return 0;
+        }
+
+        private static string NormalizarDiaProgramaJson(
+            string dia)
+        {
+            string valor =
+                (dia ?? "")
+                    .Trim()
+                    .ToLowerInvariant();
+
+            switch (valor)
+            {
+                case "miércoles":
+                case "miercoles":
+                    return "Miércoles";
+
+                case "jueves":
+                    return "Jueves";
+
+                case "viernes":
+                    return "Viernes";
+
+                case "sábado":
+                case "sabado":
+                    return "Sábado";
+
+                case "domingo":
+                    return "Domingo";
+
+                default:
+                    return "";
+            }
+        }
+
+        private static string NormalizarTipoProgramaJson(
+            string tipo)
+        {
+            string valor =
+                (tipo ?? "").Trim();
+
+            if (string.IsNullOrWhiteSpace(valor))
+            {
+                return "";
+            }
+
+            string minusculas =
+                valor.ToLowerInvariant();
+
+            if (minusculas == "rsc")
+                return "RSC";
+
+            if (minusculas == "predicación"
+                || minusculas == "predicacion")
+                return "Predicación";
+
+            if (minusculas == "visita de pastoreo"
+                || minusculas == "pastoreo")
+                return "Visita de pastoreo";
+
+            if (minusculas == "comida")
+                return "Comida";
+
+            if (minusculas == "alojamiento")
+                return "Alojamiento";
+
+            if (minusculas == "otra"
+                || minusculas == "otro")
+                return "Otra";
+
+            // Se permiten también descripciones personalizadas.
+            return valor;
+        }
+
+        private static bool EsTextoSinAcompanante(
+            string texto)
+        {
+            string valor =
+                (texto ?? "").Trim();
+
+            return
+                string.IsNullOrWhiteSpace(valor)
+                || valor.Equals(
+                    "sin acompañante",
+                    StringComparison.OrdinalIgnoreCase)
+                || valor.Equals(
+                    "sin acompanante",
+                    StringComparison.OrdinalIgnoreCase)
+                || valor.Equals(
+                    "ninguno",
+                    StringComparison.OrdinalIgnoreCase)
+                || valor.Equals(
+                    "-",
+                    StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool TextoProgramaCoincide(
+            string a,
+            string b)
+        {
+            if (string.IsNullOrWhiteSpace(a)
+                || string.IsNullOrWhiteSpace(b))
+            {
+                return false;
+            }
+
+            return
+                CultureInfo
+                    .GetCultureInfo("es-ES")
+                    .CompareInfo
+                    .Compare(
+                        a.Trim(),
+                        b.Trim(),
+                        CompareOptions.IgnoreCase
+                        | CompareOptions.IgnoreNonSpace)
+                == 0;
+        }
+
+        private static int ResolverAcompananteProgramaJson(
+            List<Persona> personas,
+            string nombre,
+            out bool ambiguo)
+        {
+            ambiguo = false;
+
+            if (EsTextoSinAcompanante(nombre))
+            {
+                return 0;
+            }
+
+            var coincidencias =
+                (personas ?? new List<Persona>())
+                    .Where(p =>
+                        TextoProgramaCoincide(
+                            nombre,
+                            p.NombreComun)
+                        ||
+                        TextoProgramaCoincide(
+                            nombre,
+                            p.NombreJWHub)
+                        ||
+                        TextoProgramaCoincide(
+                            nombre,
+                            p.Nombre))
+                    .Select(p =>
+                        p.PersonaRaizId > 0
+                            ? p.PersonaRaizId
+                            : p.Id)
+                    .Distinct()
+                    .ToList();
+
+            if (coincidencias.Count == 1)
+            {
+                return coincidencias[0];
+            }
+
+            ambiguo =
+                coincidencias.Count > 1;
+
+            return 0;
+        }
+
+        private static bool SonActividadesProgramaIguales(
+            DatabaseHelper.ActividadPrograma a,
+            DatabaseHelper.ActividadPrograma b)
+        {
+            if (a == null || b == null)
+            {
+                return false;
+            }
+
+            return
+                string.Equals(
+                    a.DiaSemana?.Trim(),
+                    b.DiaSemana?.Trim(),
+                    StringComparison.OrdinalIgnoreCase)
+                &&
+                string.Equals(
+                    NormalizarResponsablePrograma(a.Responsable),
+                    NormalizarResponsablePrograma(b.Responsable),
+                    StringComparison.OrdinalIgnoreCase)
+                &&
+                string.Equals(
+                    a.TipoActividad?.Trim() ?? "",
+                    b.TipoActividad?.Trim() ?? "",
+                    StringComparison.OrdinalIgnoreCase)
+                &&
+                string.Equals(
+                    a.Hora?.Trim() ?? "",
+                    b.Hora?.Trim() ?? "",
+                    StringComparison.OrdinalIgnoreCase)
+                &&
+                a.CompaneroId == b.CompaneroId
+                &&
+                string.Equals(
+                    a.Direccion?.Trim() ?? "",
+                    b.Direccion?.Trim() ?? "",
+                    StringComparison.OrdinalIgnoreCase);
+        }
+
+
         private void BtnEliminarActividad_Click(
             object sender,
             RoutedEventArgs e)
@@ -2972,16 +3556,104 @@ namespace SCCosmos
                 {
                     MesReferencia = mStr,
                     NombreMesVisual = mVisual,
-                    Gastos = datosDB.Gastos == 0 ? "" : datosDB.Gastos.ToString("0.00"),
-                    Mantenimiento = datosDB.Mantenimiento == 0 ? "" : datosDB.Mantenimiento.ToString("0.00"),
-                    ObraMundial = datosDB.ObraMundial == 0 ? "" : datosDB.ObraMundial.ToString("0.00"),
-                    ObraResolucion = datosDB.ObraResolucion == 0 ? "" : datosDB.ObraResolucion.ToString("0.00"),
-                    Saldo = datosDB.Saldo == 0 ? "" : datosDB.Saldo.ToString("0.00"),
-                    PublicadoresActivos = _totalPublicadoresActivos
+                    Gastos = FormatearMonedaContabilidad(datosDB.Gastos),
+                    Mantenimiento = FormatearMonedaContabilidad(datosDB.Mantenimiento),
+                    ObraMundial = FormatearMonedaContabilidad(datosDB.ObraMundial),
+                    ObraResolucion = FormatearMonedaContabilidad(datosDB.ObraResolucion),
+                    SaldoMaximo = FormatearMonedaContabilidad(datosDB.SaldoMaximo),
+                    Saldo = FormatearMonedaContabilidad(datosDB.Saldo),
+                    PublicadoresActivos = CalcularPublicadoresActivosContabilidad(m)
                 });
             }
 
             TablaContabilidad.ItemsSource = historial;
+        }
+
+        private int CalcularPublicadoresActivosContabilidad(
+            DateTime mes)
+        {
+            try
+            {
+                DateTime mesReferencia =
+                    new DateTime(
+                        mes.Year,
+                        mes.Month,
+                        1);
+
+                var personas =
+                    DatabaseHelper
+                        .ObtenerPersonasHistoricasPorMes(
+                            _congreCodigo,
+                            mesReferencia.ToString("yyyy-MM"));
+
+                int total = 0;
+
+                foreach (Persona persona in personas)
+                {
+                    if (persona == null
+                        || persona.Grupo <= 0)
+                    {
+                        continue;
+                    }
+
+                    DateTime? fechaEliminacion =
+                        ParsearFecha(
+                            persona.FechaEliminacion);
+
+                    if (fechaEliminacion.HasValue
+                        &&
+                        new DateTime(
+                            fechaEliminacion.Value.Year,
+                            fechaEliminacion.Value.Month,
+                            1)
+                        < mesReferencia)
+                    {
+                        continue;
+                    }
+
+                    DateTime? fechaCreacion =
+                        ParsearFecha(
+                            persona.FechaCreacion);
+
+                    bool sinCuentaJW =
+                        string.IsNullOrWhiteSpace(
+                            persona.NombreJWHub)
+                        &&
+                        string.IsNullOrWhiteSpace(
+                            persona.EmailJW);
+
+                    if (!sinCuentaJW
+                        &&
+                        fechaCreacion.HasValue
+                        &&
+                        new DateTime(
+                            fechaCreacion.Value.Year,
+                            fechaCreacion.Value.Month,
+                            1)
+                        > mesReferencia)
+                    {
+                        continue;
+                    }
+
+                    total++;
+                }
+
+                return total;
+            }
+            catch
+            {
+                return _totalPublicadoresActivos;
+            }
+        }
+
+        private static string FormatearMonedaContabilidad(
+            double valor)
+        {
+            return
+                valor.ToString(
+                    "N2",
+                    CultureInfo.GetCultureInfo("es-ES"))
+                + " €";
         }
 
         private void TablaContabilidad_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
@@ -2990,6 +3662,7 @@ namespace SCCosmos
             {
                 if (e.Row.Item is FilaContabilidad fila)
                 {
+                    fila.NormalizarMonedas();
                     fila.ForzarActualizacionPromedio();
 
                     var datos = new DatabaseHelper.ContabilidadMes
@@ -2998,17 +3671,49 @@ namespace SCCosmos
                         Mantenimiento = ParsearMoneda(fila.Mantenimiento),
                         ObraMundial = ParsearMoneda(fila.ObraMundial),
                         ObraResolucion = ParsearMoneda(fila.ObraResolucion),
+                        SaldoMaximo = ParsearMoneda(fila.SaldoMaximo),
                         Saldo = ParsearMoneda(fila.Saldo)
                     };
-                    DatabaseHelper.GuardarContabilidad(_congreCodigo, fila.MesReferencia, datos);
+
+                    DatabaseHelper.GuardarContabilidad(
+                        _congreCodigo,
+                        fila.MesReferencia,
+                        datos);
                 }
             }), System.Windows.Threading.DispatcherPriority.Background);
         }
 
         private double ParsearMoneda(string texto)
         {
-            if (string.IsNullOrWhiteSpace(texto)) return 0;
-            if (double.TryParse(texto.Replace(",", "."), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double val)) return val;
+            if (string.IsNullOrWhiteSpace(texto))
+            {
+                return 0;
+            }
+
+            string limpio =
+                texto
+                    .Replace("€", "")
+                    .Replace("\u00A0", " ")
+                    .Trim();
+
+            if (double.TryParse(
+                    limpio,
+                    NumberStyles.Number,
+                    CultureInfo.GetCultureInfo("es-ES"),
+                    out double valorEs))
+            {
+                return valorEs;
+            }
+
+            if (double.TryParse(
+                    limpio.Replace(",", "."),
+                    NumberStyles.Any,
+                    CultureInfo.InvariantCulture,
+                    out double valorInv))
+            {
+                return valorInv;
+            }
+
             return 0;
         }
 
@@ -3181,95 +3886,363 @@ namespace SCCosmos
 
         private void BtnEditarS303_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button btn && btn.Tag is DocumentoS303UI docUI)
+            if (!(sender is Button btn)
+                || !(btn.Tag is DocumentoS303UI docUI)
+                || docUI.DocumentoOriginal == null)
             {
-                if (File.Exists(docUI.DocumentoOriginal.RutaLocal))
+                return;
+            }
+
+            try
+            {
+                string rutaOrigen =
+                    DatabaseHelper.ExtraerDocumentoDesdeBD(
+                        docUI.DocumentoOriginal.Id,
+                        docUI.DocumentoOriginal.NombreArchivo);
+
+                if (string.IsNullOrWhiteSpace(rutaOrigen)
+                    || !File.Exists(rutaOrigen))
                 {
-                    if (docUI.EsPlantilla)
+                    MessageBox.Show(
+                        "No se ha podido recuperar el PDF desde la base de datos.",
+                        "S-303",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                    return;
+                }
+
+                if (docUI.EsPlantilla)
+                {
+                    string mesRef = _mesS303.ToString("yyyy-MM");
+                    string nombreCopia = $"S-303_{_congreCodigo}_{mesRef}.pdf";
+
+                    string carpetaEdicion =
+                        Path.Combine(
+                            Path.GetTempPath(),
+                            "SCCosmos",
+                            "S303Edicion",
+                            _congreCodigo ?? "Congregacion",
+                            mesRef);
+
+                    Directory.CreateDirectory(carpetaEdicion);
+
+                    string rutaCopia =
+                        Path.Combine(
+                            carpetaEdicion,
+                            nombreCopia);
+
+                    // OBTENER DATOS PARA AUTO-COMPLETAR
+                    var congre =
+                        DatabaseHelper
+                            .ObtenerCongregaciones()
+                            .FirstOrDefault(c =>
+                                c.Codigo == _congreCodigo);
+
+                    string fechaVisitaStr = "";
+
+                    using (var conn =
+                           new Microsoft.Data.Sqlite.SqliteConnection(
+                               $"Data Source={DatabaseHelper.RutaDirectorioDatos}\\sccosmos.db"))
                     {
-                        try
+                        conn.Open();
+
+                        var cmd = conn.CreateCommand();
+                        cmd.CommandText =
+                            "SELECT FechaMartes FROM Semanas WHERE Congregacion = @c AND Actividad = 'Visita' AND FechaMartes LIKE @m || '%' LIMIT 1";
+                        cmd.Parameters.AddWithValue("@c", _congreNombre);
+                        cmd.Parameters.AddWithValue("@m", mesRef);
+
+                        var res = cmd.ExecuteScalar();
+
+                        if (res != null
+                            &&
+                            DateTime.TryParse(
+                                res.ToString(),
+                                out DateTime fMartes))
                         {
-                            string mesRef = _mesS303.ToString("yyyy-MM");
-                            string nombreCopia = $"S-303_{_congreCodigo}_{mesRef}.pdf";
-                            string rutaCopia = Path.Combine(Path.GetDirectoryName(docUI.DocumentoOriginal.RutaLocal), nombreCopia);
+                            DateTime fDom =
+                                fMartes.AddDays(5);
 
-                            // OBTENER DATOS PARA AUTO-COMPLETAR
-                            var congre = DatabaseHelper.ObtenerCongregaciones().FirstOrDefault(c => c.Codigo == _congreCodigo);
-                            string fechaVisitaStr = "";
-
-                            using (var conn = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={DatabaseHelper.RutaDirectorioDatos}\\sccosmos.db"))
-                            {
-                                conn.Open();
-                                var cmd = conn.CreateCommand();
-                                cmd.CommandText = "SELECT FechaMartes FROM Semanas WHERE Congregacion = @c AND Actividad = 'Visita' AND FechaMartes LIKE @m || '%' LIMIT 1";
-                                cmd.Parameters.AddWithValue("@c", _congreNombre);
-                                cmd.Parameters.AddWithValue("@m", mesRef);
-                                var res = cmd.ExecuteScalar();
-                                if (res != null && DateTime.TryParse(res.ToString(), out DateTime fMartes))
-                                {
-                                    DateTime fDom = fMartes.AddDays(5);
-                                    fechaVisitaStr = $"Del {fMartes.Day} de {fMartes.ToString("MMM", new CultureInfo("es-ES"))} al {fDom.Day} de {fDom.ToString("MMM", new CultureInfo("es-ES"))} de {fDom.Year}";
-                                }
-                            }
-
-                            // OBTENER DATOS DE CONFIGURACIÓN
-                            string nomSC = DatabaseHelper.ObtenerConfiguracion("NombreSC", "").Trim();
-                            string apeSC = DatabaseHelper.ObtenerConfiguracion("ApellidosSC", "");
-                            if (string.IsNullOrEmpty(apeSC)) apeSC = DatabaseHelper.ObtenerConfiguracion("ApellidoSC", ""); // Por si estuviera en singular
-
-                            string nombreCompletoSC = $"{nomSC} {apeSC}".Trim();
-                            string numCirc = DatabaseHelper.ObtenerConfiguracion("NumeroCircuito", "");
-
-                            // RELLENAR PDF CON iText7 (Con tamaño de fuente fijo)
-                            using (PdfDocument pdfDoc = new PdfDocument(new PdfReader(docUI.DocumentoOriginal.RutaLocal), new PdfWriter(rutaCopia)))
-                            {
-                                PdfAcroForm form = PdfAcroForm.GetAcroForm(pdfDoc, true);
-                                if (form != null)
-                                {
-                                    // Establecemos un tamaño de letra fijo para que no se auto-ajuste de forma extraña
-                                    float tamanoLetra = 10f;
-
-                                    var f1 = form.GetField("900_1_Text_SanSerif");
-                                    if (f1 != null) { f1.SetFontSize(tamanoLetra); f1.SetValue(_congreCodigo ?? ""); }
-
-                                    var f2 = form.GetField("900_2_Text_SanSerif");
-                                    if (f2 != null) { f2.SetFontSize(tamanoLetra); f2.SetValue(fechaVisitaStr ?? ""); }
-
-                                    var f3 = form.GetField("900_3_Text_SanSerif");
-                                    if (f3 != null) { f3.SetFontSize(tamanoLetra); f3.SetValue(_congreNombre ?? ""); }
-
-                                    var f4 = form.GetField("900_4_Text_SanSerif");
-                                    if (f4 != null) { f4.SetFontSize(tamanoLetra); f4.SetValue(congre?.Municipio ?? ""); }
-
-                                    var f5 = form.GetField("900_5_Text_SanSerif");
-                                    if (f5 != null) { f5.SetFontSize(tamanoLetra); f5.SetValue(congre?.Provincia ?? ""); }
-
-                                    var f6 = form.GetField("900_6_Text_SanSerif");
-                                    if (f6 != null) { f6.SetFontSize(tamanoLetra); f6.SetValue(nombreCompletoSC); }
-
-                                    var f7 = form.GetField("900_7_Text_SanSerif");
-                                    if (f7 != null) { f7.SetFontSize(tamanoLetra); f7.SetValue(numCirc ?? ""); }
-                                }
-                            }
-
-                            DatabaseHelper.InsertarDocumento("S-303", nombreCopia, rutaCopia);
-
-                            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(rutaCopia) { UseShellExecute = true });
-                            ActualizarUI_MesS303();
-                        }
-                        catch (Exception ex)
-                        {
-                            MessageBox.Show($"Error al crear y rellenar la copia del S-303: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            fechaVisitaStr =
+                                $"Del {fMartes.Day} de {fMartes.ToString("MMM", new CultureInfo("es-ES"))} "
+                                + $"al {fDom.Day} de {fDom.ToString("MMM", new CultureInfo("es-ES"))} de {fDom.Year}";
                         }
                     }
-                    else
+
+                    string nomSC =
+                        DatabaseHelper
+                            .ObtenerConfiguracion(
+                                "NombreSC",
+                                "")
+                            .Trim();
+
+                    string apeSC =
+                        DatabaseHelper.ObtenerConfiguracion(
+                            "ApellidosSC",
+                            "");
+
+                    if (string.IsNullOrEmpty(apeSC))
                     {
-                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(docUI.DocumentoOriginal.RutaLocal) { UseShellExecute = true });
+                        apeSC =
+                            DatabaseHelper.ObtenerConfiguracion(
+                                "ApellidoSC",
+                                "");
                     }
+
+                    string nombreCompletoSC =
+                        $"{nomSC} {apeSC}".Trim();
+
+                    string numCirc =
+                        DatabaseHelper.ObtenerConfiguracion(
+                            "NumeroCircuito",
+                            "");
+
+                    using (PdfDocument pdfDoc =
+                           new PdfDocument(
+                               new PdfReader(rutaOrigen),
+                               new PdfWriter(rutaCopia)))
+                    {
+                        PdfAcroForm form =
+                            PdfAcroForm.GetAcroForm(
+                                pdfDoc,
+                                true);
+
+                        if (form != null)
+                        {
+                            float tamanoLetra = 10f;
+
+                            var f1 = form.GetField("900_1_Text_SanSerif");
+                            if (f1 != null)
+                            {
+                                f1.SetFontSize(tamanoLetra);
+                                f1.SetValue(_congreCodigo ?? "");
+                            }
+
+                            var f2 = form.GetField("900_2_Text_SanSerif");
+                            if (f2 != null)
+                            {
+                                f2.SetFontSize(tamanoLetra);
+                                f2.SetValue(fechaVisitaStr ?? "");
+                            }
+
+                            var f3 = form.GetField("900_3_Text_SanSerif");
+                            if (f3 != null)
+                            {
+                                f3.SetFontSize(tamanoLetra);
+                                f3.SetValue(_congreNombre ?? "");
+                            }
+
+                            var f4 = form.GetField("900_4_Text_SanSerif");
+                            if (f4 != null)
+                            {
+                                f4.SetFontSize(tamanoLetra);
+                                f4.SetValue(congre?.Municipio ?? "");
+                            }
+
+                            var f5 = form.GetField("900_5_Text_SanSerif");
+                            if (f5 != null)
+                            {
+                                f5.SetFontSize(tamanoLetra);
+                                f5.SetValue(congre?.Provincia ?? "");
+                            }
+
+                            var f6 = form.GetField("900_6_Text_SanSerif");
+                            if (f6 != null)
+                            {
+                                f6.SetFontSize(tamanoLetra);
+                                f6.SetValue(nombreCompletoSC);
+                            }
+
+                            var f7 = form.GetField("900_7_Text_SanSerif");
+                            if (f7 != null)
+                            {
+                                f7.SetFontSize(tamanoLetra);
+                                f7.SetValue(numCirc ?? "");
+                            }
+                        }
+                    }
+
+                    // La copia se guarda inmediatamente como BLOB.
+                    DatabaseHelper.InsertarDocumento(
+                        "S-303",
+                        nombreCopia,
+                        rutaCopia);
+
+                    ArchivoDocumento documentoCreado =
+                        DatabaseHelper
+                            .ObtenerDocumentos("S-303")
+                            .Where(d =>
+                                string.Equals(
+                                    d.NombreArchivo,
+                                    nombreCopia,
+                                    StringComparison.OrdinalIgnoreCase))
+                            .OrderByDescending(d => d.Id)
+                            .FirstOrDefault();
+
+                    if (documentoCreado != null)
+                    {
+                        string rutaEditable =
+                            DatabaseHelper.ExtraerDocumentoDesdeBD(
+                                documentoCreado.Id,
+                                documentoCreado.NombreArchivo)
+                            ?? rutaCopia;
+
+                        AbrirS303YGuardarAlVolver(
+                            documentoCreado,
+                            rutaEditable);
+                    }
+
+                    ActualizarUI_MesS303();
                 }
                 else
                 {
-                    MessageBox.Show("El archivo no se encuentra en el disco.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    AbrirS303YGuardarAlVolver(
+                        docUI.DocumentoOriginal,
+                        rutaOrigen);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "No se pudo abrir o preparar el S-303.\n\n"
+                    + ex.Message,
+                    "S-303",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+        }
+
+        private void AbrirS303YGuardarAlVolver(
+            ArchivoDocumento documento,
+            string rutaArchivo)
+        {
+            if (documento == null
+                || documento.Id <= 0
+                || string.IsNullOrWhiteSpace(rutaArchivo)
+                || !File.Exists(rutaArchivo))
+            {
+                return;
+            }
+
+            Window ventana =
+                Window.GetWindow(this);
+
+            EventHandler guardarAlVolver = null;
+
+            if (ventana != null)
+            {
+                guardarAlVolver =
+                    (s, args) =>
+                    {
+                        ventana.Activated -= guardarAlVolver;
+
+                        Dispatcher.BeginInvoke(
+                            new Action(() =>
+                            {
+                                GuardarS303EnBaseDeDatos(
+                                    documento,
+                                    rutaArchivo,
+                                    mostrarConfirmacion: false);
+                            }),
+                            DispatcherPriority.Background);
+                    };
+
+                ventana.Activated += guardarAlVolver;
+            }
+
+            try
+            {
+                System.Diagnostics.Process.Start(
+                    new System.Diagnostics.ProcessStartInfo(
+                        rutaArchivo)
+                    {
+                        UseShellExecute = true
+                    });
+            }
+            catch
+            {
+                if (ventana != null
+                    && guardarAlVolver != null)
+                {
+                    ventana.Activated -= guardarAlVolver;
+                }
+
+                throw;
+            }
+        }
+
+        private void BtnGuardarS303BD_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            if (sender is Button btn
+                &&
+                btn.Tag is DocumentoS303UI docUI
+                &&
+                !docUI.EsPlantilla
+                &&
+                docUI.DocumentoOriginal != null)
+            {
+                string ruta =
+                    docUI.DocumentoOriginal.RutaLocal;
+
+                if (string.IsNullOrWhiteSpace(ruta)
+                    || !File.Exists(ruta))
+                {
+                    ruta =
+                        DatabaseHelper.ExtraerDocumentoDesdeBD(
+                            docUI.DocumentoOriginal.Id,
+                            docUI.DocumentoOriginal.NombreArchivo);
+                }
+
+                GuardarS303EnBaseDeDatos(
+                    docUI.DocumentoOriginal,
+                    ruta,
+                    mostrarConfirmacion: true);
+            }
+        }
+
+        private void GuardarS303EnBaseDeDatos(
+            ArchivoDocumento documento,
+            string rutaArchivo,
+            bool mostrarConfirmacion)
+        {
+            try
+            {
+                if (documento == null
+                    || documento.Id <= 0
+                    || string.IsNullOrWhiteSpace(rutaArchivo)
+                    || !File.Exists(rutaArchivo))
+                {
+                    throw new FileNotFoundException(
+                        "No se encuentra la copia editable del S-303.");
+                }
+
+                DatabaseHelper.ActualizarDocumentoDesdeArchivo(
+                    documento.Id,
+                    rutaArchivo);
+
+                if (mostrarConfirmacion)
+                {
+                    MessageBox.Show(
+                        "El S-303 se ha guardado en la base de datos. Los cambios estarán disponibles en los demás dispositivos que usen esta BBDD.",
+                        "S-303 guardado",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                }
+
+                CargarS303yS2();
+            }
+            catch (Exception ex)
+            {
+                if (mostrarConfirmacion)
+                {
+                    MessageBox.Show(
+                        "No se pudieron guardar los cambios del S-303 en la base de datos.\n\n"
+                        + ex.Message,
+                        "S-303",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
                 }
             }
         }
@@ -3833,31 +4806,193 @@ namespace SCCosmos
         public class FilaContabilidad : INotifyPropertyChanged
         {
             public event PropertyChangedEventHandler PropertyChanged;
-            public void ForzarActualizacionPromedio() => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Promedio"));
+
+            private string _gastos;
+            private string _mantenimiento;
+            private string _obraMundial;
+            private string _obraResolucion;
+            private string _saldoMaximo;
+            private string _saldo;
+            private int _publicadoresActivos;
 
             public string MesReferencia { get; set; }
             public string NombreMesVisual { get; set; }
-            public string Gastos { get; set; }
-            public string Mantenimiento { get; set; }
-            public string ObraMundial { get; set; }
-            public string ObraResolucion { get; set; }
-            public string Saldo { get; set; }
-            public int PublicadoresActivos { get; set; }
+
+            public string Gastos
+            {
+                get => _gastos;
+                set
+                {
+                    if (_gastos == value) return;
+                    _gastos = value;
+                    OnPropertyChanged(nameof(Gastos));
+                    OnPropertyChanged(nameof(Promedio));
+                }
+            }
+
+            public string Mantenimiento
+            {
+                get => _mantenimiento;
+                set
+                {
+                    if (_mantenimiento == value) return;
+                    _mantenimiento = value;
+                    OnPropertyChanged(nameof(Mantenimiento));
+                }
+            }
+
+            public string ObraMundial
+            {
+                get => _obraMundial;
+                set
+                {
+                    if (_obraMundial == value) return;
+                    _obraMundial = value;
+                    OnPropertyChanged(nameof(ObraMundial));
+                    OnPropertyChanged(nameof(Promedio));
+                }
+            }
+
+            public string ObraResolucion
+            {
+                get => _obraResolucion;
+                set
+                {
+                    if (_obraResolucion == value) return;
+                    _obraResolucion = value;
+                    OnPropertyChanged(nameof(ObraResolucion));
+                }
+            }
+
+            public string SaldoMaximo
+            {
+                get => _saldoMaximo;
+                set
+                {
+                    if (_saldoMaximo == value) return;
+                    _saldoMaximo = value;
+                    OnPropertyChanged(nameof(SaldoMaximo));
+                    OnPropertyChanged(nameof(SaldoSuperaMaximo));
+                }
+            }
+
+            public string Saldo
+            {
+                get => _saldo;
+                set
+                {
+                    if (_saldo == value) return;
+                    _saldo = value;
+                    OnPropertyChanged(nameof(Saldo));
+                    OnPropertyChanged(nameof(SaldoSuperaMaximo));
+                }
+            }
+
+            public int PublicadoresActivos
+            {
+                get => _publicadoresActivos;
+                set
+                {
+                    if (_publicadoresActivos == value) return;
+                    _publicadoresActivos = value;
+                    OnPropertyChanged(nameof(PublicadoresActivos));
+                    OnPropertyChanged(nameof(Promedio));
+                }
+            }
+
+            public bool SaldoSuperaMaximo =>
+                ParsearMonedaHelper(Saldo)
+                >
+                ParsearMonedaHelper(SaldoMaximo);
 
             public string Promedio
             {
                 get
                 {
-                    double suma = ParsearMonedaHelper(Gastos) + ParsearMonedaHelper(Mantenimiento) + ParsearMonedaHelper(ObraMundial) + ParsearMonedaHelper(ObraResolucion);
-                    if (PublicadoresActivos <= 0) return "0.00 €";
-                    return (suma / PublicadoresActivos).ToString("F2") + " €";
+                    // El promedio solicitado se calcula únicamente con
+                    // Gastos + Obra mundial.
+                    double suma =
+                        ParsearMonedaHelper(Gastos)
+                        +
+                        ParsearMonedaHelper(ObraMundial);
+
+                    if (PublicadoresActivos <= 0)
+                    {
+                        return "0,00 €";
+                    }
+
+                    return
+                        (suma / PublicadoresActivos)
+                            .ToString(
+                                "N2",
+                                CultureInfo.GetCultureInfo("es-ES"))
+                        + " €";
                 }
             }
 
-            private double ParsearMonedaHelper(string texto)
+            public void NormalizarMonedas()
             {
-                if (string.IsNullOrWhiteSpace(texto)) return 0;
-                if (double.TryParse(texto.Replace(",", "."), NumberStyles.Any, CultureInfo.InvariantCulture, out double val)) return val;
+                Gastos = FormatearMonedaHelper(ParsearMonedaHelper(Gastos));
+                Mantenimiento = FormatearMonedaHelper(ParsearMonedaHelper(Mantenimiento));
+                ObraMundial = FormatearMonedaHelper(ParsearMonedaHelper(ObraMundial));
+                ObraResolucion = FormatearMonedaHelper(ParsearMonedaHelper(ObraResolucion));
+                SaldoMaximo = FormatearMonedaHelper(ParsearMonedaHelper(SaldoMaximo));
+                Saldo = FormatearMonedaHelper(ParsearMonedaHelper(Saldo));
+            }
+
+            public void ForzarActualizacionPromedio()
+            {
+                OnPropertyChanged(nameof(Promedio));
+                OnPropertyChanged(nameof(SaldoSuperaMaximo));
+            }
+
+            private void OnPropertyChanged(string nombre)
+            {
+                PropertyChanged?.Invoke(
+                    this,
+                    new PropertyChangedEventArgs(nombre));
+            }
+
+            private static string FormatearMonedaHelper(double valor)
+            {
+                return
+                    valor.ToString(
+                        "N2",
+                        CultureInfo.GetCultureInfo("es-ES"))
+                    + " €";
+            }
+
+            private static double ParsearMonedaHelper(string texto)
+            {
+                if (string.IsNullOrWhiteSpace(texto))
+                {
+                    return 0;
+                }
+
+                string limpio =
+                    texto
+                        .Replace("€", "")
+                        .Replace("\u00A0", " ")
+                        .Trim();
+
+                if (double.TryParse(
+                        limpio,
+                        NumberStyles.Number,
+                        CultureInfo.GetCultureInfo("es-ES"),
+                        out double valorEs))
+                {
+                    return valorEs;
+                }
+
+                if (double.TryParse(
+                        limpio.Replace(",", "."),
+                        NumberStyles.Any,
+                        CultureInfo.InvariantCulture,
+                        out double valorInv))
+                {
+                    return valorInv;
+                }
+
                 return 0;
             }
         }

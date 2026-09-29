@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using Microsoft.Data.Sqlite;
 
 namespace SCCosmos
 {
@@ -497,6 +498,53 @@ namespace SCCosmos
                 stats.SolA8.ToString();
             TxtTotalG8.Text =
                 stats.SolG8.ToString();
+
+            TxtTotalPersonas.Text =
+                stats.Personas.ToString();
+            TxtTotalHombres.Text =
+                stats.Hombres.ToString();
+            TxtTotalMujeres.Text =
+                stats.Mujeres.ToString();
+            TxtNoBautizados.Text =
+                stats.NoBautizados.ToString();
+            TxtTotalCBs.Text =
+                stats.CursosBiblicos.ToString();
+            TxtMediaEdad.Text =
+                stats.MediaEdad.ToString(
+                    "0.0",
+                    CultureInfo.GetCultureInfo("es-ES"));
+            TxtMediaAuxiliares.Text =
+                stats.MediaAuxiliares.ToString(
+                    "0.0",
+                    CultureInfo.GetCultureInfo("es-ES"));
+            TxtTotalBetel.Text =
+                stats.Betel.ToString();
+
+            TxtMesCBs.Text =
+                string.IsNullOrWhiteSpace(stats.MesActividadReferencia)
+                    ? "sin actividad disponible"
+                    : stats.MesActividadReferencia;
+
+            TxtPeriodoAuxiliares.Text =
+                stats.MesesMediaAuxiliares > 0
+                    ? $"media de {stats.MesesMediaAuxiliares} mes{(stats.MesesMediaAuxiliares == 1 ? "" : "es")}" 
+                    : "sin actividad disponible";
+
+            if (CardCBs != null)
+            {
+                CardCBs.ToolTip =
+                    string.IsNullOrWhiteSpace(stats.MesActividadReferencia)
+                        ? "No hay actividad mensual disponible."
+                        : $"Cursos bíblicos del último mes con actividad: {stats.MesActividadReferencia}.";
+            }
+
+            if (CardAuxiliaresMedia != null)
+            {
+                CardAuxiliaresMedia.ToolTip =
+                    stats.MesesMediaAuxiliares > 0
+                        ? $"Media mensual de precursores auxiliares calculada sobre los últimos {stats.MesesMediaAuxiliares} meses con actividad disponible."
+                        : "No hay actividad mensual disponible para calcular la media.";
+            }
         }
 
         private EstadisticasCircuito ObtenerContadoresDesdeBD()
@@ -509,7 +557,53 @@ namespace SCCosmos
                 // ObtenerPersonas() es la misma fuente que usa PersonasPage y
                 // devuelve solo las filas actuales (MesHistorico IS NULL).
                 List<Persona> personasActuales =
-                    DatabaseHelper.ObtenerPersonas();
+                    DatabaseHelper.ObtenerPersonas()
+                        .Where(p =>
+                            string.IsNullOrWhiteSpace(
+                                p.FechaEliminacion))
+                        .ToList();
+
+                // Todas las tarjetas del resumen se basan únicamente en
+                // fichas raíz actuales y activas. ObtenerPersonas() ya excluye
+                // MesHistorico; aquí excluimos además las bajas (soft delete).
+                res.Personas =
+                    personasActuales.Count;
+
+                res.Hombres =
+                    personasActuales.Count(p =>
+                        string.Equals(
+                            p.Sexo?.Trim(),
+                            "Hombre",
+                            StringComparison.OrdinalIgnoreCase));
+
+                res.Mujeres =
+                    personasActuales.Count(p =>
+                        string.Equals(
+                            p.Sexo?.Trim(),
+                            "Mujer",
+                            StringComparison.OrdinalIgnoreCase));
+
+                res.NoBautizados =
+                    personasActuales.Count(p =>
+                        string.IsNullOrWhiteSpace(
+                            p.FechaBautismo));
+
+                var edades =
+                    personasActuales
+                        .Select(p => CalcularEdadActual(p.FechaNacimiento))
+                        .Where(e => e.HasValue)
+                        .Select(e => (double)e.Value)
+                        .ToList();
+
+                res.MediaEdad =
+                    edades.Count > 0
+                        ? edades.Average()
+                        : 0;
+
+                res.Betel =
+                    personasActuales.Count(p =>
+                        Contiene(p.Privilegios, "Asesor de Betel")
+                        || Contiene(p.Privilegios, "Voluntario a distancia"));
 
                 res.PrecRegulares =
                     personasActuales.Count(p =>
@@ -558,6 +652,8 @@ namespace SCCosmos
                         Contiene(
                             p.Solicitudes,
                             "G-8"));
+
+                CargarResumenActividadActual(res);
             }
             catch
             {
@@ -565,6 +661,301 @@ namespace SCCosmos
             }
 
             return res;
+        }
+
+        private static void CargarResumenActividadActual(
+            EstadisticasCircuito res)
+        {
+            var registros =
+                new List<ActividadResumenCircuito>();
+
+            string dbPath =
+                System.IO.Path.Combine(
+                    DatabaseHelper.RutaDirectorioDatos,
+                    "sccosmos.db");
+
+            using (var connection =
+                   new SqliteConnection(
+                       $"Data Source={dbPath}"))
+            {
+                connection.Open();
+
+                using var cmd =
+                    connection.CreateCommand();
+
+                cmd.CommandText = @"
+                    SELECT
+                        a.PersonaId,
+                        a.Mes,
+                        a.AnioServicio,
+                        a.CursosBiblicos,
+                        a.PrecursorAuxiliar
+                    FROM ActividadPersonas a
+                    INNER JOIN Personas p
+                        ON p.Id = a.PersonaId
+                    WHERE p.MesHistorico IS NULL
+                      AND (p.FechaEliminacion IS NULL
+                           OR trim(p.FechaEliminacion) = '');";
+
+                using var reader =
+                    cmd.ExecuteReader();
+
+                DateTime mesActual =
+                    new DateTime(
+                        DateTime.Today.Year,
+                        DateTime.Today.Month,
+                        1);
+
+                while (reader.Read())
+                {
+                    string mes =
+                        reader.IsDBNull(1)
+                            ? ""
+                            : reader.GetString(1);
+
+                    string anioServicio =
+                        reader.IsDBNull(2)
+                            ? ""
+                            : reader.GetString(2);
+
+                    DateTime? mesCalendario =
+                        ObtenerMesCalendarioActividad(
+                            mes,
+                            anioServicio);
+
+                    if (!mesCalendario.HasValue
+                        || mesCalendario.Value > mesActual)
+                    {
+                        continue;
+                    }
+
+                    int cursos = 0;
+                    if (!reader.IsDBNull(3))
+                    {
+                        int.TryParse(
+                            reader.GetValue(3)?.ToString(),
+                            out cursos);
+                    }
+
+                    bool auxiliar =
+                        !reader.IsDBNull(4)
+                        && Convert.ToInt32(
+                            reader.GetValue(4)) == 1;
+
+                    registros.Add(
+                        new ActividadResumenCircuito
+                        {
+                            PersonaId =
+                                reader.GetInt32(0),
+                            MesCalendario =
+                                mesCalendario.Value,
+                            CursosBiblicos =
+                                Math.Max(0, cursos),
+                            PrecursorAuxiliar =
+                                auxiliar
+                        });
+                }
+            }
+
+            var mesesConDatos =
+                registros
+                    .Select(r => r.MesCalendario)
+                    .Distinct()
+                    .OrderByDescending(m => m)
+                    .ToList();
+
+            if (mesesConDatos.Count == 0)
+            {
+                return;
+            }
+
+            DateTime ultimoMes =
+                mesesConDatos[0];
+
+            res.CursosBiblicos =
+                registros
+                    .Where(r =>
+                        r.MesCalendario == ultimoMes)
+                    .Sum(r =>
+                        r.CursosBiblicos);
+
+            CultureInfo es =
+                CultureInfo.GetCultureInfo("es-ES");
+
+            res.MesActividadReferencia =
+                ultimoMes
+                    .ToString("MMM yyyy", es)
+                    .TrimEnd('.');
+
+            var ultimosMeses =
+                mesesConDatos
+                    .Take(6)
+                    .ToList();
+
+            res.MesesMediaAuxiliares =
+                ultimosMeses.Count;
+
+            if (ultimosMeses.Count > 0)
+            {
+                var auxiliaresPorMes =
+                    ultimosMeses
+                        .Select(m =>
+                            registros
+                                .Where(r =>
+                                    r.MesCalendario == m
+                                    && r.PrecursorAuxiliar)
+                                .Select(r => r.PersonaId)
+                                .Distinct()
+                                .Count())
+                        .ToList();
+
+                res.MediaAuxiliares =
+                    auxiliaresPorMes.Average();
+            }
+        }
+
+        private static DateTime? ObtenerMesCalendarioActividad(
+            string mes,
+            string anioServicio)
+        {
+            if (string.IsNullOrWhiteSpace(mes)
+                || !int.TryParse(
+                    anioServicio?.Trim(),
+                    out int anioServicioNumero))
+            {
+                return null;
+            }
+
+            string normalizado =
+                QuitarAcentos(
+                    mes.Trim().ToLowerInvariant());
+
+            string[] meses =
+            {
+                "enero", "febrero", "marzo", "abril",
+                "mayo", "junio", "julio", "agosto",
+                "septiembre", "octubre", "noviembre", "diciembre"
+            };
+
+            int numeroMes =
+                Array.IndexOf(
+                    meses,
+                    normalizado) + 1;
+
+            if (numeroMes <= 0)
+            {
+                return null;
+            }
+
+            // El año de servicio 2026 comprende septiembre-diciembre de 2025
+            // y enero-agosto de 2026.
+            int anioCalendario =
+                numeroMes >= 9
+                    ? anioServicioNumero - 1
+                    : anioServicioNumero;
+
+            if (anioCalendario < 1900
+                || anioCalendario > 2200)
+            {
+                return null;
+            }
+
+            return new DateTime(
+                anioCalendario,
+                numeroMes,
+                1);
+        }
+
+        private static int? CalcularEdadActual(
+            string fechaNacimiento)
+        {
+            if (!TryParseFechaPersona(
+                    fechaNacimiento,
+                    out DateTime nacimiento))
+            {
+                return null;
+            }
+
+            if (nacimiento.Year < 1900
+                || nacimiento.Date > DateTime.Today)
+            {
+                return null;
+            }
+
+            int edad =
+                DateTime.Today.Year
+                - nacimiento.Year;
+
+            if (nacimiento.Date
+                > DateTime.Today.AddYears(-edad))
+            {
+                edad--;
+            }
+
+            return edad >= 0 && edad <= 120
+                ? edad
+                : null;
+        }
+
+        private static bool TryParseFechaPersona(
+            string texto,
+            out DateTime fecha)
+        {
+            fecha = default;
+
+            if (string.IsNullOrWhiteSpace(texto))
+            {
+                return false;
+            }
+
+            string[] formatos =
+            {
+                "dd/MM/yyyy",
+                "d/M/yyyy",
+                "yyyy-MM-dd",
+                "dd-MM-yyyy",
+                "d-M-yyyy"
+            };
+
+            if (DateTime.TryParseExact(
+                    texto.Trim(),
+                    formatos,
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.None,
+                    out fecha))
+            {
+                return true;
+            }
+
+            return DateTime.TryParse(
+                texto.Trim(),
+                CultureInfo.GetCultureInfo("es-ES"),
+                DateTimeStyles.None,
+                out fecha);
+        }
+
+        private static string QuitarAcentos(
+            string texto)
+        {
+            if (string.IsNullOrEmpty(texto))
+            {
+                return "";
+            }
+
+            string normalizado =
+                texto.Normalize(
+                    System.Text.NormalizationForm.FormD);
+
+            var chars =
+                normalizado
+                    .Where(c =>
+                        CharUnicodeInfo.GetUnicodeCategory(c)
+                        != UnicodeCategory.NonSpacingMark)
+                    .ToArray();
+
+            return new string(chars)
+                .Normalize(
+                    System.Text.NormalizationForm.FormC);
         }
 
         private static bool Contiene(
@@ -599,6 +990,17 @@ namespace SCCosmos
 
         private class EstadisticasCircuito
         {
+            public int Personas { get; set; }
+            public int Hombres { get; set; }
+            public int Mujeres { get; set; }
+            public int NoBautizados { get; set; }
+            public int CursosBiblicos { get; set; }
+            public double MediaEdad { get; set; }
+            public double MediaAuxiliares { get; set; }
+            public int MesesMediaAuxiliares { get; set; }
+            public string MesActividadReferencia { get; set; } = "";
+            public int Betel { get; set; }
+
             public int PrecRegulares { get; set; }
             public int PrecEspeciales { get; set; }
             public int Ancianos { get; set; }
@@ -607,6 +1009,14 @@ namespace SCCosmos
             public int SolA19 { get; set; }
             public int SolA8 { get; set; }
             public int SolG8 { get; set; }
+        }
+
+        private class ActividadResumenCircuito
+        {
+            public int PersonaId { get; set; }
+            public DateTime MesCalendario { get; set; }
+            public int CursosBiblicos { get; set; }
+            public bool PrecursorAuxiliar { get; set; }
         }
 
         public class ActividadHoy

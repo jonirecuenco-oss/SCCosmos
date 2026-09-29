@@ -1,12 +1,152 @@
-﻿<Page x:Class="SCCosmos.DocumentacionPage"
+<Page x:Class="SCCosmos.DocumentacionPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       xmlns:local="clr-namespace:SCCosmos"
-      Title="DocumentacionPage" Background="#1E1E1E"
+      Title="Correspondencia" Background="#1E1E1E"
       PreviewMouseWheel="Page_PreviewMouseWheel">
 
     <Page.Resources>
+
+        <!-- ============================================================
+             JERARQUÍA VISUAL DE PESTAÑAS
+             1) Principal: navegación de área
+             2) Mensaje: tipo de correspondencia
+             3) Detalle: alojamiento / acompañante / tipo de asignación
+             ============================================================ -->
+
+        <!-- NIVEL 1 · PESTAÑAS PRINCIPALES -->
+        <Style x:Key="TabPrincipalStyle" TargetType="TabItem">
+            <Setter Property="Foreground" Value="#AEB4BC"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="20,11"/>
+            <Setter Property="Margin" Value="0,0,10,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Grid>
+                            <Border x:Name="Surface"
+                                    Background="#222428"
+                                    BorderBrush="#34373C"
+                                    BorderThickness="1"
+                                    CornerRadius="9,9,3,3"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter ContentSource="Header"
+                                                  HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"/>
+                            </Border>
+                            <Border x:Name="Accent"
+                                    Height="3"
+                                    Margin="9,0,9,0"
+                                    VerticalAlignment="Bottom"
+                                    Background="Transparent"
+                                    CornerRadius="2"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Surface" Property="Background" Value="#292C31"/>
+                                <Setter TargetName="Surface" Property="BorderBrush" Value="#42474E"/>
+                                <Setter Property="Foreground" Value="#E5E9ED"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Surface" Property="Background" Value="#2B3036"/>
+                                <Setter TargetName="Surface" Property="BorderBrush" Value="#496A82"/>
+                                <Setter TargetName="Accent" Property="Background" Value="#4BA3E3"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- NIVEL 2 · TIPO DE MENSAJE -->
+        <Style x:Key="TabMensajeStyle" TargetType="TabItem">
+            <Setter Property="Foreground" Value="#9EA5AD"/>
+            <Setter Property="FontSize" Value="13.5"/>
+            <Setter Property="FontWeight" Value="Normal"/>
+            <Setter Property="Padding" Value="14,8"/>
+            <Setter Property="Margin" Value="0,0,4,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Grid>
+                            <Border x:Name="Surface"
+                                    Background="Transparent"
+                                    BorderBrush="Transparent"
+                                    BorderThickness="1"
+                                    CornerRadius="6"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter ContentSource="Header"
+                                                  HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"/>
+                            </Border>
+                            <Border x:Name="Accent"
+                                    Height="2"
+                                    Margin="10,0,10,0"
+                                    VerticalAlignment="Bottom"
+                                    Background="Transparent"
+                                    CornerRadius="1"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Surface" Property="Background" Value="#24272B"/>
+                                <Setter Property="Foreground" Value="#D9DDE1"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Surface" Property="Background" Value="#272B30"/>
+                                <Setter TargetName="Surface" Property="BorderBrush" Value="#363C43"/>
+                                <Setter TargetName="Accent" Property="Background" Value="#8DB9D8"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- NIVEL 3 · ALOJAMIENTO / ACOMPAÑANTE / SUBTIPO -->
+        <Style x:Key="TabDetalleStyle" TargetType="TabItem">
+            <Setter Property="Foreground" Value="#A7ADB4"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="FontWeight" Value="Normal"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="Margin" Value="0,0,6,7"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="Pill"
+                                Background="#202226"
+                                BorderBrush="#35383D"
+                                BorderThickness="1"
+                                CornerRadius="12"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter ContentSource="Header"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Pill" Property="Background" Value="#292D32"/>
+                                <Setter TargetName="Pill" Property="BorderBrush" Value="#46515B"/>
+                                <Setter Property="Foreground" Value="#E2E6EA"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Pill" Property="Background" Value="#263A49"/>
+                                <Setter TargetName="Pill" Property="BorderBrush" Value="#6097BC"/>
+                                <Setter Property="Foreground" Value="#EAF6FF"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <!-- MOLDE PARA LA FILA DE CADA ARCHIVO SUBIDO -->
         <DataTemplate x:Key="ArchivoFilaTemplate">
             <Border Background="#2D2D30" Margin="0,0,0,8" CornerRadius="6" Padding="12,8" BorderBrush="#3E3E42" BorderThickness="1">
@@ -112,69 +252,55 @@
 
                     <!-- VISTA SIMPLE -->
                     <StackPanel Visibility="{Binding VisibilidadSimple}">
-                        <ui:Button Content="Subir archivo" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding Titulo}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
+                        <ui:Button Content="Añadir documentos" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding Titulo}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
                         <ItemsControl ItemsSource="{Binding ArchivosSimples}" ItemTemplate="{StaticResource ArchivoFilaTemplate}"/>
                     </StackPanel>
 
                     <!-- VISTA COMPLEJA (ETIQUETAS DIFERENCIADAS) -->
-                    <TabControl Visibility="{Binding VisibilidadColumnas}" Background="Transparent" BorderThickness="0" Foreground="White">
+                    <TabControl Visibility="{Binding VisibilidadColumnas}"
+                                Background="#121416"
+                                BorderBrush="#2C3035"
+                                BorderThickness="1"
+                                Padding="8,8,8,0"
+                                Foreground="White"
+                                ItemContainerStyle="{StaticResource TabDetalleStyle}">
 
                         <TabItem>
-                            <TabItem.Header>
-                                <Border Background="#3E3E42" CornerRadius="4" Padding="8,4">
-                                    <TextBlock Text="Sin alojamiento" FontSize="13" Foreground="White"/>
-                                </Border>
-                            </TabItem.Header>
+                            <TabItem.Header><TextBlock Text="Sin alojamiento"/></TabItem.Header>
                             <StackPanel Margin="0,15,0,0">
-                                <ui:Button Content="Subir archivo" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding TagSinAlojamiento}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
+                                <ui:Button Content="Añadir documentos" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding TagSinAlojamiento}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
                                 <ItemsControl ItemsSource="{Binding ArchivosSinAlojamiento}" ItemTemplate="{StaticResource ArchivoFilaTemplate}"/>
                             </StackPanel>
                         </TabItem>
 
                         <TabItem Visibility="{Binding VisibilidadConAlojamiento}">
-                            <TabItem.Header>
-                                <Border Background="#3E3E42" CornerRadius="4" Padding="8,4">
-                                    <TextBlock Text="Con alojamiento" FontSize="13" Foreground="White"/>
-                                </Border>
-                            </TabItem.Header>
+                            <TabItem.Header><TextBlock Text="Con alojamiento"/></TabItem.Header>
                             <StackPanel Margin="0,15,0,0">
-                                <ui:Button Content="Subir archivo" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding TagConAlojamiento}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
+                                <ui:Button Content="Añadir documentos" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding TagConAlojamiento}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
                                 <ItemsControl ItemsSource="{Binding ArchivosConAlojamiento}" ItemTemplate="{StaticResource ArchivoFilaTemplate}"/>
                             </StackPanel>
                         </TabItem>
 
                         <TabItem Visibility="{Binding VisibilidadAlojamientoEspecial}">
-                            <TabItem.Header>
-                                <Border Background="#3E3E42" CornerRadius="4" Padding="8,4">
-                                    <TextBlock Text="Aloj. (Ambos)" FontSize="13" Foreground="White"/>
-                                </Border>
-                            </TabItem.Header>
+                            <TabItem.Header><TextBlock Text="Alojamiento · Ambos"/></TabItem.Header>
                             <StackPanel Margin="0,15,0,0">
-                                <ui:Button Content="Subir archivo" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding TagAmbos}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
+                                <ui:Button Content="Añadir documentos" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding TagAmbos}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
                                 <ItemsControl ItemsSource="{Binding ArchivosAmbos}" ItemTemplate="{StaticResource ArchivoFilaTemplate}"/>
                             </StackPanel>
                         </TabItem>
 
                         <TabItem Visibility="{Binding VisibilidadAlojamientoEspecial}">
-                            <TabItem.Header>
-                                <Border Background="#3E3E42" CornerRadius="4" Padding="8,4">
-                                    <TextBlock Text="Solo acomp." FontSize="13" Foreground="White"/>
-                                </Border>
-                            </TabItem.Header>
+                            <TabItem.Header><TextBlock Text="Solo acompañante"/></TabItem.Header>
                             <StackPanel Margin="0,15,0,0">
-                                <ui:Button Content="Subir archivo" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding TagAcompanante}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
+                                <ui:Button Content="Añadir documentos" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding TagAcompanante}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
                                 <ItemsControl ItemsSource="{Binding ArchivosAcompanante}" ItemTemplate="{StaticResource ArchivoFilaTemplate}"/>
                             </StackPanel>
                         </TabItem>
 
                         <TabItem Visibility="{Binding VisibilidadAlojamientoEspecial}">
-                            <TabItem.Header>
-                                <Border Background="#3E3E42" CornerRadius="4" Padding="8,4">
-                                    <TextBlock Text="Aloj. (Solo yo)" FontSize="13" Foreground="White"/>
-                                </Border>
-                            </TabItem.Header>
+                            <TabItem.Header><TextBlock Text="Alojamiento · Solo yo"/></TabItem.Header>
                             <StackPanel Margin="0,15,0,0">
-                                <ui:Button Content="Subir archivo" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding TagSoloYo}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
+                                <ui:Button Content="Añadir documentos" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding TagSoloYo}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
                                 <ItemsControl ItemsSource="{Binding ArchivosSoloYo}" ItemTemplate="{StaticResource ArchivoFilaTemplate}"/>
                             </StackPanel>
                         </TabItem>
@@ -182,135 +308,74 @@
                     </TabControl>
 
                     <!-- VISTA ASIGNACIÓN REUNIÓN PRECURSORES -->
-                    <TabControl Visibility="{Binding VisibilidadAsignacionPrec}" Background="Transparent" BorderThickness="0" Foreground="White">
+                    <TabControl Visibility="{Binding VisibilidadAsignacionPrec}"
+                                Background="#121416"
+                                BorderBrush="#2C3035"
+                                BorderThickness="1"
+                                Padding="8,8,8,0"
+                                Foreground="White"
+                                ItemContainerStyle="{StaticResource TabDetalleStyle}">
                         <TabItem>
-                            <TabItem.Header>
-                                <Border Background="#3E3E42" CornerRadius="4" Padding="8,4">
-                                    <TextBlock Text="Oración inicial" FontSize="13" Foreground="White"/>
-                                </Border>
-                            </TabItem.Header>
+                            <TabItem.Header><TextBlock Text="Oración inicial"/></TabItem.Header>
                             <StackPanel Margin="0,15,0,0">
-                                <ui:Button Content="Subir archivo" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding TagOracionInicial}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
+                                <ui:Button Content="Añadir documentos" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding TagOracionInicial}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
                                 <ItemsControl ItemsSource="{Binding ArchivosOracionInicial}" ItemTemplate="{StaticResource ArchivoFilaTemplate}"/>
                             </StackPanel>
                         </TabItem>
 
                         <TabItem>
-                            <TabItem.Header>
-                                <Border Background="#3E3E42" CornerRadius="4" Padding="8,4">
-                                    <TextBlock Text="Discurso" FontSize="13" Foreground="White"/>
-                                </Border>
-                            </TabItem.Header>
+                            <TabItem.Header><TextBlock Text="Discurso"/></TabItem.Header>
                             <StackPanel Margin="0,15,0,0">
-                                <ui:Button Content="Subir archivo" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding TagDiscurso}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
+                                <ui:Button Content="Añadir documentos" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding TagDiscurso}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
                                 <ItemsControl ItemsSource="{Binding ArchivosDiscurso}" ItemTemplate="{StaticResource ArchivoFilaTemplate}"/>
                             </StackPanel>
                         </TabItem>
 
                         <TabItem>
-                            <TabItem.Header>
-                                <Border Background="#3E3E42" CornerRadius="4" Padding="8,4">
-                                    <TextBlock Text="Discurso (serie)" FontSize="13" Foreground="White"/>
-                                </Border>
-                            </TabItem.Header>
+                            <TabItem.Header><TextBlock Text="Discurso · Serie"/></TabItem.Header>
                             <StackPanel Margin="0,15,0,0">
-                                <ui:Button Content="Subir archivo" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding TagDiscursoSerie}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
+                                <ui:Button Content="Añadir documentos" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding TagDiscursoSerie}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
                                 <ItemsControl ItemsSource="{Binding ArchivosDiscursoSerie}" ItemTemplate="{StaticResource ArchivoFilaTemplate}"/>
                             </StackPanel>
                         </TabItem>
                     </TabControl>
 
-                    <!-- ================= VARIABLES INFORMATIVAS ================= -->
-                    <StackPanel Margin="0,30,0,0">
-                        <!-- VARIABLES SCS -->
-                        <StackPanel Visibility="{Binding VisibilidadVariablesSCS}">
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                <ui:SymbolIcon Symbol="Code24" Foreground="#4BA3E3" Margin="0,0,8,0"/>
-                                <TextBlock Text="VARIABLES DISPONIBLES" FontSize="13" FontWeight="SemiBold" Foreground="#4BA3E3" VerticalAlignment="Center"/>
+                    <!-- ================= VARIABLES EDITABLES ================= -->
+                    <StackPanel Margin="0,30,0,0" Visibility="{Binding VisibilidadVariables}">
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <ui:SymbolIcon Symbol="Code24" Foreground="#8AB4D6" Margin="0,0,8,0"/>
+                                <TextBlock Text="Variables disponibles" FontSize="13" FontWeight="SemiBold" Foreground="#D7DADE" VerticalAlignment="Center"/>
                             </StackPanel>
-                            <Border Background="#252528" Padding="15" CornerRadius="6" BorderThickness="1" BorderBrush="#3E3E42">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
-
-                                    <TextBlock Text="Nombre SCS:" Foreground="#AAAAAA" VerticalAlignment="Center" Margin="0,0,10,10"/>
-                                    <TextBlock Grid.Column="1" Text="{Binding VarNombreSCS}" Margin="0,0,0,10" Foreground="White" FontWeight="Bold"/>
-
-                                    <TextBlock Grid.Row="1" Text="Apellido SCS:" Foreground="#AAAAAA" VerticalAlignment="Center" Margin="0,0,10,10"/>
-                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding VarApellidoSCS}" Margin="0,0,0,10" Foreground="White" FontWeight="Bold"/>
-
-                                    <TextBlock Grid.Row="2" Text="Su esposa:" Foreground="#AAAAAA" VerticalAlignment="Center"/>
-                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding VarEsposaSCS}" Foreground="White" FontWeight="Bold"/>
-                                </Grid>
-                            </Border>
-                        </StackPanel>
-
-                        <!-- VARIABLES PASTOREO -->
-                        <StackPanel Visibility="{Binding VisibilidadVariablesPastoreo}">
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                <ui:SymbolIcon Symbol="Code24" Foreground="#4BA3E3" Margin="0,0,8,0"/>
-                                <TextBlock Text="VARIABLES DISPONIBLES" FontSize="13" FontWeight="SemiBold" Foreground="#4BA3E3" VerticalAlignment="Center"/>
+                            <ui:Button Grid.Column="1" Content="Añadir" Icon="{ui:SymbolIcon Add24}" Appearance="Secondary" Padding="8,4" Cursor="Hand" Tag="{Binding}" Click="BtnAnadirVariable_Click"/>
+                        </Grid>
+                        <Border Background="#222428" Padding="10" CornerRadius="7" BorderThickness="1" BorderBrush="#34373D">
+                            <StackPanel>
+                                <TextBlock Text="Puedes editar el nombre y el código. Los cambios se guardan al salir del campo." Foreground="#858A92" FontSize="11" TextWrapping="Wrap" Margin="2,0,2,8"/>
+                                <ItemsControl ItemsSource="{Binding VariablesDisponibles}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,3">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="1.15*"/>
+                                                    <ColumnDefinition Width="1.35*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBox Grid.Column="0" Text="{Binding Etiqueta, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Tag="{Binding}" LostFocus="Variable_LostFocus" Margin="0,0,6,0" Padding="7,5" Background="#292B30" Foreground="White" BorderBrush="#41444B" ToolTip="Nombre descriptivo"/>
+                                                <TextBox Grid.Column="1" Text="{Binding Token, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Tag="{Binding}" LostFocus="Variable_LostFocus" Margin="0,0,6,0" Padding="7,5" FontFamily="Consolas" Background="#292B30" Foreground="#B9D8EE" BorderBrush="#41444B" ToolTip="Código que se utiliza en la plantilla"/>
+                                                <ui:Button Grid.Column="2" Content="⧉" Appearance="Transparent" Padding="5" Margin="0,0,3,0" Cursor="Hand" Tag="{Binding}" ToolTip="Copiar variable" Click="BtnCopiarVariable_Click"/>
+                                                <ui:Button Grid.Column="3" Icon="{ui:SymbolIcon Delete24}" Appearance="Transparent" Foreground="#E06C75" Padding="5" Cursor="Hand" Tag="{Binding}" ToolTip="Eliminar variable" Click="BtnEliminarVariable_Click"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
                             </StackPanel>
-                            <Border Background="#252528" Padding="15" CornerRadius="6" BorderThickness="1" BorderBrush="#3E3E42">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
-
-                                    <TextBlock Text="Hermano:" Foreground="#AAAAAA" VerticalAlignment="Center" Margin="0,0,10,10"/>
-                                    <TextBlock Grid.Column="1" Text="{Binding VarNombrePastoreo}" Margin="0,0,0,10" Foreground="White" FontWeight="Bold"/>
-
-                                    <TextBlock Grid.Row="1" Text="Apellido:" Foreground="#AAAAAA" VerticalAlignment="Center" Margin="0,0,10,10"/>
-                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding VarApellidoPastoreo}" Margin="0,0,0,10" Foreground="White" FontWeight="Bold"/>
-
-                                    <TextBlock Grid.Row="2" Text="Esposa:" Foreground="#AAAAAA" VerticalAlignment="Center"/>
-                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding VarEsposaPastoreo}" Foreground="White" FontWeight="Bold"/>
-                                </Grid>
-                            </Border>
-                        </StackPanel>
-
-                        <!-- VARIABLES ASIGNACIONES ASAMBLEA -->
-                        <StackPanel Visibility="{Binding VisibilidadVariablesAsignacion}">
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                <ui:SymbolIcon Symbol="Code24" Foreground="#4BA3E3" Margin="0,0,8,0"/>
-                                <TextBlock Text="VARIABLES DISPONIBLES" FontSize="13" FontWeight="SemiBold" Foreground="#4BA3E3" VerticalAlignment="Center"/>
-                            </StackPanel>
-                            <Border Background="#252528" Padding="15" CornerRadius="6" BorderThickness="1" BorderBrush="#3E3E42">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
-
-                                    <TextBlock Text="Nombre orador:" Foreground="#AAAAAA" VerticalAlignment="Center" Margin="0,0,10,10"/>
-                                    <TextBlock Grid.Column="1" Text="{Binding VarNombreAsignado}" Margin="0,0,0,10" Foreground="White" FontWeight="Bold"/>
-
-                                    <TextBlock Grid.Row="1" Text="Apellido orador:" Foreground="#AAAAAA" VerticalAlignment="Center" Margin="0,0,10,10"/>
-                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding VarApellidoAsignado}" Margin="0,0,0,10" Foreground="White" FontWeight="Bold"/>
-
-                                    <TextBlock Grid.Row="2" Text="Tema asignado:" Foreground="#AAAAAA" VerticalAlignment="Center"/>
-                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding VarTemaAsignado}" Foreground="White" FontWeight="Bold"/>
-                                </Grid>
-                            </Border>
-                        </StackPanel>
+                        </Border>
                     </StackPanel>
 
                 </StackPanel>
@@ -323,38 +388,34 @@
         <Grid Margin="30">
 
             <Grid VerticalAlignment="Top" Margin="0,0,0,15">
-                <TextBlock Text="DOCUMENTACIÓN Y CORREOS" FontSize="26" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                <TextBlock Text="Correspondencia" FontSize="26" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                 <ui:Button Content="Nuevo mensaje" Icon="{ui:SymbolIcon Send24}" Appearance="Primary" HorizontalAlignment="Right" VerticalAlignment="Center" Cursor="Hand" Click="BtnEnviarMensajeGlobal_Click"/>
             </Grid>
 
             <!-- PESTAÑAS MAESTRAS -->
-            <TabControl Margin="0,50,0,0" Background="Transparent" BorderThickness="0" Foreground="White">
+            <TabControl Margin="0,50,0,0" Background="Transparent" BorderThickness="0" Foreground="White" ItemContainerStyle="{StaticResource TabPrincipalStyle}">
 
-                <TabItem>
-                    <TabItem.Header>
-                        <TextBlock Text="VISITAS A CONGREGACIONES" FontSize="18" FontWeight="Bold" Padding="10,5" Foreground="#4BA3E3"/>
-                    </TabItem.Header>
-                    <TabControl ItemsSource="{Binding CategoriasVisitas}" 
+                <TabItem Header="Visitas a congregaciones">
+                    <TabControl ItemsSource="{Binding CategoriasVisitas}"
                                 ContentTemplate="{StaticResource CategoriaContentTemplate}"
-                                Background="Transparent" BorderThickness="0" Margin="0,15,0,0">
+                                ItemContainerStyle="{StaticResource TabMensajeStyle}"
+                                Background="Transparent" BorderThickness="0" Margin="0,16,0,0">
                         <TabControl.ItemTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Titulo}" FontSize="15" FontWeight="SemiBold" Padding="10,5" Foreground="#EBCB8B"/>
+                                <TextBlock Text="{Binding Titulo}"/>
                             </DataTemplate>
                         </TabControl.ItemTemplate>
                     </TabControl>
                 </TabItem>
 
-                <TabItem>
-                    <TabItem.Header>
-                        <TextBlock Text="ASAMBLEAS DE CIRCUITO" FontSize="18" FontWeight="Bold" Padding="10,5" Foreground="#4BA3E3"/>
-                    </TabItem.Header>
-                    <TabControl ItemsSource="{Binding CategoriasAsambleas}" 
+                <TabItem Header="Asambleas de circuito">
+                    <TabControl ItemsSource="{Binding CategoriasAsambleas}"
                                 ContentTemplate="{StaticResource CategoriaContentTemplate}"
-                                Background="Transparent" BorderThickness="0" Margin="0,15,0,0">
+                                ItemContainerStyle="{StaticResource TabMensajeStyle}"
+                                Background="Transparent" BorderThickness="0" Margin="0,16,0,0">
                         <TabControl.ItemTemplate>
                             <DataTemplate>
-                                <TextBlock Text="{Binding Titulo}" FontSize="15" FontWeight="SemiBold" Padding="10,5" Foreground="#EBCB8B"/>
+                                <TextBlock Text="{Binding Titulo}"/>
                             </DataTemplate>
                         </TabControl.ItemTemplate>
                     </TabControl>
