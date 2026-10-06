@@ -116,7 +116,7 @@
                     <ui:NavigationViewItem Content="Correspondencia" Icon="{ui:SymbolIcon Mail24}" TargetPageType="{x:Type local:DocumentacionPage}"/>
                     <ui:NavigationViewItem Content="Circuito" Icon="{ui:SymbolIcon ArrowClockwiseDashes24}" TargetPageType="{x:Type local:CircuitoPage}"/>
                     
-                    <ui:NavigationViewItem x:Name="MenuRuta" Content="Ruta" Icon="{ui:SymbolIcon Calendarrtl24}" TargetPageType="{x:Type local:CalendarioPage}"/>
+                    <ui:NavigationViewItem x:Name="MenuRuta" Content="Calendario" Icon="{ui:SymbolIcon Calendarrtl24}" TargetPageType="{x:Type local:CalendarioPage}"/>
                     <ui:NavigationViewItem Content="Personas" Icon="{ui:SymbolIcon People24}" TargetPageType="{x:Type local:PersonasPage}"/>
                     <ui:NavigationViewItem Content="Escuelas" Icon="{ui:SymbolIcon HatGraduation24}" TargetPageType="{x:Type local:EscuelasPage}"/>
                     <ui:NavigationViewItem Content="Asambleas" Icon="{ui:SymbolIcon Earth24}" TargetPageType="{x:Type local:AsambleasPage}"/>

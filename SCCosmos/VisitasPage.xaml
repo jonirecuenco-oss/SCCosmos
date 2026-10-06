@@ -35,10 +35,48 @@
 
         <DataTemplate x:Key="BotonEditarTemplate">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                <Button Content="✏️" ToolTip="Editar" Click="BtnEditarPersona_Click" Background="Transparent" Foreground="White" BorderThickness="0" Cursor="Hand" Margin="2,0,8,0" FontSize="14"/>
+                <Button Content="✏️" ToolTip="Editar" Click="BtnEditarPersona_Click" Background="Transparent" Foreground="White" BorderThickness="0" Cursor="Hand" Margin="2,0,6,0" FontSize="14"/>
+                <Button Content="Aa" ToolTip="Formatear nombre común" Click="BtnFormatearNombreComun_Click" Background="Transparent" Foreground="#4BA3E3" BorderThickness="0" Cursor="Hand" Margin="0,0,6,0" FontSize="12" FontWeight="Bold"/>
                 <Button Content="🗑️" ToolTip="Eliminar" Background="Transparent" Foreground="White" BorderThickness="0" Cursor="Hand" Margin="0,0,2,0" FontSize="14" Click="BtnEliminarPersona_Click"/>
             </StackPanel>
         </DataTemplate>
+
+        <Style x:Key="EstiloPestanaVisita" TargetType="TabItem">
+            <Setter Property="Foreground" Value="#AEB4BC"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="15,9"/>
+            <Setter Property="Margin" Value="0,0,4,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="BdTabVisita"
+                                Background="Transparent"
+                                BorderBrush="Transparent"
+                                BorderThickness="0,0,0,2"
+                                CornerRadius="6,6,0,0">
+                            <ContentPresenter ContentSource="Header"
+                                              Margin="{TemplateBinding Padding}"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="BdTabVisita" Property="Background" Value="#25282D"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="BdTabVisita" Property="Background" Value="#292D33"/>
+                                <Setter TargetName="BdTabVisita" Property="BorderBrush" Value="#4BA3E3"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
     </Page.Resources>
 
     <Grid>
@@ -49,13 +87,16 @@
             <StackPanel Margin="20">
                 <TextBlock x:Name="TxtTitulo" Text="DATOS DE LA CONGREGACIÓN" FontSize="24" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,20"/>
 
+                <TabControl x:Name="TabsVisita"
+                            SelectedIndex="0"
+                            SelectionChanged="TabsVisita_SelectionChanged"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Foreground="White"
+                            HorizontalContentAlignment="Stretch"
+                            ItemContainerStyle="{StaticResource EstiloPestanaVisita}">
                 <!-- SECCIÓN MINISTERIO -->
-                <Expander IsExpanded="True" FontSize="16" FontWeight="Normal" HorizontalContentAlignment="Stretch" Margin="0,0,0,10">
-                    <Expander.Header>
-                        <Grid>
-                            <TextBlock Text="MINISTERIO Y PUBLICADORES" VerticalAlignment="Center"/>
-                        </Grid>
-                    </Expander.Header>
+                <TabItem x:Name="TabMinisterio" Header="Ministerio">
                     <StackPanel Margin="10,15,10,10">
 
                         <Grid Margin="0,0,0,15">
@@ -99,8 +140,16 @@
                                     </ListBox.ItemContainerStyle>
                                 </ListBox>
 
-                                <!-- BOTÓN + MEJORADO -->
-                                <Button Content="➕" ToolTip="Añadir Publicador" FontSize="16" FontWeight="SemiBold" Padding="15,8" Background="#10893E" Foreground="White" BorderThickness="0" Cursor="Hand" Click="BtnNuevaPersona_Click" VerticalAlignment="Top" Margin="4,0,0,6"/>
+                                <!-- ACCIONES DE MINISTERIO -->
+                                <Button Content="➕" ToolTip="Añadir publicador" FontSize="16" FontWeight="SemiBold" Padding="15,8" Background="#10893E" Foreground="White" BorderThickness="0" Cursor="Hand" Click="BtnNuevaPersona_Click" VerticalAlignment="Top" Margin="4,0,0,6"/>
+                                <Button x:Name="BtnGenerarS21" Content="S-21" ToolTip="Generar todas las tarjetas S-21" FontSize="13" FontWeight="SemiBold" Padding="14,9" Background="#2D5F8B" Foreground="White" BorderThickness="0" Cursor="Hand" Click="BtnGenerarTarjetasS21_Click" VerticalAlignment="Top" Margin="4,0,0,6"/>
+
+                                <Border Background="#252526" BorderBrush="#3A3A3D" BorderThickness="1" CornerRadius="6" Margin="12,0,0,6" Padding="10,4" Height="38" VerticalAlignment="Top">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="Buscar:" Foreground="#AAAAAA" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBox x:Name="TxtBuscarMinisterio" Width="220" Background="Transparent" Foreground="White" BorderThickness="0" VerticalContentAlignment="Center" TextChanged="TxtBuscarMinisterio_TextChanged" ToolTip="Buscar por nombre común, nombre completo o nombre JW Hub"/>
+                                    </StackPanel>
+                                </Border>
                             </WrapPanel>
 
                             <!-- CINTA DE MES INDIVIDUAL -->
@@ -114,9 +163,10 @@
                             </StackPanel>
                         </Grid>
 
-                        <DataGrid x:Name="TablaVisitas" PreviewMouseWheel="UIElement_PreviewMouseWheel" FontWeight="Normal" HorizontalAlignment="Stretch" AutoGenerateColumns="False" CanUserAddRows="False"
-                                  HeadersVisibility="Column" SelectionMode="Single" IsReadOnly="True" MaxHeight="800"
+                        <DataGrid x:Name="TablaVisitas" MouseLeftButtonUp="TablaVisitas_MouseLeftButtonUp" PreviewMouseWheel="UIElement_PreviewMouseWheel" FontWeight="Normal" HorizontalAlignment="Stretch" AutoGenerateColumns="False" CanUserAddRows="False"
+                                  HeadersVisibility="Column" SelectionMode="Single" IsReadOnly="True"
                                   GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#20FFFFFF" ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                  ScrollViewer.VerticalScrollBarVisibility="Disabled"
                                   BorderThickness="1" BorderBrush="#20FFFFFF" Background="Transparent" RowBackground="Transparent">
                             <DataGrid.RowStyle>
                                 <Style TargetType="DataGridRow">
@@ -159,23 +209,17 @@
                             </DataGrid.Columns>
                         </DataGrid>
                     </StackPanel>
-                </Expander>
+                </TabItem>
 
                 <!-- MAPA DEL TERRITORIO -->
-                <Expander x:Name="ExpanderMapa"
-                          Header="MAPA DEL TERRITORIO Y SALÓN"
-                          FontSize="16"
-                          FontWeight="Normal"
-                          HorizontalContentAlignment="Stretch"
-                          Margin="0,0,0,10"
-                          Expanded="ExpanderMapa_Expanded"
-                          Collapsed="ExpanderMapa_Collapsed">
-                    <Grid Margin="10,15,10,10"
-                          Height="550"
+                <TabItem x:Name="TabMapa" Header="Mapa">
+                    <Grid x:Name="ContenedorMapa"
+                          Margin="10,15,10,10"
+                          MinHeight="300"
                           ClipToBounds="True">
                         <!--
                             WebBrowser es un control HWND. Se mantiene
-                            colapsado mientras el Expander termina su layout
+                            colapsado mientras la pestaña termina su layout
                             para evitar que aparezca temporalmente por encima
                             del resto de la página.
                         -->
@@ -188,20 +232,10 @@
                                         Visibility="Collapsed"/>
                         </Border>
                     </Grid>
-                </Expander>
+                </TabItem>
 
                 <!-- PROGRAMA DE LA VISITA -->
-                <Expander x:Name="ExpanderPrograma"
-                          FontSize="16"
-                          FontWeight="Normal"
-                          HorizontalContentAlignment="Stretch"
-                          Margin="0,0,0,10">
-                    <Expander.Header>
-                        <Grid>
-                            <TextBlock Text="PROGRAMA DE LA VISITA"
-                                       VerticalAlignment="Center"/>
-                        </Grid>
-                    </Expander.Header>
+                <TabItem x:Name="TabPrograma" Header="Programa">
 
                     <StackPanel Margin="10,15,10,10">
                         <Border Background="#1C1C1F"
@@ -395,15 +429,10 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </StackPanel>
-                </Expander>
+                </TabItem>
 
                 <!-- NOTAS PERSONALES -->
-                <Expander x:Name="ExpanderNotas" FontSize="16" FontWeight="Normal" HorizontalContentAlignment="Stretch" Margin="0,0,0,10">
-                    <Expander.Header>
-                        <Grid>
-                            <TextBlock Text="NOTAS PERSONALES DE LA VISITA" VerticalAlignment="Center"/>
-                        </Grid>
-                    </Expander.Header>
+                <TabItem x:Name="TabNotas" Header="Notas" RequestBringIntoView="TabNotas_RequestBringIntoView">
                     <Grid x:Name="PanelNotas" Margin="10,15,10,10">
                         <Grid.Resources>
                             <Style x:Key="HeaderSeccion" TargetType="Border">
@@ -488,14 +517,10 @@
                             </ItemsControl>
                         </StackPanel>
                     </Grid>
-                </Expander>
+                </TabItem>
 
                 <!-- INFORMACIÓN DE LA CONGREGACIÓN -->
-                <Expander Header="INFORMACIÓN DE LA CONGREGACIÓN"
-                          FontSize="16"
-                          FontWeight="Normal"
-                          HorizontalContentAlignment="Stretch"
-                          Margin="0,0,0,10">
+                <TabItem x:Name="TabInformacion" Header="Información">
                     <Border x:Name="PanelEstadisticas"
                             Background="#171719"
                             BorderBrush="#2D2D30"
@@ -684,10 +709,10 @@
 
                         </StackPanel>
                     </Border>
-                </Expander>
+                </TabItem>
 
                 <!-- GRUPOS DE PREDICACIÓN -->
-                <Expander Header="GRUPOS DE PREDICACIÓN" FontSize="16" FontWeight="Normal" HorizontalContentAlignment="Stretch" Margin="0,0,0,10">
+                <TabItem x:Name="TabGruposVisita" Header="Grupos">
                     <StackPanel Margin="10,15,10,10">
                         <ItemsControl x:Name="GraficoGrupos" PreviewMouseWheel="UIElement_PreviewMouseWheel">
                             <ItemsControl.ItemsPanel>
@@ -728,19 +753,10 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </StackPanel>
-                </Expander>
+                </TabItem>
 
                 <!-- TERRITORIOS -->
-                <Expander FontSize="16"
-                          FontWeight="Normal"
-                          HorizontalContentAlignment="Stretch"
-                          Margin="0,0,0,10">
-                    <Expander.Header>
-                        <Grid>
-                            <TextBlock Text="TERRITORIOS (S-13)"
-                                       VerticalAlignment="Center"/>
-                        </Grid>
-                    </Expander.Header>
+                <TabItem x:Name="TabTerritorios" Header="Territorios">
 
                     <StackPanel Margin="10,15,10,10">
 
@@ -1227,25 +1243,20 @@
                                     Margin="0,15,0,0"/>
 
                     </StackPanel>
-                </Expander>
+                </TabItem>
 
                 <!-- CONTABILIDAD -->
-                <Expander FontSize="16" FontWeight="Normal" HorizontalContentAlignment="Stretch" Margin="0,0,0,10">
-                    <Expander.Header>
-                        <Grid>
-                            <TextBlock Text="CONTABILIDAD (Últimos 6 meses)" VerticalAlignment="Center"/>
-                        </Grid>
-                    </Expander.Header>
+                <TabItem x:Name="TabContabilidad" Header="Contabilidad">
                     <StackPanel Margin="10,15,10,10">
 
                         <Grid Margin="0,0,0,15">
                             <TextBlock Text="Los cambios se guardan automáticamente al escribir" Foreground="#888888" FontSize="12" VerticalAlignment="Center" FontStyle="Italic"/>
                             <!-- CINTA DE MES INDIVIDUAL -->
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                <TextBlock Text="Mes final del balance:" Foreground="Gray" FontSize="14" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBlock Text="Año de servicio:" Foreground="Gray" FontSize="14" VerticalAlignment="Center" Margin="0,0,10,0"/>
                                 <ui:Button Icon="{ui:SymbolIcon ChevronLeft24}" Appearance="Transparent" Padding="4" Margin="0,0,5,0" Cursor="Hand" Click="BtnMesAntContabilidad_Click"/>
-                                <Border Background="#2A2A2A" CornerRadius="4" Padding="15,6" MinWidth="140">
-                                    <TextBlock x:Name="TxtMesContabilidad" Text="Mes" Foreground="White" FontSize="14" FontWeight="SemiBold" TextAlignment="Center" VerticalAlignment="Center"/>
+                                <Border Background="#2A2A2A" CornerRadius="4" Padding="15,6" MinWidth="180">
+                                    <TextBlock x:Name="TxtMesContabilidad" Text="Año de servicio" Foreground="White" FontSize="14" FontWeight="SemiBold" TextAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                                 <ui:Button Icon="{ui:SymbolIcon ChevronRight24}" Appearance="Transparent" Padding="4" Margin="5,0,0,0" Cursor="Hand" Click="BtnMesSigContabilidad_Click"/>
                             </StackPanel>
@@ -1298,10 +1309,10 @@
                             </DataGrid.Columns>
                         </DataGrid>
                     </StackPanel>
-                </Expander>
+                </TabItem>
 
                 <!-- S-303 Y S-2 -->
-                <Expander x:Name="ExpanderS303yS2" Header="S-303 y S-2" FontSize="16" FontWeight="Normal" HorizontalContentAlignment="Stretch" Margin="0,0,0,10">
+                <TabItem x:Name="TabS303" Header="S-303">
                     <StackPanel Margin="10,15,10,10">
 
                         <!-- PARTE 1: S-303 -->
@@ -1404,7 +1415,7 @@
                                         </Border>
 
                                         <!-- ÁREA WEB -->
-                                        <WebBrowser x:Name="WbEditorEnvio" Height="150"/>
+                                        <WebBrowser x:Name="WbEditorEnvio" Height="300"/>
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
@@ -1417,7 +1428,8 @@
                         </StackPanel>
 
                     </StackPanel>
-                </Expander>
+                </TabItem>
+                </TabControl>
 
             </StackPanel>
         </ScrollViewer>

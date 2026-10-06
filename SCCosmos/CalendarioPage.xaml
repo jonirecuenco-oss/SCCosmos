@@ -203,11 +203,11 @@
                                     <ContentControl Margin="0,0,5,0" Visibility="{Binding VisibilidadVisita}">
                                         <ui:Button Icon="{ui:SymbolIcon DocumentArrowRight24}" Appearance="Secondary" Padding="6" Cursor="Hand" Click="BtnEnviarDoc_Click" ToolTip="Enviar documentación de la visita" Background="{Binding ColorBotonDoc}"/>
                                     </ContentControl>
-
+                                    <!-- 
                                     <ContentControl Margin="0,0,5,0" Visibility="{Binding VisibilidadVisita}">
                                         <ui:Button Icon="{ui:SymbolIcon Chat24}" Appearance="Primary" Background="#25D366" BorderThickness="0" Padding="6" Cursor="Hand" Click="BtnWhatsAppCoordinador_Click" ToolTip="WhatsApp al Coordinador"/>
                                     </ContentControl>
-
+                                    -->
                                     <!-- Botones de ASAMBLEA -->
                                     <ContentControl Margin="0,0,5,0" Visibility="{Binding VisibilidadAsamblea}">
                                         <ui:Button Icon="{ui:SymbolIcon MailAlert24}" Appearance="Secondary" Padding="6" Cursor="Hand" Click="BtnEnviarRecordatorio_Click" ToolTip="Enviar recordatorio asamblea" Background="{Binding ColorBotonRecordatorio}"/>

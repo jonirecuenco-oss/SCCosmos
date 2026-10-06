@@ -461,9 +461,10 @@ namespace SCCosmos
                             NombreJWHub = !string.IsNullOrWhiteSpace(pe.NombreJWHub) ? pe.NombreJWHub : pe.NombreCompleto,
                             NombreComun = pe.NombreComun,
 
-                            // JW Hub no es fuente para Grupo ni Sexo.
+                            // Grupo sigue siendo gestionado por S-21 / SCCosmos.
+                            // Sexo sí se obtiene ahora de Información personal de JW Hub.
                             Grupo = 0,
-                            Sexo = "",
+                            Sexo = pe.Sexo ?? "",
                             Esperanza = pe.Esperanza,
                             FechaNacimiento = pe.FechaNacimiento,
                             FechaBautismo = pe.FechaBautismo,

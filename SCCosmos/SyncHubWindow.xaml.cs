@@ -267,7 +267,11 @@ namespace SCCosmos
             if (string.IsNullOrWhiteSpace(db.Nombre) && !string.IsNullOrWhiteSpace(hub.Nombre)) return true;
             if (string.IsNullOrWhiteSpace(db.NombreComun) && !string.IsNullOrWhiteSpace(hub.NombreComun)) return true;
 
-            // Grupo y Sexo se ignoran completamente en la sincronización con JW Hub.
+            // Grupo se ignora en JW Hub, pero Sexo se obtiene ahora desde
+            // la pestaña Información personal y sí debe sincronizarse.
+            if (!string.IsNullOrWhiteSpace(hub.Sexo)
+                && !string.Equals(db.Sexo ?? "", hub.Sexo, StringComparison.OrdinalIgnoreCase))
+                return true;
 
             string hubEsp = hub.Esperanza ?? "";
             string dbEsp = db.Esperanza ?? "";

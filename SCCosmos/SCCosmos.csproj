@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <None Remove="ffmpeg.exe" />
+    <None Remove="S-21_S.pdf" />
     <None Remove="sccosmos.ico" />
   </ItemGroup>
 
@@ -36,6 +37,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="S-21_S.pdf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
     <Resource Include="sccosmos.ico">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>

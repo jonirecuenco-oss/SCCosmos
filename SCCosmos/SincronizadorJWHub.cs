@@ -97,15 +97,18 @@ namespace SCCosmos
 
                         EsperaDinamicaElementoVisibilidad(driver, By.CssSelector("article"), 15);
 
-                        // Mostrar más
+                        // Mostrar más. Después de cada clic esperamos a que Angular
+                        // realmente incorpore las nuevas tarjetas antes de continuar.
                         while (true)
                         {
                             var btnMostrarMas = EsperaDinamicaElementoVisibilidad(driver, By.XPath("//button[contains(@class, 'margin-top-05') and .//ptrn-translate[contains(text(), 'Mostrar') and contains(text(), 'más')]]"), 3);
                             if (btnMostrarMas != null && btnMostrarMas.Displayed)
                             {
+                                int antes = ObtenerTarjetasPersona(driver).Count;
                                 ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView({block: 'center'});", btnMostrarMas);
                                 Thread.Sleep(200);
                                 ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", btnMostrarMas);
+                                EsperarCambioEnListadoPersonas(driver, antes, 5);
                             }
                             else break;
                         }
@@ -114,15 +117,17 @@ namespace SCCosmos
                         var btnMostrarTodo = EsperaDinamicaElementoVisibilidad(driver, By.XPath("//button[.//ptrn-translate[contains(text(), 'Mostrar todo')]]"), 3);
                         if (btnMostrarTodo != null && btnMostrarTodo.Displayed)
                         {
+                            int antes = ObtenerTarjetasPersona(driver).Count;
                             ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView({block: 'center'});", btnMostrarTodo);
                             Thread.Sleep(200);
                             ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", btnMostrarTodo);
-                            EsperaDinamicaElementoVisibilidad(driver, By.CssSelector("article"), 15);
-                            Thread.Sleep(2000);
+                            EsperarCambioEnListadoPersonas(driver, antes, 10);
                         }
 
-                        // Recorrer la lista
-                        var cardsBase = driver.FindElements(By.CssSelector("article"));
+                        // Esperamos a que la SPA deje de reordenar / hidratar el listado.
+                        // Solo contamos article que realmente son fichas de personas.
+                        EsperarListadoPersonasEstable(driver, 20);
+                        var cardsBase = ObtenerTarjetasPersona(driver);
                         int totalCards = cardsBase.Count;
 
                         //MODO DE PRUEBAS
@@ -156,49 +161,45 @@ namespace SCCosmos
 
                         while (i < totalCards && reintentosFallidos < 5)
                         {
-                            var cards = driver.FindElements(By.CssSelector("article"));
+                            // Reobtenemos las tarjetas en cada vuelta para no conservar
+                            // IWebElement obsoletos después de abrir/cerrar perfiles.
+                            var cards = ObtenerTarjetasPersona(driver);
+                            totalCards = Math.Max(totalCards, cards.Count);
 
-                            while (i >= cards.Count)
+                            if (i >= cards.Count)
                             {
-                                try
-                                {
-                                    var btnMas = driver.FindElements(By.XPath("//button[contains(@class, 'margin-top-05') and .//ptrn-translate[contains(text(), 'Mostrar') and contains(text(), 'más')]]")).FirstOrDefault(b => b.Displayed);
-                                    if (btnMas != null)
-                                    {
-                                        ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView({block: 'center'});", btnMas);
-                                        Thread.Sleep(200);
-                                        ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", btnMas);
-                                        EsperaDinamicaElementoVisibilidad(driver, By.CssSelector("article"), 5);
-                                        cards = driver.FindElements(By.CssSelector("article"));
-                                        totalCards = cards.Count;
-                                    }
-                                    else
-                                    {
-                                        var btnTodo = driver.FindElements(By.XPath("//button[.//ptrn-translate[contains(text(), 'Mostrar todo')]]")).FirstOrDefault(b => b.Displayed);
-                                        if (btnTodo != null)
-                                        {
-                                            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView({block: 'center'});", btnTodo);
-                                            Thread.Sleep(200);
-                                            ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", btnTodo);
-                                            EsperaDinamicaElementoVisibilidad(driver, By.CssSelector("article"), 5);
-                                            cards = driver.FindElements(By.CssSelector("article"));
-                                            totalCards = cards.Count;
-                                        }
-                                        else break;
-                                    }
-                                }
-                                catch { break; }
+                                EsperarListadoPersonasEstable(driver, 8);
+                                cards = ObtenerTarjetasPersona(driver);
+                                totalCards = cards.Count;
                             }
 
                             if (i >= cards.Count) break;
                             var card = cards[i];
 
                             var spanNombre = card.FindElements(By.CssSelector("span.transliteration__vernacular")).FirstOrDefault();
-                            if (spanNombre == null) { i++; continue; }
 
-                            // Obtención robusta del texto para que procese a la primera persona
-                            string nombreReal = spanNombre.GetAttribute("textContent").Replace("\u200B", "").Trim();
-                            if (string.IsNullOrWhiteSpace(nombreReal)) { i++; continue; }
+                            // No saltamos una tarjeta todavía no hidratada: ese era uno
+                            // de los motivos por los que la primera persona podía acabar
+                            // figurando como baja. La reintentamos antes de avanzar.
+                            if (spanNombre == null)
+                            {
+                                reintentosFallidos++;
+                                Thread.Sleep(500);
+                                continue;
+                            }
+
+                            string nombreReal = (spanNombre.GetAttribute("textContent") ?? "")
+                                .Replace("\u200B", "")
+                                .Trim();
+
+                            if (string.IsNullOrWhiteSpace(nombreReal))
+                            {
+                                reintentosFallidos++;
+                                Thread.Sleep(500);
+                                continue;
+                            }
+
+                            reintentosFallidos = 0;
 
                             PersonaExtraida mejorExtraccion = null;
 
@@ -391,7 +392,12 @@ namespace SCCosmos
                                                     tempPersona.Direccion = string.Join(", ", dirRaw.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()));
                                                 }
 
-                                                // 1. LINK ESTADO
+                                                // 1. INFORMACIÓN PERSONAL
+                                                // JW Hub muestra "Masculino" / "Femenino".
+                                                // SCCosmos normaliza esos valores a "Hombre" / "Mujer".
+                                                ExtraerSexoInformacionPersonal(driver, tempPersona);
+
+                                                // 2. LINK ESTADO
                                                 var btnEstado = EsperaDinamicaElementoClicable(driver, By.XPath("//a[contains(@href, '/spiritual-status') or contains(@href, '/status') or contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnopqrstuvwxyzáéíóú'), 'estado')]"), 3);
                                                 if (btnEstado != null)
                                                 {
@@ -423,7 +429,7 @@ namespace SCCosmos
                                                     }
                                                 }
 
-                                                // 2. LINK SOLICITUDES
+                                                // 3. LINK SOLICITUDES
                                                 var btnSolicitudes = EsperaDinamicaElementoClicable(driver, By.XPath("//a[contains(@href, '/applications') or contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnopqrstuvwxyzáéíóú'), 'solicitud')]"), 3);
                                                 if (btnSolicitudes != null)
                                                 {
@@ -436,7 +442,7 @@ namespace SCCosmos
                                                     if (solList.Count > 0) tempPersona.Solicitudes = string.Join(", ", solList.Distinct());
                                                 }
 
-                                                // 3. LINK EDUCACIÓN
+                                                // 4. LINK EDUCACIÓN
                                                 var btnEducacion = EsperaDinamicaElementoClicable(driver, By.XPath("//a[contains(@href, '/theocratic-education') or contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnopqrstuvwxyzáéíóú'), 'educaci')]"), 3);
                                                 if (btnEducacion != null)
                                                 {
@@ -569,7 +575,7 @@ namespace SCCosmos
                                 catch (Exception)
                                 {
                                     Thread.Sleep(1500);
-                                    cards = driver.FindElements(By.CssSelector("article"));
+                                    cards = ObtenerTarjetasPersona(driver);
                                     totalCards = cards.Count; // Mantenemos el total actualizado
                                     if (i < cards.Count) card = cards[i];
                                 }
@@ -594,14 +600,21 @@ namespace SCCosmos
                         driver.Navigate().GoToUrl(urlNombramientos);
                         Thread.Sleep(5000);
 
+                        // La página de recomendaciones debe haber terminado de cargar antes
+                        // de sincronizar la BBDD. Si Hub devuelve una página de error, no
+                        // tocamos los registros locales.
+                        bool paginaNombramientosValida = EsperarPaginaNombramientosValida(driver, 15);
                         string htmlNombramientos = driver.PageSource;
 
                         if (Type.GetType("SCCosmos.ExtractorNombramientosHelper") != null)
                         {
                             var recomendaciones = ExtractorNombramientosHelper.ExtraerRecomendaciones(htmlNombramientos);
 
-                            if (recomendaciones.Count > 0)
+                            if (paginaNombramientosValida)
                             {
+                                // GuardarRecomendaciones funciona ahora como espejo de Hub:
+                                // también elimina de BBDD las recomendaciones que ya no están,
+                                // incluido el caso de que actualmente no haya ninguna.
                                 DatabaseHelper.GuardarRecomendaciones(recomendaciones);
                             }
 
@@ -965,7 +978,12 @@ namespace SCCosmos
             if (string.IsNullOrWhiteSpace(db.Nombre) && !string.IsNullOrWhiteSpace(hub.NombreCompleto)) return true;
             if (string.IsNullOrWhiteSpace(db.NombreComun) && !string.IsNullOrWhiteSpace(hub.NombreComun)) return true;
 
-            // Grupo y Sexo se ignoran expresamente en la sincronización con JW Hub.
+            // Grupo sigue siendo propio del S-21 / gestión local.
+            // Sexo sí se obtiene ahora de "Información personal" de JW Hub.
+            if (!string.IsNullOrWhiteSpace(hub.Sexo)
+                && !string.Equals(db.Sexo ?? "", hub.Sexo, StringComparison.OrdinalIgnoreCase))
+                return true;
+
             if (!string.IsNullOrEmpty(codigoDet) && db.CongregacionCodigo != codigoDet) return true;
 
             string hubEsp = hub.Esperanza ?? "";
@@ -1053,6 +1071,196 @@ namespace SCCosmos
                 }
                 catch { }
             }
+        }
+
+        private static List<IWebElement> ObtenerTarjetasPersona(IWebDriver driver)
+        {
+            var resultado = new List<IWebElement>();
+
+            try
+            {
+                foreach (var article in driver.FindElements(By.CssSelector("article")))
+                {
+                    try
+                    {
+                        var nombre = article.FindElements(By.CssSelector("span.transliteration__vernacular")).FirstOrDefault();
+                        if (nombre == null) continue;
+
+                        string texto = (nombre.GetAttribute("textContent") ?? "").Replace("\u200B", "").Trim();
+                        if (string.IsNullOrWhiteSpace(texto)) continue;
+
+                        // Evita contar otros <article> de la página que no son personas.
+                        var enlacePerfil = article.FindElements(By.XPath(".//a[(contains(@href, 'person') or contains(@href, '/records/')) or .//ptrn-translate[contains(., 'Ver más')]]")).FirstOrDefault();
+                        if (enlacePerfil == null) continue;
+
+                        resultado.Add(article);
+                    }
+                    catch (StaleElementReferenceException) { }
+                }
+            }
+            catch (WebDriverException) { }
+
+            return resultado;
+        }
+
+        private static void EsperarCambioEnListadoPersonas(IWebDriver driver, int cantidadAnterior, int segundosMaximos)
+        {
+            try
+            {
+                WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(segundosMaximos));
+                wait.PollingInterval = TimeSpan.FromMilliseconds(250);
+                wait.IgnoreExceptionTypes(typeof(StaleElementReferenceException), typeof(NoSuchElementException));
+                wait.Until(d => ObtenerTarjetasPersona(d).Count > cantidadAnterior);
+            }
+            catch { }
+        }
+
+        private static void EsperarListadoPersonasEstable(IWebDriver driver, int segundosMaximos)
+        {
+            DateTime limite = DateTime.UtcNow.AddSeconds(segundosMaximos);
+            int cantidadAnterior = -1;
+            string primerNombreAnterior = null;
+            int lecturasEstables = 0;
+
+            while (DateTime.UtcNow < limite)
+            {
+                try
+                {
+                    var tarjetas = ObtenerTarjetasPersona(driver);
+                    int cantidad = tarjetas.Count;
+                    string primerNombre = "";
+
+                    if (cantidad > 0)
+                    {
+                        var span = tarjetas[0].FindElements(By.CssSelector("span.transliteration__vernacular")).FirstOrDefault();
+                        primerNombre = (span?.GetAttribute("textContent") ?? "").Replace("\u200B", "").Trim();
+                    }
+
+                    int candidatos = 0;
+                    try
+                    {
+                        candidatos = driver.FindElements(By.XPath("//article[.//a[contains(@href, 'person') or contains(@href, '/records/') or .//ptrn-translate[contains(., 'Ver más')]]]")).Count;
+                    }
+                    catch { }
+
+                    bool todasHidratadas = candidatos == 0 || cantidad >= candidatos;
+
+                    if (cantidad > 0 && todasHidratadas && cantidad == cantidadAnterior && string.Equals(primerNombre, primerNombreAnterior, StringComparison.Ordinal))
+                    {
+                        lecturasEstables++;
+                        if (lecturasEstables >= 8) return; // ~2 segundos realmente estable
+                    }
+                    else
+                    {
+                        lecturasEstables = 0;
+                    }
+
+                    cantidadAnterior = cantidad;
+                    primerNombreAnterior = primerNombre;
+                }
+                catch
+                {
+                    lecturasEstables = 0;
+                }
+
+                Thread.Sleep(250);
+            }
+        }
+
+        private static void ExtraerSexoInformacionPersonal(IWebDriver driver, PersonaExtraida persona)
+        {
+            if (persona == null) return;
+
+            try
+            {
+                string sexo = "";
+
+                // Entramos expresamente en Información personal, igual que hacemos
+                // con Estado, Solicitudes vigentes y Educación teocrática.
+                var btnInfoPersonal = EsperaDinamicaElementoClicable(
+                    driver,
+                    By.XPath("//*[self::a or self::button][contains(@href, '/personal-information') or contains(@href, '/personal') or contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnopqrstuvwxyzáéíóú'), 'información personal') or contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnopqrstuvwxyzáéíóú'), 'informacion personal')]"),
+                    4);
+
+                if (btnInfoPersonal != null)
+                {
+                    ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView({block:'center'});", btnInfoPersonal);
+                    ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", btnInfoPersonal);
+
+                    EsperaDinamicaElementoVisibilidad(
+                        driver,
+                        By.XPath("//dt[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnopqrstuvwxyzáéíóú'), 'sexo')]/following-sibling::dd[1]"),
+                        8);
+
+                    sexo = LeerSexoPaginaActual(driver);
+                }
+
+                // Fallback por si Hub cambia la pestaña a una vista ya activa/no clicable.
+                if (string.IsNullOrWhiteSpace(sexo))
+                    sexo = LeerSexoPaginaActual(driver);
+
+                persona.Sexo = NormalizarSexoHub(sexo);
+            }
+            catch
+            {
+                // Sexo no es un dato crítico para abortar la extracción completa.
+            }
+        }
+
+        private static string LeerSexoPaginaActual(IWebDriver driver)
+        {
+            try
+            {
+                var ddSexo = driver.FindElements(By.XPath("//dt[contains(translate(normalize-space(.), 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnopqrstuvwxyzáéíóú'), 'sexo')]/following-sibling::dd[1]")).FirstOrDefault();
+                return ddSexo == null ? "" : (ddSexo.GetAttribute("textContent") ?? "").Replace("\u200B", "").Trim();
+            }
+            catch { return ""; }
+        }
+
+        private static string NormalizarSexoHub(string valor)
+        {
+            string sexo = (valor ?? "").Trim();
+
+            if (sexo.Equals("Masculino", StringComparison.OrdinalIgnoreCase)
+                || sexo.Equals("Male", StringComparison.OrdinalIgnoreCase)
+                || sexo.Equals("Hombre", StringComparison.OrdinalIgnoreCase))
+                return "Hombre";
+
+            if (sexo.Equals("Femenino", StringComparison.OrdinalIgnoreCase)
+                || sexo.Equals("Female", StringComparison.OrdinalIgnoreCase)
+                || sexo.Equals("Mujer", StringComparison.OrdinalIgnoreCase))
+                return "Mujer";
+
+            return "";
+        }
+
+        private static bool EsperarPaginaNombramientosValida(IWebDriver driver, int segundosMaximos)
+        {
+            try
+            {
+                WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(segundosMaximos));
+                wait.PollingInterval = TimeSpan.FromMilliseconds(500);
+
+                return wait.Until(d =>
+                {
+                    try
+                    {
+                        string url = d.Url ?? "";
+                        if (!url.Contains("/appointments", StringComparison.OrdinalIgnoreCase)) return false;
+                        if (url.Contains("/error", StringComparison.OrdinalIgnoreCase)) return false;
+
+                        bool ready = (bool)((IJavaScriptExecutor)d).ExecuteScript("return document.readyState === 'complete';");
+                        if (!ready) return false;
+
+                        string bodyText = d.FindElement(By.TagName("body")).GetAttribute("textContent") ?? "";
+                        return bodyText.IndexOf("nombr", StringComparison.OrdinalIgnoreCase) >= 0
+                               || bodyText.IndexOf("recomend", StringComparison.OrdinalIgnoreCase) >= 0
+                               || bodyText.IndexOf("appointment", StringComparison.OrdinalIgnoreCase) >= 0;
+                    }
+                    catch { return false; }
+                });
+            }
+            catch { return false; }
         }
 
         private static IWebElement EsperaDinamicaElementoVisibilidad(IWebDriver driver, By locator, int segundosMaximos)
@@ -1187,6 +1395,6 @@ namespace SCCosmos
         public string Foto { get; set; }
         public string FechaNacimiento { get; set; }
         public string Esperanza { get; set; }
-        //hola
+        public string Sexo { get; set; }
     }
 }

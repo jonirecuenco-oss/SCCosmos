@@ -337,12 +337,13 @@ namespace SCCosmos
                 var resDir = cmdCheck.ExecuteScalar();
                 if (resDir != null && resDir != DBNull.Value) dirAnterior = resDir.ToString();
 
-                bool cambiarCoords = false;
+                // Editar la ficha actual desde PersonasPage NO debe modificar snapshots
+                // históricos. Si cambia la dirección solo reiniciamos las coordenadas
+                // de esta ficha concreta; la instantánea de cada visita se conserva.
                 if (!string.Equals((p.Direccion ?? "").Trim(), dirAnterior.Trim(), StringComparison.OrdinalIgnoreCase))
                 {
                     p.Latitud = 0;
                     p.Longitud = 0;
-                    cambiarCoords = true;
                 }
 
                 var command = connection.CreateCommand();
@@ -387,20 +388,110 @@ namespace SCCosmos
 
                 command.ExecuteNonQuery();
 
-                if (cambiarCoords)
-                {
-                    var cmdClones = connection.CreateCommand();
-                    cmdClones.CommandText = "UPDATE Personas SET Direccion = $dir, Latitud = 0, Longitud = 0 WHERE PersonaRaizId = $id OR Id = (SELECT PersonaRaizId FROM Personas WHERE Id = $id AND PersonaRaizId > 0)";
-                    cmdClones.Parameters.AddWithValue("$dir", p.Direccion ?? "");
-                    cmdClones.Parameters.AddWithValue("$id", p.Id);
-                    cmdClones.ExecuteNonQuery();
-                }
             }
         }
 
         public static void ActualizarPersonaDesdeVisitas(Persona p, string mesReferencia)
         {
-            ActualizarPersona(p);
+            if (p == null || p.Id <= 0) return;
+
+            string mes = (mesReferencia ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(mes))
+            {
+                ActualizarPersona(p);
+                return;
+            }
+
+            // Desde VISITAS se mantiene el comportamiento esperado de la ficha actual
+            // y, además, se actualiza la instantánea del mes que se está consultando.
+            // PersonasPage sigue llamando a ActualizarPersona(), por lo que nunca toca
+            // snapshots históricos.
+            int personaRaizId = p.PersonaRaizId > 0 ? p.PersonaRaizId : p.Id;
+
+            // El flujo actual de Visitas abre siempre la ficha raíz. Dejamos esta
+            // protección por si en el futuro se pasa directamente una instantánea.
+            if (p.Id == personaRaizId)
+            {
+                ActualizarPersona(p);
+            }
+            else
+            {
+                var raiz = ObtenerPersonaPorId(personaRaizId);
+                if (raiz != null)
+                {
+                    raiz.Nombre = p.Nombre;
+                    raiz.NombreComun = p.NombreComun;
+                    raiz.NombreJWHub = p.NombreJWHub;
+                    raiz.FechaNacimiento = p.FechaNacimiento;
+                    raiz.Sexo = p.Sexo;
+                    raiz.FechaBautismo = p.FechaBautismo;
+                    raiz.Esperanza = p.Esperanza;
+                    raiz.Nombramiento = p.Nombramiento;
+                    raiz.Servicio = p.Servicio;
+                    raiz.CongregacionCodigo = p.CongregacionCodigo;
+                    raiz.Grupo = p.Grupo;
+                    raiz.Telefono = p.Telefono;
+                    raiz.Email = p.Email;
+                    raiz.EmailJW = p.EmailJW;
+                    raiz.FechaInicioPrec = p.FechaInicioPrec;
+                    raiz.FechaUltimaEscuela = p.FechaUltimaEscuela;
+                    raiz.Solicitudes = p.Solicitudes;
+                    raiz.Privilegios = p.Privilegios;
+                    raiz.Foto = p.Foto;
+                    raiz.Direccion = p.Direccion;
+                    raiz.Latitud = p.Latitud;
+                    raiz.Longitud = p.Longitud;
+                    raiz.ConyugeId = p.ConyugeId;
+                    raiz.Notas = p.Notas;
+                    raiz.FechaEliminacion = p.FechaEliminacion;
+                    raiz.OrigenRegistro = p.OrigenRegistro;
+                    raiz.AprobadoExhibidores = p.AprobadoExhibidores;
+                    ActualizarPersona(raiz);
+                }
+            }
+
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                connection.Open();
+                using (var transaction = connection.BeginTransaction())
+                {
+                    // Puede haber snapshots antiguos duplicados por importaciones previas.
+                    // Para este mes dejamos una única instantánea canónica.
+                    var cmdDelete = connection.CreateCommand();
+                    cmdDelete.Transaction = transaction;
+                    cmdDelete.CommandText = @"
+                        DELETE FROM Personas
+                        WHERE PersonaRaizId = $raiz
+                          AND MesHistorico = $mes;";
+                    cmdDelete.Parameters.AddWithValue("$raiz", personaRaizId);
+                    cmdDelete.Parameters.AddWithValue("$mes", mes);
+                    cmdDelete.ExecuteNonQuery();
+
+                    var cmdInsert = connection.CreateCommand();
+                    cmdInsert.Transaction = transaction;
+                    cmdInsert.CommandText = @"
+                        INSERT INTO Personas
+                        (Nombre, FechaNacimiento, Sexo, FechaBautismo, Esperanza, Nombramiento, Servicio, CongregacionCodigo, Grupo,
+                         Telefono, Email, FechaInicioPrec, FechaUltimaEscuela, NombreJWHub, Foto, FechaCreacion, FechaEliminacion,
+                         Solicitudes, Privilegios, RequisitoHoras, NombreComun, Direccion, Latitud, Longitud, ConyugeId, EmailJW,
+                         PersonaRaizId, MesHistorico, FechaExactaHistorico, Notas, OrigenRegistro, AprobadoExhibidores,
+                         TrasladoAnteriorId, TrasladoSiguienteId, FechaTraslado)
+                        SELECT
+                         Nombre, FechaNacimiento, Sexo, FechaBautismo, Esperanza, Nombramiento, Servicio, CongregacionCodigo, Grupo,
+                         Telefono, Email, FechaInicioPrec, FechaUltimaEscuela, NombreJWHub, Foto, FechaCreacion, FechaEliminacion,
+                         Solicitudes, Privilegios, RequisitoHoras, NombreComun, Direccion, Latitud, Longitud, ConyugeId, EmailJW,
+                         $raiz, $mes, $fechaExacta, Notas, OrigenRegistro, AprobadoExhibidores,
+                         TrasladoAnteriorId, TrasladoSiguienteId, FechaTraslado
+                        FROM Personas
+                        WHERE Id = $raiz;";
+                    cmdInsert.Parameters.AddWithValue("$raiz", personaRaizId);
+                    cmdInsert.Parameters.AddWithValue("$mes", mes);
+                    cmdInsert.Parameters.AddWithValue("$fechaExacta", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+                    cmdInsert.ExecuteNonQuery();
+
+                    transaction.Commit();
+                }
+            }
         }
 
 
@@ -1043,6 +1134,9 @@ namespace SCCosmos
 
         public static void GuardarRecomendaciones(List<RecomendacionHub> recomendaciones)
         {
+            if (recomendaciones == null)
+                recomendaciones = new List<RecomendacionHub>();
+
             using (var connection = new Microsoft.Data.Sqlite.SqliteConnection(ConnectionString))
             {
                 connection.Open();
@@ -1061,36 +1155,49 @@ namespace SCCosmos
                     )";
                 cmdCreate.ExecuteNonQuery();
 
-                try { connection.CreateCommand(); cmdCreate.CommandText = "ALTER TABLE RecomendacionesNombramientos ADD COLUMN UrlDetalle TEXT"; cmdCreate.ExecuteNonQuery(); } catch { }
-                try { connection.CreateCommand(); cmdCreate.CommandText = "ALTER TABLE RecomendacionesNombramientos ADD COLUMN RecomendadoComo TEXT"; cmdCreate.ExecuteNonQuery(); } catch { }
+                try { cmdCreate.CommandText = "ALTER TABLE RecomendacionesNombramientos ADD COLUMN UrlDetalle TEXT"; cmdCreate.ExecuteNonQuery(); } catch { }
+                try { cmdCreate.CommandText = "ALTER TABLE RecomendacionesNombramientos ADD COLUMN RecomendadoComo TEXT"; cmdCreate.ExecuteNonQuery(); } catch { }
 
-                if (recomendaciones.Count > 0)
+                // Esta tabla representa la bandeja ACTUAL de recomendaciones de JW Hub.
+                // Cuando la página de Hub se ha cargado correctamente, sustituimos el
+                // contenido completo en una transacción. Así desaparecen también las
+                // recomendaciones que ya no existen en la web, incluso si una
+                // congregación se ha quedado con cero recomendaciones.
+                using (var transaction = connection.BeginTransaction())
                 {
-                    // SOLUCIÓN AL BUG: Extraemos TODAS las congregaciones distintas que vengan en la descarga 
-                    // y borramos sus registros antiguos para evitar duplicados.
-                    var congregacionesAfectadas = recomendaciones.Select(r => r.Congregacion).Distinct().ToList();
-
-                    foreach (var congre in congregacionesAfectadas)
+                    try
                     {
                         var cmdDelete = connection.CreateCommand();
-                        cmdDelete.CommandText = "DELETE FROM RecomendacionesNombramientos WHERE Congregacion = @congre";
-                        cmdDelete.Parameters.AddWithValue("@congre", congre);
+                        cmdDelete.Transaction = transaction;
+                        cmdDelete.CommandText = "DELETE FROM RecomendacionesNombramientos;";
                         cmdDelete.ExecuteNonQuery();
-                    }
-                }
 
-                foreach (var r in recomendaciones)
-                {
-                    var cmdInsert = connection.CreateCommand();
-                    cmdInsert.CommandText = "INSERT INTO RecomendacionesNombramientos (Hermano, Tipo, Congregacion, Fecha, FechaDescarga, UrlDetalle, RecomendadoComo) VALUES (@h, @t, @c, @f, @fd, @url, @recComo)";
-                    cmdInsert.Parameters.AddWithValue("@h", r.Hermano);
-                    cmdInsert.Parameters.AddWithValue("@t", r.Tipo);
-                    cmdInsert.Parameters.AddWithValue("@c", r.Congregacion);
-                    cmdInsert.Parameters.AddWithValue("@f", r.Fecha);
-                    cmdInsert.Parameters.AddWithValue("@fd", DateTime.Now.ToString("dd/MM/yyyy HH:mm"));
-                    cmdInsert.Parameters.AddWithValue("@url", r.UrlDetalle ?? "");
-                    cmdInsert.Parameters.AddWithValue("@recComo", r.RecomendadoComo ?? "");
-                    cmdInsert.ExecuteNonQuery();
+                        foreach (var r in recomendaciones)
+                        {
+                            var cmdInsert = connection.CreateCommand();
+                            cmdInsert.Transaction = transaction;
+                            cmdInsert.CommandText = @"
+                                INSERT INTO RecomendacionesNombramientos
+                                    (Hermano, Tipo, Congregacion, Fecha, FechaDescarga, UrlDetalle, RecomendadoComo)
+                                VALUES
+                                    (@h, @t, @c, @f, @fd, @url, @recComo);";
+                            cmdInsert.Parameters.AddWithValue("@h", r.Hermano ?? "");
+                            cmdInsert.Parameters.AddWithValue("@t", r.Tipo ?? "");
+                            cmdInsert.Parameters.AddWithValue("@c", r.Congregacion ?? "");
+                            cmdInsert.Parameters.AddWithValue("@f", r.Fecha ?? "");
+                            cmdInsert.Parameters.AddWithValue("@fd", DateTime.Now.ToString("dd/MM/yyyy HH:mm"));
+                            cmdInsert.Parameters.AddWithValue("@url", r.UrlDetalle ?? "");
+                            cmdInsert.Parameters.AddWithValue("@recComo", r.RecomendadoComo ?? "");
+                            cmdInsert.ExecuteNonQuery();
+                        }
+
+                        transaction.Commit();
+                    }
+                    catch
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
                 }
             }
         }

@@ -286,7 +286,16 @@ namespace SCCosmos
 
         private void AsignarComboBox(ComboBox combo, string valor)
         {
-            if (string.IsNullOrEmpty(valor)) return;
+            if (string.IsNullOrWhiteSpace(valor))
+            {
+                var itemVacio = combo.Items
+                    .OfType<ComboBoxItem>()
+                    .FirstOrDefault(i => string.Equals(i.Content?.ToString(), "(Vacío)", StringComparison.OrdinalIgnoreCase));
+
+                if (itemVacio != null) combo.SelectedItem = itemVacio;
+                return;
+            }
+
             foreach (ComboBoxItem item in combo.Items)
             {
                 if (item.Content.ToString() == valor || (valor.Contains("Precursor") && item.Content.ToString().Contains(valor)))
@@ -1040,8 +1049,9 @@ namespace SCCosmos
             // del formulario). El usuario puede elegir explícitamente el valor de BBDD.
             bool preferirValorJson = esVinculacion && EsSincronizacionS21();
 
-            // Grupo y Sexo no pertenecen a JW Hub: no se comparan ni se muestran
-            // como conflicto durante una sincronización/vinculación de Hub.
+            // Grupo sigue sin pertenecer a JW Hub: no se compara durante
+            // una sincronización/vinculación de Hub. Sexo, en cambio, sí se
+            // extrae ahora desde Información personal y se resuelve más abajo.
             if (!EsSincronizacionHub())
             {
                 string rGrp = ResolverConflictoTexto(
@@ -1069,11 +1079,12 @@ namespace SCCosmos
                 if (rFbaut != null) camposConflictos.Add(rFbaut);
             }
 
-            if (!EsSincronizacionHub())
-            {
-                string cSex = ResolverConflictoCombo(CmbSexo, (CmbSexo.SelectedItem as ComboBoxItem)?.Content?.ToString(), pFusion?.Sexo, "Sexo");
-                if (cSex != null) camposConflictos.Add(cSex);
-            }
+            string cSex = ResolverConflictoCombo(
+                CmbSexo,
+                (CmbSexo.SelectedItem as ComboBoxItem)?.Content?.ToString(),
+                pFusion?.Sexo,
+                "Sexo");
+            if (cSex != null) camposConflictos.Add(cSex);
 
             string cEsp = ResolverConflictoCombo(CmbEsperanza, (CmbEsperanza.SelectedItem as ComboBoxItem)?.Content?.ToString(), pFusion?.Esperanza, "Esperanza"); if (cEsp != null) camposConflictos.Add(cEsp);
             string cNom = ResolverConflictoCombo(CmbNombramiento, (CmbNombramiento.SelectedItem as ComboBoxItem)?.Content?.ToString(), pFusion?.Nombramiento, "Nombramiento"); if (cNom != null) camposConflictos.Add(cNom);

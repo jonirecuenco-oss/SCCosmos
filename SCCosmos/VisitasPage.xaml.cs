@@ -1,5 +1,6 @@
 using iText.Forms;
 using iText.Kernel.Pdf;
+using iText.Kernel.Pdf.Annot;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Firefox;
 using OpenQA.Selenium.Support.UI;
@@ -11,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -38,9 +40,10 @@ namespace SCCosmos
         private bool _cargandoTerritorios = false;
 
         private List<FilaVisitaPublisher> _filasVisitasGlobal = new List<FilaVisitaPublisher>();
+        private string _busquedaMinisterio = "";
         private List<FilaTablaTerritorio> _territoriosGlobal = new List<FilaTablaTerritorio>();
         private int _paginaActual = 1;
-        private const int _itemsPorPagina = 10;
+        private const int _itemsPorPagina = 20;
 
         // Filtro de las tarjetas-resumen de Territorios. Solo puede haber
         // uno activo a la vez. Al desactivarlo recuperamos la página anterior.
@@ -87,6 +90,11 @@ namespace SCCosmos
         private void Page_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             AjustarVisibilidadColumnas(e.NewSize.Width);
+
+            if (TabsVisita != null && ReferenceEquals(TabsVisita.SelectedItem, TabMapa))
+            {
+                AjustarAlturaMapaSegura(e.NewSize.Height);
+            }
         }
 
         private void AjustarVisibilidadColumnas(double anchoPantalla)
@@ -326,11 +334,30 @@ namespace SCCosmos
         // --- CONTABILIDAD ---
         private void ActualizarUI_MesContabilidad()
         {
-            if (TxtMesContabilidad != null) TxtMesContabilidad.Text = FormatearMes(_mesContabilidad);
-            if (!_cargandoDatos) CargarContabilidadList(_mesContabilidad);
+            int anioServicio = ObtenerAnioServicio(_mesContabilidad);
+
+            if (TxtMesContabilidad != null)
+            {
+                TxtMesContabilidad.Text = $"Año de servicio {anioServicio}";
+            }
+
+            // Contabilidad es independiente de la carga asíncrona de Ministerio.
+            // Antes se bloqueaba con _cargandoDatos y, al abrir VISITAS, el título
+            // del año se actualizaba pero la tabla quedaba vacía hasta cambiar de año.
+            CargarContabilidadList(_mesContabilidad);
         }
-        private void BtnMesAntContabilidad_Click(object sender, RoutedEventArgs e) { _mesContabilidad = _mesContabilidad.AddMonths(-1); ActualizarUI_MesContabilidad(); }
-        private void BtnMesSigContabilidad_Click(object sender, RoutedEventArgs e) { _mesContabilidad = _mesContabilidad.AddMonths(1); ActualizarUI_MesContabilidad(); }
+
+        private void BtnMesAntContabilidad_Click(object sender, RoutedEventArgs e)
+        {
+            _mesContabilidad = _mesContabilidad.AddYears(-1);
+            ActualizarUI_MesContabilidad();
+        }
+
+        private void BtnMesSigContabilidad_Click(object sender, RoutedEventArgs e)
+        {
+            _mesContabilidad = _mesContabilidad.AddYears(1);
+            ActualizarUI_MesContabilidad();
+        }
 
         // --- S-303 ---
         private void ActualizarUI_MesS303()
@@ -1427,7 +1454,8 @@ namespace SCCosmos
             var colAcciones = new DataGridTemplateColumn
             {
                 Header = "Acción",
-                Width = new DataGridLength(7, DataGridLengthUnitType.Star),
+                Width = new DataGridLength(9, DataGridLengthUnitType.Star),
+                MinWidth = 92,
                 CellTemplate = (DataTemplate)this.FindResource("BotonEditarTemplate")
             };
             TablaVisitas.Columns.Add(colAcciones);
@@ -1850,21 +1878,12 @@ namespace SCCosmos
                 if (idx >= gruposUnicos.Count) idx = 0;
 
                 TabGrupos.SelectedIndex = idx;
-                string grupoActivo = gruposUnicos[idx];
-                var filtrados = _filasVisitasGlobal.Where(f => f.GrupoPredicacion == grupoActivo).ToList();
-                TablaVisitas.ItemsSource = filtrados;
-
-                Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    TablaVisitas.UpdateLayout();
-                    foreach (var col in TablaVisitas.Columns)
-                    {
-                        var anchoActual = col.Width;
-                        col.Width = 0; col.Width = anchoActual;
-                    }
-                }), DispatcherPriority.Loaded);
+                AplicarFiltrosMinisterio();
             }
-            else TablaVisitas.ItemsSource = null;
+            else
+            {
+                TablaVisitas.ItemsSource = null;
+            }
         }
 
         private void CargarGruposPredicacion(List<Persona> listadoHermanos)
@@ -1888,21 +1907,72 @@ namespace SCCosmos
 
         private void TabGrupos_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (TabGrupos.SelectedItem is string grupoSeleccionado)
-            {
-                var filtrados = _filasVisitasGlobal.Where(f => f.GrupoPredicacion == grupoSeleccionado).ToList();
-                TablaVisitas.ItemsSource = filtrados;
+            AplicarFiltrosMinisterio();
+        }
 
-                Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    TablaVisitas.UpdateLayout();
-                    foreach (var col in TablaVisitas.Columns)
-                    {
-                        var anchoActual = col.Width;
-                        col.Width = 0; col.Width = anchoActual;
-                    }
-                }), DispatcherPriority.Loaded);
+        private void TxtBuscarMinisterio_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            _busquedaMinisterio = TxtBuscarMinisterio?.Text?.Trim() ?? "";
+            AplicarFiltrosMinisterio();
+        }
+
+        private void AplicarFiltrosMinisterio()
+        {
+            if (TablaVisitas == null) return;
+
+            IEnumerable<FilaVisitaPublisher> consulta = _filasVisitasGlobal;
+
+            if (TabGrupos?.SelectedItem is string grupoSeleccionado)
+            {
+                consulta = consulta.Where(f =>
+                    string.Equals(f.GrupoPredicacion, grupoSeleccionado, StringComparison.OrdinalIgnoreCase));
             }
+
+            string busqueda = NormalizarTextoBusquedaMinisterio(_busquedaMinisterio);
+            if (!string.IsNullOrWhiteSpace(busqueda))
+            {
+                consulta = consulta.Where(f =>
+                    ContieneBusquedaMinisterio(f.NombreComun, busqueda) ||
+                    ContieneBusquedaMinisterio(f.Nombre, busqueda) ||
+                    ContieneBusquedaMinisterio(f.NombreJWHub, busqueda));
+            }
+
+            TablaVisitas.ItemsSource = consulta.ToList();
+
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (TablaVisitas == null) return;
+                TablaVisitas.UpdateLayout();
+                foreach (var col in TablaVisitas.Columns)
+                {
+                    var anchoActual = col.Width;
+                    col.Width = 0;
+                    col.Width = anchoActual;
+                }
+            }), DispatcherPriority.Loaded);
+        }
+
+        private static bool ContieneBusquedaMinisterio(string texto, string busquedaNormalizada)
+        {
+            if (string.IsNullOrWhiteSpace(texto) || string.IsNullOrWhiteSpace(busquedaNormalizada)) return false;
+            return NormalizarTextoBusquedaMinisterio(texto).Contains(busquedaNormalizada);
+        }
+
+        private static string NormalizarTextoBusquedaMinisterio(string texto)
+        {
+            if (string.IsNullOrWhiteSpace(texto)) return "";
+
+            string normalizado = texto.Trim().Normalize(NormalizationForm.FormD);
+            var sb = new StringBuilder();
+
+            foreach (char c in normalizado)
+            {
+                UnicodeCategory cat = CharUnicodeInfo.GetUnicodeCategory(c);
+                if (cat != UnicodeCategory.NonSpacingMark)
+                    sb.Append(char.ToUpperInvariant(c));
+            }
+
+            return sb.ToString().Normalize(NormalizationForm.FormC);
         }
 
         private bool PersonaVisibleEnMesMinisterio(
@@ -2805,44 +2875,115 @@ namespace SCCosmos
             if (sender is Button btn && btn.Tag is int paginaTarget) MostrarPaginaTerritorios(paginaTarget);
         }
 
-        private async void ExpanderMapa_Expanded(
+        private void AjustarAlturaMapaSegura(double altoPagina = 0)
+        {
+            if (ContenedorMapa == null) return;
+
+            // No forzamos UpdateLayout ni TransformToAncestor. WebBrowser es un HWND
+            // nativo y recalcular el layout desde SizeChanged/selección puede provocar
+            // un bucle de layout y dejar la interfaz bloqueada.
+            double altoBase = 0;
+
+            if (MainScrollViewer != null && MainScrollViewer.ViewportHeight > 0)
+                altoBase = MainScrollViewer.ViewportHeight;
+
+            if (altoBase <= 0 && altoPagina > 0)
+                altoBase = altoPagina;
+
+            if (altoBase <= 0)
+                altoBase = ActualHeight;
+
+            if (altoBase <= 0) return;
+
+            // Reservamos únicamente el título, la cabecera de pestañas y los márgenes.
+            // Así el mapa ocupa prácticamente todo el área visible sin depender de
+            // coordenadas del árbol visual.
+            double altoMapa = Math.Max(320, altoBase - 115);
+
+            if (double.IsNaN(ContenedorMapa.Height) ||
+                Math.Abs(ContenedorMapa.Height - altoMapa) > 1)
+            {
+                ContenedorMapa.Height = altoMapa;
+            }
+        }
+
+        private void RestablecerScrollPestana()
+        {
+            if (MainScrollViewer == null) return;
+
+            MainScrollViewer.ScrollToHome();
+
+            // Algunos controles (especialmente TextBox) solicitan BringIntoView al
+            // materializar una pestaña. Repetimos el ajuste después del layout y
+            // cuando la cola visual queda en reposo.
+            Dispatcher.BeginInvoke(
+                new Action(() => MainScrollViewer?.ScrollToHome()),
+                DispatcherPriority.Loaded);
+
+            Dispatcher.BeginInvoke(
+                new Action(() => MainScrollViewer?.ScrollToHome()),
+                DispatcherPriority.ApplicationIdle);
+        }
+
+        private void TabNotas_RequestBringIntoView(
+            object sender,
+            RequestBringIntoViewEventArgs e)
+        {
+            // Evita que un TextBox de Notas desplace el ScrollViewer exterior al
+            // recuperar foco o al crearse su contenedor visual. Las pestañas quedan
+            // siempre visibles en la parte superior.
+            if (TabsVisita != null && ReferenceEquals(TabsVisita.SelectedItem, TabNotas))
+            {
+                e.Handled = true;
+            }
+        }
+
+        private void TabsVisita_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // SelectionChanged es un evento enrutado: los ListBox/ComboBox que viven
+            // dentro de las pestañas también pueden hacerlo burbujear hasta aquí.
+            // Solo reaccionamos cuando cambia realmente la pestaña principal.
+            if (TabsVisita == null || !ReferenceEquals(e.OriginalSource, TabsVisita))
+                return;
+
+            if (ReferenceEquals(TabsVisita.SelectedItem, TabNotas))
+            {
+                // No permitimos que un TextBox recuerde el foco y solicite
+                // automáticamente desplazarse al hacerse visible la pestaña.
+                Keyboard.ClearFocus();
+            }
+
+            RestablecerScrollPestana();
+
+            if (ReferenceEquals(TabsVisita.SelectedItem, TabMapa))
+            {
+                TabMapa_Selected(TabMapa, new RoutedEventArgs());
+            }
+            else
+            {
+                TabMapa_Unselected(TabMapa, new RoutedEventArgs());
+            }
+        }
+
+        private async void TabMapa_Selected(
             object sender,
             RoutedEventArgs e)
         {
-            if (sender is not Expander expander)
-            {
-                return;
-            }
-
-            // WebBrowser es un HWND nativo y no participa en el z-order
-            // normal de WPF. Si se hace visible durante el primer cálculo
-            // de tamaño del Expander puede dibujarse temporalmente fuera de
-            // su hueco. Lo mantenemos oculto hasta que ScrollViewer y
-            // Expander hayan terminado su layout.
-            MapaWebBrowser.Visibility =
-                Visibility.Collapsed;
-
-            expander.UpdateLayout();
-            MainScrollViewer?.UpdateLayout();
+            // WebBrowser es un HWND nativo. Lo mantenemos oculto hasta que la
+            // pestaña esté materializada, pero evitamos forzar UpdateLayout porque
+            // puede entrar en un ciclo de relayout y bloquear la ventana.
+            MapaWebBrowser.Visibility = Visibility.Collapsed;
+            AjustarAlturaMapaSegura();
 
             await Dispatcher.InvokeAsync(
                 () => { },
                 DispatcherPriority.Loaded);
 
-            await Task.Delay(120);
-
-            expander.UpdateLayout();
-            MainScrollViewer?.UpdateLayout();
-
-            if (!expander.IsExpanded)
-            {
+            if (TabsVisita == null || TabsVisita.SelectedItem != TabMapa)
                 return;
-            }
 
-            MapaWebBrowser.Visibility =
-                Visibility.Visible;
-
-            MapaWebBrowser.UpdateLayout();
+            AjustarAlturaMapaSegura();
+            MapaWebBrowser.Visibility = Visibility.Visible;
 
             if (_mapaCargado
                 &&
@@ -2916,7 +3057,7 @@ namespace SCCosmos
             DibujarMapa(personasActivas);
         }
 
-        private void ExpanderMapa_Collapsed(object sender, RoutedEventArgs e)
+        private void TabMapa_Unselected(object sender, RoutedEventArgs e)
         {
             MapaWebBrowser.Visibility = Visibility.Collapsed;
         }
@@ -3010,14 +3151,43 @@ namespace SCCosmos
         // INTEGRACIÓN AVANZADA DE FORMULARIO
         // =====================================
 
+        private void TablaVisitas_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (TablaVisitas == null) return;
+
+            // Los botones de Editar/Eliminar siguen teniendo su propia acción.
+            // Si el clic procede de uno de ellos no abrimos dos veces el formulario.
+            DependencyObject origen = e.OriginalSource as DependencyObject;
+            DependencyObject actual = origen;
+            while (actual != null)
+            {
+                if (actual is Button) return;
+                if (actual is DataGridRow filaVisual)
+                {
+                    if (filaVisual.Item is FilaVisitaPublisher fila)
+                    {
+                        int personaRaizId = fila.PersonaRaizId > 0
+                            ? fila.PersonaRaizId
+                            : fila.PersonaId;
+
+                        AbrirFormularioPersona(personaRaizId);
+                        e.Handled = true;
+                    }
+                    return;
+                }
+
+                actual = VisualTreeHelper.GetParent(actual);
+            }
+        }
+
         private void BtnEditarPersona_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button btn
                 && btn.DataContext is FilaVisitaPublisher fila)
             {
-                // VISITAS puede mostrar una instantánea histórica.
-                // La edición manual siempre abre la ficha raíz actual,
-                // que es la misma que utiliza PersonasPage.
+                // VISITAS abre la ficha raíz para conservar actividad y vínculos.
+                // Al guardar, ActualizarPersonaDesdeVisitas actualiza también
+                // la instantánea correspondiente al mes de esta visita.
                 int personaRaizId =
                     fila.PersonaRaizId > 0
                         ? fila.PersonaRaizId
@@ -3026,6 +3196,535 @@ namespace SCCosmos
                 AbrirFormularioPersona(
                     personaRaizId);
             }
+        }
+
+        private void BtnFormatearNombreComun_Click(object sender, RoutedEventArgs e)
+        {
+            if (!(sender is Button btn) || !(btn.DataContext is FilaVisitaPublisher fila)) return;
+
+            int personaRaizId = fila.PersonaRaizId > 0 ? fila.PersonaRaizId : fila.PersonaId;
+            Persona persona = DatabaseHelper.ObtenerPersonaPorId(personaRaizId);
+            if (persona == null) return;
+
+            // El botón parte del Nombre completo oficial. NombreJWHub se usa
+            // únicamente como respaldo si la ficha no tiene Nombre.
+            string nombreFuente = !string.IsNullOrWhiteSpace(persona.Nombre)
+                ? persona.Nombre
+                : persona.NombreJWHub;
+
+            string nombreFormateado = FormatearNombreComunMinisterio(nombreFuente);
+            if (string.IsNullOrWhiteSpace(nombreFormateado)) return;
+
+            persona.NombreComun = nombreFormateado;
+            DatabaseHelper.ActualizarPersonaDesdeVisitas(
+                persona,
+                _mesMinisterio.ToString("yyyy-MM"));
+
+            ActualizarUI_MesMinisterio();
+            ActualizarUI_MesTerritorios();
+        }
+
+        private static string FormatearNombreComunMinisterio(string nombreCompleto)
+        {
+            if (string.IsNullOrWhiteSpace(nombreCompleto)) return "";
+
+            string limpio = string.Join(" ",
+                nombreCompleto
+                    .Replace("\u200B", "")
+                    .Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries));
+
+            string[] partes = limpio.Split(new[] { ',' }, 2);
+
+            // Formato habitual de Hub/S-21: APELLIDO, NOMBRE ...
+            if (partes.Length == 2)
+            {
+                string apellidosCabecera = CapitalizarNombreEspanol(partes[0]);
+                var derechaOriginal = partes[1]
+                    .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                    .ToList();
+
+                bool terminaEnDe = derechaOriginal.Count > 0 &&
+                    string.Equals(derechaOriginal[derechaOriginal.Count - 1], "DE", StringComparison.OrdinalIgnoreCase);
+
+                if (terminaEnDe)
+                    derechaOriginal.RemoveAt(derechaOriginal.Count - 1);
+
+                if (derechaOriginal.Count == 0)
+                    return apellidosCabecera;
+
+                string nombre = CapitalizarNombreEspanol(derechaOriginal[0]);
+
+                // Convención "..., NOMBRE APELLIDO ... DE": conservamos el primer
+                // apellido tras el nombre y añadimos el apellido de cabecera.
+                // Ej.: MARTÍNEZ, FLORENCIA GONZALEZ LUMBRERAS DE
+                //      -> Florencia González Martínez.
+                if (terminaEnDe && derechaOriginal.Count >= 2)
+                {
+                    string apellidoIntermedio = CapitalizarNombreEspanol(derechaOriginal[1]);
+                    return string.Join(" ", new[] { nombre, apellidoIntermedio, apellidosCabecera }
+                        .Where(x => !string.IsNullOrWhiteSpace(x)));
+                }
+
+                return string.Join(" ", new[] { nombre, apellidosCabecera }
+                    .Where(x => !string.IsNullOrWhiteSpace(x)));
+            }
+
+            var tokens = limpio
+                .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                .ToList();
+
+            if (tokens.Count > 0 &&
+                string.Equals(tokens[tokens.Count - 1], "DE", StringComparison.OrdinalIgnoreCase))
+            {
+                tokens.RemoveAt(tokens.Count - 1);
+            }
+
+            return CapitalizarNombreEspanol(string.Join(" ", tokens));
+        }
+
+        private static string CapitalizarNombreEspanol(string texto)
+        {
+            if (string.IsNullOrWhiteSpace(texto)) return "";
+
+            var cultura = new CultureInfo("es-ES");
+            var textInfo = cultura.TextInfo;
+            var particulas = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "de", "del", "la", "las", "los", "y"
+            };
+
+            var acentosComunes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["GONZALEZ"] = "González",
+                ["MARTINEZ"] = "Martínez",
+                ["RAMIREZ"] = "Ramírez",
+                ["SANCHEZ"] = "Sánchez",
+                ["RODRIGUEZ"] = "Rodríguez",
+                ["PEREZ"] = "Pérez",
+                ["GOMEZ"] = "Gómez",
+                ["JIMENEZ"] = "Jiménez",
+                ["FERNANDEZ"] = "Fernández",
+                ["LOPEZ"] = "López",
+                ["DIAZ"] = "Díaz",
+                ["GARCIA"] = "García",
+                ["VAZQUEZ"] = "Vázquez",
+                ["SUAREZ"] = "Suárez",
+                ["ALVAREZ"] = "Álvarez",
+                ["MUÑOZ"] = "Muñoz"
+            };
+
+            var palabras = texto
+                .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+            for (int i = 0; i < palabras.Length; i++)
+            {
+                string original = palabras[i].Trim();
+                string clave = original.ToUpperInvariant();
+
+                if (acentosComunes.TryGetValue(clave, out string corregida))
+                {
+                    palabras[i] = corregida;
+                }
+                else if (i > 0 && particulas.Contains(original))
+                {
+                    palabras[i] = original.ToLower(cultura);
+                }
+                else
+                {
+                    palabras[i] = textInfo.ToTitleCase(original.ToLower(cultura));
+                }
+            }
+
+            return string.Join(" ", palabras);
+        }
+
+        private async void BtnGenerarTarjetasS21_Click(object sender, RoutedEventArgs e)
+        {
+            int? anioServicio = SolicitarAnioServicioS21();
+            if (!anioServicio.HasValue) return;
+
+            string rutaPlantilla = LocalizarPlantillaS21();
+            if (string.IsNullOrWhiteSpace(rutaPlantilla)) return;
+
+            var idsPersonas = _filasVisitasGlobal
+                .OrderBy(f => f.NombreComun ?? f.Nombre ?? "", StringComparer.CurrentCultureIgnoreCase)
+                .Select(f => f.PersonaRaizId > 0 ? f.PersonaRaizId : f.PersonaId)
+                .Where(id => id > 0)
+                .Distinct()
+                .ToList();
+
+            if (idsPersonas.Count == 0)
+            {
+                MessageBox.Show("No hay publicadores en la tabla de Ministerio para generar tarjetas S-21.",
+                    "S-21", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var dlgGuardar = new Microsoft.Win32.SaveFileDialog
+            {
+                Title = "Guardar tarjetas S-21",
+                Filter = "Documento PDF (*.pdf)|*.pdf",
+                DefaultExt = ".pdf",
+                AddExtension = true,
+                FileName = $"S-21_{SanitizarNombreArchivo(_congreNombre)}_{anioServicio.Value}.pdf"
+            };
+
+            if (dlgGuardar.ShowDialog() != true) return;
+
+            Button boton = sender as Button;
+            if (boton != null) boton.IsEnabled = false;
+            if (PanelCargando != null) PanelCargando.Visibility = Visibility.Visible;
+
+            try
+            {
+                int total = await Task.Run(() =>
+                    GenerarPdfS21Masivo(
+                        rutaPlantilla,
+                        dlgGuardar.FileName,
+                        anioServicio.Value,
+                        idsPersonas));
+
+                MessageBox.Show(
+                    $"Se han generado {total} tarjetas S-21 para el año de servicio {anioServicio.Value}.\n\n{dlgGuardar.FileName}",
+                    "S-21 generado",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"No se pudieron generar las tarjetas S-21:\n{ex.Message}",
+                    "Error S-21",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+            finally
+            {
+                if (PanelCargando != null) PanelCargando.Visibility = Visibility.Collapsed;
+                if (boton != null) boton.IsEnabled = true;
+            }
+        }
+
+        private int? SolicitarAnioServicioS21()
+        {
+            int sugerido = ObtenerAnioServicio(DateTime.Today);
+            int? resultado = null;
+
+            var dialogo = new Window
+            {
+                Title = "Generar tarjetas S-21",
+                Owner = Window.GetWindow(this),
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                ResizeMode = ResizeMode.NoResize,
+                SizeToContent = SizeToContent.WidthAndHeight,
+                Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)),
+                Foreground = Brushes.White,
+                ShowInTaskbar = false
+            };
+
+            var contenedor = new StackPanel { Margin = new Thickness(22), Width = 330 };
+            contenedor.Children.Add(new TextBlock
+            {
+                Text = "Año de servicio a rellenar",
+                FontSize = 16,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = Brushes.White,
+                Margin = new Thickness(0, 0, 0, 5)
+            });
+            contenedor.Children.Add(new TextBlock
+            {
+                Text = "Ejemplo: 2027 corresponde de septiembre de 2026 a agosto de 2027.",
+                Foreground = new SolidColorBrush(Color.FromRgb(170, 170, 170)),
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 0, 0, 12)
+            });
+
+            var txt = new TextBox
+            {
+                Text = sugerido.ToString(),
+                FontSize = 16,
+                Padding = new Thickness(10, 7, 10, 7),
+                Background = new SolidColorBrush(Color.FromRgb(37, 37, 38)),
+                Foreground = Brushes.White,
+                BorderBrush = new SolidColorBrush(Color.FromRgb(70, 70, 74))
+            };
+            contenedor.Children.Add(txt);
+
+            var botones = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Margin = new Thickness(0, 16, 0, 0)
+            };
+
+            var cancelar = new Button
+            {
+                Content = "Cancelar",
+                MinWidth = 90,
+                Padding = new Thickness(12, 6, 12, 6),
+                Margin = new Thickness(0, 0, 8, 0),
+                IsCancel = true
+            };
+
+            var aceptar = new Button
+            {
+                Content = "Generar",
+                MinWidth = 90,
+                Padding = new Thickness(12, 6, 12, 6),
+                IsDefault = true
+            };
+
+            aceptar.Click += (s, e) =>
+            {
+                if (!int.TryParse(txt.Text?.Trim(), out int anio) || anio < 1900 || anio > 2200)
+                {
+                    MessageBox.Show("Introduce un año de servicio válido.", "S-21", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    txt.Focus();
+                    txt.SelectAll();
+                    return;
+                }
+
+                resultado = anio;
+                dialogo.DialogResult = true;
+            };
+
+            botones.Children.Add(cancelar);
+            botones.Children.Add(aceptar);
+            contenedor.Children.Add(botones);
+            dialogo.Content = contenedor;
+            dialogo.Loaded += (s, e) => { txt.Focus(); txt.SelectAll(); };
+            dialogo.ShowDialog();
+
+            return resultado;
+        }
+
+        private string LocalizarPlantillaS21()
+        {
+            string[] candidatas =
+            {
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "S-21_S.pdf"),
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Plantillas", "S-21_S.pdf"),
+                Path.Combine(DatabaseHelper.RutaDirectorioDatos, "S-21_S.pdf"),
+                Path.Combine(DatabaseHelper.RutaDirectorioDatos, "Plantillas", "S-21_S.pdf")
+            };
+
+            string encontrada = candidatas.FirstOrDefault(File.Exists);
+            if (!string.IsNullOrWhiteSpace(encontrada)) return encontrada;
+
+            var dlg = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "Selecciona la plantilla S-21-S",
+                Filter = "Documento PDF (*.pdf)|*.pdf",
+                Multiselect = false
+            };
+
+            return dlg.ShowDialog() == true ? dlg.FileName : null;
+        }
+
+        private int GenerarPdfS21Masivo(
+            string rutaPlantilla,
+            string rutaSalida,
+            int anioServicio,
+            List<int> idsPersonas)
+        {
+            string plantillaPreparada = PrepararPlantillaS21(rutaPlantilla);
+            var temporales = new List<string>();
+            int generadas = 0;
+
+            try
+            {
+                using (var pdfSalida = new PdfDocument(new PdfWriter(rutaSalida)))
+                {
+                    foreach (int idPersona in idsPersonas)
+                    {
+                        Persona persona = DatabaseHelper.ObtenerPersonaPorId(idPersona);
+                        if (persona == null) continue;
+
+                        var actividad = DatabaseHelper.ObtenerActividadPersona(idPersona)
+                            .Where(a => string.Equals(a.AnioServicio?.Trim(), anioServicio.ToString(), StringComparison.OrdinalIgnoreCase))
+                            .ToList();
+
+                        string tempPersona = Path.Combine(
+                            Path.GetTempPath(),
+                            $"SCCosmos_S21_{Guid.NewGuid():N}.pdf");
+                        temporales.Add(tempPersona);
+
+                        using (var pdfPersona = new PdfDocument(
+                            new PdfReader(plantillaPreparada),
+                            new PdfWriter(tempPersona)))
+                        {
+                            PdfAcroForm form = PdfAcroForm.GetAcroForm(pdfPersona, true);
+                            if (form == null || form.GetField("900_1_Text_SanSerif") == null)
+                                throw new InvalidOperationException("La plantilla S-21 no contiene los campos esperados.");
+
+                            RellenarTarjetaS21(form, persona, actividad, anioServicio);
+                            form.FlattenFields();
+                        }
+
+                        using (var pdfPersonaLectura = new PdfDocument(new PdfReader(tempPersona)))
+                        {
+                            pdfPersonaLectura.CopyPagesTo(
+                                1,
+                                pdfPersonaLectura.GetNumberOfPages(),
+                                pdfSalida);
+                        }
+
+                        generadas++;
+                    }
+                }
+            }
+            finally
+            {
+                foreach (string temp in temporales)
+                {
+                    try { if (File.Exists(temp)) File.Delete(temp); } catch { }
+                }
+
+                try
+                {
+                    if (!string.Equals(plantillaPreparada, rutaPlantilla, StringComparison.OrdinalIgnoreCase)
+                        && File.Exists(plantillaPreparada))
+                    {
+                        File.Delete(plantillaPreparada);
+                    }
+                }
+                catch { }
+            }
+
+            return generadas;
+        }
+
+        private string PrepararPlantillaS21(string rutaPlantilla)
+        {
+            string temp = Path.Combine(
+                Path.GetTempPath(),
+                $"SCCosmos_S21_Plantilla_{Guid.NewGuid():N}.pdf");
+
+            using (var pdf = new PdfDocument(
+                new PdfReader(rutaPlantilla),
+                new PdfWriter(temp)))
+            {
+                PdfAcroForm form = PdfAcroForm.GetAcroForm(pdf, true);
+                if (form == null)
+                    throw new InvalidOperationException("El PDF seleccionado no contiene un formulario S-21 válido.");
+
+                // Algunas versiones oficiales del S-21 contienen widgets con nombre,
+                // pero el array /Fields del AcroForm viene vacío. Registramos esos
+                // widgets para que iText pueda tratarlos como campos normales.
+                if (form.GetField("900_1_Text_SanSerif") == null)
+                {
+                    PdfArray fields = form.GetPdfObject().GetAsArray(PdfName.Fields);
+                    if (fields == null)
+                    {
+                        fields = new PdfArray();
+                        form.GetPdfObject().Put(PdfName.Fields, fields);
+                    }
+
+                    for (int pagina = 1; pagina <= pdf.GetNumberOfPages(); pagina++)
+                    {
+                        foreach (PdfAnnotation anotacion in pdf.GetPage(pagina).GetAnnotations())
+                        {
+                            PdfDictionary dic = anotacion.GetPdfObject();
+                            bool esWidget = PdfName.Widget.Equals(dic.GetAsName(PdfName.Subtype));
+                            bool tieneNombre = dic.GetAsString(PdfName.T) != null;
+                            bool tieneTipo = dic.GetAsName(PdfName.FT) != null;
+
+                            if (esWidget && tieneNombre && tieneTipo && dic.GetIndirectReference() != null)
+                                fields.Add(dic.GetIndirectReference());
+                        }
+                    }
+                }
+            }
+
+            return temp;
+        }
+
+        private void RellenarTarjetaS21(
+            PdfAcroForm form,
+            Persona persona,
+            List<ActividadMensual> actividad,
+            int anioServicio)
+        {
+            PonerTextoS21(form, "900_1_Text_SanSerif", persona.Nombre ?? "");
+            PonerTextoS21(form, "900_2_Text_SanSerif", FormatearFechaS21(persona.FechaNacimiento));
+            PonerTextoS21(form, "900_5_Text_SanSerif", FormatearFechaS21(persona.FechaBautismo));
+
+            MarcarS21(form, "900_3_CheckBox", string.Equals(persona.Sexo, "Hombre", StringComparison.OrdinalIgnoreCase));
+            MarcarS21(form, "900_4_CheckBox", string.Equals(persona.Sexo, "Mujer", StringComparison.OrdinalIgnoreCase));
+
+            string nombramiento = persona.Nombramiento ?? "";
+            string servicio = persona.Servicio ?? "";
+
+            MarcarS21(form, "900_8_CheckBox", nombramiento.IndexOf("anciano", StringComparison.OrdinalIgnoreCase) >= 0);
+            MarcarS21(form, "900_9_CheckBox", nombramiento.IndexOf("siervo", StringComparison.OrdinalIgnoreCase) >= 0 || nombramiento.IndexOf("ministerial", StringComparison.OrdinalIgnoreCase) >= 0);
+            MarcarS21(form, "900_10_CheckBox", servicio.IndexOf("precursor regular", StringComparison.OrdinalIgnoreCase) >= 0);
+            MarcarS21(form, "900_11_CheckBox", servicio.IndexOf("precursor especial", StringComparison.OrdinalIgnoreCase) >= 0);
+            MarcarS21(form, "900_12_CheckBox", servicio.IndexOf("misionero", StringComparison.OrdinalIgnoreCase) >= 0);
+
+            PonerTextoS21(form, "900_13_Text_C_SanSerif", anioServicio.ToString());
+
+            string[] meses =
+            {
+                "septiembre", "octubre", "noviembre", "diciembre",
+                "enero", "febrero", "marzo", "abril",
+                "mayo", "junio", "julio", "agosto"
+            };
+
+            for (int i = 0; i < meses.Length; i++)
+            {
+                int numeroCampo = 20 + i;
+                var registro = actividad.FirstOrDefault(a =>
+                    string.Equals(a.Mes?.Trim(), meses[i], StringComparison.OrdinalIgnoreCase));
+
+                bool participo = registro != null &&
+                    (registro.Participacion || HorasS21MayoresQueCero(registro.Horas));
+
+                MarcarS21(form, $"901_{numeroCampo}_CheckBox", participo);
+                PonerTextoS21(form, $"902_{numeroCampo}_Text_C_SanSerif", registro?.CursosBiblicos ?? "");
+                MarcarS21(form, $"903_{numeroCampo}_CheckBox", registro?.PrecursorAuxiliar == true);
+                PonerTextoS21(form, $"904_{numeroCampo}_S21_Value", registro?.Horas ?? "");
+                PonerTextoS21(form, $"905_{numeroCampo}_Text_SanSerif", registro?.Notas ?? "");
+            }
+        }
+
+        private static bool HorasS21MayoresQueCero(string horas)
+        {
+            if (string.IsNullOrWhiteSpace(horas)) return false;
+
+            return double.TryParse(
+                       horas.Trim().Replace(",", "."),
+                       NumberStyles.Any,
+                       CultureInfo.InvariantCulture,
+                       out double valor)
+                   && valor > 0;
+        }
+
+        private string FormatearFechaS21(string fecha)
+        {
+            DateTime? valor = ParsearFecha(fecha);
+            return valor.HasValue ? valor.Value.ToString("dd/MM/yyyy") : (fecha?.Trim() ?? "");
+        }
+
+        private static void PonerTextoS21(PdfAcroForm form, string nombreCampo, string valor)
+        {
+            var campo = form.GetField(nombreCampo);
+            if (campo != null)
+                campo.SetValue(valor ?? "");
+        }
+
+        private static void MarcarS21(PdfAcroForm form, string nombreCampo, bool marcado)
+        {
+            var campo = form.GetField(nombreCampo);
+            if (campo != null)
+                campo.SetValue(marcado ? "Yes" : "Off");
+        }
+
+        private static string SanitizarNombreArchivo(string texto)
+        {
+            string valor = string.IsNullOrWhiteSpace(texto) ? "Congregacion" : texto.Trim();
+            foreach (char c in Path.GetInvalidFileNameChars())
+                valor = valor.Replace(c, '_');
+            return valor;
         }
 
         private void BtnNuevaPersona_Click(object sender, RoutedEventArgs e)
@@ -3186,6 +3885,9 @@ namespace SCCosmos
                 celda.NombreS21 = nombreGuardar;
 
                 ActualizarUI_MesTerritorios();
+                // El contador "Terrs." de Ministerio depende de esta vinculación.
+                // Lo recalculamos inmediatamente para que ambas pestañas queden sincronizadas.
+                ActualizarUI_MesMinisterio();
             }
         }
 
@@ -3491,6 +4193,7 @@ namespace SCCosmos
                     // Conservamos el filtro y la página actuales siempre que
                     // sigan existiendo después de eliminar el registro.
                     ActualizarUI_MesTerritorios();
+                    ActualizarUI_MesMinisterio();
                 }
 
                 e.Handled = true;
@@ -3505,6 +4208,7 @@ namespace SCCosmos
                 {
                     DatabaseHelper.MarcarTerritorioEliminado(_congreCodigo, fila.Nombre);
                     ActualizarUI_MesTerritorios();
+                    ActualizarUI_MesMinisterio();
                 }
             }
         }
@@ -3544,9 +4248,14 @@ namespace SCCosmos
             var historial = new List<FilaContabilidad>();
             string[] nombresMesesJson = { "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre" };
 
-            for (int i = 0; i < 6; i++)
+            // La contabilidad se muestra por año de servicio completo:
+            // septiembre del año anterior hasta agosto del año indicado.
+            int anioServicio = ObtenerAnioServicio(mesReferencia);
+            DateTime inicioAnioServicio = new DateTime(anioServicio - 1, 9, 1);
+
+            for (int i = 0; i < 12; i++)
             {
-                DateTime m = mesReferencia.AddMonths(-i);
+                DateTime m = inicioAnioServicio.AddMonths(i);
                 string mStr = m.ToString("yyyy-MM");
                 string mVisual = char.ToUpper(nombresMesesJson[m.Month - 1][0]) + nombresMesesJson[m.Month - 1].Substring(1) + " " + m.Year;
 
