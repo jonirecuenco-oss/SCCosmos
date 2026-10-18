@@ -480,7 +480,7 @@ public partial class ConfiguracionPage : ContentPage
 
             TxtCodigoPerfil.Text =
                 PerfilAccesoService.CodigoValidado
-                    ? PerfilAccesoService.CodigoCompleto
+                    ? PerfilAccesoService.MarcadorCodigo
                     : "";
 
             ActualizarPanelCodigoPerfil();
@@ -570,8 +570,20 @@ public partial class ConfiguracionPage : ContentPage
 
             if (PerfilAccesoService.EsHombre)
             {
-                PerfilAccesoService.ValidarCodigo(
-                    TxtCodigoPerfil.Text ?? "");
+                string escrito =
+                    (TxtCodigoPerfil.Text ?? "")
+                        .Trim();
+
+                // El marcador significa "ya validado": no se vuelve a
+                // comprobar (el código real ya no se muestra).
+                if (!string.Equals(
+                        escrito,
+                        PerfilAccesoService.MarcadorCodigo,
+                        StringComparison.Ordinal))
+                {
+                    PerfilAccesoService.ValidarCodigo(
+                        escrito);
+                }
             }
 
             ActualizarEstadoPerfil();

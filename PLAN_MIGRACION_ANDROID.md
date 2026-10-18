@@ -405,7 +405,7 @@ Revisadas las páginas/servicios de WPF. Resultado:
   - Release arm64 (recomendado para repartir): `dotnet publish -f net10.0-android -c Release -p:RuntimeIdentifier=android-arm64` → `bin/Release/net10.0-android/android-arm64/publish/com.companyname.sccosmos.mobile-Signed.apk`.
 
 ### 11.2 Perfil de usuario (Hombre/Esposa) y código de acceso
-- Regla: acceso completo solo con perfil **Hombre** y el código **CODIGO_OCULTO**. En caso contrario (Esposa o sin código), solo **Inicio, Calendario, Personas y Configuración**.
+- Regla: acceso completo solo con perfil **Hombre** y el código del SC. En caso contrario (Esposa o sin código), solo **Inicio, Calendario, Personas y Configuración**.
 - **Android** (`Services/PerfilAccesoService`, `Views/PerfilInicialPage`, gating en `AppShell`, sección en `ConfiguracionPage`): **verificado en emulador** — primer arranque pregunta; Esposa → menú reducido; Hombre + código → menú completo. Editable en Configuración.
 - **Windows** (`PerfilAcceso.cs`, `PerfilInicialWindow.xaml`, gating en `MainWindow`, sección en `ConfiguracionPage`): **implementado y compila** (0 errores). Se guarda por equipo en `%LocalAppData%\SCCosmos\perfil_usuario.json` (no en la BD compartida, para que el perfil de cada uno no se mezcle al sincronizar).
 - Valores por defecto seguros: si aún no hay perfil, se concede acceso (se pregunta al arrancar), de modo que no bloquea a nadie por error.
@@ -1322,7 +1322,7 @@ resolverlo a mano. Ahora se combina solo:
 ### Descargas oculta + código alternativo (16/10, tarde) — Windows y Android
 
 - La página **Descargas queda oculta** en el menú de Windows por defecto. Se activa escribiendo el
-  **código alternativo** en Configuración → Perfil (perfil «Hombre»): **`CODIGO_OCULTO_DESCARGAS`**
+  **código alternativo** en Configuración → Perfil (perfil «Hombre»)
   (vale en mayúsculas o minúsculas y también como código de acceso completo en Android). Al usarlo
   queda **activada para siempre** (se guarda por equipo; luego aparece siempre, aunque después se
   use el código normal; la esposa sigue sin verla).
@@ -1331,7 +1331,7 @@ resolverlo a mano. Ahora se combina solo:
   numérico en el móvil).
 - La comparación de códigos es **sin distinguir mayúsculas** (el tema oscuro de Windows escribe en
   mayúsculas dentro del campo).
-- Verificado: sin activar → Descargas oculta ✓; con `CODIGO_OCULTO_DESCARGAS` → aparece y queda
+- Verificado: sin activar → Descargas oculta ✓; con el código alternativo → aparece y queda
   guardada la activación ✓; restaurada a oculta para que la active el usuario.
 
 ### Esquema de ventanas de Escuelas (16/10, tarde, Windows)
@@ -1472,7 +1472,7 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   13 personas y 204 actividades, secuela de días con la sincronización rota) y se adoptó en el PC
   la base del móvil (la más trabajada: reparada y con las personas nuevas), con `quick_check` ✓ y
   copia de seguridad de la anterior.
-- **Prueba real PC ↔ móvil (16/10)**: emparejados por wifi (clave común CLAVE_OCULTA). Tarea creada en
+- **Prueba real PC ↔ móvil (16/10)**: emparejados por wifi (clave común del equipo). Tarea creada en
   el PC → apareció en el móvil en segundos; casilla marcada en el móvil → `Completada=1` en el PC
   en ~5 s; borrado en el PC → desapareció del móvil; marcas de agua 4/4 en ambos sentidos. APK de
   Release instalado y app verificada. Datos de prueba limpiados después.
@@ -1659,7 +1659,7 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
 ### Publicación en GitHub y actualización desde la app (18/10, lote GitHub)
 
 - **Repositorios públicos** (cuenta `jonirecuenco-oss`): `SCCosmos` (Windows), `SCCosmos.Mobile`
-  (Android) y `SCCosmos.Compartido` (motor compartido, nuevo: antes vivía fuera de los repos y sin
+  (Android) y `SCCosmos.Shared` (motor compartido, nuevo: antes vivía fuera de los repos y sin
   él no compilan). Todo el trabajo pendiente quedó subido con su mensaje de cambios.
 - **Release v1.0.0** en `jonirecuenco-oss/SCCosmos` con los dos archivos que la app usa para
   actualizarse: `SCCosmos-android.apk` (arm64) y `SCCosmos-windows.zip` (app de Windows compilada).
