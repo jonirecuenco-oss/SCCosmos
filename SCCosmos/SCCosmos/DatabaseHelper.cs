@@ -236,6 +236,7 @@ namespace SCCosmos
 
             AsegurarColumna(connection, "Semanas", "FechaAsamblea", "TEXT");
             AsegurarColumna(connection, "Semanas", "DatosImportados", "INTEGER DEFAULT 0");
+            AsegurarColumna(connection, "Semanas", "TipoAsamblea", "TEXT");
 
             AsegurarColumna(connection, "ActividadPersonas", "Cursos", "TEXT");
             AsegurarColumna(connection, "ActividadPersonas", "PrecursorAuxiliar", "INTEGER DEFAULT 0");
@@ -2321,6 +2322,109 @@ namespace SCCosmos
             }
             return list;
         }
+
+        /// <summary>
+        /// Próxima asamblea de circuito programada en el calendario. Si no
+        /// hay ninguna futura, devuelve la última pasada. Los valores son
+        /// los que usa la página de Asambleas: sección, tipo y año de
+        /// servicio (de septiembre a agosto).
+        /// </summary>
+        public static (string Seccion, string Tipo, string Anio) ObtenerProximaAsambleaCalendario()
+        {
+            try
+            {
+                using var connection = new SqliteConnection(ConnectionString);
+                connection.Open();
+
+                // Todas las asambleas del calendario con su sección, de más
+                // antigua a más reciente.
+                var candidatas =
+                    new List<(string Seccion, string Tipo, string Anio, DateTime Fecha)>();
+
+                using (var cmd = connection.CreateCommand())
+                {
+                    cmd.CommandText =
+                        "SELECT trim(SeccionAsamblea), TipoAsamblea, FechaMartes FROM Semanas " +
+                        "WHERE Actividad = 'Asamblea de circuito' " +
+                        "AND trim(COALESCE(SeccionAsamblea, '')) <> '' " +
+                        "ORDER BY date(FechaMartes) ASC";
+
+                    using var reader = cmd.ExecuteReader();
+
+                    while (reader.Read())
+                    {
+                        string seccion =
+                            reader.IsDBNull(0) ? "" : reader.GetString(0);
+
+                        string tipoAsamblea =
+                            reader.IsDBNull(1) ? "" : reader.GetString(1);
+
+                        DateTime fechaMartes =
+                            reader.GetDateTime(2);
+
+                        string tipo =
+                            tipoAsamblea.ToUpperInvariant().Contains("BR")
+                                ? "AC (con rep. de Betel)"
+                                : "AC (con sup. de circuito)";
+
+                        int anio =
+                            fechaMartes.Month >= 9
+                                ? fechaMartes.Year + 1
+                                : fechaMartes.Year;
+
+                        // La fecha real de la asamblea: la que ya está
+                        // guardada en el programa (p. ej. 2026-11-22) o, si
+                        // todavía no hay programa, el sábado de esa semana.
+                        DateTime fecha =
+                            fechaMartes.AddDays(4);
+
+                        using (var cmdFecha = connection.CreateCommand())
+                        {
+                            cmdFecha.CommandText =
+                                "SELECT Fecha FROM ProgramaAsambleas " +
+                                "WHERE Anio = @Anio AND Tipo = @Tipo AND Seccion = @Seccion LIMIT 1";
+
+                            cmdFecha.Parameters.AddWithValue("@Anio", anio.ToString());
+                            cmdFecha.Parameters.AddWithValue("@Tipo", tipo);
+                            cmdFecha.Parameters.AddWithValue("@Seccion", seccion);
+
+                            object valor =
+                                cmdFecha.ExecuteScalar();
+
+                            if (valor != null
+                                && DateTime.TryParse(valor.ToString(), out DateTime fechaGuardada))
+                            {
+                                fecha = fechaGuardada;
+                            }
+                        }
+
+                        candidatas.Add((seccion, tipo, anio.ToString(), fecha));
+                    }
+                }
+
+                if (candidatas.Count == 0)
+                {
+                    return ("", "", "");
+                }
+
+                // La primera que aún no ha pasado; si ya pasaron todas, la
+                // última.
+                var elegida =
+                    candidatas.FirstOrDefault(c => c.Fecha.Date >= DateTime.Today);
+
+                if (elegida.Seccion == null)
+                {
+                    elegida = candidatas[candidatas.Count - 1];
+                }
+
+                return (elegida.Seccion, elegida.Tipo, elegida.Anio);
+            }
+            catch
+            {
+                return ("", "", "");
+            }
+        }
+
 
         public static SemanaCalendario ObtenerSemana(string fechaIso)
         {

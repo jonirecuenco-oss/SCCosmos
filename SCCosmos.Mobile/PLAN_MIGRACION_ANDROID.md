@@ -1688,7 +1688,7 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   desconocidas») y muestra su confirmación (y el aviso de Play Protect, normal al instalar fuera de
   la tienda).
 - **Publicar una versión nueva**: `Herramientas\publicar_version.ps1 -Version 1.0.1 -Notas "..."`.
-  Actualiza el número de versión, compila el APK y el ZIP, sube los tres repos y crea el release con
+  Actualiza el número de versión, compila el APK y el ZIP, sube el repositorio y crea el release con
   las notas y los archivos (lee la credencial de GitHub del Administrador de credenciales).
 - **Verificado**:
   - Windows de punta a punta: se puso la etiqueta temporal v9.9.9 al release → la app avisó al
@@ -1697,3 +1697,23 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
     62,5 MB, abrió el instalador, se concedió el permiso una vez y la actualización quedó
     **instalada** (los datos se conservan) ✓.
   - Después se devolvió la etiqueta del release a v1.0.0.
+
+### Asambleas: seleccionada la próxima del calendario (19/10, lote asambleas)
+
+- Al abrir la página de **Asambleas** aparece ya seleccionada la **próxima asamblea de circuito
+  programada en el calendario** (año, tipo y sección):
+  - **Windows**: en los filtros de Programa y de Organigrama, y se carga su programa directamente.
+  - **Android**: en los selectores de Programa y Organigrama, y la tarjeta de esa asamblea se
+    resalta con **borde dorado** y la etiqueta «PRÓXIMA EN EL CALENDARIO» (la lista se desplaza
+    hasta ella). Se aplica al abrir la página; después se conserva lo que elija el usuario.
+- Cómo se decide (`DatabaseHelper.ObtenerProximaAsambleaCalendario`, en las dos apps): se recorren
+  las asambleas del calendario y se usa la **fecha real** de cada una — la que ya está guardada en
+  el programa de esa sección (p. ej. 2026-11-22) y, si todavía no hay programa, el sábado de su
+  semana. Se elige la primera que aún no ha pasado; si ya pasaron todas, la última.
+- El año es el **año de servicio** (septiembre–agosto), como en el resto de la página, y el tipo
+  (AC-CO / AC-BR) se traduce al nombre que usa la página.
+- Detalle técnico: en el móvil faltaba la columna `TipoAsamblea` en el esquema de `Semanas` (se
+  leía con tolerancia): ahora se asegura su creación igual que en Windows.
+- **Verificado**: Windows (2027 · AC (con rep. de Betel) · sección A · Palacio de Congresos de
+  Cáceres · domingo 22 de noviembre, con su programa de 19 partes) y emulador (mismos selectores +
+  tarjeta resaltada en Programa y en Organigrama; captura con el borde dorado).

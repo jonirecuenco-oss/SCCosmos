@@ -110,12 +110,27 @@
                                 <Border.StrokeShape>
                                     <RoundRectangle CornerRadius="11" />
                                 </Border.StrokeShape>
+                                <Border.Triggers>
+                                    <DataTrigger TargetType="Border"
+                                                 Binding="{Binding EsProxima}"
+                                                 Value="True">
+                                        <Setter Property="Stroke"
+                                                Value="#FFC83C" />
+                                        <Setter Property="StrokeThickness"
+                                                Value="2" />
+                                    </DataTrigger>
+                                </Border.Triggers>
                                 <Border.GestureRecognizers>
                                     <TapGestureRecognizer
                                         Tapped="Asamblea_Tapped"
                                         CommandParameter="{Binding .}" />
                                 </Border.GestureRecognizers>
                                 <VerticalStackLayout Spacing="4">
+                                    <Label Text="PRÓXIMA EN EL CALENDARIO"
+                                           IsVisible="{Binding EsProxima}"
+                                           TextColor="#FFC83C"
+                                           FontSize="10"
+                                           FontAttributes="Bold" />
                                     <Label Text="{Binding TituloCabecera}"
                                            TextColor="White"
                                            FontSize="14"
@@ -192,12 +207,27 @@
                                 <Border.StrokeShape>
                                     <RoundRectangle CornerRadius="11" />
                                 </Border.StrokeShape>
+                                <Border.Triggers>
+                                    <DataTrigger TargetType="Border"
+                                                 Binding="{Binding EsProxima}"
+                                                 Value="True">
+                                        <Setter Property="Stroke"
+                                                Value="#FFC83C" />
+                                        <Setter Property="StrokeThickness"
+                                                Value="2" />
+                                    </DataTrigger>
+                                </Border.Triggers>
                                 <Border.GestureRecognizers>
                                     <TapGestureRecognizer
                                         Tapped="Asamblea_Tapped"
                                         CommandParameter="{Binding .}" />
                                 </Border.GestureRecognizers>
                                 <VerticalStackLayout Spacing="4">
+                                    <Label Text="PRÓXIMA EN EL CALENDARIO"
+                                           IsVisible="{Binding EsProxima}"
+                                           TextColor="#FFC83C"
+                                           FontSize="10"
+                                           FontAttributes="Bold" />
                                     <Label Text="{Binding TituloCabecera}"
                                            TextColor="White"
                                            FontSize="14"

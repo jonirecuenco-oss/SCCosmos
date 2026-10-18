@@ -26,6 +26,13 @@ public partial class AsambleasPage : ContentPage, IActualizableMobile
     private string _tabActiva =
         "programa";
 
+    // Próxima asamblea programada en el calendario (se selecciona al abrir
+    // la página y se resalta su tarjeta).
+    private string _proximaSeccion = "";
+    private string _proximaTipo = "";
+    private string _proximaAnio = "";
+    private bool _proximaAplicada;
+
     private static readonly string[] TiposAsamblea =
     {
         "AC (con sup. de circuito)",
@@ -85,17 +92,38 @@ public partial class AsambleasPage : ContentPage, IActualizableMobile
             _reuniones =
                 reuniones;
 
+            if (!_proximaAplicada)
+            {
+                _proximaAplicada = true;
+
+                try
+                {
+                    var proxima =
+                        await Task.Run(
+                            () =>
+                                DatabaseHelper
+                                    .ObtenerProximaAsambleaCalendarioMobile());
+
+                    _proximaSeccion = proxima.Seccion ?? "";
+                    _proximaTipo = proxima.Tipo ?? "";
+                    _proximaAnio = proxima.Anio ?? "";
+                }
+                catch
+                {
+                }
+            }
+
             _anios =
                 CrearListaAnios();
 
             // ---- Rellenamos los selectores conservando la selección ----
             string anioPrograma =
                 PickerAnioPrograma.SelectedItem as string
-                ?? AnioPorDefecto();
+                ?? AnioProximaOPorDefecto();
 
             string tipoPrograma =
                 PickerTipoPrograma.SelectedItem as string
-                ?? TiposAsamblea[0];
+                ?? TipoProximaOPorDefecto();
 
             PickerAnioPrograma.ItemsSource =
                 _anios.ToList();
@@ -124,7 +152,7 @@ public partial class AsambleasPage : ContentPage, IActualizableMobile
                     _anios.IndexOf(
                         PickerAnioOrganigrama.SelectedItem
                             as string
-                        ?? AnioPorDefecto()));
+                        ?? AnioProximaOPorDefecto()));
 
             PickerTipoOrganigrama.ItemsSource =
                 TiposAsamblea.ToList();
@@ -136,7 +164,7 @@ public partial class AsambleasPage : ContentPage, IActualizableMobile
                         TiposAsamblea,
                         PickerTipoOrganigrama.SelectedItem
                             as string
-                        ?? TiposAsamblea[0]));
+                        ?? TipoProximaOPorDefecto()));
 
             PickerAnioPrecursores.ItemsSource =
                 _anios.ToList();
@@ -210,6 +238,16 @@ public partial class AsambleasPage : ContentPage, IActualizableMobile
             }
         }
 
+        // El año de servicio de la próxima asamblea del calendario, por si
+        // aún no hay ninguna asamblea guardada de ese año.
+        if (int.TryParse(
+                _proximaAnio,
+                out int anioProxima))
+        {
+            anios.Add(
+                anioProxima);
+        }
+
         return anios
             .OrderByDescending(a => a)
             .Select(a => a.ToString())
@@ -224,6 +262,22 @@ public partial class AsambleasPage : ContentPage, IActualizableMobile
         return _anios.Contains(actual)
             ? actual
             : _anios.FirstOrDefault() ?? "";
+    }
+
+    private string AnioProximaOPorDefecto()
+    {
+        return !string.IsNullOrWhiteSpace(
+                _proximaAnio)
+            ? _proximaAnio
+            : AnioPorDefecto();
+    }
+
+    private string TipoProximaOPorDefecto()
+    {
+        return !string.IsNullOrWhiteSpace(
+                _proximaTipo)
+            ? _proximaTipo
+            : TiposAsamblea[0];
     }
 
     // ------------------------------------------------------------------
@@ -354,12 +408,19 @@ public partial class AsambleasPage : ContentPage, IActualizableMobile
                 .OrderBy(a => a.Seccion)
                 .ToList();
 
+        MarcarProxima(
+            lista);
+
         ListaPrograma.ItemsSource =
             lista;
 
         LblPrograma.Text =
             $"{lista.Count} secciones con programa · " +
             $"{anio} · {tipo}";
+
+        DesplazarHastaProxima(
+            ListaPrograma,
+            lista);
     }
 
     private void PintarOrganigrama()
@@ -381,12 +442,89 @@ public partial class AsambleasPage : ContentPage, IActualizableMobile
                 .OrderBy(a => a.Seccion)
                 .ToList();
 
+        MarcarProxima(
+            lista);
+
         ListaOrganigrama.ItemsSource =
             lista;
 
         LblOrganigrama.Text =
             $"{lista.Count} secciones con organigrama · " +
             $"{anio} · {tipo}";
+
+        DesplazarHastaProxima(
+            ListaOrganigrama,
+            lista);
+    }
+
+
+    /// <summary>
+    /// Marca la asamblea que coincide con la próxima del calendario para
+    /// que su tarjeta se resalte.
+    /// </summary>
+    private void MarcarProxima(
+        List<AsambleaMobile> lista)
+    {
+        bool hayProxima =
+            !string.IsNullOrWhiteSpace(
+                _proximaSeccion);
+
+        foreach (AsambleaMobile asamblea in lista)
+        {
+            asamblea.EsProxima =
+                hayProxima
+                && string.Equals(
+                    (asamblea.Anio ?? "").Trim(),
+                    _proximaAnio,
+                    StringComparison.Ordinal)
+                && string.Equals(
+                    (asamblea.Tipo ?? "").Trim(),
+                    _proximaTipo,
+                    StringComparison.Ordinal)
+                && string.Equals(
+                    (asamblea.Seccion ?? "").Trim(),
+                    _proximaSeccion,
+                    StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+
+    private static void DesplazarHastaProxima(
+        CollectionView lista,
+        List<AsambleaMobile> elementos)
+    {
+        AsambleaMobile? proxima =
+            elementos.FirstOrDefault(
+                a => a.EsProxima);
+
+        if (proxima == null)
+        {
+            return;
+        }
+
+        try
+        {
+            lista.Dispatcher.Dispatch(
+                async () =>
+                {
+                    try
+                    {
+                        await Task.Delay(
+                            250);
+
+                        lista.ScrollTo(
+                            proxima,
+                            position: ScrollToPosition.Center,
+                            animate: false);
+                    }
+                    catch
+                    {
+                    }
+                });
+        }
+        catch
+        {
+        }
     }
 
     // ------------------------------------------------------------------

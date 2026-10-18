@@ -74,13 +74,25 @@ namespace SCCosmos
         public ObservableCollection<SeccionCircuito> ListaSecciones { get; set; }
         public ObservableCollection<SeccionCircuito> ListaSeccionesMatriz { get; set; }
 
-        public string AñoSeleccionado { get; set; }
-        public string TipoSeleccionado { get; set; }
-        public SeccionCircuito SeccionSeleccionada { get; set; }
+        // Filtros con notificación: la página puede dejarlos ya puestos en
+        // la próxima asamblea del calendario al abrirse.
+        private string _añoSeleccionado;
+        public string AñoSeleccionado { get => _añoSeleccionado; set { _añoSeleccionado = value; OnPropertyChanged(nameof(AñoSeleccionado)); } }
 
-        public string AñoOrganigramaSeleccionado { get; set; }
-        public string TipoOrganigramaSeleccionado { get; set; }
-        public SeccionCircuito SeccionOrganigramaSeleccionada { get; set; }
+        private string _tipoSeleccionado;
+        public string TipoSeleccionado { get => _tipoSeleccionado; set { _tipoSeleccionado = value; OnPropertyChanged(nameof(TipoSeleccionado)); } }
+
+        private SeccionCircuito _seccionSeleccionada;
+        public SeccionCircuito SeccionSeleccionada { get => _seccionSeleccionada; set { _seccionSeleccionada = value; OnPropertyChanged(nameof(SeccionSeleccionada)); } }
+
+        private string _añoOrganigramaSeleccionado;
+        public string AñoOrganigramaSeleccionado { get => _añoOrganigramaSeleccionado; set { _añoOrganigramaSeleccionado = value; OnPropertyChanged(nameof(AñoOrganigramaSeleccionado)); } }
+
+        private string _tipoOrganigramaSeleccionado;
+        public string TipoOrganigramaSeleccionado { get => _tipoOrganigramaSeleccionado; set { _tipoOrganigramaSeleccionado = value; OnPropertyChanged(nameof(TipoOrganigramaSeleccionado)); } }
+
+        private SeccionCircuito _seccionOrganigramaSeleccionada;
+        public SeccionCircuito SeccionOrganigramaSeleccionada { get => _seccionOrganigramaSeleccionada; set { _seccionOrganigramaSeleccionada = value; OnPropertyChanged(nameof(SeccionOrganigramaSeleccionada)); } }
 
         public SeccionCircuito SeccionMatrizSeleccionada { get; set; }
 
@@ -183,11 +195,73 @@ namespace SCCosmos
             // Dejar que la página se pinte antes de cargar los datos.
             await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background);
 
+            // Al abrir la página, la próxima asamblea programada en el
+            // calendario aparece ya seleccionada (año, tipo y sección),
+            // tanto en Programa como en Organigrama.
+            _isInitializing = true;
+            SeleccionarProximaAsambleaDelCalendario();
             _isInitializing = false;
+
             CargarProgramaAsambleaDesdeBD();
             CargarOrganigramaDesdeBD();
             CargarProgramaPrecursoresDesdeBD();
             CargarOradores();
+        }
+
+        /// <summary>
+        /// Deja seleccionada la próxima asamblea de circuito programada en
+        /// el calendario. Si el calendario no tiene ninguna, no cambia nada.
+        /// </summary>
+        private void SeleccionarProximaAsambleaDelCalendario()
+        {
+            try
+            {
+                var (seccion, tipo, anio) =
+                    DatabaseHelper.ObtenerProximaAsambleaCalendario();
+
+                if (string.IsNullOrWhiteSpace(seccion))
+                {
+                    return;
+                }
+
+                if (!string.IsNullOrWhiteSpace(anio))
+                {
+                    if (!ListaAños.Contains(anio))
+                    {
+                        ListaAños.Insert(0, anio);
+                    }
+
+                    AñoSeleccionado = anio;
+                    AñoOrganigramaSeleccionado = anio;
+                }
+
+                TipoSeleccionado = tipo;
+                TipoOrganigramaSeleccionado = tipo;
+
+                var seccionCircuito =
+                    ListaSecciones.FirstOrDefault(
+                        s => string.Equals(
+                            (s.Nombre ?? "").Trim(),
+                            seccion.Trim(),
+                            StringComparison.OrdinalIgnoreCase));
+
+                if (seccionCircuito == null)
+                {
+                    seccionCircuito =
+                        new SeccionCircuito
+                        {
+                            Nombre = seccion.Trim()
+                        };
+
+                    ListaSecciones.Add(seccionCircuito);
+                }
+
+                SeccionSeleccionada = seccionCircuito;
+                SeccionOrganigramaSeleccionada = seccionCircuito;
+            }
+            catch
+            {
+            }
         }
 
         private void InicializarDepartamentos()

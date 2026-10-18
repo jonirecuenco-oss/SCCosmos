@@ -23,6 +23,12 @@ public class AsambleaMobile
     public bool TieneOrganigrama =>
         OrganigramaCount > 0;
 
+    /// <summary>
+    /// Lo marca la página cuando esta asamblea es la próxima programada en
+    /// el calendario (se resalta su tarjeta).
+    /// </summary>
+    public bool EsProxima { get; set; }
+
     public string ResumenPrograma =>
         PartesCount == 0
             ? "Sin programa todavía"
