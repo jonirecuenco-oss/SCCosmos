@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.EscuelaInstructorPickerPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Elegir"
+    BackgroundColor="#101216">
+
+    <Grid RowDefinitions="Auto,*">
+
+        <VerticalStackLayout Grid.Row="0"
+                             Padding="20,16,20,8"
+                             Spacing="8">
+
+            <Label x:Name="LblTitulo"
+                   Style="{StaticResource Antetitulo}" />
+
+            <Entry x:Name="TxtBuscar"
+                   Placeholder="Buscar por nombre o congregación…"
+                   TextColor="White"
+                   TextChanged="TxtBuscar_TextChanged" />
+
+        </VerticalStackLayout>
+
+        <CollectionView x:Name="Lista"
+                        Grid.Row="1"
+                        SelectionMode="Single"
+                        SelectionChanged="Lista_SelectionChanged"
+                        Margin="20,0,20,20">
+
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border BackgroundColor="{StaticResource Superficie}"
+                            Stroke="{StaticResource Borde}"
+                            StrokeThickness="1"
+                            Padding="13"
+                            Margin="0,0,0,8">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="12" />
+                        </Border.StrokeShape>
+
+                        <Label Text="{Binding Visual}"
+                               FontSize="14.5"
+                               TextColor="White" />
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+
+        </CollectionView>
+
+    </Grid>
+</ContentPage>

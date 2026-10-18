@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.TareasPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Tareas"
+    BackgroundColor="#101216">
+
+    <Grid RowDefinitions="Auto,*,Auto"
+          Padding="16,14,16,14"
+          RowSpacing="10">
+
+        <!-- CABECERA -->
+        <Grid Grid.Row="0"
+              ColumnDefinitions="*,Auto"
+              ColumnSpacing="10">
+
+            <VerticalStackLayout Spacing="3">
+                <Label Text="TAREAS Y EVENTOS"
+                       Style="{StaticResource Antetitulo}" />
+                <Label x:Name="LblResumen"
+                       Text=""
+                       Style="{StaticResource SubtituloPagina}" />
+            </VerticalStackLayout>
+
+            <Button Grid.Column="1"
+                    Text="＋ Nueva"
+                    Clicked="BtnNueva_Clicked"
+                    BackgroundColor="#0B6FC2"
+                    TextColor="White"
+                    CornerRadius="9"
+                    HeightRequest="40"
+                    Padding="14,0"
+                    FontSize="13"
+                    VerticalOptions="Center" />
+        </Grid>
+
+        <!-- LISTA -->
+        <RefreshView x:Name="Refrescar"
+                     Grid.Row="1"
+                     Refreshing="Refrescar_Refreshing">
+
+            <CollectionView x:Name="Lista"
+                            SelectionMode="None">
+
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout Padding="20,50"
+                                         HorizontalOptions="Center"
+                                         Spacing="8">
+                        <Label Text="No hay tareas ni eventos."
+                               TextColor="#9EA4AE"
+                               FontSize="15"
+                               HorizontalTextAlignment="Center" />
+                        <Label Text="Pulsa «＋ Nueva» para programar uno."
+                               TextColor="#6E767F"
+                               FontSize="12"
+                               HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border BackgroundColor="{StaticResource Superficie}"
+                                Stroke="{StaticResource Borde}"
+                                StrokeThickness="1"
+                                Padding="12"
+                                Margin="0,0,0,9"
+                                Opacity="{Binding Opacidad}">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="12" />
+                            </Border.StrokeShape>
+
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer
+                                    Tapped="Tarjeta_Tapped"
+                                    CommandParameter="{Binding .}" />
+                            </Border.GestureRecognizers>
+
+                            <Grid ColumnDefinitions="Auto,*"
+                                  ColumnSpacing="10">
+
+                                <CheckBox Grid.Column="0"
+                                          IsChecked="{Binding Completada, Mode=OneTime}"
+                                          CheckedChanged="Completada_CheckedChanged"
+                                          Color="#4BA3E3"
+                                          VerticalOptions="Center" />
+
+                                <VerticalStackLayout Grid.Column="1"
+                                                     Spacing="5">
+
+                                    <Label Text="{Binding TituloVisual}"
+                                           TextColor="White"
+                                           FontSize="15"
+                                           FontAttributes="Bold" />
+
+                                    <Label Text="{Binding FechasVisual}"
+                                           TextColor="#80C4FF"
+                                           FontSize="13" />
+
+                                    <Label Text="{Binding Descripcion}"
+                                           TextColor="#B6BBC2"
+                                           FontSize="12"
+                                           LineBreakMode="TailTruncation"
+                                           MaxLines="2" />
+
+                                    <FlexLayout Direction="Row"
+                                                Wrap="Wrap">
+
+                                        <Border IsVisible="{Binding MostrarAviso}"
+                                                BackgroundColor="#242830"
+                                                Padding="8,3"
+                                                Margin="0,0,6,4"
+                                                StrokeThickness="0">
+                                            <Border.StrokeShape>
+                                                <RoundRectangle CornerRadius="6" />
+                                            </Border.StrokeShape>
+                                            <Label Text="{Binding AvisoVisual}"
+                                                   TextColor="#EBCB8B"
+                                                   FontSize="11.5"
+                                                   FontAttributes="Bold" />
+                                        </Border>
+
+                                        <Border IsVisible="{Binding MostrarRepeticion}"
+                                                BackgroundColor="#242830"
+                                                Padding="8,3"
+                                                Margin="0,0,6,4"
+                                                StrokeThickness="0">
+                                            <Border.StrokeShape>
+                                                <RoundRectangle CornerRadius="6" />
+                                            </Border.StrokeShape>
+                                            <Label Text="{Binding RepeticionVisual}"
+                                                   TextColor="#9CC3F5"
+                                                   FontSize="11.5"
+                                                   FontAttributes="Bold" />
+                                        </Border>
+
+                                        <Border IsVisible="{Binding EstaCompartida}"
+                                                BackgroundColor="#243028"
+                                                Padding="8,3"
+                                                Margin="0,0,6,4"
+                                                StrokeThickness="0">
+                                            <Border.StrokeShape>
+                                                <RoundRectangle CornerRadius="6" />
+                                            </Border.StrokeShape>
+                                            <Label Text="👫 Compartida"
+                                                   TextColor="#7ED889"
+                                                   FontSize="11.5"
+                                                   FontAttributes="Bold" />
+                                        </Border>
+
+                                        <Border IsVisible="{Binding MostrarEstado}"
+                                                BackgroundColor="#243028"
+                                                Padding="8,3"
+                                                Margin="0,0,6,4"
+                                                StrokeThickness="0">
+                                            <Border.StrokeShape>
+                                                <RoundRectangle CornerRadius="6" />
+                                            </Border.StrokeShape>
+                                            <Label Text="{Binding EstadoVisual}"
+                                                   TextColor="#7ED889"
+                                                   FontSize="11.5"
+                                                   FontAttributes="Bold" />
+                                        </Border>
+                                    </FlexLayout>
+                                </VerticalStackLayout>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+
+        <Label Grid.Row="2"
+               Text="Los avisos aparecen en la campana y como notificación de la app."
+               Style="{StaticResource TextoNota}" />
+    </Grid>
+</ContentPage>

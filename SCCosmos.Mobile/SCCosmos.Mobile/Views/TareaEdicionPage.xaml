@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.TareaEdicionPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Tarea"
+    BackgroundColor="#101216">
+
+    <Grid RowDefinitions="*,Auto"
+          Padding="16,14,16,14"
+          RowSpacing="10">
+
+        <ScrollView Grid.Row="0">
+            <VerticalStackLayout Spacing="14">
+
+                <Label x:Name="LblCabecera"
+                       Text="NUEVA TAREA"
+                       Style="{StaticResource Antetitulo}" />
+
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="Título"
+                           Style="{StaticResource TextoNota}" />
+                    <Entry x:Name="TxtTitulo"
+                           Placeholder="Título de la tarea o evento"
+                           PlaceholderColor="#6E767F"
+                           TextColor="White"
+                           BackgroundColor="#1A1D22" />
+                </VerticalStackLayout>
+
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="Descripción"
+                           Style="{StaticResource TextoNota}" />
+                    <Editor x:Name="TxtDescripcion"
+                            Placeholder="Detalles (opcional)"
+                            PlaceholderColor="#6E767F"
+                            AutoSize="TextChanges"
+                            HeightRequest="90"
+                            TextColor="White"
+                            BackgroundColor="#1A1D22" />
+                </VerticalStackLayout>
+
+                <Grid ColumnDefinitions="*,Auto"
+                      ColumnSpacing="12">
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Fecha"
+                               Style="{StaticResource TextoNota}" />
+                        <DatePicker x:Name="PckFecha"
+                                    TextColor="White"
+                                    BackgroundColor="#1A1D22" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Grid.Column="1"
+                                         Spacing="4">
+                        <Label Text="Todo el día"
+                               Style="{StaticResource TextoNota}"
+                               HorizontalTextAlignment="Center" />
+                        <Switch x:Name="SwTodoElDia"
+                                IsToggled="True"
+                                OnColor="#0B6FC2"
+                                Toggled="SwTodoElDia_Toggled"
+                                VerticalOptions="Center" />
+                    </VerticalStackLayout>
+                </Grid>
+
+                <VerticalStackLayout x:Name="PanelHora"
+                                     Spacing="4"
+                                     IsVisible="False">
+                    <Label Text="Hora"
+                           Style="{StaticResource TextoNota}" />
+                    <TimePicker x:Name="PckHora"
+                                TextColor="White"
+                                BackgroundColor="#1A1D22" />
+                </VerticalStackLayout>
+
+                <VerticalStackLayout x:Name="PanelRango"
+                                     Spacing="4"
+                                     IsVisible="False">
+                    <Label Text="Hasta (fin del rango)"
+                           Style="{StaticResource TextoNota}" />
+                    <DatePicker x:Name="PckFechaFin"
+                                TextColor="White"
+                                BackgroundColor="#1A1D22" />
+                </VerticalStackLayout>
+
+                <HorizontalStackLayout Spacing="10">
+                    <Switch x:Name="SwRango"
+                            OnColor="#0B6FC2"
+                            Toggled="SwRango_Toggled"
+                            VerticalOptions="Center" />
+                    <Label Text="Es un rango de varios días"
+                           TextColor="White"
+                           VerticalOptions="Center" />
+                </HorizontalStackLayout>
+
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="Aviso"
+                           Style="{StaticResource TextoNota}" />
+                    <Picker x:Name="PckAviso"
+                            TextColor="White"
+                            BackgroundColor="#1A1D22" />
+                </VerticalStackLayout>
+
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="Repetición"
+                           Style="{StaticResource TextoNota}" />
+                    <Picker x:Name="PckRepeticion"
+                            TextColor="White"
+                            BackgroundColor="#1A1D22" />
+                </VerticalStackLayout>
+
+                <HorizontalStackLayout Spacing="10">
+                    <Switch x:Name="SwCompartir"
+                            OnColor="#0B6FC2"
+                            VerticalOptions="Center" />
+                    <Label x:Name="LblCompartir"
+                           Text="Compartir con mi esposa"
+                           TextColor="White"
+                           VerticalOptions="Center" />
+                </HorizontalStackLayout>
+
+                <Label Text="El aviso aparecerá en la campana y como notificación de la app."
+                       Style="{StaticResource TextoNota}" />
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <Grid Grid.Row="1"
+              ColumnDefinitions="Auto,*,Auto"
+              ColumnSpacing="10">
+
+            <Button x:Name="BtnEliminar"
+                    Text="🗑️ Eliminar"
+                    IsVisible="False"
+                    Clicked="BtnEliminar_Clicked"
+                    BackgroundColor="#3A2023"
+                    TextColor="#FFB7BC"
+                    CornerRadius="9"
+                    HeightRequest="46" />
+
+            <Button Grid.Column="2"
+                    Text="Guardar"
+                    Clicked="BtnGuardar_Clicked"
+                    BackgroundColor="#0B6FC2"
+                    TextColor="White"
+                    CornerRadius="9"
+                    HeightRequest="46"
+                    Padding="22,0" />
+        </Grid>
+    </Grid>
+</ContentPage>

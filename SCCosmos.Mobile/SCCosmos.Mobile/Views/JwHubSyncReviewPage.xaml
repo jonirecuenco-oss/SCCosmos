@@ -1,0 +1,345 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="SCCosmos.Mobile.Views.JwHubSyncReviewPage"
+    Title="Revisión JW Hub"
+    BackgroundColor="#101216">
+
+    <Grid
+        RowDefinitions="Auto,Auto,*,Auto"
+        Padding="16,14,16,12"
+        RowSpacing="12">
+
+
+        <!-- ================================================= -->
+        <!-- CABECERA -->
+        <!-- ================================================= -->
+
+        <VerticalStackLayout
+            Grid.Row="0"
+            Spacing="3">
+
+            <Label
+                Text="Revisión de JW Hub"
+                TextColor="White"
+                FontSize="26"
+                FontAttributes="Bold"/>
+
+            <Label
+                x:Name="LblEstado"
+                Text=""
+                TextColor="#9299A3"
+                FontSize="13"/>
+
+        </VerticalStackLayout>
+
+
+        <!-- ================================================= -->
+        <!-- CATEGORÍAS / PESTAÑAS -->
+        <!--
+            Los antiguos cuatro cuadros-resumen se eliminan.
+            Los contadores aparecen directamente en estas
+            pestañas para no duplicar información.
+        -->
+        <!-- ================================================= -->
+
+        <ScrollView
+            Grid.Row="1"
+            Orientation="Horizontal"
+            HorizontalScrollBarVisibility="Never">
+
+            <HorizontalStackLayout
+                Spacing="8">
+
+                <Button
+                    x:Name="BtnConflictos"
+                    Text="Conflictos (0)"
+                    HeightRequest="42"
+                    Padding="14,7"
+                    BackgroundColor="#6A5420"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    CornerRadius="9"
+                    Clicked="BtnConflictos_Clicked"/>
+
+                <Button
+                    x:Name="BtnNuevos"
+                    Text="Nuevos (0)"
+                    HeightRequest="42"
+                    Padding="14,7"
+                    BackgroundColor="#315A3A"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    CornerRadius="9"
+                    Clicked="BtnNuevos_Clicked"/>
+
+                <Button
+                    x:Name="BtnBajas"
+                    Text="Bajas (0)"
+                    HeightRequest="42"
+                    Padding="14,7"
+                    BackgroundColor="#6A3030"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    CornerRadius="9"
+                    Clicked="BtnBajas_Clicked"/>
+
+                <Button
+                    x:Name="BtnTraslados"
+                    Text="Traslados (0)"
+                    HeightRequest="42"
+                    Padding="14,7"
+                    BackgroundColor="#2E5A6E"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    CornerRadius="9"
+                    Clicked="BtnTraslados_Clicked"/>
+
+                <Button
+                    x:Name="BtnIguales"
+                    Text="Sin cambios (0)"
+                    HeightRequest="42"
+                    Padding="14,7"
+                    BackgroundColor="#343A43"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    CornerRadius="9"
+                    Clicked="BtnIguales_Clicked"/>
+
+            </HorizontalStackLayout>
+
+        </ScrollView>
+
+
+        <!-- ================================================= -->
+        <!-- LISTADO -->
+        <!-- ================================================= -->
+
+        <Grid
+            Grid.Row="2"
+            RowDefinitions="Auto,*"
+            RowSpacing="8">
+
+            <Label
+                x:Name="LblTituloLista"
+                Grid.Row="0"
+                Text="Resultados"
+                TextColor="White"
+                FontSize="18"
+                FontAttributes="Bold"/>
+
+
+            <CollectionView
+                x:Name="ListaResultados"
+                Grid.Row="1"
+                SelectionMode="None"
+                ItemsLayout="VerticalList"
+                EmptyView="No hay elementos en esta categoría.">
+
+                <CollectionView.ItemTemplate>
+
+                    <DataTemplate>
+
+                        <Border
+                            BackgroundColor="{StaticResource Superficie}"
+                            Stroke="{StaticResource Borde}"
+                            StrokeThickness="1"
+                            Padding="14"
+                            Margin="0,0,0,10">
+
+                            <Border.StrokeShape>
+                                <RoundRectangle
+                                    CornerRadius="15"/>
+                            </Border.StrokeShape>
+
+
+                            <VerticalStackLayout
+                                Spacing="6">
+
+
+                                <!-- Nombre mostrado por SCCosmos -->
+                                <Label
+                                    Text="{Binding NombreVisual}"
+                                    TextColor="White"
+                                    FontSize="17"
+                                    FontAttributes="Bold"
+                                    LineBreakMode="TailTruncation"/>
+
+
+                                <!-- Nombre real/último conocido de JW Hub -->
+                                <Label
+                                    TextColor="#73B9E6"
+                                    FontSize="13"
+                                    LineBreakMode="TailTruncation">
+
+                                    <Label.FormattedText>
+                                        <FormattedString>
+                                            <Span
+                                                Text="JW Hub: "
+                                                FontAttributes="Bold"/>
+                                            <Span
+                                                Text="{Binding NombreJwHubVisual}"/>
+                                        </FormattedString>
+                                    </Label.FormattedText>
+
+                                </Label>
+
+
+                                <Label
+                                    Text="{Binding Descripcion}"
+                                    TextColor="#A9AFB8"
+                                    FontSize="13"
+                                    LineBreakMode="WordWrap"/>
+
+
+                                <!-- Aviso de baja no confirmable.
+                                     Normalmente ya no aparecerá en producción,
+                                     pero mantenemos el cortafuegos. -->
+                                <Label
+                                    Text="Esta posible baja no puede confirmarse porque la extracción no fue completa."
+                                    TextColor="#E6B35A"
+                                    FontSize="12"
+                                    IsVisible="{Binding MostrarAvisoBajaPrueba}"/>
+
+
+                                <!-- ========================================= -->
+                                <!-- ACCIONES EN UNA SOLA LÍNEA -->
+                                <!-- ========================================= -->
+
+                                <HorizontalStackLayout
+                                    Spacing="8"
+                                    Margin="0,5,0,0">
+
+                                    <!-- Conflicto -->
+                                    <Button
+                                        Text="Resolver"
+                                        IsVisible="{Binding EsConflicto}"
+                                        CommandParameter="{Binding .}"
+                                        HeightRequest="40"
+                                        Padding="16,6"
+                                        BackgroundColor="#2478B5"
+                                        TextColor="White"
+                                        FontAttributes="Bold"
+                                        CornerRadius="8"
+                                        Clicked="BtnResolverConflicto_Clicked"/>
+
+
+                                    <!-- Nuevo -->
+                                    <Button
+                                        Text="Revisar y añadir"
+                                        IsVisible="{Binding EsNuevo}"
+                                        CommandParameter="{Binding .}"
+                                        HeightRequest="40"
+                                        Padding="14,6"
+                                        BackgroundColor="#315A3A"
+                                        TextColor="White"
+                                        FontAttributes="Bold"
+                                        CornerRadius="8"
+                                        Clicked="BtnAnadirNuevo_Clicked"/>
+
+
+                                    <!-- Posible baja -->
+                                    <Button
+                                        Text="Confirmar baja"
+                                        IsVisible="{Binding EsBaja}"
+                                        IsEnabled="{Binding PuedeConfirmarBaja}"
+                                        CommandParameter="{Binding .}"
+                                        HeightRequest="40"
+                                        Padding="14,6"
+                                        BackgroundColor="#6A3030"
+                                        TextColor="White"
+                                        FontAttributes="Bold"
+                                        CornerRadius="8"
+                                        Clicked="BtnConfirmarBaja_Clicked"/>
+
+
+                                    <!-- Posible traslado -->
+                                    <Button
+                                        Text="Confirmar traslado"
+                                        IsVisible="{Binding EsTraslado}"
+                                        CommandParameter="{Binding .}"
+                                        HeightRequest="40"
+                                        Padding="14,6"
+                                        BackgroundColor="#2E5A6E"
+                                        TextColor="White"
+                                        FontAttributes="Bold"
+                                        CornerRadius="8"
+                                        Clicked="BtnConfirmarTraslado_Clicked"/>
+
+                                    <Button
+                                        Text="No es traslado"
+                                        IsVisible="{Binding EsTraslado}"
+                                        CommandParameter="{Binding .}"
+                                        HeightRequest="40"
+                                        Padding="12,6"
+                                        BackgroundColor="#343A43"
+                                        TextColor="White"
+                                        CornerRadius="8"
+                                        Clicked="BtnNoEsTraslado_Clicked"/>
+
+
+                                    <!-- Conflictos / Nuevos / Bajas.
+                                         NO aparece en "Sin cambios". -->
+                                    <Button
+                                        Text="Descartar"
+                                        IsVisible="{Binding MostrarDescartar}"
+                                        CommandParameter="{Binding .}"
+                                        HeightRequest="40"
+                                        Padding="14,6"
+                                        BackgroundColor="#343A43"
+                                        TextColor="White"
+                                        CornerRadius="8"
+                                        Clicked="BtnDescartar_Clicked"/>
+
+                                </HorizontalStackLayout>
+
+                            </VerticalStackLayout>
+
+                        </Border>
+
+                    </DataTemplate>
+
+                </CollectionView.ItemTemplate>
+
+            </CollectionView>
+
+        </Grid>
+
+
+        <!-- ================================================= -->
+        <!-- PIE -->
+        <!-- ================================================= -->
+
+        <Grid
+            Grid.Row="3"
+            ColumnDefinitions="*,*"
+            ColumnSpacing="10">
+
+            <Button
+                x:Name="BtnCerrar"
+                Grid.Column="0"
+                Text="Cerrar"
+                HeightRequest="46"
+                BackgroundColor="#343A43"
+                TextColor="White"
+                CornerRadius="9"
+                Clicked="BtnCerrar_Clicked"/>
+
+            <Button
+                x:Name="BtnFinalizar"
+                Grid.Column="1"
+                Text="Finalizar revisión"
+                HeightRequest="46"
+                BackgroundColor="#2478B5"
+                TextColor="White"
+                FontAttributes="Bold"
+                CornerRadius="9"
+                Clicked="BtnFinalizar_Clicked"/>
+
+        </Grid>
+
+    </Grid>
+
+</ContentPage>

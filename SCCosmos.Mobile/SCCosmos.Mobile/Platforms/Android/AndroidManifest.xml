@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <application
+      android:allowBackup="true"
+      android:icon="@mipmap/appicon"
+      android:roundIcon="@mipmap/appicon_round"
+      android:supportsRtl="true">
+  </application>
+
+  <uses-permission
+      android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+  <uses-permission
+      android:name="android.permission.INTERNET" />
+
+  <uses-permission
+      android:name="android.permission.FOREGROUND_SERVICE" />
+
+  <uses-permission
+      android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+
+  <!-- Android 13+:
+       necesario para que SCCosmos pueda mostrar notificaciones
+       en la barra de notificaciones. -->
+  <uses-permission
+      android:name="android.permission.POST_NOTIFICATIONS" />
+
+  <uses-permission
+      android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+
+  <uses-permission
+      android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+  <uses-permission
+      android:name="android.permission.WAKE_LOCK" />
+
+  <!-- Permite abrir el instalador de Android para actualizar la app. -->
+  <uses-permission
+      android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
+  <queries>
+    <intent>
+      <action android:name="android.intent.action.VIEW" />
+      <data android:mimeType="application/vnd.android.package-archive" />
+    </intent>
+  </queries>
+
+</manifest>

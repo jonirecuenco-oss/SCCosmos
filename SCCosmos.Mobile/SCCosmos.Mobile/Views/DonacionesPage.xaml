@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.DonacionesPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Rendimientos"
+    BackgroundColor="#101216">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto"
+          Padding="16,14,16,14"
+          RowSpacing="10">
+
+        <!-- CABECERA -->
+        <VerticalStackLayout Grid.Row="0"
+                             Spacing="3">
+            <Label Text="RENDIMIENTOS"
+                   Style="{StaticResource Antetitulo}" />
+            <Label x:Name="LblTotal"
+                   Text=""
+                   Style="{StaticResource SubtituloPagina}" />
+            <Label x:Name="LblDesglose"
+                   Text=""
+                   Style="{StaticResource TextoNota}" />
+        </VerticalStackLayout>
+
+        <!-- FILTROS -->
+        <Border Grid.Row="1"
+                BackgroundColor="{StaticResource Superficie}"
+                Stroke="{StaticResource Borde}"
+                Padding="12">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="12" />
+            </Border.StrokeShape>
+
+            <VerticalStackLayout Spacing="8">
+
+                <Grid ColumnDefinitions="*,*"
+                      ColumnSpacing="8">
+                    <VerticalStackLayout Grid.Column="0"
+                                         Spacing="2">
+                        <Label Text="Año"
+                               Style="{StaticResource TextoNota}" />
+                        <Picker x:Name="PickerAnio"
+                                FontSize="13"
+                                SelectedIndexChanged="Filtro_Changed" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Grid.Column="1"
+                                         Spacing="2">
+                        <Label Text="Mes"
+                               Style="{StaticResource TextoNota}" />
+                        <Picker x:Name="PickerMes"
+                                FontSize="13"
+                                SelectedIndexChanged="Filtro_Changed" />
+                    </VerticalStackLayout>
+                </Grid>
+
+                <Grid ColumnDefinitions="*,*"
+                      ColumnSpacing="8">
+                    <VerticalStackLayout Grid.Column="0"
+                                         Spacing="2">
+                        <Label Text="Congregación"
+                               Style="{StaticResource TextoNota}" />
+                        <Picker x:Name="PickerCongregacion"
+                                FontSize="13"
+                                ItemDisplayBinding="{Binding Visual}"
+                                SelectedIndexChanged="Filtro_Changed" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Grid.Column="1"
+                                         Spacing="2">
+                        <Label Text="Medio de pago"
+                               Style="{StaticResource TextoNota}" />
+                        <Picker x:Name="PickerMedio"
+                                FontSize="13"
+                                SelectedIndexChanged="Filtro_Changed" />
+                    </VerticalStackLayout>
+                </Grid>
+
+                <Grid ColumnDefinitions="*,Auto"
+                      ColumnSpacing="8">
+                    <Entry x:Name="TxtPersona"
+                           Grid.Column="0"
+                           Placeholder="Buscar por persona…"
+                           TextColor="White"
+                           TextChanged="TxtPersona_TextChanged" />
+
+                    <Button Grid.Column="1"
+                            Text="Limpiar"
+                            Clicked="BtnLimpiar_Clicked"
+                            Style="{StaticResource BotonSecundario}"
+                            HeightRequest="40"
+                            Padding="12,6"
+                            FontSize="12.5" />
+                </Grid>
+
+            </VerticalStackLayout>
+        </Border>
+
+        <!-- LISTA -->
+        <CollectionView x:Name="Lista"
+                        Grid.Row="2"
+                        SelectionMode="None">
+            <CollectionView.EmptyView>
+                <VerticalStackLayout Padding="20,40"
+                                     HorizontalOptions="Center"
+                                     Spacing="6">
+                    <Label Text="No hay registros con esos filtros."
+                           TextColor="#9EA4AE"
+                           HorizontalTextAlignment="Center" />
+                    <Label Text="Pulsa «Añadir registro» para crear el primero."
+                           Style="{StaticResource TextoNota}"
+                           HorizontalTextAlignment="Center" />
+                </VerticalStackLayout>
+            </CollectionView.EmptyView>
+
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border BackgroundColor="{StaticResource Superficie}"
+                            Stroke="{StaticResource Borde}"
+                            StrokeThickness="1"
+                            Padding="12"
+                            Margin="0,0,0,8">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="11" />
+                        </Border.StrokeShape>
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer
+                                Tapped="Donacion_Tapped"
+                                CommandParameter="{Binding .}" />
+                        </Border.GestureRecognizers>
+
+                        <Grid ColumnDefinitions="*,Auto"
+                              ColumnSpacing="10">
+
+                            <VerticalStackLayout Grid.Column="0"
+                                                 Spacing="2">
+                                <Label Text="{Binding PersonaVisual}"
+                                       TextColor="White"
+                                       FontSize="14"
+                                       FontAttributes="Bold" />
+                                <Label Text="{Binding DetalleVisual}"
+                                       Style="{StaticResource TextoTarjeta}" />
+                                <Label Text="{Binding Notas}"
+                                       Style="{StaticResource TextoNota}"
+                                       IsVisible="{Binding TieneNotas}" />
+                            </VerticalStackLayout>
+
+                            <VerticalStackLayout Grid.Column="1"
+                                                 Spacing="2"
+                                                 VerticalOptions="Center">
+                                <Label Text="{Binding CantidadVisual}"
+                                       TextColor="#8EE29D"
+                                       FontSize="15"
+                                       FontAttributes="Bold"
+                                       HorizontalTextAlignment="End" />
+                                <Label Text="Editar"
+                                       Style="{StaticResource TextoAccion}"
+                                       HorizontalTextAlignment="End" />
+                            </VerticalStackLayout>
+
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- ACCIÓN -->
+        <Button Grid.Row="3"
+                Text="＋ Añadir registro"
+                Clicked="BtnNueva_Clicked"
+                Style="{StaticResource BotonPrincipal}" />
+
+    </Grid>
+</ContentPage>

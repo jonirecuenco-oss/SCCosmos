@@ -1,0 +1,231 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentView
+    x:Class="SCCosmos.Mobile.Views.MatrizOradoresView"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <Grid RowDefinitions="Auto,Auto,*"
+          RowSpacing="8">
+
+        <VerticalStackLayout Grid.Row="0"
+                             Spacing="5">
+            <Label Text="MATRIZ DE ORADORES"
+                   Style="{StaticResource Antetitulo}" />
+            <Label Text="Igual que en Windows: solo aparecen los hermanos con participación en las asambleas o en la reunión de precursores."
+                   Style="{StaticResource TextoNota}" />
+
+            <Grid ColumnDefinitions="Auto,*"
+                  ColumnSpacing="8">
+                <Label Text="Sección:"
+                       TextColor="#9299A3"
+                       FontSize="12"
+                       VerticalTextAlignment="Center" />
+                <Picker x:Name="PickerSeccion"
+                        Grid.Column="1"
+                        TextColor="White"
+                        FontSize="13"
+                        SelectedIndexChanged="PickerSeccion_SelectedIndexChanged" />
+            </Grid>
+
+            <Label x:Name="LblInfo"
+                   Text=""
+                   FontSize="11"
+                   TextColor="#8F969F" />
+        </VerticalStackLayout>
+
+        <Button Grid.Row="1"
+                Text="＋ Añadir participante"
+                Clicked="BtnAnadir_Clicked"
+                Style="{StaticResource BotonExito}" />
+
+        <CollectionView x:Name="Lista"
+                        Grid.Row="2"
+                        SelectionMode="None">
+            <CollectionView.EmptyView>
+                <Label Text="Ningún orador con participación todavía."
+                       TextColor="#9EA4AE"
+                       Padding="20,40"
+                       HorizontalTextAlignment="Center" />
+            </CollectionView.EmptyView>
+
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border BackgroundColor="{StaticResource Superficie}"
+                            Stroke="{StaticResource Borde}"
+                            StrokeThickness="1"
+                            Padding="12"
+                            Margin="0,0,0,9">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="11" />
+                        </Border.StrokeShape>
+
+                        <VerticalStackLayout Spacing="7">
+
+                            <Grid ColumnDefinitions="*,Auto">
+                                <VerticalStackLayout Grid.Column="0"
+                                                     Spacing="2">
+                                    <Label Text="{Binding Nombre}"
+                                           TextColor="White"
+                                           FontSize="14"
+                                           FontAttributes="Bold" />
+                                    <Label Text="{Binding SeccionVisual}"
+                                           TextColor="#9EA4AE"
+                                           FontSize="11" />
+                                </VerticalStackLayout>
+
+                                <Button Grid.Column="1"
+                                        Text="Quitar"
+                                        Clicked="BtnQuitar_Clicked"
+                                        CommandParameter="{Binding .}"
+                                        Padding="10,5"
+                                        FontSize="11"
+                                        BackgroundColor="#3A2023"
+                                        TextColor="#FFB7BC"
+                                        CornerRadius="7"
+                                        VerticalOptions="Center" />
+                            </Grid>
+
+                            <Border BackgroundColor="{StaticResource SuperficieAlta}"
+                                    Stroke="#2E3540"
+                                    Padding="8,5">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="8" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer
+                                        Tapped="Bos_Tapped"
+                                        CommandParameter="{Binding .}" />
+                                </Border.GestureRecognizers>
+                                <Label Text="{Binding BosVisual}"
+                                       TextColor="#A9D3F5"
+                                       FontSize="11" />
+                            </Border>
+
+                            <VerticalStackLayout Spacing="6"
+                                                 BindableLayout.ItemsSource="{Binding Anios}">
+                                <BindableLayout.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border BackgroundColor="#12151A"
+                                                Stroke="#2A3038"
+                                                Padding="7">
+                                            <Border.StrokeShape>
+                                                <RoundRectangle CornerRadius="8" />
+                                            </Border.StrokeShape>
+
+                                            <VerticalStackLayout Spacing="5">
+                                                <Grid ColumnDefinitions="*,Auto">
+                                                    <Label Text="{Binding Anio}"
+                                                           TextColor="White"
+                                                           FontSize="12"
+                                                           FontAttributes="Bold"
+                                                           VerticalTextAlignment="Center" />
+                                                    <HorizontalStackLayout Grid.Column="1"
+                                                                           Spacing="5">
+                                                        <Label Text="EV"
+                                                               TextColor="#9EA4AE"
+                                                               FontSize="11"
+                                                               VerticalTextAlignment="Center" />
+                                                        <Switch IsToggled="{Binding Evaluacion}"
+                                                                OnColor="#2478B5"
+                                                                Toggled="Evaluacion_Toggled"
+                                                                VerticalOptions="Center" />
+                                                    </HorizontalStackLayout>
+                                                </Grid>
+
+                                                <Grid ColumnDefinitions="*,*,*"
+                                                      ColumnSpacing="5">
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                    </Grid.RowDefinitions>
+
+                                                    <Label Grid.Row="0"
+                                                           Grid.Column="0"
+                                                           Text="AC-BR"
+                                                           TextColor="#8F969F"
+                                                           FontSize="9"
+                                                           HorizontalTextAlignment="Center" />
+                                                    <Label Grid.Row="0"
+                                                           Grid.Column="1"
+                                                           Text="R. Prec"
+                                                           TextColor="#8F969F"
+                                                           FontSize="9"
+                                                           HorizontalTextAlignment="Center" />
+                                                    <Label Grid.Row="0"
+                                                           Grid.Column="2"
+                                                           Text="AC-CO"
+                                                           TextColor="#8F969F"
+                                                           FontSize="9"
+                                                           HorizontalTextAlignment="Center" />
+
+                                                    <Border Grid.Row="1"
+                                                            Grid.Column="0"
+                                                            BackgroundColor="{Binding AcbrFondo}"
+                                                            Padding="4,6"
+                                                            Margin="0,3,0,0">
+                                                        <Border.StrokeShape>
+                                                            <RoundRectangle CornerRadius="5" />
+                                                        </Border.StrokeShape>
+                                                        <Border.GestureRecognizers>
+                                                            <TapGestureRecognizer
+                                                                Tapped="Acbr_Tapped"
+                                                                CommandParameter="{Binding .}" />
+                                                        </Border.GestureRecognizers>
+                                                        <Label Text="{Binding Acbr}"
+                                                               TextColor="White"
+                                                               FontSize="11"
+                                                               HorizontalTextAlignment="Center" />
+                                                    </Border>
+
+                                                    <Border Grid.Row="1"
+                                                            Grid.Column="1"
+                                                            BackgroundColor="{Binding RpFondo}"
+                                                            Padding="4,6"
+                                                            Margin="0,3,0,0">
+                                                        <Border.StrokeShape>
+                                                            <RoundRectangle CornerRadius="5" />
+                                                        </Border.StrokeShape>
+                                                        <Border.GestureRecognizers>
+                                                            <TapGestureRecognizer
+                                                                Tapped="Rp_Tapped"
+                                                                CommandParameter="{Binding .}" />
+                                                        </Border.GestureRecognizers>
+                                                        <Label Text="{Binding Rp}"
+                                                               TextColor="White"
+                                                               FontSize="11"
+                                                               HorizontalTextAlignment="Center" />
+                                                    </Border>
+
+                                                    <Border Grid.Row="1"
+                                                            Grid.Column="2"
+                                                            BackgroundColor="{Binding AccoFondo}"
+                                                            Padding="4,6"
+                                                            Margin="0,3,0,0">
+                                                        <Border.StrokeShape>
+                                                            <RoundRectangle CornerRadius="5" />
+                                                        </Border.StrokeShape>
+                                                        <Border.GestureRecognizers>
+                                                            <TapGestureRecognizer
+                                                                Tapped="Acco_Tapped"
+                                                                CommandParameter="{Binding .}" />
+                                                        </Border.GestureRecognizers>
+                                                        <Label Text="{Binding Acco}"
+                                                               TextColor="White"
+                                                               FontSize="11"
+                                                               HorizontalTextAlignment="Center" />
+                                                    </Border>
+                                                </Grid>
+                                            </VerticalStackLayout>
+                                        </Border>
+                                    </DataTemplate>
+                                </BindableLayout.ItemTemplate>
+                            </VerticalStackLayout>
+
+                        </VerticalStackLayout>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+    </Grid>
+</ContentView>

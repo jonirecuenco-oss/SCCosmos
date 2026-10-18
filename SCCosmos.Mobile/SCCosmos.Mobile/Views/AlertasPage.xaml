@@ -1,0 +1,86 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.AlertasPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Alertas"
+    BackgroundColor="#101216">
+
+    <Grid RowDefinitions="Auto,*"
+          Padding="16,14,16,14"
+          RowSpacing="10">
+
+        <Grid Grid.Row="0"
+              ColumnDefinitions="*,Auto"
+              ColumnSpacing="10">
+
+            <VerticalStackLayout Grid.Column="0"
+                                 Spacing="3">
+                <Label Text="ALERTAS PENDIENTES"
+                       Style="{StaticResource Antetitulo}" />
+                <Label x:Name="LblResumen"
+                       Text=""
+                       Style="{StaticResource SubtituloPagina}" />
+            </VerticalStackLayout>
+
+            <Button Grid.Column="1"
+                    Text="Marcar leídas"
+                    Clicked="BtnLeidas_Clicked"
+                    Style="{StaticResource BotonSecundario}"
+                    HeightRequest="40"
+                    Padding="12,6"
+                    FontSize="12"
+                    VerticalOptions="Start" />
+
+        </Grid>
+
+        <RefreshView x:Name="Refrescar"
+                     Grid.Row="1"
+                     Refreshing="Refrescar_Refreshing">
+
+            <CollectionView x:Name="Lista"
+                            SelectionMode="None">
+
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout Padding="20,50"
+                                         HorizontalOptions="Center"
+                                         Spacing="8">
+                        <Label Text="¡Todo está al día!"
+                               TextColor="#9EA4AE"
+                               FontAttributes="Bold"
+                               HorizontalTextAlignment="Center" />
+                        <Label Text="Tómate un café ☕"
+                               TextColor="#7E858F"
+                               HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border BackgroundColor="{StaticResource Superficie}"
+                                Stroke="{StaticResource Borde}"
+                                StrokeThickness="1"
+                                Padding="13"
+                                Margin="0,0,0,8">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="12" />
+                            </Border.StrokeShape>
+
+                            <VerticalStackLayout Spacing="3">
+                                <Label Text="{Binding Titulo}"
+                                       FontSize="15"
+                                       FontAttributes="Bold"
+                                       TextColor="White" />
+                                <Label Text="{Binding Descripcion}"
+                                       FontSize="12"
+                                       TextColor="#AEB4BC" />
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+
+            </CollectionView>
+        </RefreshView>
+
+    </Grid>
+</ContentPage>

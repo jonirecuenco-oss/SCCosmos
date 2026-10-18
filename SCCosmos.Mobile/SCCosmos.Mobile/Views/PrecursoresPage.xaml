@@ -1,0 +1,109 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.PrecursoresPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Reunión de precursores"
+    BackgroundColor="#101216">
+
+    <Grid RowDefinitions="Auto,*"
+          Padding="16,14,16,14"
+          RowSpacing="10">
+
+        <VerticalStackLayout Grid.Row="0"
+                             Spacing="3">
+            <Label Text="REUNIÓN DE PRECURSORES"
+                   Style="{StaticResource Antetitulo}" />
+            <Label Text="Consulta las sesiones y sus partes"
+                   Style="{StaticResource SubtituloPagina}" />
+        </VerticalStackLayout>
+
+        <RefreshView x:Name="Refrescar"
+                     Grid.Row="1"
+                     Refreshing="Refrescar_Refreshing">
+
+            <CollectionView x:Name="Lista"
+                            SelectionMode="None">
+                <CollectionView.EmptyView>
+                    <Label Text="No hay reuniones de precursores."
+                           TextColor="#9EA4AE"
+                           Padding="20,50"
+                           HorizontalTextAlignment="Center" />
+                </CollectionView.EmptyView>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border BackgroundColor="{StaticResource Superficie}"
+                                Stroke="{StaticResource Borde}"
+                                StrokeThickness="1"
+                                Padding="13"
+                                Margin="0,0,0,8">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="12" />
+                            </Border.StrokeShape>
+                            <VerticalStackLayout Spacing="6">
+                                <Label Text="{Binding Detalle}"
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       TextColor="White" />
+                                <Label Text="{Binding TextoTematico}"
+                                       FontSize="12"
+                                       TextColor="#80C4FF" />
+                                <Button Text="＋ Añadir sesión"
+                                        Clicked="BtnAnadirSesion_Clicked"
+                                        CommandParameter="{Binding .}"
+                                        Padding="10,6"
+                                        FontSize="12"
+                                        BackgroundColor="#245C38"
+                                        TextColor="White"
+                                        CornerRadius="8" />
+                                <VerticalStackLayout
+                                    BindableLayout.ItemsSource="{Binding Sesiones}"
+                                    Spacing="4">
+                                    <BindableLayout.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BackgroundColor="{StaticResource SuperficieAlta}"
+                                                    Stroke="{StaticResource Borde}"
+                                                    StrokeThickness="1"
+                                                    Padding="10">
+                                                <Border.StrokeShape>
+                                                    <RoundRectangle CornerRadius="8" />
+                                                </Border.StrokeShape>
+                                                <Grid ColumnDefinitions="*,Auto">
+                                                    <Label Grid.Column="0"
+                                                           Text="{Binding Detalle}"
+                                                           TextColor="#AEB4BC"
+                                                           FontSize="12"
+                                                           VerticalOptions="Center" />
+                                                    <HorizontalStackLayout Grid.Column="1"
+                                                                           Spacing="5">
+                                                        <Button Text="Partes"
+                                                                Clicked="BtnPartesSesion_Clicked"
+                                                                CommandParameter="{Binding .}"
+                                                                Padding="10,5"
+                                                                FontSize="11"
+                                                                BackgroundColor="#163553"
+                                                                TextColor="#B9DEFF"
+                                                                CornerRadius="7" />
+                                                        <Button Text="Editar"
+                                                                Clicked="BtnEditarSesion_Clicked"
+                                                                CommandParameter="{Binding .}"
+                                                                Padding="10,5"
+                                                                FontSize="11"
+                                                                BackgroundColor="#242830"
+                                                                TextColor="White"
+                                                                CornerRadius="7" />
+                                                    </HorizontalStackLayout>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </BindableLayout.ItemTemplate>
+                                </VerticalStackLayout>
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+
+    </Grid>
+</ContentPage>

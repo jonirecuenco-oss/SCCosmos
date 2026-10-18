@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    Sistema de diseño de SCCosmos Mobile.
+    Paleta única + estilos reutilizables, para que todas las páginas
+    compartan la misma jerarquía visual.
+-->
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!-- ==================== COLORES ==================== -->
+    <Color x:Key="FondoPagina">#101216</Color>
+    <Color x:Key="Superficie">#171A1F</Color>
+    <Color x:Key="SuperficieAlta">#1E2228</Color>
+    <Color x:Key="SuperficieBaja">#12151A</Color>
+    <Color x:Key="Borde">#343942</Color>
+    <Color x:Key="BordeSuave">#2A3038</Color>
+
+    <Color x:Key="TextoPrincipal">#F2F4F7</Color>
+    <Color x:Key="TextoSecundario">#A7AEB8</Color>
+    <Color x:Key="TextoTerciario">#808893</Color>
+
+    <Color x:Key="Acento">#4BA3E3</Color>
+    <Color x:Key="AcentoFuerte">#2478B5</Color>
+    <Color x:Key="AcentoSuave">#1B3A52</Color>
+
+    <Color x:Key="Exito">#3E9B6B</Color>
+    <Color x:Key="ExitoSuave">#245C38</Color>
+    <Color x:Key="Peligro">#C0454F</Color>
+    <Color x:Key="PeligroSuave">#3A2023</Color>
+    <Color x:Key="Aviso">#D9A441</Color>
+
+    <!-- ==================== TIPOGRAFÍA ==================== -->
+    <Style x:Key="Antetitulo" TargetType="Label">
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="CharacterSpacing" Value="1.4" />
+        <Setter Property="TextColor" Value="{StaticResource Acento}" />
+        <Setter Property="FontAutoScalingEnabled" Value="False" />
+    </Style>
+
+    <Style x:Key="TituloPagina" TargetType="Label">
+        <Setter Property="FontSize" Value="19" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="TextColor" Value="{StaticResource TextoPrincipal}" />
+        <Setter Property="FontAutoScalingEnabled" Value="False" />
+    </Style>
+
+    <Style x:Key="SubtituloPagina" TargetType="Label">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="TextColor" Value="{StaticResource TextoSecundario}" />
+        <Setter Property="FontAutoScalingEnabled" Value="False" />
+    </Style>
+
+    <Style x:Key="TituloTarjeta" TargetType="Label">
+        <Setter Property="FontSize" Value="14.5" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="TextColor" Value="{StaticResource TextoPrincipal}" />
+        <Setter Property="FontAutoScalingEnabled" Value="False" />
+    </Style>
+
+    <Style x:Key="TextoTarjeta" TargetType="Label">
+        <Setter Property="FontSize" Value="11.5" />
+        <Setter Property="TextColor" Value="{StaticResource TextoSecundario}" />
+        <Setter Property="FontAutoScalingEnabled" Value="False" />
+    </Style>
+
+    <Style x:Key="TextoNota" TargetType="Label">
+        <Setter Property="FontSize" Value="10.5" />
+        <Setter Property="TextColor" Value="{StaticResource TextoTerciario}" />
+        <Setter Property="FontAutoScalingEnabled" Value="False" />
+    </Style>
+
+    <!-- ==================== TARJETAS ==================== -->
+    <Style x:Key="Tarjeta" TargetType="Border">
+        <Setter Property="BackgroundColor" Value="{StaticResource Superficie}" />
+        <Setter Property="Stroke" Value="{StaticResource Borde}" />
+        <Setter Property="StrokeThickness" Value="1" />
+        <Setter Property="Padding" Value="14" />
+        <Setter Property="Margin" Value="0,0,0,10" />
+        <Setter Property="StrokeShape">
+            <Setter.Value>
+                <RoundRectangle CornerRadius="12" />
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="TarjetaPlana" TargetType="Border">
+        <Setter Property="BackgroundColor" Value="{StaticResource SuperficieAlta}" />
+        <Setter Property="Stroke" Value="{StaticResource BordeSuave}" />
+        <Setter Property="StrokeThickness" Value="1" />
+        <Setter Property="Padding" Value="12" />
+        <Setter Property="StrokeShape">
+            <Setter.Value>
+                <RoundRectangle CornerRadius="10" />
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ==================== BOTONES ==================== -->
+    <Style x:Key="BotonPrincipal" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="{StaticResource AcentoFuerte}" />
+        <Setter Property="TextColor" Value="White" />
+        <Setter Property="FontAttributes" Value="Bold" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="HeightRequest" Value="46" />
+        <Setter Property="Padding" Value="14,10" />
+        <Setter Property="FontAutoScalingEnabled" Value="False" />
+    </Style>
+
+    <Style x:Key="BotonSecundario" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="{StaticResource SuperficieAlta}" />
+        <Setter Property="TextColor" Value="{StaticResource TextoPrincipal}" />
+        <Setter Property="BorderColor" Value="{StaticResource Borde}" />
+        <Setter Property="BorderWidth" Value="1" />
+        <Setter Property="FontSize" Value="13.5" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="HeightRequest" Value="44" />
+        <Setter Property="Padding" Value="12,9" />
+        <Setter Property="FontAutoScalingEnabled" Value="False" />
+    </Style>
+
+    <Style x:Key="BotonPeligro" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="{StaticResource PeligroSuave}" />
+        <Setter Property="TextColor" Value="#FFB7BC" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="HeightRequest" Value="42" />
+        <Setter Property="Padding" Value="12,8" />
+        <Setter Property="FontAutoScalingEnabled" Value="False" />
+    </Style>
+
+    <Style x:Key="BotonExito" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="{StaticResource ExitoSuave}" />
+        <Setter Property="TextColor" Value="White" />
+        <Setter Property="FontSize" Value="13.5" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="HeightRequest" Value="44" />
+        <Setter Property="Padding" Value="12,8" />
+        <Setter Property="FontAutoScalingEnabled" Value="False" />
+    </Style>
+
+    <!-- Pestañas / segmentos (Asambleas, filtros rápidos...) -->
+    <Style x:Key="BotonPestana" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="{StaticResource SuperficieAlta}" />
+        <Setter Property="TextColor" Value="{StaticResource TextoSecundario}" />
+        <Setter Property="FontSize" Value="12.5" />
+        <Setter Property="CornerRadius" Value="9" />
+        <Setter Property="HeightRequest" Value="40" />
+        <Setter Property="Padding" Value="6,6" />
+        <Setter Property="FontAutoScalingEnabled" Value="False" />
+    </Style>
+
+    <!-- ==================== CHIPS / ETIQUETAS ==================== -->
+    <Style x:Key="Chip" TargetType="Border">
+        <Setter Property="BackgroundColor" Value="{StaticResource SuperficieAlta}" />
+        <Setter Property="Stroke" Value="{StaticResource BordeSuave}" />
+        <Setter Property="StrokeThickness" Value="1" />
+        <Setter Property="Padding" Value="9,4" />
+        <Setter Property="StrokeShape">
+            <Setter.Value>
+                <RoundRectangle CornerRadius="999" />
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="TextoAccion" TargetType="Label">
+        <Setter Property="FontSize" Value="12.5" />
+        <Setter Property="TextColor" Value="{StaticResource Acento}" />
+        <Setter Property="FontAutoScalingEnabled" Value="False" />
+    </Style>
+
+    <!-- ==================== CAMPOS ==================== -->
+    <Style x:Key="Campo" TargetType="Entry">
+        <Setter Property="BackgroundColor" Value="{StaticResource SuperficieBaja}" />
+        <Setter Property="TextColor" Value="{StaticResource TextoPrincipal}" />
+        <Setter Property="PlaceholderColor" Value="{StaticResource TextoTerciario}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="FontAutoScalingEnabled" Value="False" />
+    </Style>
+
+    <Style x:Key="CampoEditor" TargetType="Editor">
+        <Setter Property="BackgroundColor" Value="{StaticResource SuperficieBaja}" />
+        <Setter Property="TextColor" Value="{StaticResource TextoPrincipal}" />
+        <Setter Property="PlaceholderColor" Value="{StaticResource TextoTerciario}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontAutoScalingEnabled" Value="False" />
+    </Style>
+
+    <Style x:Key="CampoPicker" TargetType="Picker">
+        <Setter Property="BackgroundColor" Value="{StaticResource SuperficieBaja}" />
+        <Setter Property="TextColor" Value="{StaticResource TextoPrincipal}" />
+        <Setter Property="TitleColor" Value="{StaticResource TextoTerciario}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontAutoScalingEnabled" Value="False" />
+    </Style>
+
+</ResourceDictionary>

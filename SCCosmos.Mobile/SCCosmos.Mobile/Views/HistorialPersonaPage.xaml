@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.HistorialPersonaPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Historial"
+    BackgroundColor="#101216">
+
+    <Grid RowDefinitions="Auto,*"
+          Padding="16,14,16,14"
+          RowSpacing="10">
+
+        <VerticalStackLayout Grid.Row="0"
+                             Spacing="3">
+            <Label x:Name="LblPersona"
+                   FontSize="16"
+                   FontAttributes="Bold"
+                   TextColor="White" />
+            <Label Text="Instantáneas mensuales guardadas (solo lectura)."
+                   FontSize="12"
+                   TextColor="#9EA4AE" />
+        </VerticalStackLayout>
+
+        <CollectionView x:Name="Lista"
+                        Grid.Row="1"
+                        SelectionMode="None">
+            <CollectionView.EmptyView>
+                <Label Text="No hay historial para esta persona."
+                       TextColor="#9EA4AE"
+                       Padding="20,50"
+                       HorizontalTextAlignment="Center" />
+            </CollectionView.EmptyView>
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border BackgroundColor="{StaticResource Superficie}"
+                            Stroke="{StaticResource Borde}"
+                            StrokeThickness="1"
+                            Padding="13"
+                            Margin="0,0,0,8">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="12" />
+                        </Border.StrokeShape>
+                        <VerticalStackLayout Spacing="3">
+                            <Label Text="{Binding Titulo}"
+                                   FontSize="15"
+                                   FontAttributes="Bold"
+                                   TextColor="White" />
+                            <Label Text="{Binding Detalle}"
+                                   FontSize="12"
+                                   TextColor="#AEB4BC" />
+                        </VerticalStackLayout>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+    </Grid>
+</ContentPage>

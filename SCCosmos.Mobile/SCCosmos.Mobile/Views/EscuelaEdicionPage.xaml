@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.EscuelaEdicionPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Escuela"
+    BackgroundColor="#101216">
+
+    <Grid RowDefinitions="*,Auto">
+
+        <ScrollView Grid.Row="0">
+            <VerticalStackLayout Padding="20,16,20,24"
+                                 Spacing="14">
+
+                <Border BackgroundColor="{StaticResource Superficie}"
+                        Stroke="{StaticResource Borde}"
+                        StrokeThickness="1"
+                        Padding="16">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16" />
+                    </Border.StrokeShape>
+
+                    <VerticalStackLayout Spacing="12">
+
+                        <Label x:Name="LblTituloForm"
+                               Style="{StaticResource Antetitulo}" />
+
+                        <Label Text="Semana de la escuela (lunes a sábado)"
+                               Style="{StaticResource TextoNota}" />
+                        <DatePicker x:Name="FechaSemana"
+                                    DateSelected="FechaSemana_DateSelected"
+                                    TextColor="White" />
+
+                        <Grid ColumnDefinitions="Auto,*,Auto"
+                              ColumnSpacing="6"
+                              Margin="0,4,0,0">
+
+                            <Button x:Name="BtnSemanaAnterior"
+                                    Grid.Column="0"
+                                    Text="‹"
+                                    Clicked="BtnSemanaAnterior_Clicked"
+                                    Style="{StaticResource BotonSecundario}"
+                                    WidthRequest="42"
+                                    HeightRequest="40"
+                                    Padding="0"
+                                    FontSize="18" />
+
+                            <HorizontalStackLayout x:Name="TiraDias"
+                                                   Grid.Column="1"
+                                                   Spacing="4"
+                                                   HorizontalOptions="Center"
+                                                   VerticalOptions="Center" />
+
+                            <Button x:Name="BtnSemanaSiguiente"
+                                    Grid.Column="2"
+                                    Text="›"
+                                    Clicked="BtnSemanaSiguiente_Clicked"
+                                    Style="{StaticResource BotonSecundario}"
+                                    WidthRequest="42"
+                                    HeightRequest="40"
+                                    Padding="0"
+                                    FontSize="18" />
+
+                        </Grid>
+
+                        <Label x:Name="LblSemana"
+                               FontSize="13.5"
+                               FontAttributes="Bold"
+                               TextColor="#4BA3E3" />
+
+                        <Label Text="Instructor (precursor regular, especial o misionero; hombre y anciano)"
+                               Style="{StaticResource TextoNota}" />
+                        <Button x:Name="BtnElegirInstructor"
+                                Text="Elegir instructor…"
+                                Clicked="BtnElegirInstructor_Clicked"
+                                Style="{StaticResource BotonSecundario}"
+                                HeightRequest="44"
+                                FontSize="13.5" />
+                        <Label x:Name="LblInstructorElegido"
+                               Text="Sin instructor"
+                               FontSize="13"
+                               TextColor="#4BA3E3" />
+
+                        <Label Text="Instructor sustituto (opcional)"
+                               Style="{StaticResource TextoNota}" />
+                        <Button x:Name="BtnElegirSustituto"
+                                Text="Elegir sustituto…"
+                                Clicked="BtnElegirSustituto_Clicked"
+                                Style="{StaticResource BotonSecundario}"
+                                HeightRequest="44"
+                                FontSize="13.5" />
+                        <Label x:Name="LblSustitutoElegido"
+                               Text="(sin sustituto)"
+                               FontSize="13"
+                               TextColor="#8B94A0" />
+
+                        <Label Text="Salón del reino (congregación)"
+                               Style="{StaticResource TextoNota}" />
+                        <Picker x:Name="CmbCongregacion"
+                                Title="Elige congregación" />
+                        <Entry x:Name="TxtOtraCongregacion"
+                               Placeholder="O escribe otra congregación distinta…"
+                               TextColor="White" />
+
+                        <Label Text="Notas (opcional)"
+                               Style="{StaticResource TextoNota}" />
+                        <Entry x:Name="TxtNotas"
+                               Placeholder="Ideas, recordatorios…"
+                               TextColor="White" />
+
+                    </VerticalStackLayout>
+                </Border>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <Grid Grid.Row="1"
+              ColumnDefinitions="*,*"
+              ColumnSpacing="10"
+              Padding="18,10,18,16"
+              BackgroundColor="{StaticResource Superficie}">
+
+            <Button Grid.Column="0"
+                    Text="Cancelar"
+                    Clicked="BtnCancelar_Clicked"
+                    Style="{StaticResource BotonSecundario}" />
+
+            <Button Grid.Column="1"
+                    Text="Guardar"
+                    Clicked="BtnGuardar_Clicked"
+                    Style="{StaticResource BotonPrincipal}" />
+
+        </Grid>
+
+    </Grid>
+</ContentPage>

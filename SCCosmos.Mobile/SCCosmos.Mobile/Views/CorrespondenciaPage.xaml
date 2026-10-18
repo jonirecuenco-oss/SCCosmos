@@ -1,0 +1,188 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.CorrespondenciaPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Correspondencia"
+    BackgroundColor="#101216">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16,14,16,28"
+                             Spacing="14">
+
+            <VerticalStackLayout Spacing="3">
+                <Label Text="CORRESPONDENCIA"
+                       Style="{StaticResource Antetitulo}" />
+                <Label Text="Asunto y cuerpo (con formato) que se usan al preparar los correos, más sus adjuntos."
+                       Style="{StaticResource SubtituloPagina}" />
+            </VerticalStackLayout>
+
+            <Border BackgroundColor="{StaticResource Superficie}"
+                    Stroke="{StaticResource Borde}"
+                    Padding="16">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="14" />
+                </Border.StrokeShape>
+
+                <VerticalStackLayout Spacing="12">
+
+                    <Label Text="Categoría"
+                           TextColor="#9299A3"
+                           FontSize="12" />
+                    <Picker x:Name="PickerCategoria"
+                            TextColor="White"
+                            SelectedIndexChanged="PickerCategoria_SelectedIndexChanged" />
+
+                    <Label Text="Asunto"
+                           TextColor="#9299A3"
+                           FontSize="12" />
+                    <Entry x:Name="TxtAsunto"
+                           TextColor="White" />
+
+                    <Label Text="Cuerpo (HTML) · editor con formato"
+                           TextColor="#9299A3"
+                           FontSize="12" />
+
+                    <HorizontalStackLayout Spacing="6">
+                        <Button Text="N"
+                                Clicked="Formato_Clicked"
+                                CommandParameter="bold"
+                                FontAttributes="Bold"
+                                BackgroundColor="#242830"
+                                TextColor="White"
+                                Padding="12,4"
+                                FontSize="13" />
+                        <Button Text="C"
+                                Clicked="Formato_Clicked"
+                                CommandParameter="italic"
+                                FontAttributes="Italic"
+                                BackgroundColor="#242830"
+                                TextColor="White"
+                                Padding="12,4"
+                                FontSize="13" />
+                        <Button Text="S"
+                                Clicked="Formato_Clicked"
+                                CommandParameter="underline"
+                                BackgroundColor="#242830"
+                                TextColor="White"
+                                Padding="12,4"
+                                FontSize="13" />
+                        <Button Text="Título"
+                                Clicked="Formato_Clicked"
+                                CommandParameter="h2"
+                                BackgroundColor="#242830"
+                                TextColor="White"
+                                Padding="10,4"
+                                FontSize="12" />
+                        <Button Text="Lista"
+                                Clicked="Formato_Clicked"
+                                CommandParameter="insertUnorderedList"
+                                BackgroundColor="#242830"
+                                TextColor="White"
+                                Padding="10,4"
+                                FontSize="12" />
+                        <Button Text="Enlace"
+                                Clicked="Formato_Clicked"
+                                CommandParameter="createLink"
+                                BackgroundColor="#242830"
+                                TextColor="White"
+                                Padding="10,4"
+                                FontSize="12" />
+                        <Button Text="Quitar formato"
+                                Clicked="Formato_Clicked"
+                                CommandParameter="removeFormat"
+                                BackgroundColor="#242830"
+                                TextColor="White"
+                                Padding="10,4"
+                                FontSize="12" />
+                    </HorizontalStackLayout>
+
+                    <Border BackgroundColor="#101216"
+                            Stroke="{StaticResource Borde}"
+                            Padding="2">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="10" />
+                        </Border.StrokeShape>
+                        <WebView x:Name="EditorCuerpo"
+                                 HeightRequest="340"
+                                 Navigated="EditorCuerpo_Navigated" />
+                    </Border>
+
+                    <Editor x:Name="TxtCuerpo"
+                            IsVisible="False"
+                            AutoSize="TextChanges" />
+
+                    <Button Text="Guardar plantilla"
+                            Clicked="BtnGuardar_Clicked"
+                            Style="{StaticResource BotonPrincipal}"
+                            Margin="0,4,0,0" />
+
+                </VerticalStackLayout>
+            </Border>
+
+            <Border BackgroundColor="{StaticResource Superficie}"
+                    Stroke="{StaticResource Borde}"
+                    Padding="16">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="14" />
+                </Border.StrokeShape>
+
+                <VerticalStackLayout Spacing="10">
+
+                    <Label Text="ADJUNTOS DE LA CATEGORÍA"
+                           Style="{StaticResource Antetitulo}" />
+
+                    <Label x:Name="LblSinAdjuntos"
+                           Text="Sin archivos adjuntos."
+                           Style="{StaticResource SubtituloPagina}" />
+
+                    <VerticalStackLayout x:Name="ListaAdjuntos"
+                                         Spacing="8">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate>
+                                <Border BackgroundColor="{StaticResource SuperficieAlta}"
+                                        Stroke="{StaticResource Borde}"
+                                        StrokeThickness="1"
+                                        Padding="12">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="10" />
+                                    </Border.StrokeShape>
+
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <Label Grid.Column="0"
+                                               Text="{Binding NombreArchivo}"
+                                               TextColor="White"
+                                               FontSize="14"
+                                               VerticalOptions="Center" />
+                                        <Button Grid.Column="1"
+                                                Text="Eliminar"
+                                                Clicked="BtnEliminarAdjunto_Clicked"
+                                                CommandParameter="{Binding .}"
+                                                Padding="12,6"
+                                                FontSize="12"
+                                                BackgroundColor="#3A2023"
+                                                TextColor="#FFB7BC"
+                                                CornerRadius="8" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+
+                    <Button Text="Añadir adjunto"
+                            Clicked="BtnAnadirAdjunto_Clicked"
+                            BackgroundColor="#265B36"
+                            TextColor="#D6F6DE"
+                            CornerRadius="9" />
+
+                </VerticalStackLayout>
+            </Border>
+
+            <Label x:Name="LblEstado"
+                   Text=""
+                   FontSize="13"
+                   TextColor="#9EA4AE" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

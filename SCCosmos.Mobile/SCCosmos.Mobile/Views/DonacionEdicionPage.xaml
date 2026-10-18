@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.DonacionEdicionPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Registro"
+    BackgroundColor="#101216">
+
+    <Grid RowDefinitions="*,Auto">
+
+        <ScrollView Grid.Row="0">
+            <VerticalStackLayout Padding="20,16,20,24"
+                                 Spacing="14">
+
+                <Border BackgroundColor="{StaticResource Superficie}"
+                        Stroke="{StaticResource Borde}"
+                        Padding="16">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16" />
+                    </Border.StrokeShape>
+
+                    <VerticalStackLayout Spacing="12">
+
+                        <Label Text="DATOS DEL REGISTRO"
+                               Style="{StaticResource Antetitulo}" />
+
+                        <Label Text="Fecha"
+                               Style="{StaticResource TextoNota}" />
+                        <DatePicker x:Name="FechaDonacion"
+                                    TextColor="White" />
+
+                        <Label Text="Persona que dona"
+                               Style="{StaticResource TextoNota}" />
+
+                        <Entry x:Name="TxtBuscarPersona"
+                               Placeholder="Buscar por nombre o congregación…"
+                               TextColor="White"
+                               TextChanged="TxtBuscarPersona_TextChanged" />
+
+                        <Label x:Name="LblCoincidencias"
+                               Text=""
+                               Style="{StaticResource TextoNota}" />
+
+                        <Picker x:Name="PickerPersona"
+                                Title="Elige persona o Desconocido"
+                                ItemDisplayBinding="{Binding Visual}"
+                                SelectedIndexChanged="PickerPersona_Changed" />
+
+                        <Label Text="Congregación (se rellena sola con la persona)"
+                               Style="{StaticResource TextoNota}" />
+                        <Picker x:Name="PickerCongregacion"
+                                ItemDisplayBinding="{Binding Visual}" />
+
+                        <Label Text="Cantidad (€)"
+                               Style="{StaticResource TextoNota}" />
+                        <Entry x:Name="TxtCantidad"
+                               Keyboard="Numeric"
+                               Placeholder="25,50"
+                               TextColor="White" />
+
+                        <Label Text="Medio de pago"
+                               Style="{StaticResource TextoNota}" />
+                        <Picker x:Name="PickerMedio" />
+
+                        <Label Text="Notas (opcional)"
+                               Style="{StaticResource TextoNota}" />
+                        <Entry x:Name="TxtNotas"
+                               Placeholder="Referencia de la transferencia, etc."
+                               TextColor="White" />
+
+                    </VerticalStackLayout>
+                </Border>
+
+                <Button x:Name="BtnEliminar"
+                        Text="Eliminar registro"
+                        Clicked="BtnEliminar_Clicked"
+                        Style="{StaticResource BotonPeligro}"
+                        IsVisible="False" />
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <Grid Grid.Row="1"
+              ColumnDefinitions="*,*"
+              ColumnSpacing="10"
+              Padding="18,10,18,16"
+              BackgroundColor="{StaticResource Superficie}">
+
+            <Button Grid.Column="0"
+                    Text="Cancelar"
+                    Clicked="BtnCancelar_Clicked"
+                    Style="{StaticResource BotonSecundario}" />
+
+            <Button Grid.Column="1"
+                    Text="Guardar"
+                    Clicked="BtnGuardar_Clicked"
+                    Style="{StaticResource BotonPrincipal}" />
+
+        </Grid>
+
+    </Grid>
+</ContentPage>

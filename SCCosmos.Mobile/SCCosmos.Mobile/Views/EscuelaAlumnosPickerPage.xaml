@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.EscuelaAlumnosPickerPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Añadir estudiantes"
+    BackgroundColor="#101216">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <VerticalStackLayout Grid.Row="0"
+                             Padding="20,16,20,8"
+                             Spacing="8">
+
+            <Label Text="AÑADIR ESTUDIANTES"
+                   Style="{StaticResource Antetitulo}" />
+
+            <Label x:Name="LblSubtitulo"
+                   Text=""
+                   Style="{StaticResource TextoNota}" />
+
+            <Entry x:Name="TxtBuscar"
+                   Placeholder="Buscar por nombre o congregación…"
+                   TextColor="White"
+                   TextChanged="TxtBuscar_TextChanged" />
+
+        </VerticalStackLayout>
+
+        <CollectionView x:Name="ListaPosibles"
+                        Grid.Row="1"
+                        SelectionMode="None"
+                        Margin="20,0,20,0">
+
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border BackgroundColor="{StaticResource Superficie}"
+                            Stroke="{StaticResource Borde}"
+                            StrokeThickness="1"
+                            Padding="12"
+                            Margin="0,0,0,8">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="12" />
+                        </Border.StrokeShape>
+
+                        <Grid ColumnDefinitions="Auto,*"
+                              ColumnSpacing="10">
+
+                            <CheckBox Grid.Column="0"
+                                      IsChecked="{Binding Seleccionado, Mode=TwoWay}"
+                                      Color="#FFB900"
+                                      VerticalOptions="Center" />
+
+                            <VerticalStackLayout Grid.Column="1"
+                                                 Spacing="2"
+                                                 VerticalOptions="Center">
+                                <Label Text="{Binding Nombre}"
+                                       FontSize="14.5"
+                                       TextColor="White" />
+                                <Label Text="{Binding Detalle}"
+                                       FontSize="12"
+                                       TextColor="#8B94A0" />
+                            </VerticalStackLayout>
+
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+
+        </CollectionView>
+
+        <Grid Grid.Row="2"
+              ColumnDefinitions="*,*"
+              ColumnSpacing="10"
+              Padding="18,10,18,16"
+              BackgroundColor="{StaticResource Superficie}">
+
+            <Button Grid.Column="0"
+                    Text="Cancelar"
+                    Clicked="BtnCancelar_Clicked"
+                    Style="{StaticResource BotonSecundario}" />
+
+            <Button Grid.Column="1"
+                    Text="Añadir seleccionados"
+                    Clicked="BtnAnadir_Clicked"
+                    Style="{StaticResource BotonPrincipal}" />
+
+        </Grid>
+
+    </Grid>
+</ContentPage>

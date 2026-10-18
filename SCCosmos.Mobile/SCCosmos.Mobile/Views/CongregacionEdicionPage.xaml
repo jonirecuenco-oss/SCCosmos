@@ -1,0 +1,171 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.CongregacionEdicionPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Congregación"
+    BackgroundColor="#101216">
+
+    <Grid RowDefinitions="*,Auto">
+
+        <ScrollView Grid.Row="0">
+            <VerticalStackLayout Padding="20,16,20,24"
+                                 Spacing="16">
+
+                <Border BackgroundColor="{StaticResource Superficie}"
+                        Stroke="{StaticResource Borde}"
+                        Padding="16">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16" />
+                    </Border.StrokeShape>
+
+                    <VerticalStackLayout Spacing="12">
+
+                        <Label Text="DATOS DE LA CONGREGACIÓN"
+                               Style="{StaticResource Antetitulo}"
+                               CharacterSpacing="1" />
+
+                        <Label Text="Código"
+                               TextColor="#9299A3"
+                               FontSize="12" />
+                        <Entry x:Name="TxtCodigo"
+                               TextColor="White" />
+
+                        <Label Text="Nombre"
+                               TextColor="#9299A3"
+                               FontSize="12" />
+                        <Entry x:Name="TxtNombre"
+                               TextColor="White" />
+
+                        <Label Text="Email"
+                               TextColor="#9299A3"
+                               FontSize="12" />
+                        <Entry x:Name="TxtEmail"
+                               Keyboard="Email"
+                               TextColor="White" />
+
+                        <Label Text="Sección"
+                               TextColor="#9299A3"
+                               FontSize="12" />
+                        <Picker x:Name="PickerSeccion"
+                                Title="(Sin sección)"
+                                TextColor="White"
+                                ItemDisplayBinding="{Binding Nombre}" />
+
+                        <Label Text="Provincia"
+                               TextColor="#9299A3"
+                               FontSize="12" />
+                        <Entry x:Name="TxtProvincia"
+                               TextColor="White" />
+
+                        <Label Text="Municipio"
+                               TextColor="#9299A3"
+                               FontSize="12" />
+                        <Entry x:Name="TxtMunicipio"
+                               TextColor="White" />
+
+                        <Label Text="Dirección del Salón"
+                               TextColor="#9299A3"
+                               FontSize="12" />
+                        <Entry x:Name="TxtDireccion"
+                               TextColor="White" />
+
+                        <Grid ColumnDefinitions="*,*"
+                              ColumnSpacing="12">
+                            <VerticalStackLayout Grid.Column="0"
+                                                 Spacing="5">
+                                <Label Text="Día entre semana"
+                                       TextColor="#9299A3"
+                                       FontSize="12" />
+                                <Entry x:Name="TxtDiaEntre"
+                                       TextColor="White" />
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="1"
+                                                 Spacing="5">
+                                <Label Text="Hora entre semana"
+                                       TextColor="#9299A3"
+                                       FontSize="12" />
+                                <Entry x:Name="TxtHoraEntre"
+                                       TextColor="White" />
+                            </VerticalStackLayout>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="*,*"
+                              ColumnSpacing="12">
+                            <VerticalStackLayout Grid.Column="0"
+                                                 Spacing="5">
+                                <Label Text="Día fin de semana"
+                                       TextColor="#9299A3"
+                                       FontSize="12" />
+                                <Entry x:Name="TxtDiaFin"
+                                       TextColor="White" />
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="1"
+                                                 Spacing="5">
+                                <Label Text="Hora fin de semana"
+                                       TextColor="#9299A3"
+                                       FontSize="12" />
+                                <Entry x:Name="TxtHoraFin"
+                                       TextColor="White" />
+                            </VerticalStackLayout>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="*,*"
+                              ColumnSpacing="12">
+                            <VerticalStackLayout Grid.Column="0"
+                                                 Spacing="5">
+                                <Label Text="Capacidad"
+                                       TextColor="#9299A3"
+                                       FontSize="12" />
+                                <Entry x:Name="TxtCapacidad"
+                                       Keyboard="Numeric"
+                                       TextColor="White" />
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="1"
+                                                 Spacing="5">
+                                <Label Text="Población"
+                                       TextColor="#9299A3"
+                                       FontSize="12" />
+                                <Entry x:Name="TxtPoblacion"
+                                       Keyboard="Numeric"
+                                       TextColor="White" />
+                            </VerticalStackLayout>
+                        </Grid>
+
+                    </VerticalStackLayout>
+                </Border>
+
+                <Button x:Name="BtnEliminar"
+                        Text="Eliminar congregación"
+                        Clicked="BtnEliminar_Clicked"
+                        BackgroundColor="#3A2023"
+                        TextColor="#FFB7BC"
+                        CornerRadius="10"
+                        HeightRequest="48"
+                        IsVisible="False" />
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <Grid Grid.Row="1"
+              ColumnDefinitions="*,*"
+              ColumnSpacing="10"
+              Padding="18,10,18,16"
+              BackgroundColor="{StaticResource Superficie}">
+
+            <Button Grid.Column="0"
+                    Text="Cancelar"
+                    BackgroundColor="#30343B"
+                    Clicked="BtnCancelar_Clicked" />
+
+            <Button Grid.Column="1"
+                    Text="Guardar"
+                    BackgroundColor="#2478B5"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    Clicked="BtnGuardar_Clicked" />
+
+        </Grid>
+
+    </Grid>
+</ContentPage>

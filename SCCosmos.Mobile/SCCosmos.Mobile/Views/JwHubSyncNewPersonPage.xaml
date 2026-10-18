@@ -1,0 +1,522 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.JwHubSyncNewPersonPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:converters="clr-namespace:SCCosmos.Mobile.Converters"
+    Title="Nueva persona"
+    BackgroundColor="#101216">
+
+    <ContentPage.Resources>
+
+        <converters:Base64ImageConverter
+            x:Key="Base64ImageConverter"/>
+
+    </ContentPage.Resources>
+
+
+    <Grid
+        Padding="16"
+        RowDefinitions="Auto,*,Auto"
+        RowSpacing="14">
+
+
+        <!-- CABECERA -->
+
+        <VerticalStackLayout
+            Grid.Row="0"
+            Spacing="4">
+
+            <Label
+                Text="Nueva persona en JW Hub"
+                FontSize="24"
+                FontAttributes="Bold"
+                TextColor="White"/>
+
+            <Label
+                Text="Revisa los datos antes de añadirla a SCCosmos."
+                FontSize="13"
+                TextColor="#9EA4AE"/>
+
+        </VerticalStackLayout>
+
+
+        <!-- DATOS -->
+
+        <ScrollView
+            Grid.Row="1">
+
+            <VerticalStackLayout
+                Spacing="12">
+
+
+                <!-- PERSONA -->
+
+                <Border
+                    Padding="15"
+                    BackgroundColor="{StaticResource Superficie}"
+                    Stroke="{StaticResource Borde}"
+                    StrokeThickness="1">
+
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="14"/>
+                    </Border.StrokeShape>
+
+
+                    <Grid
+                        ColumnDefinitions="72,*"
+                        ColumnSpacing="14">
+
+                        <Border
+                            WidthRequest="66"
+                            HeightRequest="66"
+                            BackgroundColor="#272D36"
+                            StrokeThickness="0"
+                            VerticalOptions="Start">
+
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="33"/>
+                            </Border.StrokeShape>
+
+
+                            <Grid>
+
+                                <Label
+                                    Text="👤"
+                                    FontSize="27"
+                                    HorizontalOptions="Center"
+                                    VerticalOptions="Center"/>
+
+
+                                <Image
+                                    Source="{Binding Foto,
+                                        Converter={StaticResource Base64ImageConverter}}"
+                                    Aspect="AspectFill"
+                                    WidthRequest="66"
+                                    HeightRequest="66"/>
+
+                            </Grid>
+
+                        </Border>
+
+
+                        <VerticalStackLayout
+                            Grid.Column="1"
+                            Spacing="3"
+                            VerticalOptions="Center">
+
+                            <Label
+                                Text="{Binding NombreComun}"
+                                FontSize="20"
+                                FontAttributes="Bold"
+                                TextColor="White"
+                                LineBreakMode="WordWrap"/>
+
+                            <Label
+                                Text="{Binding Nombre}"
+                                FontSize="13"
+                                TextColor="#A8AFB9"
+                                LineBreakMode="WordWrap"/>
+
+                            <Label
+                                Text="{Binding CongregacionNombre}"
+                                FontSize="13"
+                                TextColor="#5CB6F0"
+                                LineBreakMode="WordWrap"/>
+
+                        </VerticalStackLayout>
+
+                    </Grid>
+
+                </Border>
+
+
+                <!-- DATOS PERSONALES -->
+
+                <Label
+                    Text="DATOS DE JW HUB"
+                    FontSize="12"
+                    FontAttributes="Bold"
+                    TextColor="#7F8791"
+                    Margin="2,6,0,0"/>
+
+
+                <Border
+                    Padding="14"
+                    BackgroundColor="{StaticResource Superficie}"
+                    Stroke="{StaticResource Borde}">
+
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="12"/>
+                    </Border.StrokeShape>
+
+                    <VerticalStackLayout Spacing="12">
+
+                        <Grid ColumnDefinitions="145,*">
+                            <Label
+                                Text="Congregación"
+                                TextColor="#8F959F"/>
+
+                            <Label
+                                Grid.Column="1"
+                                Text="{Binding CongregacionNombre}"
+                                TextColor="White"
+                                LineBreakMode="WordWrap"/>
+                        </Grid>
+
+
+                        <Grid ColumnDefinitions="145,*">
+                            <Label
+                                Text="Código"
+                                TextColor="#8F959F"/>
+
+                            <Label
+                                Grid.Column="1"
+                                Text="{Binding CongregacionCodigo}"
+                                TextColor="White"/>
+                        </Grid>
+
+
+                        <Grid ColumnDefinitions="145,*">
+                            <Label
+                                Text="Nacimiento"
+                                TextColor="#8F959F"/>
+
+                            <Label
+                                Grid.Column="1"
+                                Text="{Binding FechaNacimiento}"
+                                TextColor="White"/>
+                        </Grid>
+
+
+                        <Grid ColumnDefinitions="145,*">
+                            <Label
+                                Text="Bautismo"
+                                TextColor="#8F959F"/>
+
+                            <Label
+                                Grid.Column="1"
+                                Text="{Binding FechaBautismo}"
+                                TextColor="White"/>
+                        </Grid>
+
+
+                        <Grid ColumnDefinitions="145,*">
+                            <Label
+                                Text="Esperanza"
+                                TextColor="#8F959F"/>
+
+                            <Label
+                                Grid.Column="1"
+                                Text="{Binding Esperanza}"
+                                TextColor="White"/>
+                        </Grid>
+
+
+                        <Grid ColumnDefinitions="145,*">
+                            <Label
+                                Text="Nombramiento"
+                                TextColor="#8F959F"/>
+
+                            <Label
+                                Grid.Column="1"
+                                Text="{Binding Nombramiento}"
+                                TextColor="White"/>
+                        </Grid>
+
+
+                        <Grid ColumnDefinitions="145,*">
+                            <Label
+                                Text="Servicio"
+                                TextColor="#8F959F"/>
+
+                            <Label
+                                Grid.Column="1"
+                                Text="{Binding Servicio}"
+                                TextColor="White"/>
+                        </Grid>
+
+
+                        <Grid ColumnDefinitions="145,*">
+                            <Label
+                                Text="Inicio precursorado"
+                                TextColor="#8F959F"/>
+
+                            <Label
+                                Grid.Column="1"
+                                Text="{Binding FechaInicioPrec}"
+                                TextColor="White"/>
+                        </Grid>
+
+
+                        <Grid ColumnDefinitions="145,*">
+                            <Label
+                                Text="Última escuela"
+                                TextColor="#8F959F"/>
+
+                            <Label
+                                Grid.Column="1"
+                                Text="{Binding FechaUltimaEscuela}"
+                                TextColor="White"/>
+                        </Grid>
+
+                    </VerticalStackLayout>
+
+                </Border>
+
+
+                <!-- CONTACTO -->
+
+                <Label
+                    Text="CONTACTO"
+                    FontSize="12"
+                    FontAttributes="Bold"
+                    TextColor="#7F8791"
+                    Margin="2,6,0,0"/>
+
+
+                <Border
+                    Padding="14"
+                    BackgroundColor="{StaticResource Superficie}"
+                    Stroke="{StaticResource Borde}">
+
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="12"/>
+                    </Border.StrokeShape>
+
+                    <VerticalStackLayout Spacing="12">
+
+                        <Grid ColumnDefinitions="100,*">
+                            <Label
+                                Text="Teléfono"
+                                TextColor="#8F959F"/>
+
+                            <Label
+                                Grid.Column="1"
+                                Text="{Binding Telefono}"
+                                TextColor="White"
+                                LineBreakMode="WordWrap"/>
+                        </Grid>
+
+
+                        <Grid ColumnDefinitions="100,*">
+                            <Label
+                                Text="Email"
+                                TextColor="#8F959F"/>
+
+                            <Label
+                                Grid.Column="1"
+                                Text="{Binding Email}"
+                                TextColor="White"
+                                LineBreakMode="WordWrap"/>
+                        </Grid>
+
+
+                        <Grid ColumnDefinitions="100,*">
+                            <Label
+                                Text="Email JW"
+                                TextColor="#8F959F"/>
+
+                            <Label
+                                Grid.Column="1"
+                                Text="{Binding EmailJW}"
+                                TextColor="White"
+                                LineBreakMode="WordWrap"/>
+                        </Grid>
+
+
+                        <Grid ColumnDefinitions="100,*">
+                            <Label
+                                Text="Dirección"
+                                TextColor="#8F959F"/>
+
+                            <Label
+                                Grid.Column="1"
+                                Text="{Binding Direccion}"
+                                TextColor="White"
+                                LineBreakMode="WordWrap"/>
+                        </Grid>
+
+                    </VerticalStackLayout>
+
+                </Border>
+
+
+                <!-- OTROS -->
+
+                <Label
+                    Text="OTROS DATOS"
+                    FontSize="12"
+                    FontAttributes="Bold"
+                    TextColor="#7F8791"
+                    Margin="2,6,0,0"/>
+
+
+                <Border
+                    Padding="14"
+                    BackgroundColor="{StaticResource Superficie}"
+                    Stroke="{StaticResource Borde}">
+
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="12"/>
+                    </Border.StrokeShape>
+
+                    <VerticalStackLayout Spacing="12">
+
+                        <VerticalStackLayout Spacing="3">
+
+                            <Label
+                                Text="Solicitudes"
+                                TextColor="#8F959F"/>
+
+                            <Label
+                                Text="{Binding Solicitudes}"
+                                TextColor="White"
+                                LineBreakMode="WordWrap"/>
+
+                        </VerticalStackLayout>
+
+
+                        <VerticalStackLayout Spacing="3">
+
+                            <Label
+                                Text="Privilegios"
+                                TextColor="#8F959F"/>
+
+                            <Label
+                                Text="{Binding Privilegios}"
+                                TextColor="White"
+                                LineBreakMode="WordWrap"/>
+
+                        </VerticalStackLayout>
+
+                    </VerticalStackLayout>
+
+                </Border>
+
+                <!-- ================================================= -->
+                <!-- VINCULAR PERSONA EXISTENTE -->
+                <!-- ================================================= -->
+
+                <VerticalStackLayout
+    x:Name="PanelVincular"
+    Spacing="8"
+    IsVisible="False">
+
+                    <Label
+        Text="¿YA EXISTE EN SCCOSMOS?"
+        FontSize="12"
+        FontAttributes="Bold"
+        TextColor="#E0A35B"
+        Margin="2,6,0,0"/>
+
+
+                    <Border
+        Padding="14"
+        BackgroundColor="#332B00"
+        Stroke="#8A6500"
+        StrokeThickness="1">
+
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="12"/>
+                        </Border.StrokeShape>
+
+
+                        <VerticalStackLayout Spacing="10">
+
+                            <Label
+                Text="Si se trata de una persona que ya existe pero cuyo nombre ha cambiado en JW Hub, puedes vincularla con su ficha actual. Se conservarán su Id y todo su historial."
+                FontSize="12"
+                TextColor="#E8D8A8"
+                LineBreakMode="WordWrap"/>
+
+
+                            <Label
+                Text="Persona existente"
+                FontSize="12"
+                TextColor="#AAAAAA"/>
+
+
+                            <Picker
+                x:Name="PickerVincular"
+                Title="Selecciona una persona..."
+                TitleColor="#999999"
+                TextColor="White"
+                BackgroundColor="#252526"
+                ItemDisplayBinding="{Binding Texto}"/>
+
+
+                            <Button
+                Text="Vincular con persona existente"
+                BackgroundColor="#8A6500"
+                TextColor="White"
+                FontAttributes="Bold"
+                CornerRadius="8"
+                Clicked="BtnVincular_Clicked"/>
+
+                        </VerticalStackLayout>
+
+                    </Border>
+
+                </VerticalStackLayout>
+
+
+                <!-- AVISO -->
+
+                <Border
+                    Padding="12"
+                    Margin="0,2,0,8"
+                    BackgroundColor="#192B3A"
+                    Stroke="#295A7A">
+
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="10"/>
+                    </Border.StrokeShape>
+
+                    <Label
+                        Text="Los datos locales que JW Hub no proporciona —por ejemplo grupo, sexo o cónyuge— se podrán completar después desde la ficha de la persona."
+                        TextColor="#A9D8F7"
+                        FontSize="12"
+                        LineBreakMode="WordWrap"/>
+
+                </Border>
+
+            </VerticalStackLayout>
+
+        </ScrollView>
+
+
+        <!-- BOTONES -->
+
+        <Grid
+            Grid.Row="2"
+            ColumnDefinitions="*,*"
+            ColumnSpacing="10">
+
+            <Button
+                Grid.Column="0"
+                Text="Cancelar"
+                HeightRequest="48"
+                BackgroundColor="#353A42"
+                TextColor="White"
+                CornerRadius="9"
+                Clicked="BtnCancelar_Clicked"/>
+
+
+            <Button
+                x:Name="BtnAnadir"
+                Grid.Column="1"
+                Text="Añadir a BD"
+                HeightRequest="48"
+                BackgroundColor="#267A42"
+                TextColor="White"
+                FontAttributes="Bold"
+                CornerRadius="9"
+                Clicked="BtnAnadir_Clicked"/>
+
+        </Grid>
+
+    </Grid>
+
+</ContentPage>

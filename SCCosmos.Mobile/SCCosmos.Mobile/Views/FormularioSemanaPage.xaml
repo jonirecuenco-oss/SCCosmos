@@ -1,0 +1,263 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.FormularioSemanaPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Editar semana"
+    BackgroundColor="#101216"
+    Shell.NavBarIsVisible="False">
+
+    <Grid RowDefinitions="*,Auto">
+
+        <ScrollView Grid.Row="0">
+            <VerticalStackLayout Padding="18,18,18,20"
+                                 Spacing="15">
+
+                <!-- CABECERA -->
+                <VerticalStackLayout Spacing="3"
+                                     Margin="0,0,0,5">
+                    <Label Text="Planificación de la semana"
+                           FontSize="22"
+                           FontAttributes="Bold"
+                           TextColor="#4BA3E3" />
+
+                    <Label x:Name="LblRango"
+                           TextColor="#9EA4AE"
+                           FontSize="13" />
+                </VerticalStackLayout>
+
+                <!-- ACTIVIDAD -->
+                <VerticalStackLayout Spacing="6">
+                    <Label Text="Actividad de la semana"
+                           TextColor="White"
+                           FontAttributes="Bold" />
+
+                    <Picker x:Name="PickerActividad"
+                            SelectedIndexChanged="PickerActividad_SelectedIndexChanged"
+                            BackgroundColor="#1A1D22"
+                            TextColor="White"
+                            Title="Seleccionar actividad"
+                            TitleColor="#9EA4AE" />
+                </VerticalStackLayout>
+
+                <!-- CONGREGACIÓN -->
+                <VerticalStackLayout x:Name="PanelCongregacion"
+                                     Spacing="6">
+                    <Label Text="Congregación asignada"
+                           TextColor="White"
+                           FontAttributes="Bold" />
+
+                    <Picker x:Name="PickerCongregacion"
+                            BackgroundColor="#1A1D22"
+                            TextColor="White"
+                            Title="Seleccionar congregación"
+                            TitleColor="#9EA4AE" />
+                </VerticalStackLayout>
+
+                <!-- ASAMBLEA -->
+                <Border x:Name="PanelAsamblea"
+                        IsVisible="False"
+                        BackgroundColor="{StaticResource Superficie}"
+                        Stroke="{StaticResource Borde}"
+                        StrokeThickness="1"
+                        Padding="13">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="11" />
+                    </Border.StrokeShape>
+
+                    <VerticalStackLayout Spacing="13">
+                        <Label Text="ASAMBLEA DE CIRCUITO"
+                               FontSize="12"
+                               FontAttributes="Bold"
+                               TextColor="#80C4FF" />
+
+                        <VerticalStackLayout Spacing="6">
+                            <Label Text="Sección que asiste"
+                                   TextColor="White" />
+                            <Picker x:Name="PickerSeccion"
+                                    BackgroundColor="#1A1D22"
+                                    TextColor="White"
+                                    Title="Seleccionar sección"
+                                    TitleColor="#9EA4AE" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Spacing="6">
+                            <Label Text="Día del fin de semana"
+                                   TextColor="White" />
+                            <Picker x:Name="PickerDiaAsamblea"
+                                    BackgroundColor="#1A1D22"
+                                    TextColor="White"
+                                    Title="Seleccionar día"
+                                    TitleColor="#9EA4AE" />
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- VISITA -->
+                <Border x:Name="PanelDetallesVisita"
+                        IsVisible="False"
+                        BackgroundColor="{StaticResource Superficie}"
+                        Stroke="{StaticResource Borde}"
+                        StrokeThickness="1"
+                        Padding="13">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="11" />
+                    </Border.StrokeShape>
+
+                    <VerticalStackLayout Spacing="14">
+                        <Label Text="DETALLES DE LA VISITA"
+                               FontSize="12"
+                               FontAttributes="Bold"
+                               TextColor="#80C4FF" />
+
+                        <VerticalStackLayout Spacing="6">
+                            <Label Text="Tipo de visita"
+                                   TextColor="White" />
+                            <Picker x:Name="PickerTipo"
+                                    SelectedIndexChanged="PickerTipo_SelectedIndexChanged"
+                                    BackgroundColor="#1A1D22"
+                                    TextColor="White"
+                                    Title="Seleccionar tipo"
+                                    TitleColor="#9EA4AE" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Spacing="6">
+                            <Label Text="Régimen de alojamiento"
+                                   TextColor="White" />
+                            <Picker x:Name="PickerAlojamiento"
+                                    BackgroundColor="#1A1D22"
+                                    TextColor="White"
+                                    Title="Seleccionar alojamiento"
+                                    TitleColor="#9EA4AE" />
+                        </VerticalStackLayout>
+
+                        <!-- SCS -->
+                        <VerticalStackLayout x:Name="PanelSCS"
+                                             IsVisible="False"
+                                             Spacing="12">
+                            <BoxView HeightRequest="1"
+                                     Color="#343942"
+                                     Margin="0,2" />
+
+                            <VerticalStackLayout Spacing="6">
+                                <Label Text="Superintendente sustituto"
+                                       TextColor="White" />
+                                <Picker x:Name="PickerSCS"
+                                        SelectedIndexChanged="PickerSCS_SelectedIndexChanged"
+                                        BackgroundColor="#1A1D22"
+                                        TextColor="White"
+                                        Title="Seleccionar SCS"
+                                        TitleColor="#9EA4AE" />
+                            </VerticalStackLayout>
+
+                            <VerticalStackLayout Spacing="6">
+                                <Label Text="Esposa del SCS"
+                                       TextColor="White" />
+                                <Picker x:Name="PickerEsposaSCS"
+                                        BackgroundColor="#1A1D22"
+                                        TextColor="White"
+                                        Title="Seleccionar esposa"
+                                        TitleColor="#9EA4AE" />
+                            </VerticalStackLayout>
+                        </VerticalStackLayout>
+
+                        <!-- PASTOREO -->
+                        <VerticalStackLayout x:Name="PanelPastoreo"
+                                             IsVisible="False"
+                                             Spacing="12">
+                            <BoxView HeightRequest="1"
+                                     Color="#343942"
+                                     Margin="0,2" />
+
+                            <Grid ColumnDefinitions="*,*"
+                                  ColumnSpacing="10">
+                                <VerticalStackLayout Grid.Column="0"
+                                                     Spacing="6">
+                                    <Label Text="Nombre (Hno.)"
+                                           TextColor="White" />
+                                    <Entry x:Name="TxtHermanoPastoreo"
+                                           BackgroundColor="#1A1D22"
+                                           TextColor="White"
+                                           PlaceholderColor="#777D86" />
+                                </VerticalStackLayout>
+
+                                <VerticalStackLayout Grid.Column="1"
+                                                     Spacing="6">
+                                    <Label Text="Apellido"
+                                           TextColor="White" />
+                                    <Entry x:Name="TxtApellidoPastoreo"
+                                           BackgroundColor="#1A1D22"
+                                           TextColor="White"
+                                           PlaceholderColor="#777D86" />
+                                </VerticalStackLayout>
+                            </Grid>
+
+                            <VerticalStackLayout Spacing="6">
+                                <Label Text="Esposa (si asiste)"
+                                       TextColor="White" />
+                                <Entry x:Name="TxtEsposaPastoreo"
+                                       BackgroundColor="#1A1D22"
+                                       TextColor="White"
+                                       PlaceholderColor="#777D86" />
+                            </VerticalStackLayout>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <Label x:Name="LblAviso"
+                       IsVisible="False"
+                       TextColor="#FFCC80"
+                       FontSize="12"
+                       LineBreakMode="WordWrap" />
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- BOTONES -->
+        <Grid Grid.Row="1"
+              ColumnDefinitions="*,*"
+              ColumnSpacing="10"
+              Padding="18,10,18,18"
+              BackgroundColor="#101216">
+
+            <Button Grid.Column="0"
+                    Text="Cancelar"
+                    Clicked="BtnCancelar_Clicked"
+                    BackgroundColor="#242830"
+                    TextColor="White"
+                    CornerRadius="9"
+                    HeightRequest="46" />
+
+            <Button Grid.Column="1"
+                    Text="Guardar"
+                    Clicked="BtnGuardar_Clicked"
+                    BackgroundColor="#0B6FC2"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    CornerRadius="9"
+                    HeightRequest="46" />
+        </Grid>
+
+        <!-- CARGA -->
+        <Grid x:Name="OverlayCargando"
+              Grid.RowSpan="2"
+              BackgroundColor="#C0101216"
+              IsVisible="False">
+            <VerticalStackLayout
+                HorizontalOptions="Center"
+                VerticalOptions="Center"
+                Spacing="12">
+                <ActivityIndicator IsRunning="True"
+                                   Color="#4BA3E3"
+                                   WidthRequest="42"
+                                   HeightRequest="42" />
+                <Label x:Name="LblCarga"
+                       Text="Cargando..."
+                       TextColor="White"
+                       FontAttributes="Bold"
+                       HorizontalTextAlignment="Center" />
+            </VerticalStackLayout>
+        </Grid>
+
+    </Grid>
+</ContentPage>

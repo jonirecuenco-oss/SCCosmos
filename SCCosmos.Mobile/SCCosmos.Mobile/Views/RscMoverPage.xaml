@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.RscMoverPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Mover"
+    BackgroundColor="#101216">
+
+    <ScrollView>
+        <VerticalStackLayout
+            Padding="20,16,20,24"
+            Spacing="14">
+
+            <Border Style="{StaticResource Tarjeta}">
+                <VerticalStackLayout Spacing="12">
+
+                    <Label
+                        x:Name="LblPersona"
+                        FontSize="16"
+                        FontAttributes="Bold"
+                        TextColor="White"
+                        LineBreakMode="WordWrap" />
+
+                    <Label
+                        Text="¿A qué grupo quieres moverla?"
+                        Style="{StaticResource SubtituloPagina}" />
+
+                    <VerticalStackLayout
+                        x:Name="PanelRadios"
+                        Spacing="4" />
+
+                    <Button
+                        Text="Mover"
+                        Clicked="BtnMover_Clicked"
+                        Style="{StaticResource BotonPrincipal}" />
+
+                </VerticalStackLayout>
+            </Border>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

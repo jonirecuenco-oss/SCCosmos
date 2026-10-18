@@ -1,0 +1,279 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.CicloVisitasPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Ciclo de visitas"
+    BackgroundColor="#101216"
+    Shell.NavBarIsVisible="False" NavigationPage.HasNavigationBar="False">
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto"
+          Padding="16,14,16,14"
+          RowSpacing="10">
+
+        <!-- CABECERA -->
+        <Grid Grid.Row="0"
+              ColumnDefinitions="*,Auto"
+              ColumnSpacing="10">
+
+            <VerticalStackLayout Grid.Column="0"
+                                 Spacing="3">
+                <Label Text="MATRIZ DE VISITAS"
+                       FontSize="23"
+                       FontAttributes="Bold"
+                       TextColor="White" />
+
+                <Label Text="Ciclo de 3 años · 6 ruedas"
+                       FontSize="12"
+                       TextColor="#9EA4AE" />
+            </VerticalStackLayout>
+
+            <Button Grid.Column="1"
+                    Text="Cerrar"
+                    Clicked="BtnCerrar_Clicked"
+                    BackgroundColor="#242830"
+                    TextColor="White"
+                    CornerRadius="9"
+                    Padding="13,7"
+                    VerticalOptions="Center" />
+        </Grid>
+
+        <!-- EXPLICACIÓN Y ACCIONES -->
+        <Border Grid.Row="1"
+                BackgroundColor="{StaticResource Superficie}"
+                Stroke="{StaticResource Borde}"
+                StrokeThickness="1"
+                Padding="12">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="11" />
+            </Border.StrokeShape>
+
+            <VerticalStackLayout Spacing="10">
+                <Label Text="Marca el candado para impedir que una congregación sea reemplazada al autocompletar."
+                       TextColor="#B6BBC2"
+                       FontSize="12"
+                       LineBreakMode="WordWrap" />
+
+                <Grid ColumnDefinitions="*,*"
+                      ColumnSpacing="8">
+
+                    <Button Grid.Column="0"
+                            Text="Limpiar futuras"
+                            Clicked="BtnLimpiar_Clicked"
+                            BackgroundColor="#3A2023"
+                            TextColor="#FFB7BC"
+                            CornerRadius="8"
+                            FontSize="12"
+                            Padding="8,7" />
+
+                    <Button Grid.Column="1"
+                            Text="Auto-completar"
+                            Clicked="BtnAutoGenerar_Clicked"
+                            BackgroundColor="#0B6FC2"
+                            TextColor="White"
+                            CornerRadius="8"
+                            FontAttributes="Bold"
+                            FontSize="12"
+                            Padding="8,7" />
+                </Grid>
+            </VerticalStackLayout>
+        </Border>
+
+        <!-- SELECTOR DE RUEDA -->
+        <VerticalStackLayout Grid.Row="2"
+                             Spacing="8">
+
+            <ScrollView Orientation="Horizontal"
+                        HorizontalScrollBarVisibility="Never">
+                <HorizontalStackLayout Spacing="7">
+                    <Button x:Name="BtnVisita1"
+                            Text="1"
+                            Clicked="BtnVisita_Clicked"
+                            CommandParameter="1"
+                            WidthRequest="46"
+                            HeightRequest="40"
+                            CornerRadius="9" />
+
+                    <Button x:Name="BtnVisita2"
+                            Text="2"
+                            Clicked="BtnVisita_Clicked"
+                            CommandParameter="2"
+                            WidthRequest="46"
+                            HeightRequest="40"
+                            CornerRadius="9" />
+
+                    <Button x:Name="BtnVisita3"
+                            Text="3"
+                            Clicked="BtnVisita_Clicked"
+                            CommandParameter="3"
+                            WidthRequest="46"
+                            HeightRequest="40"
+                            CornerRadius="9" />
+
+                    <Button x:Name="BtnVisita4"
+                            Text="4"
+                            Clicked="BtnVisita_Clicked"
+                            CommandParameter="4"
+                            WidthRequest="46"
+                            HeightRequest="40"
+                            CornerRadius="9" />
+
+                    <Button x:Name="BtnVisita5"
+                            Text="5"
+                            Clicked="BtnVisita_Clicked"
+                            CommandParameter="5"
+                            WidthRequest="46"
+                            HeightRequest="40"
+                            CornerRadius="9" />
+
+                    <Button x:Name="BtnVisita6"
+                            Text="6"
+                            Clicked="BtnVisita_Clicked"
+                            CommandParameter="6"
+                            WidthRequest="46"
+                            HeightRequest="40"
+                            CornerRadius="9" />
+                </HorizontalStackLayout>
+            </ScrollView>
+
+            <Grid ColumnDefinitions="*,Auto">
+                <VerticalStackLayout Spacing="1">
+                    <Label x:Name="LblVisitaActual"
+                           Text="VISITA 1"
+                           TextColor="#80C4FF"
+                           FontAttributes="Bold"
+                           FontSize="14" />
+
+                    <Label x:Name="LblPeriodoActual"
+                           Text="Septiembre"
+                           TextColor="#9EA4AE"
+                           FontSize="11" />
+                </VerticalStackLayout>
+
+                <Label x:Name="LblTotalFilas"
+                       Grid.Column="1"
+                       VerticalOptions="Center"
+                       TextColor="#9EA4AE"
+                       FontSize="11" />
+            </Grid>
+        </VerticalStackLayout>
+
+        <!-- UNA COLUMNA DE LA MATRIZ CADA VEZ, ADAPTADA A MÓVIL -->
+        <CollectionView x:Name="ListaFilas"
+                        Grid.Row="3"
+                        SelectionMode="None"
+                        VerticalScrollBarVisibility="Default">
+
+            <CollectionView.EmptyView>
+                <Label Text="No hay congregaciones disponibles."
+                       Padding="20,40"
+                       TextColor="#9EA4AE"
+                       HorizontalTextAlignment="Center" />
+            </CollectionView.EmptyView>
+
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border BackgroundColor="{StaticResource Superficie}"
+                            Stroke="{StaticResource Borde}"
+                            StrokeThickness="1"
+                            Padding="11"
+                            Margin="0,0,0,8">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="11" />
+                        </Border.StrokeShape>
+
+                        <Grid ColumnDefinitions="40,*,Auto"
+                              ColumnSpacing="9">
+
+                            <Border Grid.Column="0"
+                                    BackgroundColor="#202A35"
+                                    StrokeThickness="0"
+                                    WidthRequest="36"
+                                    HeightRequest="36"
+                                    HorizontalOptions="Center"
+                                    VerticalOptions="Center">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="18" />
+                                </Border.StrokeShape>
+
+                                <Label Text="{Binding Orden}"
+                                       TextColor="#80C4FF"
+                                       FontAttributes="Bold"
+                                       HorizontalTextAlignment="Center"
+                                       VerticalTextAlignment="Center" />
+                            </Border>
+
+                            <Picker Grid.Column="1"
+                                    ItemsSource="{Binding Congregaciones}"
+                                    SelectedItem="{Binding ValorActual, Mode=TwoWay}"
+                                    Title="Seleccionar congregación"
+                                    TitleColor="#808791"
+                                    BackgroundColor="#1A1D22"
+                                    TextColor="White"
+                                    VerticalOptions="Center" />
+
+                            <VerticalStackLayout Grid.Column="2"
+                                                 Spacing="1"
+                                                 VerticalOptions="Center"
+                                                 HorizontalOptions="Center">
+                                <CheckBox IsChecked="{Binding BloqueadoActual, Mode=TwoWay}"
+                                          Color="#4BA3E3"
+                                          HorizontalOptions="Center" />
+                                <Label Text="Bloquear"
+                                       FontSize="9"
+                                       TextColor="#9EA4AE"
+                                       HorizontalTextAlignment="Center" />
+                            </VerticalStackLayout>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- ESTADO -->
+        <Grid Grid.Row="4"
+              ColumnDefinitions="*,Auto"
+              Margin="0,2,0,0">
+
+            <Label x:Name="LblEstado"
+                   Text="Los cambios se guardan automáticamente."
+                   FontSize="11"
+                   TextColor="#8D949D"
+                   VerticalOptions="Center" />
+
+            <Label x:Name="LblGuardado"
+                   Grid.Column="1"
+                   Text="✓ Guardado"
+                   FontSize="11"
+                   FontAttributes="Bold"
+                   TextColor="#7ED889"
+                   VerticalOptions="Center"
+                   IsVisible="False" />
+        </Grid>
+
+        <!-- OVERLAY -->
+        <Grid x:Name="OverlayCargando"
+              Grid.RowSpan="5"
+              BackgroundColor="#C0101216"
+              IsVisible="False"
+              InputTransparent="False">
+
+            <VerticalStackLayout
+                HorizontalOptions="Center"
+                VerticalOptions="Center"
+                Spacing="12">
+
+                <ActivityIndicator IsRunning="True"
+                                   Color="#4BA3E3"
+                                   WidthRequest="42"
+                                   HeightRequest="42" />
+
+                <Label x:Name="LblCargando"
+                       Text="Cargando ciclo..."
+                       TextColor="White"
+                       FontAttributes="Bold"
+                       HorizontalTextAlignment="Center" />
+            </VerticalStackLayout>
+        </Grid>
+    </Grid>
+</ContentPage>

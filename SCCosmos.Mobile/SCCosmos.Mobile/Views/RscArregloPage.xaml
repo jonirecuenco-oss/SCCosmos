@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.RscArregloPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Arreglo"
+    BackgroundColor="#101216">
+
+    <ScrollView>
+        <VerticalStackLayout
+            Padding="20,16,20,24"
+            Spacing="14">
+
+            <Border Style="{StaticResource Tarjeta}">
+                <VerticalStackLayout Spacing="12">
+
+                    <Label
+                        x:Name="LblPersona"
+                        FontSize="16"
+                        FontAttributes="Bold"
+                        TextColor="White"
+                        LineBreakMode="WordWrap" />
+
+                    <Label
+                        Text="¿Va a predicar con alguien en concreto ese día? Puede ser con varias personas."
+                        Style="{StaticResource SubtituloPagina}" />
+
+                    <Label
+                        Text="Va con:"
+                        Style="{StaticResource TextoNota}" />
+
+                    <ScrollView
+                        MaximumHeightRequest="320">
+
+                        <VerticalStackLayout
+                            x:Name="PanelCon"
+                            Spacing="6" />
+
+                    </ScrollView>
+
+                    <Border Style="{StaticResource TarjetaPlana}">
+                        <VerticalStackLayout Spacing="6">
+
+                            <HorizontalStackLayout Spacing="10">
+
+                                <Switch
+                                    x:Name="TogAcepta"
+                                    IsToggled="True"
+                                    OnColor="#2478B5"
+                                    ThumbColor="White"
+                                    VerticalOptions="Center" />
+
+                                <Label
+                                    Text="Puede ir en un grupo más grande"
+                                    FontSize="13"
+                                    TextColor="White"
+                                    VerticalTextAlignment="Center" />
+
+                            </HorizontalStackLayout>
+
+                            <Label
+                                Text="Si lo desactivas, ese grupo de arreglo irá aparte, sin juntarse con más hermanos."
+                                Style="{StaticResource TextoNota}" />
+
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <Button
+                        Text="Guardar"
+                        Clicked="BtnGuardar_Clicked"
+                        Style="{StaticResource BotonPrincipal}" />
+
+                    <Button
+                        Text="Quitar arreglo"
+                        Clicked="BtnQuitar_Clicked"
+                        Style="{StaticResource BotonSecundario}" />
+
+                </VerticalStackLayout>
+            </Border>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

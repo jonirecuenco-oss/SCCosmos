@@ -1,0 +1,305 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.AsambleasPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:SCCosmos.Mobile.Views"
+    Title="Asambleas"
+    BackgroundColor="#101216">
+
+    <Grid RowDefinitions="Auto,Auto,*"
+          Padding="16,14,16,14"
+          RowSpacing="10">
+
+        <!-- CABECERA + PESTAÑAS (las 4 secciones de Windows) -->
+        <VerticalStackLayout Grid.Row="0"
+                             Spacing="8">
+            <VerticalStackLayout Spacing="3">
+                <Label Text="ASAMBLEAS DE CIRCUITO"
+                       Style="{StaticResource Antetitulo}" />
+                <Label Text="Programa, organigrama, oradores y precursores"
+                       Style="{StaticResource SubtituloPagina}" />
+            </VerticalStackLayout>
+
+            <Grid ColumnDefinitions="*,*,*,*"
+                  ColumnSpacing="6">
+                <Button x:Name="TabPrograma"
+                        Grid.Column="0"
+                        Text="Programa"
+                        Clicked="Tab_Clicked"
+                        CommandParameter="programa"
+                        Style="{StaticResource BotonPestana}" />
+                <Button x:Name="TabOrganigrama"
+                        Grid.Column="1"
+                        Text="Organigrama"
+                        Clicked="Tab_Clicked"
+                        CommandParameter="organigrama"
+                        Style="{StaticResource BotonPestana}"
+                        FontSize="11.5" />
+                <Button x:Name="TabOradores"
+                        Grid.Column="2"
+                        Text="Oradores"
+                        Clicked="Tab_Clicked"
+                        CommandParameter="oradores"
+                        Style="{StaticResource BotonPestana}" />
+                <Button x:Name="TabPrecursores"
+                        Grid.Column="3"
+                        Text="Precursores"
+                        Clicked="Tab_Clicked"
+                        CommandParameter="precursores"
+                        Style="{StaticResource BotonPestana}"
+                        FontSize="11" />
+            </Grid>
+        </VerticalStackLayout>
+
+        <!-- ============================ PROGRAMA ============================ -->
+        <Grid x:Name="PanelPrograma"
+              Grid.Row="2"
+              RowDefinitions="Auto,*"
+              RowSpacing="8">
+
+            <VerticalStackLayout Grid.Row="0"
+                                 Spacing="6">
+                <Grid ColumnDefinitions="Auto,*,Auto,*"
+                      ColumnSpacing="6">
+                    <Label Text="Año"
+                           TextColor="#9299A3"
+                           FontSize="12"
+                           VerticalTextAlignment="Center" />
+                    <Picker x:Name="PickerAnioPrograma"
+                            Grid.Column="1"
+                            TextColor="White"
+                            FontSize="13"
+                            SelectedIndexChanged="FiltroPrograma_Changed" />
+                    <Label Grid.Column="2"
+                           Text="Tipo"
+                           TextColor="#9299A3"
+                           FontSize="12"
+                           VerticalTextAlignment="Center" />
+                    <Picker x:Name="PickerTipoPrograma"
+                            Grid.Column="3"
+                            TextColor="White"
+                            FontSize="13"
+                            SelectedIndexChanged="FiltroPrograma_Changed" />
+                </Grid>
+
+                <Label x:Name="LblPrograma"
+                       Text=""
+                       FontSize="11"
+                       TextColor="#8F969F" />
+            </VerticalStackLayout>
+
+            <RefreshView x:Name="RefrescarPrograma"
+                         Grid.Row="1"
+                         Refreshing="Refrescar_Refreshing">
+                <CollectionView x:Name="ListaPrograma"
+                                SelectionMode="None">
+                    <CollectionView.EmptyView>
+                        <Label Text="Ninguna sección tiene programa para ese año y tipo de evento."
+                               TextColor="#9EA4AE"
+                               Padding="20,40"
+                               HorizontalTextAlignment="Center" />
+                    </CollectionView.EmptyView>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border BackgroundColor="{StaticResource Superficie}"
+                                    Stroke="{StaticResource Borde}"
+                                    StrokeThickness="1"
+                                    Padding="13"
+                                    Margin="0,0,0,8">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="11" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer
+                                        Tapped="Asamblea_Tapped"
+                                        CommandParameter="{Binding .}" />
+                                </Border.GestureRecognizers>
+                                <VerticalStackLayout Spacing="4">
+                                    <Label Text="{Binding TituloCabecera}"
+                                           TextColor="White"
+                                           FontSize="14"
+                                           FontAttributes="Bold" />
+                                    <Label Text="{Binding Detalle}"
+                                           TextColor="#AEB4BC"
+                                           FontSize="11" />
+                                    <Label Text="{Binding ResumenPrograma}"
+                                           TextColor="#8BC98B"
+                                           FontSize="11" />
+                                </VerticalStackLayout>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </RefreshView>
+        </Grid>
+
+        <!-- ========================== ORGANIGRAMA ========================== -->
+        <Grid x:Name="PanelOrganigrama"
+              Grid.Row="2"
+              IsVisible="False"
+              RowDefinitions="Auto,*"
+              RowSpacing="8">
+
+            <VerticalStackLayout Grid.Row="0"
+                                 Spacing="6">
+                <Grid ColumnDefinitions="Auto,*,Auto,*"
+                      ColumnSpacing="6">
+                    <Label Text="Año"
+                           TextColor="#9299A3"
+                           FontSize="12"
+                           VerticalTextAlignment="Center" />
+                    <Picker x:Name="PickerAnioOrganigrama"
+                            Grid.Column="1"
+                            TextColor="White"
+                            FontSize="13"
+                            SelectedIndexChanged="FiltroOrganigrama_Changed" />
+                    <Label Grid.Column="2"
+                           Text="Tipo"
+                           TextColor="#9299A3"
+                           FontSize="12"
+                           VerticalTextAlignment="Center" />
+                    <Picker x:Name="PickerTipoOrganigrama"
+                            Grid.Column="3"
+                            TextColor="White"
+                            FontSize="13"
+                            SelectedIndexChanged="FiltroOrganigrama_Changed" />
+                </Grid>
+
+                <Label x:Name="LblOrganigrama"
+                       Text=""
+                       FontSize="11"
+                       TextColor="#8F969F" />
+            </VerticalStackLayout>
+
+            <RefreshView Grid.Row="1"
+                         Refreshing="Refrescar_Refreshing">
+                <CollectionView x:Name="ListaOrganigrama"
+                                SelectionMode="None">
+                    <CollectionView.EmptyView>
+                        <Label Text="Ninguna sección tiene organigrama para ese año y tipo de evento."
+                               TextColor="#9EA4AE"
+                               Padding="20,40"
+                               HorizontalTextAlignment="Center" />
+                    </CollectionView.EmptyView>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border BackgroundColor="{StaticResource Superficie}"
+                                    Stroke="{StaticResource Borde}"
+                                    StrokeThickness="1"
+                                    Padding="13"
+                                    Margin="0,0,0,8">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="11" />
+                                </Border.StrokeShape>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer
+                                        Tapped="Asamblea_Tapped"
+                                        CommandParameter="{Binding .}" />
+                                </Border.GestureRecognizers>
+                                <VerticalStackLayout Spacing="4">
+                                    <Label Text="{Binding TituloCabecera}"
+                                           TextColor="White"
+                                           FontSize="14"
+                                           FontAttributes="Bold" />
+                                    <Label Text="{Binding Detalle}"
+                                           TextColor="#AEB4BC"
+                                           FontSize="11" />
+                                    <Label Text="{Binding ResumenOrganigrama}"
+                                           TextColor="#8BC9E8"
+                                           FontSize="11" />
+                                </VerticalStackLayout>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </RefreshView>
+        </Grid>
+
+        <!-- ============================ ORADORES ============================ -->
+        <views:MatrizOradoresView x:Name="PanelOradores"
+                                  Grid.Row="2"
+                                  IsVisible="False" />
+
+        <!-- ========================== PRECURSORES ========================== -->
+        <Grid x:Name="PanelPrecursores"
+              Grid.Row="2"
+              IsVisible="False"
+              RowDefinitions="Auto,*,Auto"
+              RowSpacing="8">
+
+            <VerticalStackLayout Grid.Row="0"
+                                 Spacing="6">
+                <Grid ColumnDefinitions="Auto,*"
+                      ColumnSpacing="6">
+                    <Label Text="Año"
+                           TextColor="#9299A3"
+                           FontSize="12"
+                           VerticalTextAlignment="Center" />
+                    <Picker x:Name="PickerAnioPrecursores"
+                            Grid.Column="1"
+                            TextColor="White"
+                            FontSize="13"
+                            SelectedIndexChanged="FiltroPrecursores_Changed" />
+                </Grid>
+
+                <Label x:Name="LblPrecursores"
+                       Text=""
+                       FontSize="11"
+                       TextColor="#8F969F" />
+            </VerticalStackLayout>
+
+            <CollectionView x:Name="ListaPrecursores"
+                            Grid.Row="1"
+                            SelectionMode="None">
+                <CollectionView.EmptyView>
+                    <Label Text="No hay reunión de precursores en ese año."
+                           TextColor="#9EA4AE"
+                           Padding="20,40"
+                           HorizontalTextAlignment="Center" />
+                </CollectionView.EmptyView>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border BackgroundColor="{StaticResource Superficie}"
+                                Stroke="{StaticResource Borde}"
+                                StrokeThickness="1"
+                                Padding="12"
+                                Margin="0,0,0,8">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="11" />
+                            </Border.StrokeShape>
+                            <VerticalStackLayout Spacing="5">
+                                <Label Text="{Binding TituloSesion}"
+                                       TextColor="#8FBCBB"
+                                       FontSize="13"
+                                       FontAttributes="Bold" />
+                                <Label Text="{Binding DetalleSesion}"
+                                       TextColor="#AEB4BC"
+                                       FontSize="11" />
+                                <VerticalStackLayout Spacing="3"
+                                                     BindableLayout.ItemsSource="{Binding Partes}">
+                                    <BindableLayout.ItemTemplate>
+                                        <DataTemplate>
+                                            <Label Text="{Binding Linea}"
+                                                   TextColor="#D0D5DB"
+                                                   FontSize="11" />
+                                        </DataTemplate>
+                                    </BindableLayout.ItemTemplate>
+                                </VerticalStackLayout>
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <Button Grid.Row="2"
+                    Text="Abrir editor de precursores"
+                    Clicked="BtnEditorPrecursores_Clicked"
+                    BackgroundColor="#242830"
+                    TextColor="White"
+                    CornerRadius="9"
+                    HeightRequest="44" />
+        </Grid>
+
+    </Grid>
+</ContentPage>

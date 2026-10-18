@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.RscNuevaPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Nueva RSC"
+    BackgroundColor="#101216">
+
+    <ScrollView>
+        <VerticalStackLayout
+            Padding="20,16,20,24"
+            Spacing="14">
+
+            <Border Style="{StaticResource Tarjeta}">
+                <VerticalStackLayout Spacing="12">
+
+                    <Label
+                        Text="NUEVA RSC"
+                        Style="{StaticResource Antetitulo}" />
+
+                    <Label
+                        Text="Una reunión breve antes de salir a predicar."
+                        Style="{StaticResource SubtituloPagina}" />
+
+                    <Label
+                        Text="Día"
+                        Style="{StaticResource TextoNota}" />
+
+                    <DatePicker
+                        x:Name="DpFecha"
+                        TextColor="White"
+                        Format="dd/MM/yyyy" />
+
+                    <Label
+                        Text="Turno"
+                        Style="{StaticResource TextoNota}" />
+
+                    <HorizontalStackLayout Spacing="20">
+
+                        <RadioButton
+                            x:Name="RadManana"
+                            Content="Mañana"
+                            GroupName="TurnoRsc"
+                            IsChecked="True"
+                            TextColor="White" />
+
+                        <RadioButton
+                            x:Name="RadTarde"
+                            Content="Tarde"
+                            GroupName="TurnoRsc"
+                            TextColor="White" />
+
+                    </HorizontalStackLayout>
+
+                    <Label
+                        Text="Congregación"
+                        Style="{StaticResource TextoNota}" />
+
+                    <Picker
+                        x:Name="CmbCongregacion"
+                        Title="Elige congregación"
+                        Style="{StaticResource CampoPicker}" />
+
+                    <Button
+                        Text="Crear y preparar"
+                        Clicked="BtnCrear_Clicked"
+                        Style="{StaticResource BotonPrincipal}"
+                        Margin="0,6,0,0" />
+
+                </VerticalStackLayout>
+            </Border>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>
