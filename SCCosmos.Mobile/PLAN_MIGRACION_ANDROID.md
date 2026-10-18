@@ -1669,8 +1669,11 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   verificación PBKDF2-SHA256 (sal aleatoria, 100.000 iteraciones) en el motor compartido
   (`CodigoAcceso.cs`). Los códigos siguen siendo los mismos y valen en MAYÚSCULAS. Se reescribió
   el historial de los dos repos de las apps para borrarlos también de los commits antiguos, y se
-  borraron los releases y etiquetas antiguos (solo queda v1.0.2). El proyecto compartido pasa a
-  llamarse `SCCosmos.Shared`.
+  borraron los releases y etiquetas antiguos (solo queda v1.0.2).
+- **Repositorios unificados**: los tres proyectos viven ahora en un solo repositorio
+  (`jonirecuenco-oss/SCCosmos`, carpetas `SCCosmos/`, `SCCosmos.Mobile/` y `SincroCompartido/`),
+  conservando la historia de commits de cada uno. `SCCosmos.Mobile` y `SCCosmos.Shared` quedaron
+  archivados; el script de publicación sube un solo repositorio.
 - **Motor compartido** (`SincroCompartido\ActualizadorSccosmos.cs`): número de versión de la app
   (`VersionApp`), consulta de la última versión publicada en GitHub (`releases/latest`, sin cuenta ni
   token: el proyecto es público), comparación de versiones y descarga con progreso.
