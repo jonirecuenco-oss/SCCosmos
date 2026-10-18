@@ -32,6 +32,20 @@ namespace SCCosmos
 
             HookAutoguardado();
 
+            // Versión y actualizaciones.
+            TxtVersionInstalada.Text =
+                "Versión instalada: "
+                + ActualizacionPc.VersionInstalada;
+
+            ToggleActualizarAuto.IsChecked =
+                ActualizacionPc.AutoActiva;
+
+            ToggleActualizarAuto.Checked += (s, e) =>
+                ActualizacionPc.AutoActiva = true;
+
+            ToggleActualizarAuto.Unchecked += (s, e) =>
+                ActualizacionPc.AutoActiva = false;
+
             this.Loaded += ConfiguracionPage_Loaded;
             this.Unloaded += ConfiguracionPage_Unloaded;
 
@@ -62,6 +76,133 @@ namespace SCCosmos
             CargarConfiguracion();
             CargarPerfilUsuario();
             CargarSincronizacion();
+        }
+
+        // =========================================================================
+        // VERSIÓN Y ACTUALIZACIONES
+        // =========================================================================
+
+        private async void BtnBuscarActualizacion_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            BtnBuscarActualizacion.IsEnabled = false;
+            TxtEstadoActualizacion.Text = "Buscando…";
+
+            try
+            {
+                var resultado =
+                    await ActualizacionPc.ComprobarAsync();
+
+                if (!resultado.Correcto)
+                {
+                    TxtEstadoActualizacion.Text =
+                        "No se pudo comprobar: "
+                        + resultado.Error;
+
+                    return;
+                }
+
+                if (resultado.Version == null)
+                {
+                    TxtEstadoActualizacion.Text =
+                        "Todavía no hay ninguna versión publicada.";
+
+                    return;
+                }
+
+                if (!ActualizacionPc.HayNueva(resultado))
+                {
+                    TxtEstadoActualizacion.Text =
+                        "Estás al día (v"
+                        + ActualizacionPc.VersionInstalada
+                        + ").";
+
+                    return;
+                }
+
+                var version =
+                    resultado.Version;
+
+                var respuesta = MessageBox.Show(
+                    "Hay una versión nueva de SCCosmos (v"
+                    + version.Numero + ").\n\n"
+                    + RecortarNotas(version.Notas)
+                    + "\n¿Actualizar ahora? La aplicación se cerrará "
+                    + "y se volverá a abrir ya actualizada.",
+                    "Actualización disponible",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+
+                if (respuesta != MessageBoxResult.Yes)
+                {
+                    TxtEstadoActualizacion.Text =
+                        "Actualización aplazada (v"
+                        + version.Numero + ").";
+
+                    return;
+                }
+
+                TxtEstadoActualizacion.Text =
+                    "Descargando la versión nueva…";
+
+                bool preparada =
+                    await ActualizacionPc.PrepararAsync(
+                        version,
+                        progreso =>
+                            Dispatcher.Invoke(() =>
+                                TxtEstadoActualizacion.Text =
+                                    "Descargando la versión nueva… "
+                                    + progreso.ToString("P0")));
+
+                if (!preparada)
+                {
+                    TxtEstadoActualizacion.Text =
+                        "No se pudo preparar la actualización.";
+
+                    return;
+                }
+
+                TxtEstadoActualizacion.Text =
+                    "Aplicando la actualización…";
+
+                if (ActualizacionPc.AplicarAhora())
+                {
+                    Application.Current.Shutdown();
+                }
+                else
+                {
+                    TxtEstadoActualizacion.Text =
+                        "No se pudo aplicar la actualización.";
+                }
+            }
+            catch (Exception ex)
+            {
+                TxtEstadoActualizacion.Text =
+                    "No se pudo comprobar: " + ex.Message;
+            }
+            finally
+            {
+                BtnBuscarActualizacion.IsEnabled = true;
+            }
+        }
+
+
+        private static string RecortarNotas(
+            string notas)
+        {
+            string texto =
+                (notas ?? "").Trim();
+
+            if (texto.Length > 400)
+            {
+                texto =
+                    texto.Substring(0, 400) + "…";
+            }
+
+            return texto.Length == 0
+                ? ""
+                : texto + "\n\n";
         }
 
         // =========================================================================

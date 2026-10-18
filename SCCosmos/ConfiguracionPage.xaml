@@ -272,6 +272,28 @@
                     </Grid>
                 </ui:Card>
 
+                <!-- TARJETA: VERSIÓN Y ACTUALIZACIONES -->
+                <ui:Card Padding="20" Margin="0,0,0,10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <ui:SymbolIcon Grid.Column="0" Symbol="ArrowSync24" FontSize="36" Margin="0,0,20,0" VerticalAlignment="Top" Foreground="#4BA3E3"/>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Versión y actualizaciones" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                            <TextBlock x:Name="TxtVersionInstalada" Text="Versión instalada: 1.0.0" Foreground="#AAAAAA" FontSize="13" Margin="0,0,0,12"/>
+
+                            <ui:ToggleSwitch x:Name="ToggleActualizarAuto" Content="Actualizar automáticamente cuando haya una versión nueva (se aplica al cerrar la app)" Margin="0,0,0,12"/>
+
+                            <StackPanel Orientation="Horizontal">
+                                <ui:Button x:Name="BtnBuscarActualizacion" Content="Buscar actualizaciones" Icon="{ui:SymbolIcon ArrowSync24}" Appearance="Secondary" Click="BtnBuscarActualizacion_Click"/>
+                                <TextBlock x:Name="TxtEstadoActualizacion" Foreground="#AAAAAA" FontSize="12" VerticalAlignment="Center" Margin="12,0,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </ui:Card>
+
             </StackPanel>
         </ScrollViewer>
 

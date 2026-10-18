@@ -42,7 +42,9 @@ namespace SCCosmos
         /// <summary>
         /// Antes de cerrar se envía lo que quede pendiente (dispositivos
         /// vinculados y carpeta compartida) para no perder los últimos
-        /// cambios.
+        /// cambios. Si hay una actualización preparada, se aplica ahora:
+        /// el actualizador espera a que la app termine, copia los archivos
+        /// y la vuelve a abrir.
         /// </summary>
         private async void MainWindow_Closing(
             object sender,
@@ -74,6 +76,14 @@ namespace SCCosmos
             }
             catch
             {
+            }
+
+            if (ActualizacionPc.HayPreparada
+                && ActualizacionPc.AplicarAhora())
+            {
+                Application.Current.Shutdown();
+
+                return;
             }
 
             Close();
@@ -142,6 +152,9 @@ namespace SCCosmos
 
                 RevisarDescargasMartes();
                 RevisarSincronizacionLunes();
+
+                // Comprobación de versión nueva (en segundo plano).
+                _ = ComprobarActualizacionAlArrancarAsync();
             };
 
             this.Activated += (s, e) => VerificarAlertas();
@@ -149,9 +162,90 @@ namespace SCCosmos
         }
 
         // =========================================================
-        // PERFIL DE USUARIO Y NIVEL DE ACCESO
+        // ACTUALIZACIÓN DE LA APP
         // =========================================================
 
+        /// <summary>
+        /// Comprueba en segundo plano si hay una versión nueva. Si la
+        /// actualización automática está activada, la deja preparada y se
+        /// aplicará al cerrar la app; si no, se pregunta al usuario.
+        /// </summary>
+        private async Task ComprobarActualizacionAlArrancarAsync()
+        {
+            try
+            {
+                await Task.Delay(
+                    TimeSpan.FromSeconds(15));
+
+                var resultado =
+                    await ActualizacionPc
+                        .ComprobarAsync();
+
+                if (!ActualizacionPc.HayNueva(
+                        resultado))
+                {
+                    return;
+                }
+
+                var version =
+                    resultado.Version;
+
+                if (ActualizacionPc.AutoActiva)
+                {
+                    // Se descarga en silencio y se aplica al cerrar.
+                    await ActualizacionPc
+                        .PrepararAsync(
+                            version);
+
+                    return;
+                }
+
+                string notas =
+                    (version.Notas ?? "").Trim();
+
+                if (notas.Length > 400)
+                {
+                    notas =
+                        notas.Substring(0, 400) + "…";
+                }
+
+                var respuesta = System.Windows.MessageBox.Show(
+                    "Hay una versión nueva de SCCosmos (v"
+                    + version.Numero + ").\n\n"
+                    + (notas.Length == 0
+                        ? ""
+                        : notas + "\n\n")
+                    + "¿Actualizar ahora? La aplicación se cerrará "
+                    + "y se volverá a abrir ya actualizada.",
+                    "Actualización disponible",
+                    System.Windows.MessageBoxButton.YesNo,
+                    System.Windows.MessageBoxImage.Question);
+
+                if (respuesta != System.Windows.MessageBoxResult.Yes)
+                {
+                    return;
+                }
+
+                bool preparada =
+                    await ActualizacionPc
+                        .PrepararAsync(
+                            version);
+
+                if (preparada
+                    && ActualizacionPc.AplicarAhora())
+                {
+                    Application.Current.Shutdown();
+                }
+            }
+            catch
+            {
+            }
+        }
+
+
+        // =========================================================
+        // PERFIL DE USUARIO Y NIVEL DE ACCESO
+        // =========================================================
         public void AplicarPerfilAcceso()
         {
             Visibility visibilidad =
