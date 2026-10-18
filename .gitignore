@@ -1,0 +1,14 @@
+# Visual Studio / compilacion
+.vs/
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+
+# Python
+__pycache__/
+*.pyc
+
+# Copias de seguridad locales
+_backups_*/
+_git_backup_*/
