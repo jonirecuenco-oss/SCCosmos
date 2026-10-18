@@ -1,0 +1,5 @@
+﻿## Archivos de compilacion
+[Bb]in/
+[Oo]bj/
+*.user
+.vs/
