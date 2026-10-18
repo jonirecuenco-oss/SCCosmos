@@ -1663,6 +1663,8 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   él no compilan). Todo el trabajo pendiente quedó subido con su mensaje de cambios.
 - **Release v1.0.0** en `jonirecuenco-oss/SCCosmos` con los dos archivos que la app usa para
   actualizarse: `SCCosmos-android.apk` (arm64) y `SCCosmos-windows.zip` (app de Windows compilada).
+- **Release v1.0.1** (arreglo): la actualización preparada se aplica al cerrar aunque la
+  sincronización esté desactivada (antes el cierre salía antes de aplicarla).
 - **Motor compartido** (`SincroCompartido\ActualizadorSccosmos.cs`): número de versión de la app
   (`VersionApp`), consulta de la última versión publicada en GitHub (`releases/latest`, sin cuenta ni
   token: el proyecto es público), comparación de versiones y descarga con progreso.
