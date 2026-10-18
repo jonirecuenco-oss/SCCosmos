@@ -12,3 +12,8 @@ __pycache__/
 # Copias de seguridad locales
 _backups_*/
 _git_backup_*/
+
+# Herramientas locales y pruebas (no se publican)
+Herramientas/
+RscPruebas/
+SincroPruebas/
