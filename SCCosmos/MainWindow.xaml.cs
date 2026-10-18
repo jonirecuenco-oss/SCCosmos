@@ -58,8 +58,15 @@ namespace SCCosmos
             var servicio =
                 SincronizacionRed.Servicio;
 
-            if (servicio is null
-                || !servicio.Activo)
+            bool haySincro =
+                servicio is not null
+                && servicio.Activo;
+
+            bool hayActualizacion =
+                ActualizacionPc.HayPreparada;
+
+            if (!haySincro
+                && !hayActualizacion)
             {
                 return;
             }
@@ -68,17 +75,20 @@ namespace SCCosmos
 
             _sincroFinalRealizada = true;
 
-            try
+            if (haySincro)
             {
-                await SincronizacionRed
-                    .VaciarPendientesAsync(
-                        TimeSpan.FromSeconds(4));
-            }
-            catch
-            {
+                try
+                {
+                    await SincronizacionRed
+                        .VaciarPendientesAsync(
+                            TimeSpan.FromSeconds(4));
+                }
+                catch
+                {
+                }
             }
 
-            if (ActualizacionPc.HayPreparada
+            if (hayActualizacion
                 && ActualizacionPc.AplicarAhora())
             {
                 Application.Current.Shutdown();
