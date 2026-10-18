@@ -36,6 +36,9 @@ public partial class ConfiguracionPage : ContentPage
         // Selector nuevo entre dispositivos.
         CargarSincronizacion();
 
+        // Versión y actualizaciones.
+        CargarActualizaciones();
+
         // La esposa no gestiona dispositivos.
         try
         {
@@ -48,6 +51,194 @@ public partial class ConfiguracionPage : ContentPage
         catch
         {
         }
+    }
+
+
+    // =========================================================
+    // VERSIÓN Y ACTUALIZACIONES
+    // =========================================================
+
+    private bool _cargandoActualizaciones;
+
+    private void CargarActualizaciones()
+    {
+        _cargandoActualizaciones =
+            true;
+
+        LblVersionApp.Text =
+            "Versión instalada: "
+            + ActualizacionMobileService.VersionInstalada;
+
+        SwitchActualizarAuto.IsToggled =
+            ActualizacionMobileService.AutoActiva;
+
+        _cargandoActualizaciones =
+            false;
+    }
+
+
+    private void SwitchActualizarAuto_Toggled(
+        object sender,
+        ToggledEventArgs e)
+    {
+        if (_cargandoActualizaciones)
+        {
+            return;
+        }
+
+        ActualizacionMobileService.AutoActiva =
+            e.Value;
+
+        LblEstadoActualizacion.Text =
+            e.Value
+                ? "Se actualizará sola cuando haya una versión nueva."
+                : "Se te avisará cuando haya una versión nueva.";
+    }
+
+
+    private async void BtnBuscarActualizacion_Clicked(
+        object sender,
+        EventArgs e)
+    {
+        BtnBuscarActualizacion.IsEnabled =
+            false;
+
+        LblEstadoActualizacion.Text =
+            "Buscando…";
+
+        try
+        {
+            var resultado =
+                await ActualizacionMobileService
+                    .ComprobarAsync();
+
+            if (!resultado.Correcto)
+            {
+                LblEstadoActualizacion.Text =
+                    "No se pudo comprobar: "
+                    + resultado.Error;
+
+                return;
+            }
+
+            if (resultado.Version == null)
+            {
+                LblEstadoActualizacion.Text =
+                    "Todavía no hay ninguna versión publicada.";
+
+                return;
+            }
+
+            if (!ActualizacionMobileService.HayNueva(
+                    resultado))
+            {
+                LblEstadoActualizacion.Text =
+                    "Estás al día (v"
+                    + ActualizacionMobileService.VersionInstalada
+                    + ").";
+
+                return;
+            }
+
+            var version =
+                resultado.Version;
+
+            bool actualizar =
+                await DisplayAlert(
+                    "Actualización disponible",
+                    "Hay una versión nueva de SCCosmos (v"
+                    + version.Numero + ").\n\n"
+                    + RecortarNotas(version.Notas)
+                    + "¿Descargarla e instalarla ahora?",
+                    "Actualizar",
+                    "Más tarde");
+
+            if (!actualizar)
+            {
+                LblEstadoActualizacion.Text =
+                    "Actualización aplazada (v"
+                    + version.Numero + ").";
+
+                return;
+            }
+
+            await DescargarEInstalarAsync(
+                version);
+        }
+        catch (Exception ex)
+        {
+            LblEstadoActualizacion.Text =
+                "No se pudo comprobar: " + ex.Message;
+        }
+        finally
+        {
+            BtnBuscarActualizacion.IsEnabled =
+                true;
+        }
+    }
+
+
+    /// <summary>
+    /// Descarga el APK y abre el instalador del sistema.
+    /// </summary>
+    private async Task DescargarEInstalarAsync(
+        SCCosmos.Sincro.VersionPublicada version)
+    {
+        LblEstadoActualizacion.Text =
+            "Descargando la versión nueva…";
+
+        bool descargada =
+            await ActualizacionMobileService
+                .DescargarAsync(
+                    version,
+                    progreso =>
+                        MainThread.BeginInvokeOnMainThread(
+                            () =>
+                                LblEstadoActualizacion.Text =
+                                    "Descargando la versión nueva… "
+                                    + progreso.ToString("P0")));
+
+        if (!descargada)
+        {
+            LblEstadoActualizacion.Text =
+                "No se pudo descargar la actualización.";
+
+            return;
+        }
+
+        LblEstadoActualizacion.Text =
+            "Abriendo el instalador…";
+
+        if (ActualizacionMobileService.Instalar())
+        {
+            LblEstadoActualizacion.Text =
+                "Sigue las indicaciones de Android para instalar la "
+                + "versión v" + version.Numero + ".";
+        }
+        else
+        {
+            LblEstadoActualizacion.Text =
+                "No se pudo abrir el instalador. Revisa que SCCosmos "
+                + "tenga permiso para instalar aplicaciones.";
+        }
+    }
+
+
+    private static string RecortarNotas(
+        string notas)
+    {
+        string texto =
+            (notas ?? "").Trim();
+
+        if (texto.Length > 400)
+        {
+            texto =
+                texto.Substring(0, 400) + "…";
+        }
+
+        return texto.Length == 0
+            ? ""
+            : texto + "\n\n";
     }
 
     /// <summary>

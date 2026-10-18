@@ -32,6 +32,93 @@ public partial class InicioPage : ContentPage, IActualizableMobile
         // del icono de la app.
         _ = AlertasNotificacionService
             .ActualizarAsync();
+
+        // Comprobación de versión nueva (una vez por sesión).
+        _ = ComprobarActualizacionAsync();
+    }
+
+
+    private static bool _actualizacionComprobada;
+
+    /// <summary>
+    /// Comprueba si hay una versión nueva. Si la actualización automática
+    /// está activada se descarga sola y se abre el instalador; si no, se
+    /// pregunta antes.
+    /// </summary>
+    private async Task ComprobarActualizacionAsync()
+    {
+        if (_actualizacionComprobada)
+        {
+            return;
+        }
+
+        _actualizacionComprobada = true;
+
+        try
+        {
+            await Task.Delay(
+                TimeSpan.FromSeconds(10));
+
+            var resultado =
+                await ActualizacionMobileService
+                    .ComprobarAsync();
+
+            if (!ActualizacionMobileService.HayNueva(
+                    resultado))
+            {
+                return;
+            }
+
+            var version =
+                resultado.Version;
+
+            if (!ActualizacionMobileService.AutoActiva)
+            {
+                string notas =
+                    (version.Notas ?? "").Trim();
+
+                if (notas.Length > 400)
+                {
+                    notas =
+                        notas.Substring(0, 400) + "…";
+                }
+
+                bool actualizar =
+                    await DisplayAlert(
+                        "Actualización disponible",
+                        "Hay una versión nueva de SCCosmos (v"
+                        + version.Numero + ").\n\n"
+                        + (notas.Length == 0
+                            ? ""
+                            : notas + "\n\n")
+                        + "¿Descargarla e instalarla ahora?",
+                        "Actualizar",
+                        "Más tarde");
+
+                if (!actualizar)
+                {
+                    return;
+                }
+            }
+
+            bool ok =
+                await ActualizacionMobileService
+                    .DescargarEInstalarAsync(
+                        version);
+
+            if (!ok)
+            {
+                await DisplayAlert(
+                    "Actualización",
+                    "No se pudo descargar la actualización. "
+                    + "Puedes intentarlo de nuevo desde "
+                    + "Configuración.",
+                    "Aceptar");
+            }
+        }
+        catch
+        {
+        }
     }
 
     public void DatosActualizados()
