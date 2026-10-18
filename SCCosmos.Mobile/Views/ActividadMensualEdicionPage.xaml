@@ -1,0 +1,114 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.ActividadMensualEdicionPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Actividad mensual"
+    BackgroundColor="#101216">
+
+    <Grid RowDefinitions="*,Auto">
+
+        <ScrollView Grid.Row="0">
+            <VerticalStackLayout Padding="20,16,20,24"
+                                 Spacing="16">
+
+                <Border BackgroundColor="{StaticResource Superficie}"
+                        Stroke="{StaticResource Borde}"
+                        Padding="16">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16" />
+                    </Border.StrokeShape>
+
+                    <VerticalStackLayout Spacing="14">
+
+                        <Label Text="Mes"
+                               TextColor="#9299A3"
+                               FontSize="12" />
+                        <Picker x:Name="PickerMes"
+                                TextColor="White" />
+
+                        <Label Text="Año de servicio"
+                               TextColor="#9299A3"
+                               FontSize="12" />
+                        <Entry x:Name="TxtAnio"
+                               Keyboard="Numeric"
+                               Placeholder="p. ej. 2025"
+                               TextColor="White" />
+
+                        <Label Text="Horas"
+                               TextColor="#9299A3"
+                               FontSize="12" />
+                        <Entry x:Name="TxtHoras"
+                               Keyboard="Numeric"
+                               TextColor="White" />
+
+                        <Label Text="Cursos bíblicos"
+                               TextColor="#9299A3"
+                               FontSize="12" />
+                        <Entry x:Name="TxtCursos"
+                               Keyboard="Numeric"
+                               TextColor="White" />
+
+                        <Label Text="Notas"
+                               TextColor="#9299A3"
+                               FontSize="12" />
+                        <Entry x:Name="TxtNotas"
+                               TextColor="White" />
+
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Grid.Column="0"
+                                   Text="Participación"
+                                   TextColor="#E7E9EC"
+                                   VerticalOptions="Center" />
+                            <Switch x:Name="SwParticipacion"
+                                    Grid.Column="1"
+                                    OnColor="#0B6FC2" />
+                        </Grid>
+
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Grid.Column="0"
+                                   Text="Precursor auxiliar"
+                                   TextColor="#E7E9EC"
+                                   VerticalOptions="Center" />
+                            <Switch x:Name="SwPrecAux"
+                                    Grid.Column="1"
+                                    OnColor="#0B6FC2" />
+                        </Grid>
+
+                    </VerticalStackLayout>
+                </Border>
+
+                <Button x:Name="BtnEliminar"
+                        Text="Eliminar registro"
+                        Clicked="BtnEliminar_Clicked"
+                        BackgroundColor="#3A2023"
+                        TextColor="#FFB7BC"
+                        CornerRadius="10"
+                        HeightRequest="48"
+                        IsVisible="False" />
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <Grid Grid.Row="1"
+              ColumnDefinitions="*,*"
+              ColumnSpacing="10"
+              Padding="18,10,18,16"
+              BackgroundColor="{StaticResource Superficie}">
+
+            <Button Grid.Column="0"
+                    Text="Cancelar"
+                    BackgroundColor="#30343B"
+                    Clicked="BtnCancelar_Clicked" />
+
+            <Button Grid.Column="1"
+                    Text="Guardar"
+                    BackgroundColor="#2478B5"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    Clicked="BtnGuardar_Clicked" />
+
+        </Grid>
+
+    </Grid>
+</ContentPage>

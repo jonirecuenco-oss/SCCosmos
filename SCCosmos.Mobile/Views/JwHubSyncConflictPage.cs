@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 
 using SCCosmos.Mobile.Data;
@@ -151,7 +150,39 @@ public partial class JwHubSyncConflictPage
                 : _item.NombreVisual;
 
 
+        // Fotografía de la persona: una sola vez, en la cabecera.
+        if (!string.IsNullOrWhiteSpace(
+                _item.PersonaDB.Foto))
+        {
+            var fuente =
+                new SCCosmos.Mobile.Converters
+                    .Base64ImageConverter()
+                    .Convert(
+                        _item.PersonaDB.Foto,
+                        typeof(ImageSource),
+                        null,
+                        System.Globalization.CultureInfo
+                            .InvariantCulture)
+                as ImageSource;
+
+            if (fuente is not null)
+            {
+                ImgFotoPersona.Source =
+                    fuente;
+
+                ImgFotoPersona.IsVisible =
+                    true;
+
+                LblSinFotoPersona.IsVisible =
+                    false;
+            }
+        }
+
+
         CrearCampos();
+
+
+        PrepararFoto();
 
 
         ListaCampos.ItemsSource =
@@ -208,13 +239,17 @@ public partial class JwHubSyncConflictPage
 
         // =====================================================
         // NOMBRE COMÚN
+        //
+        // Si la base de datos ya tiene un nombre común se respeta: puede
+        // haberlo cambiado el superintendente a mano. JW Hub solo lo aporta
+        // cuando el campo está vacío (y se propone su valor por defecto).
         // =====================================================
 
         if (!string.IsNullOrEmpty(
                 hub.NombreComun)
             &&
-            db.NombreComun !=
-                hub.NombreComun)
+            string.IsNullOrWhiteSpace(
+                db.NombreComun))
         {
             AgregarCampo(
                 "NombreComun",
@@ -225,21 +260,14 @@ public partial class JwHubSyncConflictPage
 
 
         // =====================================================
-        // NOMBRE COMPLETO
+        // NOMBRE COMPLETO (S-21)
+        //
+        // No se ofrece como campo resoluble desde JW Hub.
+        //
+        // Si esta ficha ya tiene identidad S-21, Nombre debe
+        // conservarse exactamente como llegó del S-21. JW Hub
+        // únicamente administra NombreJWHub y NombreComun.
         // =====================================================
-
-        if (!string.IsNullOrEmpty(
-                hub.Nombre)
-            &&
-            db.Nombre !=
-                hub.Nombre)
-        {
-            AgregarCampo(
-                "Nombre",
-                "Nombre completo",
-                db.Nombre,
-                hub.Nombre);
-        }
 
 
         // =====================================================
@@ -531,26 +559,12 @@ public partial class JwHubSyncConflictPage
         // =====================================================
         // FOTOGRAFÍA
         //
-        // La comparación es visual, no de Base64.
+        // Sigue excluida temporalmente.
         //
-        // Si JW Hub no tiene foto, no proponemos borrar
-        // una fotografía local.
+        // Windows recodifica la imagen a JPEG y Android
+        // obtiene los bytes originales, por lo que comparar
+        // los Base64 directamente produciría falsos positivos.
         // =====================================================
-
-        if (!string.IsNullOrWhiteSpace(
-                hub.Foto)
-            &&
-            !JwHubPhotoComparer
-                .SonVisualmenteIguales(
-                    db.Foto,
-                    hub.Foto))
-        {
-            AgregarCampo(
-                "Foto",
-                "Fotografía",
-                db.Foto,
-                hub.Foto);
-        }
     }
 
 
@@ -863,6 +877,19 @@ public partial class JwHubSyncConflictPage
 
 
             // =================================================
+            // FOTOGRAFÍA
+            // =================================================
+
+            if (_fotoVisible
+                &&
+                _usarFotoHub)
+            {
+                actualizada.Foto =
+                    hub.Foto;
+            }
+
+
+            // =================================================
             // GUARDAR EN SQLITE
             //
             // En modo vinculación sigue siendo la misma
@@ -1064,9 +1091,8 @@ public partial class JwHubSyncConflictPage
         {
             case "Nombre":
 
-                destino.Nombre =
-                    hub.Nombre;
-
+                // Nombre pertenece al S-21.
+                // Nunca se sustituye desde JW Hub.
                 break;
 
 
@@ -1196,15 +1222,157 @@ public partial class JwHubSyncConflictPage
                     hub.Solicitudes;
 
                 break;
-
-
-            case "Foto":
-
-                destino.Foto =
-                    hub.Foto;
-
-                break;
         }
+    }
+
+
+    // =========================================================
+    // FOTOGRAFÍA
+    //
+    // La fotografía se excluye de la lista de campos porque
+    // no es texto. Cuando el análisis detectó un cambio real
+    // (dHash), se muestra esta tarjeta con las dos versiones
+    // y se elige cuál conservar.
+    // =========================================================
+
+    private bool _usarFotoHub =
+        true;
+
+
+    private bool _fotoVisible;
+
+
+    private void PrepararFoto()
+    {
+        _fotoVisible =
+            _item.PersonaDB is not null
+            &&
+            _item.PersonaHub is not null
+            &&
+            !string.IsNullOrWhiteSpace(
+                _item.PersonaHub.Foto)
+            &&
+            _item.CamposCambiados.Any(c =>
+                string.Equals(
+                    c,
+                    "Fotografía",
+                    StringComparison.OrdinalIgnoreCase));
+
+
+        if (!_fotoVisible)
+        {
+            PanelFoto.IsVisible =
+                false;
+
+            return;
+        }
+
+
+        PanelFoto.IsVisible =
+            true;
+
+
+        ImgFotoBd.Source =
+            ConvertirFoto(
+                _item.PersonaDB!.Foto);
+
+
+        ImgFotoHub.Source =
+            ConvertirFoto(
+                _item.PersonaHub!.Foto);
+
+
+        // Por defecto se propone la de JW Hub, igual que en el
+        // resto de campos.
+        _usarFotoHub =
+            true;
+
+
+        RefrescarSeleccionFoto();
+    }
+
+
+    private static ImageSource? ConvertirFoto(
+        string? foto)
+    {
+        if (string.IsNullOrWhiteSpace(foto))
+        {
+            return null;
+        }
+
+
+        return new SCCosmos.Mobile.Converters
+            .Base64ImageConverter()
+            .Convert(
+                foto,
+                typeof(ImageSource),
+                null,
+                System.Globalization.CultureInfo
+                    .InvariantCulture)
+            as ImageSource;
+    }
+
+
+    private void RefrescarSeleccionFoto()
+    {
+        LblMarcaFotoBd.Text =
+            _usarFotoHub
+                ? " "
+                : "✓";
+
+
+        LblMarcaFotoHub.Text =
+            _usarFotoHub
+                ? "✓"
+                : " ";
+
+
+        FotoBdBorder.StrokeThickness =
+            _usarFotoHub
+                ? 1
+                : 3;
+
+
+        FotoHubBorder.StrokeThickness =
+            _usarFotoHub
+                ? 3
+                : 1;
+    }
+
+
+    private void FotoBd_Tapped(
+        object? sender,
+        TappedEventArgs e)
+    {
+        if (!_fotoVisible)
+        {
+            return;
+        }
+
+
+        _usarFotoHub =
+            false;
+
+
+        RefrescarSeleccionFoto();
+    }
+
+
+    private void FotoHub_Tapped(
+        object? sender,
+        TappedEventArgs e)
+    {
+        if (!_fotoVisible)
+        {
+            return;
+        }
+
+
+        _usarFotoHub =
+            true;
+
+
+        RefrescarSeleccionFoto();
     }
 
 
@@ -1315,117 +1483,6 @@ public partial class JwHubSyncConflictPage
                 ValorHub)
                 ? "(Vacío)"
                 : ValorHub;
-
-
-        // =====================================================
-        // PRESENTACIÓN ESPECIAL PARA FOTOGRAFÍA
-        // =====================================================
-
-        public bool EsFoto =>
-            string.Equals(
-                Clave,
-                "Foto",
-                StringComparison.Ordinal);
-
-
-        public bool EsTexto =>
-            !EsFoto;
-
-
-        public bool TieneFotoBd =>
-            EsFoto
-            &&
-            !string.IsNullOrWhiteSpace(
-                ValorBd);
-
-
-        public bool FotoBdVacia =>
-            EsFoto
-            &&
-            !TieneFotoBd;
-
-
-        public bool TieneFotoHub =>
-            EsFoto
-            &&
-            !string.IsNullOrWhiteSpace(
-                ValorHub);
-
-
-        public bool FotoHubVacia =>
-            EsFoto
-            &&
-            !TieneFotoHub;
-
-
-        public ImageSource? FotoBdSource =>
-            CrearImageSource(
-                ValorBd);
-
-
-        public ImageSource? FotoHubSource =>
-            CrearImageSource(
-                ValorHub);
-
-
-        private static ImageSource?
-            CrearImageSource(
-                string? base64)
-        {
-            if (string.IsNullOrWhiteSpace(
-                    base64))
-            {
-                return null;
-            }
-
-
-            try
-            {
-                string limpio =
-                    base64.Trim();
-
-
-                if (limpio.StartsWith(
-                        "data:image/",
-                        StringComparison.OrdinalIgnoreCase))
-                {
-                    int coma =
-                        limpio.IndexOf(',');
-
-
-                    if (coma >= 0
-                        &&
-                        coma < limpio.Length - 1)
-                    {
-                        limpio =
-                            limpio.Substring(
-                                coma + 1);
-                    }
-                }
-
-
-                byte[] bytes =
-                    Convert.FromBase64String(
-                        limpio);
-
-
-                if (bytes.Length == 0)
-                {
-                    return null;
-                }
-
-
-                return ImageSource.FromStream(
-                    () =>
-                        new MemoryStream(
-                            bytes,
-                            writable: false));
-            }
-            catch
-            {
-                return null;
-            }
-        }
 
 
         public List<string> Opciones

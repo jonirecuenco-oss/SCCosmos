@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.RscPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="RSC"
+    BackgroundColor="#101216">
+
+    <ScrollView>
+        <VerticalStackLayout
+            Padding="20,16,20,24"
+            Spacing="14">
+
+            <Label
+                Text="RSC"
+                Style="{StaticResource TituloPagina}" />
+
+            <Label
+                Text="Reuniones para el Servicio del Campo · asistentes, arreglos y grupos de predicación"
+                Style="{StaticResource SubtituloPagina}" />
+
+            <Button
+                Text="＋ Nueva RSC"
+                Clicked="BtnNueva_Clicked"
+                Style="{StaticResource BotonPrincipal}" />
+
+            <Label
+                Text="BUSCAR POR DÍA"
+                Style="{StaticResource Antetitulo}"
+                Margin="0,6,0,0" />
+
+            <Border Style="{StaticResource Tarjeta}">
+                <VerticalStackLayout Spacing="8">
+
+                    <Grid ColumnDefinitions="Auto,*,Auto"
+                          ColumnSpacing="8">
+
+                        <Label
+                            Text="Ver un día:"
+                            TextColor="#A7AEB8"
+                            FontSize="13"
+                            VerticalTextAlignment="Center" />
+
+                        <DatePicker
+                            x:Name="DpFiltro"
+                            Grid.Column="1"
+                            DateSelected="DpFiltro_DateSelected"
+                            TextColor="White"
+                            Format="dd/MM/yyyy" />
+
+                        <Button
+                            Grid.Column="2"
+                            Text="Todas"
+                            Clicked="BtnTodas_Clicked"
+                            Style="{StaticResource BotonSecundario}"
+                            HeightRequest="40"
+                            WidthRequest="76"
+                            Padding="0"
+                            FontSize="12.5" />
+
+                    </Grid>
+
+                    <Label
+                        x:Name="LblInfoFiltro"
+                        Style="{StaticResource TextoNota}" />
+
+                </VerticalStackLayout>
+            </Border>
+
+            <Label
+                x:Name="LblVacio"
+                Text="Todavía no hay ninguna RSC. Pulsa «＋ Nueva RSC» para preparar la primera."
+                Style="{StaticResource TextoNota}"
+                IsVisible="False" />
+
+            <VerticalStackLayout
+                x:Name="ListaReuniones"
+                Spacing="10" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

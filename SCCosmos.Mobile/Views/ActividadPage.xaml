@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.ActividadPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Actividad"
+    BackgroundColor="#101216">
+
+    <Grid
+        Padding="16,14,16,12"
+        RowDefinitions="Auto,Auto,*"
+        RowSpacing="10">
+
+        <VerticalStackLayout
+            Grid.Row="0"
+            Spacing="3">
+
+            <Label
+                Text="ACTIVIDAD"
+                TextColor="White"
+                FontSize="26"
+                FontAttributes="Bold"/>
+
+            <Label
+                Text="Todo lo que se hace en SCCosmos, en lenguaje natural: quién (dispositivo y perfil), cuándo y qué."
+                TextColor="#9299A3"
+                FontSize="13"
+                LineBreakMode="WordWrap"/>
+
+            <Label
+                x:Name="LblResumen"
+                Text=""
+                TextColor="#7FB3E0"
+                FontSize="13"/>
+
+        </VerticalStackLayout>
+
+        <Grid
+            Grid.Row="1"
+            ColumnDefinitions="*,Auto"
+            ColumnSpacing="10">
+
+            <Picker
+                x:Name="PickerCategoria"
+                Title="Categoría"
+                TextColor="White"
+                TitleColor="#A5ABB4"
+                SelectedIndexChanged="PickerCategoria_SelectedIndexChanged"/>
+
+            <Button
+                Grid.Column="1"
+                Text="Actualizar"
+                HeightRequest="44"
+                Padding="16,6"
+                BackgroundColor="#343A43"
+                TextColor="White"
+                CornerRadius="9"
+                Clicked="BtnActualizar_Clicked"/>
+
+        </Grid>
+
+        <CollectionView
+            x:Name="ListaActividad"
+            Grid.Row="2"
+            SelectionMode="None"
+            EmptyView="Sin actividad registrada todavía.">
+
+            <CollectionView.ItemTemplate>
+
+                <DataTemplate>
+
+                    <Border
+                        BackgroundColor="{StaticResource Superficie}"
+                        Stroke="#343B45"
+                        StrokeThickness="1"
+                        Padding="14,12"
+                        Margin="0,0,0,10">
+
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="14"/>
+                        </Border.StrokeShape>
+
+                        <VerticalStackLayout
+                            Spacing="4">
+
+                            <Label
+                                Text="{Binding Cabecera}"
+                                TextColor="#7FB3E0"
+                                FontSize="13"
+                                FontAttributes="Bold"/>
+
+                            <Label
+                                Text="{Binding Descripcion}"
+                                TextColor="White"
+                                FontSize="15"
+                                LineBreakMode="WordWrap"/>
+
+                        </VerticalStackLayout>
+
+                    </Border>
+
+                </DataTemplate>
+
+            </CollectionView.ItemTemplate>
+
+        </CollectionView>
+
+    </Grid>
+
+</ContentPage>

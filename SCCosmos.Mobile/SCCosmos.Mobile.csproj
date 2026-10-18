@@ -35,6 +35,17 @@
 
 		<WindowsPackageType>None</WindowsPackageType>
 
+		<!-- Android: APK autónomo y válido para teléfonos reales.
+		     - RuntimeIdentifiers incluye arm64-v8a (móviles modernos) además
+		       de armeabi-v7a y x86_64 (emulador).
+		     - EmbedAssembliesIntoApk embebe los .NET assemblies dentro del
+		       APK: sin esto, los APK de Debug usan "fast deployment" y, al
+		       copiarlos a mano a un teléfono, la app no arranca. -->
+		<RuntimeIdentifiers Condition="$(TargetFramework.Contains('-android'))">android-arm64;android-arm;android-x64</RuntimeIdentifiers>
+		<EmbedAssembliesIntoApk Condition="$(TargetFramework.Contains('-android'))">true</EmbedAssembliesIntoApk>
+		<AndroidFastDeploymentType Condition="$(TargetFramework.Contains('-android'))">None</AndroidFastDeploymentType>
+		<AndroidPackageFormats Condition="$(TargetFramework.Contains('-android'))">apk</AndroidPackageFormats>
+
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">15.0</SupportedOSPlatformVersion>
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
@@ -44,14 +55,10 @@
 
 	<ItemGroup>
 		<!-- App Icon -->
-		<MauiIcon Include="Resources\AppIcon\appicon.svg"
-		          ForegroundFile="Resources\AppIcon\appiconfg.svg"
-		          Color="#EAF4FF" />
+		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#101216" />
 
 		<!-- Splash Screen -->
-		<MauiSplashScreen Include="Resources\Splash\splash.svg"
-		                 Color="#101216"
-		                 BaseSize="180,180" />
+		<MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#101216" BaseSize="180,180" />
 
 		<!-- Images -->
 		<MauiImage Include="Resources\Images\*" />
@@ -66,9 +73,15 @@
 
 	<ItemGroup>
 		<PackageReference Include="CommunityToolkit.Maui" Version="15.0.1" />
+		<PackageReference Include="itext" Version="9.7.0" />
 		<PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.12" />
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- Motor de sincronización entre dispositivos (compartido con Windows). -->
+		<Compile Include="..\..\SincroCompartido\*.cs" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -78,13 +91,34 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <MauiXaml Update="Views\CalendarioPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Views\CicloVisitasPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
 	  <MauiXaml Update="Views\ConfiguracionPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Views\FiltrosPersonasPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
+	  <MauiXaml Update="Views\FormularioSemanaPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
 	  <MauiXaml Update="Views\InicioPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Views\JsonImportConflictPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Views\JsonImportNewPersonPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Views\JsonImportReviewPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Views\JsonImportSelectPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Views\JwHubLoginPage.xaml">
@@ -103,6 +137,12 @@
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Views\PersonasPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Views\VisitaDetallePage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Views\VisitaProgramaActividadPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	</ItemGroup>

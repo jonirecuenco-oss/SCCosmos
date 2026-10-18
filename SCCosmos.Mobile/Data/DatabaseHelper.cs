@@ -8,7 +8,7 @@ public record ResumenBaseDatos(
     int Semanas,
     string NombreSC);
 
-public static class DatabaseHelper
+public static partial class DatabaseHelper
 {
     private static string ConnectionString
     {
@@ -234,6 +234,106 @@ public static class DatabaseHelper
         };
     }
 
+
+    /// <summary>
+    /// Primera semana con actividad programada después de la fecha dada
+    /// (para el enlace «Próxima» del Inicio).
+    /// </summary>
+    public static SemanaCalendario? ObtenerProximaActividad(
+        DateTime desdeExclusivo)
+    {
+        using var connection =
+            new SqliteConnection(ConnectionString);
+
+        connection.Open();
+
+        using var cmd =
+            connection.CreateCommand();
+
+        cmd.CommandText = @"
+        SELECT *
+        FROM Semanas
+        WHERE date(FechaMartes) > date($fecha)
+          AND TRIM(COALESCE(Actividad, '')) <> ''
+        ORDER BY date(FechaMartes) ASC, Id ASC
+        LIMIT 1;";
+
+        cmd.Parameters.AddWithValue(
+            "$fecha",
+            desdeExclusivo.ToString("yyyy-MM-dd"));
+
+        using var reader =
+            cmd.ExecuteReader();
+
+        if (!reader.Read())
+            return null;
+
+        return new SemanaCalendario
+        {
+            Id = Convert.ToInt32(reader["Id"]),
+
+            FechaMartes =
+                reader.GetDateTime(
+                    reader.GetOrdinal("FechaMartes")),
+
+            Actividad =
+                ObtenerString(reader, "Actividad"),
+
+            Congregacion =
+                ObtenerString(reader, "Congregacion"),
+
+            Tipo =
+                ObtenerString(reader, "Tipo"),
+
+            Acompanante =
+                ObtenerString(reader, "Acompanante"),
+
+            Alojamiento =
+                ObtenerString(reader, "Alojamiento"),
+
+            S302Enviado =
+                ObtenerBool(reader, "S302Enviado"),
+
+            DocEnviada =
+                ObtenerBool(reader, "DocEnviada"),
+
+            SeccionAsamblea =
+                ObtenerString(reader, "SeccionAsamblea"),
+
+            FechaAsamblea =
+                ObtenerString(reader, "FechaAsamblea"),
+
+            NotificacionEnviada =
+                ObtenerBool(reader, "NotificacionEnviada"),
+
+            RecordatorioEnviado =
+                ObtenerBool(reader, "RecordatorioEnviado"),
+
+            TieneDatosImportados =
+                ObtenerBool(reader, "DatosImportados"),
+
+            TipoAsamblea =
+                ObtenerString(reader, "TipoAsamblea"),
+
+            RepBetelNombre =
+                ObtenerString(reader, "RepBetelNombre"),
+
+            RepBetelTelefono =
+                ObtenerString(reader, "RepBetelTelefono"),
+
+            RepBetelEmail =
+                ObtenerString(reader, "RepBetelEmail"),
+
+            RepBetelMensajeEnviado =
+                ObtenerBoolOpcional(
+                    reader,
+                    "RepBetelMensajeEnviado"),
+
+            EsClonada = false
+        };
+    }
+
+
     public static string ObtenerCodigoCongregacion(
         string nombreCongregacion)
     {
@@ -259,6 +359,101 @@ public static class DatabaseHelper
 
         return result?.ToString()
                ?? string.Empty;
+    }
+
+    public static List<ActividadPrograma> ObtenerActividadesProgramaDia(
+        string congreCodigo,
+        string mesReferenciaStr,
+        string dia)
+    {
+        var lista =
+            new List<ActividadPrograma>();
+
+        using var connection =
+            new SqliteConnection(ConnectionString);
+
+        connection.Open();
+
+        using var cmd =
+            connection.CreateCommand();
+
+        cmd.CommandText = @"
+        SELECT
+            Responsable,
+            TipoActividad,
+            Hora,
+            NotasLibro,
+            CompaneroId,
+            Direccion
+        FROM ProgramaVisitaV2
+        WHERE CongreCodigo = $codigo
+          AND MesReferencia = $mes
+          AND DiaSemana = $dia
+        ORDER BY Hora ASC;";
+
+        cmd.Parameters.AddWithValue("$codigo", congreCodigo);
+        cmd.Parameters.AddWithValue("$mes", mesReferenciaStr);
+        cmd.Parameters.AddWithValue("$dia", dia);
+
+        using var reader =
+            cmd.ExecuteReader();
+
+        while (reader.Read())
+        {
+            lista.Add(new ActividadPrograma
+            {
+                Responsable = reader.IsDBNull(0) ? "" : reader.GetString(0),
+                TipoActividad = reader.IsDBNull(1) ? "" : reader.GetString(1),
+                Hora = reader.IsDBNull(2) ? "" : reader.GetString(2),
+                NotasLibro = reader.IsDBNull(3) ? "" : reader.GetString(3),
+                CompaneroId = reader.IsDBNull(4) ? 0 : reader.GetInt32(4),
+                Direccion = reader.IsDBNull(5) ? "" : reader.GetString(5)
+            });
+        }
+
+        return lista;
+    }
+
+    public static DateTime? ObtenerFechaMinimaSemana()
+    {
+        using var connection =
+            new SqliteConnection(ConnectionString);
+
+        connection.Open();
+
+        using var cmd =
+            connection.CreateCommand();
+
+        cmd.CommandText =
+            "SELECT MIN(FechaMartes) FROM Semanas";
+
+        object valor =
+            cmd.ExecuteScalar();
+
+        return valor == null || valor == DBNull.Value
+            ? null
+            : Convert.ToDateTime(valor);
+    }
+
+    public static DateTime? ObtenerFechaMaximaSemana()
+    {
+        using var connection =
+            new SqliteConnection(ConnectionString);
+
+        connection.Open();
+
+        using var cmd =
+            connection.CreateCommand();
+
+        cmd.CommandText =
+            "SELECT MAX(FechaMartes) FROM Semanas";
+
+        object valor =
+            cmd.ExecuteScalar();
+
+        return valor == null || valor == DBNull.Value
+            ? null
+            : Convert.ToDateTime(valor);
     }
 
     public static List<ActividadPrograma>
@@ -552,26 +747,66 @@ public static class DatabaseHelper
         return resultado;
     }
 
+    /// <summary>
+    /// Busca el índice de una columna sin fallar si no existe: las bases
+    /// sincronizadas desde el PC pueden ser anteriores a algún añadido.
+    /// </summary>
+    private static int BuscarOrdinal(
+        SqliteDataReader reader,
+        string columna)
+    {
+        for (int i = 0;
+             i < reader.FieldCount;
+             i++)
+        {
+            if (string.Equals(
+                    reader.GetName(i),
+                    columna,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+
     private static string ObtenerString(
         SqliteDataReader reader,
         string columna)
     {
         int ordinal =
-            reader.GetOrdinal(columna);
+            BuscarOrdinal(
+                reader,
+                columna);
 
-        return reader.IsDBNull(ordinal)
-            ? ""
-            : reader.GetString(ordinal);
+        if (ordinal < 0
+            ||
+            reader.IsDBNull(ordinal))
+        {
+            return "";
+        }
+
+        // Convert.ToString admite columnas numéricas o de fecha leídas
+        // como texto.
+        return Convert.ToString(
+                   reader.GetValue(ordinal))
+               ?? "";
     }
+
 
     private static bool ObtenerBool(
         SqliteDataReader reader,
         string columna)
     {
         int ordinal =
-            reader.GetOrdinal(columna);
+            BuscarOrdinal(
+                reader,
+                columna);
 
-        return !reader.IsDBNull(ordinal)
+        return ordinal >= 0
+               && !reader.IsDBNull(ordinal)
                && Convert.ToInt32(
                    reader.GetValue(ordinal)) == 1;
     }
@@ -808,6 +1043,8 @@ public static class DatabaseHelper
     public static void ActualizarPersona(
     Persona p)
     {
+        AnotarActividadMobile("Personas", "Editó la ficha de «" + MostrarNombreMobile(p) + "»");
+
         using var connection =
             new SqliteConnection(ConnectionString);
 
@@ -1017,6 +1254,8 @@ public static class DatabaseHelper
     public static int InsertarPersonaNueva(
     Persona p)
     {
+        AnotarActividadMobile("Personas", "Añadió la persona «" + MostrarNombreMobile(p) + "»");
+
         using var connection =
             new Microsoft.Data.Sqlite.SqliteConnection(
                 ConnectionString);
@@ -1224,6 +1463,8 @@ public static class DatabaseHelper
     public static void MarcarPersonaEliminada(
     int idPersona)
     {
+        AnotarActividadMobile("Personas", "Dio de baja a «" + NombrePersonaPorIdMobile(idPersona) + "»");
+
         using var connection =
             new Microsoft.Data.Sqlite.SqliteConnection(
                 ConnectionString);

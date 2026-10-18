@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 
 <ContentPage
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
@@ -6,6 +6,9 @@
     x:Class="SCCosmos.Mobile.Views.InicioPage"
     Title="Inicio"
     BackgroundColor="#101216">
+
+    <ContentPage.ToolbarItems>
+    </ContentPage.ToolbarItems>
 
     <ScrollView>
 
@@ -15,21 +18,67 @@
 
             <!-- SALUDO -->
 
-            <VerticalStackLayout Spacing="2">
+            <Grid ColumnDefinitions="*,Auto"
+                  ColumnSpacing="10">
 
-                <Label
-                    x:Name="TxtSaludo"
-                    Text="¡Hola!"
-                    TextColor="White"
-                    FontSize="29"
-                    FontAttributes="Bold"/>
+                <VerticalStackLayout Grid.Column="0"
+                                     Spacing="2">
 
-                <Label
-                    Text="Este es el resumen de tu circuito"
-                    TextColor="#8F959F"
-                    FontSize="14"/>
+                    <Label
+                        x:Name="TxtSaludo"
+                        Text="¡Hola!"
+                        TextColor="White"
+                        FontSize="29"
+                        FontAttributes="Bold"/>
 
-            </VerticalStackLayout>
+                </VerticalStackLayout>
+
+                <Border x:Name="PanelCampana"
+                        Grid.Column="1"
+                        BackgroundColor="{StaticResource SuperficieAlta}"
+                        Stroke="{StaticResource Borde}"
+                        StrokeThickness="1"
+                        Padding="9,6"
+                        VerticalOptions="Start"
+                        Margin="0,4,0,0">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="12"/>
+                    </Border.StrokeShape>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="Campana_Tapped"/>
+                    </Border.GestureRecognizers>
+                    <Grid>
+                        <Label
+                            x:Name="LblCampana"
+                            Text="🔕"
+                            FontSize="20"
+                            Opacity="0.45"
+                            HorizontalTextAlignment="Center"
+                            VerticalTextAlignment="Center"/>
+                        <Border
+                            x:Name="BadgeCampana"
+                            IsVisible="False"
+                            BackgroundColor="#FFB900"
+                            StrokeThickness="0"
+                            Padding="5,0"
+                            MinimumHeightRequest="16"
+                            HorizontalOptions="End"
+                            VerticalOptions="Start"
+                            Margin="0,-2,-4,0">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="8"/>
+                            </Border.StrokeShape>
+                            <Label
+                                x:Name="LblCampanaNumero"
+                                Text="0"
+                                TextColor="#1A1D22"
+                                FontSize="10"
+                                FontAttributes="Bold"/>
+                        </Border>
+                    </Grid>
+                </Border>
+
+            </Grid>
 
 
             <!-- SEMANA ACTUAL -->
@@ -42,8 +91,8 @@
                 CharacterSpacing="1.5"/>
 
             <Border
-                BackgroundColor="#191D23"
-                Stroke="#303640"
+                BackgroundColor="{StaticResource Superficie}"
+                Stroke="{StaticResource Borde}"
                 StrokeThickness="1"
                 Padding="18">
 
@@ -63,9 +112,7 @@
                             <Label
                                 x:Name="LblTipoSemana"
                                 Text="Actividad"
-                                TextColor="#4BA3E3"
-                                FontSize="12"
-                                FontAttributes="Bold"/>
+                                Style="{StaticResource Antetitulo}"/>
 
                             <Label
                                 x:Name="LblActividad"
@@ -134,6 +181,15 @@
                             FontSize="14"
                             IsVisible="False"/>
 
+                        <Button
+                            Text="Ver visita"
+                            Clicked="BtnVerVisitaInicio_Click"
+                            BackgroundColor="#0B6FC2"
+                            TextColor="White"
+                            CornerRadius="9"
+                            HeightRequest="44"
+                            Margin="0,4,0,0"/>
+
                     </VerticalStackLayout>
 
                     <!-- OTRA ACTIVIDAD -->
@@ -155,6 +211,24 @@
                             Margin="0,6,0,0"/>
 
                     </VerticalStackLayout>
+
+                    <!-- PRÓXIMA ACTIVIDAD (enlace al calendario) -->
+
+                    <Label
+                        x:Name="LblProximaActividad"
+                        Text=""
+                        TextColor="#80C4FF"
+                        FontSize="13.5"
+                        TextDecorations="Underline"
+                        LineBreakMode="WordWrap"
+                        IsVisible="False">
+
+                        <Label.GestureRecognizers>
+                            <TapGestureRecognizer
+                                Tapped="ProximaActividad_Tapped"/>
+                        </Label.GestureRecognizers>
+
+                    </Label>
 
                     <!-- SIN DATOS -->
 
@@ -185,8 +259,8 @@
                     CharacterSpacing="1.5"/>
 
                 <Border
-                    BackgroundColor="#191D23"
-                    Stroke="#303640"
+                    BackgroundColor="{StaticResource Superficie}"
+                    Stroke="{StaticResource Borde}"
                     StrokeThickness="1"
                     Padding="6">
 
@@ -204,11 +278,13 @@
 
                                 <Grid
                                     Padding="12"
-                                    ColumnDefinitions="65,*"
-                                    RowDefinitions="Auto,Auto">
+                                    ColumnDefinitions="62,*,Auto"
+                                    RowDefinitions="Auto,Auto,Auto"
+                                    ColumnSpacing="8"
+                                    RowSpacing="2">
 
                                     <Label
-                                        Grid.RowSpan="2"
+                                        Grid.RowSpan="3"
                                         Text="{Binding Hora}"
                                         TextColor="#4BA3E3"
                                         FontSize="15"
@@ -222,6 +298,24 @@
                                         FontSize="15"
                                         FontAttributes="Bold"/>
 
+                                    <Border
+                                        Grid.Column="2"
+                                        Grid.RowSpan="2"
+                                        BackgroundColor="#242A33"
+                                        Padding="8,3"
+                                        StrokeThickness="0"
+                                        VerticalOptions="Start"
+                                        IsVisible="{Binding MostrarResponsable}">
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="6"/>
+                                        </Border.StrokeShape>
+                                        <Label
+                                            Text="{Binding Responsable}"
+                                            TextColor="#EBCB8B"
+                                            FontSize="11.5"
+                                            FontAttributes="Bold"/>
+                                    </Border>
+
                                     <Label
                                         Grid.Row="1"
                                         Grid.Column="1"
@@ -229,6 +323,16 @@
                                         TextColor="#9299A3"
                                         FontSize="13"
                                         IsVisible="{Binding VerCompanero}"/>
+
+                                    <Label
+                                        Grid.Row="2"
+                                        Grid.Column="1"
+                                        Grid.ColumnSpan="2"
+                                        Text="{Binding Ubicacion}"
+                                        TextColor="#7F8791"
+                                        FontSize="12"
+                                        LineBreakMode="WordWrap"
+                                        IsVisible="{Binding MostrarUbicacion}"/>
 
                                 </Grid>
 
@@ -254,8 +358,9 @@
                 Margin="0,5,0,0"/>
 
             <Grid
+                x:Name="GridEstadisticas"
                 ColumnDefinitions="*,*"
-                RowDefinitions="Auto,Auto,Auto,Auto"
+                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
                 ColumnSpacing="12"
                 RowSpacing="12">
 
@@ -264,8 +369,8 @@
                 <Border
                     Grid.Row="0"
                     Grid.Column="0"
-                    BackgroundColor="#191D23"
-                    Stroke="#303640"
+                    BackgroundColor="{StaticResource Superficie}"
+                    Stroke="{StaticResource Borde}"
                     Padding="16">
 
                     <Border.StrokeShape>
@@ -298,8 +403,8 @@
                 <Border
                     Grid.Row="0"
                     Grid.Column="1"
-                    BackgroundColor="#191D23"
-                    Stroke="#303640"
+                    BackgroundColor="{StaticResource Superficie}"
+                    Stroke="{StaticResource Borde}"
                     Padding="16">
 
                     <Border.StrokeShape>
@@ -332,8 +437,8 @@
                 <Border
                     Grid.Row="1"
                     Grid.Column="0"
-                    BackgroundColor="#191D23"
-                    Stroke="#303640"
+                    BackgroundColor="{StaticResource Superficie}"
+                    Stroke="{StaticResource Borde}"
                     Padding="16">
                     
 
@@ -367,8 +472,8 @@
                 <Border
                     Grid.Row="1"
                     Grid.Column="1"
-                    BackgroundColor="#191D23"
-                    Stroke="#303640"
+                    BackgroundColor="{StaticResource Superficie}"
+                    Stroke="{StaticResource Borde}"
                     Padding="16">
 
                     <Border.StrokeShape>
@@ -401,8 +506,8 @@
                 <Border
                     Grid.Row="2"
                     Grid.Column="0"
-                    BackgroundColor="#191D23"
-                    Stroke="#303640"
+                    BackgroundColor="{StaticResource Superficie}"
+                    Stroke="{StaticResource Borde}"
                     Padding="16">
 
                     <Border.StrokeShape>
@@ -435,8 +540,8 @@
                 <Border
                     Grid.Row="2"
                     Grid.Column="1"
-                    BackgroundColor="#191D23"
-                    Stroke="#303640"
+                    BackgroundColor="{StaticResource Superficie}"
+                    Stroke="{StaticResource Borde}"
                     Padding="16">
 
                     <Border.StrokeShape>
@@ -469,8 +574,8 @@
                 <Border
                     Grid.Row="3"
                     Grid.Column="0"
-                    BackgroundColor="#191D23"
-                    Stroke="#303640"
+                    BackgroundColor="{StaticResource Superficie}"
+                    Stroke="{StaticResource Borde}"
                     Padding="16">
 
                     <Border.StrokeShape>
@@ -503,8 +608,8 @@
                 <Border
                     Grid.Row="3"
                     Grid.Column="1"
-                    BackgroundColor="#191D23"
-                    Stroke="#303640"
+                    BackgroundColor="{StaticResource Superficie}"
+                    Stroke="{StaticResource Borde}"
                     Padding="16">
 
                     <Border.StrokeShape>
@@ -530,6 +635,102 @@
                             FontAttributes="Bold"/>
                     </VerticalStackLayout>
 
+                </Border>
+
+                <!-- PUBLICADORES -->
+                <Border Grid.Row="4" Grid.Column="0"
+                        BackgroundColor="{StaticResource Superficie}" Stroke="{StaticResource Borde}" Padding="16">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16"/>
+                    </Border.StrokeShape>
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Publicadores" TextColor="#AAB0B9" FontSize="13"/>
+                        <Label x:Name="TxtTotalPublicadores" Text="—" TextColor="White" FontSize="27" FontAttributes="Bold"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- HOMBRES -->
+                <Border Grid.Row="4" Grid.Column="1"
+                        BackgroundColor="{StaticResource Superficie}" Stroke="{StaticResource Borde}" Padding="16">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16"/>
+                    </Border.StrokeShape>
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Hombres" TextColor="#AAB0B9" FontSize="13"/>
+                        <Label x:Name="TxtTotalHombres" Text="—" TextColor="White" FontSize="27" FontAttributes="Bold"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- MUJERES -->
+                <Border Grid.Row="5" Grid.Column="0"
+                        BackgroundColor="{StaticResource Superficie}" Stroke="{StaticResource Borde}" Padding="16">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16"/>
+                    </Border.StrokeShape>
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Mujeres" TextColor="#AAB0B9" FontSize="13"/>
+                        <Label x:Name="TxtTotalMujeres" Text="—" TextColor="White" FontSize="27" FontAttributes="Bold"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- NO BAUTIZADOS -->
+                <Border Grid.Row="5" Grid.Column="1"
+                        BackgroundColor="{StaticResource Superficie}" Stroke="{StaticResource Borde}" Padding="16">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16"/>
+                    </Border.StrokeShape>
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="No bautizados" TextColor="#AAB0B9" FontSize="13"/>
+                        <Label x:Name="TxtTotalNoBautizados" Text="—" TextColor="White" FontSize="27" FontAttributes="Bold"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- CURSOS -->
+                <Border Grid.Row="6" Grid.Column="0"
+                        BackgroundColor="{StaticResource Superficie}" Stroke="{StaticResource Borde}" Padding="16">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16"/>
+                    </Border.StrokeShape>
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Cursos bíblicos" TextColor="#AAB0B9" FontSize="13"/>
+                        <Label x:Name="TxtTotalCursos" Text="—" TextColor="White" FontSize="27" FontAttributes="Bold"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- MEDIA EDAD -->
+                <Border Grid.Row="6" Grid.Column="1"
+                        BackgroundColor="{StaticResource Superficie}" Stroke="{StaticResource Borde}" Padding="16">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16"/>
+                    </Border.StrokeShape>
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Media de edad" TextColor="#AAB0B9" FontSize="13"/>
+                        <Label x:Name="TxtMediaEdad" Text="—" TextColor="White" FontSize="27" FontAttributes="Bold"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- MEDIA PREC AUX -->
+                <Border Grid.Row="7" Grid.Column="0"
+                        BackgroundColor="{StaticResource Superficie}" Stroke="{StaticResource Borde}" Padding="16">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16"/>
+                    </Border.StrokeShape>
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Media prec. auxiliares" TextColor="#AAB0B9" FontSize="13"/>
+                        <Label x:Name="TxtMediaPrecAux" Text="—" TextColor="White" FontSize="27" FontAttributes="Bold"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- BETEL -->
+                <Border Grid.Row="7" Grid.Column="1"
+                        BackgroundColor="{StaticResource Superficie}" Stroke="{StaticResource Borde}" Padding="16">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16"/>
+                    </Border.StrokeShape>
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Betel" TextColor="#AAB0B9" FontSize="13"/>
+                        <Label x:Name="TxtTotalBetel" Text="—" TextColor="White" FontSize="27" FontAttributes="Bold"/>
+                    </VerticalStackLayout>
                 </Border>
 
             </Grid>

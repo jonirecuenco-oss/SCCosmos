@@ -4,6 +4,10 @@ using Microsoft.Maui.ApplicationModel;
 using SCCosmos.Mobile.Data;
 using System.ComponentModel;
 
+#if ANDROID
+using SCCosmos.Mobile.Platforms.Android;
+#endif
+
 namespace SCCosmos.Mobile.Views;
 
 public partial class ConfiguracionPage : ContentPage
@@ -14,13 +18,526 @@ public partial class ConfiguracionPage : ContentPage
     public ConfiguracionPage()
     {
         InitializeComponent();
+        HookAutoguardado();
         CargarConfiguracionJwHub();
         CargarRutaGuardada();
+        CargarDatosGlobales();
+        CargarPerfil();
+
+        // La sincronización es siempre automática: no hay interruptor.
+        AutoSyncService.Activo =
+            true;
+
+        AutoSyncService.EstadoCambiado +=
+            AutoSync_EstadoCambiado;
+
+        ComprobarBaseDatos();
+
+        // Selector nuevo entre dispositivos.
+        CargarSincronizacion();
+
+        // La esposa no gestiona dispositivos.
+        try
+        {
+            if (!PerfilAccesoService.EsHombre)
+            {
+                CardSincroMobile.IsVisible =
+                    false;
+            }
+        }
+        catch
+        {
+        }
+    }
+
+    /// <summary>
+    /// La comprobación de la base de datos es automática: se muestra el
+    /// resultado junto al botón de seleccionar carpeta.
+    /// </summary>
+    private void AutoSync_EstadoCambiado(string mensaje)
+    {
+        MainThread.BeginInvokeOnMainThread(
+            () =>
+            {
+                if (string.IsNullOrWhiteSpace(mensaje))
+                {
+                    return;
+                }
+
+                LblEstado.Text =
+                    $"{_estadoBaseDatos} · {mensaje}";
+            });
+    }
+
+    private string _estadoBaseDatos =
+        "Comprobando la base de datos…";
+
+
+    // =========================================================
+    // SINCRONIZACIÓN ENTRE DISPOSITIVOS
+    // =========================================================
+
+    private Microsoft.Maui.Dispatching.IDispatcherTimer?
+        _timerSincro;
+
+
+    private void CargarSincronizacion()
+    {
+        try
+        {
+            _autoguardando =
+                true;
+
+            SwSincroActivo.IsToggled =
+                SincronizacionMobile.ConfiguracionActiva;
+
+            TxtNombreSincro.Text =
+                SincronizacionMobile.NombreDispositivo;
+
+            TxtClaveSincro.Text =
+                SincronizacionMobile.Clave;
+
+            _autoguardando =
+                false;
+
+            RefrescarSincro();
+        }
+        catch
+        {
+            _autoguardando =
+                false;
+        }
+    }
+
+
+    private void RefrescarSincro()
+    {
+        try
+        {
+            LblEstadoSincro.Text =
+                SincronizacionMobile.EstadoTexto;
+
+            BindableLayout.SetItemsSource(
+                ListaDispositivosSincro,
+                SincronizacionMobile.ObtenerDispositivosVista());
+        }
+        catch
+        {
+        }
+    }
+
+
+    private void IniciarTimerSincro()
+    {
+        try
+        {
+            _timerSincro ??=
+                Dispatcher.CreateTimer();
+
+            _timerSincro.Interval =
+                TimeSpan.FromSeconds(3);
+
+            _timerSincro.Tick -=
+                TimerSincro_Tick;
+
+            _timerSincro.Tick +=
+                TimerSincro_Tick;
+
+            _timerSincro.Start();
+
+            RefrescarSincro();
+        }
+        catch
+        {
+        }
+    }
+
+
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+
+        try
+        {
+            _timerSincro?.Stop();
+        }
+        catch
+        {
+        }
+    }
+
+
+    private void TimerSincro_Tick(
+        object? sender,
+        EventArgs e)
+    {
+        RefrescarSincro();
+    }
+
+
+    /// <summary>
+    /// Aplica los ajustes de sincronización (sin botón: se llama solo al
+    /// cambiar el interruptor o al salir de los campos).
+    /// </summary>
+    private void AplicarSincroAutomatico()
+    {
+        try
+        {
+            if (_autoguardando)
+            {
+                return;
+            }
+
+            bool activoAntes =
+                SincronizacionMobile.ConfiguracionActiva;
+
+            SincronizacionMobile.ConfiguracionActiva =
+                SwSincroActivo.IsToggled;
+
+            string nombreNuevo =
+                (TxtNombreSincro.Text ?? "").Trim();
+
+            string claveNueva =
+                (TxtClaveSincro.Text ?? "").Trim();
+
+            bool cambio =
+                activoAntes != SincronizacionMobile.ConfiguracionActiva
+                || !string.Equals(
+                    nombreNuevo,
+                    SincronizacionMobile.NombreDispositivo,
+                    StringComparison.Ordinal)
+                || !string.Equals(
+                    claveNueva,
+                    SincronizacionMobile.Clave,
+                    StringComparison.Ordinal);
+
+            if (!cambio)
+            {
+                return;
+            }
+
+            SincronizacionMobile.NombreDispositivo =
+                nombreNuevo;
+
+            SincronizacionMobile.Clave =
+                claveNueva;
+
+            SincronizacionMobile.Aplicar();
+
+            if (activoAntes != SincronizacionMobile.ConfiguracionActiva)
+            {
+                DatabaseHelper.AnotarActividadMobile(
+                    "Configuración",
+                    SincronizacionMobile.ConfiguracionActiva
+                        ? "Activó la sincronización entre dispositivos"
+                        : "Desactivó la sincronización entre dispositivos");
+            }
+            else
+            {
+                DatabaseHelper.AnotarActividadMobile(
+                    "Configuración",
+                    "Cambió los datos de sincronización (nombre o clave)");
+            }
+
+            RefrescarSincro();
+        }
+        catch
+        {
+        }
+    }
+
+
+    /// <summary>
+    /// Desmarca o marca un dispositivo para no sincronizar con él.
+    /// </summary>
+    private void ChkDispositivo_Changed(
+        object? sender,
+        CheckedChangedEventArgs e)
+    {
+        try
+        {
+            if (_autoguardando)
+            {
+                return;
+            }
+
+            if (sender is CheckBox casilla
+                && casilla.BindingContext is DispositivoSyncMobile dispositivo
+                && dispositivo.Id.Length > 0)
+            {
+                SincronizacionMobile.EstablecerHabilitado(
+                    dispositivo.Id,
+                    dispositivo.Nombre,
+                    e.Value);
+            }
+        }
+        catch
+        {
+        }
+    }
+
+    private void CargarPerfil()
+    {
+        try
+        {
+            PickerPerfil.SelectedItem =
+                PerfilAccesoService.EsHombre
+                    ? PerfilAccesoService.PefilHombre
+                    : (PerfilAccesoService.Configurado
+                        ? PerfilAccesoService.PerfilEsposa
+                        : PerfilAccesoService.PefilHombre);
+
+            TxtCodigoPerfil.Text =
+                PerfilAccesoService.CodigoValidado
+                    ? PerfilAccesoService.CodigoCompleto
+                    : "";
+
+            ActualizarPanelCodigoPerfil();
+            ActualizarEstadoPerfil();
+        }
+        catch
+        {
+        }
+    }
+
+    /// <summary>
+    /// El código de acceso es solo para el superintendente: el campo se
+    /// oculta mientras el perfil seleccionado no sea «Hombre».
+    /// </summary>
+    private void ActualizarPanelCodigoPerfil()
+    {
+        bool esHombre =
+            string.Equals(
+                PickerPerfil.SelectedItem?.ToString(),
+                PerfilAccesoService.PefilHombre,
+                StringComparison.OrdinalIgnoreCase);
+
+        PanelCodigoPerfil.IsVisible =
+            esHombre;
+
+        if (!esHombre)
+        {
+            TxtCodigoPerfil.Text = "";
+        }
+    }
+
+    private void PickerPerfil_SelectedIndexChanged(
+        object sender,
+        EventArgs e)
+    {
+        ActualizarPanelCodigoPerfil();
+    }
+
+    private void ActualizarEstadoPerfil()
+    {
+        bool completo =
+            PerfilAccesoService.AccesoCompleto;
+
+        LblPerfilEstado.TextColor =
+            completo
+                ? Colors.LightGreen
+                : Colors.Orange;
+
+        LblPerfilEstado.Text =
+            completo
+                ? "Acceso completo a todas las funciones."
+                : "Acceso limitado: Inicio, Calendario, Personas y " +
+                  "Configuración.";
+
+        AplicarPerfilAccesoConfiguracion();
+    }
+
+
+    /// <summary>
+    /// La esposa del SC no ve el JW Hub ni los datos del superintendente y
+    /// del circuito: solo su propio nombre.
+    /// </summary>
+    private void AplicarPerfilAccesoConfiguracion()
+    {
+        bool completo =
+            PerfilAccesoService.AccesoCompleto;
+
+        TituloJwHub.IsVisible = completo;
+        PanelJwHub.IsVisible = completo;
+
+        PanelDatosSC.IsVisible = completo;
+        PanelDatosSCFinal.IsVisible = completo;
+    }
+
+    private async void BtnGuardarPerfil_Click(
+        object sender,
+        EventArgs e)
+    {
+        try
+        {
+            string rol =
+                PickerPerfil.SelectedItem?.ToString()
+                ?? PerfilAccesoService.PefilHombre;
+
+            PerfilAccesoService.EstablecerRol(
+                rol);
+
+            if (PerfilAccesoService.EsHombre)
+            {
+                PerfilAccesoService.ValidarCodigo(
+                    TxtCodigoPerfil.Text ?? "");
+            }
+
+            ActualizarEstadoPerfil();
+
+            (Shell.Current as AppShell)
+                ?.AplicarPerfilAcceso();
+
+            await DisplayAlert(
+                "Perfil de usuario",
+                PerfilAccesoService.AccesoCompleto
+                    ? "Guardado. Acceso completo."
+                    : "Guardado. Acceso limitado a Inicio, Calendario, " +
+                      "Personas y Configuración.",
+                "Aceptar");
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert(
+                "Perfil",
+                "No se pudo guardar: " + ex.Message,
+                "Aceptar");
+        }
+    }
+
+    private void CargarDatosGlobales()
+    {
+        try
+        {
+            _autoguardando =
+                true;
+
+            TxtNombreSC.Text =
+                DatabaseHelper.ObtenerConfiguracion("NombreSC", "");
+
+            TxtApellidoSC.Text =
+                DatabaseHelper.ObtenerConfiguracion("ApellidoSC", "");
+
+            TxtNombreEsposaSC.Text =
+                DatabaseHelper.ObtenerConfiguracion("NombreEsposaSC", "");
+
+            TxtApellidoEsposaSC.Text =
+                DatabaseHelper.ObtenerConfiguracion("ApellidoEsposaSC", "");
+
+            TxtNumCircuito.Text =
+                DatabaseHelper.ObtenerConfiguracion("NumeroCircuito", "");
+
+            TxtRutaArchivoCircuito.Text =
+                DatabaseHelper.ObtenerConfiguracion("RutaArchivoCircuito", "");
+
+            _autoguardando =
+                false;
+        }
+        catch (Exception ex)
+        {
+            _autoguardando =
+                false;
+
+            LblResultadoGlobal.TextColor =
+                Colors.OrangeRed;
+
+            LblResultadoGlobal.Text =
+                "No se pudieron leer los datos: " + ex.Message;
+        }
+    }
+
+    /// <summary>
+    /// Guarda los datos del circuito (sin botones: se llama solo al
+    /// salir de cada campo).
+    /// </summary>
+    private void GuardarDatosGlobales()
+    {
+        try
+        {
+            if (_autoguardando)
+            {
+                return;
+            }
+
+            DatabaseHelper.GuardarConfiguracion(
+                "NombreSC",
+                TxtNombreSC.Text?.Trim() ?? "");
+
+            DatabaseHelper.GuardarConfiguracion(
+                "ApellidoSC",
+                TxtApellidoSC.Text?.Trim() ?? "");
+
+            DatabaseHelper.GuardarConfiguracion(
+                "NombreEsposaSC",
+                TxtNombreEsposaSC.Text?.Trim() ?? "");
+
+            DatabaseHelper.GuardarConfiguracion(
+                "ApellidoEsposaSC",
+                TxtApellidoEsposaSC.Text?.Trim() ?? "");
+
+            DatabaseHelper.GuardarConfiguracion(
+                "NumeroCircuito",
+                TxtNumCircuito.Text?.Trim() ?? "");
+
+            DatabaseHelper.GuardarConfiguracion(
+                "RutaArchivoCircuito",
+                TxtRutaArchivoCircuito.Text?.Trim() ?? "");
+
+            LblResultadoGlobal.TextColor =
+                Colors.LightGreen;
+
+            LblResultadoGlobal.Text =
+                "✓ Guardado automáticamente.";
+        }
+        catch (Exception ex)
+        {
+            LblResultadoGlobal.TextColor =
+                Colors.OrangeRed;
+
+            LblResultadoGlobal.Text =
+                "✗ No se pudieron guardar: " + ex.Message;
+        }
+    }
+
+
+    // =========================================================
+    // AUTOGUARDADO (SIN BOTONES)
+    // =========================================================
+
+    private bool _autoguardando;
+
+    private void HookAutoguardado()
+    {
+        foreach (Entry campo in
+                 new Entry[]
+                 {
+                     TxtNombreSC,
+                     TxtApellidoSC,
+                     TxtNombreEsposaSC,
+                     TxtApellidoEsposaSC,
+                     TxtNumCircuito,
+                     TxtRutaArchivoCircuito
+                 })
+        {
+            campo.Unfocused +=
+                (s, e) => GuardarDatosGlobales();
+        }
+
+        TxtNombreSincro.Unfocused +=
+            (s, e) => AplicarSincroAutomatico();
+
+        TxtClaveSincro.Unfocused +=
+            (s, e) => AplicarSincroAutomatico();
+
+        SwSincroActivo.Toggled +=
+            (s, e) => AplicarSincroAutomatico();
     }
 
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+
+        IniciarTimerSincro();
 
         // Si la sincronización automática ya estaba activada
         // (por ejemplo, tras actualizar/reinstalar una versión
@@ -102,6 +619,72 @@ public partial class ConfiguracionPage : ContentPage
                 $"Carpeta: {SyncFolderService.NombreCarpeta}";
 
             ComprobarBaseDatos();
+
+            // Antes había que reiniciar la app: al elegir la carpeta solo se
+            // comprobaba que existiera la base de datos y la importación se
+            // hacía únicamente al arrancar. Ahora se usa la base de datos de
+            // la carpeta al momento.
+            if (!SyncFolderService.ExisteBaseDatos())
+            {
+                return;
+            }
+
+            if (AutoSyncService.HayCambiosLocalesSinSincronizar())
+            {
+                bool usarCarpeta =
+                    await DisplayAlert(
+                        "Base de datos",
+                        "En el móvil hay cambios que todavía no se han " +
+                        "enviado a la carpeta.\n\n" +
+                        "¿Quieres usar la base de datos de la carpeta o " +
+                        "mantener la del móvil?",
+                        "Usar la de la carpeta",
+                        "Mantener la del móvil");
+
+                if (!usarCarpeta)
+                {
+                    LblEstado.Text =
+                        "Se mantiene la base de datos del móvil.";
+
+                    LblEstado.TextColor =
+                        Colors.Orange;
+
+                    return;
+                }
+            }
+
+            LblEstado.Text =
+                "Importando la base de datos de la carpeta...";
+
+            LblEstado.TextColor =
+                Colors.White;
+
+            ResultadoSincronizacion resultado =
+                await AutoSyncService.ImportarAhoraAsync();
+
+            if (!resultado.Correcto)
+            {
+                LblEstado.Text =
+                    "✗ " + resultado.Mensaje;
+
+                LblEstado.TextColor =
+                    Colors.OrangeRed;
+
+                return;
+            }
+
+            _estadoBaseDatos =
+                "✓ sccosmos.db encontrado y accesible";
+
+            LblEstado.Text =
+                "✓ Base de datos actualizada desde la carpeta";
+
+            LblEstado.TextColor =
+                Colors.LightGreen;
+
+            // Se abre Inicio para que se vean los datos recién importados:
+            // cada sección vuelve a cargar sus datos al entrar en ella.
+            await Shell.Current.GoToAsync("//inicio");
         }
         catch (Exception ex)
         {
@@ -113,19 +696,15 @@ public partial class ConfiguracionPage : ContentPage
         }
     }
 
-    private void BtnComprobar_Click(
-        object sender,
-        EventArgs e)
-    {
-        ComprobarBaseDatos();
-    }
-
     private void ComprobarBaseDatos()
     {
         if (!SyncFolderService.EstaConfigurada)
         {
-            LblEstado.Text =
+            _estadoBaseDatos =
                 "Primero selecciona la carpeta SCCosmos.";
+
+            LblEstado.Text =
+                _estadoBaseDatos;
 
             LblEstado.TextColor =
                 Colors.Orange;
@@ -135,106 +714,25 @@ public partial class ConfiguracionPage : ContentPage
 
         if (SyncFolderService.ExisteBaseDatos())
         {
-            LblEstado.Text =
+            _estadoBaseDatos =
                 "✓ sccosmos.db encontrado y accesible";
 
+            LblEstado.Text =
+                _estadoBaseDatos;
+
             LblEstado.TextColor =
                 Colors.LightGreen;
         }
         else
         {
-            LblEstado.Text =
+            _estadoBaseDatos =
                 "✗ No se encuentra sccosmos.db dentro de la carpeta seleccionada.";
 
+            LblEstado.Text =
+                _estadoBaseDatos;
+
             LblEstado.TextColor =
                 Colors.OrangeRed;
-        }
-    }
-
-    private async void BtnImportar_Click(
-        object sender,
-        EventArgs e)
-    {
-        LblResultadoDb.Text =
-            "Actualizando base de datos...";
-
-        var resultado =
-            await DatabaseSyncService.ImportarAsync();
-
-        if (resultado.Correcto)
-        {
-            LblResultadoDb.TextColor =
-                Colors.LightGreen;
-
-            LblResultadoDb.Text =
-                "✓ " + resultado.Mensaje;
-        }
-        else
-        {
-            LblResultadoDb.TextColor =
-                Colors.OrangeRed;
-
-            LblResultadoDb.Text =
-                "✗ " + resultado.Mensaje;
-        }
-    }
-
-    private async void BtnExportar_Click(
-        object sender,
-        EventArgs e)
-    {
-        bool confirmar =
-            await DisplayAlert(
-                "Guardar cambios",
-                "Se actualizará sccosmos.db en la carpeta sincronizada. ¿Continuar?",
-                "Sí",
-                "Cancelar");
-
-        if (!confirmar)
-            return;
-
-        LblResultadoDb.Text =
-            "Guardando cambios...";
-
-        var resultado =
-            await DatabaseSyncService.ExportarAsync();
-
-        LblResultadoDb.TextColor =
-            resultado.Correcto
-                ? Colors.LightGreen
-                : Colors.OrangeRed;
-
-        LblResultadoDb.Text =
-            resultado.Correcto
-                ? "✓ " + resultado.Mensaje
-                : "✗ " + resultado.Mensaje;
-    }
-
-    private void BtnProbarBase_Click(
-        object sender,
-        EventArgs e)
-    {
-        try
-        {
-            var resumen =
-                DatabaseHelper.ObtenerResumenPrueba();
-
-            LblResultadoDb.TextColor =
-                Colors.LightGreen;
-
-            LblResultadoDb.Text =
-                $"✓ Base de datos abierta correctamente\n\n" +
-                $"Nombre SC: {resumen.NombreSC}\n" +
-                $"Personas: {resumen.Personas}\n" +
-                $"Semanas: {resumen.Semanas}";
-        }
-        catch (Exception ex)
-        {
-            LblResultadoDb.TextColor =
-                Colors.Red;
-
-            LblResultadoDb.Text =
-                $"Error al abrir la base de datos:\n{ex.Message}";
         }
     }
 

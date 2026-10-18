@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.VisitaProgramaActividadPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Actividad"
+    BackgroundColor="#101216">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="18,18,18,28"
+                             Spacing="12">
+
+            <Label x:Name="LblTitulo"
+                   Text="Programar actividad"
+                   TextColor="White"
+                   FontSize="23"
+                   FontAttributes="Bold" />
+
+            <Label Text="Día" TextColor="#9EA4AE" FontSize="12" />
+            <Picker x:Name="PickerDia"
+                    BackgroundColor="#1A1D22"
+                    TextColor="White" />
+
+            <Label Text="Turno" TextColor="#9EA4AE" FontSize="12" />
+            <Picker x:Name="PickerTurno"
+                    BackgroundColor="#1A1D22"
+                    TextColor="White"
+                    SelectedIndexChanged="PickerTurno_SelectedIndexChanged" />
+
+            <Label Text="Responsable" TextColor="#9EA4AE" FontSize="12" />
+            <Picker x:Name="PickerResponsable"
+                    BackgroundColor="#1A1D22"
+                    TextColor="White" />
+
+            <Label Text="Acompañante / familia" TextColor="#9EA4AE" FontSize="12" />
+            <Picker x:Name="PickerCompanero"
+                    ItemDisplayBinding="{Binding Nombre}"
+                    SelectedIndexChanged="PickerCompanero_SelectedIndexChanged"
+                    BackgroundColor="#1A1D22"
+                    TextColor="White" />
+
+            <Label Text="Ubicación / dirección" TextColor="#9EA4AE" FontSize="12" />
+            <Entry x:Name="TxtUbicacion"
+                   Placeholder="Dirección o lugar de la actividad"
+                   TextChanged="TxtUbicacion_TextChanged"
+                   TextColor="White"
+                   PlaceholderColor="#6F7781"
+                   BackgroundColor="#1A1D22" />
+
+            <Grid ColumnDefinitions="*,Auto"
+                  ColumnSpacing="8">
+                <Label x:Name="LblCoordenadas"
+                       Text="Sin coordenadas"
+                       TextColor="#7F8791"
+                       FontSize="10"
+                       VerticalTextAlignment="Center" />
+
+                <Button Grid.Column="1"
+                        Text="Usar dirección del acompañante"
+                        Clicked="BtnUsarDireccionCompanero_Clicked"
+                        BackgroundColor="#242830"
+                        TextColor="#B9DEFF"
+                        FontSize="10"
+                        CornerRadius="8"
+                        Padding="9,5" />
+            </Grid>
+
+            <Label Text="Hora (ej. 10:00)" TextColor="#9EA4AE" FontSize="12" />
+            <Entry x:Name="TxtHora"
+                   Placeholder="10:00"
+                   TextColor="White"
+                   PlaceholderColor="#6F7781"
+                   BackgroundColor="#1A1D22" />
+
+            <Label Text="Tipo de actividad" TextColor="#9EA4AE" FontSize="12" />
+            <Entry x:Name="TxtTipo"
+                   Placeholder="Predicación, pastoreo..."
+                   TextColor="White"
+                   PlaceholderColor="#6F7781"
+                   BackgroundColor="#1A1D22" />
+
+            <Label Text="Notas / libro" TextColor="#9EA4AE" FontSize="12" />
+            <Editor x:Name="TxtNotas"
+                    AutoSize="TextChanges"
+                    MinimumHeightRequest="90"
+                    TextColor="White"
+                    BackgroundColor="#1A1D22" />
+
+            <Grid ColumnDefinitions="*,*"
+                  ColumnSpacing="10"
+                  Margin="0,8,0,0">
+                <Button Text="Cancelar"
+                        Clicked="BtnCancelar_Clicked"
+                        BackgroundColor="#242830"
+                        TextColor="White"
+                        CornerRadius="10" />
+                <Button Grid.Column="1"
+                        x:Name="BtnGuardar"
+                        Text="Guardar"
+                        Clicked="BtnGuardar_Clicked"
+                        BackgroundColor="#2478B5"
+                        TextColor="White"
+                        FontAttributes="Bold"
+                        CornerRadius="10" />
+            </Grid>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

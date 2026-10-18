@@ -1,0 +1,73 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.S21Page"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Tarjetas S-21"
+    BackgroundColor="#101216">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20,16,20,28"
+                             Spacing="16">
+
+            <Border BackgroundColor="{StaticResource Superficie}"
+                    Stroke="{StaticResource Borde}"
+                    Padding="16">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="16" />
+                </Border.StrokeShape>
+
+                <VerticalStackLayout Spacing="12">
+
+                    <Label Text="TARJETAS S-21-S"
+                           Style="{StaticResource Antetitulo}"
+                           CharacterSpacing="1" />
+
+                    <Label x:Name="LblCongregacion"
+                           TextColor="White"
+                           FontSize="16"
+                           FontAttributes="Bold" />
+
+                    <Label x:Name="LblPlantilla"
+                           TextColor="#AEB4BC"
+                           FontSize="13" />
+
+                    <Button x:Name="BtnCargarPlantilla"
+                            Text="Cargar plantilla S-21 (PDF)"
+                            Clicked="BtnCargarPlantilla_Clicked"
+                            BackgroundColor="#242830"
+                            TextColor="White"
+                            CornerRadius="9"
+                            HeightRequest="46" />
+
+                    <Label Text="Año de servicio"
+                           TextColor="#9299A3"
+                           FontSize="12" />
+
+                    <Entry x:Name="TxtAnio"
+                           Keyboard="Numeric"
+                           TextColor="White" />
+
+                    <Label x:Name="LblPublicadores"
+                           TextColor="#AEB4BC"
+                           FontSize="13" />
+
+                    <Button x:Name="BtnGenerar"
+                            Text="Generar y compartir tarjetas S-21"
+                            Clicked="BtnGenerar_Clicked"
+                            BackgroundColor="#0B6FC2"
+                            TextColor="White"
+                            CornerRadius="10"
+                            HeightRequest="50" />
+
+                </VerticalStackLayout>
+            </Border>
+
+            <Label x:Name="LblEstado"
+                   Text=""
+                   TextColor="#9EA4AE"
+                   FontSize="13" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

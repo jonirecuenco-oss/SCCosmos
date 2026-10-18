@@ -1,0 +1,277 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.ArchivoCircuitoPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Archivo del circuito"
+    BackgroundColor="#101216">
+
+    <Grid RowDefinitions="Auto,Auto,*"
+          Padding="16,14,16,10"
+          RowSpacing="10">
+
+        <!-- CABECERA -->
+        <VerticalStackLayout Grid.Row="0"
+                             Spacing="3">
+            <Label Text="ARCHIVO DEL CIRCUITO"
+                   Style="{StaticResource Antetitulo}" />
+            <Label x:Name="LblCarpeta"
+                   Text=""
+                   Style="{StaticResource SubtituloPagina}" />
+        </VerticalStackLayout>
+
+        <!-- ACCIONES GLOBALES -->
+        <Grid Grid.Row="1"
+              ColumnDefinitions="*,*"
+              ColumnSpacing="8">
+            <Button Grid.Column="0"
+                    Text="↻ Actualizar"
+                    Clicked="BtnActualizar_Clicked"
+                    Style="{StaticResource BotonSecundario}" />
+            <Button Grid.Column="1"
+                    Text="＋ Sección"
+                    Clicked="BtnNuevaSeccion_Clicked"
+                    Style="{StaticResource BotonPrincipal}" />
+        </Grid>
+
+        <!-- SECCIONES CON SU ÁRBOL DE CARPETAS Y ARCHIVOS -->
+        <RefreshView x:Name="Refrescar"
+                     Grid.Row="2"
+                     Refreshing="Refrescar_Refreshing">
+            <CollectionView x:Name="Lista"
+                            SelectionMode="None">
+                <CollectionView.EmptyView>
+                    <Label Text="No hay secciones o no se encuentra la carpeta sincronizada. Configura la carpeta y la subcarpeta en Configuración."
+                           TextColor="#9EA4AE"
+                           Padding="20,50"
+                           HorizontalTextAlignment="Center" />
+                </CollectionView.EmptyView>
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border BackgroundColor="{StaticResource Superficie}"
+                                Stroke="{StaticResource Borde}"
+                                StrokeThickness="1"
+                                Padding="12"
+                                Margin="0,0,0,10">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="12" />
+                            </Border.StrokeShape>
+
+                            <VerticalStackLayout Spacing="8">
+
+                                <!-- Cabecera de la sección -->
+                                <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto"
+                                      ColumnSpacing="6">
+                                    <HorizontalStackLayout Grid.Column="0"
+                                                           Spacing="8"
+                                                           HorizontalOptions="Fill"
+                                                           MinimumHeightRequest="36"
+                                                           VerticalOptions="Fill">
+                                        <HorizontalStackLayout.GestureRecognizers>
+                                            <TapGestureRecognizer
+                                                Tapped="Seccion_Tapped"
+                                                CommandParameter="{Binding .}" />
+                                        </HorizontalStackLayout.GestureRecognizers>
+
+                                        <Label Text="{Binding IconoFlecha}"
+                                               TextColor="#C7CDD6"
+                                               FontSize="19"
+                                               WidthRequest="26"
+                                               HorizontalTextAlignment="Center"
+                                               VerticalOptions="Center" />
+
+                                        <Label Text="{Binding Nombre}"
+                                               TextColor="White"
+                                               FontSize="15"
+                                               FontAttributes="Bold"
+                                               VerticalOptions="Center" />
+                                    </HorizontalStackLayout>
+                                    <Button Grid.Column="1"
+                                            Text="＋"
+                                            Clicked="BtnNuevaCarpetaSeccion_Clicked"
+                                            CommandParameter="{Binding .}"
+                                            Padding="0"
+                                            FontSize="15"
+                                            WidthRequest="40"
+                                            HeightRequest="36"
+                                            BackgroundColor="#242830"
+                                            TextColor="White"
+                                            CornerRadius="8"
+                                            SemanticProperties.Description="Crear carpeta en la sección" />
+                                    <Button Grid.Column="2"
+                                            Text="⬆️"
+                                            Clicked="BtnSubirSeccion_Clicked"
+                                            CommandParameter="{Binding .}"
+                                            Padding="0"
+                                            FontSize="14"
+                                            WidthRequest="40"
+                                            HeightRequest="36"
+                                            BackgroundColor="#265B36"
+                                            TextColor="#D6F6DE"
+                                            CornerRadius="8"
+                                            SemanticProperties.Description="Subir archivo a la sección" />
+                                    <Button Grid.Column="3"
+                                            Text="✏️"
+                                            Clicked="BtnRenombrarSeccion_Clicked"
+                                            CommandParameter="{Binding .}"
+                                            Padding="0"
+                                            FontSize="14"
+                                            WidthRequest="40"
+                                            HeightRequest="36"
+                                            BackgroundColor="#242830"
+                                            TextColor="White"
+                                            CornerRadius="8"
+                                            SemanticProperties.Description="Renombrar sección" />
+                                    <Button Grid.Column="4"
+                                            Text="🗑️"
+                                            Clicked="BtnEliminarSeccion_Clicked"
+                                            CommandParameter="{Binding .}"
+                                            Padding="0"
+                                            FontSize="14"
+                                            WidthRequest="40"
+                                            HeightRequest="36"
+                                            BackgroundColor="#3A2023"
+                                            TextColor="#FFB7BC"
+                                            CornerRadius="8"
+                                            SemanticProperties.Description="Eliminar sección" />
+                                </Grid>
+
+                                <Label Text="{Binding Resumen}"
+                                       IsVisible="{Binding MostrarResumen}"
+                                       Style="{StaticResource TextoNota}" />
+
+                                <!-- Sección SCS: tabla en línea -->
+                                <VerticalStackLayout Spacing="3"
+                                                     IsVisible="{Binding MostrarScs}"
+                                                     BindableLayout.ItemsSource="{Binding Scs}">
+                                    <BindableLayout.ItemTemplate>
+                                        <DataTemplate>
+                                            <Label Text="{Binding Linea}"
+                                                   TextColor="#CFE6FF"
+                                                   FontSize="11" />
+                                        </DataTemplate>
+                                    </BindableLayout.ItemTemplate>
+                                </VerticalStackLayout>
+
+                                <!-- Secciones 12 y 14: editar tabla y PDF -->
+                                <Grid ColumnDefinitions="*,*"
+                                      ColumnSpacing="8"
+                                      IsVisible="{Binding MostrarTablaEspecial}">
+                                    <Button Grid.Column="0"
+                                            Text="✏️ Editar tabla"
+                                            Clicked="BtnTablaEspecial_Clicked"
+                                            CommandParameter="{Binding .}"
+                                            Style="{StaticResource BotonSecundario}"
+                                            HeightRequest="40"
+                                            FontSize="12" />
+                                    <Button Grid.Column="1"
+                                            Text="🧾 Generar PDF"
+                                            Clicked="BtnPdfEspecial_Clicked"
+                                            CommandParameter="{Binding .}"
+                                            Style="{StaticResource BotonSecundario}"
+                                            HeightRequest="40"
+                                            FontSize="12" />
+                                </Grid>
+
+                                <!-- Árbol de carpetas y archivos -->
+                                <VerticalStackLayout Spacing="4"
+                                                     IsVisible="{Binding Abierta}"
+                                                     BindableLayout.ItemsSource="{Binding Nodos}">
+                                    <BindableLayout.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BackgroundColor="{Binding Fondo}"
+                                                    Stroke="{Binding Borde}"
+                                                    StrokeThickness="1"
+                                                    Padding="8,6"
+                                                    Margin="{Binding Sangria}">
+                                                <Border.StrokeShape>
+                                                    <RoundRectangle CornerRadius="8" />
+                                                </Border.StrokeShape>
+                                                <Border.GestureRecognizers>
+                                                    <TapGestureRecognizer
+                                                        Tapped="Nodo_Tapped"
+                                                        CommandParameter="{Binding .}" />
+                                                </Border.GestureRecognizers>
+
+                                                <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto"
+                                                      ColumnSpacing="5">
+                                                    <Label Grid.Column="0"
+                                                           Text="{Binding Icono}"
+                                                           FontSize="14"
+                                                           VerticalOptions="Center" />
+
+                                                    <Label Grid.Column="1"
+                                                           Text="{Binding Nombre}"
+                                                           TextColor="{Binding Color}"
+                                                           FontSize="{Binding TamanoTexto}"
+                                                           FontAttributes="{Binding Grosor}"
+                                                           LineBreakMode="TailTruncation"
+                                                           VerticalOptions="Center" />
+
+                                                    <Button Grid.Column="2"
+                                                            Text="{Binding Accion1}"
+                                                            IsVisible="{Binding TieneAccion1}"
+                                                            Clicked="Accion1_Clicked"
+                                                            CommandParameter="{Binding .}"
+                                                            Padding="0"
+                                                            FontSize="12"
+                                                            WidthRequest="36"
+                                                            HeightRequest="34"
+                                                            BackgroundColor="#242830"
+                                                            TextColor="White"
+                                                            CornerRadius="7" />
+
+                                                    <Button Grid.Column="3"
+                                                            Text="{Binding Accion2}"
+                                                            IsVisible="{Binding TieneAccion2}"
+                                                            Clicked="Accion2_Clicked"
+                                                            CommandParameter="{Binding .}"
+                                                            Padding="0"
+                                                            FontSize="12"
+                                                            WidthRequest="36"
+                                                            HeightRequest="34"
+                                                            BackgroundColor="#242830"
+                                                            TextColor="White"
+                                                            CornerRadius="7" />
+
+                                                    <Button Grid.Column="4"
+                                                            Text="{Binding Accion3}"
+                                                            IsVisible="{Binding TieneAccion3}"
+                                                            Clicked="Accion3_Clicked"
+                                                            CommandParameter="{Binding .}"
+                                                            Padding="0"
+                                                            FontSize="12"
+                                                            WidthRequest="36"
+                                                            HeightRequest="34"
+                                                            BackgroundColor="#242830"
+                                                            TextColor="White"
+                                                            CornerRadius="7" />
+
+                                                    <Button Grid.Column="5"
+                                                            Text="{Binding Accion4}"
+                                                            IsVisible="{Binding TieneAccion4}"
+                                                            Clicked="Accion4_Clicked"
+                                                            CommandParameter="{Binding .}"
+                                                            Padding="0"
+                                                            FontSize="12"
+                                                            WidthRequest="36"
+                                                            HeightRequest="34"
+                                                            BackgroundColor="#3A2023"
+                                                            TextColor="#FFB7BC"
+                                                            CornerRadius="7" />
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </BindableLayout.ItemTemplate>
+                                </VerticalStackLayout>
+
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+
+    </Grid>
+</ContentPage>

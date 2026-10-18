@@ -5,6 +5,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:views="clr-namespace:SCCosmos.Mobile.Views"
+    xmlns:conv="clr-namespace:SCCosmos.Mobile.Converters"
 
     FlyoutBehavior="Flyout"
 
@@ -13,7 +14,35 @@
     TitleColor="White"
     UnselectedColor="#A8ADB5"
 
-    FlyoutBackgroundColor="#17191E">
+    FlyoutBackgroundColor="#101216">
+
+    <Shell.Resources>
+        <conv:IconoMenuConverter x:Key="IconoMenu" />
+    </Shell.Resources>
+
+    <!-- Menú lateral: icono + nombre, con aspecto de tarjeta -->
+    <Shell.ItemTemplate>
+        <DataTemplate>
+            <Grid Padding="16,9"
+                  ColumnDefinitions="28,*"
+                  ColumnSpacing="12"
+                  BackgroundColor="#101216">
+
+                <Label Grid.Column="0"
+                       Text="{Binding Title, Converter={StaticResource IconoMenu}}"
+                       FontSize="17"
+                       VerticalTextAlignment="Center"
+                       HorizontalTextAlignment="Center" />
+
+                <Label Grid.Column="1"
+                       Text="{Binding Title}"
+                       FontSize="15"
+                       TextColor="#E9ECF1"
+                       VerticalTextAlignment="Center" />
+
+            </Grid>
+        </DataTemplate>
+    </Shell.ItemTemplate>
 
     <Shell.FlyoutHeader>
 
@@ -43,6 +72,8 @@
 
     </Shell.FlyoutHeader>
 
+    <!-- Mismo orden que en Windows (sin Descargas en el móvil). -->
+
     <FlyoutItem
         Title="Inicio"
         Route="inicio">
@@ -54,23 +85,176 @@
     </FlyoutItem>
 
     <FlyoutItem
-        Title="Personas"
-        Route="personas">
+        x:Name="ItemCorrespondencia"
+        Title="Correspondencia"
+        Route="correspondencia">
 
         <ShellContent
-            Title="Personas"
-            ContentTemplate="{DataTemplate views:PersonasPage}" />
+        Title="Correspondencia"
+        ContentTemplate="{DataTemplate views:CorrespondenciaPage}" />
 
     </FlyoutItem>
 
     <FlyoutItem
+        x:Name="ItemCircuito"
+        Title="Circuito"
+        Route="circuito">
+
+        <ShellContent
+        Title="Circuito"
+        ContentTemplate="{DataTemplate views:CircuitoPage}" />
+
+    </FlyoutItem>
+
+    <FlyoutItem
+        Title="Calendario"
+        Route="Calendario">
+
+        <ShellContent
+        Title="Calendario"
+        ContentTemplate="{DataTemplate views:CalendarioPage}" />
+
+    </FlyoutItem>
+
+    <FlyoutItem
+        Title="Personas"
+        Route="personas">
+
+        <ShellContent
+        Title="Personas"
+        ContentTemplate="{DataTemplate views:PersonasPage}" />
+
+    </FlyoutItem>
+
+    <FlyoutItem
+        x:Name="ItemEscuelas"
+        Title="Escuelas"
+        Route="escuelas">
+
+        <ShellContent
+        Title="Escuelas"
+        ContentTemplate="{DataTemplate views:EscuelasPage}" />
+
+    </FlyoutItem>
+
+    <FlyoutItem
+        x:Name="ItemRsc"
+        Title="RSC"
+        Route="rsc">
+
+        <ShellContent
+        Title="RSC"
+        ContentTemplate="{DataTemplate views:RscPage}" />
+
+    </FlyoutItem>
+
+    <FlyoutItem
+        x:Name="ItemAsambleas"
+        Title="Asambleas"
+        Route="asambleas">
+
+        <ShellContent
+        Title="Asambleas"
+        ContentTemplate="{DataTemplate views:AsambleasPage}" />
+
+    </FlyoutItem>
+
+    <FlyoutItem
+        x:Name="ItemArchivo"
+        Title="Archivo del circuito"
+        Route="archivo">
+
+        <ShellContent
+        Title="Archivo"
+        ContentTemplate="{DataTemplate views:ArchivoCircuitoPage}" />
+
+    </FlyoutItem>
+
+    <FlyoutItem
+        x:Name="ItemDonaciones"
+        Title="Rendimientos"
+        Route="donaciones">
+
+        <ShellContent
+        Title="Rendimientos"
+        ContentTemplate="{DataTemplate views:DonacionesPage}" />
+
+    </FlyoutItem>
+
+    <FlyoutItem
+        Title="Tareas"
+        Route="tareas">
+
+        <ShellContent
+        Title="Tareas"
+        ContentTemplate="{DataTemplate views:TareasPage}" />
+
+    </FlyoutItem>
+
+    <FlyoutItem
+        x:Name="ItemActividad"
+        Title="Actividad"
+        Route="actividad">
+
+        <ShellContent
+        Title="Actividad"
+        ContentTemplate="{DataTemplate views:ActividadPage}" />
+
+    </FlyoutItem>
+
+    <!-- Configuración vive abajo del todo (pie del menú), como en
+         Windows: se oculta de la lista con FlyoutItemIsVisible y se
+         llega por el pie (la ruta sigue activa). -->
+
+    <FlyoutItem
         Title="Configuración"
-        Route="configuracion">
+        Route="configuracion"
+        Shell.FlyoutItemIsVisible="False">
 
         <ShellContent
             Title="Configuración"
             ContentTemplate="{DataTemplate views:ConfiguracionPage}" />
 
     </FlyoutItem>
+
+    <Shell.FlyoutFooter>
+
+        <VerticalStackLayout
+            BackgroundColor="#101216">
+
+            <BoxView
+                HeightRequest="1"
+                Color="#2A2F37"
+                Margin="16,4,16,0"/>
+
+            <Grid
+                Padding="16,12,16,14"
+                ColumnDefinitions="28,*"
+                ColumnSpacing="12"
+                BackgroundColor="#101216">
+
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="Configuracion_Tapped"/>
+                </Grid.GestureRecognizers>
+
+                <Label
+                    Grid.Column="0"
+                    Text="⚙"
+                    FontSize="17"
+                    VerticalTextAlignment="Center"
+                    HorizontalTextAlignment="Center"/>
+
+                <Label
+                    Grid.Column="1"
+                    Text="Configuración"
+                    FontSize="15"
+                    TextColor="#E9ECF1"
+                    VerticalTextAlignment="Center"/>
+
+            </Grid>
+
+        </VerticalStackLayout>
+
+    </Shell.FlyoutFooter>
 
 </Shell>

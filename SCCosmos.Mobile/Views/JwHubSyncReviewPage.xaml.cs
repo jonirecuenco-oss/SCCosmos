@@ -1,5 +1,6 @@
 using SCCosmos.Mobile.Data;
 using SCCosmos.Mobile.Models;
+using SCCosmos.Mobile.Services;
 
 #if ANDROID
 using SCCosmos.Mobile.Platforms.Android;
@@ -54,11 +55,6 @@ public partial class JwHubSyncReviewPage
 
         if (_analisis is null)
         {
-            TxtNumConflictos.Text = "0";
-            TxtNumNuevos.Text = "0";
-            TxtNumBajas.Text = "0";
-            TxtNumIguales.Text = "0";
-
             ListaResultados.ItemsSource =
                 null;
 
@@ -68,25 +64,10 @@ public partial class JwHubSyncReviewPage
             LblEstado.Text =
                 "No hay una comparación disponible.";
 
+            ActualizarBotonesCategoria();
+
             return;
         }
-
-
-        TxtNumConflictos.Text =
-            _analisis.TotalConflictos
-                .ToString();
-
-        TxtNumNuevos.Text =
-            _analisis.TotalNuevos
-                .ToString();
-
-        TxtNumBajas.Text =
-            _analisis.TotalBajas
-                .ToString();
-
-        TxtNumIguales.Text =
-            _analisis.TotalIguales
-                .ToString();
 
 
         int total =
@@ -170,6 +151,17 @@ public partial class JwHubSyncReviewPage
                 break;
 
 
+            case TipoAnalisisJwHub.Traslado:
+
+                elementos =
+                    _analisis.Traslados;
+
+                LblTituloLista.Text =
+                    $"Posibles traslados ({elementos.Count})";
+
+                break;
+
+
             default:
 
                 elementos =
@@ -197,6 +189,46 @@ public partial class JwHubSyncReviewPage
 
     private void ActualizarBotonesCategoria()
     {
+        int conflictos =
+            _analisis?.TotalConflictos
+            ?? 0;
+
+        int nuevos =
+            _analisis?.TotalNuevos
+            ?? 0;
+
+        int bajas =
+            _analisis?.TotalBajas
+            ?? 0;
+
+        int traslados =
+            _analisis?.TotalTraslados
+            ?? 0;
+
+        int iguales =
+            _analisis?.TotalIguales
+            ?? 0;
+
+
+        // Los contadores viven ahora en las propias pestañas.
+        // Así evitamos duplicar la misma información con los
+        // cuatro cuadros-resumen que había encima.
+        BtnConflictos.Text =
+            $"Conflictos ({conflictos})";
+
+        BtnNuevos.Text =
+            $"Nuevos ({nuevos})";
+
+        BtnBajas.Text =
+            $"Bajas ({bajas})";
+
+        BtnTraslados.Text =
+            $"Traslados ({traslados})";
+
+        BtnIguales.Text =
+            $"Sin cambios ({iguales})";
+
+
         BtnConflictos.Opacity =
             _categoriaActual ==
             TipoAnalisisJwHub.Conflicto
@@ -214,6 +246,13 @@ public partial class JwHubSyncReviewPage
         BtnBajas.Opacity =
             _categoriaActual ==
             TipoAnalisisJwHub.Baja
+                ? 1
+                : 0.55;
+
+
+        BtnTraslados.Opacity =
+            _categoriaActual ==
+            TipoAnalisisJwHub.Traslado
                 ? 1
                 : 0.55;
 
@@ -367,6 +406,19 @@ public partial class JwHubSyncReviewPage
     }
 
 
+    private void BtnTraslados_Clicked(
+        object sender,
+        EventArgs e)
+    {
+#if ANDROID
+
+        MostrarCategoria(
+            TipoAnalisisJwHub.Traslado);
+
+#endif
+    }
+
+
     private void BtnIguales_Clicked(
         object sender,
         EventArgs e)
@@ -378,6 +430,300 @@ public partial class JwHubSyncReviewPage
 
 #endif
     }
+
+    // =========================================================
+    // CONFIRMAR TRASLADO
+    // =========================================================
+
+    private async void BtnConfirmarTraslado_Clicked(
+        object sender,
+        EventArgs e)
+    {
+#if ANDROID
+
+        if (sender is not Button boton)
+        {
+            return;
+        }
+
+
+        if (boton.CommandParameter
+            is not JwHubSyncItemAnalisis item)
+        {
+            return;
+        }
+
+
+        if (item.Tipo !=
+                TipoAnalisisJwHub.Traslado
+            ||
+            item.PersonaDB is null
+            ||
+            item.PersonaHub is null)
+        {
+            return;
+        }
+
+
+        if (_analisis is null)
+        {
+            return;
+        }
+
+
+        string origen =
+            !string.IsNullOrWhiteSpace(
+                item.PersonaDB.CongregacionNombre)
+                ? item.PersonaDB.CongregacionNombre
+                : item.PersonaDB.CongregacionCodigo;
+
+
+        string destino =
+            item.PersonaHub.CongregacionCodigo ?? "";
+
+
+        bool confirmar =
+            await DisplayAlert(
+                "Confirmar traslado",
+                $"¿Confirmas el traslado de " +
+                $"{item.NombreVisual}?\n\n" +
+                $"{origen}  →  {destino}\n\n" +
+                "La ficha anterior se dará de baja y se " +
+                "conservará para las visitas históricas. " +
+                "Se creará una ficha nueva enlazada en la " +
+                "congregación de destino.\n\n" +
+                "La actividad mensual NO se copiará a la " +
+                "ficha nueva.",
+                "Confirmar traslado",
+                "Cancelar");
+
+
+        if (!confirmar)
+        {
+            return;
+        }
+
+
+        boton.IsEnabled =
+            false;
+
+
+        try
+        {
+            Persona anterior =
+                item.PersonaDB;
+
+
+            Persona hub =
+                item.PersonaHub;
+
+
+            int nuevoId =
+                await Task.Run(
+                    () =>
+                        DatabaseHelper
+                            .RegistrarTrasladoConHubMobile(
+                                anterior,
+                                hub,
+                                DateTime.Today));
+
+
+            if (nuevoId <= 0)
+            {
+                throw new Exception(
+                    "No se pudo crear la ficha nueva.");
+            }
+
+
+            // =============================================
+            // LA FICHA NUEVA PASA A "SIN CAMBIOS"
+            // =============================================
+
+            _analisis.Traslados.Remove(
+                item);
+
+
+            Persona? nuevaGuardada =
+                DatabaseHelper
+                    .ObtenerPersonaPorId(
+                        nuevoId);
+
+
+            item.Tipo =
+                TipoAnalisisJwHub.Igual;
+
+
+            item.PersonaDB =
+                nuevaGuardada
+                ?? anterior;
+
+
+            item.Descripcion =
+                $"Traslado registrado: {origen} → {destino}.";
+
+
+            item.CamposCambiados.Clear();
+
+
+            _analisis.Iguales.Add(
+                item);
+
+
+            JwHubSyncAnalysisService
+                .GuardarUltimoAnalisis();
+
+
+            CargarAnalisis();
+
+
+            await DisplayAlert(
+                "JW Hub",
+                "El traslado se ha registrado " +
+                "correctamente.\n\n" +
+                "La ficha anterior queda como baja " +
+                "histórica y la nueva está enlazada.",
+                "Aceptar");
+        }
+        catch (Exception ex)
+        {
+            boton.IsEnabled =
+                true;
+
+
+            await DisplayAlert(
+                "Traslado",
+                "No se pudo registrar el traslado:\n\n" +
+                ex.Message,
+                "Aceptar");
+        }
+
+#endif
+    }
+
+
+    // =========================================================
+    // NO ES TRASLADO
+    //
+    // El registro de Hub vuelve a la lista de nuevos y la
+    // ficha antigua a la lista de posibles bajas.
+    // =========================================================
+
+    private async void BtnNoEsTraslado_Clicked(
+        object sender,
+        EventArgs e)
+    {
+#if ANDROID
+
+        if (sender is not Button boton)
+        {
+            return;
+        }
+
+
+        if (boton.CommandParameter
+            is not JwHubSyncItemAnalisis item)
+        {
+            return;
+        }
+
+
+        if (item.Tipo !=
+                TipoAnalisisJwHub.Traslado
+            ||
+            item.PersonaDB is null
+            ||
+            item.PersonaHub is null)
+        {
+            return;
+        }
+
+
+        if (_analisis is null)
+        {
+            return;
+        }
+
+
+        bool confirmar =
+            await DisplayAlert(
+                "No es traslado",
+                $"¿Seguro que {item.NombreVisual} no se ha " +
+                "trasladado?\n\n" +
+                "El registro de JW Hub volverá a la lista de " +
+                "nuevos y la ficha antigua a la lista de " +
+                "posibles bajas.",
+                "No es traslado",
+                "Cancelar");
+
+
+        if (!confirmar)
+        {
+            return;
+        }
+
+
+        _analisis.Traslados.Remove(
+            item);
+
+
+        _analisis.Nuevos.Add(
+            new JwHubSyncItemAnalisis
+            {
+                Tipo =
+                    TipoAnalisisJwHub.Nuevo,
+
+                PersonaDB =
+                    null,
+
+                PersonaHub =
+                    item.PersonaHub,
+
+                NombreVisual =
+                    !string.IsNullOrWhiteSpace(
+                        item.PersonaHub.Nombre)
+                        ? item.PersonaHub.Nombre
+                        : item.NombreVisual,
+
+                Descripcion =
+                    "Aparece en JW Hub pero no está en la " +
+                    "Base de Datos."
+            });
+
+
+        _analisis.Bajas.Add(
+            new JwHubSyncItemAnalisis
+            {
+                Tipo =
+                    TipoAnalisisJwHub.Baja,
+
+                PersonaDB =
+                    item.PersonaDB,
+
+                PersonaHub =
+                    null,
+
+                NombreVisual =
+                    item.NombreVisual,
+
+                Descripcion =
+                    "Ya no aparece con esta identidad en " +
+                    "JW Hub. Puede tratarse de una baja, un " +
+                    "traslado o un cambio de nombre.",
+
+                PuedeConfirmarBaja =
+                    item.PuedeConfirmarBaja
+            });
+
+
+        JwHubSyncAnalysisService
+            .GuardarUltimoAnalisis();
+
+
+        CargarAnalisis();
+
+#endif
+    }
+
 
     // =========================================================
     // DESCARTAR ELEMENTO
@@ -424,6 +770,14 @@ public partial class JwHubSyncReviewPage
         }
 
 
+        // "Sin cambios" no se descarta: ya es un resultado
+        // informativo y no requiere ninguna decisión.
+        if (item.EsIgual)
+        {
+            return;
+        }
+
+
         string explicacion =
             item.Tipo switch
             {
@@ -438,6 +792,10 @@ public partial class JwHubSyncReviewPage
                 TipoAnalisisJwHub.Baja =>
                     "La persona permanecerá activa en " +
                     "la base de datos.",
+
+                TipoAnalisisJwHub.Traslado =>
+                    "El traslado no se registrará. Ambas " +
+                    "fichas quedarán como están.",
 
                 _ =>
                     "El elemento desaparecerá de esta revisión."
@@ -480,6 +838,12 @@ public partial class JwHubSyncReviewPage
                      item))
         {
             _analisis.Bajas.Remove(
+                item);
+        }
+        else if (_analisis.Traslados.Contains(
+                     item))
+        {
+            _analisis.Traslados.Remove(
                 item);
         }
         else if (_analisis.Iguales.Contains(
@@ -544,6 +908,10 @@ public partial class JwHubSyncReviewPage
             _analisis.TotalBajas;
 
 
+        int trasladosPendientes =
+            _analisis.TotalTraslados;
+
+
         // =========================================================
         // NUEVOS: SIEMPRE DEBEN REVISARSE
         //
@@ -561,6 +929,25 @@ public partial class JwHubSyncReviewPage
                 "Revísalas antes de finalizar. Cada una debe " +
                 "añadirse como persona nueva, vincularse con una " +
                 "persona existente o descartarse.",
+                "Aceptar");
+
+            return;
+        }
+
+
+        // =========================================================
+        // TRASLADOS: IGUAL QUE EN WINDOWS, DEBEN REVISARSE ANTES
+        // DE PODER FINALIZAR.
+        // =========================================================
+
+        if (trasladosPendientes > 0)
+        {
+            await DisplayAlert(
+                "Traslados pendientes",
+                $"Todavía hay {trasladosPendientes} posible(s) " +
+                "traslado(s) sin revisar.\n\n" +
+                "Confirma cada traslado o pulsa «No es " +
+                "traslado» antes de finalizar.",
                 "Aceptar");
 
             return;
@@ -609,6 +996,21 @@ public partial class JwHubSyncReviewPage
         {
             JwHubSyncAnalysisService
                 .LimpiarUltimoAnalisis();
+
+
+            // La revisión ya terminó. Volvemos el sincronizador
+            // a su estado inicial para que, al regresar a Personas:
+            //
+            // - el botón vuelva a "Sincronizar JW Hub";
+            // - desaparezca "Sincronización completada";
+            // - desaparezca el detalle/resumen de la extracción;
+            // - desaparezca "Revisar resultados JW Hub".
+            JwHubSyncState.Establecer(
+                EstadoJwHubSync.Inactivo,
+                0,
+                0,
+                "",
+                false);
 
 
             await DisplayAlert(

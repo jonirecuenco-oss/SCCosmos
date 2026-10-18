@@ -1,5 +1,9 @@
+﻿using System.Globalization;
+
 using SCCosmos.Mobile.Data;
 using SCCosmos.Mobile.Models;
+using SCCosmos.Mobile.Services;
+using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Storage;
 
 namespace SCCosmos.Mobile.Views;
@@ -15,12 +19,21 @@ public partial class PersonaDetallePage : ContentPage
 
     private string _fotoBase64 = "";
 
+    private List<ActividadMensualMobile> _actividades =
+        new();
+
+    private DatabaseHelper.CamposExtraPersonaMobile? _extra;
+
     private bool _cargandoControles;
     private bool _paginaCargada;
 
     public PersonaDetallePage(int personaId)
     {
         InitializeComponent();
+
+        // La esposa del SC no puede ver la actividad de la persona.
+        SeccionActividad.IsVisible =
+            PerfilAccesoService.AccesoCompleto;
 
         _personaId = personaId;
 
@@ -121,6 +134,8 @@ public partial class PersonaDetallePage : ContentPage
             CargarControles();
 
             await RefrescarConyugesAsync();
+
+            await CargarActividadesAsync();
         }
         catch (Exception ex)
         {
@@ -240,6 +255,45 @@ public partial class PersonaDetallePage : ContentPage
             _persona.Foto ?? "";
 
         RefrescarFoto();
+
+        // La ficha es editable directamente: mostramos las acciones
+        // de foto desde el principio.
+        PanelBotonesFoto.IsVisible =
+            true;
+
+        // Campos de origen / aprobación / requisito.
+        try
+        {
+            _extra =
+                DatabaseHelper
+                    .ObtenerCamposExtraPersonaMobile(
+                        _personaId);
+
+            LblOrigen.Text =
+                _extra is null
+                    ? "Origen: desconocido"
+                    : (string.IsNullOrWhiteSpace(
+                           _extra.OrigenRegistro)
+                       || _extra.OrigenRegistro.Equals(
+                           "DESCONOCIDO",
+                           StringComparison.OrdinalIgnoreCase)
+                        ? "Origen: desconocido"
+                        : "Origen: " + _extra.OrigenRegistro);
+
+            SwAprobado.IsToggled =
+                _extra?.AprobadoExhibidores
+                ?? false;
+
+            TxtRequisito.Text =
+                _extra is not null
+                && _extra.RequisitoHoras > 0
+                    ? _extra.RequisitoHoras.ToString()
+                    : "";
+        }
+        catch
+        {
+            // Los campos extra no bloquean la ficha.
+        }
     }
 
     private static bool ContieneSolicitud(
@@ -403,59 +457,53 @@ public partial class PersonaDetallePage : ContentPage
         await RefrescarConyugesAsync();
     }
 
-    private void BtnEditar_Click(
+    private async void BtnAnadirContacto_Click(
         object sender,
         EventArgs e)
     {
-        PanelFormulario.IsEnabled =
-            true;
+        if (_persona is null)
+        {
+            return;
+        }
 
-        PanelEdicion.IsVisible =
-            true;
+#if ANDROID
+        try
+        {
+            SCCosmos.Mobile.Platforms.Android.ContactoAndroid
+                .AbrirEditorContacto(
+                    _persona.NombreMostrarTabla,
+                    string.IsNullOrWhiteSpace(_persona.Telefono)
+                        ? _persona.Telefono
+                        : _persona.Telefono,
+                    string.IsNullOrWhiteSpace(_persona.Email)
+                        ? _persona.EmailJW
+                        : _persona.Email,
+                    _persona.Direccion);
 
-        PanelBotonesFoto.IsVisible =
-            true;
-
-        BtnEditar.IsEnabled =
-            false;
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert(
+                "Contacto",
+                "No se pudo abrir el editor de contactos:\n" +
+                ex.Message,
+                "Aceptar");
+        }
+#else
+        await DisplayAlert(
+            "Contacto",
+            "Añadir contacto solo está disponible en Android.",
+            "Aceptar");
+#endif
     }
 
     private async void BtnCancelar_Click(
         object sender,
         EventArgs e)
     {
-        bool descartar =
-            await DisplayAlert(
-                "Cancelar edición",
-                "¿Quieres descartar los cambios realizados?",
-                "Sí",
-                "No");
-
-        if (!descartar)
-            return;
-
-        _cargandoControles = true;
-
-        try
-        {
-            _persona =
-                await Task.Run(() =>
-                    DatabaseHelper
-                        .ObtenerPersonaPorId(
-                            _personaId));
-
-            if (_persona != null)
-            {
-                CargarControles();
-                await RefrescarConyugesAsync();
-            }
-        }
-        finally
-        {
-            _cargandoControles = false;
-        }
-
-        TerminarEdicion();
+        // Cancelar = volver al registro de personas sin guardar.
+        await Navigation.PopAsync();
     }
 
     private async void BtnCambiarFoto_Click(
@@ -550,6 +598,450 @@ public partial class PersonaDetallePage : ContentPage
             LblSinFoto.IsVisible = true;
         }
     }
+
+    // ========================================================================
+    // MAPA Y COORDENADAS
+    // ========================================================================
+
+    private async void BtnVerMapa_Click(
+        object sender,
+        EventArgs e)
+    {
+        if (_persona == null)
+        {
+            return;
+        }
+
+        if (_persona.Latitud != 0
+            ||
+            _persona.Longitud != 0)
+        {
+            await AbrirMapaCoordenadasAsync(
+                _persona.Latitud,
+                _persona.Longitud);
+
+            return;
+        }
+
+        string direccion =
+            TxtDireccion.Text?.Trim()
+            ?? _persona.Direccion;
+
+        if (string.IsNullOrWhiteSpace(
+                direccion))
+        {
+            await DisplayAlert(
+                "Mapa",
+                "Esta persona no tiene dirección ni coordenadas. " +
+                "Puedes escribir la dirección y pulsar " +
+                "«Localizar dirección».",
+                "Aceptar");
+
+            return;
+        }
+
+        await AbrirMapaDireccionAsync(
+            direccion);
+    }
+
+    private async void BtnLocalizar_Click(
+        object sender,
+        EventArgs e)
+    {
+        if (_persona == null)
+        {
+            return;
+        }
+
+        string direccion =
+            TxtDireccion.Text?.Trim()
+            ?? "";
+
+        if (string.IsNullOrWhiteSpace(
+                direccion))
+        {
+            await DisplayAlert(
+                "Localizar dirección",
+                "Escribe primero una dirección.",
+                "Aceptar");
+
+            return;
+        }
+
+        try
+        {
+            GeocodificacionService.ResultadoGeocodificacion
+                resultado =
+                    await GeocodificacionService
+                        .BuscarAsync(
+                            direccion);
+
+            if (!resultado.Ok)
+            {
+                await DisplayAlert(
+                    "Localizar dirección",
+                    resultado.Error,
+                    "Aceptar");
+
+                return;
+            }
+
+            _persona.Latitud =
+                resultado.Latitud;
+
+            _persona.Longitud =
+                resultado.Longitud;
+
+            await Task.Run(
+                () =>
+                    DatabaseHelper
+                        .ActualizarCoordenadasPersonaMobile(
+                            _personaId,
+                            resultado.Latitud,
+                            resultado.Longitud));
+
+            await DisplayAlert(
+                "Localizar dirección",
+                "Coordenadas actualizadas. Se abrirá el mapa.",
+                "Aceptar");
+
+            await AbrirMapaCoordenadasAsync(
+                resultado.Latitud,
+                resultado.Longitud);
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert(
+                "Localizar dirección",
+                ex.Message,
+                "Aceptar");
+        }
+    }
+
+    private static async Task AbrirMapaCoordenadasAsync(
+        double latitud,
+        double longitud)
+    {
+        string lat =
+            latitud.ToString(
+                CultureInfo.InvariantCulture);
+
+        string lon =
+            longitud.ToString(
+                CultureInfo.InvariantCulture);
+
+        string url =
+            "https://www.google.com/maps/search/?api=1" +
+            $"&query={lat},{lon}";
+
+        await Launcher.Default.OpenAsync(
+            new Uri(url));
+    }
+
+    private static async Task AbrirMapaDireccionAsync(
+        string direccion)
+    {
+        string url =
+            "https://www.google.com/maps/search/?api=1" +
+            "&query=" +
+            Uri.EscapeDataString(
+                direccion);
+
+        await Launcher.Default.OpenAsync(
+            new Uri(url));
+    }
+
+
+    // ========================================================================
+    // HISTORIAL, TRASLADO Y FUSIÓN
+    // ========================================================================
+
+    private async void BtnHistorial_Click(
+        object sender,
+        EventArgs e)
+    {
+        await Navigation.PushAsync(
+            new HistorialPersonaPage(
+                _personaId,
+                _persona?.NombreMostrarTabla ?? ""));
+    }
+
+    private async void BtnTrasladar_Click(
+        object sender,
+        EventArgs e)
+    {
+        if (_persona is null)
+        {
+            return;
+        }
+
+        try
+        {
+            List<Congregacion> congregaciones =
+                await Task.Run(
+                    () =>
+                        DatabaseHelper.ObtenerCongregaciones());
+
+            var opciones =
+                congregaciones
+                    .Where(c =>
+                        !string.Equals(
+                            c.Codigo,
+                            _persona.CongregacionCodigo,
+                            StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+            if (opciones.Count == 0)
+            {
+                await DisplayAlert(
+                    "Traslado",
+                    "No hay otras congregaciones registradas.",
+                    "Aceptar");
+
+                return;
+            }
+
+            var etiquetas =
+                opciones
+                    .Select(c => $"{c.Nombre} ({c.Codigo})")
+                    .ToArray();
+
+            string eleccion =
+                await DisplayActionSheet(
+                    "Trasladar a la congregación:",
+                    "Cancelar",
+                    null,
+                    etiquetas);
+
+            int indice =
+                Array.IndexOf(
+                    etiquetas,
+                    eleccion);
+
+            if (indice < 0)
+            {
+                return;
+            }
+
+            Congregacion destino =
+                opciones[indice];
+
+            bool confirmar =
+                await DisplayAlert(
+                    "Confirmar traslado",
+                    $"Se creará una nueva ficha en " +
+                    $"«{destino.Nombre}» y la ficha actual " +
+                    "quedará marcada como baja (trasladada).",
+                    "Trasladar",
+                    "Cancelar");
+
+            if (!confirmar)
+            {
+                return;
+            }
+
+            await Task.Run(
+                () =>
+                    DatabaseHelper
+                        .RegistrarTrasladoMobile(
+                            _personaId,
+                            destino.Codigo,
+                            DateTime.Today));
+
+            await DisplayAlert(
+                "Traslado",
+                "Traslado registrado correctamente.",
+                "Aceptar");
+
+            await Navigation.PopAsync();
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert(
+                "Traslado",
+                "No se pudo registrar el traslado:\n" +
+                ex.Message,
+                "Aceptar");
+        }
+    }
+
+    private async void BtnFusionar_Click(
+        object sender,
+        EventArgs e)
+    {
+        if (_persona is null)
+        {
+            return;
+        }
+
+        try
+        {
+            List<Persona> candidatos =
+                await Task.Run(
+                    () =>
+                        DatabaseHelper.ObtenerPersonas());
+
+            candidatos =
+                candidatos
+                    .Where(p => p.Id != _personaId)
+                    .OrderBy(p => p.NombreMostrarTabla)
+                    .ToList();
+
+            if (candidatos.Count == 0)
+            {
+                await DisplayAlert(
+                    "Fusión",
+                    "No hay otras fichas con las que fusionar.",
+                    "Aceptar");
+
+                return;
+            }
+
+            var etiquetas =
+                candidatos
+                    .Select(p =>
+                        $"{p.NombreMostrarTabla} " +
+                        $"({p.CongregacionNombre})")
+                    .ToArray();
+
+            string eleccion =
+                await DisplayActionSheet(
+                    "Fusionar (borra la ficha elegida):",
+                    "Cancelar",
+                    null,
+                    etiquetas);
+
+            int indice =
+                Array.IndexOf(
+                    etiquetas,
+                    eleccion);
+
+            if (indice < 0)
+            {
+                return;
+            }
+
+            Persona origen =
+                candidatos[indice];
+
+            bool confirmar =
+                await DisplayAlert(
+                    "Confirmar fusión",
+                    $"La ficha «{origen.NombreMostrarTabla}» se " +
+                    $"fusionará en «{_persona.NombreMostrarTabla}» " +
+                    "y se eliminará. Esta acción no se puede " +
+                    "deshacer.",
+                    "Fusionar",
+                    "Cancelar");
+
+            if (!confirmar)
+            {
+                return;
+            }
+
+            await Task.Run(
+                () =>
+                    DatabaseHelper
+                        .FusionarYBorrarDefinitivoMobile(
+                            _personaId,
+                            origen.Id));
+
+            await DisplayAlert(
+                "Fusión",
+                "Fusión completada.",
+                "Aceptar");
+
+            await Navigation.PopAsync();
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert(
+                "Fusión",
+                "No se pudo fusionar:\n" +
+                ex.Message,
+                "Aceptar");
+        }
+    }
+
+
+    // ========================================================================
+    // ACTIVIDAD MENSUAL
+    // ========================================================================
+
+    private async Task CargarActividadesAsync()
+    {
+        try
+        {
+            _actividades =
+                await Task.Run(
+                    () =>
+                        DatabaseHelper
+                            .ObtenerActividadPersonaMobile(
+                                _personaId));
+        }
+        catch
+        {
+            _actividades =
+                new List<ActividadMensualMobile>();
+        }
+
+        BindableLayout.SetItemsSource(
+            ListaActividad,
+            _actividades);
+
+        LblSinActividad.IsVisible =
+            _actividades.Count == 0;
+    }
+
+    private async void BtnAnadirActividad_Clicked(
+        object sender,
+        EventArgs e)
+    {
+        await AbrirEditorActividadAsync(
+            null);
+    }
+
+    private async void BtnEditarActividad_Clicked(
+        object sender,
+        EventArgs e)
+    {
+        if (sender is Button boton
+            &&
+            boton.CommandParameter is
+                ActividadMensualMobile actividad)
+        {
+            await AbrirEditorActividadAsync(
+                actividad);
+        }
+    }
+
+    private async void Actividad_Tapped(
+        object sender,
+        TappedEventArgs e)
+    {
+        if (e.Parameter is
+            ActividadMensualMobile actividad)
+        {
+            await AbrirEditorActividadAsync(
+                actividad);
+        }
+    }
+
+    private async Task AbrirEditorActividadAsync(
+        ActividadMensualMobile? actividad)
+    {
+        var editor =
+            new ActividadMensualEdicionPage(
+                _personaId,
+                actividad);
+
+        await Navigation.PushAsync(editor);
+
+        await editor.EsperarResultadoAsync();
+
+        await CargarActividadesAsync();
+    }
+
 
     private async void BtnGuardar_Click(
         object sender,
@@ -685,10 +1177,22 @@ public partial class PersonaDetallePage : ContentPage
 
         try
         {
+            int.TryParse(
+                TxtRequisito.Text?.Trim(),
+                out int requisito);
+
             await Task.Run(() =>
+            {
                 DatabaseHelper
                     .ActualizarPersona(
-                        _persona));
+                        _persona);
+
+                DatabaseHelper
+                    .ActualizarCamposExtraPersonaMobile(
+                        _personaId,
+                        SwAprobado.IsToggled,
+                        requisito);
+            });
 
             // Volvemos a consultar para obtener
             // también el nombre de congregación.
@@ -718,16 +1222,6 @@ public partial class PersonaDetallePage : ContentPage
 
     private void TerminarEdicion()
     {
-        PanelFormulario.IsEnabled =
-            false;
-
-        PanelEdicion.IsVisible =
-            false;
-
-        PanelBotonesFoto.IsVisible =
-            false;
-
-        BtnEditar.IsEnabled =
-            true;
+        // La ficha es editable directamente; no hay que desactivar nada.
     }
 }

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.RscEditorPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="RSC"
+    BackgroundColor="#101216">
+
+    <ScrollView>
+        <VerticalStackLayout
+            Padding="20,16,20,24"
+            Spacing="14">
+
+            <Border Style="{StaticResource Tarjeta}">
+                <VerticalStackLayout Spacing="8">
+
+                    <Label
+                        x:Name="LblTitulo"
+                        FontSize="17"
+                        FontAttributes="Bold"
+                        TextColor="White"
+                        LineBreakMode="WordWrap" />
+
+                    <Label
+                        x:Name="LblResumen"
+                        Style="{StaticResource TextoTarjeta}" />
+
+                    <Button
+                        x:Name="BtnEliminar"
+                        Text="Eliminar RSC"
+                        Clicked="BtnEliminar_Clicked"
+                        Style="{StaticResource BotonPeligro}"
+                        HeightRequest="40"
+                        FontSize="12.5"
+                        HorizontalOptions="Start" />
+
+                </VerticalStackLayout>
+            </Border>
+
+            <Border
+                x:Name="TarjetaArreglos"
+                Style="{StaticResource Tarjeta}"
+                IsVisible="False">
+                <VerticalStackLayout Spacing="8">
+
+                    <Label
+                        Text="ARREGLOS APUNTADOS EN EL PROGRAMA DE LA VISITA"
+                        Style="{StaticResource Antetitulo}" />
+
+                    <VerticalStackLayout
+                        x:Name="PanelArreglos"
+                        Spacing="8" />
+
+                </VerticalStackLayout>
+            </Border>
+
+            <Label
+                Text="ASISTENTES A LA RSC"
+                Style="{StaticResource Antetitulo}"
+                Margin="0,6,0,0" />
+
+            <Label
+                x:Name="LblContadorAsistentes"
+                Style="{StaticResource TextoNota}" />
+
+            <Button
+                x:Name="BtnAnadir"
+                Text="＋ Añadir personas"
+                Clicked="BtnAnadir_Clicked"
+                Style="{StaticResource BotonSecundario}" />
+
+            <Label
+                x:Name="LblSinAsistentes"
+                Text="Todavía no hay nadie. Pulsa «＋ Añadir personas» para marcar quién asistió a la RSC."
+                Style="{StaticResource TextoNota}"
+                IsVisible="False" />
+
+            <VerticalStackLayout
+                x:Name="ListaAsistentes"
+                Spacing="8" />
+
+            <Label
+                Text="GRUPOS DE PREDICACIÓN"
+                Style="{StaticResource Antetitulo}"
+                Margin="0,6,0,0" />
+
+            <Button
+                x:Name="BtnFormar"
+                Text="⚙ Formar grupos"
+                Clicked="BtnFormar_Clicked"
+                Style="{StaticResource BotonPrincipal}" />
+
+            <Label
+                x:Name="LblAvisos"
+                FontSize="12"
+                TextColor="{StaticResource Aviso}"
+                LineBreakMode="WordWrap"
+                IsVisible="False" />
+
+            <Label
+                x:Name="LblResumenGrupos"
+                Style="{StaticResource TextoNota}" />
+
+            <Label
+                x:Name="LblSinGrupos"
+                Text="Los grupos aparecerán aquí. Marca primero quién asiste y sale a predicar, y pulsa «⚙ Formar grupos»."
+                Style="{StaticResource TextoNota}"
+                IsVisible="False" />
+
+            <VerticalStackLayout
+                x:Name="ListaGrupos"
+                Spacing="10" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

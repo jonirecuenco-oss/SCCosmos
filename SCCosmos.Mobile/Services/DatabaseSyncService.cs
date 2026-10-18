@@ -6,7 +6,8 @@ namespace SCCosmos.Mobile.Services;
 
 public record ResultadoSincronizacion(
     bool Correcto,
-    string Mensaje);
+    string Mensaje,
+    bool Conflicto = false);
 
 public static class DatabaseSyncService
 {
@@ -119,6 +120,13 @@ public static class DatabaseSyncService
                 consolidada,
                 DatabasePaths.RutaLocal);
 
+            // La base local acaba de ser sustituida: hay que descartar las
+            // conexiones que SQLite tenía en su pool, porque apuntan al
+            // archivo anterior (ya borrado). Si no, las siguientes
+            // escrituras podían fallar con "attempt to write a readonly
+            // database".
+            SqliteConnection.ClearAllPools();
+
             BorrarSiExiste(temporal);
 
             Preferences.Default.Set(
@@ -189,7 +197,8 @@ public static class DatabaseSyncService
                     false,
                     "La base de datos sincronizada ha cambiado desde la última actualización. " +
                     "Puede haber cambios realizados desde el PC. " +
-                    "Actualiza primero desde la carpeta para evitar perder información.");
+                    "Actualiza primero desde la carpeta para evitar perder información.",
+                    Conflicto: true);
             }
 
             // =====================================================
@@ -205,7 +214,7 @@ public static class DatabaseSyncService
 
             using (var origen =
                    new SqliteConnection(
-                       $"Data Source={DatabasePaths.RutaLocal};Mode=ReadOnly"))
+                       $"Data Source={DatabasePaths.RutaLocal}"))
             using (var destino =
                    new SqliteConnection(
                        $"Data Source={temporal}"))
@@ -249,6 +258,11 @@ public static class DatabaseSyncService
             // 4. Escribir mediante ContentResolver
             // =====================================================
 
+            // El registro de cambios y sus disparadores no deben viajar a la
+            // carpeta compartida.
+            FusionBaseDatosService.LimpiarRegistro(
+                temporal);
+
             await SyncFolderService
                 .CopiarLocalABaseDatosAsync(
                     temporal);
@@ -258,6 +272,10 @@ public static class DatabaseSyncService
             // =====================================================
             // 5. Registrar el nuevo estado sincronizado
             // =====================================================
+
+            // Lo anotado en el registro de cambios ya está en la carpeta.
+            FusionBaseDatosService
+                .LimpiarRegistroLocal();
 
             string nuevoHash =
                 SyncFolderService.CalcularHashBaseDatos();

@@ -1,0 +1,99 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.SesionPrecursoresEdicionPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Sesión de precursores"
+    BackgroundColor="#101216">
+
+    <Grid RowDefinitions="*,Auto">
+
+        <ScrollView Grid.Row="0">
+            <VerticalStackLayout Padding="20,16,20,24"
+                                 Spacing="14">
+
+                <Border BackgroundColor="{StaticResource Superficie}"
+                        Stroke="{StaticResource Borde}"
+                        Padding="16">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16" />
+                    </Border.StrokeShape>
+
+                    <VerticalStackLayout Spacing="12">
+
+                        <Label Text="SESIÓN"
+                               Style="{StaticResource Antetitulo}"
+                               CharacterSpacing="1" />
+
+                        <Label Text="Número"
+                               TextColor="#9299A3"
+                               FontSize="12" />
+                        <Entry x:Name="TxtNumero"
+                               Keyboard="Numeric"
+                               TextColor="White" />
+
+                        <Label Text="Fecha"
+                               TextColor="#9299A3"
+                               FontSize="12" />
+                        <Entry x:Name="TxtFecha"
+                               Placeholder="dd/MM/aaaa"
+                               TextColor="White" />
+
+                        <Label Text="Hora"
+                               TextColor="#9299A3"
+                               FontSize="12" />
+                        <Entry x:Name="TxtHora"
+                               Placeholder="16:00"
+                               TextColor="White" />
+
+                        <Label Text="Congregaciones"
+                               TextColor="#9299A3"
+                               FontSize="12" />
+                        <Editor x:Name="TxtCongregaciones"
+                                AutoSize="TextChanges"
+                                MinimumHeightRequest="70"
+                                TextColor="White" />
+
+                        <Label Text="Lugar"
+                               TextColor="#9299A3"
+                               FontSize="12" />
+                        <Entry x:Name="TxtLugar"
+                               TextColor="White" />
+
+                    </VerticalStackLayout>
+                </Border>
+
+                <Button x:Name="BtnEliminar"
+                        Text="Eliminar sesión"
+                        Clicked="BtnEliminar_Clicked"
+                        BackgroundColor="#3A2023"
+                        TextColor="#FFB7BC"
+                        CornerRadius="10"
+                        HeightRequest="48"
+                        IsVisible="False" />
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <Grid Grid.Row="1"
+              ColumnDefinitions="*,*"
+              ColumnSpacing="10"
+              Padding="18,10,18,16"
+              BackgroundColor="{StaticResource Superficie}">
+
+            <Button Grid.Column="0"
+                    Text="Cancelar"
+                    BackgroundColor="#30343B"
+                    Clicked="BtnCancelar_Clicked" />
+
+            <Button Grid.Column="1"
+                    Text="Guardar"
+                    BackgroundColor="#2478B5"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    Clicked="BtnGuardar_Clicked" />
+
+        </Grid>
+
+    </Grid>
+</ContentPage>

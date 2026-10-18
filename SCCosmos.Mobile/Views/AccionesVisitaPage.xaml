@@ -1,0 +1,196 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.AccionesVisitaPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Acciones de la semana"
+    BackgroundColor="#101216">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16"
+                             Spacing="14">
+
+            <!-- CABECERA -->
+            <Border BackgroundColor="{StaticResource Superficie}"
+                    Stroke="{StaticResource Borde}"
+                    StrokeThickness="1"
+                    Padding="14">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="12" />
+                </Border.StrokeShape>
+
+                <VerticalStackLayout Spacing="3">
+                    <Label Text="ACCIONES DE LA SEMANA"
+                           FontSize="12"
+                           FontAttributes="Bold"
+                           TextColor="#80C4FF" />
+                    <Label x:Name="LblCongregacion"
+                           FontSize="19"
+                           FontAttributes="Bold"
+                           TextColor="White" />
+                    <Label x:Name="LblFechas"
+                           FontSize="13"
+                           TextColor="#AEB4BC" />
+                    <Label x:Name="LblTipo"
+                           FontSize="13"
+                           TextColor="#9EA4AE" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- ===================== VISITA ===================== -->
+            <VerticalStackLayout x:Name="SeccionVisita"
+                                 Spacing="12">
+
+                <Label Text="Formulario S-302"
+                       FontSize="14"
+                       FontAttributes="Bold"
+                       TextColor="#D7DBE0"
+                       Margin="2,4,0,0" />
+
+                <Button x:Name="BtnPrepararS302"
+                        Text="Generar y compartir S-302"
+                        Clicked="BtnPrepararS302_Clicked"
+                        BackgroundColor="#0B6FC2"
+                        TextColor="White"
+                        CornerRadius="10"
+                        HeightRequest="50" />
+
+                <Button x:Name="BtnEnviarS302"
+                        Text="Enviar S-302 por correo"
+                        Clicked="BtnEnviarS302_Clicked"
+                        BackgroundColor="#163553"
+                        TextColor="#B9DEFF"
+                        CornerRadius="10"
+                        HeightRequest="50" />
+
+                <Label Text="Documentación"
+                       FontSize="14"
+                       FontAttributes="Bold"
+                       TextColor="#D7DBE0"
+                       Margin="2,8,0,0" />
+
+                <Button x:Name="BtnEnviarDocumentacion"
+                        Text="Preparar correo de documentación"
+                        Clicked="BtnEnviarDocumentacion_Clicked"
+                        BackgroundColor="#265B36"
+                        TextColor="#D6F6DE"
+                        CornerRadius="10"
+                        HeightRequest="50" />
+
+            </VerticalStackLayout>
+
+            <!-- ===================== ASAMBLEA ===================== -->
+            <VerticalStackLayout x:Name="SeccionAsamblea"
+                                 Spacing="12"
+                                 IsVisible="False">
+
+                <Label Text="Notificación de asamblea"
+                       FontSize="14"
+                       FontAttributes="Bold"
+                       TextColor="#D7DBE0"
+                       Margin="2,4,0,0" />
+
+                <Button x:Name="BtnNotificacionAsamblea"
+                        Text="Preparar notificación a las congregaciones"
+                        Clicked="BtnNotificacionAsamblea_Clicked"
+                        BackgroundColor="#163553"
+                        TextColor="#B9DEFF"
+                        CornerRadius="10"
+                        HeightRequest="50" />
+
+                <Label Text="Representante de Betel"
+                       FontSize="14"
+                       FontAttributes="Bold"
+                       TextColor="#D7DBE0"
+                       Margin="2,8,0,0" />
+
+                <Button x:Name="BtnEnviarBetel"
+                        Text="Preparar mensaje al rep. de Betel"
+                        Clicked="BtnEnviarBetel_Clicked"
+                        BackgroundColor="#3A3520"
+                        TextColor="#F3E7B8"
+                        CornerRadius="10"
+                        HeightRequest="50" />
+            </VerticalStackLayout>
+
+            <!-- ===================== ESTADO ===================== -->
+            <Label Text="Estado de los envíos"
+                   FontSize="14"
+                   FontAttributes="Bold"
+                   TextColor="#D7DBE0"
+                   Margin="2,8,0,0" />
+
+            <Border BackgroundColor="{StaticResource Superficie}"
+                    Stroke="{StaticResource Borde}"
+                    StrokeThickness="1"
+                    Padding="14">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="12" />
+                </Border.StrokeShape>
+
+                <VerticalStackLayout Spacing="6">
+                    <Grid ColumnDefinitions="*,Auto"
+                          x:Name="FilaS302">
+                        <Label Grid.Column="0"
+                               Text="S-302 enviado"
+                               TextColor="#E7E9EC"
+                               VerticalOptions="Center" />
+                        <Switch x:Name="SwS302"
+                                Grid.Column="1"
+                                OnColor="#0B6FC2" />
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*,Auto"
+                          x:Name="FilaDoc">
+                        <Label Grid.Column="0"
+                               Text="Documentación enviada"
+                               TextColor="#E7E9EC"
+                               VerticalOptions="Center" />
+                        <Switch x:Name="SwDoc"
+                                Grid.Column="1"
+                                OnColor="#0B6FC2" />
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*,Auto"
+                          x:Name="FilaNotificacion"
+                          IsVisible="False">
+                        <Label Grid.Column="0"
+                               Text="Notificación de asamblea enviada"
+                               TextColor="#E7E9EC"
+                               VerticalOptions="Center" />
+                        <Switch x:Name="SwNotificacion"
+                                Grid.Column="1"
+                                OnColor="#0B6FC2" />
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*,Auto"
+                          x:Name="FilaBetel"
+                          IsVisible="False">
+                        <Label Grid.Column="0"
+                               Text="Mensaje a Betel enviado"
+                               TextColor="#E7E9EC"
+                               VerticalOptions="Center" />
+                        <Switch x:Name="SwBetel"
+                                Grid.Column="1"
+                                OnColor="#0B6FC2" />
+                    </Grid>
+
+                    <Button x:Name="BtnGuardarEstado"
+                            Text="Guardar estado"
+                            Clicked="BtnGuardarEstado_Clicked"
+                            BackgroundColor="#242830"
+                            TextColor="White"
+                            CornerRadius="9"
+                            Margin="0,8,0,0" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Label x:Name="LblEstado"
+                   Text=""
+                   FontSize="13"
+                   TextColor="#9EA4AE"
+                   Margin="2,4,0,0" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

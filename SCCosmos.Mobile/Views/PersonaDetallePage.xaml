@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 
 <ContentPage
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
@@ -10,9 +10,9 @@
     <ContentPage.ToolbarItems>
 
         <ToolbarItem
-            x:Name="BtnEditar"
-            Text="Editar"
-            Clicked="BtnEditar_Click"/>
+            x:Name="BtnContacto"
+            Text="Añadir contacto"
+            Clicked="BtnAnadirContacto_Click"/>
 
     </ContentPage.ToolbarItems>
 
@@ -98,14 +98,14 @@
 
                 <VerticalStackLayout
                     x:Name="PanelFormulario"
-                    IsEnabled="False"
+                    IsEnabled="True"
                     Spacing="18">
 
                     <!-- IDENTIDAD -->
 
                     <Border
-                        BackgroundColor="#191D23"
-                        Stroke="#303640"
+                        BackgroundColor="{StaticResource Superficie}"
+                        Stroke="{StaticResource Borde}"
                         Padding="16">
 
                         <Border.StrokeShape>
@@ -116,9 +116,7 @@
 
                             <Label
                                 Text="DATOS PERSONALES"
-                                TextColor="#4BA3E3"
-                                FontSize="12"
-                                FontAttributes="Bold"
+                                Style="{StaticResource Antetitulo}"
                                 CharacterSpacing="1"/>
 
                             <Label Text="Nombre completo"
@@ -237,8 +235,8 @@
                     <!-- SERVICIO -->
 
                     <Border
-                        BackgroundColor="#191D23"
-                        Stroke="#303640"
+                        BackgroundColor="{StaticResource Superficie}"
+                        Stroke="{StaticResource Borde}"
                         Padding="16">
 
                         <Border.StrokeShape>
@@ -249,9 +247,7 @@
 
                             <Label
                                 Text="SERVICIO"
-                                TextColor="#4BA3E3"
-                                FontSize="12"
-                                FontAttributes="Bold"
+                                Style="{StaticResource Antetitulo}"
                                 CharacterSpacing="1"/>
 
                             <Label
@@ -353,8 +349,8 @@
                     <!-- CONTACTO -->
 
                     <Border
-                        BackgroundColor="#191D23"
-                        Stroke="#303640"
+                        BackgroundColor="{StaticResource Superficie}"
+                        Stroke="{StaticResource Borde}"
                         Padding="16">
 
                         <Border.StrokeShape>
@@ -365,9 +361,7 @@
 
                             <Label
                                 Text="CONTACTO"
-                                TextColor="#4BA3E3"
-                                FontSize="12"
-                                FontAttributes="Bold"
+                                Style="{StaticResource Antetitulo}"
                                 CharacterSpacing="1"/>
 
                             <Label Text="Teléfono"
@@ -405,6 +399,29 @@
                                 x:Name="TxtDireccion"
                                 TextColor="White"/>
 
+                            <Grid
+                                ColumnDefinitions="*,*"
+                                ColumnSpacing="10"
+                                Margin="0,4,0,0">
+
+                                <Button
+                                    Grid.Column="0"
+                                    Text="Ver en mapa"
+                                    Clicked="BtnVerMapa_Click"
+                                    BackgroundColor="#163553"
+                                    TextColor="#B9DEFF"
+                                    CornerRadius="9" />
+
+                                <Button
+                                    Grid.Column="1"
+                                    Text="Localizar dirección"
+                                    Clicked="BtnLocalizar_Click"
+                                    BackgroundColor="#265B36"
+                                    TextColor="#D6F6DE"
+                                    CornerRadius="9" />
+
+                            </Grid>
+
                         </VerticalStackLayout>
 
                     </Border>
@@ -412,8 +429,8 @@
                     <!-- SOLICITUDES -->
 
                     <Border
-                        BackgroundColor="#191D23"
-                        Stroke="#303640"
+                        BackgroundColor="{StaticResource Superficie}"
+                        Stroke="{StaticResource Borde}"
                         Padding="16">
 
                         <Border.StrokeShape>
@@ -473,8 +490,8 @@
                     <!-- PRIVILEGIOS Y NOTAS -->
 
                     <Border
-                        BackgroundColor="#191D23"
-                        Stroke="#303640"
+                        BackgroundColor="{StaticResource Superficie}"
+                        Stroke="{StaticResource Borde}"
                         Padding="16">
 
                         <Border.StrokeShape>
@@ -485,9 +502,7 @@
 
                             <Label
                                 Text="PRIVILEGIOS Y NOTAS"
-                                TextColor="#4BA3E3"
-                                FontSize="12"
-                                FontAttributes="Bold"
+                                Style="{StaticResource Antetitulo}"
                                 CharacterSpacing="1"/>
 
                             <Label
@@ -516,7 +531,191 @@
 
                     </Border>
 
+                    <!-- ORIGEN Y ESTADO -->
+
+                    <Border
+                        BackgroundColor="{StaticResource Superficie}"
+                        Stroke="{StaticResource Borde}"
+                        Padding="16">
+
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="16"/>
+                        </Border.StrokeShape>
+
+                        <VerticalStackLayout Spacing="12">
+
+                            <Label
+                                Text="ORIGEN Y ESTADO"
+                                Style="{StaticResource Antetitulo}"
+                                CharacterSpacing="1"/>
+
+                            <Label
+                                x:Name="LblOrigen"
+                                Text=""
+                                TextColor="#AEB4BC"
+                                FontSize="13"/>
+
+                            <Grid ColumnDefinitions="*,Auto">
+                                <Label Grid.Column="0"
+                                       Text="Aprobado para exhibidores"
+                                       TextColor="#E7E9EC"
+                                       VerticalOptions="Center"/>
+                                <Switch x:Name="SwAprobado"
+                                        Grid.Column="1"
+                                        OnColor="#0B6FC2"/>
+                            </Grid>
+
+                            <Label Text="Requisito de horas"
+                                   TextColor="#9299A3"
+                                   FontSize="12"/>
+                            <Entry x:Name="TxtRequisito"
+                                   Keyboard="Numeric"
+                                   TextColor="White"/>
+
+                        </VerticalStackLayout>
+
+                    </Border>
+
                 </VerticalStackLayout>
+
+                <!-- ACCIONES: HISTORIAL, TRASLADO, FUSIÓN -->
+
+                <Border
+                    BackgroundColor="{StaticResource Superficie}"
+                    Stroke="{StaticResource Borde}"
+                    Padding="16">
+
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16"/>
+                    </Border.StrokeShape>
+
+                    <VerticalStackLayout Spacing="10">
+
+                        <Label
+                            Text="HISTORIAL Y REGISTROS"
+                            Style="{StaticResource Antetitulo}"
+                            CharacterSpacing="1"/>
+
+                        <Button Text="Ver historial"
+                                Clicked="BtnHistorial_Click"
+                                BackgroundColor="#242830"
+                                TextColor="White"
+                                CornerRadius="9"/>
+
+                        <Button Text="Registrar traslado a otra congregación"
+                                Clicked="BtnTrasladar_Click"
+                                BackgroundColor="#3A3520"
+                                TextColor="#F3E7B8"
+                                CornerRadius="9"/>
+
+                        <Button Text="Fusionar con otra ficha"
+                                Clicked="BtnFusionar_Click"
+                                BackgroundColor="#3A2023"
+                                TextColor="#FFB7BC"
+                                CornerRadius="9"/>
+
+                    </VerticalStackLayout>
+
+                </Border>
+
+                <!-- ACTIVIDAD MENSUAL -->
+
+                <Border
+                    x:Name="SeccionActividad"
+                    BackgroundColor="{StaticResource Superficie}"
+                    Stroke="{StaticResource Borde}"
+                    Padding="16">
+
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16"/>
+                    </Border.StrokeShape>
+
+                    <VerticalStackLayout Spacing="12">
+
+                        <Label
+                            Text="ACTIVIDAD MENSUAL"
+                            Style="{StaticResource Antetitulo}"
+                            CharacterSpacing="1"/>
+
+                        <Label
+                            x:Name="LblSinActividad"
+                            Text="Sin registros de actividad."
+                            TextColor="#7E858F"
+                            FontSize="13"/>
+
+                        <VerticalStackLayout
+                            x:Name="ListaActividad"
+                            Spacing="8">
+
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate>
+
+                                    <Border
+                                        BackgroundColor="{StaticResource SuperficieAlta}"
+                                        Stroke="{StaticResource Borde}"
+                                        StrokeThickness="1"
+                                        Padding="12">
+
+                                        <Border.StrokeShape>
+                                            <RoundRectangle CornerRadius="10"/>
+                                        </Border.StrokeShape>
+
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer
+                                                Tapped="Actividad_Tapped"
+                                                CommandParameter="{Binding .}"/>
+                                        </Border.GestureRecognizers>
+
+                                        <Grid ColumnDefinitions="*,Auto">
+
+                                            <VerticalStackLayout
+                                                Grid.Column="0"
+                                                Spacing="2">
+
+                                                <Label
+                                                    Text="{Binding Etiqueta}"
+                                                    TextColor="White"
+                                                    FontAttributes="Bold"
+                                                    FontSize="14"/>
+
+                                                <Label
+                                                    Text="{Binding Resumen}"
+                                                    TextColor="#AEB4BC"
+                                                    FontSize="12"/>
+
+                                            </VerticalStackLayout>
+
+                                            <Button
+                                                Grid.Column="1"
+                                                Text="Editar"
+                                                Clicked="BtnEditarActividad_Clicked"
+                                                CommandParameter="{Binding .}"
+                                                Padding="12,6"
+                                                FontSize="12"
+                                                BackgroundColor="#242830"
+                                                TextColor="White"
+                                                CornerRadius="8"
+                                                VerticalOptions="Center"/>
+
+                                        </Grid>
+
+                                    </Border>
+
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+
+                        </VerticalStackLayout>
+
+                        <Button
+                            Text="Añadir mes"
+                            Clicked="BtnAnadirActividad_Clicked"
+                            BackgroundColor="#163553"
+                            TextColor="#B9DEFF"
+                            CornerRadius="9"/>
+
+                    </VerticalStackLayout>
+
+                </Border>
 
             </VerticalStackLayout>
 
@@ -527,11 +726,11 @@
         <Grid
             Grid.Row="1"
             x:Name="PanelEdicion"
-            IsVisible="False"
+            IsVisible="True"
             ColumnDefinitions="*,*"
             ColumnSpacing="10"
             Padding="18,10,18,16"
-            BackgroundColor="#171A1F">
+            BackgroundColor="{StaticResource Superficie}">
 
             <Button
                 Grid.Column="0"

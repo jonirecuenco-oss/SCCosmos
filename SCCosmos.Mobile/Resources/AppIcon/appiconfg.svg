@@ -3,21 +3,11 @@
      width="512"
      height="512"
      viewBox="0 0 256 256">
-  <g transform="translate(128 128) scale(0.80) translate(-128 -128)">
-    <!-- Órbitas -->
-    <ellipse cx="128" cy="128" rx="101" ry="35"
-             fill="none" stroke="#80BFFF" stroke-width="8" stroke-linecap="round"/>
-    <ellipse cx="128" cy="128" rx="101" ry="35"
-             fill="none" stroke="#80BFFF" stroke-width="8" stroke-linecap="round"
-             transform="rotate(60 128 128)"/>
-    <ellipse cx="128" cy="128" rx="101" ry="35"
-             fill="none" stroke="#80BFFF" stroke-width="8" stroke-linecap="round"
-             transform="rotate(-60 128 128)"/>
-
-    <!-- Núcleo -->
+  <g transform="translate(128 128) scale(0.60) translate(-128 -128)">
+    <ellipse cx="128" cy="128" rx="101" ry="35" fill="none" stroke="#80BFFF" stroke-width="8" stroke-linecap="round"/>
+    <ellipse cx="128" cy="128" rx="101" ry="35" fill="none" stroke="#80BFFF" stroke-width="8" stroke-linecap="round" transform="rotate(60 128 128)"/>
+    <ellipse cx="128" cy="128" rx="101" ry="35" fill="none" stroke="#80BFFF" stroke-width="8" stroke-linecap="round" transform="rotate(-60 128 128)"/>
     <circle cx="128" cy="128" r="30" fill="#0078D4"/>
-
-    <!-- Electrones -->
     <circle cx="27" cy="128" r="10.5" fill="#FFFFFF"/>
     <circle cx="178" cy="41" r="10.5" fill="#FFFFFF"/>
     <circle cx="178" cy="215" r="10.5" fill="#FFFFFF"/>

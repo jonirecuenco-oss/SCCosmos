@@ -1,0 +1,191 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.AsambleaDetallePage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Asamblea"
+    BackgroundColor="#101216">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16,14,16,28"
+                             Spacing="14">
+
+            <Border BackgroundColor="{StaticResource Superficie}"
+                    Stroke="{StaticResource Borde}"
+                    StrokeThickness="1"
+                    Padding="14">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="12" />
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="4">
+                    <Label x:Name="LblTitulo"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           TextColor="White" />
+                    <Label x:Name="LblDetalle"
+                           FontSize="13"
+                           TextColor="#AEB4BC" />
+                    <Label x:Name="LblTematico"
+                           FontSize="13"
+                           TextColor="#80C4FF" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Grid ColumnDefinitions="*,*"
+                  ColumnSpacing="8">
+                <Button Grid.Column="0"
+                        Text="PDF programa"
+                        Clicked="BtnPdfPrograma_Clicked"
+                        BackgroundColor="#163553"
+                        TextColor="#B9DEFF"
+                        CornerRadius="9"
+                        HeightRequest="44" />
+                <Button Grid.Column="1"
+                        Text="PDF organigrama"
+                        Clicked="BtnPdfOrganigrama_Clicked"
+                        BackgroundColor="#163553"
+                        TextColor="#B9DEFF"
+                        CornerRadius="9"
+                        HeightRequest="44" />
+            </Grid>
+
+            <Grid ColumnDefinitions="*,*"
+                  ColumnSpacing="8">
+                <Button Grid.Column="0"
+                        Text="Enviar asignación"
+                        Clicked="BtnEnviarAsignacion_Clicked"
+                        BackgroundColor="#245C38"
+                        TextColor="White"
+                        CornerRadius="9"
+                        HeightRequest="44" />
+                <Button Grid.Column="1"
+                        Text="Enviar organigrama"
+                        Clicked="BtnEnviarOrganigrama_Clicked"
+                        BackgroundColor="#245C38"
+                        TextColor="White"
+                        CornerRadius="9"
+                        HeightRequest="44" />
+            </Grid>
+
+            <Label Text="PROGRAMA" Style="{StaticResource Antetitulo}" />
+            <Button Text="＋ Añadir parte"
+                    Clicked="BtnAnadirParte_Clicked"
+                    BackgroundColor="#245C38"
+                    TextColor="White"
+                    CornerRadius="9"
+                    HeightRequest="44" />
+            <Label x:Name="LblSinPartes"
+                   Text="Sin partes registradas."
+                   FontSize="13"
+                   TextColor="#7E858F" />
+            <VerticalStackLayout x:Name="ListaPartes"
+                                 Spacing="7">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate>
+                        <Border BackgroundColor="{StaticResource Superficie}"
+                                Stroke="{StaticResource Borde}"
+                                StrokeThickness="1"
+                                Padding="12">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="10" />
+                            </Border.StrokeShape>
+                            <Grid ColumnDefinitions="*,Auto">
+                                <VerticalStackLayout Grid.Column="0"
+                                                     Spacing="3">
+                                    <Label Text="{Binding Titulo}"
+                                           TextColor="White"
+                                           FontSize="14"
+                                           FontAttributes="Bold" />
+                                    <Label Text="{Binding Detalle}"
+                                           TextColor="#AEB4BC"
+                                           FontSize="12" />
+                                </VerticalStackLayout>
+                                <VerticalStackLayout Grid.Column="1"
+                                                     Spacing="5">
+                                    <Button Text="Editar"
+                                            Clicked="BtnEditarParte_Clicked"
+                                            CommandParameter="{Binding .}"
+                                            Padding="10,5"
+                                            FontSize="11"
+                                            BackgroundColor="#242830"
+                                            TextColor="White"
+                                            CornerRadius="7" />
+                                    <Button Text="Eliminar"
+                                            Clicked="BtnEliminarParte_Clicked"
+                                            CommandParameter="{Binding .}"
+                                            Padding="10,5"
+                                            FontSize="11"
+                                            BackgroundColor="#3A2023"
+                                            TextColor="#FFB7BC"
+                                            CornerRadius="7" />
+                                </VerticalStackLayout>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
+
+            <Label Text="ORGANIGRAMA" Style="{StaticResource Antetitulo}" />
+            <Button Text="＋ Añadir asignación"
+                    Clicked="BtnAnadirOrganigrama_Clicked"
+                    BackgroundColor="#245C38"
+                    TextColor="White"
+                    CornerRadius="9"
+                    HeightRequest="44" />
+            <Label x:Name="LblSinOrganigrama"
+                   Text="Sin organigrama registrado."
+                   FontSize="13"
+                   TextColor="#7E858F" />
+            <VerticalStackLayout x:Name="ListaOrganigrama"
+                                 Spacing="7">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate>
+                        <Border BackgroundColor="{StaticResource Superficie}"
+                                Stroke="{StaticResource Borde}"
+                                StrokeThickness="1"
+                                Padding="12">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="10" />
+                            </Border.StrokeShape>
+                            <Grid ColumnDefinitions="*,Auto">
+                                <VerticalStackLayout Grid.Column="0"
+                                                     Spacing="3">
+                                    <Label Text="{Binding Departamento}"
+                                           TextColor="White"
+                                           FontSize="14"
+                                           FontAttributes="Bold" />
+                                    <Label Text="{Binding Rol}"
+                                           TextColor="#80C4FF"
+                                           FontSize="12" />
+                                    <Label Text="{Binding Detalle}"
+                                           TextColor="#AEB4BC"
+                                           FontSize="12" />
+                                </VerticalStackLayout>
+                                <VerticalStackLayout Grid.Column="1"
+                                                     Spacing="5">
+                                    <Button Text="Editar"
+                                            Clicked="BtnEditarOrganigrama_Clicked"
+                                            CommandParameter="{Binding .}"
+                                            Padding="10,5"
+                                            FontSize="11"
+                                            BackgroundColor="#242830"
+                                            TextColor="White"
+                                            CornerRadius="7" />
+                                    <Button Text="Eliminar"
+                                            Clicked="BtnEliminarOrganigrama_Clicked"
+                                            CommandParameter="{Binding .}"
+                                            Padding="10,5"
+                                            FontSize="11"
+                                            BackgroundColor="#3A2023"
+                                            TextColor="#FFB7BC"
+                                            CornerRadius="7" />
+                                </VerticalStackLayout>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

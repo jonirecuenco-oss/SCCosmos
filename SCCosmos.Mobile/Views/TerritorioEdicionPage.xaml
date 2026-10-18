@@ -1,0 +1,91 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.TerritorioEdicionPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Territorio"
+    BackgroundColor="#101216">
+
+    <Grid RowDefinitions="*,Auto">
+
+        <ScrollView Grid.Row="0">
+            <VerticalStackLayout Padding="20,16,20,24"
+                                 Spacing="16">
+
+                <Border BackgroundColor="{StaticResource Superficie}"
+                        Stroke="{StaticResource Borde}"
+                        Padding="16">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16" />
+                    </Border.StrokeShape>
+
+                    <VerticalStackLayout Spacing="12">
+
+                        <Label Text="TERRITORIO"
+                               Style="{StaticResource Antetitulo}"
+                               CharacterSpacing="1" />
+
+                        <Label x:Name="LblNombre"
+                               TextColor="White"
+                               FontSize="17"
+                               FontAttributes="Bold" />
+
+                        <Label x:Name="LblEstado"
+                               TextColor="#AEB4BC"
+                               FontSize="13" />
+
+                        <Label Text="Vincular a publicador"
+                               TextColor="#9299A3"
+                               FontSize="12"
+                               Margin="0,6,0,0" />
+
+                        <Picker x:Name="PickerPersona"
+                                Title="Selecciona un publicador"
+                                TextColor="White"
+                                ItemDisplayBinding="{Binding NombreMostrarTabla}"
+                                SelectedIndexChanged="PickerPersona_SelectedIndexChanged" />
+
+                        <Label Text="Nombre vinculado"
+                               TextColor="#9299A3"
+                               FontSize="12" />
+
+                        <Entry x:Name="TxtVinculado"
+                               Placeholder="Nombre a vincular (o vacío para quitar)"
+                               TextColor="White" />
+
+                    </VerticalStackLayout>
+                </Border>
+
+                <Button x:Name="BtnEliminar"
+                        Text="Eliminar registro de territorio"
+                        Clicked="BtnEliminar_Clicked"
+                        BackgroundColor="#3A2023"
+                        TextColor="#FFB7BC"
+                        CornerRadius="10"
+                        HeightRequest="48" />
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <Grid Grid.Row="1"
+              ColumnDefinitions="*,*"
+              ColumnSpacing="10"
+              Padding="18,10,18,16"
+              BackgroundColor="{StaticResource Superficie}">
+
+            <Button Grid.Column="0"
+                    Text="Cancelar"
+                    BackgroundColor="#30343B"
+                    Clicked="BtnCancelar_Clicked" />
+
+            <Button Grid.Column="1"
+                    Text="Guardar"
+                    BackgroundColor="#2478B5"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    Clicked="BtnGuardar_Clicked" />
+
+        </Grid>
+
+    </Grid>
+</ContentPage>

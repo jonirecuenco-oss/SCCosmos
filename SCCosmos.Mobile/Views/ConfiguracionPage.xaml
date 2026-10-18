@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 
 <ContentPage
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
@@ -15,9 +15,136 @@
 
             <Label
                 Text="Configuración"
-                TextColor="White"
-                FontSize="30"
+                TextColor="{StaticResource TextoPrincipal}"
+                FontSize="26"
                 FontAttributes="Bold"/>
+
+            <Label
+                Text="Datos del superintendente y circuito"
+                TextColor="#4BA3E3"
+                FontSize="18"
+                FontAttributes="Bold"
+                Margin="0,10,0,0"/>
+
+            <Border
+                BackgroundColor="{StaticResource Superficie}"
+                Stroke="#30343C"
+                StrokeThickness="1"
+                Padding="18">
+
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="14"/>
+                </Border.StrokeShape>
+
+                <VerticalStackLayout Spacing="10">
+
+                    <VerticalStackLayout x:Name="PanelDatosSC"
+                                         Spacing="10">
+
+                        <Label Text="Nombre del SC"
+                               TextColor="#9299A3"
+                               FontSize="12"/>
+                        <Entry x:Name="TxtNombreSC" TextColor="White"/>
+
+                        <Label Text="Apellidos del SC"
+                               TextColor="#9299A3"
+                               FontSize="12"/>
+                        <Entry x:Name="TxtApellidoSC" TextColor="White"/>
+
+                    </VerticalStackLayout>
+
+                    <Label Text="Nombre de la esposa"
+                           TextColor="#9299A3"
+                           FontSize="12"/>
+                    <Entry x:Name="TxtNombreEsposaSC" TextColor="White"/>
+
+                    <Label Text="Apellidos de la esposa"
+                           TextColor="#9299A3"
+                           FontSize="12"/>
+                    <Entry x:Name="TxtApellidoEsposaSC" TextColor="White"/>
+
+                    <VerticalStackLayout x:Name="PanelDatosSCFinal"
+                                         Spacing="10">
+
+                        <Label Text="Número de circuito"
+                               TextColor="#9299A3"
+                               FontSize="12"/>
+                        <Entry x:Name="TxtNumCircuito" TextColor="White"/>
+
+                        <Label Text="Carpeta del Archivo del circuito (subcarpeta de la carpeta sincronizada; vacío = misma carpeta)"
+                               TextColor="#9299A3"
+                               FontSize="12"/>
+                        <Entry x:Name="TxtRutaArchivoCircuito"
+                               Placeholder="p. ej. ArchivoCircuito"
+                               TextColor="White"/>
+
+                    </VerticalStackLayout>
+
+                    <Label x:Name="LblResultadoGlobal"
+                           Text=""
+                           TextColor="#9EA4AE"
+                           FontSize="13"/>
+
+                </VerticalStackLayout>
+
+            </Border>
+
+            <Label
+                Text="Perfil de usuario"
+                TextColor="#4BA3E3"
+                FontSize="18"
+                FontAttributes="Bold"
+                Margin="0,15,0,0"/>
+
+            <Border
+                BackgroundColor="{StaticResource Superficie}"
+                Stroke="#30343C"
+                StrokeThickness="1"
+                Padding="18">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="14"/>
+                </Border.StrokeShape>
+
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="¿Quién usa este dispositivo?"
+                           TextColor="#9299A3"
+                           FontSize="12"/>
+                    <Picker x:Name="PickerPerfil"
+                            TextColor="White"
+                            SelectedIndexChanged="PickerPerfil_SelectedIndexChanged">
+                        <Picker.ItemsSource>
+                            <x:Array Type="{x:Type x:String}">
+                                <x:String>Hombre</x:String>
+                                <x:String>Esposa</x:String>
+                            </x:Array>
+                        </Picker.ItemsSource>
+                    </Picker>
+
+                    <VerticalStackLayout x:Name="PanelCodigoPerfil"
+                                         IsVisible="False"
+                                         Spacing="6">
+                        <Label Text="Código de acceso (solo si es él)"
+                               TextColor="#9299A3"
+                               FontSize="12"/>
+                        <Entry x:Name="TxtCodigoPerfil"
+                               IsPassword="True"
+                               TextColor="White"/>
+                    </VerticalStackLayout>
+
+                    <Button Text="Guardar perfil"
+                            Clicked="BtnGuardarPerfil_Click"
+                            BackgroundColor="#2478B5"
+                            TextColor="White"
+                            FontAttributes="Bold"
+                            CornerRadius="9"
+                            Margin="0,4,0,0"/>
+
+                    <Label x:Name="LblPerfilEstado"
+                           Text=""
+                           TextColor="#9EA4AE"
+                           FontSize="13"/>
+                </VerticalStackLayout>
+            </Border>
 
             <Label
                 Text="Base de datos"
@@ -27,7 +154,7 @@
                 Margin="0,15,0,0"/>
 
             <Border
-                BackgroundColor="#1A1D23"
+                BackgroundColor="{StaticResource Superficie}"
                 Stroke="#30343C"
                 StrokeThickness="1"
                 Padding="18">
@@ -58,73 +185,32 @@
 
                     <Button
                         Text="Seleccionar carpeta"
-                        Clicked="BtnSeleccionarCarpeta_Click"/>
-
-                    <BoxView
-                        HeightRequest="1"
-                        Color="#30343C"
-                        Margin="0,5"/>
-
-                    <Label
-                        Text="Estado"
-                        TextColor="#A8ADB5"
-                        FontSize="12"/>
+                        Clicked="BtnSeleccionarCarpeta_Click"
+                        Style="{StaticResource BotonPrincipal}"/>
 
                     <Label
                         x:Name="LblEstado"
-                        Text="Pendiente de seleccionar carpeta."
+                        Text="Comprobando la base de datos…"
                         TextColor="#FFB900"
                         FontSize="14"
                         FontAttributes="Bold"/>
 
-                    <Button
-                        Text="Comprobar base de datos"
-                        Clicked="BtnComprobar_Click"/>
-
                     <BoxView
-    HeightRequest="1"
-    Color="#30343C"
-    Margin="0,8"/>
+                        HeightRequest="1"
+                        Color="#30343C"
+                        Margin="0,12"/>
 
                     <Label
-    Text="Sincronización"
-    TextColor="White"
-    FontSize="17"
-    FontAttributes="Bold"/>
-
-                    <Button
-    Text="↓ Actualizar desde carpeta"
-    Clicked="BtnImportar_Click"/>
-
-                    <Button
-    Text="↑ Guardar cambios en carpeta"
-    Clicked="BtnExportar_Click"/>
-
-                    <Button
-    Text="Probar base de datos local"
-    Clicked="BtnProbarBase_Click"/>
-
-                    <Label
-    x:Name="LblResultadoDb"
-    Text=""
-    TextColor="#CCCCCC"
-    FontSize="14"
-    LineBreakMode="WordWrap"/>
-
-                    <BoxView
-    HeightRequest="1"
-    Color="#30343C"
-    Margin="0,12"/>
-
-                    <Label
+    x:Name="TituloJwHub"
     Text="JW Hub"
     TextColor="White"
     FontSize="17"
     FontAttributes="Bold"/>
 
                     <Border
-    BackgroundColor="#191D23"
-    Stroke="#303640"
+    x:Name="PanelJwHub"
+    BackgroundColor="{StaticResource Superficie}"
+    Stroke="{StaticResource Borde}"
     Padding="16">
 
                         <Border.StrokeShape>
@@ -206,6 +292,106 @@
 
                 </VerticalStackLayout>
 
+            </Border>
+
+            <!-- SINCRONIZACIÓN ENTRE DISPOSITIVOS -->
+            <Label
+                Text="Sincronización entre dispositivos"
+                TextColor="#4BA3E3"
+                FontSize="18"
+                FontAttributes="Bold"
+                Margin="0,15,0,0"/>
+
+            <Border
+                x:Name="CardSincroMobile"
+                BackgroundColor="{StaticResource Superficie}"
+                Stroke="#30343C"
+                StrokeThickness="1"
+                Padding="18">
+
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="14"/>
+                </Border.StrokeShape>
+
+                <VerticalStackLayout Spacing="12">
+
+                    <Label
+                        Text="Los cambios viajan solos entre tus dispositivos: en casa por wifi (al instante) y fuera de casa por la carpeta sincronizada que ya usas. Solo comparte la misma clave en todos."
+                        TextColor="#A8ADB5"
+                        FontSize="14"/>
+
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label
+                            Text="Activada"
+                            TextColor="White"
+                            VerticalOptions="Center"/>
+                        <Switch
+                            x:Name="SwSincroActivo"
+                            Grid.Column="1"/>
+                    </Grid>
+
+                    <Label
+                        Text="Nombre de este móvil"
+                        TextColor="#CCCCCC"
+                        FontSize="13"/>
+                    <Entry
+                        x:Name="TxtNombreSincro"
+                        TextColor="White"/>
+
+                    <Label
+                        Text="Clave de sincronización"
+                        TextColor="#CCCCCC"
+                        FontSize="13"/>
+                    <Entry
+                        x:Name="TxtClaveSincro"
+                        TextColor="White"
+                        Keyboard="Numeric"/>
+
+                    <Label
+                        Text="Dispositivos (desmarca los que no quieras sincronizar con este móvil)"
+                        TextColor="#CCCCCC"
+                        FontSize="13"/>
+                    <VerticalStackLayout
+                        x:Name="ListaDispositivosSincro"
+                        Spacing="0">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate>
+                                <Grid
+                                    ColumnDefinitions="Auto,*"
+                                    ColumnSpacing="6"
+                                    Padding="0,2">
+                                    <CheckBox
+                                        Grid.Column="0"
+                                        IsChecked="{Binding Habilitado, Mode=OneWay}"
+                                        CheckedChanged="ChkDispositivo_Changed"
+                                        Color="#FFB900"
+                                        VerticalOptions="Center"/>
+                                    <VerticalStackLayout
+                                        Grid.Column="1"
+                                        Spacing="0"
+                                        VerticalOptions="Center">
+                                        <Label
+                                            Text="{Binding Nombre}"
+                                            TextColor="White"
+                                            FontSize="14"/>
+                                        <Label
+                                            Text="{Binding Detalle}"
+                                            TextColor="#9EA4AE"
+                                            FontSize="11"/>
+                                    </VerticalStackLayout>
+                                </Grid>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+
+                    <Label
+                        x:Name="LblEstadoSincro"
+                        Text=""
+                        TextColor="#FFB900"
+                        FontSize="13"
+                        LineBreakMode="WordWrap"/>
+
+                </VerticalStackLayout>
             </Border>
 
         </VerticalStackLayout>

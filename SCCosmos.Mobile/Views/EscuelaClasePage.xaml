@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.EscuelaClasePage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Clase"
+    BackgroundColor="#101216">
+
+    <Grid RowDefinitions="*,Auto">
+
+        <ScrollView Grid.Row="0">
+            <VerticalStackLayout Padding="20,16,20,24"
+                                 Spacing="14">
+
+                <Border BackgroundColor="{StaticResource Superficie}"
+                        Stroke="{StaticResource Borde}"
+                        StrokeThickness="1"
+                        Padding="16">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16" />
+                    </Border.StrokeShape>
+
+                    <VerticalStackLayout Spacing="8">
+
+                        <Label x:Name="LblSemana"
+                               FontSize="20"
+                               FontAttributes="Bold"
+                               TextColor="White" />
+
+                        <Label x:Name="LblInfo"
+                               FontSize="13"
+                               TextColor="#9FB3C8"
+                               LineBreakMode="WordWrap" />
+
+                        <Grid ColumnDefinitions="*,*"
+                              ColumnSpacing="8"
+                              Margin="0,6,0,0">
+
+                            <Button Grid.Column="0"
+                                    Text="Editar"
+                                    Clicked="BtnEditar_Clicked"
+                                    Style="{StaticResource BotonSecundario}"
+                                    HeightRequest="42"
+                                    FontSize="13" />
+
+                            <Button Grid.Column="1"
+                                    Text="Eliminar"
+                                    Clicked="BtnEliminar_Clicked"
+                                    Style="{StaticResource BotonPeligro}"
+                                    HeightRequest="42"
+                                    FontSize="13" />
+
+                        </Grid>
+
+                    </VerticalStackLayout>
+                </Border>
+
+                <Label Text="LA CLASE"
+                       Style="{StaticResource Antetitulo}" />
+
+                <Grid ColumnDefinitions="*,*"
+                      RowDefinitions="Auto,Auto,Auto"
+                      ColumnSpacing="8"
+                      RowSpacing="8">
+
+                    <Button Grid.Row="0" Grid.Column="0"
+                            Text="Añadir estudiantes"
+                            Clicked="BtnAnadir_Clicked"
+                            Style="{StaticResource BotonSecundario}"
+                            HeightRequest="46"
+                            FontSize="13" />
+
+                    <Button Grid.Row="0" Grid.Column="1"
+                            Text="Distribuir asientos"
+                            Clicked="BtnAsientos_Clicked"
+                            Style="{StaticResource BotonSecundario}"
+                            HeightRequest="46"
+                            FontSize="13" />
+
+                    <Button Grid.Row="1" Grid.Column="0"
+                            Text="Programa de limpieza"
+                            Clicked="BtnLimpieza_Clicked"
+                            Style="{StaticResource BotonSecundario}"
+                            HeightRequest="46"
+                            FontSize="13" />
+
+                    <Button Grid.Row="1" Grid.Column="1"
+                            Text="Editar el horario"
+                            Clicked="BtnHorario_Clicked"
+                            Style="{StaticResource BotonSecundario}"
+                            HeightRequest="46"
+                            FontSize="13" />
+
+                    <Button Grid.Row="2" Grid.Column="0"
+                            Text="Talleres"
+                            Clicked="BtnTalleres_Clicked"
+                            Style="{StaticResource BotonSecundario}"
+                            HeightRequest="46"
+                            FontSize="13" />
+
+                </Grid>
+
+                <Label Text="ESTUDIANTES DE LA CLASE"
+                       Style="{StaticResource Antetitulo}" />
+
+                <Label x:Name="LblSinAlumnos"
+                       Text="Todavía no hay estudiantes. Usa «Añadir estudiantes»."
+                       Style="{StaticResource TextoNota}" />
+
+                <VerticalStackLayout x:Name="ListaAlumnos"
+                                     Spacing="8">
+
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate>
+                            <Border BackgroundColor="{StaticResource Superficie}"
+                                    Stroke="{StaticResource Borde}"
+                                    StrokeThickness="1"
+                                    Padding="12">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="12" />
+                                </Border.StrokeShape>
+
+                                <Grid ColumnDefinitions="*,Auto"
+                                      ColumnSpacing="8">
+
+                                    <VerticalStackLayout Grid.Column="0"
+                                                         Spacing="2">
+                                        <Label Text="{Binding Nombre}"
+                                               FontSize="14.5"
+                                               TextColor="White" />
+                                        <Label Text="{Binding Detalle}"
+                                               FontSize="12"
+                                               TextColor="#8B94A0" />
+                                    </VerticalStackLayout>
+
+                                    <Button Grid.Column="1"
+                                            Text="Quitar"
+                                            CommandParameter="{Binding .}"
+                                            Clicked="BtnQuitarAlumno_Clicked"
+                                            Padding="10,4"
+                                            FontSize="12"
+                                            BackgroundColor="#3A1F27"
+                                            TextColor="#F2B8C6"
+                                            CornerRadius="8"
+                                            VerticalOptions="Center" />
+
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+
+                </VerticalStackLayout>
+
+                <Label x:Name="LblNotas"
+                       FontSize="12"
+                       TextColor="#777F8A"
+                       LineBreakMode="WordWrap" />
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <Grid Grid.Row="1"
+              Padding="18,10,18,16"
+              BackgroundColor="{StaticResource Superficie}">
+
+            <Button Text="Volver"
+                    Clicked="BtnVolver_Clicked"
+                    Style="{StaticResource BotonSecundario}" />
+
+        </Grid>
+
+    </Grid>
+</ContentPage>

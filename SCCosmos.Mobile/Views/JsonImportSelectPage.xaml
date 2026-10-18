@@ -1,0 +1,241 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.JsonImportSelectPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Importar actividad"
+    BackgroundColor="#101216"
+    Shell.NavBarIsVisible="False" NavigationPage.HasNavigationBar="False">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- CABECERA -->
+        <Grid Grid.Row="0"
+              ColumnDefinitions="*,Auto"
+              Padding="16,14,16,10"
+              ColumnSpacing="10">
+
+            <VerticalStackLayout Grid.Column="0"
+                                 Spacing="2">
+                <Label Text="IMPORTAR ACTIVIDAD"
+                       FontSize="22"
+                       FontAttributes="Bold"
+                       TextColor="White" />
+
+                <Label x:Name="LblSubtitulo"
+                       FontSize="12"
+                       TextColor="#9EA4AE"
+                       LineBreakMode="TailTruncation" />
+            </VerticalStackLayout>
+
+            <Button Grid.Column="1"
+                    Text="Cerrar"
+                    Clicked="BtnCancelar_Clicked"
+                    BackgroundColor="#242830"
+                    TextColor="White"
+                    CornerRadius="9"
+                    Padding="13,7"
+                    VerticalOptions="Center" />
+        </Grid>
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="16,0,16,18"
+                                 Spacing="12">
+
+                <Border x:Name="PanelAviso"
+                        BackgroundColor="#3B1B1B"
+                        Stroke="#A94A4A"
+                        StrokeThickness="1"
+                        Padding="12"
+                        IsVisible="False">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="10" />
+                    </Border.StrokeShape>
+                    <Label Text="⚠ Esta semana ya tiene datos importados. Si continúas, se actualizarán la actividad y los territorios. No se borrarán publicadores automáticamente."
+                           TextColor="#FFB5B5"
+                           FontSize="12"
+                           LineBreakMode="WordWrap" />
+                </Border>
+
+                <Border BackgroundColor="{StaticResource Superficie}"
+                        Stroke="{StaticResource Borde}"
+                        StrokeThickness="1"
+                        Padding="13">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="12" />
+                    </Border.StrokeShape>
+
+                    <Grid ColumnDefinitions="*,Auto"
+                          ColumnSpacing="10">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="S-21 (JSON)"
+                                   TextColor="White"
+                                   FontAttributes="Bold"
+                                   FontSize="15" />
+
+                            <Label x:Name="LblS21"
+                                   Text="Ningún archivo seleccionado"
+                                   TextColor="#8F969F"
+                                   FontSize="12"
+                                   LineBreakMode="TailTruncation" />
+                        </VerticalStackLayout>
+
+                        <Button Grid.Column="1"
+                                Text="Examinar"
+                                Clicked="BtnS21_Clicked"
+                                BackgroundColor="#163553"
+                                TextColor="#B9DEFF"
+                                CornerRadius="9"
+                                Padding="12,7"
+                                VerticalOptions="Center" />
+                    </Grid>
+                </Border>
+
+                <Border BackgroundColor="{StaticResource Superficie}"
+                        Stroke="{StaticResource Borde}"
+                        StrokeThickness="1"
+                        Padding="13">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="12" />
+                    </Border.StrokeShape>
+
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="S-21 (PDF) · Convertir tarjetas"
+                               TextColor="White"
+                               FontAttributes="Bold"
+                               FontSize="15" />
+
+                        <Label x:Name="LblPdfS21"
+                               Text="Elige las tarjetas S-21 en PDF y se generará el JSON aquí."
+                               TextColor="#8F969F"
+                               FontSize="12"
+                               LineBreakMode="WordWrap" />
+
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                            <Button x:Name="BtnConvertirPdf"
+                                    Text="Convertir PDFs"
+                                    Clicked="BtnConvertirPdf_Clicked"
+                                    BackgroundColor="#242830"
+                                    TextColor="White"
+                                    CornerRadius="9"
+                                    Padding="10,7" />
+
+                            <Button x:Name="BtnCompartirJson"
+                                    Grid.Column="1"
+                                    Text="Compartir JSON"
+                                    Clicked="BtnCompartirJson_Clicked"
+                                    BackgroundColor="#163553"
+                                    TextColor="#B9DEFF"
+                                    CornerRadius="9"
+                                    Padding="10,7"
+                                    IsVisible="False" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border BackgroundColor="{StaticResource Superficie}"
+                        Stroke="{StaticResource Borde}"
+                        StrokeThickness="1"
+                        Padding="13">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="12" />
+                    </Border.StrokeShape>
+
+                    <Grid ColumnDefinitions="*,Auto"
+                          ColumnSpacing="10">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="S-13 (JSON) · Opcional"
+                                   TextColor="White"
+                                   FontAttributes="Bold"
+                                   FontSize="15" />
+
+                            <Label x:Name="LblS13"
+                                   Text="Ningún archivo seleccionado"
+                                   TextColor="#8F969F"
+                                   FontSize="12"
+                                   LineBreakMode="TailTruncation" />
+                        </VerticalStackLayout>
+
+                        <Button Grid.Column="1"
+                                Text="Examinar"
+                                Clicked="BtnS13_Clicked"
+                                BackgroundColor="#242830"
+                                TextColor="White"
+                                CornerRadius="9"
+                                Padding="12,7"
+                                VerticalOptions="Center" />
+                    </Grid>
+                </Border>
+
+                <Border BackgroundColor="#15191E"
+                        Stroke="#2E343C"
+                        StrokeThickness="1"
+                        Padding="12">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="10" />
+                    </Border.StrokeShape>
+
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="Cómo se tratarán las personas"
+                               TextColor="#80C4FF"
+                               FontAttributes="Bold"
+                               FontSize="12" />
+
+                        <Label Text="El S-21 aporta el nombre completo, grupo y actividad. JW Hub aporta su nombre JW, nombre común y otros datos. Si parecen ser la misma persona, podrás vincularlas antes de guardar para evitar duplicados."
+                               TextColor="#AEB4BC"
+                               FontSize="11"
+                               LineBreakMode="WordWrap" />
+                    </VerticalStackLayout>
+                </Border>
+
+                <Label x:Name="LblEstado"
+                       TextColor="#9EA4AE"
+                       FontSize="11"
+                       LineBreakMode="WordWrap" />
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <Grid Grid.Row="2"
+              ColumnDefinitions="*,*"
+              Padding="16,10,16,16"
+              ColumnSpacing="10">
+
+            <Button Text="Cancelar"
+                    Clicked="BtnCancelar_Clicked"
+                    BackgroundColor="#242830"
+                    TextColor="White"
+                    CornerRadius="10"
+                    HeightRequest="46" />
+
+            <Button x:Name="BtnAnalizar"
+                    Grid.Column="1"
+                    Text="Analizar archivos"
+                    Clicked="BtnAnalizar_Clicked"
+                    BackgroundColor="#0B6FC2"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    CornerRadius="10"
+                    HeightRequest="46" />
+        </Grid>
+
+        <Grid x:Name="OverlayCargando"
+              Grid.RowSpan="3"
+              BackgroundColor="#C0101216"
+              IsVisible="False">
+            <VerticalStackLayout
+                HorizontalOptions="Center"
+                VerticalOptions="Center"
+                Spacing="12">
+                <ActivityIndicator IsRunning="True"
+                                   Color="#4BA3E3"
+                                   WidthRequest="42"
+                                   HeightRequest="42" />
+                <Label x:Name="LblCargando"
+                       Text="Leyendo archivos..."
+                       TextColor="White"
+                       FontAttributes="Bold"
+                       HorizontalTextAlignment="Center" />
+            </VerticalStackLayout>
+        </Grid>
+    </Grid>
+</ContentPage>

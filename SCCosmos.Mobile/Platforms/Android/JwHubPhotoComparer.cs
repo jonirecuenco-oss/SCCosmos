@@ -57,11 +57,21 @@ public static class JwHubPhotoComparer
         }
 
 
-        // JW Hub tiene foto y SQLite no.
+        // JW Hub aparentemente tiene foto y SQLite no.
+        //
+        // Solo generamos conflicto si lo recibido desde JW Hub
+        // es realmente una imagen válida.
+        //
+        // Esta comprobación es una segunda barrera de seguridad:
+        // evita falsos conflictos si por cualquier cambio del DOM
+        // llegara aquí una URL/página/valor que no sea una foto.
         if (string.IsNullOrWhiteSpace(
                 db))
         {
-            return false;
+            return
+                !IntentarCrearDHash(
+                    hub,
+                    out _);
         }
 
 

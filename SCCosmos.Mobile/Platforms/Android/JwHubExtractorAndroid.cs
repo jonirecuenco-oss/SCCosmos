@@ -63,6 +63,9 @@ public sealed class PersonaExtraidaJwHubAndroid
     public string Servicio { get; set; } = "";
     public string Nombramiento { get; set; } = "";
 
+    // Se obtiene de la página "Información personal" de JW Hub.
+    public string Sexo { get; set; } = "";
+
     public string Solicitudes { get; set; } = "";
     public string Privilegios { get; set; } = "";
     public string Esperanza { get; set; } = "";
@@ -1283,6 +1286,53 @@ public static class JwHubExtractorAndroid
                     LimpiarFechaCruda(
                         fechaEscuela));
         }
+
+
+        // =====================================================
+        // 5. INFORMACIÓN PERSONAL (SEXO)
+        //
+        // Sexo NO es un dato crítico: si la página no carga
+        // o cambia su estructura, se continúa sin él en lugar
+        // de abortar la extracción completa de la persona.
+        // =====================================================
+
+        ActualizarEstado(
+            $"Sincronizando " +
+            $"{numeroPersona}/{totalPersonas} · " +
+            $"datos personales",
+            numeroPersona - 1,
+            totalPersonas,
+            EstadoJwHubSync.Sintonizando);
+
+        try
+        {
+            string urlPersonal =
+                raizPersona +
+                "/personal-information";
+
+            await CargarUrlYEsperarElementoAsync(
+                webViewDetalle,
+                urlPersonal,
+                "dt",
+                token);
+
+            string sexoCrudo =
+                await ObtenerSexoAsync(
+                    webViewDetalle,
+                    token);
+
+            persona.Sexo =
+                NormalizarSexoHub(
+                    sexoCrudo);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch
+        {
+            // Sexo queda vacío; no es un dato crítico.
+        }
     }
 
 
@@ -2217,14 +2267,36 @@ public static class JwHubExtractorAndroid
                         : null;
 
 
-                const urlFoto =
+                // IMPORTANTE:
+                //
+                // Cuando JW Hub no tiene fotografía, el elemento
+                // <img> puede existir con src="".
+                //
+                // En ese caso la propiedad DOM foto.src puede
+                // resolverse a la URL de la página actual, aunque
+                // el atributo HTML esté realmente vacío.
+                //
+                // Por eso comprobamos PRIMERO getAttribute('src').
+                // Solo usamos currentSrc cuando existe una URL real.
+                const srcFoto =
                     foto
                         ? (
-                            foto.currentSrc ||
-                            foto.src ||
                             foto.getAttribute(
                                 'src') ||
                             ''
+                          )
+                            .trim()
+                        : '';
+
+
+                const urlFoto =
+                    srcFoto
+                        ? (
+                            (
+                                foto.currentSrc ||
+                                srcFoto
+                            )
+                                .trim()
                           )
                         : '';
 
@@ -2664,6 +2736,127 @@ public static class JwHubExtractorAndroid
             })();
             """,
             token);
+    }
+
+
+    // =========================================================
+    // SEXO (INFORMACIÓN PERSONAL)
+    // =========================================================
+
+    private static Task<string>
+        ObtenerSexoAsync(
+            AndroidWebView webView,
+            CancellationToken token)
+    {
+        return EvaluarJsAsync(
+            webView,
+            """
+            (() => {
+                const normalizar = t =>
+                    (t || '')
+                        .normalize('NFD')
+                        .replace(
+                            /[\u0300-\u036f]/g,
+                            '')
+                        .replace(/\s+/g, ' ')
+                        .trim()
+                        .toLowerCase();
+
+                const leerDd = dd =>
+                    (dd && (dd.textContent || ''))
+                        .replace(/\u200B/g, '')
+                        .replace(/\s+/g, ' ')
+                        .trim();
+
+                const pares =
+                    Array.from(
+                        document.querySelectorAll(
+                            '.data__pair'));
+
+                for (const par of pares) {
+                    const dt =
+                        par.querySelector('dt');
+
+                    const dd =
+                        par.querySelector('dd');
+
+                    if (!dt || !dd)
+                        continue;
+
+                    if (normalizar(dt.textContent)
+                            .includes('sexo'))
+                    {
+                        return leerDd(dd);
+                    }
+                }
+
+                const dts =
+                    Array.from(
+                        document.querySelectorAll('dt'));
+
+                for (const dt of dts) {
+                    if (!normalizar(dt.textContent)
+                            .includes('sexo'))
+                    {
+                        continue;
+                    }
+
+                    let sib =
+                        dt.nextElementSibling;
+
+                    while (sib && sib.tagName !== 'DD') {
+                        sib = sib.nextElementSibling;
+                    }
+
+                    if (sib) {
+                        return leerDd(sib);
+                    }
+                }
+
+                return '';
+            })();
+            """,
+            token);
+    }
+
+
+    private static string NormalizarSexoHub(
+        string valor)
+    {
+        string sexo =
+            (valor ?? "").Trim();
+
+        if (sexo.Equals(
+                "Masculino",
+                StringComparison.OrdinalIgnoreCase)
+            ||
+            sexo.Equals(
+                "Male",
+                StringComparison.OrdinalIgnoreCase)
+            ||
+            sexo.Equals(
+                "Hombre",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return "Hombre";
+        }
+
+        if (sexo.Equals(
+                "Femenino",
+                StringComparison.OrdinalIgnoreCase)
+            ||
+            sexo.Equals(
+                "Female",
+                StringComparison.OrdinalIgnoreCase)
+            ||
+            sexo.Equals(
+                "Mujer",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return "Mujer";
+        }
+
+        return "";
     }
 
 

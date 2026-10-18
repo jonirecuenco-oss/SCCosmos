@@ -1,0 +1,79 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.PerfilInicialPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Perfil"
+    BackgroundColor="#101216">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="24"
+                             Spacing="18"
+                             VerticalOptions="Center">
+
+            <Label Text="¿Quién usará este dispositivo?"
+                   FontSize="24"
+                   FontAttributes="Bold"
+                   TextColor="White" />
+
+            <Label Text="Esta elección determina las funciones disponibles. Podrás cambiarla en Configuración."
+                   FontSize="14"
+                   TextColor="#9EA4AE" />
+
+            <Border BackgroundColor="{StaticResource Superficie}"
+                    Stroke="#30343C"
+                    Padding="18">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="14" />
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="14">
+                    <Button x:Name="BtnHombre"
+                            Text="👤 Soy el superintendente (él)"
+                            Clicked="BtnHombre_Clicked"
+                            BackgroundColor="#2478B5"
+                            TextColor="White"
+                            CornerRadius="10"
+                            HeightRequest="52" />
+                    <Button x:Name="BtnEsposa"
+                            Text="👤 Soy su esposa"
+                            Clicked="BtnEsposa_Clicked"
+                            BackgroundColor="#30343B"
+                            TextColor="White"
+                            CornerRadius="10"
+                            HeightRequest="52" />
+                </VerticalStackLayout>
+            </Border>
+
+            <VerticalStackLayout x:Name="PanelCodigo"
+                                 IsVisible="False"
+                                 Spacing="10">
+                <Label Text="Introduce el código de acceso"
+                       FontSize="14"
+                       TextColor="White"
+                       FontAttributes="Bold" />
+                <Entry x:Name="TxtCodigo"
+                       Keyboard="Numeric"
+                       Placeholder="Código"
+                       TextColor="White" />
+                <Button Text="Continuar"
+                        Clicked="BtnContinuar_Clicked"
+                        BackgroundColor="#245C38"
+                        TextColor="White"
+                        CornerRadius="10"
+                        HeightRequest="48" />
+                <Button Text="Continuar sin código (acceso limitado)"
+                        Clicked="BtnSinCodigo_Clicked"
+                        BackgroundColor="#242830"
+                        TextColor="#D7DBE0"
+                        CornerRadius="10"
+                        HeightRequest="44" />
+            </VerticalStackLayout>
+
+            <Label x:Name="LblAviso"
+                   Text=""
+                   TextColor="#EAC18B"
+                   FontSize="13" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

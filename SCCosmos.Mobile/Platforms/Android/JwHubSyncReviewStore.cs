@@ -103,6 +103,13 @@ public static class JwHubSyncReviewStore
                             CrearItemPersistido)
                         .ToList(),
 
+                Traslados =
+                    analisis
+                        .Traslados
+                        .Select(
+                            CrearItemPersistido)
+                        .ToList(),
+
                 Iguales =
                     analisis
                         .Iguales
@@ -204,6 +211,11 @@ public static class JwHubSyncReviewStore
             RestaurarLista(
                 archivo.Bajas,
                 resultado.Bajas);
+
+
+            RestaurarLista(
+                archivo.Traslados,
+                resultado.Traslados);
 
 
             RestaurarLista(
@@ -315,11 +327,17 @@ public static class JwHubSyncReviewStore
                 TipoAnalisisJwHub.Conflicto
             ||
             item.Tipo ==
-                TipoAnalisisJwHub.Nuevo)
+                TipoAnalisisJwHub.Nuevo
+            ||
+            item.Tipo ==
+                TipoAnalisisJwHub.Traslado)
         {
             bool conservarFoto =
                 item.Tipo ==
                     TipoAnalisisJwHub.Nuevo
+                ||
+                item.Tipo ==
+                    TipoAnalisisJwHub.Traslado
                 ||
                 (
                     item.Tipo ==
@@ -386,6 +404,9 @@ public static class JwHubSyncReviewStore
                     TipoAnalisisJwHub.Baja
                 ||
                 guardado.Tipo ==
+                    TipoAnalisisJwHub.Traslado
+                ||
+                guardado.Tipo ==
                     TipoAnalisisJwHub.Igual;
 
 
@@ -397,10 +418,13 @@ public static class JwHubSyncReviewStore
             }
 
 
-            // Los Nuevos necesitan los datos Hub.
+            // Los Nuevos y los Traslados necesitan los datos Hub.
 
-            if (guardado.Tipo ==
-                    TipoAnalisisJwHub.Nuevo
+            if ((guardado.Tipo ==
+                     TipoAnalisisJwHub.Nuevo
+                 ||
+                 guardado.Tipo ==
+                     TipoAnalisisJwHub.Traslado)
                 &&
                 guardado.PersonaHub is null)
             {
@@ -600,6 +624,13 @@ public static class JwHubSyncReviewStore
 
 
         public List<ItemPersistido> Bajas
+        {
+            get;
+            set;
+        } = new();
+
+
+        public List<ItemPersistido> Traslados
         {
             get;
             set;

@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.EscuelaAsientosPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Asientos"
+    BackgroundColor="#101216">
+
+    <Grid RowDefinitions="Auto,*">
+
+        <VerticalStackLayout Grid.Row="0"
+                             Padding="20,14,20,8"
+                             Spacing="6">
+
+            <Label Text="BUTACAS"
+                   Style="{StaticResource Antetitulo}" />
+
+            <Label x:Name="LblSemana"
+                   Text=""
+                   FontSize="13.5"
+                   FontAttributes="Bold"
+                   TextColor="#4BA3E3" />
+
+            <Label Text="Toca una butaca para elegir quién se sienta en ella (o vaciarla)."
+                   Style="{StaticResource TextoNota}" />
+
+            <HorizontalStackLayout Spacing="10"
+                                   Margin="0,2,0,0">
+
+                <Label Text="Filas:"
+                       Style="{StaticResource TextoNota}"
+                       VerticalOptions="Center" />
+
+                <Button x:Name="BtnMenosFila"
+                        Text="−"
+                        Clicked="BtnMenosFila_Clicked"
+                        Style="{StaticResource BotonSecundario}"
+                        WidthRequest="40"
+                        HeightRequest="36"
+                        Padding="0"
+                        FontSize="15" />
+
+                <Label x:Name="LblNumFilas"
+                       Text="4"
+                       FontSize="15"
+                       FontAttributes="Bold"
+                       TextColor="White"
+                       WidthRequest="30"
+                       HorizontalTextAlignment="Center"
+                       VerticalOptions="Center" />
+
+                <Button x:Name="BtnMasFila"
+                        Text="+"
+                        Clicked="BtnMasFila_Clicked"
+                        Style="{StaticResource BotonSecundario}"
+                        WidthRequest="40"
+                        HeightRequest="36"
+                        Padding="0"
+                        FontSize="15" />
+
+            </HorizontalStackLayout>
+
+            <HorizontalStackLayout Spacing="10">
+
+                <Label Text="Columnas:"
+                       Style="{StaticResource TextoNota}"
+                       VerticalOptions="Center" />
+
+                <Button x:Name="BtnMenosColumna"
+                        Text="−"
+                        Clicked="BtnMenosColumna_Clicked"
+                        Style="{StaticResource BotonSecundario}"
+                        WidthRequest="40"
+                        HeightRequest="36"
+                        Padding="0"
+                        FontSize="15" />
+
+                <Label x:Name="LblNumColumnas"
+                       Text="6"
+                       FontSize="15"
+                       FontAttributes="Bold"
+                       TextColor="White"
+                       WidthRequest="30"
+                       HorizontalTextAlignment="Center"
+                       VerticalOptions="Center" />
+
+                <Button x:Name="BtnMasColumna"
+                        Text="+"
+                        Clicked="BtnMasColumna_Clicked"
+                        Style="{StaticResource BotonSecundario}"
+                        WidthRequest="40"
+                        HeightRequest="36"
+                        Padding="0"
+                        FontSize="15" />
+
+            </HorizontalStackLayout>
+
+            <Label Text="Pasillos (después de la columna):"
+                   Style="{StaticResource TextoNota}"
+                   Margin="0,2,0,0" />
+
+            <FlexLayout x:Name="PanelPasillos"
+                        Wrap="Wrap"
+                        Direction="Row"
+                        AlignItems="Start"
+                        JustifyContent="Start" />
+
+            <Button x:Name="BtnPdfAsientos"
+                    Text="PDF de la disposición"
+                    Clicked="BtnPdfAsientos_Clicked"
+                    Style="{StaticResource BotonSecundario}"
+                    HeightRequest="42"
+                    FontSize="13.5"
+                    Margin="0,6,0,0" />
+
+            <Label x:Name="LblSinAlumnos"
+                   Text="Añade estudiantes a la clase para poder sentarlos."
+                   Style="{StaticResource TextoNota}"
+                   IsVisible="False" />
+
+        </VerticalStackLayout>
+
+        <ScrollView Grid.Row="1"
+                    Padding="20,4,20,20">
+
+            <VerticalStackLayout x:Name="PanelFilasAsientos"
+                                 Spacing="8" />
+
+        </ScrollView>
+
+    </Grid>
+</ContentPage>

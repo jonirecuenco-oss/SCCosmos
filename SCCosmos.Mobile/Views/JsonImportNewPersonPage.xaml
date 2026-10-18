@@ -1,0 +1,180 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.JsonImportNewPersonPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Nuevo S-21"
+    BackgroundColor="#101216"
+    Shell.NavBarIsVisible="False" NavigationPage.HasNavigationBar="False">
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
+
+        <Grid Grid.Row="0"
+              ColumnDefinitions="*,Auto"
+              Padding="16,14,16,8"
+              ColumnSpacing="10">
+            <VerticalStackLayout Spacing="2">
+                <Label Text="NUEVO EN S-21"
+                       FontSize="21"
+                       FontAttributes="Bold"
+                       TextColor="White" />
+
+                <Label x:Name="LblNombreJson"
+                       TextColor="#72D58A"
+                       FontSize="13"
+                       FontAttributes="Bold"
+                       LineBreakMode="TailTruncation" />
+            </VerticalStackLayout>
+
+            <Button Grid.Column="1"
+                    Text="Volver"
+                    Clicked="BtnVolver_Clicked"
+                    BackgroundColor="#242830"
+                    TextColor="White"
+                    CornerRadius="9"
+                    Padding="12,7"
+                    VerticalOptions="Center" />
+        </Grid>
+
+        <Border Grid.Row="1"
+                Margin="16,4,16,8"
+                BackgroundColor="{StaticResource Superficie}"
+                Stroke="{StaticResource Borde}"
+                Padding="12">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="11" />
+            </Border.StrokeShape>
+
+            <VerticalStackLayout Spacing="4">
+                <Label Text="DATOS S-21"
+                       TextColor="#80C4FF"
+                       FontAttributes="Bold"
+                       FontSize="10" />
+
+                <Label x:Name="LblDatosJson"
+                       TextColor="White"
+                       FontSize="12"
+                       LineBreakMode="WordWrap" />
+
+                <Label Text="Antes de crear una persona nueva, revisa si es la misma persona que ya existe con identidad de JW Hub."
+                       TextColor="#9EA4AE"
+                       FontSize="10"
+                       LineBreakMode="WordWrap"
+                       Margin="0,4,0,0" />
+            </VerticalStackLayout>
+        </Border>
+
+        <Label Grid.Row="2"
+               Text="Posibles coincidencias en la congregación"
+               TextColor="White"
+               FontAttributes="Bold"
+               FontSize="15"
+               Margin="16,6,16,8" />
+
+        <CollectionView x:Name="ListaCandidatos"
+                        Grid.Row="3"
+                        SelectionMode="None"
+                        Margin="16,0,16,0">
+            <CollectionView.EmptyView>
+                <VerticalStackLayout Padding="20,35"
+                                     HorizontalOptions="Center"
+                                     Spacing="5">
+                    <Label Text="No hay posibles fichas sin emparejar."
+                           TextColor="#8F969F"
+                           HorizontalTextAlignment="Center" />
+                </VerticalStackLayout>
+            </CollectionView.EmptyView>
+
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border BackgroundColor="{StaticResource Superficie}"
+                            Stroke="{StaticResource Borde}"
+                            Padding="11"
+                            Margin="0,0,0,8">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="11" />
+                        </Border.StrokeShape>
+
+                        <Grid ColumnDefinitions="*,Auto"
+                              RowDefinitions="Auto,Auto,Auto"
+                              ColumnSpacing="10"
+                              RowSpacing="3">
+
+                            <Label Text="{Binding NombreVisual}"
+                                   TextColor="White"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   LineBreakMode="TailTruncation" />
+
+                            <Button Grid.Row="0"
+                                    Grid.RowSpan="3"
+                                    Grid.Column="1"
+                                    Text="Vincular"
+                                    Clicked="BtnVincular_Clicked"
+                                    CommandParameter="{Binding .}"
+                                    BackgroundColor="#163553"
+                                    TextColor="#C5E4FF"
+                                    CornerRadius="8"
+                                    Padding="11,6"
+                                    FontSize="11"
+                                    VerticalOptions="Center" />
+
+                            <Label Grid.Row="1"
+                                   Text="{Binding Nombres}"
+                                   TextColor="#AEB4BC"
+                                   FontSize="10"
+                                   LineBreakMode="WordWrap" />
+
+                            <VerticalStackLayout Grid.Row="2"
+                                                 Spacing="1">
+                                <Label Text="{Binding Datos}"
+                                       TextColor="#8F969F"
+                                       FontSize="9" />
+                                <Label Text="{Binding Coincidencia}"
+                                       TextColor="{Binding ColorCoincidencia}"
+                                       FontSize="9"
+                                       FontAttributes="Bold" />
+                            </VerticalStackLayout>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <Grid Grid.Row="4"
+              RowDefinitions="Auto,Auto"
+              ColumnDefinitions="*,*"
+              Padding="16,10,16,16"
+              ColumnSpacing="10"
+              RowSpacing="8">
+
+            <Button Grid.Row="0"
+                    Grid.ColumnSpan="2"
+                    Text="Es una persona nueva · Añadir al finalizar"
+                    Clicked="BtnCrearNueva_Clicked"
+                    BackgroundColor="#1B6E36"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    CornerRadius="10"
+                    HeightRequest="46" />
+
+            <Button Grid.Row="1"
+                    Grid.Column="0"
+                    Text="Omitir este JSON"
+                    Clicked="BtnOmitir_Clicked"
+                    BackgroundColor="#3A2023"
+                    TextColor="#FFB7BC"
+                    CornerRadius="10"
+                    HeightRequest="44" />
+
+            <Button Grid.Row="1"
+                    Grid.Column="1"
+                    Text="Volver"
+                    Clicked="BtnVolver_Clicked"
+                    BackgroundColor="#242830"
+                    TextColor="White"
+                    CornerRadius="10"
+                    HeightRequest="44" />
+        </Grid>
+    </Grid>
+</ContentPage>

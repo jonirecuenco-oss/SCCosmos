@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.EscuelaLimpiezaPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Programa de limpieza"
+    BackgroundColor="#101216">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20,16,20,24"
+                             Spacing="14">
+
+            <Label Text="PROGRAMA DE LIMPIEZA"
+                   Style="{StaticResource Antetitulo}" />
+
+            <Label x:Name="LblSemana"
+                   Text=""
+                   FontSize="13.5"
+                   FontAttributes="Bold"
+                   TextColor="#4BA3E3" />
+
+            <Button x:Name="BtnPdfLimpieza"
+                    Text="PDF del programa"
+                    Clicked="BtnPdfLimpieza_Clicked"
+                    Style="{StaticResource BotonSecundario}"
+                    HeightRequest="42"
+                    FontSize="13.5"
+                    Margin="0,2,0,0" />
+
+            <Border BackgroundColor="{StaticResource Superficie}"
+                    Stroke="{StaticResource Borde}"
+                    StrokeThickness="1"
+                    Padding="14">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="14" />
+                </Border.StrokeShape>
+
+                <VerticalStackLayout Spacing="6">
+
+                    <Label Text="RESUMEN POR DÍAS"
+                           Style="{StaticResource Antetitulo}" />
+
+                    <VerticalStackLayout x:Name="ResumenDias"
+                                         Spacing="4">
+
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnDefinitions="90,*"
+                                      ColumnSpacing="8">
+                                    <Label Grid.Column="0"
+                                           Text="{Binding Dia}"
+                                           FontSize="13"
+                                           FontAttributes="Bold"
+                                           TextColor="#4BA3E3" />
+                                    <Label Grid.Column="1"
+                                           Text="{Binding Nombres}"
+                                           FontSize="13"
+                                           TextColor="#DDDDDD"
+                                           LineBreakMode="WordWrap" />
+                                </Grid>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+
+                    </VerticalStackLayout>
+
+                </VerticalStackLayout>
+            </Border>
+
+            <Label Text="ELIGE EL DÍA DE CADA ESTUDIANTE"
+                   Style="{StaticResource Antetitulo}" />
+
+            <Label x:Name="LblSinAlumnos"
+                   Text="Añade estudiantes a la clase para organizar la limpieza."
+                   Style="{StaticResource TextoNota}"
+                   IsVisible="False" />
+
+            <VerticalStackLayout x:Name="ListaDias"
+                                 Spacing="8">
+
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate>
+                        <Border BackgroundColor="{StaticResource Superficie}"
+                                Stroke="{StaticResource Borde}"
+                                StrokeThickness="1"
+                                Padding="12">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="12" />
+                            </Border.StrokeShape>
+
+                            <Grid ColumnDefinitions="*,170"
+                                  ColumnSpacing="8">
+
+                                <Label Grid.Column="0"
+                                       Text="{Binding Nombre}"
+                                       FontSize="14"
+                                       TextColor="White"
+                                       VerticalOptions="Center" />
+
+                                <Picker Grid.Column="1"
+                                        ItemsSource="{Binding Opciones}"
+                                        SelectedItem="{Binding DiaSeleccionado, Mode=TwoWay}"
+                                        SelectedIndexChanged="PickerDia_Changed"
+                                        FontSize="13" />
+
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+
+            </VerticalStackLayout>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

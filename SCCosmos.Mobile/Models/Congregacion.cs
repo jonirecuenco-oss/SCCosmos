@@ -23,6 +23,43 @@ public class Congregacion
 
     public string Provincia { get; set; } = "";
     public string Municipio { get; set; } = "";
+
+    public string DetalleLista
+    {
+        get
+        {
+            var partes =
+                new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(Codigo))
+            {
+                partes.Add(Codigo);
+            }
+
+            if (!string.IsNullOrWhiteSpace(NombreSeccion))
+            {
+                partes.Add(
+                    NombreSeccion.StartsWith(
+                        "Sección",
+                        StringComparison.OrdinalIgnoreCase)
+                        ? NombreSeccion
+                        : "Sección " + NombreSeccion);
+            }
+
+            if (!string.IsNullOrWhiteSpace(Municipio))
+            {
+                partes.Add(Municipio);
+            }
+            else if (!string.IsNullOrWhiteSpace(Provincia))
+            {
+                partes.Add(Provincia);
+            }
+
+            return string.Join(
+                " · ",
+                partes);
+        }
+    }
 }
 
 public class ElementoMapa

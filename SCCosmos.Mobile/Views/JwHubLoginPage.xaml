@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 
 <ContentPage
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
@@ -13,8 +13,8 @@
             Grid.Row="0"
             Margin="12,10,12,8"
             Padding="14"
-            BackgroundColor="#191D23"
-            Stroke="#303640">
+            BackgroundColor="{StaticResource Superficie}"
+            Stroke="{StaticResource Borde}">
 
             <Border.StrokeShape>
                 <RoundRectangle CornerRadius="14"/>
@@ -49,7 +49,7 @@
             ColumnDefinitions="*,*"
             ColumnSpacing="10"
             Padding="12"
-            BackgroundColor="#171A1F">
+            BackgroundColor="{StaticResource Superficie}">
 
             <Button
                 Grid.Column="0"

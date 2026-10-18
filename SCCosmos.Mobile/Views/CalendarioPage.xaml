@@ -1,0 +1,270 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.CalendarioPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Calendario"
+    BackgroundColor="#101216">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto"
+          Padding="0,14,0,14"
+          RowSpacing="10">
+
+        <!-- CABECERA -->
+        <Grid Grid.Row="0"
+              ColumnDefinitions="*,Auto"
+              ColumnSpacing="10"
+              Margin="16,0,16,4">
+            <VerticalStackLayout Spacing="3">
+                <Label Text="CALENDARIO"
+                       Style="{StaticResource Antetitulo}" />
+                <Label Text="Ruta semanal del circuito"
+                       Style="{StaticResource SubtituloPagina}" />
+            </VerticalStackLayout>
+
+            <HorizontalStackLayout Grid.Column="1"
+                                   Spacing="7"
+                                   VerticalOptions="Center">
+
+                <Button x:Name="BtnCiclo"
+                        Text="Ciclo"
+                        Clicked="BtnConfigurarCiclo_Clicked"
+                        Style="{StaticResource BotonSecundario}"
+                        HeightRequest="40"
+                        Padding="12,6"
+                        FontSize="12.5" />
+
+                <Button x:Name="BtnHoy"
+                        Text="Hoy"
+                        Clicked="BtnHoy_Clicked"
+                        Style="{StaticResource BotonSecundario}"
+                        HeightRequest="40"
+                        Padding="12,6"
+                        FontSize="12.5" />
+            </HorizontalStackLayout>
+        </Grid>
+
+        <!-- LISTADO -->
+        <RefreshView x:Name="RefrescarCalendario"
+                     Grid.Row="2"
+                     Refreshing="RefrescarCalendario_Refreshing">
+
+            <CollectionView x:Name="ListaCalendario"
+                            IsGrouped="True"
+                            SelectionMode="None"
+                            Scrolled="ListaCalendario_Scrolled"
+                            VerticalScrollBarVisibility="Default">
+
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout Padding="20,50"
+                                         HorizontalOptions="Center"
+                                         Spacing="8">
+                        <Label Text="No hay semanas para mostrar."
+                               TextColor="#9EA4AE"
+                               HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+
+                <CollectionView.GroupHeaderTemplate>
+                    <DataTemplate>
+                        <Grid BackgroundColor="#1B2433"
+                              Padding="16,9"
+                              Margin="0,12,0,6">
+                            <Label Text="{Binding Titulo}"
+                                   FontSize="12.5"
+                                   FontAttributes="Bold"
+                                   TextColor="#9CC3F5"
+                                   CharacterSpacing="1.4"
+                                   HorizontalTextAlignment="Center" />
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.GroupHeaderTemplate>
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border BackgroundColor="{Binding Fondo}"
+                                Stroke="{Binding Borde}"
+                                StrokeThickness="{Binding GrosorBorde}"
+                                Padding="13"
+                                Margin="16,0,16,8">
+
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="12" />
+                            </Border.StrokeShape>
+
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer
+                                    Tapped="TarjetaSemana_Tapped"
+                                    CommandParameter="{Binding .}" />
+                            </Border.GestureRecognizers>
+
+                            <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto"
+                                  ColumnDefinitions="*,Auto"
+                                  RowSpacing="5">
+
+                                <!-- FECHAS -->
+                                <VerticalStackLayout Grid.Row="0"
+                                                     Grid.Column="0"
+                                                     Spacing="1">
+                                    <Label Text="{Binding RangoFechas}"
+                                           FontSize="16"
+                                           FontAttributes="Bold"
+                                           TextColor="White" />
+                                    <Label Text="{Binding EtiquetaActual}"
+                                           FontSize="11"
+                                           FontAttributes="Bold"
+                                           TextColor="#80C4FF"
+                                           IsVisible="{Binding EsActual}" />
+                                </VerticalStackLayout>
+
+                                <Label Grid.Row="0"
+                                       Grid.Column="1"
+                                       Text="{Binding MarcadorParalela}"
+                                       FontSize="11"
+                                       TextColor="#9EA4AE"
+                                       VerticalOptions="Center"
+                                       IsVisible="{Binding EsActividadParalela}" />
+
+                                <!-- ACTIVIDAD -->
+                                <Label Grid.Row="1"
+                                       Grid.ColumnSpan="2"
+                                       Text="{Binding ActividadVisual}"
+                                       FontSize="15"
+                                       FontAttributes="Bold"
+                                       TextColor="#4BA3E3" />
+
+                                <!-- CONGREGACIÓN / ASAMBLEA -->
+                                <Label Grid.Row="2"
+                                       Grid.ColumnSpan="2"
+                                       Text="{Binding DetallePrincipal}"
+                                       FontSize="14"
+                                       TextColor="#E7E9EC"
+                                       IsVisible="{Binding MostrarDetallePrincipal}"
+                                       LineBreakMode="WordWrap" />
+
+                                <!-- TIPO / ACOMPAÑANTE / ALOJAMIENTO -->
+                                <Label Grid.Row="3"
+                                       Grid.ColumnSpan="2"
+                                       Text="{Binding DetalleSecundario}"
+                                       FontSize="12"
+                                       TextColor="#AEB4BC"
+                                       IsVisible="{Binding MostrarDetalleSecundario}"
+                                       LineBreakMode="WordWrap" />
+
+                                <!-- ACCIONES -->
+                                <FlexLayout Grid.Row="4"
+                                            Grid.ColumnSpan="2"
+                                            Direction="Row"
+                                            Wrap="Wrap"
+                                            AlignItems="Start"
+                                            Margin="0,7,0,0">
+
+                                    <Button Text="✏️"
+                                            Clicked="BtnEditar_Clicked"
+                                            CommandParameter="{Binding .}"
+                                            SemanticProperties.Description="Editar semana"
+                                            Padding="0"
+                                            Margin="0,0,8,8"
+                                            FontSize="20"
+                                            WidthRequest="52"
+                                            HeightRequest="46"
+                                            BackgroundColor="#242830"
+                                            CornerRadius="8"
+                                            IsVisible="{Binding MostrarBotonEditar}" />
+
+                                    <Button Text="👁️"
+                                            Clicked="BtnVerVisita_Clicked"
+                                            CommandParameter="{Binding .}"
+                                            SemanticProperties.Description="Ver visita"
+                                            Padding="0"
+                                            Margin="0,0,8,8"
+                                            FontSize="20"
+                                            WidthRequest="52"
+                                            HeightRequest="46"
+                                            BackgroundColor="#0B6FC2"
+                                            CornerRadius="8"
+                                            IsVisible="{Binding MostrarVerVisita}" />
+
+                                    <Button Text="📨"
+                                            Clicked="BtnAcciones_Clicked"
+                                            CommandParameter="{Binding .}"
+                                            SemanticProperties.Description="Acciones de la semana"
+                                            Padding="0"
+                                            Margin="0,0,8,8"
+                                            FontSize="20"
+                                            WidthRequest="52"
+                                            HeightRequest="46"
+                                            BackgroundColor="#3A3520"
+                                            CornerRadius="8"
+                                            IsVisible="{Binding MostrarBotonAcciones}" />
+
+                                    <Button Text="🗂️"
+                                            Clicked="BtnImportarJson_Clicked"
+                                            CommandParameter="{Binding .}"
+                                            SemanticProperties.Description="Importar o actualizar JSON"
+                                            Padding="0"
+                                            Margin="0,0,8,8"
+                                            FontSize="20"
+                                            WidthRequest="52"
+                                            HeightRequest="46"
+                                            BackgroundColor="#265B36"
+                                            CornerRadius="8"
+                                            IsVisible="{Binding MostrarBotonImportarJson}" />
+
+                                    <Button Text="➕"
+                                            Clicked="BtnSolapar_Clicked"
+                                            CommandParameter="{Binding .}"
+                                            SemanticProperties.Description="Añadir actividad"
+                                            Padding="0"
+                                            Margin="0,0,8,8"
+                                            FontSize="20"
+                                            WidthRequest="52"
+                                            HeightRequest="46"
+                                            BackgroundColor="#163553"
+                                            CornerRadius="8"
+                                            IsVisible="{Binding MostrarBotonSolapar}" />
+
+                                    <Button Text="🗑️"
+                                            Clicked="BtnEliminar_Clicked"
+                                            CommandParameter="{Binding .}"
+                                            SemanticProperties.Description="Eliminar actividad"
+                                            Padding="0"
+                                            Margin="0,0,8,8"
+                                            FontSize="20"
+                                            WidthRequest="52"
+                                            HeightRequest="46"
+                                            BackgroundColor="#3A2023"
+                                            CornerRadius="8"
+                                            IsVisible="{Binding MostrarBotonEliminar}" />
+                                </FlexLayout>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+
+        <!-- OVERLAY -->
+        <Grid x:Name="OverlayCargando"
+              Grid.RowSpan="4"
+              BackgroundColor="#B8101216"
+              IsVisible="False"
+              InputTransparent="False">
+            <VerticalStackLayout
+                HorizontalOptions="Center"
+                VerticalOptions="Center"
+                Spacing="12">
+                <ActivityIndicator IsRunning="True"
+                                   Color="#4BA3E3"
+                                   WidthRequest="42"
+                                   HeightRequest="42" />
+                <Label x:Name="LblCargando"
+                       Text="Cargando calendario..."
+                       TextColor="White"
+                       FontAttributes="Bold"
+                       HorizontalTextAlignment="Center" />
+            </VerticalStackLayout>
+        </Grid>
+
+    </Grid>
+</ContentPage>

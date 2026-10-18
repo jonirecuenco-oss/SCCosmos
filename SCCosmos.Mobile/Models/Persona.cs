@@ -56,4 +56,23 @@ public class Persona
 
     public string FechaExactaHistorico { get; set; } = "";
     public string Notas { get; set; } = "";
+
+    // Campos de origen / traslado / aprobación (compartidos con WPF).
+    public string OrigenRegistro { get; set; } = "DESCONOCIDO";
+    public bool AprobadoExhibidores { get; set; }
+    public int TrasladoAnteriorId { get; set; }
+    public int TrasladoSiguienteId { get; set; }
+    public string FechaTraslado { get; set; } = "";
+
+    public string OrigenVisual =>
+        string.IsNullOrWhiteSpace(OrigenRegistro)
+        || OrigenRegistro.Equals(
+            "DESCONOCIDO",
+            StringComparison.OrdinalIgnoreCase)
+            ? "Origen: desconocido"
+            : "Origen: " + OrigenRegistro;
+
+    public bool Trasladado =>
+        TrasladoAnteriorId > 0
+        || TrasladoSiguienteId > 0;
 }

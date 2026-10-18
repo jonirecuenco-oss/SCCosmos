@@ -1,4 +1,4 @@
-using SCCosmos.Mobile.Data;
+﻿using SCCosmos.Mobile.Data;
 using SCCosmos.Mobile.Models;
 using SCCosmos.Mobile.Services;
 
@@ -10,7 +10,7 @@ namespace SCCosmos.Mobile.Views;
 
 
 public partial class PersonasPage
-    : ContentPage
+    : ContentPage, IActualizableMobile
 {
     private List<Persona>
         _todasLasPersonas =
@@ -39,6 +39,17 @@ public partial class PersonasPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+
+        // La esposa del SC no ve los nombramientos ni las herramientas de
+        // sincronización con JW Hub.
+        if (!PerfilAccesoService.AccesoCompleto)
+        {
+            ToolbarItems.Clear();
+
+            BtnSintonizarHub.IsVisible = false;
+            BtnCancelarHub.IsVisible = false;
+            BtnRevisarHub.IsVisible = false;
+        }
 
 
         // Evitamos duplicar suscripciones.
@@ -106,6 +117,18 @@ public partial class PersonasPage
     // CARGAR PERSONAS
     // =========================================================
 
+    public void DatosActualizados()
+    {
+        try
+        {
+            _ = CargarPersonasAsync();
+        }
+        catch
+        {
+        }
+    }
+
+
     private async Task CargarPersonasAsync()
     {
         try
@@ -126,7 +149,14 @@ public partial class PersonasPage
 
             _todasLasPersonas =
                 await Task.Run(
-                    DatabaseHelper.ObtenerPersonas);
+                    () =>
+                        DatabaseHelper
+                            .ObtenerPersonas()
+                            .Where(
+                                p =>
+                                    string.IsNullOrWhiteSpace(
+                                        p.FechaEliminacion))
+                            .ToList());
 
 
             AplicarFiltros();
@@ -524,8 +554,7 @@ public partial class PersonasPage
                 });
 
 
-        await Navigation.PushModalAsync(
-            pagina);
+        await Navigation.PushAsync(pagina);
     }
 
 
@@ -547,6 +576,19 @@ public partial class PersonasPage
         await Navigation.PushAsync(
             new PersonaDetallePage(
                 persona.Id));
+    }
+
+
+    // =========================================================
+    // NOMBRAMIENTOS
+    // =========================================================
+
+    private async void BtnNombramientos_Click(
+        object sender,
+        EventArgs e)
+    {
+        await Navigation.PushAsync(
+            new NombramientosPage());
     }
 
 
@@ -665,7 +707,7 @@ public partial class PersonasPage
                     Colors.Orange,
 
                 _ =>
-                    Color.FromArgb(
+                    Microsoft.Maui.Graphics.Color.FromArgb(
                         "#9EA4AE")
             };
 
@@ -707,6 +749,44 @@ public partial class PersonasPage
             JwHubSyncAnalysisService
                 .UltimoAnalisis
                 is not null;
+
+
+        // Si la revisión ya se finalizó, no conservamos en
+        // pantalla el resultado de la extracción anterior.
+        //
+        // Es una defensa adicional al reseteo que hace
+        // JwHubSyncReviewPage al pulsar "Finalizar revisión".
+        if (!hayAnalisis
+            &&
+            estado.Estado ==
+                EstadoJwHubSync.Completado)
+        {
+            BtnRevisarHub.IsVisible =
+                false;
+
+            BtnSintonizarHub.IsEnabled =
+                true;
+
+            BtnSintonizarHub.Text =
+                "Sincronizar JW Hub";
+
+            BtnCancelarHub.IsVisible =
+                false;
+
+            ProgresoHub.IsVisible =
+                false;
+
+            ProgresoHub.Progress =
+                0;
+
+            LblEstadoHub.Text =
+                "";
+
+            LblEstadoHub.IsVisible =
+                false;
+
+            return;
+        }
 
 
         BtnRevisarHub.IsVisible =

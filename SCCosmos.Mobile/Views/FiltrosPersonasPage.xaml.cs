@@ -1,4 +1,4 @@
-using SCCosmos.Mobile.Models;
+﻿using SCCosmos.Mobile.Models;
 
 namespace SCCosmos.Mobile.Views;
 
@@ -220,7 +220,7 @@ public partial class FiltrosPersonasPage : ContentPage
         object sender,
         EventArgs e)
     {
-        await Navigation.PopModalAsync();
+        await Navigation.PopAsync();
     }
 
     private void BtnLimpiar_Click(
@@ -284,7 +284,7 @@ public partial class FiltrosPersonasPage : ContentPage
 
         _alAplicar(resultado);
 
-        await Navigation.PopModalAsync();
+        await Navigation.PopAsync();
     }
 
     private static string ObtenerValorPicker(

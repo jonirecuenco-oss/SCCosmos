@@ -1,0 +1,86 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.ArchivoEspecialPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Archivo"
+    BackgroundColor="#101216">
+
+    <Grid RowDefinitions="Auto,Auto,*"
+          Padding="16,14,16,14"
+          RowSpacing="10">
+
+        <VerticalStackLayout Grid.Row="0"
+                             Spacing="8">
+            <Label x:Name="LblTitulo"
+                   Text=""
+                   FontSize="20"
+                   FontAttributes="Bold"
+                   TextColor="White" />
+            <Grid ColumnDefinitions="*,*"
+                  ColumnSpacing="8">
+                <Button Grid.Column="0"
+                        Text="＋ Añadir"
+                        Clicked="BtnAnadir_Clicked"
+                        BackgroundColor="#245C38"
+                        TextColor="White"
+                        CornerRadius="9"
+                        HeightRequest="44" />
+                <Button Grid.Column="1"
+                        Text="PDF"
+                        Clicked="BtnPdf_Clicked"
+                        BackgroundColor="#163553"
+                        TextColor="#B9DEFF"
+                        CornerRadius="9"
+                        HeightRequest="44" />
+            </Grid>
+        </VerticalStackLayout>
+
+        <CollectionView x:Name="Lista"
+                        Grid.Row="1"
+                        SelectionMode="None">
+            <CollectionView.EmptyView>
+                <Label Text="No hay registros."
+                       TextColor="#9EA4AE"
+                       Padding="20,50"
+                       HorizontalTextAlignment="Center" />
+            </CollectionView.EmptyView>
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border BackgroundColor="{StaticResource Superficie}"
+                            Stroke="{StaticResource Borde}"
+                            StrokeThickness="1"
+                            Padding="12"
+                            Margin="0,0,0,8">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="10" />
+                        </Border.StrokeShape>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <VerticalStackLayout Grid.Column="0"
+                                                 Spacing="3">
+                                <Label Text="{Binding Titulo}"
+                                       TextColor="White"
+                                       FontSize="14"
+                                       FontAttributes="Bold" />
+                                <Label Text="{Binding Descripcion}"
+                                       TextColor="#AEB4BC"
+                                       FontSize="12" />
+                            </VerticalStackLayout>
+                            <Button Grid.Column="1"
+                                    Text="Eliminar"
+                                    Clicked="BtnEliminar_Clicked"
+                                    CommandParameter="{Binding .}"
+                                    Padding="10,5"
+                                    FontSize="11"
+                                    BackgroundColor="#3A2023"
+                                    TextColor="#FFB7BC"
+                                    CornerRadius="7"
+                                    VerticalOptions="Center" />
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+    </Grid>
+</ContentPage>

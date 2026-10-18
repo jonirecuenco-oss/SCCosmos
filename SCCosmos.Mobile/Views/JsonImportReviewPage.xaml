@@ -1,0 +1,284 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.JsonImportReviewPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Revisar S-21"
+    BackgroundColor="#101216"
+    Shell.NavBarIsVisible="False" NavigationPage.HasNavigationBar="False">
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
+
+        <!-- CABECERA -->
+        <Grid Grid.Row="0"
+              ColumnDefinitions="*,Auto"
+              Padding="16,14,16,8"
+              ColumnSpacing="10">
+
+            <VerticalStackLayout Spacing="2">
+                <Label Text="REVISAR IMPORTACIÓN"
+                       FontSize="22"
+                       FontAttributes="Bold"
+                       TextColor="White" />
+
+                <Label x:Name="LblSubtitulo"
+                       FontSize="12"
+                       TextColor="#9EA4AE"
+                       LineBreakMode="TailTruncation" />
+            </VerticalStackLayout>
+
+            <Button Grid.Column="1"
+                    Text="Cancelar"
+                    Clicked="BtnCancelar_Clicked"
+                    BackgroundColor="#242830"
+                    TextColor="White"
+                    CornerRadius="9"
+                    Padding="12,7"
+                    VerticalOptions="Center" />
+        </Grid>
+
+        <!-- RESUMEN -->
+        <Grid Grid.Row="1"
+              Padding="16,4,16,6"
+              ColumnDefinitions="*,*"
+              RowDefinitions="Auto,Auto"
+              ColumnSpacing="8"
+              RowSpacing="8">
+
+            <Border Grid.Row="0"
+                    Grid.Column="0"
+                    BackgroundColor="#332B00"
+                    Stroke="#8C7200"
+                    Padding="10">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="10" />
+                </Border.StrokeShape>
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="BtnConflictos_Tapped" />
+                </Border.GestureRecognizers>
+                <VerticalStackLayout Spacing="1">
+                    <Label Text="⚠ CONFLICTOS"
+                           TextColor="#FFCC4D"
+                           FontSize="10"
+                           FontAttributes="Bold" />
+                    <Label x:Name="TxtNumConflictos"
+                           Text="0"
+                           TextColor="White"
+                           FontSize="22"
+                           FontAttributes="Bold" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Grid.Row="0"
+                    Grid.Column="1"
+                    BackgroundColor="#12311C"
+                    Stroke="#246E38"
+                    Padding="10">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="10" />
+                </Border.StrokeShape>
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="BtnNuevos_Tapped" />
+                </Border.GestureRecognizers>
+                <VerticalStackLayout Spacing="1">
+                    <Label Text="✨ NUEVOS"
+                           TextColor="#72D58A"
+                           FontSize="10"
+                           FontAttributes="Bold" />
+                    <Label x:Name="TxtNumNuevos"
+                           Text="0"
+                           TextColor="White"
+                           FontSize="22"
+                           FontAttributes="Bold" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Grid.Row="1"
+                    Grid.Column="0"
+                    BackgroundColor="#35191B"
+                    Stroke="#7B383D"
+                    Padding="10">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="10" />
+                </Border.StrokeShape>
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="BtnBajas_Tapped" />
+                </Border.GestureRecognizers>
+                <VerticalStackLayout Spacing="1">
+                    <Label Text="❌ POSIBLES BAJAS"
+                           TextColor="#FF8F96"
+                           FontSize="10"
+                           FontAttributes="Bold" />
+                    <Label x:Name="TxtNumBajas"
+                           Text="0"
+                           TextColor="White"
+                           FontSize="22"
+                           FontAttributes="Bold" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Grid.Row="1"
+                    Grid.Column="1"
+                    BackgroundColor="#1B1F24"
+                    Stroke="#3A414A"
+                    Padding="10">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="10" />
+                </Border.StrokeShape>
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="BtnIguales_Tapped" />
+                </Border.GestureRecognizers>
+                <VerticalStackLayout Spacing="1">
+                    <Label Text="✓ SIN CAMBIOS"
+                           TextColor="#AEB4BC"
+                           FontSize="10"
+                           FontAttributes="Bold" />
+                    <Label x:Name="TxtNumIguales"
+                           Text="0"
+                           TextColor="White"
+                           FontSize="22"
+                           FontAttributes="Bold" />
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+
+        <!-- TÍTULO LISTA -->
+        <Grid Grid.Row="2"
+              ColumnDefinitions="*,Auto"
+              Padding="16,7,16,7">
+            <Label x:Name="LblTituloLista"
+                   Text="Conflictos"
+                   TextColor="White"
+                   FontSize="16"
+                   FontAttributes="Bold" />
+
+            <Label x:Name="LblEstado"
+                   Grid.Column="1"
+                   TextColor="#8F969F"
+                   FontSize="11"
+                   VerticalOptions="Center" />
+        </Grid>
+
+        <!-- LISTA -->
+        <CollectionView x:Name="ListaResultados"
+                        Grid.Row="3"
+                        SelectionMode="None"
+                        Margin="16,0,16,0">
+
+            <CollectionView.EmptyView>
+                <VerticalStackLayout Padding="20,40"
+                                     Spacing="6"
+                                     HorizontalOptions="Center">
+                    <Label Text="No hay elementos en esta categoría."
+                           TextColor="#8F969F"
+                           HorizontalTextAlignment="Center" />
+                </VerticalStackLayout>
+            </CollectionView.EmptyView>
+
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border BackgroundColor="{StaticResource Superficie}"
+                            Stroke="{StaticResource Borde}"
+                            StrokeThickness="1"
+                            Padding="12"
+                            Margin="0,0,0,8">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="11" />
+                        </Border.StrokeShape>
+
+                        <Grid RowDefinitions="Auto,Auto,Auto"
+                              ColumnDefinitions="*,Auto"
+                              RowSpacing="4"
+                              ColumnSpacing="10">
+
+                            <VerticalStackLayout Grid.Row="0"
+                                                 Grid.Column="0"
+                                                 Spacing="1">
+                                <Label Text="{Binding EtiquetaOrigen}"
+                                       TextColor="{Binding ColorEtiqueta}"
+                                       FontSize="9"
+                                       FontAttributes="Bold" />
+
+                                <Label Text="{Binding NombreVisual}"
+                                       TextColor="White"
+                                       FontSize="14"
+                                       FontAttributes="Bold"
+                                       LineBreakMode="TailTruncation" />
+                            </VerticalStackLayout>
+
+                            <Button Grid.Row="0"
+                                    Grid.RowSpan="2"
+                                    Grid.Column="1"
+                                    Text="{Binding AccionTexto}"
+                                    Clicked="BtnAccion_Clicked"
+                                    CommandParameter="{Binding .}"
+                                    IsVisible="{Binding TieneAccion}"
+                                    BackgroundColor="#163553"
+                                    TextColor="#C5E4FF"
+                                    CornerRadius="8"
+                                    Padding="11,6"
+                                    FontSize="11"
+                                    VerticalOptions="Center" />
+
+                            <Label Grid.Row="1"
+                                   Grid.Column="0"
+                                   Text="{Binding Descripcion}"
+                                   TextColor="#AEB4BC"
+                                   FontSize="11"
+                                   LineBreakMode="WordWrap" />
+
+                            <Label Grid.Row="2"
+                                   Grid.ColumnSpan="2"
+                                   Text="Los cambios no se escriben en SQLite hasta pulsar Finalizar."
+                                   TextColor="#67707B"
+                                   FontSize="9"
+                                   IsVisible="{Binding EsConflicto}" />
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- PIE -->
+        <Grid Grid.Row="4"
+              ColumnDefinitions="*,*"
+              Padding="16,10,16,16"
+              ColumnSpacing="10">
+
+            <Button Text="Cancelar importación"
+                    Clicked="BtnCancelar_Clicked"
+                    BackgroundColor="#242830"
+                    TextColor="White"
+                    CornerRadius="10"
+                    HeightRequest="46" />
+
+            <Button x:Name="BtnFinalizar"
+                    Grid.Column="1"
+                    Text="Finalizar"
+                    Clicked="BtnFinalizar_Clicked"
+                    BackgroundColor="#0B6FC2"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    CornerRadius="10"
+                    HeightRequest="46" />
+        </Grid>
+
+        <Grid x:Name="OverlayCargando"
+              Grid.RowSpan="5"
+              BackgroundColor="#C0101216"
+              IsVisible="False">
+            <VerticalStackLayout
+                HorizontalOptions="Center"
+                VerticalOptions="Center"
+                Spacing="12">
+                <ActivityIndicator IsRunning="True"
+                                   Color="#4BA3E3"
+                                   WidthRequest="42"
+                                   HeightRequest="42" />
+                <Label Text="Guardando importación..."
+                       TextColor="White"
+                       FontAttributes="Bold" />
+            </VerticalStackLayout>
+        </Grid>
+    </Grid>
+</ContentPage>

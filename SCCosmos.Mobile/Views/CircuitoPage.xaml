@@ -1,0 +1,88 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.CircuitoPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Circuito"
+    BackgroundColor="#101216">
+
+    <Grid RowDefinitions="Auto,*"
+          Padding="16,14,16,14"
+          RowSpacing="10">
+
+        <VerticalStackLayout Grid.Row="0"
+                             Spacing="6">
+
+            <VerticalStackLayout Spacing="3">
+                <Label Text="CIRCUITO"
+                       Style="{StaticResource Antetitulo}" />
+                <Label x:Name="LblTotal"
+                       Text=""
+                       Style="{StaticResource SubtituloPagina}" />
+            </VerticalStackLayout>
+
+            <Grid ColumnDefinitions="*,*"
+                  ColumnSpacing="8">
+                <Button Grid.Column="0"
+                        Text="Ver secciones"
+                        Clicked="BtnSecciones_Clicked"
+                        Style="{StaticResource BotonSecundario}" />
+                <Button Grid.Column="1"
+                        Text="+ Congregación"
+                        Clicked="BtnAnadir_Clicked"
+                        Style="{StaticResource BotonPrincipal}" />
+            </Grid>
+
+        </VerticalStackLayout>
+
+        <RefreshView x:Name="Refrescar"
+                     Grid.Row="1"
+                     Refreshing="Refrescar_Refreshing">
+
+            <CollectionView x:Name="Lista"
+                            SelectionMode="None">
+
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout Padding="20,50"
+                                         HorizontalOptions="Center">
+                        <Label Text="No hay congregaciones registradas."
+                               TextColor="#9EA4AE"
+                               HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border BackgroundColor="{StaticResource Superficie}"
+                                Stroke="{StaticResource Borde}"
+                                StrokeThickness="1"
+                                Padding="13"
+                                Margin="0,0,0,8">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="12" />
+                            </Border.StrokeShape>
+
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer
+                                    Tapped="Congregacion_Tapped"
+                                    CommandParameter="{Binding .}" />
+                            </Border.GestureRecognizers>
+
+                            <VerticalStackLayout Spacing="3">
+                                <Label Text="{Binding Nombre}"
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       TextColor="White" />
+                                <Label Text="{Binding DetalleLista}"
+                                       FontSize="12"
+                                       TextColor="#AEB4BC" />
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+
+            </CollectionView>
+        </RefreshView>
+
+    </Grid>
+</ContentPage>

@@ -1,0 +1,155 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.JsonImportConflictPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Resolver S-21"
+    BackgroundColor="#101216"
+    Shell.NavBarIsVisible="False" NavigationPage.HasNavigationBar="False">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+
+        <Grid Grid.Row="0"
+              ColumnDefinitions="*,Auto"
+              Padding="16,14,16,8"
+              ColumnSpacing="10">
+            <VerticalStackLayout Spacing="2">
+                <Label x:Name="LblTitulo"
+                       Text="RESOLVER CONFLICTO"
+                       FontSize="21"
+                       FontAttributes="Bold"
+                       TextColor="White" />
+
+                <Label x:Name="LblNombre"
+                       FontSize="13"
+                       TextColor="#80C4FF"
+                       LineBreakMode="TailTruncation" />
+            </VerticalStackLayout>
+
+            <Button Grid.Column="1"
+                    Text="Volver"
+                    Clicked="BtnCancelar_Clicked"
+                    BackgroundColor="#242830"
+                    TextColor="White"
+                    CornerRadius="9"
+                    Padding="12,7"
+                    VerticalOptions="Center" />
+        </Grid>
+
+        <Border Grid.Row="1"
+                Margin="16,4,16,10"
+                BackgroundColor="#15191E"
+                Stroke="#2E343C"
+                Padding="11">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="10" />
+            </Border.StrokeShape>
+            <Label x:Name="LblExplicacion"
+                   TextColor="#AEB4BC"
+                   FontSize="11"
+                   LineBreakMode="WordWrap" />
+        </Border>
+
+        <CollectionView x:Name="ListaCampos"
+                        Grid.Row="2"
+                        SelectionMode="None"
+                        Margin="16,0,16,0">
+            <CollectionView.EmptyView>
+                <VerticalStackLayout Padding="20,40"
+                                     HorizontalOptions="Center">
+                    <Label Text="No hay diferencias de ficha que resolver."
+                           TextColor="#8F969F"
+                           HorizontalTextAlignment="Center" />
+                </VerticalStackLayout>
+            </CollectionView.EmptyView>
+
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border BackgroundColor="{StaticResource Superficie}"
+                            Stroke="{StaticResource Borde}"
+                            Padding="12"
+                            Margin="0,0,0,8">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="11" />
+                        </Border.StrokeShape>
+
+                        <VerticalStackLayout Spacing="7">
+                            <Label Text="{Binding Etiqueta}"
+                                   TextColor="White"
+                                   FontAttributes="Bold"
+                                   FontSize="13" />
+
+                            <Grid ColumnDefinitions="*,*"
+                                  ColumnSpacing="8">
+                                <Border BackgroundColor="#20242A"
+                                        StrokeThickness="0"
+                                        Padding="8">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="7" />
+                                    </Border.StrokeShape>
+                                    <VerticalStackLayout Spacing="2">
+                                        <Label Text="BASE DE DATOS"
+                                               TextColor="#8F969F"
+                                               FontSize="8"
+                                               FontAttributes="Bold" />
+                                        <Label Text="{Binding ValorBd}"
+                                               TextColor="#D7DBE0"
+                                               FontSize="11"
+                                               LineBreakMode="WordWrap" />
+                                    </VerticalStackLayout>
+                                </Border>
+
+                                <Border Grid.Column="1"
+                                        BackgroundColor="#142B3F"
+                                        StrokeThickness="0"
+                                        Padding="8">
+                                    <Border.StrokeShape>
+                                        <RoundRectangle CornerRadius="7" />
+                                    </Border.StrokeShape>
+                                    <VerticalStackLayout Spacing="2">
+                                        <Label Text="S-21"
+                                               TextColor="#80C4FF"
+                                               FontSize="8"
+                                               FontAttributes="Bold" />
+                                        <Label Text="{Binding ValorJson}"
+                                               TextColor="White"
+                                               FontSize="11"
+                                               LineBreakMode="WordWrap" />
+                                    </VerticalStackLayout>
+                                </Border>
+                            </Grid>
+
+                            <Picker ItemsSource="{Binding Opciones}"
+                                    SelectedItem="{Binding Seleccion, Mode=TwoWay}"
+                                    BackgroundColor="#20242A"
+                                    TextColor="White"
+                                    Title="Elegir valor" />
+                        </VerticalStackLayout>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <Grid Grid.Row="3"
+              ColumnDefinitions="*,*"
+              Padding="16,10,16,16"
+              ColumnSpacing="10">
+            <Button Text="Cancelar"
+                    Clicked="BtnCancelar_Clicked"
+                    BackgroundColor="#242830"
+                    TextColor="White"
+                    CornerRadius="10"
+                    HeightRequest="46" />
+
+            <Button x:Name="BtnGuardar"
+                    Grid.Column="1"
+                    Text="Guardar resolución"
+                    Clicked="BtnGuardar_Clicked"
+                    BackgroundColor="#0B6FC2"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    CornerRadius="10"
+                    HeightRequest="46" />
+        </Grid>
+    </Grid>
+</ContentPage>

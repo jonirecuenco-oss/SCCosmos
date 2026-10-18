@@ -1,0 +1,92 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.SesionPrecursoresDetallePage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Sesión de precursores"
+    BackgroundColor="#101216">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16,14,16,28"
+                             Spacing="12">
+
+            <Border BackgroundColor="{StaticResource Superficie}"
+                    Stroke="{StaticResource Borde}"
+                    StrokeThickness="1"
+                    Padding="14">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="12" />
+                </Border.StrokeShape>
+                <VerticalStackLayout Spacing="4">
+                    <Label x:Name="LblSesion"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           TextColor="White" />
+                    <Label x:Name="LblDetalle"
+                           FontSize="13"
+                           TextColor="#AEB4BC" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Button Text="＋ Añadir parte"
+                    Clicked="BtnAnadirParte_Clicked"
+                    BackgroundColor="#245C38"
+                    TextColor="White"
+                    CornerRadius="9"
+                    HeightRequest="44" />
+
+            <Label x:Name="LblSinPartes"
+                   Text="Sin partes registradas."
+                   FontSize="13"
+                   TextColor="#7E858F" />
+
+            <VerticalStackLayout x:Name="ListaPartes"
+                                 Spacing="7">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate>
+                        <Border BackgroundColor="{StaticResource Superficie}"
+                                Stroke="{StaticResource Borde}"
+                                StrokeThickness="1"
+                                Padding="12">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="10" />
+                            </Border.StrokeShape>
+                            <Grid ColumnDefinitions="*,Auto">
+                                <VerticalStackLayout Grid.Column="0"
+                                                     Spacing="3">
+                                    <Label Text="{Binding Titulo}"
+                                           TextColor="White"
+                                           FontSize="14"
+                                           FontAttributes="Bold" />
+                                    <Label Text="{Binding Detalle}"
+                                           TextColor="#AEB4BC"
+                                           FontSize="12" />
+                                </VerticalStackLayout>
+                                <VerticalStackLayout Grid.Column="1"
+                                                     Spacing="5">
+                                    <Button Text="Editar"
+                                            Clicked="BtnEditarParte_Clicked"
+                                            CommandParameter="{Binding .}"
+                                            Padding="10,5"
+                                            FontSize="11"
+                                            BackgroundColor="#242830"
+                                            TextColor="White"
+                                            CornerRadius="7" />
+                                    <Button Text="Eliminar"
+                                            Clicked="BtnEliminarParte_Clicked"
+                                            CommandParameter="{Binding .}"
+                                            Padding="10,5"
+                                            FontSize="11"
+                                            BackgroundColor="#3A2023"
+                                            TextColor="#FFB7BC"
+                                            CornerRadius="7" />
+                                </VerticalStackLayout>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

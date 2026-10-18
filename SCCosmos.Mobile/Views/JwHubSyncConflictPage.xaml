@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 
 <ContentPage
     x:Class="SCCosmos.Mobile.Views.JwHubSyncConflictPage"
@@ -9,7 +9,7 @@
 
     <Grid
         Padding="16"
-        RowDefinitions="Auto,Auto,*,Auto"
+        RowDefinitions="Auto,Auto,Auto,*,Auto"
         RowSpacing="14">
 
         <VerticalStackLayout
@@ -22,23 +22,183 @@
                 FontAttributes="Bold"
                 TextColor="White"/>
 
-            <Label
-                x:Name="LblNombre"
-                Text=""
-                FontSize="18"
-                FontAttributes="Bold"
-                TextColor="#FFCC55"/>
+            <!-- FOTOGRAFÍA DE LA PERSONA (una sola vez, arriba) -->
+            <Grid
+                ColumnDefinitions="62,*"
+                ColumnSpacing="12"
+                Margin="0,6,0,4">
+
+                <Border
+                    Grid.Column="0"
+                    WidthRequest="58"
+                    HeightRequest="58"
+                    BackgroundColor="#272D36"
+                    StrokeThickness="0">
+
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="29"/>
+                    </Border.StrokeShape>
+
+                    <Grid>
+
+                        <Label
+                            x:Name="LblSinFotoPersona"
+                            Text="👤"
+                            FontSize="24"
+                            HorizontalOptions="Center"
+                            VerticalOptions="Center"/>
+
+                        <Image
+                            x:Name="ImgFotoPersona"
+                            IsVisible="False"
+                            Aspect="AspectFill"
+                            WidthRequest="58"
+                            HeightRequest="58"/>
+
+                    </Grid>
+
+                </Border>
+
+                <VerticalStackLayout
+                    Grid.Column="1"
+                    Spacing="2"
+                    VerticalOptions="Center">
+
+                    <Label
+                        x:Name="LblNombre"
+                        Text=""
+                        FontSize="18"
+                        FontAttributes="Bold"
+                        TextColor="#FFCC55"/>
+
+                    <Label
+                        Text="Selecciona qué valor quieres conservar en cada campo."
+                        FontSize="13"
+                        TextColor="#A5ABB4"
+                        LineBreakMode="WordWrap"/>
+
+                </VerticalStackLayout>
+
+            </Grid>
+
+        </VerticalStackLayout>
+
+        <!-- ================================================= -->
+        <!-- FOTOGRAFÍA: BD vs JW HUB (solo si cambió) -->
+        <!-- ================================================= -->
+
+        <VerticalStackLayout
+            x:Name="PanelFoto"
+            Grid.Row="1"
+            IsVisible="False"
+            Spacing="8">
 
             <Label
-                Text="Selecciona qué valor quieres conservar en cada campo."
+                Text="Fotografía"
+                FontSize="16"
+                FontAttributes="Bold"
+                TextColor="White"/>
+
+            <Label
+                Text="La fotografía de JW Hub es distinta de la que hay en la base de datos. Toca la que quieras conservar."
                 FontSize="13"
                 TextColor="#A5ABB4"
                 LineBreakMode="WordWrap"/>
 
+            <Grid
+                ColumnDefinitions="*,*"
+                ColumnSpacing="10">
+
+                <Border
+                    x:Name="FotoBdBorder"
+                    Grid.Column="0"
+                    Padding="10"
+                    BackgroundColor="#141D25"
+                    Stroke="#2D526B"
+                    StrokeThickness="1">
+
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="10"/>
+                    </Border.StrokeShape>
+
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="FotoBd_Tapped"/>
+                    </Border.GestureRecognizers>
+
+                    <VerticalStackLayout
+                        Spacing="6">
+
+                        <Label
+                            Text="BASE DE DATOS"
+                            FontSize="10"
+                            FontAttributes="Bold"
+                            TextColor="#78BCE8"
+                            HorizontalTextAlignment="Center"/>
+
+                        <Image
+                            x:Name="ImgFotoBd"
+                            HeightRequest="110"
+                            Aspect="AspectFill"/>
+
+                        <Label
+                            x:Name="LblMarcaFotoBd"
+                            Text=" "
+                            FontSize="16"
+                            TextColor="#78BCE8"
+                            HorizontalTextAlignment="Center"/>
+
+                    </VerticalStackLayout>
+
+                </Border>
+
+                <Border
+                    x:Name="FotoHubBorder"
+                    Grid.Column="1"
+                    Padding="10"
+                    BackgroundColor="#15251A"
+                    Stroke="#315E3B"
+                    StrokeThickness="1">
+
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="10"/>
+                    </Border.StrokeShape>
+
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="FotoHub_Tapped"/>
+                    </Border.GestureRecognizers>
+
+                    <VerticalStackLayout
+                        Spacing="6">
+
+                        <Label
+                            Text="JW HUB"
+                            FontSize="10"
+                            FontAttributes="Bold"
+                            TextColor="#73D18A"
+                            HorizontalTextAlignment="Center"/>
+
+                        <Image
+                            x:Name="ImgFotoHub"
+                            HeightRequest="110"
+                            Aspect="AspectFill"/>
+
+                        <Label
+                            x:Name="LblMarcaFotoHub"
+                            Text=" "
+                            FontSize="16"
+                            TextColor="#73D18A"
+                            HorizontalTextAlignment="Center"/>
+
+                    </VerticalStackLayout>
+
+                </Border>
+
+            </Grid>
+
         </VerticalStackLayout>
 
         <Grid
-            Grid.Row="1"
+            Grid.Row="2"
             ColumnDefinitions="*,*"
             ColumnSpacing="8">
 
@@ -86,7 +246,7 @@
 
         <CollectionView
             x:Name="ListaCampos"
-            Grid.Row="2"
+            Grid.Row="3"
             SelectionMode="None">
 
             <CollectionView.EmptyView>
@@ -117,7 +277,7 @@
                     <Border
                         Margin="0,0,0,12"
                         Padding="13"
-                        BackgroundColor="#191D23"
+                        BackgroundColor="{StaticResource Superficie}"
                         Stroke="#343B45"
                         StrokeThickness="1">
 
@@ -165,22 +325,6 @@
                                             TextColor="White"
                                             LineBreakMode="WordWrap"/>
 
-                                        <Image
-                                            IsVisible="{Binding TieneFotoBd}"
-                                            Source="{Binding FotoBdSource}"
-                                            HeightRequest="150"
-                                            Aspect="AspectFit"
-                                            HorizontalOptions="Fill"/>
-
-                                        <Label
-                                            IsVisible="{Binding FotoBdVacia}"
-                                            Text="(Sin fotografía)"
-                                            FontSize="13"
-                                            TextColor="#A5ABB4"
-                                            HorizontalTextAlignment="Center"
-                                            VerticalTextAlignment="Center"
-                                            HeightRequest="80"/>
-
                                     </VerticalStackLayout>
 
                                 </Border>
@@ -211,22 +355,6 @@
                                             FontSize="13"
                                             TextColor="White"
                                             LineBreakMode="WordWrap"/>
-
-                                        <Image
-                                            IsVisible="{Binding TieneFotoHub}"
-                                            Source="{Binding FotoHubSource}"
-                                            HeightRequest="150"
-                                            Aspect="AspectFit"
-                                            HorizontalOptions="Fill"/>
-
-                                        <Label
-                                            IsVisible="{Binding FotoHubVacia}"
-                                            Text="(Sin fotografía)"
-                                            FontSize="13"
-                                            TextColor="#A5ABB4"
-                                            HorizontalTextAlignment="Center"
-                                            VerticalTextAlignment="Center"
-                                            HeightRequest="80"/>
 
                                     </VerticalStackLayout>
 
@@ -268,7 +396,7 @@
         </CollectionView>
 
         <Grid
-            Grid.Row="3"
+            Grid.Row="4"
             ColumnDefinitions="*,*"
             ColumnSpacing="10">
 

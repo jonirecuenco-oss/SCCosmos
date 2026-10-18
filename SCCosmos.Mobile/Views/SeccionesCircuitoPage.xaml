@@ -1,0 +1,73 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.SeccionesCircuitoPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Secciones"
+    BackgroundColor="#101216">
+
+    <Grid RowDefinitions="Auto,Auto,*"
+          Padding="16,14,16,14"
+          RowSpacing="10">
+
+        <Label Grid.Row="0"
+               Text="SECCIONES DEL CIRCUITO"
+               Style="{StaticResource Antetitulo}" />
+
+        <Grid Grid.Row="1"
+              ColumnDefinitions="*,Auto"
+              ColumnSpacing="8">
+            <Entry x:Name="TxtNueva"
+                   Grid.Column="0"
+                   Placeholder="Nombre de la nueva sección"
+                   TextColor="White" />
+            <Button Grid.Column="1"
+                    Text="Añadir"
+                    Clicked="BtnAnadir_Clicked"
+                    BackgroundColor="#163553"
+                    TextColor="#B9DEFF"
+                    CornerRadius="9" />
+        </Grid>
+
+        <CollectionView x:Name="Lista"
+                        Grid.Row="2"
+                        SelectionMode="None">
+            <CollectionView.EmptyView>
+                <Label Text="No hay secciones."
+                       TextColor="#9EA4AE"
+                       Padding="20,40"
+                       HorizontalTextAlignment="Center" />
+            </CollectionView.EmptyView>
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border BackgroundColor="{StaticResource Superficie}"
+                            Stroke="{StaticResource Borde}"
+                            StrokeThickness="1"
+                            Padding="13"
+                            Margin="0,0,0,8">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="12" />
+                        </Border.StrokeShape>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Grid.Column="0"
+                                   Text="{Binding Nombre}"
+                                   TextColor="White"
+                                   FontSize="15"
+                                   VerticalOptions="Center" />
+                            <Button Grid.Column="1"
+                                    Text="Eliminar"
+                                    Clicked="BtnEliminar_Clicked"
+                                    CommandParameter="{Binding .}"
+                                    Padding="12,6"
+                                    FontSize="12"
+                                    BackgroundColor="#3A2023"
+                                    TextColor="#FFB7BC"
+                                    CornerRadius="8" />
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+    </Grid>
+</ContentPage>

@@ -1,15 +1,19 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using SCCosmos.Mobile.Data;
 using SCCosmos.Mobile.Models;
 using SCCosmos.Mobile.Services;
 
 namespace SCCosmos.Mobile.Views;
 
-public partial class InicioPage : ContentPage
+public partial class InicioPage : ContentPage, IActualizableMobile
 {
     public ObservableCollection<ActividadHoy>
         ProgramaHoy
     { get; } = new();
+
+    private SemanaCalendario? _semanaActual;
+
+    private SemanaCalendario? _proximaActividad;
 
     public InicioPage()
     {
@@ -23,7 +27,24 @@ public partial class InicioPage : ContentPage
         base.OnAppearing();
 
         await CargarPaginaAsync();
+
+        // Mantiene al día las notificaciones del sistema y el contador
+        // del icono de la app.
+        _ = AlertasNotificacionService
+            .ActualizarAsync();
     }
+
+    public void DatosActualizados()
+    {
+        try
+        {
+            _ = CargarPaginaAsync();
+        }
+        catch
+        {
+        }
+    }
+
 
     private async Task CargarPaginaAsync()
     {
@@ -37,11 +58,51 @@ public partial class InicioPage : ContentPage
                 return;
             }
 
+            // La esposa del SC no ve la campana de alertas ni recibe
+            // notificaciones.
+            PanelCampana.IsVisible =
+                PerfilAccesoService.AccesoCompleto;
+
+            // La campana se pinta según las alertas pendientes: gris si
+            // no hay ninguna, dorada con el número si las hay.
+            try
+            {
+                int pendientes =
+                    (await Task.Run(
+                        () => AlertasMobileService.Calcular()))
+                    .Count;
+
+                ActualizarCampana(
+                    pendientes);
+            }
+            catch
+            {
+            }
+
+            // Si el dispositivo lo usa la esposa del SC, el saludo es con su
+            // nombre (Nombre de la esposa); si no está puesto, se usa el
+            // nombre del SC.
+            bool esEsposa =
+                PerfilAccesoService.Configurado
+                && !PerfilAccesoService.EsHombre;
+
             string nombre =
                 await Task.Run(() =>
                     DatabaseHelper.ObtenerConfiguracion(
-                        "NombreSC",
+                        esEsposa
+                            ? "NombreEsposaSC"
+                            : "NombreSC",
                         ""));
+
+            if (string.IsNullOrWhiteSpace(nombre)
+                && esEsposa)
+            {
+                nombre =
+                    await Task.Run(() =>
+                        DatabaseHelper.ObtenerConfiguracion(
+                            "NombreSC",
+                            ""));
+            }
 
             TxtSaludo.Text =
                 string.IsNullOrWhiteSpace(nombre)
@@ -60,6 +121,38 @@ public partial class InicioPage : ContentPage
             LblError.IsVisible = true;
         }
     }
+
+    /// <summary>
+    /// Pinta la campana: gris si no hay alertas, dorada con el número
+    /// de alertas pendientes si las hay.
+    /// </summary>
+    private void ActualizarCampana(
+        int pendientes)
+    {
+        try
+        {
+            bool hay =
+                pendientes > 0;
+
+            LblCampana.Text =
+                hay ? "🔔" : "🔕";
+
+            LblCampana.Opacity =
+                hay ? 1.0 : 0.45;
+
+            BadgeCampana.IsVisible =
+                hay;
+
+            LblCampanaNumero.Text =
+                pendientes > 99
+                    ? "99+"
+                    : pendientes.ToString();
+        }
+        catch
+        {
+        }
+    }
+
 
     private async Task CargarSemanaActualAsync()
     {
@@ -80,10 +173,15 @@ public partial class InicioPage : ContentPage
             martesDeEstaSemana.ToString(
                 "yyyy-MM-dd");
 
+        await CargarProximaActividadAsync(
+            martesDeEstaSemana);
+
         SemanaCalendario? semana =
             await Task.Run(() =>
                 DatabaseHelper.ObtenerSemana(
                     fechaIso));
+
+        _semanaActual = semana;
 
         ProgramaHoy.Clear();
 
@@ -118,7 +216,7 @@ public partial class InicioPage : ContentPage
                 ? "Sin actividad"
                 : semana.Actividad;
 
-        if (semana.Actividad == "Visita")
+        if (EsVisita(semana))
         {
             LblTipoSemana.Text =
                 "VISITA A CONGREGACIÓN";
@@ -189,6 +287,89 @@ public partial class InicioPage : ContentPage
         }
     }
 
+    /// <summary>
+    /// Comprueba si la semana es una visita, como hace Windows: se admite
+    /// cualquier variante de mayúsculas/minúsculas o espacios y también el
+    /// tipo «Visita SC».
+    /// </summary>
+    private static bool EsVisita(
+        SemanaCalendario semana)
+    {
+        string actividad =
+            (semana.Actividad ?? "").Trim();
+
+        string tipo =
+            (semana.Tipo ?? "").Trim();
+
+        return actividad.Equals(
+                   "Visita",
+                   StringComparison.OrdinalIgnoreCase)
+               ||
+               tipo.StartsWith(
+                   "Visita",
+                   StringComparison.OrdinalIgnoreCase);
+    }
+
+
+    private int _columnasEstadisticas = 2;
+
+    protected override void OnSizeAllocated(double width, double height)
+    {
+        base.OnSizeAllocated(width, height);
+
+        if (width <= 0)
+        {
+            return;
+        }
+
+        // Tablet o fold abierto: el resumen reparte las tarjetas en más
+        // columnas para aprovechar el ancho.
+        int columnas =
+            width >= 900 ? 4 : width >= 600 ? 3 : 2;
+
+        if (columnas != _columnasEstadisticas)
+        {
+            _columnasEstadisticas = columnas;
+            AdaptarEstadisticas(columnas);
+        }
+    }
+
+    private void AdaptarEstadisticas(int columnas)
+    {
+        if (GridEstadisticas == null)
+        {
+            return;
+        }
+
+        GridEstadisticas.ColumnDefinitions.Clear();
+
+        for (int i = 0; i < columnas; i++)
+        {
+            GridEstadisticas.ColumnDefinitions.Add(
+                new ColumnDefinition(new GridLength(1, GridUnitType.Star)));
+        }
+
+        int filas =
+            (GridEstadisticas.Children.Count + columnas - 1) / columnas;
+
+        GridEstadisticas.RowDefinitions.Clear();
+
+        for (int i = 0; i < filas; i++)
+        {
+            GridEstadisticas.RowDefinitions.Add(
+                new RowDefinition(new GridLength(1, GridUnitType.Auto)));
+        }
+
+        for (int i = 0; i < GridEstadisticas.Children.Count; i++)
+        {
+            IView hijo =
+                GridEstadisticas.Children[i];
+
+            GridEstadisticas.SetRow(hijo, i / columnas);
+            GridEstadisticas.SetColumn(hijo, i % columnas);
+        }
+    }
+
     private async Task CargarProgramaDelDiaAsync(
         string congreCodigo,
         string mesReferencia,
@@ -213,90 +394,103 @@ public partial class InicioPage : ContentPage
                 var resultado =
                     new List<ActividadHoy>();
 
-                string[] turnos =
-                {
-                    "MAÑANA",
-                    "MEDIODÍA",
-                    "TARDE",
-                    "NOCHE"
-                };
+                // Se leen TODAS las actividades del día (SC, Esposa, Ambos,
+                // Joni, Rebe...), como en Windows, para que aparezcan tanto
+                // las del hombre como las de la mujer.
+                List<ActividadPrograma> actividades =
+                    DatabaseHelper
+                        .ObtenerActividadesProgramaDia(
+                            congreCodigo,
+                            mesReferencia,
+                            diaDb);
 
-                string[] responsables =
+                foreach (ActividadPrograma actividad
+                         in actividades)
                 {
-                    "Joni",
-                    "Rebe",
-                    "Comida",
-                    "Cenar",
-                    "Dormir"
-                };
+                    string responsableCrudo =
+                        (actividad.Responsable ?? "").Trim();
 
-                foreach (string turno in turnos)
-                {
-                    foreach (string responsable
-                             in responsables)
+                    bool esLegacy =
+                        responsableCrudo.Equals("Comida", StringComparison.OrdinalIgnoreCase)
+                        || responsableCrudo.Equals("Cenar", StringComparison.OrdinalIgnoreCase)
+                        || responsableCrudo.Equals("Dormir", StringComparison.OrdinalIgnoreCase);
+
+                    string responsable =
+                        responsableCrudo.Equals("Ambos", StringComparison.OrdinalIgnoreCase)
+                            ? "Ambos"
+                            : (responsableCrudo.Equals("Rebe", StringComparison.OrdinalIgnoreCase)
+                               || responsableCrudo.Equals("Esposa", StringComparison.OrdinalIgnoreCase))
+                                ? "Esposa"
+                                : "SC";
+
+                    if (esLegacy)
                     {
-                        var actividades =
+                        responsable = "";
+                    }
+
+                    string tipo =
+                        (actividad.TipoActividad ?? "").Trim();
+
+                    if (string.IsNullOrWhiteSpace(tipo)
+                        && esLegacy)
+                    {
+                        tipo = responsableCrudo;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(tipo))
+                    {
+                        tipo = "Actividad";
+                    }
+
+                    string nombreCompanero =
+                        "";
+
+                    if (!esLegacy
+                        && actividad.CompaneroId > 0)
+                    {
+                        Persona? persona =
                             DatabaseHelper
-                                .ObtenerActividadesPrograma(
-                                    congreCodigo,
-                                    mesReferencia,
-                                    diaDb,
-                                    turno,
-                                    responsable);
+                                .ObtenerPersonaPorId(
+                                    actividad.CompaneroId);
 
-                        foreach (var actividad
-                                 in actividades)
+                        if (persona != null &&
+                            !string.IsNullOrWhiteSpace(
+                                persona.Nombre))
                         {
-                            string nombreCompanero =
-                                "";
-
-                            bool mostrarCompanero =
-                                responsable != "Comida"
-                                && responsable != "Cenar"
-                                && responsable != "Dormir";
-
-                            if (mostrarCompanero &&
-                                actividad.CompaneroId > 0)
-                            {
-                                Persona? persona =
-                                    DatabaseHelper
-                                        .ObtenerPersonaPorId(
-                                            actividad.CompaneroId);
-
-                                if (persona != null &&
-                                    !string.IsNullOrWhiteSpace(
-                                        persona.Nombre))
-                                {
-                                    nombreCompanero =
-                                        persona.Nombre
-                                            .Split(
-                                                ' ',
-                                                StringSplitOptions
-                                                    .RemoveEmptyEntries)
-                                            .FirstOrDefault()
-                                        ?? "";
-                                }
-                            }
-
-                            resultado.Add(
-                                new ActividadHoy
-                                {
-                                    Hora =
-                                        actividad.Hora,
-
-                                    TipoActividad =
-                                        actividad.TipoActividad,
-
-                                    CompaneroNombre =
-                                        nombreCompanero,
-
-                                    VerCompanero =
-                                        mostrarCompanero &&
-                                        !string.IsNullOrWhiteSpace(
-                                            nombreCompanero)
-                                });
+                            nombreCompanero =
+                                persona.Nombre
+                                    .Split(
+                                        ' ',
+                                        StringSplitOptions
+                                            .RemoveEmptyEntries)
+                                    .FirstOrDefault()
+                                ?? "";
                         }
                     }
+
+                    resultado.Add(
+                        new ActividadHoy
+                        {
+                            Hora =
+                                actividad.Hora,
+
+                            TipoActividad =
+                                tipo,
+
+                            Responsable =
+                                responsable,
+
+                            CompaneroNombre =
+                                nombreCompanero,
+
+                            VerCompanero =
+                                !esLegacy &&
+                                !string.IsNullOrWhiteSpace(
+                                    nombreCompanero),
+
+                            Ubicacion =
+                                (actividad.Direccion ?? "").Trim()
+                        });
                 }
 
                 return resultado
@@ -316,34 +510,194 @@ public partial class InicioPage : ContentPage
 
     private async Task CargarEstadisticasAsync()
     {
-        EstadisticasCircuito stats =
+        var stats =
             await Task.Run(() =>
-                DatabaseHelper
-                    .ObtenerEstadisticasCircuito());
+            {
+                List<Persona> personasActivas =
+                    DatabaseHelper
+                        .ObtenerPersonas()
+                        .Where(p =>
+                            string.IsNullOrWhiteSpace(
+                                p.FechaEliminacion))
+                        .ToList();
+
+                int precRegulares =
+                    personasActivas.Count(p =>
+                        ContieneTexto(
+                            p.Servicio,
+                            "Precursor regular"));
+
+                int precEspeciales =
+                    personasActivas.Count(p =>
+                        ContieneTexto(
+                            p.Servicio,
+                            "Precursor especial"));
+
+                int ancianos =
+                    personasActivas.Count(p =>
+                        ContieneTexto(
+                            p.Nombramiento,
+                            "Anciano"));
+
+                int siervosM =
+                    personasActivas.Count(p =>
+                        ContieneTexto(
+                            p.Nombramiento,
+                            "Siervo ministerial"));
+
+                int solA2 =
+                    personasActivas.Count(p =>
+                        ContieneTexto(
+                            p.Solicitudes,
+                            "A-2"));
+
+                int solA19 =
+                    personasActivas.Count(p =>
+                        ContieneTexto(
+                            p.Solicitudes,
+                            "A-19"));
+
+                int solA8 =
+                    personasActivas.Count(p =>
+                        ContieneTexto(
+                            p.Solicitudes,
+                            "A-8"));
+
+                int solG8 =
+                    personasActivas.Count(p =>
+                        ContieneTexto(
+                            p.Solicitudes,
+                            "G-8"));
+
+                int totalPublicadores =
+                    personasActivas.Count;
+
+                int hombres =
+                    personasActivas.Count(p =>
+                        string.Equals(
+                            p.Sexo,
+                            "Hombre",
+                            StringComparison.OrdinalIgnoreCase));
+
+                int mujeres =
+                    personasActivas.Count(p =>
+                        string.Equals(
+                            p.Sexo,
+                            "Mujer",
+                            StringComparison.OrdinalIgnoreCase));
+
+                int noBautizados =
+                    personasActivas.Count(p =>
+                        string.IsNullOrWhiteSpace(
+                            p.FechaBautismo));
+
+                int betel =
+                    personasActivas.Count(p =>
+                        ContieneTexto(p.Servicio, "Betel")
+                        ||
+                        ContieneTexto(p.Privilegios, "Betel"));
+
+                List<int> edades =
+                    personasActivas
+                        .Select(p =>
+                            EscuelasService.CalcularEdad(
+                                p.FechaNacimiento,
+                                DateTime.Today))
+                        .Where(e => e != "-"
+                                    &&
+                                    int.TryParse(e, out _))
+                        .Select(int.Parse)
+                        .ToList();
+
+                string mediaEdad =
+                    edades.Count > 0
+                        ? Math.Round(edades.Average(), 1)
+                              .ToString()
+                        : "—";
+
+                DatabaseHelper.EstadisticasExtraMobile extra =
+                    DatabaseHelper
+                        .ObtenerEstadisticasExtraMobile();
+
+                return (
+                    precRegulares,
+                    precEspeciales,
+                    ancianos,
+                    siervosM,
+                    solA2,
+                    solA19,
+                    solA8,
+                    solG8,
+                    totalPublicadores,
+                    hombres,
+                    mujeres,
+                    noBautizados,
+                    betel,
+                    mediaEdad,
+                    extra);
+            });
 
         TxtTotalPrecReg.Text =
-            stats.PrecRegulares.ToString();
+            stats.precRegulares.ToString();
 
         TxtTotalPrecEsp.Text =
-            stats.PrecEspeciales.ToString();
+            stats.precEspeciales.ToString();
 
         TxtTotalAncianos.Text =
-            stats.Ancianos.ToString();
+            stats.ancianos.ToString();
 
         TxtTotalSM.Text =
-            stats.SiervosM.ToString();
+            stats.siervosM.ToString();
 
         TxtTotalA2.Text =
-            stats.SolA2.ToString();
+            stats.solA2.ToString();
 
         TxtTotalA19.Text =
-            stats.SolA19.ToString();
+            stats.solA19.ToString();
 
         TxtTotalA8.Text =
-            stats.SolA8.ToString();
+            stats.solA8.ToString();
 
         TxtTotalG8.Text =
-            stats.SolG8.ToString();
+            stats.solG8.ToString();
+
+        TxtTotalPublicadores.Text =
+            stats.totalPublicadores.ToString();
+
+        TxtTotalHombres.Text =
+            stats.hombres.ToString();
+
+        TxtTotalMujeres.Text =
+            stats.mujeres.ToString();
+
+        TxtTotalNoBautizados.Text =
+            stats.noBautizados.ToString();
+
+        TxtTotalBetel.Text =
+            stats.betel.ToString();
+
+        TxtMediaEdad.Text =
+            stats.mediaEdad;
+
+        TxtTotalCursos.Text =
+            stats.extra.CursosUltimoMes.ToString();
+
+        TxtMediaPrecAux.Text =
+            stats.extra.MediaPrecursoresAuxiliares
+                .ToString("0.#");
+    }
+
+
+    private static bool ContieneTexto(
+        string? texto,
+        string valor)
+    {
+        return
+            !string.IsNullOrWhiteSpace(texto)
+            &&
+            texto.Contains(
+                valor,
+                StringComparison.OrdinalIgnoreCase);
     }
 
     private void MostrarSinBaseDatos()
@@ -379,6 +733,120 @@ public partial class InicioPage : ContentPage
         return
             $"Del {lunes:dd-MMM} al {domingo:dd-MMM}"
                 .ToLower();
+    }
+
+    private async void BtnAlertas_Click(
+        object sender,
+        EventArgs e)
+    {
+        await Navigation.PushAsync(
+            new AlertasPage());
+    }
+
+    private async void Campana_Tapped(
+        object sender,
+        TappedEventArgs e)
+    {
+        await Navigation.PushAsync(
+            new AlertasPage());
+    }
+
+    private async void BtnVerVisitaInicio_Click(
+        object sender,
+        EventArgs e)
+    {
+        if (_semanaActual is null)
+        {
+            return;
+        }
+
+        await Navigation.PushAsync(new VisitaDetallePage(
+                    _semanaActual));
+    }
+
+
+    private async Task CargarProximaActividadAsync(
+        DateTime martesDeEstaSemana)
+    {
+        try
+        {
+            _proximaActividad =
+                await Task.Run(() =>
+                    DatabaseHelper.ObtenerProximaActividad(
+                        martesDeEstaSemana));
+
+            if (_proximaActividad is null)
+            {
+                LblProximaActividad.IsVisible =
+                    false;
+
+                return;
+            }
+
+            LblProximaActividad.Text =
+                "Próxima: " +
+                TextoActividadProxima(
+                    _proximaActividad);
+
+            LblProximaActividad.IsVisible =
+                true;
+        }
+        catch
+        {
+            LblProximaActividad.IsVisible =
+                false;
+        }
+    }
+
+
+    private static string TextoActividadProxima(
+        SemanaCalendario semana)
+    {
+        string actividad =
+            semana.Actividad?.Trim() ?? "";
+
+        if (string.Equals(
+                actividad,
+                "Visita",
+                StringComparison.OrdinalIgnoreCase)
+            && !string.IsNullOrWhiteSpace(
+                semana.Congregacion))
+        {
+            actividad =
+                "Visita · " + semana.Congregacion;
+        }
+        else if (string.Equals(
+                actividad,
+                "Asamblea de circuito",
+                StringComparison.OrdinalIgnoreCase)
+            && !string.IsNullOrWhiteSpace(
+                semana.SeccionAsamblea))
+        {
+            actividad =
+                "Asamblea de circuito · Sección " +
+                semana.SeccionAsamblea;
+        }
+
+        return actividad + " (" +
+            semana.RangoFechas.ToLower() + ")";
+    }
+
+
+    private async void ProximaActividad_Tapped(
+        object sender,
+        TappedEventArgs e)
+    {
+        if (_proximaActividad is null)
+        {
+            return;
+        }
+
+        CalendarioPage.SemanaDestacadaPendiente =
+            _proximaActividad.FechaMartes
+                .ToString("yyyy-MM-dd");
+
+        await Shell.Current.GoToAsync(
+            "//Calendario");
     }
 
     private async void TarjetaEstadistica_Tapped(

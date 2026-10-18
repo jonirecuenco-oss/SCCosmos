@@ -1,0 +1,97 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.ParteSesionPrecursoresEdicionPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Parte de la sesión"
+    BackgroundColor="#101216">
+
+    <Grid RowDefinitions="*,Auto">
+
+        <ScrollView Grid.Row="0">
+            <VerticalStackLayout Padding="20,16,20,24"
+                                 Spacing="14">
+
+                <Border BackgroundColor="{StaticResource Superficie}"
+                        Stroke="{StaticResource Borde}"
+                        Padding="16">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="16" />
+                    </Border.StrokeShape>
+
+                    <VerticalStackLayout Spacing="12">
+
+                        <Label Text="PARTE"
+                               Style="{StaticResource Antetitulo}"
+                               CharacterSpacing="1" />
+
+                        <Label Text="Hora"
+                               TextColor="#9299A3"
+                               FontSize="12" />
+                        <Entry x:Name="TxtHora"
+                               Placeholder="16:00"
+                               TextColor="White" />
+
+                        <Label Text="Título"
+                               TextColor="#9299A3"
+                               FontSize="12" />
+                        <Entry x:Name="TxtTitulo"
+                               TextColor="White" />
+
+                        <Label Text="Asignado"
+                               TextColor="#9299A3"
+                               FontSize="12" />
+                        <Picker x:Name="PickerAsignado"
+                                Title="(Sin asignar)"
+                                TextColor="White"
+                                ItemDisplayBinding="{Binding NombreMostrarTabla}" />
+
+                        <Label Text="Participantes"
+                               TextColor="#9299A3"
+                               FontSize="12" />
+                        <Entry x:Name="TxtParticipantes"
+                               TextColor="White" />
+
+                        <Label Text="Tipo"
+                               TextColor="#9299A3"
+                               FontSize="12" />
+                        <Entry x:Name="TxtTipo"
+                               TextColor="White" />
+
+                    </VerticalStackLayout>
+                </Border>
+
+                <Button x:Name="BtnEliminar"
+                        Text="Eliminar parte"
+                        Clicked="BtnEliminar_Clicked"
+                        BackgroundColor="#3A2023"
+                        TextColor="#FFB7BC"
+                        CornerRadius="10"
+                        HeightRequest="48"
+                        IsVisible="False" />
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <Grid Grid.Row="1"
+              ColumnDefinitions="*,*"
+              ColumnSpacing="10"
+              Padding="18,10,18,16"
+              BackgroundColor="{StaticResource Superficie}">
+
+            <Button Grid.Column="0"
+                    Text="Cancelar"
+                    BackgroundColor="#30343B"
+                    Clicked="BtnCancelar_Clicked" />
+
+            <Button Grid.Column="1"
+                    Text="Guardar"
+                    BackgroundColor="#2478B5"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    Clicked="BtnGuardar_Clicked" />
+
+        </Grid>
+
+    </Grid>
+</ContentPage>
