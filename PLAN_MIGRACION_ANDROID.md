@@ -1655,3 +1655,34 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   - Windows en vivo: con cambios pendientes reales, al cerrar la ventana el archivo de cambios de
     la carpeta se reescribió en ese mismo instante (mtime del cierre) y la app se cerró en ~0,5 s ✓.
   - Emulador: ciclo Inicio → segundo plano → reabrir → cerrar sin excepciones en `logcat` ✓.
+
+### Publicación en GitHub y actualización desde la app (18/10, lote GitHub)
+
+- **Repositorios públicos** (cuenta `jonirecuenco-oss`): `SCCosmos` (Windows), `SCCosmos.Mobile`
+  (Android) y `SCCosmos.Compartido` (motor compartido, nuevo: antes vivía fuera de los repos y sin
+  él no compilan). Todo el trabajo pendiente quedó subido con su mensaje de cambios.
+- **Release v1.0.0** en `jonirecuenco-oss/SCCosmos` con los dos archivos que la app usa para
+  actualizarse: `SCCosmos-android.apk` (arm64) y `SCCosmos-windows.zip` (app de Windows compilada).
+- **Motor compartido** (`SincroCompartido\ActualizadorSccosmos.cs`): número de versión de la app
+  (`VersionApp`), consulta de la última versión publicada en GitHub (`releases/latest`, sin cuenta ni
+  token: el proyecto es público), comparación de versiones y descarga con progreso.
+- **Windows** (`ActualizacionPc`): sección «Versión y actualizaciones» en Configuración (versión
+  instalada, interruptor «Actualizar automáticamente», botón «Buscar actualizaciones»). Al arrancar
+  comprueba en segundo plano (a los ~15 s): si hay versión nueva pregunta (o, con el interruptor
+  activado, descarga en silencio y la deja preparada). Al cerrar la app, un pequeño actualizador
+  espera a que termine, copia los archivos nuevos (`robocopy`) y la vuelve a abrir.
+- **Android** (`ActualizacionMobileService`): misma sección en Configuración y misma comprobación al
+  abrir Inicio (~10 s). Descarga el APK y abre el instalador del sistema
+  (`REQUEST_INSTALL_PACKAGES` + FileProvider); Android pide permiso la primera vez («instalar apps
+  desconocidas») y muestra su confirmación (y el aviso de Play Protect, normal al instalar fuera de
+  la tienda).
+- **Publicar una versión nueva**: `Herramientas\publicar_version.ps1 -Version 1.0.1 -Notas "..."`.
+  Actualiza el número de versión, compila el APK y el ZIP, sube los tres repos y crea el release con
+  las notas y los archivos (lee la credencial de GitHub del Administrador de credenciales).
+- **Verificado**:
+  - Windows de punta a punta: se puso la etiqueta temporal v9.9.9 al release → la app avisó al
+    arrancar, se aceptó, descargó 87 MB, se cerró, se reemplazó y **se volvió a abrir sola** ✓.
+  - Android de punta a punta (emulador): «Estás al día (v1.0.0)» ✓ → con v9.9.9 avisó, descargó
+    62,5 MB, abrió el instalador, se concedió el permiso una vez y la actualización quedó
+    **instalada** (los datos se conservan) ✓.
+  - Después se devolvió la etiqueta del release a v1.0.0.
