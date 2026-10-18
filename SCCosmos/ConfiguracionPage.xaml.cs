@@ -223,7 +223,7 @@ namespace SCCosmos
 
             TxtCodigoPerfil.Password =
                 datos.CodigoOk
-                    ? PerfilAcceso.CodigoCompleto
+                    ? PerfilAcceso.MarcadorCodigo
                     : "";
 
             ActualizarPanelCodigoPerfil();
@@ -309,8 +309,20 @@ namespace SCCosmos
 
                 if (PerfilAcceso.EsHombre)
                 {
-                    PerfilAcceso.ValidarCodigo(
-                        TxtCodigoPerfil.Password);
+                    string escrito =
+                        (TxtCodigoPerfil.Password ?? "")
+                            .Trim();
+
+                    // El marcador significa "ya validado": no se vuelve
+                    // a comprobar (el código real ya no se muestra).
+                    if (!string.Equals(
+                            escrito,
+                            PerfilAcceso.MarcadorCodigo,
+                            StringComparison.Ordinal))
+                    {
+                        PerfilAcceso.ValidarCodigo(
+                            escrito);
+                    }
                 }
 
                 ActualizarEstadoPerfil();
@@ -319,10 +331,8 @@ namespace SCCosmos
                     ?.AplicarPerfilAcceso();
 
                 bool codigoEspecial =
-                    string.Equals(
-                        (TxtCodigoPerfil.Password ?? "").Trim(),
-                        PerfilAcceso.CodigoDescargas,
-                        StringComparison.OrdinalIgnoreCase);
+                    PerfilAcceso.CodigoEsDescargas(
+                        TxtCodigoPerfil.Password);
 
                 MessageBox.Show(
                     PerfilAcceso.AccesoCompleto

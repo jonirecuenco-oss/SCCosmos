@@ -2,6 +2,8 @@ using System;
 using System.IO;
 using System.Text.Json;
 
+using SCCosmos.Sincro;
+
 namespace SCCosmos
 {
     // =====================================================================
@@ -17,13 +19,44 @@ namespace SCCosmos
 
     public static class PerfilAcceso
     {
-        public const string CodigoCompleto = "CODIGO_OCULTO";
+        // Los códigos de acceso no se guardan en claro: solo su
+        // verificación (PBKDF2-SHA256 con sal aleatoria). Así no aparecen
+        // en el código publicado en GitHub.
+        private const string SalCompleto =
+            "9I02tLJEMceNsOEBrGjH4A==";
+
+        private const string ClaveCompleto =
+            "iFarzSpfFX4MVfyEKpLLh6IYB+JS0g8GE+1x4bQDeQs=";
+
+        private const string SalDescargas =
+            "faU8Wp8KD8g1TE+DS1B7dw==";
+
+        private const string ClaveDescargas =
+            "WlvHNJAcrEgW5iYqyDBXWnIBGCN5FgJU9tbaaurpjYE=";
 
         /// <summary>
-        /// Código especial: da acceso completo y además activa para
-        /// siempre la página de Descargas (que si no, queda oculta).
+        /// Texto que se muestra en el campo del código cuando ya está
+        /// validado (el código real ya no se puede volver a mostrar).
         /// </summary>
-        public const string CodigoDescargas = "CODIGO_OCULTO_DESCARGAS";
+        public const string MarcadorCodigo =
+            "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022";
+
+        /// <summary>¿El código es el de acceso completo?</summary>
+        public static bool CodigoEsCompleto(string codigo) =>
+            CodigoAcceso.Verificar(
+                codigo,
+                SalCompleto,
+                ClaveCompleto);
+
+        /// <summary>
+        /// ¿El código es el especial, que además activa la página de
+        /// Descargas para siempre?
+        /// </summary>
+        public static bool CodigoEsDescargas(string codigo) =>
+            CodigoAcceso.Verificar(
+                codigo,
+                SalDescargas,
+                ClaveDescargas);
 
         public const string PerfilHombre = "Hombre";
         public const string PerfilEsposa = "Esposa";
@@ -150,21 +183,15 @@ namespace SCCosmos
             string limpio =
                 (codigo ?? "").Trim();
 
+            bool esDescargas =
+                CodigoEsDescargas(limpio);
+
             datos.CodigoOk =
-                string.Equals(
-                    limpio,
-                    CodigoCompleto,
-                    StringComparison.OrdinalIgnoreCase)
-                || string.Equals(
-                    limpio,
-                    CodigoDescargas,
-                    StringComparison.OrdinalIgnoreCase);
+                esDescargas
+                || CodigoEsCompleto(limpio);
 
             // El código especial activa la página de Descargas para siempre.
-            if (string.Equals(
-                    limpio,
-                    CodigoDescargas,
-                    StringComparison.OrdinalIgnoreCase))
+            if (esDescargas)
             {
                 datos.DescargasActivadas =
                     true;
