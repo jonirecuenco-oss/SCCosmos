@@ -1,0 +1,510 @@
+<Page x:Class="SCCosmos.RscPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:local="clr-namespace:SCCosmos"
+      Title="RscPage" Background="#1E1E1E">
+
+    <Grid Background="Transparent">
+
+        <!-- ============================================================ -->
+        <!-- VISTA PRINCIPAL: LISTA Y BUSCADOR POR DÍA                    -->
+        <!-- ============================================================ -->
+        <Grid Margin="30">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Cabecera -->
+            <Grid Grid.Row="0" Margin="0,0,0,18">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel>
+                    <TextBlock Text="RSC" FontSize="26" FontWeight="SemiBold" Foreground="White"/>
+                    <TextBlock Text="Reuniones para el Servicio del Campo · asistentes, arreglos y grupos de predicación"
+                               FontSize="13" Foreground="#8A9199" Margin="0,4,0,0"/>
+                </StackPanel>
+
+                <ui:Button Grid.Column="1"
+                           Content="＋ Nueva RSC"
+                           VerticalAlignment="Center"
+                           AutomationProperties.Name="Nueva RSC"
+                           Click="BtnNuevaRsc_Click"/>
+            </Grid>
+
+            <!-- Filtro por día -->
+            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,14">
+                <TextBlock Text="Ver un día:"
+                           Foreground="#AAAAAA"
+                           VerticalAlignment="Center"
+                           Margin="0,0,10,0"/>
+
+                <DatePicker x:Name="PckFiltroDia"
+                            Width="170"
+                            Padding="5"
+                            Background="#1E1E1E"
+                            Foreground="White"
+                            BorderBrush="#444"
+                            SelectedDateChanged="PckFiltroDia_SelectedDateChanged"/>
+
+                <ui:Button x:Name="BtnVerTodas"
+                           Content="Ver todas"
+                           Appearance="Secondary"
+                           Padding="12,6"
+                           Margin="10,0,0,0"
+                           Cursor="Hand"
+                           Click="BtnVerTodas_Click"/>
+
+                <TextBlock x:Name="TxtInfoFiltro"
+                           Foreground="#7E858F"
+                           FontSize="12"
+                           VerticalAlignment="Center"
+                           Margin="14,0,0,0"/>
+            </StackPanel>
+
+            <!-- Lista de RSC -->
+            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                <StackPanel x:Name="PanelReuniones" Margin="0,0,8,20"/>
+            </ScrollViewer>
+        </Grid>
+
+        <!-- ============================================================ -->
+        <!-- EDITOR (PÁGINA COMPLETA)                                     -->
+        <!-- ============================================================ -->
+        <Grid x:Name="OverlayEditor"
+              Background="#0F1114"
+              Visibility="Collapsed">
+
+            <Border Background="#171A20"
+                    BorderBrush="#2A2F38"
+                    BorderThickness="0"
+                    CornerRadius="0"
+                    Margin="0"
+                    Padding="22,18,22,18">
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Cabecera del editor -->
+                    <Grid Grid.Row="0" Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <ui:Button Grid.Column="0"
+                                   Content="← Volver"
+                                   Appearance="Secondary"
+                                   Padding="14,8"
+                                   Cursor="Hand"
+                                   AutomationProperties.Name="Volver del editor RSC"
+                                   Click="BtnVolverEditor_Click"
+                                   Margin="0,0,16,0"/>
+
+                        <TextBlock Grid.Column="1"
+                                   x:Name="TxtTituloEditor"
+                                   FontSize="20"
+                                   FontWeight="SemiBold"
+                                   Foreground="White"
+                                   VerticalAlignment="Center"
+                                   TextWrapping="Wrap"/>
+
+                        <ui:Button Grid.Column="2"
+                                   Content="Eliminar RSC"
+                                   Appearance="Secondary"
+                                   Padding="12,6"
+                                   Cursor="Hand"
+                                   AutomationProperties.Name="Eliminar RSC"
+                                   Click="BtnEliminarRsc_Click"/>
+                    </Grid>
+
+                    <!-- Arreglos ya apuntados en el programa de la visita -->
+                    <Border Grid.Row="1"
+                            x:Name="BordeArreglos"
+                            Background="#141B24"
+                            BorderBrush="#2C4257"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Padding="12,9"
+                            Margin="0,0,0,10"
+                            Visibility="Collapsed">
+                        <StackPanel>
+                            <TextBlock Text="ARREGLOS YA APUNTADOS EN EL PROGRAMA DE LA VISITA"
+                                       FontSize="11"
+                                       FontWeight="SemiBold"
+                                       Foreground="#7FA6C6"/>
+                            <StackPanel x:Name="PanelArreglosDetectados" Margin="0,6,0,0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Contenido -->
+                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="0,0,8,24">
+
+                            <!-- Asistentes -->
+                            <Grid Margin="0,4,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="ASISTENTES A LA RSC"
+                                               FontSize="14"
+                                               FontWeight="SemiBold"
+                                               Foreground="#8FB8E0"/>
+                                    <TextBlock x:Name="TxtContadorAsistentes"
+                                               Foreground="#7E858F"
+                                               Margin="12,1,0,0"
+                                               FontSize="13"/>
+                                </StackPanel>
+
+                                <ui:Button Grid.Column="1"
+                                           Content="＋ Añadir personas"
+                                           Appearance="Secondary"
+                                           Padding="12,6"
+                                           Cursor="Hand"
+                                           AutomationProperties.Name="Añadir personas"
+                                           Click="BtnAnadirPersonas_Click"/>
+                            </Grid>
+
+                            <StackPanel x:Name="PanelAsistentes"/>
+
+                            <TextBlock x:Name="TxtSinAsistentes"
+                                       Text="Todavía no hay nadie. Pulsa «＋ Añadir personas» para marcar quién asistió a la RSC."
+                                       Foreground="#7E858F"
+                                       Margin="0,6,0,0"
+                                       TextWrapping="Wrap"/>
+
+                            <!-- Grupos -->
+                            <Grid Margin="0,22,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Text="GRUPOS DE PREDICACIÓN"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
+                                           Foreground="#8FB8E0"
+                                           VerticalAlignment="Center"/>
+
+                                <ui:Button Grid.Column="1"
+                                           Content="⚙ Formar grupos"
+                                           Padding="14,6"
+                                           Cursor="Hand"
+                                           AutomationProperties.Name="Formar grupos"
+                                           Click="BtnFormarGrupos_Click"/>
+                            </Grid>
+
+                            <TextBlock x:Name="TxtResumenGrupos"
+                                       Foreground="#7E858F"
+                                       FontSize="13"
+                                       Margin="0,0,0,8"/>
+
+                            <TextBlock x:Name="TxtAvisosGrupos"
+                                       Foreground="#E8B25A"
+                                       FontSize="13"
+                                       TextWrapping="Wrap"
+                                       Margin="0,0,0,8"
+                                       Visibility="Collapsed"/>
+
+                            <StackPanel x:Name="PanelGrupos"/>
+
+                            <TextBlock x:Name="TxtSinGrupos"
+                                       Text="Los grupos aparecerán aquí. Marca primero quién asiste y sale a predicar, y pulsa «⚙ Formar grupos»."
+                                       Foreground="#7E858F"
+                                       Margin="0,6,0,0"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ============================================================ -->
+        <!-- MODAL: NUEVA RSC                                             -->
+        <!-- ============================================================ -->
+        <Grid x:Name="OverlayNuevaRsc"
+              Background="#CC090B0E"
+              Visibility="Collapsed">
+
+            <Border Background="#171A20"
+                    BorderBrush="#2A2F38"
+                    BorderThickness="1"
+                    CornerRadius="14"
+                    MaxWidth="520"
+                    MaxHeight="640"
+                    Margin="60,40"
+                    Padding="22"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center">
+
+                <StackPanel>
+                    <TextBlock Text="Nueva RSC"
+                               FontSize="20"
+                               FontWeight="SemiBold"
+                               Foreground="White"
+                               Margin="0,0,0,4"/>
+                    <TextBlock Text="Una reunión breve antes de salir a predicar."
+                               Foreground="#8A9199"
+                               FontSize="12"
+                               Margin="0,0,0,16"/>
+
+                    <TextBlock Text="Día" Foreground="#AAAAAA" Margin="0,0,0,6"/>
+                    <DatePicker x:Name="PckFechaNueva"
+                                Padding="5"
+                                Background="#1E1E1E"
+                                Foreground="White"
+                                BorderBrush="#444"
+                                Margin="0,0,0,14"/>
+
+                    <TextBlock Text="Turno" Foreground="#AAAAAA" Margin="0,0,0,6"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                        <RadioButton x:Name="RadTurnoManana"
+                                     Content="Mañana"
+                                     Foreground="White"
+                                     IsChecked="True"
+                                     Margin="0,0,20,0"/>
+                        <RadioButton x:Name="RadTurnoTarde"
+                                     Content="Tarde"
+                                     Foreground="White"/>
+                    </StackPanel>
+
+                    <TextBlock Text="Congregación" Foreground="#AAAAAA" Margin="0,0,0,6"/>
+                    <ComboBox x:Name="CmbCongNueva"
+                              Padding="8"
+                              Background="#1E1E1E"
+                              Foreground="White"
+                              BorderBrush="#444"
+                              Margin="0,0,0,20"/>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <ui:Button Content="Cancelar"
+                                   Appearance="Secondary"
+                                   Padding="16,8"
+                                   Margin="0,0,10,0"
+                                   Cursor="Hand"
+                                   Click="BtnCancelarNueva_Click"/>
+                        <ui:Button Content="Crear y preparar"
+                                   Padding="16,8"
+                                   Cursor="Hand"
+                                   AutomationProperties.Name="Crear RSC"
+                                   Click="BtnCrearNueva_Click"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- ============================================================ -->
+        <!-- MODAL: ELEGIR PERSONAS                                       -->
+        <!-- ============================================================ -->
+        <Grid x:Name="OverlayElegirPersonas"
+              Background="#CC090B0E"
+              Visibility="Collapsed">
+
+            <Border Background="#171A20"
+                    BorderBrush="#2A2F38"
+                    BorderThickness="1"
+                    CornerRadius="14"
+                    MaxWidth="620"
+                    MaxHeight="720"
+                    Margin="60,40"
+                    Padding="22"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center">
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Margin="0,0,0,10">
+                        <TextBlock Text="Añadir asistentes a la RSC"
+                                   FontSize="20"
+                                   FontWeight="SemiBold"
+                                   Foreground="White"/>
+                        <TextBlock x:Name="TxtSubtituloPicker"
+                                   Foreground="#8A9199"
+                                   FontSize="12"
+                                   Margin="0,3,0,0"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="1" x:Name="PanelPinnedPersonas" Margin="0,0,0,10"/>
+
+                    <TextBox Grid.Row="2"
+                             x:Name="TxtBuscarPersona"
+                             Padding="8"
+                             Background="#1E1E1E"
+                             Foreground="White"
+                             BorderBrush="#444"
+                             CaretBrush="White"
+                             Margin="0,0,0,10"
+                             TextChanged="TxtBuscarPersona_TextChanged"/>
+
+                    <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto" Margin="0,0,6,0">
+                        <StackPanel x:Name="PanelListaPersonas"/>
+                    </ScrollViewer>
+
+                    <StackPanel Grid.Row="4"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                Margin="0,14,0,0">
+                        <ui:Button Content="Cancelar"
+                                   Appearance="Secondary"
+                                   Padding="16,8"
+                                   Margin="0,0,10,0"
+                                   Cursor="Hand"
+                                   Click="BtnCancelarPicker_Click"/>
+                        <ui:Button Content="Añadir seleccionadas"
+                                   Padding="16,8"
+                                   Cursor="Hand"
+                                   AutomationProperties.Name="Añadir seleccionadas"
+                                   Click="BtnAnadirSeleccionadas_Click"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ============================================================ -->
+        <!-- MODAL: ARREGLO DE UNA PERSONA                                -->
+        <!-- ============================================================ -->
+        <Grid x:Name="OverlayArreglo"
+              Background="#CC090B0E"
+              Visibility="Collapsed">
+
+            <Border Background="#171A20"
+                    BorderBrush="#2A2F38"
+                    BorderThickness="1"
+                    CornerRadius="14"
+                    MaxWidth="540"
+                    MaxHeight="600"
+                    Margin="60,40"
+                    Padding="22"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center">
+
+                <StackPanel>
+                    <TextBlock x:Name="TxtArregloPersona"
+                               FontSize="19"
+                               FontWeight="SemiBold"
+                               Foreground="White"
+                               Margin="0,0,0,4"/>
+                    <TextBlock Text="¿Va a predicar con alguien en concreto ese día? Puede ser con varias personas."
+                               Foreground="#8A9199"
+                               FontSize="12"
+                               Margin="0,0,0,14"/>
+
+                    <TextBlock Text="Va con:" Foreground="#AAAAAA" Margin="0,0,0,6"/>
+                    <ScrollViewer MaxHeight="220"
+                                  VerticalScrollBarVisibility="Auto"
+                                  Margin="0,0,0,14">
+                        <StackPanel x:Name="PanelArregloCon"/>
+                    </ScrollViewer>
+
+                    <Border Background="#12151B"
+                            CornerRadius="8"
+                            Padding="12,10"
+                            Margin="0,0,0,16">
+                        <StackPanel>
+                            <ui:ToggleSwitch x:Name="TogAceptaGrupo"
+                                             Content="Puede ir en un grupo más grande"
+                                             IsChecked="True"/>
+                            <TextBlock Text="Si lo desactivas, ese grupo de arreglo irá aparte, sin juntarse con más hermanos."
+                                       Foreground="#7E858F"
+                                       FontSize="12"
+                                       TextWrapping="Wrap"
+                                       Margin="0,8,0,0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <ui:Button Content="Quitar arreglo"
+                                   Appearance="Secondary"
+                                   Padding="14,8"
+                                   Margin="0,0,10,0"
+                                   Cursor="Hand"
+                                   Click="BtnQuitarArreglo_Click"/>
+                        <ui:Button Content="Cancelar"
+                                   Appearance="Secondary"
+                                   Padding="14,8"
+                                   Margin="0,0,10,0"
+                                   Cursor="Hand"
+                                   Click="BtnCancelarArreglo_Click"/>
+                        <ui:Button Content="Guardar"
+                                   Padding="16,8"
+                                   Cursor="Hand"
+                                   AutomationProperties.Name="Guardar arreglo"
+                                   Click="BtnGuardarArreglo_Click"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- ============================================================ -->
+        <!-- MODAL: MOVER A OTRO GRUPO                                    -->
+        <!-- ============================================================ -->
+        <Grid x:Name="OverlayMover"
+              Background="#CC090B0E"
+              Visibility="Collapsed">
+
+            <Border Background="#171A20"
+                    BorderBrush="#2A2F38"
+                    BorderThickness="1"
+                    CornerRadius="14"
+                    MaxWidth="460"
+                    MaxHeight="620"
+                    Margin="60,40"
+                    Padding="22"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center">
+
+                <StackPanel>
+                    <TextBlock x:Name="TxtMoverPersona"
+                               FontSize="19"
+                               FontWeight="SemiBold"
+                               Foreground="White"
+                               Margin="0,0,0,4"/>
+                    <TextBlock Text="¿A qué grupo quieres moverla?"
+                               Foreground="#8A9199"
+                               FontSize="12"
+                               Margin="0,0,0,14"/>
+
+                    <ScrollViewer MaxHeight="360" VerticalScrollBarVisibility="Auto">
+                        <StackPanel x:Name="PanelMoverRadios" Margin="0,0,6,0"/>
+                    </ScrollViewer>
+
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                Margin="0,16,0,0">
+                        <ui:Button Content="Cancelar"
+                                   Appearance="Secondary"
+                                   Padding="14,8"
+                                   Margin="0,0,10,0"
+                                   Cursor="Hand"
+                                   Click="BtnCancelarMover_Click"/>
+                        <ui:Button Content="Mover"
+                                   Padding="16,8"
+                                   Cursor="Hand"
+                                   AutomationProperties.Name="Confirmar mover"
+                                   Click="BtnConfirmarMover_Click"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</Page>

@@ -33,6 +33,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Motor de sincronización entre dispositivos (compartido con Android). -->
+    <Compile Include="..\..\SincroCompartido\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Page Include="App.xaml" />
   </ItemGroup>
 

@@ -9,7 +9,7 @@ using System.IO;
 
 namespace SCCosmos
 {
-    public static class DatabaseHelper
+    public static partial class DatabaseHelper
     {
 
         public static void BorrarPersonasYActividad()
@@ -65,13 +65,62 @@ namespace SCCosmos
             }
         }
 
+        private static bool _migracionBaseDatosHecha;
+
+        /// <summary>
+        /// La base de datos vive ahora dentro de la aplicación (datos locales
+        /// de este equipo). La sincronización entre dispositivos la hace el
+        /// motor de cambios, sin copiar el archivo por ninguna carpeta.
+        /// </summary>
+        public static string RutaBaseDatos
+        {
+            get
+            {
+                string carpeta = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "SCCosmos");
+
+                System.IO.Directory.CreateDirectory(carpeta);
+
+                string ruta = System.IO.Path.Combine(carpeta, "sccosmos.db");
+
+                if (!_migracionBaseDatosHecha)
+                {
+                    _migracionBaseDatosHecha = true;
+
+                    try
+                    {
+                        // Primera vez con el sistema nuevo: la base de la
+                        // carpeta compartida (si existe) se copia una sola
+                        // vez y a partir de ahí todo va por cambios.
+                        if (!System.IO.File.Exists(ruta))
+                        {
+                            string antigua = System.IO.Path.Combine(
+                                RutaDirectorioDatos,
+                                "sccosmos.db");
+
+                            if (System.IO.File.Exists(antigua))
+                            {
+                                System.IO.File.Copy(antigua, ruta, true);
+                            }
+                        }
+                    }
+                    catch
+                    {
+                    }
+                }
+
+                return ruta;
+            }
+        }
+
         private static string ConnectionString
         {
             get
             {
-                if (!System.IO.Directory.Exists(RutaDirectorioDatos)) System.IO.Directory.CreateDirectory(RutaDirectorioDatos);
-                string rutaDb = System.IO.Path.Combine(RutaDirectorioDatos, "sccosmos.db");
-                return $"Data Source={rutaDb}";
+                // Sin agrupación de conexiones (pooling): así la app no
+                // mantiene el archivo abierto entre operación y operación.
+                return $"Data Source={RutaBaseDatos};Pooling=False";
             }
         }
 
@@ -83,6 +132,11 @@ namespace SCCosmos
                 //BorrarPersonasYActividad();
                 CrearTablasPrincipales(connection);
                 AsegurarTablasAsambleasInterno(connection);
+                AsegurarTablaTareasInterno(connection);
+                AsegurarTablaRegistroActividad(connection);
+                AsegurarTablasEscuelasClasesInterno(connection);
+                AsegurarTablasEscuelasProgramaInterno(connection);
+                AsegurarTablasRscInterno(connection);
                 EjecutarMigracionesYParches(connection);
             }
         }
@@ -326,6 +380,8 @@ namespace SCCosmos
 
         public static void ActualizarPersona(Persona p)
         {
+            AnotarActividad("Personas", "Editó la ficha de «" + MostrarNombre(p) + "»");
+
             using (var connection = new SqliteConnection(ConnectionString))
             {
                 connection.Open();
@@ -770,6 +826,8 @@ namespace SCCosmos
 
         public static int InsertarPersonaNueva(Persona p)
         {
+            AnotarActividad("Personas", "Añadió la persona «" + MostrarNombre(p) + "»");
+
             using (var connection = new SqliteConnection(ConnectionString))
             {
                 connection.Open();
@@ -827,6 +885,12 @@ namespace SCCosmos
                 throw new InvalidOperationException("Un traslado debe realizarse entre congregaciones distintas.");
 
             string fecha = fechaTraslado.ToString("dd/MM/yyyy");
+
+            AnotarActividad(
+                "Personas",
+                "Registró el traslado de «" + MostrarNombre(personaAnterior) + "» (" +
+                personaAnterior.CongregacionCodigo + " → " +
+                personaHubNueva.CongregacionCodigo + ")");
 
             string Elegir(string preferido, string alternativo)
                 => !string.IsNullOrWhiteSpace(preferido) ? preferido : (alternativo ?? "");
@@ -1062,6 +1126,8 @@ namespace SCCosmos
 
         public static void EliminarPersona(int personaId)
         {
+            AnotarActividad("Personas", "Eliminó la ficha de «" + NombrePersonaPorId(personaId) + "»");
+
             using (var connection = new SqliteConnection(ConnectionString))
             {
                 connection.Open();
@@ -1096,6 +1162,8 @@ namespace SCCosmos
 
         public static void MarcarPersonaEliminada(int idPersona)
         {
+            AnotarActividad("Personas", "Dio de baja a «" + NombrePersonaPorId(idPersona) + "»");
+
             using (var connection = new SqliteConnection(ConnectionString))
             {
                 connection.Open();
@@ -1246,6 +1314,29 @@ namespace SCCosmos
             catch { }
 
             return lista;
+        }
+
+        // S-303 puede procesar varias decisiones de la misma persona.
+        // Borrar por nombre/congregación eliminaría también las pendientes.
+        // UrlDetalle identifica la recomendación concreta extraída de Hub.
+        public static void EliminarRecomendacionProcesada(RecomendacionHub recomendacion)
+        {
+            if (recomendacion == null || string.IsNullOrWhiteSpace(recomendacion.UrlDetalle))
+                throw new ArgumentException("La recomendación procesada debe tener URL de detalle.");
+
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                connection.Open();
+                var cmd = connection.CreateCommand();
+                cmd.CommandText = @"DELETE FROM RecomendacionesNombramientos
+                                    WHERE UrlDetalle = $url
+                                      AND Congregacion = $congre
+                                      AND Hermano = $hermano;";
+                cmd.Parameters.AddWithValue("$url", recomendacion.UrlDetalle);
+                cmd.Parameters.AddWithValue("$congre", recomendacion.Congregacion ?? "");
+                cmd.Parameters.AddWithValue("$hermano", recomendacion.Hermano ?? "");
+                cmd.ExecuteNonQuery();
+            }
         }
 
         public static void EliminarRecomendacion(string hermano, string congregacion)
@@ -1720,6 +1811,11 @@ namespace SCCosmos
 
         public static void GuardarActividadMensualEditada(int personaId, string mes, string anioServicio, string horas, bool participacion, string cursos, bool precAux, string notas)
         {
+            AnotarActividad(
+                "Personas",
+                "Registró la actividad de «" + NombrePersonaPorId(personaId) +
+                "» para " + mes + " de " + anioServicio);
+
             using (var connection = new SqliteConnection(ConnectionString))
             {
                 connection.Open();
@@ -1805,6 +1901,11 @@ namespace SCCosmos
 
         public static void EliminarActividadMensual(int personaId, string mes, string anioServicio)
         {
+            AnotarActividad(
+                "Personas",
+                "Quitó la actividad de «" + NombrePersonaPorId(personaId) +
+                "» de " + mes + " de " + anioServicio);
+
             using (var connection = new SqliteConnection(ConnectionString))
             {
                 connection.Open();
@@ -1896,6 +1997,8 @@ namespace SCCosmos
 
         public static void InsertarCongregacion(Congregacion cong)
         {
+            AnotarActividad("Circuito", "Añadió la congregación «" + (cong?.Nombre ?? cong?.Codigo ?? "") + "»");
+
             using (var connection = new SqliteConnection(ConnectionString))
             {
                 connection.Open();
@@ -1952,6 +2055,8 @@ namespace SCCosmos
 
         public static void EliminarCongregacion(string codigo)
         {
+            AnotarActividad("Circuito", "Eliminó la congregación «" + codigo + "»");
+
             using (var connection = new SqliteConnection(ConnectionString))
             {
                 connection.Open();
@@ -2142,6 +2247,43 @@ namespace SCCosmos
 
         #region 7. GESTIÓN DE CALENDARIO, SEMANAS Y VISITAS
 
+        public static List<SemanaCalendario> ObtenerTodasLasSemanas()
+        {
+            var list = new List<SemanaCalendario>();
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                connection.Open();
+                var cmd = connection.CreateCommand();
+                cmd.CommandText = "SELECT * FROM Semanas ORDER BY FechaMartes ASC, Id ASC";
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        list.Add(new SemanaCalendario
+                        {
+                            Id = Convert.ToInt32(reader["Id"]),
+                            FechaMartes = reader.GetDateTime(reader.GetOrdinal("FechaMartes")),
+                            Actividad = reader.IsDBNull(reader.GetOrdinal("Actividad")) ? "" : reader.GetString(reader.GetOrdinal("Actividad")),
+                            Congregacion = reader.IsDBNull(reader.GetOrdinal("Congregacion")) ? "" : reader.GetString(reader.GetOrdinal("Congregacion")),
+                            Tipo = reader.IsDBNull(reader.GetOrdinal("Tipo")) ? "" : reader.GetString(reader.GetOrdinal("Tipo")),
+                            Acompanante = reader.IsDBNull(reader.GetOrdinal("Acompanante")) ? "" : reader.GetString(reader.GetOrdinal("Acompanante")),
+                            Alojamiento = reader.IsDBNull(reader.GetOrdinal("Alojamiento")) ? "" : reader.GetString(reader.GetOrdinal("Alojamiento")),
+                            S302Enviado = !reader.IsDBNull(reader.GetOrdinal("S302Enviado")) && reader.GetInt32(reader.GetOrdinal("S302Enviado")) == 1,
+                            DocEnviada = !reader.IsDBNull(reader.GetOrdinal("DocEnviada")) && reader.GetInt32(reader.GetOrdinal("DocEnviada")) == 1,
+                            SeccionAsamblea = reader.IsDBNull(reader.GetOrdinal("SeccionAsamblea")) ? "" : reader.GetString(reader.GetOrdinal("SeccionAsamblea")),
+                            FechaAsamblea = reader.IsDBNull(reader.GetOrdinal("FechaAsamblea")) ? "" : reader.GetString(reader.GetOrdinal("FechaAsamblea")),
+                            NotificacionEnviada = !reader.IsDBNull(reader.GetOrdinal("NotificacionEnviada")) && reader.GetInt32(reader.GetOrdinal("NotificacionEnviada")) == 1,
+                            RecordatorioEnviado = !reader.IsDBNull(reader.GetOrdinal("RecordatorioEnviado")) && reader.GetInt32(reader.GetOrdinal("RecordatorioEnviado")) == 1,
+                            TieneDatosImportados = !reader.IsDBNull(reader.GetOrdinal("DatosImportados")) && reader.GetInt32(reader.GetOrdinal("DatosImportados")) == 1,
+                            EsClonada = Visibility.Collapsed
+                        });
+                    }
+                }
+            }
+            return list;
+        }
+
         public static List<SemanaCalendario> ObtenerTodasSemanasPorFecha(string fechaIso)
         {
             var list = new List<SemanaCalendario>();
@@ -2218,6 +2360,11 @@ namespace SCCosmos
 
         public static void GuardarSemana(SemanaCalendario semana)
         {
+            AnotarActividad(
+                "Calendario",
+                "Guardó la semana del " +
+                (semana?.FechaMartes.ToString("dd/MM/yyyy") ?? ""));
+
             using (var connection = new SqliteConnection(ConnectionString))
             {
                 connection.Open();
@@ -2482,6 +2629,11 @@ namespace SCCosmos
 
         public static void GuardarNotasVisita(int semanaId, List<NotaVisita> notas)
         {
+            AnotarActividad(
+                "Visitas",
+                "Guardó las notas de la visita (semana del " +
+                FechaSemanaPorId(semanaId) + ")");
+
             using (var connection = new SqliteConnection(ConnectionString))
             {
                 connection.Open();
@@ -2509,6 +2661,8 @@ namespace SCCosmos
         public static void ActualizarNotaVisitaUnica(NotaVisita nota)
         {
             if (nota.Id == 0) return;
+
+            AnotarActividad("Visitas", "Editó una nota de la visita");
             using (var connection = new SqliteConnection(ConnectionString))
             {
                 connection.Open();
@@ -2601,6 +2755,14 @@ namespace SCCosmos
             string notasLibro,
             int companeroId)
         {
+            AnotarActividad(
+                "Visitas",
+                "Añadió " +
+                (string.IsNullOrWhiteSpace(tipoActividad)
+                    ? "una actividad"
+                    : "«" + tipoActividad + "»") +
+                $" al programa de la visita ({dia}, {turno})");
+
             GuardarActividadPrograma(
                 congreCodigo,
                 mesReferenciaStr,
@@ -2694,6 +2856,8 @@ namespace SCCosmos
             double latitud,
             double longitud)
         {
+            AnotarActividad("Visitas", "Editó una actividad del programa de la visita");
+
             using (var connection = new SqliteConnection(ConnectionString))
             {
                 connection.Open();
@@ -2798,6 +2962,8 @@ namespace SCCosmos
         public static void EliminarActividadPrograma(
             int actividadId)
         {
+            AnotarActividad("Visitas", "Eliminó una actividad del programa de la visita");
+
             using (var connection = new SqliteConnection(ConnectionString))
             {
                 connection.Open();
@@ -3122,6 +3288,11 @@ namespace SCCosmos
 
         public static void GuardarContabilidad(string congreCodigo, string mesReferencia, ContabilidadMes datos)
         {
+            AnotarActividad(
+                "Visitas",
+                "Guardó la contabilidad de " + congreCodigo +
+                " (" + mesReferencia + ")");
+
             using (var connection = new SqliteConnection(ConnectionString))
             {
                 connection.Open();
@@ -3543,6 +3714,11 @@ namespace SCCosmos
 
         public static void GuardarTerritoriosImportados(string congreCodigo, List<TerritorioJSON> territorios)
         {
+            AnotarActividad(
+                "Visitas",
+                "Importó " + (territorios?.Count ?? 0) +
+                " territorios de " + congreCodigo);
+
             using (var connection = new SqliteConnection(ConnectionString))
             {
                 connection.Open();

@@ -73,6 +73,14 @@ namespace SCCosmos
             DatosPotencial = new ObservableCollection<HermanoPotencial>();
             DatosProblemas = new ObservableCollection<ProblemaPendiente>();
 
+            this.Loaded += ArchivoCircuitoPage_Loaded;
+        }
+
+        private async void ArchivoCircuitoPage_Loaded(object sender, RoutedEventArgs e)
+        {
+            // Dejar que la página se pinte antes de cargar los datos.
+            await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background);
+
             CargarVFS();
             CargarDesplegables();
         }

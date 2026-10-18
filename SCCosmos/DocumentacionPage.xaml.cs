@@ -42,6 +42,14 @@ namespace SCCosmos
 
             this.DataContext = this;
 
+            this.Loaded += DocumentacionPage_Loaded;
+        }
+
+        private async void DocumentacionPage_Loaded(object sender, RoutedEventArgs e)
+        {
+            // Dejar que la página se pinte antes de cargar los datos.
+            await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background);
+
             // Crea/migra una sola vez las variables que antes estaban fijas en código.
             DatabaseHelper.InicializarVariablesCorrespondencia();
             DatabaseHelper.MigrarDocumentosLegacyABlob();

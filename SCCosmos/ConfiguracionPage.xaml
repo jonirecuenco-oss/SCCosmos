@@ -21,6 +21,30 @@
             <StackPanel>
 
                 <!-- ========================================================= -->
+                <!-- PERFIL DE USUARIO (POR EQUIPO)                            -->
+                <!-- ========================================================= -->
+                <TextBlock Text="👤 PERFIL DE USUARIO (solo este equipo)" FontSize="15" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                <ui:Card Padding="20" Margin="0,0,0,25">
+                    <StackPanel>
+                        <TextBlock Text="¿Quién usa este equipo? Solo el superintendente, con el código correcto, accede a todas las funciones. En caso contrario solo estarán Inicio, Calendario, Personas y Configuración." Foreground="#AAAAAA" FontSize="13" Margin="0,0,0,12" TextWrapping="Wrap"/>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Perfil:" Foreground="#CCC" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <ComboBox x:Name="CmbPerfilUsuario" Width="150" SelectedIndex="0" SelectionChanged="CmbPerfilUsuario_SelectionChanged">
+                                <ComboBoxItem>Hombre</ComboBoxItem>
+                                <ComboBoxItem>Esposa</ComboBoxItem>
+                            </ComboBox>
+                            <StackPanel x:Name="PanelCodigoPerfil" Orientation="Horizontal" Visibility="Collapsed">
+                                <TextBlock Text="Código:" Foreground="#CCC" VerticalAlignment="Center" Margin="18,0,8,0"/>
+                                <PasswordBox x:Name="TxtCodigoPerfil" Width="150" Background="#1E1E1E" Foreground="White" BorderBrush="#444" Padding="6"/>
+                            </StackPanel>
+                            <Button Content="Guardar perfil" Click="BtnGuardarPerfil_Click" Margin="18,0,0,0" Padding="14,6" Background="#2478B5" Foreground="White" BorderThickness="0"/>
+                        </StackPanel>
+                        <TextBlock x:Name="TxtEstadoPerfil" Foreground="#EAC18B" FontSize="12" Margin="0,10,0,0" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </ui:Card>
+
+                <!-- ========================================================= -->
                 <!-- BLOQUE 1: CONFIGURACIÓN GLOBAL (VIAJA POR LA NUBE/BBDD)   -->
                 <!-- ========================================================= -->
                 <TextBlock Text="🌐 GLOBAL (Sincronizado en todos tus dispositivos)" FontSize="15" FontWeight="Bold" Margin="0,0,0,10"/>
@@ -52,17 +76,17 @@
                                 </Grid.ColumnDefinitions>
 
                                 <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Nº de Circuito" Foreground="#CCC" Margin="0,0,0,5"/>
+                                    <TextBlock x:Name="LblNumCircuito" Text="Nº de Circuito" Foreground="#CCC" Margin="0,0,0,5"/>
                                     <ui:TextBox x:Name="TxtNumCircuito" Background="#1E1E1E" Foreground="White" PlaceholderText="ESP-BA-01"/>
                                 </StackPanel>
                                 
                                 <StackPanel Grid.Column="2">
-                                    <TextBlock Text="Nombre del SC" Foreground="#CCC" Margin="0,0,0,5"/>
+                                    <TextBlock x:Name="LblNombreSC" Text="Nombre del SC" Foreground="#CCC" Margin="0,0,0,5"/>
                                     <ui:TextBox x:Name="TxtNombre" Background="#1E1E1E" Foreground="White"/>
                                 </StackPanel>
 
                                 <StackPanel Grid.Column="4">
-                                    <TextBlock Text="Apellido del SC" Foreground="#CCC" Margin="0,0,0,5"/>
+                                    <TextBlock x:Name="LblApellidoSC" Text="Apellido del SC" Foreground="#CCC" Margin="0,0,0,5"/>
                                     <ui:TextBox x:Name="TxtApellido" Background="#1E1E1E" Foreground="White"/>
                                 </StackPanel>
 
@@ -83,7 +107,7 @@
                 </ui:Card>
 
                 <!-- TARJETA: ARCHIVO DEL CIRCUITO -->
-                <ui:Card Padding="20" Margin="0,0,0,30">
+                <ui:Card x:Name="CardArchivoCircuito" Padding="20" Margin="0,0,0,30">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
@@ -111,7 +135,7 @@
                 <TextBlock Text="💻 LOCAL (Exclusivo de este PC)" FontSize="15" FontWeight="Bold" Margin="0,0,0,10"/>
 
                 <!-- TARJETA: VINCULACIÓN JW HUB -->
-                <ui:Card Padding="20" Margin="0,0,0,15">
+                <ui:Card x:Name="CardJwHub" Padding="20" Margin="0,0,0,15">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
@@ -138,16 +162,84 @@
                         </Grid.ColumnDefinitions>
                         <ui:SymbolIcon Grid.Column="0" Symbol="FolderSync24" FontSize="36" Margin="0,0,20,0" VerticalAlignment="Center" Foreground="#4CAF50"/>
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                            <TextBlock Text="Almacenamiento de la Base de Datos" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,5"/>
-                            <TextBlock Text="Ruta donde se guarda tu archivo de datos (sccosmos.db). Si usas varios ordenadores, establece esta ruta en una carpeta sincronizada (OneDrive, Google Drive, etc.)." Foreground="#AAAAAA" TextWrapping="Wrap" FontSize="13" Margin="0,0,0,10"/>
+                            <TextBlock Text="Base de datos y almacenamiento" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                            <TextBlock Text="La base de datos ahora vive dentro de la aplicación y se sincroniza sola entre tus dispositivos (nunca se sube a internet). Aquí puedes ver dónde está y elegir la carpeta general de archivos." Foreground="#AAAAAA" TextWrapping="Wrap" FontSize="13" Margin="0,0,0,10"/>
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <ui:TextBox x:Name="TxtRutaBaseDatos" Grid.Column="0" IsReadOnly="True" PlaceholderText="Cargando ruta..." Background="#1E1E1E" Foreground="White"/>
-                                <ui:Button Grid.Column="1" Content="Cambiar Ruta" Margin="10,0,0,0" Appearance="Secondary" Icon="{ui:SymbolIcon Folder24}" Click="BtnCambiarRuta_Click"/>
+                                <ui:Button Grid.Column="1" Content="Carpeta de archivos" Margin="10,0,0,0" Appearance="Secondary" Icon="{ui:SymbolIcon Folder24}" Click="BtnCambiarRuta_Click"/>
                             </Grid>
+                        </StackPanel>
+                    </Grid>
+                </ui:Card>
+
+                <!-- TARJETA: SINCRONIZACIÓN ENTRE DISPOSITIVOS -->
+                <ui:Card x:Name="CardSincronizacion" Padding="20" Margin="0,0,0,15">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <ui:SymbolIcon Grid.Column="0" Symbol="ArrowSync24" FontSize="36" Margin="0,0,20,0" VerticalAlignment="Top" Foreground="#4CAF50"/>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Sincronización entre dispositivos" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                            <TextBlock Text="Los cambios viajan solos entre tus dispositivos: en casa por wifi (al instante) y fuera de casa por la carpeta sincronizada que ya usas. No hay que añadir direcciones ni instalar nada; solo comparte la misma clave en todos." Foreground="#AAAAAA" FontSize="13" Margin="0,0,0,15" TextWrapping="Wrap"/>
+
+                            <ui:ToggleSwitch x:Name="ToggleSincroActivo" Content="Sincronización activada" Margin="0,0,0,14"/>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="15"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Nombre de este equipo" Foreground="#CCC" Margin="0,0,0,5"/>
+                                    <ui:TextBox x:Name="TxtNombreSincro" Background="#1E1E1E" Foreground="White"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Clave de sincronización (igual en todos los dispositivos)" Foreground="#CCC" Margin="0,0,0,5"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <ui:TextBox x:Name="TxtClaveSincro" Grid.Column="0" IsReadOnly="True" Background="#1E1E1E" Foreground="White"/>
+                                        <ui:Button Grid.Column="1" Content="Copiar" Margin="10,0,0,0" Appearance="Secondary" Click="BtnCopiarClaveSincro_Click"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Grid>
+
+                            <TextBlock Text="Dispositivos (desmarca los que no quieras sincronizar con este equipo)" Foreground="#CCC" Margin="0,14,0,5"/>
+                            <ListBox x:Name="ListaDispositivosSincro" Height="110" Background="#1E1E1E" Foreground="#DDDDDD">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="2,3">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <CheckBox Grid.Column="0"
+                                                      IsChecked="{Binding Habilitado, Mode=OneWay}"
+                                                      Tag="{Binding Id}"
+                                                      VerticalAlignment="Center"
+                                                      Checked="ChkDispositivo_Changed"
+                                                      Unchecked="ChkDispositivo_Changed"/>
+                                            <StackPanel Grid.Column="1" Margin="6,0,0,0" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Nombre}" Foreground="White"/>
+                                                <TextBlock Text="{Binding Detalle}" Foreground="#9EA4AE" FontSize="11"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+
+                            <TextBlock x:Name="LblEstadoSincro" Foreground="#AAAAAA" FontSize="12" Margin="0,12,0,0" TextWrapping="Wrap"/>
                         </StackPanel>
                     </Grid>
                 </ui:Card>
@@ -183,10 +275,7 @@
             </StackPanel>
         </ScrollViewer>
 
-        <!-- BOTÓN GUARDAR -->
-        <Border Grid.Row="2" Background="#252526" BorderThickness="0,1,0,0" BorderBrush="#333" Padding="0,15,0,0" Margin="0,10,0,0">
-            <ui:Button Content="Guardar Configuración" Appearance="Primary" Icon="{ui:SymbolIcon Save24}" HorizontalAlignment="Right" Padding="30,8" Click="BtnGuardar_Click"/>
-        </Border>
+        <!-- Sin botón de guardar: todos los cambios se guardan solos. -->
 
     </Grid>
 </Page>

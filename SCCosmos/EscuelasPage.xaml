@@ -5,7 +5,36 @@
       xmlns:local="clr-namespace:SCCosmos"
       Title="EscuelasPage" Background="#1E1E1E">
 
-    <Grid Margin="30" Background="Transparent">
+    <Page.Resources>
+        <Style x:Key="EstiloDiaSemana" TargetType="CalendarDayButton">
+            <Setter Property="Foreground" Value="#E6EAF0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Margin" Value="1"/>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#2F6FA8"/>
+                    <Setter Property="Foreground" Value="White"/>
+                    <Setter Property="FontWeight" Value="SemiBold"/>
+                </Trigger>
+                <Trigger Property="IsToday" Value="True">
+                    <Setter Property="BorderBrush" Value="#4BA3E3"/>
+                    <Setter Property="BorderThickness" Value="1"/>
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#22405E"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="EstiloBotonCalendario" TargetType="CalendarButton">
+            <Setter Property="Foreground" Value="#E6EAF0"/>
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+    </Page.Resources>
+
+    <Grid Background="Transparent">
+
+        <Grid Margin="30">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -89,27 +118,632 @@
                 </Grid>
             </TabItem>
 
-            <!-- 2. TALLERES -->
-            <TabItem Header="Talleres" FontSize="16" Foreground="White">
+            <!-- 2. CLASES -->
+            <TabItem Header="Clases" FontSize="16" Foreground="White">
                 <Grid Margin="0,15,0,0">
-                    <TextBlock Text="Sección de talleres (Próximamente)" Foreground="#777777" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                </Grid>
-            </TabItem>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
 
-            <!-- 3. ASIENTOS -->
-            <TabItem Header="Asientos" FontSize="16" Foreground="White">
-                <Grid Margin="0,15,0,0">
-                    <TextBlock Text="Asignación de asientos (Próximamente)" Foreground="#777777" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                </Grid>
-            </TabItem>
+                    <Grid Grid.Row="0" Margin="0,0,0,15">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
 
-            <!-- 4. PROGRAMAS -->
-            <TabItem Header="Programas" FontSize="16" Foreground="White">
-                <Grid Margin="0,15,0,0">
-                    <TextBlock Text="Programa de la escuela (Próximamente)" Foreground="#777777" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <ui:SymbolIcon Grid.Column="0" Symbol="Library24" Foreground="#AAAAAA" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="1" Text="Cada clase es una escuela de una semana, de lunes a sábado. Ábrela para añadir estudiantes, repartir butacas y el programa de limpieza." Foreground="#AAAAAA" FontSize="14" VerticalAlignment="Center" TextWrapping="Wrap"/>
+
+                        <ui:Button x:Name="BtnNuevaEscuela" Grid.Column="2" Content="＋ Nueva escuela" Icon="{ui:SymbolIcon AddCircle24}" Appearance="Primary" Padding="14,8" Cursor="Hand" Click="BtnNuevaEscuela_Click"/>
+                    </Grid>
+
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl x:Name="ListaEscuelasClases">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Background="Transparent"
+                                            BorderBrush="#22FFFFFF"
+                                            BorderThickness="1"
+                                            Padding="14"
+                                            Margin="0,0,0,10"
+                                            HorizontalContentAlignment="Stretch"
+                                            Cursor="Hand"
+                                            AutomationProperties.Name="{Binding SemanaTexto}"
+                                            Click="TarjetaEscuela_Click"
+                                            Tag="{Binding}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="{Binding SemanaTexto}" FontSize="16" FontWeight="SemiBold" Foreground="White"/>
+                                                <TextBlock Text="{Binding Detalle}" Foreground="#4BA3E3" Margin="0,3,0,0"/>
+                                                <TextBlock Text="{Binding NotasTexto}" Foreground="#B6BBC2" Margin="0,3,0,0" TextWrapping="Wrap"/>
+                                            </StackPanel>
+
+                                            <TextBlock Grid.Column="1" Text="›" FontSize="26" Foreground="#888888" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <TextBlock x:Name="TxtSinClases"
+                               Grid.Row="1"
+                               Text="Todavía no hay clases creadas. Pulsa «Nueva escuela» para crear la primera."
+                               Foreground="#777777"
+                               FontSize="15"
+                               MaxWidth="420"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               IsHitTestVisible="False"/>
                 </Grid>
             </TabItem>
 
         </TabControl>
+
+        </Grid>
+
+        <!-- ============================================================ -->
+        <!-- OVERLAY: DETALLE DE UNA CLASE                                -->
+        <!-- ============================================================ -->
+        <Grid x:Name="OverlayDetalleEscuela"
+              Background="#171A20"
+              Visibility="Collapsed">
+
+            <Border Background="#171A20"
+                    BorderBrush="#2A2F38"
+                    BorderThickness="0"
+                    CornerRadius="0"
+                    Margin="0"
+                    Padding="22,18,22,18">
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0" Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <ui:Button Grid.Column="0" Content="← Volver" Appearance="Secondary" Padding="14,8" Cursor="Hand" AutomationProperties.Name="Volver del detalle" Click="BtnCerrarDetalle_Click" Margin="0,0,16,0"/>
+                        <TextBlock Grid.Column="1" x:Name="TituloDetalleEscuela" FontSize="20" FontWeight="SemiBold" Foreground="White" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <TextBlock x:Name="InfoDetalleEscuela" Grid.Row="1" Foreground="#9FB3C8" TextWrapping="Wrap" Margin="0,0,0,12"/>
+
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Margin="0,0,16,0">
+                            <StackPanel>
+                                <TextBlock Text="ESTUDIANTES DE LA CLASE" Foreground="#8B94A0" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                <ItemsControl x:Name="ListaAlumnosEscuela">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="#12FFFFFF" CornerRadius="8" Padding="10" Margin="0,0,0,6">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <StackPanel Grid.Column="0">
+                                                        <TextBlock Text="{Binding Nombre}" Foreground="White" FontSize="14"/>
+                                                        <TextBlock Text="{Binding Detalle}" Foreground="#8B94A0" FontSize="12"/>
+                                                    </StackPanel>
+
+                                                    <ui:Button Grid.Column="1" Content="Quitar" Appearance="Secondary" Padding="8,3" FontSize="12" Tag="{Binding}" Click="BtnQuitarAlumno_Click"/>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <StackPanel Grid.Column="1" Width="230">
+                            <ui:Button Content="Editar escuela" Appearance="Secondary" Padding="10,8" HorizontalAlignment="Stretch" Margin="0,0,0,8" Click="BtnEditarEscuela_Click"/>
+                            <ui:Button Content="Añadir estudiantes" Appearance="Secondary" Padding="10,8" HorizontalAlignment="Stretch" Margin="0,0,0,8" Click="BtnAnadirEstudiantes_Click"/>
+                            <ui:Button Content="Distribuir asientos" Appearance="Secondary" Padding="10,8" HorizontalAlignment="Stretch" Margin="0,0,0,8" Click="BtnAsientos_Click"/>
+                            <ui:Button Content="Programa de limpieza" Appearance="Secondary" Padding="10,8" HorizontalAlignment="Stretch" Margin="0,0,0,8" Click="BtnLimpieza_Click"/>
+                            <ui:Button Content="Editar el horario" Appearance="Secondary" Padding="10,8" HorizontalAlignment="Stretch" Margin="0,0,0,8" Click="BtnHorario_Click"/>
+                            <ui:Button Content="Talleres" Appearance="Secondary" Padding="10,8" HorizontalAlignment="Stretch" Margin="0,0,0,8" Click="BtnTalleres_Click"/>
+                            <ui:Button Content="Eliminar escuela" Appearance="Danger" Padding="10,8" HorizontalAlignment="Stretch" Margin="0,16,0,0" Click="BtnEliminarEscuela_Click"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <TextBlock x:Name="NotasDetalleEscuela" Grid.Row="3" Foreground="#777F8A" FontSize="12.5" TextWrapping="Wrap" Margin="0,12,0,0"/>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ============================================================ -->
+        <!-- OVERLAY: FORMULARIO DE CLASE (CREAR / EDITAR)                -->
+        <!-- ============================================================ -->
+        <Grid x:Name="OverlayFormEscuela"
+              Background="#CC090B0E"
+              Visibility="Collapsed">
+
+            <Border Background="#171A20"
+                    BorderBrush="#2A2F38"
+                    BorderThickness="1"
+                    CornerRadius="14"
+                    MaxWidth="720"
+                    MaxHeight="740"
+                    Margin="60,40"
+                    Padding="0">
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0"
+                          Background="#12151B">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <ui:Button Grid.Column="0"
+                                   Content="← Volver"
+                                   Appearance="Secondary"
+                                   Padding="14,8"
+                                   Cursor="Hand"
+                                   AutomationProperties.Name="Volver del editor de clases"
+                                   Click="BtnCancelarFormEscuela_Click"
+                                   Margin="22,14,16,14"/>
+
+                        <TextBlock Grid.Column="1"
+                                   x:Name="TituloFormEscuela"
+                                   FontSize="20"
+                                   FontWeight="SemiBold"
+                                   Foreground="White"
+                                   VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <ScrollViewer Grid.Row="1"
+                                  VerticalScrollBarVisibility="Auto">
+                        <StackPanel MaxWidth="920" HorizontalAlignment="Left" Margin="26,20,26,20">
+                            <TextBlock Text="Semana de la escuela (toca cualquier día del lunes al sábado y se marca la semana entera)" Foreground="#AAAAAA" Margin="0,0,0,5"/>
+                            <Border Background="#16191F"
+                                    BorderBrush="#333A44"
+                                    BorderThickness="1"
+                                    CornerRadius="10"
+                                    Padding="8"
+                                    HorizontalAlignment="Left">
+                                <Calendar x:Name="CalendarioSemana"
+                                          SelectionMode="MultipleRange"
+                                          SelectedDatesChanged="CalendarioSemana_SelectedDatesChanged"
+                                          Background="Transparent"
+                                          Foreground="White"
+                                          BorderThickness="0"
+                                          CalendarDayButtonStyle="{StaticResource EstiloDiaSemana}"
+                                          CalendarButtonStyle="{StaticResource EstiloBotonCalendario}"/>
+                            </Border>
+                            <TextBlock x:Name="LblSemanaEscuela" Foreground="#4BA3E3" FontWeight="SemiBold" Margin="0,8,0,14" TextWrapping="Wrap"/>
+
+                            <TextBlock Text="Instructor (precursor regular, especial o misionero; hombre y anciano)" Foreground="#AAAAAA" Margin="0,0,0,5"/>
+                            <ComboBox x:Name="CmbInstructor"
+                                      IsEditable="True"
+                                      IsTextSearchEnabled="False"
+                                      StaysOpenOnEdit="True"
+                                      Background="#1E1E1E"
+                                      Foreground="White"
+                                      BorderBrush="#444"
+                                      Padding="6"
+                                      DisplayMemberPath="Visual"
+                                      ToolTip="Escribe para buscar por nombre o congregación"/>
+
+                            <TextBlock Text="Instructor sustituto (opcional)" Foreground="#AAAAAA" Margin="0,14,0,5"/>
+                            <ComboBox x:Name="CmbSustituto"
+                                      IsEditable="True"
+                                      IsTextSearchEnabled="False"
+                                      StaysOpenOnEdit="True"
+                                      Background="#1E1E1E"
+                                      Foreground="White"
+                                      BorderBrush="#444"
+                                      Padding="6"
+                                      DisplayMemberPath="Visual"
+                                      ToolTip="Escribe para buscar por nombre o congregación"/>
+
+                            <TextBlock Text="Salón del reino (congregación)" Foreground="#AAAAAA" Margin="0,14,0,5"/>
+                            <ComboBox x:Name="CmbCongregacion" IsEditable="True" Background="#1E1E1E" Foreground="White" BorderBrush="#444" Padding="6"/>
+
+                            <TextBlock Text="Notas (opcional)" Foreground="#AAAAAA" Margin="0,14,0,5"/>
+                            <TextBox x:Name="TxtNotasEscuela" AcceptsReturn="True" Height="70" Background="#1E1E1E" Foreground="White" BorderBrush="#444" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <Grid Grid.Row="2"
+                          Background="#12151B">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="22,12,22,12">
+                            <ui:Button Content="Cancelar" Appearance="Secondary" Padding="18,8" Margin="0,0,10,0" Click="BtnCancelarFormEscuela_Click"/>
+                            <ui:Button Content="Guardar" Appearance="Primary" Padding="18,8" Click="BtnGuardarFormEscuela_Click"/>
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ============================================================ -->
+        <!-- OVERLAY: AÑADIR ESTUDIANTES                                  -->
+        <!-- ============================================================ -->
+        <Grid x:Name="OverlayAlumnos"
+              Background="#CC090B0E"
+              Visibility="Collapsed">
+
+            <Border Background="#171A20"
+                    BorderBrush="#2A2F38"
+                    BorderThickness="1"
+                    CornerRadius="14"
+                    MaxWidth="640"
+                    MaxHeight="700"
+                    Margin="60,40"
+                    Padding="22">
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="AÑADIR ESTUDIANTES" FontSize="20" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,4"/>
+                    <TextBlock x:Name="SubtituloAlumnos" Grid.Row="0" Foreground="#7E858F" FontSize="12" VerticalAlignment="Bottom" Margin="0,0,0,2" HorizontalAlignment="Right"/>
+
+                    <TextBox x:Name="TxtBuscarAlumno" Grid.Row="1" Background="#1E1E1E" Foreground="White" BorderBrush="#444" Padding="6" Margin="0,10,0,10" TextChanged="TxtBuscarAlumno_TextChanged"/>
+
+                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl x:Name="ListaPosiblesAlumnos">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#10FFFFFF" CornerRadius="8" Padding="8,6" Margin="0,0,0,5">
+                                        <CheckBox IsChecked="{Binding Seleccionado, Mode=TwoWay}"
+                                                  Foreground="White"
+                                                  Cursor="Hand">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding Nombre}" Foreground="White"/>
+                                                <TextBlock Text="{Binding Detalle}" Foreground="#8B94A0" Margin="10,0,0,0"/>
+                                            </StackPanel>
+                                        </CheckBox>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
+                        <ui:Button Content="Cancelar" Appearance="Secondary" Padding="18,8" Margin="0,0,10,0" Click="BtnCancelarAlumnos_Click"/>
+                        <ui:Button Content="Añadir seleccionados" Appearance="Primary" Padding="18,8" Click="BtnConfirmarAlumnos_Click"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ============================================================ -->
+        <!-- OVERLAY: ASIENTOS (BUTACAS)                                  -->
+        <!-- ============================================================ -->
+        <Grid x:Name="OverlayAsientos"
+              Background="#171A20"
+              Visibility="Collapsed">
+
+            <Border Background="#171A20"
+                    BorderBrush="#2A2F38"
+                    BorderThickness="0"
+                    CornerRadius="0"
+                    Margin="0"
+                    Padding="22,18,22,18">
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <ui:Button Grid.Column="0" Content="← Volver" Appearance="Secondary" Padding="14,8" Cursor="Hand" AutomationProperties.Name="Volver de asientos" Click="BtnCerrarAsientos_Click" Margin="0,0,16,0"/>
+                        <TextBlock Grid.Column="1" x:Name="TituloAsientos" FontSize="20" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+
+                        <StackPanel Grid.Column="2" Orientation="Horizontal">
+                            <TextBlock Text="Filas:" Foreground="#AAAAAA" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <ui:Button x:Name="BtnMenosFila" Content="−" Appearance="Secondary" Padding="12,4" Cursor="Hand" Click="BtnMenosFila_Click"/>
+                            <TextBlock x:Name="TxtNumFilas" Foreground="White" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center" Margin="10,0" MinWidth="22" TextAlignment="Center"/>
+                            <ui:Button x:Name="BtnMasFila" Content="+" Appearance="Secondary" Padding="12,4" Cursor="Hand" Click="BtnMasFila_Click" Margin="0,0,18,0"/>
+
+                            <TextBlock Text="Columnas:" Foreground="#AAAAAA" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <ui:Button x:Name="BtnMenosColumna" Content="−" Appearance="Secondary" Padding="12,4" Cursor="Hand" Click="BtnMenosColumna_Click"/>
+                            <TextBlock x:Name="TxtNumColumnas" Foreground="White" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center" Margin="10,0" MinWidth="22" TextAlignment="Center"/>
+                            <ui:Button x:Name="BtnMasColumna" Content="+" Appearance="Secondary" Padding="12,4" Cursor="Hand" Click="BtnMasColumna_Click"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid Grid.Row="1" Margin="0,8,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" Text="Pasillos (después de la columna):" Foreground="#AAAAAA" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <WrapPanel x:Name="PanelPasillos" Grid.Column="1" VerticalAlignment="Center"/>
+
+                        <ui:Button x:Name="BtnPdfAsientos" Grid.Column="2" Content="PDF de la disposición" Icon="{ui:SymbolIcon Document24}" Appearance="Secondary" Padding="12,6" Cursor="Hand" Click="BtnPdfAsientos_Click"/>
+                    </Grid>
+
+                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                        <StackPanel x:Name="PanelFilasAsientos" HorizontalAlignment="Center"/>
+                    </ScrollViewer>
+
+                    <Border Grid.Row="3" Background="#12151B" CornerRadius="10" Padding="12" Margin="0,10,0,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock x:Name="LblAsientoElegido" Grid.Column="0" Foreground="#4BA3E3" VerticalAlignment="Center" FontWeight="SemiBold" Text="Ninguna butaca elegida" Margin="0,0,10,0"/>
+                            <ComboBox x:Name="CmbAlumnoAsiento" Grid.Column="1" Background="#1E1E1E" Foreground="White" BorderBrush="#444" Padding="6" DisplayMemberPath="Visual" Margin="0,0,10,0"/>
+                            <ui:Button x:Name="BtnAsignarAsiento" Grid.Column="2" Content="Asignar" Appearance="Primary" Padding="14,7" Click="BtnAsignarAsiento_Click" Margin="0,0,10,0"/>
+                            <ui:Button x:Name="BtnVaciarAsiento" Grid.Column="3" Content="Vaciar" Appearance="Secondary" Padding="14,7" Click="BtnVaciarAsiento_Click"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ============================================================ -->
+        <!-- OVERLAY: PROGRAMA DE LIMPIEZA                                -->
+        <!-- ============================================================ -->
+        <Grid x:Name="OverlayLimpieza"
+              Background="#171A20"
+              Visibility="Collapsed">
+
+            <Border Background="#171A20"
+                    BorderBrush="#2A2F38"
+                    BorderThickness="0"
+                    CornerRadius="0"
+                    Margin="0"
+                    Padding="22,18,22,18">
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <ui:Button Grid.Column="0" Content="← Volver" Appearance="Secondary" Padding="14,8" Cursor="Hand" AutomationProperties.Name="Volver de limpieza" Click="BtnCerrarLimpieza_Click" Margin="0,0,16,0"/>
+
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="PROGRAMA DE LIMPIEZA" FontSize="20" FontWeight="SemiBold" Foreground="White"/>
+                            <TextBlock x:Name="SubtituloLimpieza" Foreground="#7E858F" FontSize="12" Margin="0,3,0,0"/>
+                        </StackPanel>
+
+                        <ui:Button Grid.Column="2" x:Name="BtnPdfLimpieza" Content="PDF del programa" Icon="{ui:SymbolIcon Document24}" Appearance="Secondary" Padding="12,6" Cursor="Hand" AutomationProperties.Name="PDF del programa de limpieza" Click="BtnPdfLimpieza_Click"/>
+                    </Grid>
+
+                    <Border Grid.Row="1" Background="#12151B" CornerRadius="10" Padding="12" Margin="0,12,0,12">
+                        <StackPanel>
+                            <TextBlock Text="RESUMEN POR DÍAS" Foreground="#8B94A0" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                            <ItemsControl x:Name="ResumenLimpieza">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,2">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="90"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="{Binding Dia}" Foreground="#4BA3E3" FontWeight="SemiBold"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Nombres}" Foreground="#DDDDDD" TextWrapping="Wrap"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <TextBlock Text="ELIGE EL DÍA DE CADA ESTUDIANTE" Foreground="#8B94A0" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                            <ItemsControl x:Name="ListaLimpiezaAlumnos">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,0,0,7">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="170"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <TextBlock Grid.Column="0" Text="{Binding Nombre}" Foreground="White" VerticalAlignment="Center"/>
+                                            <ComboBox Grid.Column="1"
+                                                      ItemsSource="{x:Static local:EscuelasPage.DiasLimpieza}"
+                                                      SelectedItem="{Binding DiaSeleccionado, Mode=OneWay}"
+                                                      Tag="{Binding}"
+                                                      SelectionChanged="ComboLimpieza_Changed"
+                                                      Background="#1E1E1E"
+                                                      Foreground="White"
+                                                      BorderBrush="#444"
+                                                      Padding="6"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ============================================================ -->
+        <!-- OVERLAY: TALLERES                                            -->
+        <!-- ============================================================ -->
+        <Grid x:Name="OverlayTalleres"
+              Background="#171A20"
+              Visibility="Collapsed">
+
+            <Border Background="#171A20"
+                    BorderBrush="#2A2F38"
+                    BorderThickness="0"
+                    CornerRadius="0"
+                    Margin="0"
+                    Padding="22,18,22,18">
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0" Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <ui:Button Grid.Column="0" Content="← Volver" Appearance="Secondary" Padding="14,8" Cursor="Hand" AutomationProperties.Name="Volver de talleres" Click="BtnCerrarTalleres_Click" Margin="0,0,16,0"/>
+
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="TALLERES" FontSize="20" FontWeight="SemiBold" Foreground="White"/>
+                            <TextBlock x:Name="SubtituloTalleres" Foreground="#7E858F" FontSize="12" Margin="0,3,0,0"/>
+                        </StackPanel>
+
+                        <ui:Button Grid.Column="2" x:Name="BtnPdfTalleres" Content="PDF de los talleres" Icon="{ui:SymbolIcon Document24}" Appearance="Secondary" Padding="12,6" Cursor="Hand" AutomationProperties.Name="PDF de los talleres" Click="BtnPdfTalleres_Click"/>
+                    </Grid>
+
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <StackPanel x:Name="PanelTalleres"/>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ============================================================ -->
+        <!-- OVERLAY: HORARIO                                             -->
+        <!-- ============================================================ -->
+        <Grid x:Name="OverlayHorario"
+              Background="#171A20"
+              Visibility="Collapsed">
+
+            <Border Background="#171A20"
+                    BorderBrush="#2A2F38"
+                    BorderThickness="0"
+                    CornerRadius="0"
+                    Margin="0"
+                    Padding="22,18,22,18">
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0" Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <ui:Button Grid.Column="0" Content="← Volver" Appearance="Secondary" Padding="14,8" Cursor="Hand" AutomationProperties.Name="Volver de horario" Click="BtnCerrarHorario_Click" Margin="0,0,16,0"/>
+
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="HORARIO" FontSize="20" FontWeight="SemiBold" Foreground="White"/>
+                            <TextBlock x:Name="SubtituloHorario" Foreground="#7E858F" FontSize="12" Margin="0,3,0,0"/>
+                        </StackPanel>
+
+                        <ui:Button Grid.Column="2" x:Name="BtnPdfHorario" Content="PDF del horario" Icon="{ui:SymbolIcon Document24}" Appearance="Secondary" Padding="12,6" Cursor="Hand" AutomationProperties.Name="PDF del horario" Click="BtnPdfHorario_Click"/>
+                    </Grid>
+
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <StackPanel x:Name="PanelHorario"/>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ============================================================ -->
+        <!-- OVERLAY: ELEGIR PERSONA (talleres y horario)                 -->
+        <!-- ============================================================ -->
+        <Grid x:Name="OverlayElegirPersona"
+              Background="#CC090B0E"
+              Visibility="Collapsed">
+
+            <Border Background="#171A20"
+                    BorderBrush="#2A2F38"
+                    BorderThickness="1"
+                    CornerRadius="14"
+                    MaxWidth="580"
+                    MaxHeight="640"
+                    Margin="60,40"
+                    Padding="22">
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock x:Name="TituloElegirPersona" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,8"/>
+
+                    <TextBox x:Name="TxtBuscarPersona" Grid.Row="1" Background="#16191F" Foreground="White" BorderBrush="#444" Padding="6" Margin="0,0,0,8" ToolTip="Busca por nombre o congregación" TextChanged="TxtBuscarPersona_TextChanged"/>
+
+                    <ListBox x:Name="ListaElegirPersona" Grid.Row="2" Background="#141820" Foreground="#E6EAF0" BorderBrush="#2A2F38" MouseDoubleClick="ListaElegirPersona_DoubleClick">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Visual}" Padding="4" Foreground="White"/>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+                        <ui:Button Content="Nadie" Appearance="Secondary" Padding="16,8" Margin="0,0,10,0" Click="BtnElegirNadie_Click"/>
+                        <ui:Button Content="Elegir" Appearance="Primary" Padding="16,8" Margin="0,0,10,0" Click="BtnElegirPersona_Click"/>
+                        <ui:Button Content="Cancelar" Appearance="Secondary" Padding="16,8" Click="BtnCancelarElegirPersona_Click"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
     </Grid>
 </Page>

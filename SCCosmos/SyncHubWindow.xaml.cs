@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -257,10 +257,49 @@ namespace SCCosmos
             TxtNumIguales.Text = _iguales.Count.ToString();
         }
 
+        /// <summary>
+        /// Compara dos textos ignorando espacios sobrantes (al principio, al
+        /// final y repetidos por dentro), para no marcar como conflicto
+        /// cambios irreales.
+        /// </summary>
+        private static bool MismoTexto(string a, string b)
+        {
+            return string.Equals(
+                NormalizarTexto(a),
+                NormalizarTexto(b),
+                StringComparison.Ordinal);
+        }
+
+        private static bool MismoTextoSinMayusculas(string a, string b)
+        {
+            return string.Equals(
+                NormalizarTexto(a),
+                NormalizarTexto(b),
+                StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string NormalizarTexto(string texto)
+        {
+            if (string.IsNullOrWhiteSpace(texto)) return "";
+
+            var resultado = new System.Text.StringBuilder(texto.Length);
+            bool huecoPendiente = false;
+
+            foreach (char caracter in texto.Trim())
+            {
+                if (char.IsWhiteSpace(caracter)) { huecoPendiente = true; continue; }
+                if (huecoPendiente && resultado.Length > 0) resultado.Append(' ');
+                huecoPendiente = false;
+                resultado.Append(caracter);
+            }
+
+            return resultado.ToString();
+        }
+
         private bool HayConflicto(Persona db, Persona hub)
         {
             // NombreJWHub sí pertenece a Hub y puede actualizarse.
-            if (!string.IsNullOrEmpty(hub.NombreJWHub) && db.NombreJWHub != hub.NombreJWHub) return true;
+            if (!string.IsNullOrEmpty(hub.NombreJWHub) && !MismoTexto(db.NombreJWHub, hub.NombreJWHub)) return true;
 
             // Nombre completo y nombre común ya rellenos se consideran consolidados.
             // Hub únicamente los aporta cuando el campo de BBDD está vacío.
@@ -275,17 +314,17 @@ namespace SCCosmos
 
             string hubEsp = hub.Esperanza ?? "";
             string dbEsp = db.Esperanza ?? "";
-            if (hubEsp != "" && dbEsp != hubEsp) return true;
+            if (hubEsp != "" && !MismoTextoSinMayusculas(dbEsp, hubEsp)) return true;
 
             // DETECCIÓN DE PÉRDIDAS (Nombramientos y Servicios)
             // Al quitar el "IsNullOrEmpty", obligamos a que detecte si el Hub viene vacío y la BBDD no.
             string hubNomb = hub.Nombramiento ?? "";
             string dbNomb = db.Nombramiento ?? "";
-            if (hubNomb != dbNomb) return true;
+            if (!MismoTexto(hubNomb, dbNomb)) return true;
 
             string hubServ = hub.Servicio ?? "";
             string dbServ = db.Servicio ?? "";
-            if (hubServ != dbServ) return true;
+            if (!MismoTexto(hubServ, dbServ)) return true;
 
             // PRIVILEGIOS: cualquier diferencia debe llegar al formulario de resolución.
             // Antes solo se comprobaba un subconjunto y podían pasar cambios sin marcarse.
@@ -313,18 +352,18 @@ namespace SCCosmos
             // Si no hay origen S21, seguimos ignorando fechas aproximadas 01/01/YYYY.
             if (!db.TieneOrigenS21)
             {
-                if (!string.IsNullOrEmpty(hub.FechaNacimiento) && db.FechaNacimiento != hub.FechaNacimiento && !hub.FechaNacimiento.StartsWith("01/01/")) return true;
-                if (!string.IsNullOrEmpty(hub.FechaBautismo) && db.FechaBautismo != hub.FechaBautismo && !hub.FechaBautismo.StartsWith("01/01/")) return true;
+                if (!string.IsNullOrEmpty(hub.FechaNacimiento) && !MismoTexto(db.FechaNacimiento, hub.FechaNacimiento) && !hub.FechaNacimiento.StartsWith("01/01/")) return true;
+                if (!string.IsNullOrEmpty(hub.FechaBautismo) && !MismoTexto(db.FechaBautismo, hub.FechaBautismo) && !hub.FechaBautismo.StartsWith("01/01/")) return true;
             }
 
-            if (!string.IsNullOrEmpty(hub.FechaInicioPrec) && db.FechaInicioPrec != hub.FechaInicioPrec && !hub.FechaInicioPrec.StartsWith("01/01/")) return true;
+            if (!string.IsNullOrEmpty(hub.FechaInicioPrec) && !MismoTexto(db.FechaInicioPrec, hub.FechaInicioPrec) && !hub.FechaInicioPrec.StartsWith("01/01/")) return true;
 
-            if (!string.IsNullOrEmpty(hub.FechaUltimaEscuela) && db.FechaUltimaEscuela != hub.FechaUltimaEscuela) return true;
+            if (!string.IsNullOrEmpty(hub.FechaUltimaEscuela) && !MismoTexto(db.FechaUltimaEscuela, hub.FechaUltimaEscuela)) return true;
 
-            if (!string.IsNullOrEmpty(hub.Email) && db.Email != hub.Email) return true;
-            if (!string.IsNullOrEmpty(hub.EmailJW) && db.EmailJW != hub.EmailJW) return true;
-            if (!string.IsNullOrEmpty(hub.Telefono) && db.Telefono != hub.Telefono) return true;
-            if (!string.IsNullOrEmpty(hub.Direccion) && db.Direccion != hub.Direccion) return true;
+            if (!string.IsNullOrEmpty(hub.Email) && !MismoTexto(db.Email, hub.Email)) return true;
+            if (!string.IsNullOrEmpty(hub.EmailJW) && !MismoTexto(db.EmailJW, hub.EmailJW)) return true;
+            if (!string.IsNullOrEmpty(hub.Telefono) && !MismoTexto(db.Telefono, hub.Telefono)) return true;
+            if (!string.IsNullOrEmpty(hub.Direccion) && !MismoTexto(db.Direccion, hub.Direccion)) return true;
             if (!string.IsNullOrEmpty(hub.Foto) && db.Foto != hub.Foto) return true;
 
             string hubSols = hub.Solicitudes ?? "";

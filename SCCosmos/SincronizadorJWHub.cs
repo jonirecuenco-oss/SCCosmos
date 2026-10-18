@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -690,13 +690,110 @@ namespace SCCosmos
             return listaExtraidos;
         }
 
+        // Solo cambia el estado en Hub: NO genera mensajes individuales.
+        // El envío único del S-303 y, cuando corresponde, la carta, pertenece a VisitasPage.
+        public static void AprobarRecomendacionHubSinCorreo(
+            string rutaPerfilFirefox, RecomendacionHub rec, DateTime fechaAprobacion)
+        {
+            if (rec == null) throw new ArgumentNullException(nameof(rec));
+            string urlDetalle = ValidarUrlRecomendacion(rec.UrlDetalle);
+            string perfilClonado = ClonarPerfilFirefox(rutaPerfilFirefox, "_TempApproveS303");
+            try
+            {
+                var service = FirefoxDriverService.CreateDefaultService();
+                service.HideCommandPromptWindow = true;
+                var options = new FirefoxOptions();
+                options.AddArgument("-profile");
+                options.AddArgument(perfilClonado);
+                options.AddArgument("-headless");
+                options.AddArgument("--window-size=1920,1080");
+
+                using (IWebDriver driver = new FirefoxDriver(service, options))
+                {
+                    driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(30);
+                    driver.Navigate().GoToUrl(urlDetalle);
+                    IWebElement btnAnalizar = EsperaDinamicaElementoVisibilidad(driver,
+                        By.XPath("//a[.//ptrn-translate[contains(., 'Analizar hermano')]] | //*[contains(@class, 'button')]//ptrn-translate[contains(., 'Analizar hermano')]/ancestor::a"), 20);
+                    if (btnAnalizar == null) throw new InvalidOperationException(
+                        "No se encuentra 'Analizar hermano' en la recomendación de " + rec.Hermano);
+                    ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", btnAnalizar);
+
+                    IWebElement btnEditar = EsperaDinamicaElementoVisibilidad(driver,
+                        By.XPath("//a[.//ptrn-translate[contains(., 'Editar estado del nombramiento')]]"), 20);
+                    if (btnEditar == null) throw new InvalidOperationException(
+                        "No se encuentra 'Editar estado del nombramiento' de " + rec.Hermano);
+                    ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", btnEditar);
+
+                    // El selector se apoya en el flujo que ya usa PersonasPage.
+                    IWebElement lblAprobar = EsperaDinamicaElementoVisibilidad(driver,
+                        By.XPath("//label[.//ptrn-translate[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnopqrstuvwxyzáéíóú'), 'aprobar') or contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnopqrstuvwxyzáéíóú'), 'confirmar')]]"), 12);
+                    if (lblAprobar == null) throw new InvalidOperationException(
+                        "No se encuentra la opción de aprobar/confirmar para " + rec.Hermano);
+                    ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", lblAprobar);
+
+                    var txtFecha = driver.FindElements(By.Id("form.effectiveDate")).FirstOrDefault()
+                        ?? driver.FindElements(By.XPath("//input[@placeholder='d/M/yy']")).FirstOrDefault();
+                    if (txtFecha != null)
+                    {
+                        txtFecha.Clear();
+                        txtFecha.SendKeys(fechaAprobacion.ToString("d/M/yy"));
+                        txtFecha.SendKeys(Keys.Tab);
+                    }
+
+                    IWebElement btnGuardar = EsperaDinamicaElementoVisibilidad(driver,
+                        By.XPath("//button[.//ptrn-translate[contains(., 'Guardar')]]"), 12);
+                    if (btnGuardar == null) throw new InvalidOperationException(
+                        "No se encuentra Guardar al aprobar a " + rec.Hermano);
+                    ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", btnGuardar);
+                    Thread.Sleep(1000);
+
+                    IWebElement btnEnviar = EsperaDinamicaElementoVisibilidad(driver,
+                        By.XPath("//*[.//ptrn-translate[contains(., 'Enviar')]]/ancestor-or-self::button | //*[.//ptrn-translate[contains(., 'Enviar')]]/ancestor-or-self::a"), 15);
+                    if (btnEnviar == null) throw new InvalidOperationException(
+                        "No se encuentra Enviar/confirmar aprobación para " + rec.Hermano);
+                    ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", btnEnviar);
+                    Thread.Sleep(3000);
+                    VerificarPaginaHubSinError(driver, rec.Hermano);
+                }
+            }
+            finally
+            {
+                EliminarPerfilClonado(perfilClonado);
+            }
+        }
+
+        private static string ValidarUrlRecomendacion(string ruta)
+        {
+            if (string.IsNullOrWhiteSpace(ruta))
+                throw new InvalidOperationException("La recomendación no contiene URL de detalle en la base de datos.");
+            Uri url;
+            if (!Uri.TryCreate(new Uri("https://hub.jw.org"), ruta, out url)
+                || !string.Equals(url.Host, "hub.jw.org", StringComparison.OrdinalIgnoreCase)
+                || url.Scheme != Uri.UriSchemeHttps)
+            {
+                throw new InvalidOperationException("La URL de recomendación no pertenece a hub.jw.org.");
+            }
+            return url.AbsoluteUri;
+        }
+
+        private static void VerificarPaginaHubSinError(IWebDriver driver, string hermano)
+        {
+            var url = driver.Url ?? "";
+            if (url.Contains("/error") || url.Contains("/login") || url.Contains("/signin") ||
+                driver.PageSource.Contains("414 ERROR"))
+            {
+                throw new InvalidOperationException(
+                    "JW Hub ha mostrado una página de error o acceso al procesar a " + hermano);
+            }
+        }
+
         public static void CancelarRecomendacionHub(string rutaPerfilFirefox, RecomendacionHub rec)
         {
             string perfilClonado = ClonarPerfilFirefox(rutaPerfilFirefox, "_TempCancel");
 
             try
             {
-                string urlBase = "https://hub.jw.org";
+                string urlDetalle = ValidarUrlRecomendacion(rec.UrlDetalle);
                 var service = FirefoxDriverService.CreateDefaultService();
                 service.HideCommandPromptWindow = true;
 
@@ -712,10 +809,11 @@ namespace SCCosmos
                     try
                     {
                         driver.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(30);
-                        driver.Navigate().GoToUrl(urlBase + rec.UrlDetalle);
+                        driver.Navigate().GoToUrl(urlDetalle);
                         Thread.Sleep(5000);
 
                         var btnAnalizar = EsperaDinamicaElementoVisibilidad(driver, By.XPath("//a[.//ptrn-translate[contains(., 'Analizar hermano')]] | //*[contains(@class, 'button')]//ptrn-translate[contains(., 'Analizar hermano')]/ancestor::a"), 10);
+                        if (btnAnalizar == null) throw new InvalidOperationException("No se encuentra 'Analizar hermano' para " + rec.Hermano);
                         if (btnAnalizar != null)
                         {
                             ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView({block: 'center'});", btnAnalizar);
@@ -724,6 +822,7 @@ namespace SCCosmos
                             Thread.Sleep(4000);
 
                             var btnEditar = EsperaDinamicaElementoVisibilidad(driver, By.XPath("//a[.//ptrn-translate[contains(., 'Editar estado del nombramiento')]]"), 10);
+                            if (btnEditar == null) throw new InvalidOperationException("No se encuentra el editor de estado para " + rec.Hermano);
                             if (btnEditar != null)
                             {
                                 ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView({block: 'center'});", btnEditar);
@@ -732,6 +831,7 @@ namespace SCCosmos
                                 Thread.Sleep(3000);
 
                                 var lblCancelar = EsperaDinamicaElementoVisibilidad(driver, By.XPath("//label[.//ptrn-translate[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚ', 'abcdefghijklmnopqrstuvwxyzáéíóú'), 'cancelar')]]"), 5);
+                                if (lblCancelar == null) throw new InvalidOperationException("No se encuentra la opción Cancelar para " + rec.Hermano);
                                 if (lblCancelar != null)
                                 {
                                     ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", lblCancelar);
@@ -739,6 +839,7 @@ namespace SCCosmos
                                 }
 
                                 var btnGuardar = driver.FindElements(By.XPath("//button[.//ptrn-translate[contains(., 'Guardar')]]")).FirstOrDefault();
+                                if (btnGuardar == null) throw new InvalidOperationException("No se encuentra Guardar para " + rec.Hermano);
                                 if (btnGuardar != null)
                                 {
                                     ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", btnGuardar);
@@ -748,6 +849,7 @@ namespace SCCosmos
                         }
 
                         var btnEnviar = EsperaDinamicaElementoVisibilidad(driver, By.XPath("//*[.//ptrn-translate[contains(., 'Enviar')]]/ancestor-or-self::button | //*[.//ptrn-translate[contains(., 'Enviar')]]/ancestor-or-self::a"), 10);
+                        if (btnEnviar == null) throw new InvalidOperationException("No se encuentra Enviar para cancelar la recomendación de " + rec.Hermano);
                         if (btnEnviar != null)
                         {
                             ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView({block: 'center'});", btnEnviar);
@@ -755,6 +857,7 @@ namespace SCCosmos
                             ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].click();", btnEnviar);
                             Thread.Sleep(3000);
                         }
+                        VerificarPaginaHubSinError(driver, rec.Hermano);
                     }
                     catch (Exception ex)
                     {
@@ -968,10 +1071,58 @@ namespace SCCosmos
             }
         }
 
+        /// <summary>
+        /// Compara dos textos ignorando espacios sobrantes (al principio, al
+        /// final y repetidos por dentro). Así no se marcan como conflicto
+        /// cambios irreales cuando el mismo dato llega con un espacio de más.
+        /// </summary>
+        private static bool MismoTexto(string a, string b)
+        {
+            return string.Equals(
+                NormalizarTexto(a),
+                NormalizarTexto(b),
+                StringComparison.Ordinal);
+        }
+
+        private static bool MismoTextoSinMayusculas(string a, string b)
+        {
+            return string.Equals(
+                NormalizarTexto(a),
+                NormalizarTexto(b),
+                StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string NormalizarTexto(string texto)
+        {
+            if (string.IsNullOrWhiteSpace(texto)) return "";
+
+            var resultado = new System.Text.StringBuilder(texto.Length);
+            bool huecoPendiente = false;
+
+            foreach (char caracter in texto.Trim())
+            {
+                if (char.IsWhiteSpace(caracter))
+                {
+                    huecoPendiente = true;
+                    continue;
+                }
+
+                if (huecoPendiente && resultado.Length > 0)
+                {
+                    resultado.Append(' ');
+                }
+
+                huecoPendiente = false;
+                resultado.Append(caracter);
+            }
+
+            return resultado.ToString();
+        }
+
         private static bool DetectarConflictoSincronizador(Persona db, PersonaExtraida hub, string codigoDet)
         {
             // El texto real de Hub se compara únicamente con NombreJWHub.
-            if (!string.IsNullOrEmpty(hub.NombreJWHub) && db.NombreJWHub != hub.NombreJWHub) return true;
+            if (!string.IsNullOrEmpty(hub.NombreJWHub) && !MismoTexto(db.NombreJWHub, hub.NombreJWHub)) return true;
 
             // Nombre y NombreComun ya rellenos en BBDD se consideran consolidados.
             // Hub solo debe aportarlos cuando estén vacíos.
@@ -984,20 +1135,20 @@ namespace SCCosmos
                 && !string.Equals(db.Sexo ?? "", hub.Sexo, StringComparison.OrdinalIgnoreCase))
                 return true;
 
-            if (!string.IsNullOrEmpty(codigoDet) && db.CongregacionCodigo != codigoDet) return true;
+            if (!string.IsNullOrEmpty(codigoDet) && !MismoTexto(db.CongregacionCodigo, codigoDet)) return true;
 
             string hubEsp = hub.Esperanza ?? "";
             string dbEsp = db.Esperanza ?? "";
-            if (hubEsp != "" && dbEsp != hubEsp) return true;
+            if (hubEsp != "" && !MismoTextoSinMayusculas(dbEsp, hubEsp)) return true;
 
             // Validar pérdida de nombramiento/servicio
             string hubNomb = hub.Nombramiento ?? "";
             string dbNomb = db.Nombramiento ?? "";
-            if (hubNomb != dbNomb) return true;
+            if (!MismoTexto(hubNomb, dbNomb)) return true;
 
             string hubServ = hub.Servicio ?? "";
             string dbServ = db.Servicio ?? "";
-            if (hubServ != dbServ) return true;
+            if (!MismoTexto(hubServ, dbServ)) return true;
 
             // Validar de forma cruzada la lista de privilegios para detectar altas O bajas
             string[] privilegiosPermitidos = { "Instructor de la Escuela del Servicio de Precursor", "Superintendente de circuito sustituto", "Miembro del CEH", "Superintendente de asamblea", "Coordinador", "Secretario", "Miembro del GVP", "Persona que pertenece a una entidad del LDC", "Superintendente auxiliar de asamblea" };
@@ -1014,11 +1165,11 @@ namespace SCCosmos
                 if (privilegiosPermitidos.Contains(p) && !dbPrivs.Contains(p)) return true;
             }
 
-            if (!string.IsNullOrEmpty(hub.FechaUltimaEscuela) && db.FechaUltimaEscuela != hub.FechaUltimaEscuela) return true;
-            if (!string.IsNullOrEmpty(hub.Email) && db.Email != hub.Email) return true;
-            if (!string.IsNullOrEmpty(hub.EmailJW) && db.EmailJW != hub.EmailJW) return true;
-            if (!string.IsNullOrEmpty(hub.Telefono) && db.Telefono != hub.Telefono) return true;
-            if (!string.IsNullOrEmpty(hub.Direccion) && db.Direccion != hub.Direccion) return true;
+            if (!string.IsNullOrEmpty(hub.FechaUltimaEscuela) && !MismoTexto(db.FechaUltimaEscuela, hub.FechaUltimaEscuela)) return true;
+            if (!string.IsNullOrEmpty(hub.Email) && !MismoTexto(db.Email, hub.Email)) return true;
+            if (!string.IsNullOrEmpty(hub.EmailJW) && !MismoTexto(db.EmailJW, hub.EmailJW)) return true;
+            if (!string.IsNullOrEmpty(hub.Telefono) && !MismoTexto(db.Telefono, hub.Telefono)) return true;
+            if (!string.IsNullOrEmpty(hub.Direccion) && !MismoTexto(db.Direccion, hub.Direccion)) return true;
             if (!string.IsNullOrEmpty(hub.Foto) && db.Foto != hub.Foto) return true;
 
             // Si las fechas definitivas proceden de S-21/JSON, Hub no puede generar
@@ -1026,11 +1177,11 @@ namespace SCCosmos
             // que es solo una aproximación calculada a partir de la edad.
             if (!db.TieneOrigenS21)
             {
-                if (!string.IsNullOrEmpty(hub.FechaNacimiento) && db.FechaNacimiento != hub.FechaNacimiento && !hub.FechaNacimiento.StartsWith("01/01/")) return true;
-                if (!string.IsNullOrEmpty(hub.FechaBautismo) && db.FechaBautismo != hub.FechaBautismo && !hub.FechaBautismo.StartsWith("01/01/")) return true;
+                if (!string.IsNullOrEmpty(hub.FechaNacimiento) && !MismoTexto(db.FechaNacimiento, hub.FechaNacimiento) && !hub.FechaNacimiento.StartsWith("01/01/")) return true;
+                if (!string.IsNullOrEmpty(hub.FechaBautismo) && !MismoTexto(db.FechaBautismo, hub.FechaBautismo) && !hub.FechaBautismo.StartsWith("01/01/")) return true;
             }
 
-            if (!string.IsNullOrEmpty(hub.FechaInicioPrec) && db.FechaInicioPrec != hub.FechaInicioPrec && !hub.FechaInicioPrec.StartsWith("01/01/")) return true;
+            if (!string.IsNullOrEmpty(hub.FechaInicioPrec) && !MismoTexto(db.FechaInicioPrec, hub.FechaInicioPrec) && !hub.FechaInicioPrec.StartsWith("01/01/")) return true;
 
             string hubSols = hub.Solicitudes ?? "";
             string dbSols = db.Solicitudes ?? "";

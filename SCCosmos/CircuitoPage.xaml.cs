@@ -15,7 +15,7 @@ using Microsoft.Win32;
 
 namespace SCCosmos
 {
-    public partial class CircuitoPage : Page
+    public partial class CircuitoPage : Page, IActualizablePorSincro
     {
         public ObservableCollection<Congregacion> ListaCongregaciones { get; set; }
         public ObservableCollection<SeccionCircuito> ListaSecciones { get; set; }
@@ -23,8 +23,27 @@ namespace SCCosmos
         public CircuitoPage()
         {
             InitializeComponent();
+            this.Loaded += CircuitoPage_Loaded;
+        }
+
+        private async void CircuitoPage_Loaded(object sender, RoutedEventArgs e)
+        {
+            // Dejar que la página se pinte antes de cargar los datos.
+            await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background);
             CargarDatos();
         }
+
+        public void DatosActualizados()
+        {
+            try
+            {
+                CargarDatos();
+            }
+            catch
+            {
+            }
+        }
+
 
         private void CargarDatos()
         {

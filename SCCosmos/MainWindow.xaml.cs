@@ -25,11 +25,74 @@ namespace SCCosmos
     public partial class MainWindow : FluentWindow
     {
         private DispatcherTimer _timerTareasFondo;
+        private DispatcherTimer _timerAlertas;
+
+        /// <summary>
+        /// Número de alertas del último cálculo ya avisado. Sirve para no
+        /// abrir el aviso al arrancar y sí hacerlo cuando aparece una alerta
+        /// nueva mientras la aplicación está abierta.
+        /// </summary>
+        private int _alertasAvisadas = -1;
+
+        /// <summary>
+        /// Evita repetir el vaciado final de sincronización al cerrar.
+        /// </summary>
+        private bool _sincroFinalRealizada;
+
+        /// <summary>
+        /// Antes de cerrar se envía lo que quede pendiente (dispositivos
+        /// vinculados y carpeta compartida) para no perder los últimos
+        /// cambios.
+        /// </summary>
+        private async void MainWindow_Closing(
+            object sender,
+            System.ComponentModel.CancelEventArgs e)
+        {
+            if (_sincroFinalRealizada)
+            {
+                return;
+            }
+
+            var servicio =
+                SincronizacionRed.Servicio;
+
+            if (servicio is null
+                || !servicio.Activo)
+            {
+                return;
+            }
+
+            e.Cancel = true;
+
+            _sincroFinalRealizada = true;
+
+            try
+            {
+                await SincronizacionRed
+                    .VaciarPendientesAsync(
+                        TimeSpan.FromSeconds(4));
+            }
+            catch
+            {
+            }
+
+            Close();
+        }
 
         public MainWindow()
         {
             InitializeComponent();
             DatabaseHelper.InicializarDatabase();
+
+            // Motor de sincronización entre dispositivos.
+            SincronizacionRed.Iniciar();
+
+            // Refresco automático de la página abierta cuando llegan
+            // cambios de otro dispositivo.
+            SincronizacionPaginas.Iniciar(this);
+
+            this.Closed += (s, e) => SincronizacionRed.Detener();
+            this.Closing += MainWindow_Closing;
 
             PopupAlertas.PlacementTarget = BtnAlertas;
 
@@ -42,6 +105,10 @@ namespace SCCosmos
 
                 this.MenuPrincipal.Navigate(typeof(InicioPage));
 
+                // Perfil de usuario y nivel de acceso
+                PreguntarPerfilSiProcede();
+                AplicarPerfilAcceso();
+
                 // =========================================================
                 // INICIAR RELOJ PARA TAREAS AUTOMÁTICAS
                 // =========================================================
@@ -53,6 +120,13 @@ namespace SCCosmos
                     RevisarSincronizacionLunes();
                 };
                 _timerTareasFondo.Start();
+
+                // Aviso de alertas: comprobación ligera cada minuto, para
+                // que los avisos de las tareas lleguen a su hora.
+                _timerAlertas = new DispatcherTimer();
+                _timerAlertas.Interval = TimeSpan.FromMinutes(1);
+                _timerAlertas.Tick += (sender, args) => VerificarAlertas();
+                _timerAlertas.Start();
 
                 NetworkChange.NetworkAvailabilityChanged += (senderNet, argsNet) =>
                 {
@@ -72,6 +146,58 @@ namespace SCCosmos
 
             this.Activated += (s, e) => VerificarAlertas();
             this.PreviewMouseWheel += MainWindow_PreviewMouseWheel;
+        }
+
+        // =========================================================
+        // PERFIL DE USUARIO Y NIVEL DE ACCESO
+        // =========================================================
+
+        public void AplicarPerfilAcceso()
+        {
+            Visibility visibilidad =
+                PerfilAcceso.AccesoCompleto
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+
+            ItemCorrespondencia.Visibility = visibilidad;
+            ItemCircuito.Visibility = visibilidad;
+            ItemEscuelas.Visibility = visibilidad;
+            ItemRsc.Visibility = visibilidad;
+            ItemAsambleas.Visibility = visibilidad;
+            ItemActividad.Visibility = visibilidad;
+            ItemArchivo.Visibility = visibilidad;
+
+            // Descargas está oculta: solo aparece tras activarla con el
+            // código especial del perfil (y luego ya se queda siempre).
+            ItemDescargas.Visibility =
+                PerfilAcceso.AccesoCompleto
+                && PerfilAcceso.DescargasActivadas
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+
+            // Donaciones la ven tanto el SC como su esposa.
+            ItemDonaciones.Visibility = Visibility.Visible;
+
+            // La esposa del SC no ve las notificaciones.
+            BtnAlertas.Visibility = visibilidad;
+        }
+
+        private void PreguntarPerfilSiProcede()
+        {
+            if (PerfilAcceso.Configurado)
+            {
+                return;
+            }
+
+            try
+            {
+                var ventana = new PerfilInicialWindow();
+                ventana.Owner = this;
+                ventana.ShowDialog();
+            }
+            catch
+            {
+            }
         }
 
         // =========================================================
@@ -436,10 +562,24 @@ namespace SCCosmos
                 PopupAlertas.IsOpen = false;
                 MenuPrincipal.Navigate(typeof(CalendarioPage));
             }
+            else if (tipoAlerta == "Tarea")
+            {
+                PopupAlertas.IsOpen = false;
+                MenuPrincipal.Navigate(typeof(TareasPage));
+            }
         }
 
         private void VerificarAlertas(bool soloSilencioso = false)
         {
+            // La esposa del SC no ve ni recibe notificaciones de ningún
+            // tipo.
+            if (!PerfilAcceso.AccesoCompleto)
+            {
+                _alertasActuales.Clear();
+                PopupAlertas.IsOpen = false;
+                return;
+            }
+
             _alertasActuales.Clear();
             DateTime hoy = DateTime.Today;
 
@@ -472,10 +612,46 @@ namespace SCCosmos
                 });
             }
 
-            string configPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SCCosmos", "rutadb.txt");
-            string dir = System.IO.File.Exists(configPath) ? System.IO.File.ReadAllText(configPath) : @"C:\Users\Usuario\Documents\2 - ESP-BA-01\8 - Otros\SCCosmos";
-            string dbPath = System.IO.Path.Combine(dir, "sccosmos.db");
-            string connectionString = $"Data Source={dbPath}";
+            // 2b. Tareas y eventos con el aviso vencido y sin completar.
+            try
+            {
+                DateTime ahoraTareas = DateTime.Now;
+
+                foreach (Tarea tarea in DatabaseHelper.ObtenerTareas())
+                {
+                    if (tarea.Completada || tarea.AvisoMinutos < 0)
+                    {
+                        continue;
+                    }
+
+                    DateTime? cita = TareasAviso.OcurrenciaAvisoVencida(tarea, ahoraTareas);
+
+                    if (cita == null)
+                    {
+                        continue;
+                    }
+
+                    string cuandoTarea = cita.Value.Date == hoy
+                        ? $"Hoy {cita.Value:HH:mm}"
+                        : cita.Value.Date == hoy.AddDays(1)
+                            ? $"Mañana {cita.Value:HH:mm}"
+                            : cita.Value.ToString("dd MMM HH:mm");
+
+                    _alertasActuales.Add(new AlertaItem
+                    {
+                        Titulo = "⏰ " + (string.IsNullOrWhiteSpace(tarea.Titulo) ? "Tarea" : tarea.Titulo),
+                        Descripcion = cuandoTarea + (string.IsNullOrWhiteSpace(tarea.Descripcion) ? "" : " · " + tarea.Descripcion),
+                        ColorBorde = "#E8A33D",
+                        Dias = 0,
+                        TipoAlerta = "Tarea"
+                    });
+                }
+            }
+            catch
+            {
+            }
+
+            string connectionString = $"Data Source={DatabaseHelper.RutaBaseDatos};Pooling=False";
 
             try
             {
@@ -609,17 +785,42 @@ namespace SCCosmos
             }
             catch { }
 
+            // Ocultar las alertas marcadas como leídas.
+            var leidas = CargarAlertasLeidas();
+
+            _alertasActuales = _alertasActuales
+                .Where(a => !leidas.Contains(FirmaAlerta(a)))
+                .ToList();
+
             if (_alertasActuales.Count > 0)
             {
                 if (!soloSilencioso && _alertasActuales.Count > _cantidadAlertasVistas)
                 {
                     BtnAlertas.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFD700")); // Dorado
+
+                    // Notificación automática: si han aparecido alertas
+                    // nuevas desde el último cálculo, el aviso se muestra
+                    // solo (también con la comprobación de cada 15 minutos).
+                    if (_alertasAvisadas >= 0
+                        && _alertasActuales.Count > _alertasAvisadas
+                        && IsActive
+                        && !PopupAlertas.IsOpen)
+                    {
+                        PopupAlertas.IsOpen = true;
+                        ApagarCampana();
+                    }
+                }
+
+                if (!soloSilencioso)
+                {
+                    _alertasAvisadas = _alertasActuales.Count;
                 }
 
                 ListaAlertas.ItemsSource = _alertasActuales.OrderBy(a => a.Dias).ToList();
                 ListaAlertas.Visibility = Visibility.Visible;
                 TituloPopup.Visibility = Visibility.Visible;
                 TxtSinAlertas.Visibility = Visibility.Collapsed;
+                BtnMarcarAlertasLeidas.Visibility = Visibility.Visible;
             }
             else
             {
@@ -630,7 +831,82 @@ namespace SCCosmos
                 ListaAlertas.Visibility = Visibility.Collapsed;
                 TituloPopup.Visibility = Visibility.Collapsed;
                 TxtSinAlertas.Visibility = Visibility.Visible;
+                BtnMarcarAlertasLeidas.Visibility = Visibility.Collapsed;
             }
+        }
+
+        // =========================================================
+        // ALERTAS LEÍDAS (por equipo)
+        // =========================================================
+
+        private static string RutaAlertasLeidas =>
+            System.IO.Path.Combine(
+                Environment.GetFolderPath(
+                    Environment.SpecialFolder.LocalApplicationData),
+                "SCCosmos",
+                "alertas_leidas.json");
+
+        private static string FirmaAlerta(AlertaItem a) =>
+            (a.Titulo ?? "") + "|" + (a.Descripcion ?? "");
+
+        private static HashSet<string> CargarAlertasLeidas()
+        {
+            try
+            {
+                string ruta = RutaAlertasLeidas;
+
+                if (System.IO.File.Exists(ruta))
+                {
+                    return new HashSet<string>(
+                        System.IO.File.ReadAllLines(ruta),
+                        StringComparer.Ordinal);
+                }
+            }
+            catch
+            {
+            }
+
+            return new HashSet<string>(StringComparer.Ordinal);
+        }
+
+        private static void GuardarAlertasLeidas(HashSet<string> firmas)
+        {
+            try
+            {
+                string ruta = RutaAlertasLeidas;
+
+                string carpeta = System.IO.Path.GetDirectoryName(ruta);
+
+                if (!string.IsNullOrWhiteSpace(carpeta))
+                {
+                    System.IO.Directory.CreateDirectory(carpeta);
+                }
+
+                System.IO.File.WriteAllLines(ruta, firmas);
+            }
+            catch
+            {
+            }
+        }
+
+        private void BtnMarcarAlertasLeidas_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            var firmas = CargarAlertasLeidas();
+
+            foreach (var alerta in _alertasActuales)
+            {
+                firmas.Add(FirmaAlerta(alerta));
+            }
+
+            GuardarAlertasLeidas(firmas);
+
+            _cantidadAlertasVistas = 0;
+
+            VerificarAlertas();
+
+            PopupAlertas.IsOpen = false;
         }
 
         private void MenuSplitter_DragDelta(object sender, DragDeltaEventArgs e)

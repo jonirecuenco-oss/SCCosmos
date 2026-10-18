@@ -16,7 +16,7 @@ using System.Diagnostics;
 
 namespace SCCosmos
 {
-    public partial class PersonasPage : Page
+    public partial class PersonasPage : Page, IActualizablePorSincro
     {
         // =========================================================
         // VARIABLES GLOBALES (Para recibir órdenes desde InicioPage)
@@ -42,6 +42,13 @@ namespace SCCosmos
         {
             InitializeComponent();
             ComprobarPerfilFirefox();
+
+            // La esposa del SC no ve la pestaña de nombramientos y bajas.
+            if (!PerfilAcceso.AccesoCompleto)
+            {
+                TabNombramientos.Visibility = Visibility.Collapsed;
+                BtnSincronizarHub.Visibility = Visibility.Collapsed;
+            }
 
             LstServicio.ItemsSource = new List<string> { "Precursor regular", "Precursor especial", "Misionero" };
             LstSols.ItemsSource = new List<string> { "A-2", "A-19", "A-8", "G-8" };
@@ -75,6 +82,9 @@ namespace SCCosmos
             // 1. Vinculamos el evento de sincronización
             SincronizadorJWHub.SincronizacionCambiada += Sincronizador_EstadoCambiado;
             ActualizarUI_Sincronizacion(SincronizadorJWHub.EstaSincronizando);
+
+            // Dejar que la página se pinte antes de cargar los datos.
+            await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background);
 
             // 2. Antes de cargar datos, aplicamos los filtros que vengan de la página de Inicio
             ProcesarFiltrosPendientes();
@@ -240,6 +250,18 @@ namespace SCCosmos
             ColSolicitudes.Visibility = ChkColSolicitudes.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
             ColPrivilegios.Visibility = ChkColPrivilegios.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
         }
+
+        public void DatosActualizados()
+        {
+            try
+            {
+                _ = CargarListaPersonasAsync();
+            }
+            catch
+            {
+            }
+        }
+
 
         private async Task CargarListaPersonasAsync()
         {
@@ -591,7 +613,7 @@ namespace SCCosmos
                                 p.Latitud = lat;
                                 p.Longitud = lon;
 
-                                using (var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={DatabaseHelper.RutaDirectorioDatos}\\sccosmos.db"))
+                                using (var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={DatabaseHelper.RutaBaseDatos};Pooling=False"))
                                 {
                                     connection.Open();
                                     var cmd = connection.CreateCommand();

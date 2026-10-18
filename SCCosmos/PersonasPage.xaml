@@ -223,7 +223,7 @@
                     </TabItem>
 
                     <!-- PESTAÑA 3: NOMBRAMIENTOS Y BAJAS -->
-                    <TabItem Header="Nombramientos y bajas" FontSize="16" Foreground="White">
+                    <TabItem x:Name="TabNombramientos" Header="Nombramientos y bajas" FontSize="16" Foreground="White">
                         <Grid Margin="0,15,0,0">
                             <DataGrid x:Name="TablaNombramientos" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column" SelectionMode="Single" IsReadOnly="True" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#20FFFFFF" BorderThickness="1" BorderBrush="#3E3E42" Background="Transparent" RowBackground="Transparent" AlternatingRowBackground="Transparent">
 

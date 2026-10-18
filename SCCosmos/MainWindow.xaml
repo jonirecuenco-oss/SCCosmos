@@ -83,6 +83,17 @@
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
 
+                                <Button x:Name="BtnMarcarAlertasLeidas"
+                                        Content="✔ Marcar todas como leídas"
+                                        Click="BtnMarcarAlertasLeidas_Click"
+                                        Margin="0,10,0,0"
+                                        Padding="10,7"
+                                        Background="#2B3038"
+                                        Foreground="White"
+                                        BorderThickness="0"
+                                        Cursor="Hand"
+                                        Visibility="Collapsed"/>
+
                                 <TextBlock x:Name="TxtSinAlertas" Text="¡Todo está al día!&#x0a;Tómate un café ☕" TextAlignment="Center" Foreground="#888888" FontStyle="Italic" Visibility="Collapsed" Margin="0,10,0,10"/>
                             </StackPanel>
                         </Border>
@@ -113,15 +124,19 @@
 
                 <ui:NavigationView.MenuItems>
                     <ui:NavigationViewItem Content="Inicio" Icon="{ui:SymbolIcon Home24}" TargetPageType="{x:Type local:InicioPage}" IsActive="True"/>
-                    <ui:NavigationViewItem Content="Correspondencia" Icon="{ui:SymbolIcon Mail24}" TargetPageType="{x:Type local:DocumentacionPage}"/>
-                    <ui:NavigationViewItem Content="Circuito" Icon="{ui:SymbolIcon ArrowClockwiseDashes24}" TargetPageType="{x:Type local:CircuitoPage}"/>
+                    <ui:NavigationViewItem x:Name="ItemCorrespondencia" Content="Correspondencia" Icon="{ui:SymbolIcon Mail24}" TargetPageType="{x:Type local:DocumentacionPage}"/>
+                    <ui:NavigationViewItem x:Name="ItemCircuito" Content="Circuito" Icon="{ui:SymbolIcon ArrowClockwiseDashes24}" TargetPageType="{x:Type local:CircuitoPage}"/>
                     
                     <ui:NavigationViewItem x:Name="MenuRuta" Content="Calendario" Icon="{ui:SymbolIcon Calendarrtl24}" TargetPageType="{x:Type local:CalendarioPage}"/>
                     <ui:NavigationViewItem Content="Personas" Icon="{ui:SymbolIcon People24}" TargetPageType="{x:Type local:PersonasPage}"/>
-                    <ui:NavigationViewItem Content="Escuelas" Icon="{ui:SymbolIcon HatGraduation24}" TargetPageType="{x:Type local:EscuelasPage}"/>
-                    <ui:NavigationViewItem Content="Asambleas" Icon="{ui:SymbolIcon Earth24}" TargetPageType="{x:Type local:AsambleasPage}"/>
-                    <ui:NavigationViewItem Content="Archivo del circuito" Icon="{ui:SymbolIcon BriefCase24}" TargetPageType="{x:Type local:ArchivoCircuitoPage}"/>
-                    <ui:NavigationViewItem Content="Descargas" Icon="{ui:SymbolIcon ArrowDownload24}" TargetPageType="{x:Type local:DescargasPage}"/>
+                    <ui:NavigationViewItem x:Name="ItemEscuelas" Content="Escuelas" Icon="{ui:SymbolIcon HatGraduation24}" TargetPageType="{x:Type local:EscuelasPage}"/>
+                    <ui:NavigationViewItem x:Name="ItemRsc" Content="RSC" Icon="{ui:SymbolIcon PeopleTeam24}" TargetPageType="{x:Type local:RscPage}"/>
+                    <ui:NavigationViewItem x:Name="ItemAsambleas" Content="Asambleas" Icon="{ui:SymbolIcon Earth24}" TargetPageType="{x:Type local:AsambleasPage}"/>
+                    <ui:NavigationViewItem x:Name="ItemArchivo" Content="Archivo del circuito" Icon="{ui:SymbolIcon BriefCase24}" TargetPageType="{x:Type local:ArchivoCircuitoPage}"/>
+                    <ui:NavigationViewItem x:Name="ItemDonaciones" Content="Rendimientos" Icon="{ui:SymbolIcon MoneyHand24}" TargetPageType="{x:Type local:DonacionesPage}"/>
+                    <ui:NavigationViewItem x:Name="ItemTareas" Content="Tareas" Icon="{ui:SymbolIcon CheckmarkCircle24}" TargetPageType="{x:Type local:TareasPage}"/>
+                    <ui:NavigationViewItem x:Name="ItemActividad" Content="Actividad" Icon="{ui:SymbolIcon ClipboardTaskListLtr24}" TargetPageType="{x:Type local:ActividadPage}"/>
+                    <ui:NavigationViewItem x:Name="ItemDescargas" Content="Descargas" Icon="{ui:SymbolIcon ArrowDownload24}" TargetPageType="{x:Type local:DescargasPage}"/>
                 </ui:NavigationView.MenuItems>
 
                 <ui:NavigationView.FooterMenuItems>

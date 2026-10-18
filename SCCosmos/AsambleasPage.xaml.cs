@@ -175,6 +175,14 @@ namespace SCCosmos
             InicializarDepartamentos();
             CargarConfiguracionBase();
 
+            this.Loaded += AsambleasPage_Loaded;
+        }
+
+        private async void AsambleasPage_Loaded(object sender, RoutedEventArgs e)
+        {
+            // Dejar que la página se pinte antes de cargar los datos.
+            await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background);
+
             _isInitializing = false;
             CargarProgramaAsambleaDesdeBD();
             CargarOrganigramaDesdeBD();

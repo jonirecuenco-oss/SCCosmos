@@ -13,6 +13,7 @@ namespace SCCosmos
         private bool _yaImportado;
         private string _rutaS21;
         private string _rutaTerritorios;
+        private string _rutaJsonConvertido;
         private readonly string _mesReferencia;
 
         public ImportarArchivosActividad(string congreCodigo, string congreNombre, bool yaImportado, string mesReferencia = null)
@@ -60,6 +61,90 @@ namespace SCCosmos
         {
             this.DialogResult = false;
             this.Close();
+        }
+
+        private async void BtnConvertirPdf_Click(object sender, RoutedEventArgs e)
+        {
+            var dialogo = new OpenFolderDialog
+            {
+                Title = "Carpeta con las tarjetas S-21 (PDF)"
+            };
+
+            if (dialogo.ShowDialog(this) != true)
+            {
+                return;
+            }
+
+            string carpeta = dialogo.FolderName;
+
+            TxtPdfS21.Text = "Convirtiendo tarjetas…";
+            TxtPdfS21.Foreground = System.Windows.Media.Brushes.LightYellow;
+            BtnVerJsonS21.Visibility = Visibility.Collapsed;
+
+            int anio = SCCosmos.Sincro.ConvertidorS21.AnioCicloActual(
+                DateTime.Parse(_mesReferencia + "-01"));
+
+            SCCosmos.Sincro.ResultadoConversionS21 resultado = null;
+            string rutaJson = null;
+            string error = null;
+
+            await System.Threading.Tasks.Task.Run(() =>
+            {
+                try
+                {
+                    resultado = SCCosmos.Sincro.ConvertidorS21
+                        .ConvertirCarpeta(carpeta, anio);
+
+                    rutaJson = SCCosmos.Sincro.ConvertidorS21
+                        .GuardarJson(resultado.Tarjetas, carpeta);
+                }
+                catch (Exception ex)
+                {
+                    error = ex.Message;
+                }
+            });
+
+            if (error != null)
+            {
+                TxtPdfS21.Text = "No se pudo convertir: " + error;
+                TxtPdfS21.Foreground = System.Windows.Media.Brushes.Salmon;
+                return;
+            }
+
+            if (resultado == null || resultado.Tarjetas.Count == 0)
+            {
+                TxtPdfS21.Text = "No se encontraron tarjetas S-21 en esa carpeta.";
+                TxtPdfS21.Foreground = System.Windows.Media.Brushes.Salmon;
+                return;
+            }
+
+            _rutaJsonConvertido = rutaJson;
+            _rutaS21 = rutaJson;
+
+            TxtS21.Text = System.IO.Path.GetFileName(rutaJson)
+                + " (" + resultado.Tarjetas.Count
+                + " tarjetas, generado desde PDF)";
+            TxtS21.Foreground = System.Windows.Media.Brushes.LightGreen;
+            TxtS21.FontStyle = FontStyles.Normal;
+
+            TxtPdfS21.Text = resultado.Tarjetas.Count + " tarjetas de "
+                + resultado.ArchivosPdf + " PDFs ("
+                + resultado.Repetidas + " repetidas). Puedes ver el JSON generado.";
+            TxtPdfS21.Foreground = System.Windows.Media.Brushes.LightGreen;
+            BtnVerJsonS21.Visibility = Visibility.Visible;
+        }
+
+        private void BtnVerJsonS21_Click(object sender, RoutedEventArgs e)
+        {
+            if (!string.IsNullOrEmpty(_rutaJsonConvertido)
+                && System.IO.File.Exists(_rutaJsonConvertido))
+            {
+                System.Diagnostics.Process.Start(
+                    new System.Diagnostics.ProcessStartInfo(_rutaJsonConvertido)
+                    {
+                        UseShellExecute = true
+                    });
+            }
         }
 
         private void BtnProcesar_Click(object sender, RoutedEventArgs e)

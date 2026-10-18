@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
@@ -28,12 +30,183 @@ namespace SCCosmos
 
             _rutaArchivoLocalSettings = Path.Combine(_rutaAppData, "local_settings.json");
 
+            HookAutoguardado();
+
+            this.Loaded += ConfiguracionPage_Loaded;
+            this.Unloaded += ConfiguracionPage_Unloaded;
+
+            // La esposa del SC no ve el JW Hub ni los datos del
+            // superintendente y del circuito: solo su propio nombre.
+            if (!PerfilAcceso.AccesoCompleto)
+            {
+                CardJwHub.Visibility = Visibility.Collapsed;
+                CardArchivoCircuito.Visibility = Visibility.Collapsed;
+                CardSincronizacion.Visibility = Visibility.Collapsed;
+                ToggleSincronizacion.Visibility = Visibility.Collapsed;
+
+                LblNumCircuito.Visibility = Visibility.Collapsed;
+                TxtNumCircuito.Visibility = Visibility.Collapsed;
+                LblNombreSC.Visibility = Visibility.Collapsed;
+                TxtNombre.Visibility = Visibility.Collapsed;
+                LblApellidoSC.Visibility = Visibility.Collapsed;
+                TxtApellido.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private async void ConfiguracionPage_Loaded(object sender, RoutedEventArgs e)
+        {
+            // Dejar que la página se pinte antes de cargar los datos.
+            await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background);
+
             ComprobarEstadoVinculacion();
             CargarConfiguracion();
+            CargarPerfilUsuario();
+            CargarSincronizacion();
+        }
+
+        // =========================================================================
+        // PERFIL DE USUARIO
+        // =========================================================================
+
+        private void CargarPerfilUsuario()
+        {
+            var datos = PerfilAcceso.Cargar();
+
+            CmbPerfilUsuario.SelectedIndex =
+                string.Equals(
+                    datos.Rol,
+                    PerfilAcceso.PerfilEsposa,
+                    StringComparison.OrdinalIgnoreCase)
+                    ? 1
+                    : 0;
+
+            TxtCodigoPerfil.Password =
+                datos.CodigoOk
+                    ? PerfilAcceso.CodigoCompleto
+                    : "";
+
+            ActualizarPanelCodigoPerfil();
+            ActualizarEstadoPerfil();
+        }
+
+        /// <summary>
+        /// El código de acceso es solo para el superintendente: el campo se
+        /// oculta mientras el perfil seleccionado no sea «Hombre».
+        /// </summary>
+        private void ActualizarPanelCodigoPerfil()
+        {
+            // Al cargar el XAML, el ComboBox puede disparar SelectionChanged
+            // antes de que existan los demás controles de la página.
+            if (PanelCodigoPerfil == null
+                || TxtCodigoPerfil == null)
+            {
+                return;
+            }
+
+            string rol =
+                (CmbPerfilUsuario.SelectedItem as ComboBoxItem)
+                    ?.Content?.ToString()
+                ?? PerfilAcceso.PerfilHombre;
+
+            bool esHombre =
+                string.Equals(
+                    rol,
+                    PerfilAcceso.PerfilHombre,
+                    StringComparison.OrdinalIgnoreCase);
+
+            PanelCodigoPerfil.Visibility =
+                esHombre
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+
+            if (!esHombre)
+            {
+                TxtCodigoPerfil.Password = "";
+            }
+        }
+
+        private void CmbPerfilUsuario_SelectionChanged(
+            object sender,
+            SelectionChangedEventArgs e)
+        {
+            ActualizarPanelCodigoPerfil();
+        }
+
+        private void ActualizarEstadoPerfil()
+        {
+            if (TxtEstadoPerfil == null)
+            {
+                return;
+            }
+
+            bool completo =
+                PerfilAcceso.AccesoCompleto;
+
+            TxtEstadoPerfil.Text =
+                completo
+                    ? "Acceso completo a todas las funciones."
+                    : "Acceso limitado: Inicio, Calendario, Personas y Configuración.";
+
+            TxtEstadoPerfil.Foreground =
+                new System.Windows.Media.SolidColorBrush(
+                    (Color)ColorConverter.ConvertFromString(
+                        completo ? "#4CAF50" : "#EAC18B"));
+        }
+
+        private void BtnGuardarPerfil_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            try
+            {
+                string rol =
+                    (CmbPerfilUsuario.SelectedItem as ComboBoxItem)
+                        ?.Content?.ToString()
+                    ?? PerfilAcceso.PerfilHombre;
+
+                PerfilAcceso.EstablecerRol(rol);
+
+                if (PerfilAcceso.EsHombre)
+                {
+                    PerfilAcceso.ValidarCodigo(
+                        TxtCodigoPerfil.Password);
+                }
+
+                ActualizarEstadoPerfil();
+
+                (Window.GetWindow(this) as MainWindow)
+                    ?.AplicarPerfilAcceso();
+
+                bool codigoEspecial =
+                    string.Equals(
+                        (TxtCodigoPerfil.Password ?? "").Trim(),
+                        PerfilAcceso.CodigoDescargas,
+                        StringComparison.OrdinalIgnoreCase);
+
+                MessageBox.Show(
+                    PerfilAcceso.AccesoCompleto
+                        ? codigoEspecial
+                            ? "Guardado. Acceso completo a todas las funciones y página de Descargas activada para siempre."
+                            : "Guardado. Acceso completo a todas las funciones."
+                        : "Guardado. Acceso limitado a Inicio, Calendario, Personas y Configuración.",
+                    "Perfil de usuario",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "No se pudo guardar el perfil: " + ex.Message,
+                    "Perfil de usuario",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
         }
 
         private void CargarConfiguracion()
         {
+            _autoguardando = true;
+
             // 1. CARGAR DATOS GLOBALES (BBDD)
             TxtNombre.Text = DatabaseHelper.ObtenerConfiguracion("NombreSC", "");
             TxtApellido.Text = DatabaseHelper.ObtenerConfiguracion("ApellidoSC", "");
@@ -43,7 +216,7 @@ namespace SCCosmos
             TxtRutaArchivoCircuito.Text = DatabaseHelper.ObtenerConfiguracion("RutaArchivoCircuito", "");
 
             // 2. CARGAR DATOS LOCALES (Este PC)
-            TxtRutaBaseDatos.Text = DatabaseHelper.RutaDirectorioDatos;
+            TxtRutaBaseDatos.Text = DatabaseHelper.RutaBaseDatos;
 
             if (File.Exists(_rutaArchivoLocalSettings))
             {
@@ -63,12 +236,22 @@ namespace SCCosmos
             {
                 TxtRutaDescargas.Text = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DescargasStream");
             }
+
+            _autoguardando = false;
         }
 
-        private void BtnGuardar_Click(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// Guarda toda la configuración (sin botones: se llama sola).
+        /// </summary>
+        private void GuardarTodo()
         {
             try
             {
+                if (_autoguardando)
+                {
+                    return;
+                }
+
                 // 1. GUARDAR DATOS GLOBALES
                 DatabaseHelper.GuardarConfiguracion("NombreSC", TxtNombre.Text.Trim());
                 DatabaseHelper.GuardarConfiguracion("ApellidoSC", TxtApellido.Text.Trim());
@@ -87,12 +270,266 @@ namespace SCCosmos
                     RutaDescargas = TxtRutaDescargas.Text.Trim()
                 };
                 File.WriteAllText(_rutaArchivoLocalSettings, JsonSerializer.Serialize(localSettings));
-
-                MessageBox.Show("Toda la configuración se ha guardado correctamente.", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
             }
-            catch (Exception ex)
+            catch
             {
-                MessageBox.Show($"Error al guardar la configuración: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+
+        // =========================================================================
+        // AUTOGUARDADO (SIN BOTONES)
+        // =========================================================================
+
+        private bool _autoguardando;
+
+        private void Autoguardar()
+        {
+            try
+            {
+                GuardarTodo();
+            }
+            catch
+            {
+            }
+        }
+
+
+        private void HookAutoguardado()
+        {
+            foreach (System.Windows.Controls.TextBox campo in
+                     new System.Windows.Controls.TextBox[]
+                     {
+                         TxtNombre,
+                         TxtApellido,
+                         TxtNombreEsposa,
+                         TxtApellidoEsposa,
+                         TxtNumCircuito,
+                         TxtRutaArchivoCircuito,
+                         TxtRutaDescargas
+                     })
+            {
+                campo.LostFocus += (s, e) => Autoguardar();
+            }
+
+            ToggleDescargas.Checked += (s, e) => Autoguardar();
+            ToggleDescargas.Unchecked += (s, e) => Autoguardar();
+            ToggleSincronizacion.Checked += (s, e) => Autoguardar();
+            ToggleSincronizacion.Unchecked += (s, e) => Autoguardar();
+
+            TxtNombreSincro.LostFocus += (s, e) => GuardarNombreSincro();
+            ToggleSincroActivo.Checked += (s, e) => AplicarSincroAutomatico();
+            ToggleSincroActivo.Unchecked += (s, e) => AplicarSincroAutomatico();
+        }
+
+        // =========================================================================
+        // SINCRONIZACIÓN ENTRE DISPOSITIVOS
+        // =========================================================================
+
+        private System.Windows.Threading.DispatcherTimer? _timerSincro;
+
+        private void CargarSincronizacion()
+        {
+            try
+            {
+                var config = SincronizacionRed.Config;
+
+                if (config is null)
+                {
+                    return;
+                }
+
+                _autoguardando = true;
+
+                ToggleSincroActivo.IsChecked = config.Activo;
+                TxtNombreSincro.Text = config.NombreDispositivo;
+                TxtClaveSincro.Text = config.Clave;
+
+                _autoguardando = false;
+
+                if (_timerSincro is null)
+                {
+                    _timerSincro = new System.Windows.Threading.DispatcherTimer();
+                    _timerSincro.Interval = TimeSpan.FromSeconds(2);
+                    _timerSincro.Tick += (s, e) => RefrescarEstadoSincro();
+                }
+
+                _timerSincro.Start();
+
+                RefrescarEstadoSincro();
+            }
+            catch
+            {
+            }
+        }
+
+        private void ConfiguracionPage_Unloaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                _timerSincro?.Stop();
+            }
+            catch
+            {
+            }
+        }
+
+        private void RefrescarEstadoSincro()
+        {
+            try
+            {
+                var servicio = SincronizacionRed.Servicio;
+
+                if (servicio is null)
+                {
+                    LblEstadoSincro.Text = "Sincronización no iniciada.";
+                    ListaDispositivosSincro.ItemsSource = null;
+                    return;
+                }
+
+                var partes = new List<string>();
+
+                if (!string.IsNullOrWhiteSpace(servicio.UltimoEstado))
+                {
+                    partes.Add(servicio.UltimoEstado);
+                }
+
+                if (servicio.UltimaActividad is not null)
+                {
+                    partes.Add("Última actividad: " + servicio.UltimaActividad.Value.ToString("HH:mm:ss"));
+                }
+
+                partes.Add($"Enviados: {servicio.CambiosEnviados} · Recibidos: {servicio.CambiosRecibidos}");
+
+                LblEstadoSincro.Text = string.Join("  ·  ", partes);
+
+                ListaDispositivosSincro.ItemsSource =
+                    SincronizacionRed.ObtenerDispositivosVista();
+            }
+            catch
+            {
+            }
+        }
+
+        private void BtnCopiarClaveSincro_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Clipboard.SetText(TxtClaveSincro.Text ?? "");
+                LblEstadoSincro.Text = "Clave copiada al portapapeles.";
+            }
+            catch
+            {
+            }
+        }
+
+        /// <summary>
+        /// Aplica los ajustes de sincronización (sin botón: se llama sola
+        /// al cambiar el interruptor o el nombre).
+        /// </summary>
+        private void AplicarSincroAutomatico()
+        {
+            try
+            {
+                if (_autoguardando)
+                {
+                    return;
+                }
+
+                var config = SincronizacionRed.Config;
+
+                if (config is null)
+                {
+                    return;
+                }
+
+                bool activoAntes = config.Activo;
+
+                config.Activo = ToggleSincroActivo.IsChecked == true;
+                config.NombreDispositivo = TxtNombreSincro.Text?.Trim() ?? "";
+
+                // Primero se guarda y después se reinicia, para que el
+                // motor arranque ya con los valores nuevos.
+                SincronizacionRed.Guardar();
+                SincronizacionRed.Reiniciar();
+
+                if (activoAntes != config.Activo)
+                {
+                    DatabaseHelper.AnotarActividad(
+                        "Configuración",
+                        config.Activo
+                            ? "Activó la sincronización entre dispositivos"
+                            : "Desactivó la sincronización entre dispositivos");
+                }
+
+                RefrescarEstadoSincro();
+            }
+            catch
+            {
+            }
+        }
+
+
+        /// <summary>
+        /// Guarda solo el nombre del dispositivo de sincronización.
+        /// </summary>
+        private void GuardarNombreSincro()
+        {
+            try
+            {
+                if (_autoguardando)
+                {
+                    return;
+                }
+
+                var config = SincronizacionRed.Config;
+
+                if (config is null)
+                {
+                    return;
+                }
+
+                string nombre = TxtNombreSincro.Text?.Trim() ?? "";
+
+                if (!string.Equals(
+                        config.NombreDispositivo,
+                        nombre,
+                        StringComparison.Ordinal))
+                {
+                    config.NombreDispositivo = nombre;
+                    SincronizacionRed.Guardar();
+                }
+            }
+            catch
+            {
+            }
+        }
+
+
+        /// <summary>
+        /// Desmarca o marca un dispositivo para no sincronizar con él.
+        /// </summary>
+        private void ChkDispositivo_Changed(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (_autoguardando)
+                {
+                    return;
+                }
+
+                if (sender is CheckBox chk
+                    && chk.Tag is string id
+                    && id.Length > 0)
+                {
+                    SincronizacionRed.EstablecerHabilitado(
+                        id,
+                        (chk.DataContext as DispositivoSyncPc)?.Nombre ?? "",
+                        chk.IsChecked == true);
+                }
+            }
+            catch
+            {
             }
         }
 
@@ -107,7 +544,11 @@ namespace SCCosmos
                 Title = "Selecciona la carpeta raíz del Archivo del Circuito",
                 InitialDirectory = string.IsNullOrEmpty(TxtRutaArchivoCircuito.Text) ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) : TxtRutaArchivoCircuito.Text
             };
-            if (dialog.ShowDialog() == true) TxtRutaArchivoCircuito.Text = dialog.FolderName;
+            if (dialog.ShowDialog() == true)
+            {
+                TxtRutaArchivoCircuito.Text = dialog.FolderName;
+                GuardarTodo();
+            }
         }
 
         private void BtnRutaDescargas_Click(object sender, RoutedEventArgs e)
@@ -117,35 +558,40 @@ namespace SCCosmos
                 Title = "Selecciona la carpeta para los discursos descargados",
                 InitialDirectory = string.IsNullOrEmpty(TxtRutaDescargas.Text) ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) : TxtRutaDescargas.Text
             };
-            if (dialog.ShowDialog() == true) TxtRutaDescargas.Text = dialog.FolderName;
+            if (dialog.ShowDialog() == true)
+            {
+                TxtRutaDescargas.Text = dialog.FolderName;
+                GuardarTodo();
+            }
         }
 
         private void BtnCambiarRuta_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new Microsoft.Win32.OpenFolderDialog
             {
-                Title = "Selecciona la carpeta donde quieres guardar los datos de SCCosmos",
+                Title = "Selecciona la carpeta general de archivos de SCCosmos",
                 InitialDirectory = DatabaseHelper.RutaDirectorioDatos
             };
 
             if (dialog.ShowDialog() == true)
             {
-                string nuevaRuta = dialog.FolderName;
                 try
                 {
-                    string bdAntigua = Path.Combine(DatabaseHelper.RutaDirectorioDatos, "sccosmos.db");
-                    string bdNueva = Path.Combine(nuevaRuta, "sccosmos.db");
+                    // La base de datos ya no se mueve: vive dentro de la
+                    // aplicación. Esta carpeta se usa para el Archivo del
+                    // circuito y demás archivos.
+                    DatabaseHelper.RutaDirectorioDatos = dialog.FolderName;
+                    TxtRutaBaseDatos.Text = DatabaseHelper.RutaBaseDatos;
 
-                    if (File.Exists(bdAntigua) && !File.Exists(bdNueva)) File.Copy(bdAntigua, bdNueva);
+                    DatabaseHelper.AnotarActividad(
+                        "Configuración",
+                        "Cambió la carpeta de archivos a " + dialog.FolderName);
 
-                    DatabaseHelper.RutaDirectorioDatos = nuevaRuta;
-                    TxtRutaBaseDatos.Text = nuevaRuta;
-
-                    MessageBox.Show("Ruta actualizada correctamente.\n\nEl programa leerá y escribirá los datos en esta nueva ubicación a partir de ahora.", "Sincronización", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show("Carpeta actualizada.\n\nSe usará para el Archivo del circuito y los archivos relacionados.", "Carpeta", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Hubo un error al intentar cambiar la ruta:\n\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show($"Hubo un error al intentar cambiar la carpeta:\n\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }

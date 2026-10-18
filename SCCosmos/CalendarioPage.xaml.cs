@@ -20,14 +20,20 @@ using System.Runtime.InteropServices;
 
 namespace SCCosmos
 {
-    public partial class CalendarioPage : Page
+    public partial class CalendarioPage : Page, IActualizablePorSincro
     {
         public ObservableCollection<SemanaCalendario> ColeccionSemanas { get; set; }
         private ICollectionView _vistaAgrupada;
 
-        private DateTime _fechaLimiteAnterior;
-        private DateTime _fechaLimitePosterior;
+        /// <summary>
+        /// Semana que debe resaltarse brevemente al abrir el calendario
+        /// (la fija el enlace «Próxima» del Inicio). Formato yyyy-MM-dd.
+        /// </summary>
+        public static string SemanaDestacadaPendiente = "";
+
         private ScrollViewer _scrollPadreFantasma;
+        private bool _cargaIniciada;
+        private bool _cancelarCarga;
 
         // Importación nativa de Windows para simular el teclado
         [DllImport("user32.dll", SetLastError = true)]
@@ -39,6 +45,13 @@ namespace SCCosmos
         {
             InitializeComponent();
 
+            // La esposa del SC en el calendario solo ve "Ver visita":
+            // sin configurar ciclo ni cargadores de meses.
+            if (!PerfilAcceso.AccesoCompleto)
+            {
+                BtnCiclo.Visibility = Visibility.Collapsed;
+            }
+
             ColeccionSemanas = new ObservableCollection<SemanaCalendario>();
             _vistaAgrupada = CollectionViewSource.GetDefaultView(ColeccionSemanas);
 
@@ -46,35 +59,106 @@ namespace SCCosmos
             _vistaAgrupada.SortDescriptions.Add(new SortDescription("Id", ListSortDirection.Ascending));
             _vistaAgrupada.GroupDescriptions.Add(new PropertyGroupDescription("Banner"));
 
-            InicializarCalendarioRangoFijo();
-
+            // La tabla se enlaza vacía; los datos se cargan después, en
+            // segundo plano, con el aviso de «Cargando…» ya en pantalla.
             TablaRuta.ItemsSource = _vistaAgrupada;
 
             this.Loaded += CalendarioPage_Loaded;
             this.Unloaded += CalendarioPage_Unloaded;
         }
 
-        private void InicializarCalendarioRangoFijo()
+        /// <summary>
+        /// Prepara en segundo plano todas las semanas del calendario (el rango
+        /// con datos más un año por cada lado), sin tocar la interfaz.
+        /// </summary>
+        private async Task<List<SemanaCalendario>> ConstruirSemanasAsync()
         {
-            DateTime hoy = DateTime.Today;
-            DateTime martesActual = hoy;
-            while (martesActual.DayOfWeek != DayOfWeek.Tuesday)
+            return await Task.Run(() =>
             {
-                martesActual = martesActual.AddDays(-1);
-            }
+                DateTime hoy = DateTime.Today;
+                DateTime martesActual = hoy;
+                while (martesActual.DayOfWeek != DayOfWeek.Tuesday)
+                {
+                    martesActual = martesActual.AddDays(-1);
+                }
 
-            _fechaLimiteAnterior = martesActual.AddDays(-26 * 7);
-            _fechaLimitePosterior = martesActual.AddDays(26 * 7);
+                // Se carga de una vez todo el rango con datos (más un año de
+                // margen por cada lado): así al desplazarse ya no hay que ir
+                // añadiendo meses y el scroll no tiene tirones.
+                DateTime inicio = martesActual.AddDays(-52 * 7);
+                DateTime fin = martesActual.AddDays(52 * 7);
 
-            DateTime bucleFecha = _fechaLimiteAnterior;
-            while (bucleFecha <= _fechaLimitePosterior)
-            {
-                InsertarSemanasDesdeDB(bucleFecha, addToBottom: true);
-                bucleFecha = bucleFecha.AddDays(7);
-            }
+                List<SemanaCalendario> todas = DatabaseHelper.ObtenerTodasLasSemanas();
+
+                foreach (SemanaCalendario semana in todas)
+                {
+                    if (semana.FechaMartes.AddDays(-52 * 7) < inicio)
+                    {
+                        inicio = semana.FechaMartes.AddDays(-52 * 7);
+                    }
+
+                    if (semana.FechaMartes.AddDays(52 * 7) > fin)
+                    {
+                        fin = semana.FechaMartes.AddDays(52 * 7);
+                    }
+                }
+
+                var porFecha = new Dictionary<DateTime, List<SemanaCalendario>>();
+
+                foreach (SemanaCalendario semana in todas)
+                {
+                    DateTime clave = semana.FechaMartes.Date;
+
+                    if (!porFecha.TryGetValue(clave, out List<SemanaCalendario> listaFecha))
+                    {
+                        listaFecha = new List<SemanaCalendario>();
+                        porFecha[clave] = listaFecha;
+                    }
+
+                    listaFecha.Add(semana);
+                }
+
+                var resultado = new List<SemanaCalendario>();
+
+                DateTime bucleFecha = inicio;
+                while (bucleFecha <= fin)
+                {
+                    if (!porFecha.TryGetValue(bucleFecha.Date, out List<SemanaCalendario> semanasEnEstaFecha))
+                    {
+                        semanasEnEstaFecha = new List<SemanaCalendario>
+                        {
+                            new SemanaCalendario
+                            {
+                                FechaMartes = bucleFecha,
+                                Actividad = "",
+                                Congregacion = "",
+                                Acompanante = "",
+                                Tipo = "",
+                                Alojamiento = ""
+                            }
+                        };
+                    }
+
+                    for (int i = 0; i < semanasEnEstaFecha.Count; i++)
+                    {
+                        SemanaCalendario s = semanasEnEstaFecha[i];
+
+                        if (i > 0)
+                        {
+                            s.EsClonada = Visibility.Visible;
+                        }
+
+                        resultado.Add(delayEstado(s));
+                    }
+
+                    bucleFecha = bucleFecha.AddDays(7);
+                }
+
+                return resultado;
+            });
         }
 
-        private void InsertarSemanasDesdeDB(DateTime fecha, bool addToBottom)
+        private List<SemanaCalendario> LeerSemanasDeBD(DateTime fecha)
         {
             string isoId = fecha.ToString("yyyy-MM-dd");
             List<SemanaCalendario> semanasEnEstaFecha = DatabaseHelper.ObtenerTodasSemanasPorFecha(isoId);
@@ -98,8 +182,16 @@ namespace SCCosmos
                 var s = semanasEnEstaFecha[i];
                 if (i > 0) s.EsClonada = Visibility.Visible;
 
-                s = delayEstado(s);
+                semanasEnEstaFecha[i] = delayEstado(s);
+            }
 
+            return semanasEnEstaFecha;
+        }
+
+        private void InsertarSemanasDesdeDB(DateTime fecha, bool addToBottom)
+        {
+            foreach (var s in LeerSemanasDeBD(fecha))
+            {
                 if (addToBottom) ColeccionSemanas.Add(s);
                 else ColeccionSemanas.Insert(0, s);
             }
@@ -267,40 +359,6 @@ namespace SCCosmos
             return null;
         }
 
-        private void BtnCargarPasado_Click(object sender, RoutedEventArgs e)
-        {
-            var scrollViewer = ObtenerScrollViewer(TablaRuta);
-            double offsetAnterior = scrollViewer != null ? scrollViewer.VerticalOffset : 0;
-            double alturaTotalAnterior = scrollViewer != null ? scrollViewer.ExtentHeight : 0;
-
-            for (int i = 0; i < 26; i++)
-            {
-                _fechaLimiteAnterior = _fechaLimiteAnterior.AddDays(-7);
-                InsertarSemanasDesdeDB(_fechaLimiteAnterior, addToBottom: false);
-            }
-            _vistaAgrupada.Refresh();
-
-            if (scrollViewer != null)
-            {
-                Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() =>
-                {
-                    TablaRuta.UpdateLayout();
-                    double diferenciaAltura = scrollViewer.ExtentHeight - alturaTotalAnterior;
-                    scrollViewer.ScrollToVerticalOffset(offsetAnterior + diferenciaAltura);
-                }));
-            }
-        }
-
-        private void BtnCargarFuturo_Click(object sender, RoutedEventArgs e)
-        {
-            for (int i = 0; i < 26; i++)
-            {
-                _fechaLimitePosterior = _fechaLimitePosterior.AddDays(7);
-                InsertarSemanasDesdeDB(_fechaLimitePosterior, addToBottom: true);
-            }
-            _vistaAgrupada.Refresh();
-        }
-
         private void CalendarioPage_Loaded(object sender, RoutedEventArgs e)
         {
             DependencyObject parent = System.Windows.Media.VisualTreeHelper.GetParent(this);
@@ -315,8 +373,91 @@ namespace SCCosmos
                 parent = System.Windows.Media.VisualTreeHelper.GetParent(parent);
             }
 
-            Dispatcher.BeginInvoke(DispatcherPriority.Background, new Action(() =>
+            if (_cargaIniciada)
             {
+                // La página puede reutilizarse: si venimos del enlace
+                // «Próxima» del Inicio, se resalta igualmente.
+                _ = ResaltarSemanaPendienteAsync();
+
+                return;
+            }
+
+            _cargaIniciada = true;
+
+            OverlayCargando.Visibility = Visibility.Visible;
+
+            _ = CargarCalendarioAsync();
+        }
+
+        /// <summary>
+        /// Rellena el calendario con el aviso de carga ya en pantalla: primero
+        /// se preparan las semanas en segundo plano y después se vuelcan en la
+        /// tabla (sin enlazar, para que no procese cada fila) y se coloca la
+        /// vista en el mes actual.
+        /// </summary>
+        public void DatosActualizados()
+        {
+            try
+            {
+                _ = CargarCalendarioAsync();
+            }
+            catch
+            {
+            }
+        }
+
+
+        private async Task CargarCalendarioAsync()
+        {
+            bool completado = false;
+
+            try
+            {
+                // Dejar que la página termine de dibujarse (con el aviso ya a
+                // la vista) antes de ponerse con el trabajo.
+                await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+                List<SemanaCalendario> semanas = await ConstruirSemanasAsync();
+
+                // La tabla se rellena por tandas pequeñas y entre tanda y tanda
+                // se cede el turno: así la barra del aviso se mantiene fluida y
+                // el menú sigue respondiendo (al salir, la carga se cancela).
+                const int tamanoTanda = 3;
+
+                for (int i = 0; i < semanas.Count; i += tamanoTanda)
+                {
+                    if (_cancelarCarga)
+                    {
+                        return;
+                    }
+
+                    int finTanda = Math.Min(i + tamanoTanda, semanas.Count);
+
+                    for (int j = i; j < finTanda; j++)
+                    {
+                        ColeccionSemanas.Add(semanas[j]);
+                    }
+
+                    await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+                }
+
+                // Con las altas por tandas, WPF deja mal repartidos los anchos
+                // en estrella de las columnas: se piden de nuevo al terminar.
+                foreach (DataGridColumn columna in TablaRuta.Columns)
+                {
+                    if (columna.Width.IsStar)
+                    {
+                        double valorEstrella = columna.Width.Value;
+                        columna.Width = new DataGridLength(1, DataGridLengthUnitType.Auto);
+                        columna.Width = new DataGridLength(valorEstrella, DataGridLengthUnitType.Star);
+                    }
+                }
+
+                if (_cancelarCarga)
+                {
+                    return;
+                }
+
                 int indiceActual = -1;
                 DateTime martesActual = DateTime.Today;
                 while (martesActual.DayOfWeek != DayOfWeek.Tuesday) martesActual = martesActual.AddDays(-1);
@@ -338,15 +479,171 @@ namespace SCCosmos
                     TablaRuta.UpdateLayout();
                     TablaRuta.ScrollIntoView(ColeccionSemanas[indiceConMargen]);
                 }
-            }));
+
+                completado = true;
+            }
+            catch (Exception)
+            {
+                // Si algo falla al cargar, el aviso se retira igualmente.
+            }
+            finally
+            {
+                OverlayCargando.Visibility = Visibility.Collapsed;
+            }
+
+            if (completado)
+            {
+                await ResaltarSemanaPendienteAsync();
+            }
         }
 
         private void CalendarioPage_Unloaded(object sender, RoutedEventArgs e)
         {
+            _cancelarCarga = true;
+
             if (_scrollPadreFantasma != null)
             {
                 _scrollPadreFantasma.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
             }
+        }
+
+        /// <summary>
+        /// Si el Inicio dejó una semana pendiente, se desplaza hasta ella
+        /// y se resalta un momento (borde y fondo), volviendo después a
+        /// su estado normal.
+        /// </summary>
+        private async Task ResaltarSemanaPendienteAsync()
+        {
+            string pendiente = SemanaDestacadaPendiente;
+
+            SemanaDestacadaPendiente = "";
+
+            if (string.IsNullOrWhiteSpace(pendiente))
+            {
+                return;
+            }
+
+            // Si hay una recarga en curso (p. ej. por sincronización), se
+            // espera un momento; si sigue, se reintenta cuando acabe.
+            for (int intento = 0;
+                 intento < 8
+                 && OverlayCargando.Visibility
+                    == Visibility.Visible;
+                 intento++)
+            {
+                await Task.Delay(200);
+            }
+
+            if (OverlayCargando.Visibility
+                == Visibility.Visible)
+            {
+                SemanaDestacadaPendiente = pendiente;
+
+                return;
+            }
+
+            SemanaCalendario objetivo = null;
+
+            for (int intento = 0;
+                 intento < 30 && objetivo == null;
+                 intento++)
+            {
+                objetivo =
+                    ColeccionSemanas.FirstOrDefault(s =>
+                        string.Equals(
+                            s.IdIso,
+                            pendiente,
+                            StringComparison.OrdinalIgnoreCase));
+
+                if (objetivo == null)
+                {
+                    await Task.Delay(200);
+                }
+            }
+
+            if (objetivo == null)
+            {
+                return;
+            }
+
+            TablaRuta.ScrollIntoView(objetivo);
+            TablaRuta.UpdateLayout();
+
+            await Dispatcher.InvokeAsync(
+                () => { },
+                DispatcherPriority.Loaded);
+
+            DataGridRow fila = null;
+
+            for (int intento = 0;
+                 intento < 10 && fila == null;
+                 intento++)
+            {
+                fila =
+                    TablaRuta.ItemContainerGenerator
+                        .ContainerFromItem(objetivo)
+                    as DataGridRow
+                    ?? BuscarFilaSemana(TablaRuta, objetivo);
+
+                if (fila == null)
+                {
+                    await Task.Delay(150);
+                }
+            }
+
+            if (fila == null)
+            {
+                return;
+            }
+
+            fila.Background =
+                new SolidColorBrush(
+                    Color.FromArgb(0x66, 0x4B, 0xA3, 0xE3));
+
+            fila.BorderBrush =
+                new SolidColorBrush(
+                    Color.FromArgb(0xFF, 0xFF, 0xC8, 0x3C));
+
+            await Task.Delay(1800);
+
+            fila.ClearValue(
+                Control.BackgroundProperty);
+
+            fila.ClearValue(
+                Control.BorderBrushProperty);
+        }
+
+
+        private static DataGridRow BuscarFilaSemana(
+            DependencyObject raiz,
+            object item)
+        {
+            int total =
+                VisualTreeHelper.GetChildrenCount(raiz);
+
+            for (int i = 0; i < total; i++)
+            {
+                DependencyObject hijo =
+                    VisualTreeHelper.GetChild(raiz, i);
+
+                if (hijo is DataGridRow fila
+                    && ReferenceEquals(
+                        fila.Item,
+                        item))
+                {
+                    return fila;
+                }
+
+                DataGridRow encontrada =
+                    BuscarFilaSemana(hijo, item);
+
+                if (encontrada != null)
+                {
+                    return encontrada;
+                }
+            }
+
+            return null;
         }
 
         private void BtnEditar_Click(object sender, RoutedEventArgs e)
@@ -1288,6 +1585,10 @@ namespace SCCosmos
 
         private void FilaSemana_Click(object sender, MouseButtonEventArgs e)
         {
+            // La esposa del SC no abre la edición de la semana al pulsar
+            // la fila: en el calendario solo tiene "Ver visita".
+            if (!PerfilAcceso.AccesoCompleto) return;
+
             if (e.OriginalSource is DependencyObject source)
             {
                 var esBotonEstandar = FindParent<Button>(source) != null;

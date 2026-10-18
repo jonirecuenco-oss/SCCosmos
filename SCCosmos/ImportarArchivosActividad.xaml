@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-        Title="Importar Archivos" Height="480" Width="550" 
+        Title="Importar Archivos" Height="560" Width="550" 
         WindowStartupLocation="CenterOwner" WindowBackdropType="Mica" ExtendsContentIntoTitleBar="True">
 
     <Grid Margin="25,45,25,25">
@@ -35,6 +35,24 @@
                         <TextBlock x:Name="TxtS21" Text="Ningún archivo seleccionado" Foreground="#888888" Margin="0,4,0,0" FontStyle="Italic"/>
                     </StackPanel>
                     <ui:Button Grid.Column="1" Content="Examinar" Icon="{ui:SymbolIcon ArrowUp24}" Cursor="Hand" Click="BtnS21_Click" VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+
+            <!-- Bloque S-21 (PDF) -->
+            <Border Background="#10FFFFFF" BorderBrush="#20FFFFFF" BorderThickness="1" CornerRadius="8" Padding="15" Margin="0,0,0,15">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="S-21 (PDF) - Convertir tarjetas" FontWeight="SemiBold" FontSize="14" Foreground="White"/>
+                        <TextBlock x:Name="TxtPdfS21" Text="Elige la carpeta con las tarjetas S-21 en PDF y se generará el JSON." Foreground="#888888" Margin="0,4,0,0" FontStyle="Italic" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <ui:Button x:Name="BtnVerJsonS21" Content="Ver JSON" Icon="{ui:SymbolIcon Document24}" Cursor="Hand" Appearance="Secondary" Margin="0,0,8,0" Visibility="Collapsed" Click="BtnVerJsonS21_Click"/>
+                        <ui:Button Content="Convertir…" Icon="{ui:SymbolIcon DocumentPdf24}" Cursor="Hand" Click="BtnConvertirPdf_Click"/>
+                    </StackPanel>
                 </Grid>
             </Border>
 

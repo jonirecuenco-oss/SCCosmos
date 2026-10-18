@@ -1,0 +1,70 @@
+<Window x:Class="SCCosmos.PerfilInicialWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Perfil de usuario"
+        Height="360"
+        Width="480"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="#17191E">
+    <StackPanel Margin="26" VerticalAlignment="Center">
+        <TextBlock Text="¿Quién usará este equipo?"
+                   FontSize="22"
+                   FontWeight="Bold"
+                   Foreground="White"
+                   TextWrapping="Wrap"/>
+
+        <TextBlock Text="Esta elección determina las funciones disponibles. Podrás cambiarla en Configuración."
+                   Foreground="#9EA4AE"
+                   FontSize="13"
+                   Margin="0,8,0,18"
+                   TextWrapping="Wrap"/>
+
+        <StackPanel x:Name="PanelOpciones">
+            <Button x:Name="BtnHombre"
+                    Content="👤 Soy el superintendente (él)"
+                    Click="BtnHombre_Click"
+                    Padding="12"
+                    Margin="0,0,0,10"
+                    Background="#2478B5"
+                    Foreground="White"
+                    BorderThickness="0"/>
+            <Button x:Name="BtnEsposa"
+                    Content="👤 Soy su esposa"
+                    Click="BtnEsposa_Click"
+                    Padding="12"
+                    Background="#30343B"
+                    Foreground="White"
+                    BorderThickness="0"/>
+        </StackPanel>
+
+        <StackPanel x:Name="PanelCodigo" Visibility="Collapsed">
+            <TextBlock Text="Introduce el código de acceso"
+                       Foreground="White"
+                       FontWeight="SemiBold"
+                       Margin="0,0,0,6"/>
+            <TextBox x:Name="TxtCodigo"
+                     Padding="8"
+                     Margin="0,0,0,10"/>
+            <Button Content="Continuar"
+                    Click="BtnContinuar_Click"
+                    Padding="12"
+                    Background="#245C38"
+                    Foreground="White"
+                    BorderThickness="0"/>
+            <Button Content="Continuar sin código (acceso limitado)"
+                    Click="BtnSinCodigo_Click"
+                    Padding="10"
+                    Margin="0,8,0,0"
+                    Background="#242830"
+                    Foreground="#D7DBE0"
+                    BorderThickness="0"/>
+        </StackPanel>
+
+        <TextBlock x:Name="TxtAviso"
+                   Foreground="#EAC18B"
+                   FontSize="12"
+                   Margin="0,12,0,0"
+                   TextWrapping="Wrap"/>
+    </StackPanel>
+</Window>

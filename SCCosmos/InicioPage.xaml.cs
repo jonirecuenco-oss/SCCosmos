@@ -9,9 +9,10 @@ using Microsoft.Data.Sqlite;
 
 namespace SCCosmos
 {
-    public partial class InicioPage : Page
+    public partial class InicioPage : Page, IActualizablePorSincro
     {
         private SemanaCalendario _semanaActual;
+        private SemanaCalendario _proximaActividad;
         private DateTime _lunesSemanaActual;
         private DateTime _domingoSemanaActual;
         private DateTime _fechaProgramaSeleccionada;
@@ -21,7 +22,36 @@ namespace SCCosmos
         public InicioPage()
         {
             InitializeComponent();
-            TxtSaludo.Text = $"¡Hola, {DatabaseHelper.ObtenerConfiguracion("NombreSC", "Jonatán")}!";
+
+            // Si el equipo lo usa la esposa del SC, el saludo es con su
+            // nombre; si no está puesto, se usa el del SC.
+            bool esEsposa =
+                PerfilAcceso.Configurado
+                && !PerfilAcceso.EsHombre;
+
+            string nombre =
+                DatabaseHelper.ObtenerConfiguracion(
+                    esEsposa
+                        ? "NombreEsposaSC"
+                        : "NombreSC",
+                    "");
+
+            if (string.IsNullOrWhiteSpace(nombre)
+                && esEsposa)
+            {
+                nombre =
+                    DatabaseHelper.ObtenerConfiguracion(
+                        "NombreSC",
+                        "");
+            }
+
+            if (string.IsNullOrWhiteSpace(nombre))
+            {
+                nombre = "Jonatán";
+            }
+
+            TxtSaludo.Text = $"¡Hola, {nombre}!";
+
             CargarSemanaActual();
             _ = CargarEstadisticasAsync();
         }
@@ -29,6 +59,20 @@ namespace SCCosmos
         // =====================================================
         // SEMANA ACTUAL: LUNES A DOMINGO
         // =====================================================
+        public void DatosActualizados()
+        {
+            try
+            {
+                CargarSemanaActual();
+
+                _ = CargarEstadisticasAsync();
+            }
+            catch
+            {
+            }
+        }
+
+
         private void CargarSemanaActual()
         {
             try
@@ -45,6 +89,8 @@ namespace SCCosmos
 
                 _domingoSemanaActual =
                     _lunesSemanaActual.AddDays(6).Date;
+
+                CargarProximaActividad();
 
                 // La tabla Semanas conserva históricamente FechaMartes como
                 // fecha identificadora. Para una semana lunes-domingo, el
@@ -133,6 +179,101 @@ namespace SCCosmos
         // =====================================================
         // PROGRAMA DEL DÍA
         // =====================================================
+        private void CargarProximaActividad()
+        {
+            try
+            {
+                DateTime martesActual =
+                    _lunesSemanaActual.AddDays(1);
+
+                _proximaActividad =
+                    DatabaseHelper
+                        .ObtenerTodasLasSemanas()
+                        .Where(s =>
+                            s.FechaMartes.Date > martesActual.Date
+                            && !string.IsNullOrWhiteSpace(
+                                s.Actividad))
+                        .OrderBy(s => s.FechaMartes)
+                        .ThenBy(s => s.Id)
+                        .FirstOrDefault();
+
+                if (_proximaActividad == null)
+                {
+                    TxtProximaActividad.Visibility =
+                        Visibility.Collapsed;
+
+                    return;
+                }
+
+                TxtProximaActividad.Text =
+                    "Próxima: " +
+                    TextoProximaActividad(
+                        _proximaActividad);
+
+                TxtProximaActividad.Visibility =
+                    Visibility.Visible;
+            }
+            catch
+            {
+                TxtProximaActividad.Visibility =
+                    Visibility.Collapsed;
+            }
+        }
+
+        private static string TextoProximaActividad(
+            SemanaCalendario semana)
+        {
+            string actividad =
+                semana.Actividad?.Trim() ?? "";
+
+            if (string.Equals(
+                    actividad,
+                    "Visita",
+                    StringComparison.OrdinalIgnoreCase)
+                && !string.IsNullOrWhiteSpace(
+                    semana.Congregacion))
+            {
+                actividad =
+                    "Visita · " + semana.Congregacion;
+            }
+            else if (string.Equals(
+                    actividad,
+                    "Asamblea de circuito",
+                    StringComparison.OrdinalIgnoreCase)
+                && !string.IsNullOrWhiteSpace(
+                    semana.SeccionAsamblea))
+            {
+                actividad =
+                    "Asamblea de circuito · Sección " +
+                    semana.SeccionAsamblea;
+            }
+
+            return actividad + " (" +
+                semana.RangoFechas.ToLower() + ")";
+        }
+
+        private void TxtProximaActividad_Click(
+            object sender,
+            System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (_proximaActividad == null)
+            {
+                return;
+            }
+
+            CalendarioPage.SemanaDestacadaPendiente =
+                _proximaActividad.FechaMartes
+                    .ToString("yyyy-MM-dd");
+
+            var ventanaPrincipal =
+                Application.Current.MainWindow as MainWindow;
+
+            ventanaPrincipal
+                ?.MenuPrincipal
+                .Navigate(typeof(CalendarioPage));
+        }
+
+
         private void CargarProgramaFecha(DateTime fecha)
         {
             if (_semanaActual == null
@@ -221,6 +362,13 @@ namespace SCCosmos
                 tipo = "Actividad";
             }
 
+            // En las actividades "de comida/cena/dormir" el responsable es la
+            // propia actividad: no se muestra insignia de persona.
+            if (EsActividadLegacy(actividad.Responsable))
+            {
+                responsable = "";
+            }
+
             Persona acompanante =
                 ObtenerPersonaActual(
                     actividad.CompaneroId);
@@ -239,6 +387,10 @@ namespace SCCosmos
                         ? "--:--"
                         : actividad.Hora.Trim(),
                 Responsable = responsable,
+                VerResponsable =
+                    string.IsNullOrWhiteSpace(responsable)
+                        ? Visibility.Collapsed
+                        : Visibility.Visible,
                 TipoActividad = tipo,
                 CompaneroNombre =
                     string.IsNullOrWhiteSpace(nombreAcompanante)
@@ -670,13 +822,11 @@ namespace SCCosmos
                 new List<ActividadResumenCircuito>();
 
             string dbPath =
-                System.IO.Path.Combine(
-                    DatabaseHelper.RutaDirectorioDatos,
-                    "sccosmos.db");
+                DatabaseHelper.RutaBaseDatos;
 
             using (var connection =
                    new SqliteConnection(
-                       $"Data Source={dbPath}"))
+                       $"Data Source={dbPath};Pooling=False"))
             {
                 connection.Open();
 
@@ -1028,6 +1178,7 @@ namespace SCCosmos
             public string Ubicacion { get; set; }
             public Visibility VerCompanero { get; set; }
             public Visibility VerUbicacion { get; set; }
+            public Visibility VerResponsable { get; set; }
         }
     }
 }

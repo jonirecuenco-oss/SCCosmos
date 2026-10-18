@@ -7,6 +7,7 @@ using OpenQA.Selenium.Support.UI;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -61,11 +62,17 @@ namespace SCCosmos
         private bool _mapaCargado = false;
         private string _htmlMapaCache = "";
 
+        // Carta generada para esta congregación/mes y selección de aprobaciones.
+        // Se abre una COPIA editable: nunca se modifica la plantilla de Correspondencia.
+        private string _cartaNombramientosEditable;
+        private string _firmaCartaNombramientos;
+
         public List<CategoriaNotas> MisNotasAgrupadas { get; set; }
 
         public VisitasPage()
         {
             InitializeComponent();
+            AplicarPerfilAccesoVisita();
             this.Loaded += Page_Loaded;
         }
 
@@ -101,15 +108,53 @@ namespace SCCosmos
         {
             if (TablaVisitas == null || TablaVisitas.Columns.Count == 0) return;
 
+            bool perfilLimitado = !PerfilAcceso.AccesoCompleto;
+
             foreach (var col in TablaVisitas.Columns)
             {
                 string header = col.Header?.ToString();
                 if (string.IsNullOrEmpty(header)) continue;
 
+                // La esposa del SC no ve los cuadros de las horas ni los
+                // territorios trabajados.
+                if (perfilLimitado && EsColumnaDeHoras(header)) { col.Visibility = Visibility.Collapsed; continue; }
+                if (perfilLimitado && header == "Terrs.") { col.Visibility = Visibility.Collapsed; continue; }
+
                 if (header == "Nombre JW Hub") col.Visibility = anchoPantalla < 1250 ? Visibility.Collapsed : Visibility.Visible;
                 else if (header == "Sexo" || header == "Edad" || header == "Baut.") col.Visibility = anchoPantalla < 1100 ? Visibility.Collapsed : Visibility.Visible;
                 else if (header == "Terrs." || header == "CBs") col.Visibility = anchoPantalla < 950 ? Visibility.Collapsed : Visibility.Visible;
             }
+        }
+
+        /// <summary>
+        /// Las columnas de los 6 meses se titulan "May 26", "Jun 26"...
+        /// </summary>
+        private static bool EsColumnaDeHoras(string header)
+        {
+            return header.Length == 6
+                && header[3] == ' '
+                && header.Substring(4).All(char.IsDigit);
+        }
+
+        /// <summary>
+        /// La esposa del SC solo ve la información de la congregación, el
+        /// programa, los grupos y el ministerio sin los cuadros de las horas.
+        /// </summary>
+        private void AplicarPerfilAccesoVisita()
+        {
+            if (PerfilAcceso.AccesoCompleto)
+            {
+                return;
+            }
+
+            TabMapa.Visibility = Visibility.Collapsed;
+            TabNotas.Visibility = Visibility.Collapsed;
+            TabTerritorios.Visibility = Visibility.Collapsed;
+            TabContabilidad.Visibility = Visibility.Collapsed;
+            TabS303.Visibility = Visibility.Collapsed;
+
+            // Tampoco ve el selector de meses del Ministerio.
+            CintaMesMinisterio.Visibility = Visibility.Collapsed;
         }
 
         private void UIElement_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
@@ -329,6 +374,111 @@ namespace SCCosmos
                 _mesTerritorios.AddYears(1);
 
             ActualizarUI_MesTerritorios();
+        }
+
+        private void BtnImportarTerritoriosJson_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(_congreCodigo))
+            {
+                MessageBox.Show(
+                    "No se ha podido identificar la congregación.",
+                    "Territorios",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                return;
+            }
+
+            var dialogo = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = "Archivos JSON (*.json)|*.json",
+                Title = "Seleccionar S-13 (territorios)"
+            };
+
+            if (dialogo.ShowDialog() != true)
+            {
+                return;
+            }
+
+            try
+            {
+                string contenido =
+                    System.IO.File
+                        .ReadAllText(dialogo.FileName)
+                        .Trim();
+
+                if (!contenido.StartsWith("["))
+                {
+                    contenido = "[" + contenido + "]";
+                }
+
+                var opciones = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                var lista = JsonSerializer
+                    .Deserialize<List<TerritorioJSON>>(
+                        contenido,
+                        opciones);
+
+                if (lista == null || lista.Count == 0)
+                {
+                    MessageBox.Show(
+                        "El archivo no contiene territorios.",
+                        "Territorios",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+
+                    return;
+                }
+
+                int existentes = DatabaseHelper
+                    .ObtenerTerritoriosPorCongregacion(
+                        _congreCodigo)
+                    .GroupBy(t => t.Nombre)
+                    .Count();
+
+                if (existentes > 0)
+                {
+                    var respuesta = MessageBox.Show(
+                        "Esta congregación ya tiene " + existentes +
+                        " territorios. Se sustituirán por los " +
+                        lista.Count + " del archivo.\n\n¿Continuar?",
+                        "Importar S-13",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Question);
+
+                    if (respuesta != MessageBoxResult.Yes)
+                    {
+                        return;
+                    }
+                }
+
+                DatabaseHelper.GuardarTerritoriosImportados(
+                    _congreCodigo,
+                    lista);
+
+                ActualizarUI_MesTerritorios();
+
+                MessageBox.Show(
+                    "Se importaron " + lista.Count +
+                    " territorios del S-13.",
+                    "Territorios",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "No se pudo importar el JSON:\n\n" +
+                    ex.Message,
+                    "Territorios",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
         }
 
         // --- CONTABILIDAD ---
@@ -3038,7 +3188,7 @@ namespace SCCosmos
                             p.Latitud = lat;
                             p.Longitud = lon;
 
-                            using (var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={DatabaseHelper.RutaDirectorioDatos}\\sccosmos.db"))
+                            using (var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={DatabaseHelper.RutaBaseDatos};Pooling=False"))
                             {
                                 connection.Open();
                                 var cmd = connection.CreateCommand();
@@ -4651,7 +4801,7 @@ namespace SCCosmos
 
                     using (var conn =
                            new Microsoft.Data.Sqlite.SqliteConnection(
-                               $"Data Source={DatabaseHelper.RutaDirectorioDatos}\\sccosmos.db"))
+                               $"Data Source={DatabaseHelper.RutaBaseDatos};Pooling=False"))
                     {
                         conn.Open();
 
@@ -5040,8 +5190,28 @@ namespace SCCosmos
             }
 
             // 2. Cargar S-2 (Recomendaciones y bajas pendientes)
+            RefrescarTablaRecomendacionesS2();
+
+            // 3. Cargar la plantilla de correo por defecto
+            string asuntoPlantilla = DatabaseHelper.ObtenerConfiguracion("Asunto_Envío de S-303", "Informe S-303");
+            string cuerpoPlantilla = DatabaseHelper.ObtenerConfiguracion("Email_Envío de S-303", "Queridos hermanos,<br><br>Adjunto el informe S-303 de la visita.<br><br>Un saludo cariñoso.");
+
+            // Reemplazamos etiquetas dinámicas
+            asuntoPlantilla = asuntoPlantilla.Replace("[Congregacion]", _congreNombre);
+            cuerpoPlantilla = cuerpoPlantilla.Replace("[Congregacion]", _congreNombre);
+
+            TxtAsuntoEnvio.Text = asuntoPlantilla;
+
+            // Inyectamos el HTML directamente en el editor visual
+            WbEditorHelper.SetHtml(WbEditorEnvio, cuerpoPlantilla);
+        }
+
+        private void RefrescarTablaRecomendacionesS2()
+        {
             var recomendaciones = DatabaseHelper.ObtenerRecomendaciones()
-                .Where(r => r.Congregacion == _congreNombre)
+                // Incluir tanto nombramientos como bajas. Hub puede devolver
+                // congregación con código, por lo que no se exige igualdad literal.
+                .Where(r => EsRecomendacionDeCongregacionActual(r.Congregacion))
                 .Select(r => new RecomendacionS2UI { Original = r, Aprobar = false })
                 .ToList();
 
@@ -5057,18 +5227,170 @@ namespace SCCosmos
                 TxtSinS2.Visibility = Visibility.Visible;
             }
 
-            // 3. Cargar la plantilla de correo por defecto
-            string asuntoPlantilla = DatabaseHelper.ObtenerConfiguracion("Asunto_Envío de S-303", "Informe S-303");
-            string cuerpoPlantilla = DatabaseHelper.ObtenerConfiguracion("Email_Envío de S-303", "Queridos hermanos,<br><br>Adjunto el informe S-303 de la visita.<br><br>Un saludo cariñoso.");
+        }
 
-            // Reemplazamos etiquetas dinámicas
-            asuntoPlantilla = asuntoPlantilla.Replace("[Congregacion]", _congreNombre);
-            cuerpoPlantilla = cuerpoPlantilla.Replace("[Congregacion]", _congreNombre);
+        private bool EsRecomendacionDeCongregacionActual(string congregacionHub)
+        {
+            string recibido = NormalizarTextoCongregacion(congregacionHub);
+            string actual = NormalizarTextoCongregacion(_congreNombre);
+            if (string.IsNullOrEmpty(recibido) || string.IsNullOrEmpty(actual)) return false;
+            if (recibido == actual) return true;
 
-            TxtAsuntoEnvio.Text = asuntoPlantilla;
+            // Hub suele añadir el número entre paréntesis a la congregación.
+            string codigo = (_congreCodigo ?? "").Trim();
+            if (!string.IsNullOrEmpty(codigo))
+            {
+                var sinCodigo = System.Text.RegularExpressions.Regex.Replace(
+                    congregacionHub ?? "", @"\s*\(" + System.Text.RegularExpressions.Regex.Escape(codigo) + @"\)\s*$", "",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                if (NormalizarTextoCongregacion(sinCodigo) == actual) return true;
+            }
+            return false;
+        }
 
-            // Inyectamos el HTML directamente en el editor visual
-            WbEditorHelper.SetHtml(WbEditorEnvio, cuerpoPlantilla);
+        private static string NormalizarTextoCongregacion(string valor)
+        {
+            string descompuesto = (valor ?? "").Trim().Normalize(System.Text.NormalizationForm.FormD);
+            var sb = new StringBuilder();
+            foreach (char c in descompuesto)
+            {
+                if (CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
+                    sb.Append(char.ToLowerInvariant(c));
+            }
+            return System.Text.RegularExpressions.Regex.Replace(sb.ToString(), @"\s+", " ").Trim();
+        }
+
+        private static bool EsBajaDeNombramiento(RecomendacionHub rec)
+        {
+            string texto = ((rec?.Tipo ?? "") + " " + (rec?.RecomendadoComo ?? "")).ToLowerInvariant();
+            return texto.Contains("baja") || texto.Contains("cese") || texto.Contains("cesar")
+                   || texto.Contains("remoci") || texto.Contains("relevo")
+                   || texto.Contains("dejar de servir") || texto.Contains("deja de servir");
+        }
+
+        private string FirmaSeleccionCarta(IEnumerable<RecomendacionS2UI> decisiones)
+        {
+            return (_congreCodigo ?? "") + "|" + _mesS303.ToString("yyyy-MM") + "|" + DateTime.Today.ToString("yyyy-MM-dd") + "|" +
+                   string.Join("|", decisiones.Where(d => d.Aprobar)
+                       .Select(d => d.Original.UrlDetalle + ":" + d.Original.Hermano + ":" + d.Original.Tipo + ":" + d.Original.RecomendadoComo)
+                       .OrderBy(x => x, StringComparer.OrdinalIgnoreCase));
+        }
+
+        private ArchivoDocumento ObtenerPlantillaCartaNombramientos()
+        {
+            return DatabaseHelper.ObtenerDocumentos("Envío de S-303")
+                .Where(d => string.Equals(d.NombreArchivo?.Trim(), "Carta de nombramiento.docx", StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(d => d.Id).FirstOrDefault();
+        }
+
+        private string PrepararCartaNombramientos(List<RecomendacionS2UI> decisiones, bool regenerar)
+        {
+            var firma = FirmaSeleccionCarta(decisiones);
+            if (!regenerar && firma == _firmaCartaNombramientos &&
+                !string.IsNullOrWhiteSpace(_cartaNombramientosEditable) && File.Exists(_cartaNombramientosEditable))
+                return _cartaNombramientosEditable;
+
+            ArchivoDocumento plantilla = ObtenerPlantillaCartaNombramientos();
+            if (plantilla == null) throw new FileNotFoundException(
+                "No se encuentra 'Carta de nombramiento.docx' en Correspondencia > Visitas a congregaciones > Envío de S-303.");
+
+            string rutaOrigen = DatabaseHelper.ExtraerDocumentoDesdeBD(plantilla.Id, plantilla.NombreArchivo);
+            if (string.IsNullOrWhiteSpace(rutaOrigen) || !File.Exists(rutaOrigen))
+                throw new IOException("El archivo de la carta no tiene contenido accesible en la base de datos.");
+
+            string directorio = Path.Combine(Path.GetTempPath(), "SCCosmos", "CartasNombramiento", _congreCodigo ?? "SinCongregacion");
+            Directory.CreateDirectory(directorio);
+            string ruta = Path.Combine(directorio, "Carta_nombramiento_" + _mesS303.ToString("yyyy-MM") + "_" + Guid.NewGuid().ToString("N") + ".docx");
+            File.Copy(rutaOrigen, ruta, true);
+
+            var aprobadas = decisiones.Where(d => d.Aprobar).Select(d => d.Original).ToList();
+            string nombresSiervos = string.Join(", ", aprobadas.Where(r => !EsBajaDeNombramiento(r) &&
+                ((r.RecomendadoComo ?? "") + " " + (r.Tipo ?? "")).IndexOf("siervo", StringComparison.OrdinalIgnoreCase) >= 0)
+                .Select(r => r.Hermano).Distinct(StringComparer.OrdinalIgnoreCase));
+            string nombresAncianos = string.Join(", ", aprobadas.Where(r => !EsBajaDeNombramiento(r) &&
+                ((r.RecomendadoComo ?? "") + " " + (r.Tipo ?? "")).IndexOf("anciano", StringComparison.OrdinalIgnoreCase) >= 0)
+                .Select(r => r.Hermano).Distinct(StringComparer.OrdinalIgnoreCase));
+            string nombresBajas = string.Join(", ", aprobadas.Where(EsBajaDeNombramiento)
+                .Select(r => r.Hermano).Distinct(StringComparer.OrdinalIgnoreCase));
+
+            string nombreSC = DatabaseHelper.ObtenerConfiguracion("NombreSC", "").Trim();
+            string apellidoSC = DatabaseHelper.ObtenerConfiguracion("ApellidosSC", "").Trim();
+            if (string.IsNullOrEmpty(apellidoSC)) apellidoSC = DatabaseHelper.ObtenerConfiguracion("ApellidoSC", "").Trim();
+            string circuito = DatabaseHelper.ObtenerConfiguracion("NombreCircuito", "").Trim();
+            if (string.IsNullOrEmpty(circuito)) circuito = DatabaseHelper.ObtenerConfiguracion("Circuito", "").Trim();
+            if (string.IsNullOrEmpty(circuito)) circuito = DatabaseHelper.ObtenerConfiguracion("NumeroCircuito", "").Trim();
+            string congre = (_congreNombre ?? "").Trim() + (string.IsNullOrWhiteSpace(_congreCodigo) ? "" : " (" + _congreCodigo + ")");
+
+            var valores = new Dictionary<string, string>
+            {
+                ["$_FECHA"] = DateTime.Today.ToString("dd/MM/yyyy", new CultureInfo("es-ES")),
+                ["$_SC"] = (nombreSC + " " + apellidoSC).Trim(),
+                ["$_CIRCUITO"] = circuito,
+                ["$_SM"] = nombresSiervos,
+                ["$_ANCIANOS"] = nombresAncianos,
+                ["$_BAJAS"] = nombresBajas,
+                ["$_CONGREGACION"] = congre
+            };
+
+            using (var documento = Xceed.Words.NET.DocX.Load(ruta))
+            {
+                foreach (var kv in valores.OrderByDescending(kv => kv.Key.Length))
+                    documento.ReplaceText(kv.Key, kv.Value ?? "");
+                documento.Save();
+            }
+            _cartaNombramientosEditable = ruta;
+            _firmaCartaNombramientos = firma;
+            return ruta;
+        }
+
+        private static IWebElement esperaArchivoParaCarta(IWebDriver driver, WebDriverWait wait)
+        {
+            return wait.Until(d => d.FindElements(By.XPath("//input[@type='file']")).FirstOrDefault());
+        }
+
+        private static string ConvertirCartaNombramientosAPdf(string rutaDocx)
+        {
+            string rutaPdf = DocumentoHelper.ConvertirAPdfSiEsWord(rutaDocx);
+            if (string.IsNullOrWhiteSpace(rutaPdf) ||
+                !string.Equals(Path.GetExtension(rutaPdf), ".pdf", StringComparison.OrdinalIgnoreCase) ||
+                !File.Exists(rutaPdf) || new FileInfo(rutaPdf).Length == 0)
+            {
+                throw new IOException("No se ha conseguido convertir 'Carta de nombramiento.docx' a un PDF válido. " +
+                                      "Comprueba que Word/LibreOffice esté disponible y cierra el documento antes de enviar.");
+            }
+            return rutaPdf;
+        }
+
+        private void BtnAbrirCartaNombramiento_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var filas = (TablaS2.ItemsSource as IEnumerable<RecomendacionS2UI>)?.ToList()
+                            ?? new List<RecomendacionS2UI>();
+                string ruta = PrepararCartaNombramientos(filas, false);
+                Process.Start(new ProcessStartInfo(ruta) { UseShellExecute = true });
+                TxtEstadoCarta.Text = "Copia editable abierta. Guarda los cambios en Word y cierra el documento antes del envío.";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Carta de nombramientos", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        private void BtnRegenerarCartaNombramiento_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var filas = (TablaS2.ItemsSource as IEnumerable<RecomendacionS2UI>)?.ToList()
+                            ?? new List<RecomendacionS2UI>();
+                string ruta = PrepararCartaNombramientos(filas, true);
+                TxtEstadoCarta.Text = "Carta regenerada desde la plantilla. Se ha creado una copia nueva; las ediciones anteriores no se transfieren.";
+                Process.Start(new ProcessStartInfo(ruta) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Carta de nombramientos", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         }
 
         private void BtnFormato_Click(object sender, RoutedEventArgs e)
@@ -5125,13 +5447,78 @@ namespace SCCosmos
             bool copiaSrv = ChkCopiaSRV.IsChecked == true;
 
             // Extraemos las recomendaciones (S-2) que el usuario haya marcado con el CheckBox para aprobar
-            var recomendacionesS2 = TablaS2.ItemsSource as List<RecomendacionS2UI>;
-            var recomendacionesAAprobar = recomendacionesS2?.Where(r => r.Aprobar).Select(r => r.Original).ToList() ?? new List<RecomendacionHub>();
+            var recomendacionesS2 = (TablaS2.ItemsSource as IEnumerable<RecomendacionS2UI>)?.ToList()
+                                    ?? new List<RecomendacionS2UI>();
+            var recomendacionesAAprobar = recomendacionesS2.Where(r => r.Aprobar).Select(r => r.Original).ToList();
+            var recomendacionesACancelar = recomendacionesS2.Where(r => !r.Aprobar).Select(r => r.Original).ToList();
+
+            if (recomendacionesS2.Count > 0)
+            {
+                var confirmacion = MessageBox.Show(
+                    $"Se van a procesar {recomendacionesS2.Count} recomendaciones de {_congreNombre}:\n\n" +
+                    $"  • APROBAR: {recomendacionesAAprobar.Count}\n" +
+                    $"  • CANCELAR: {recomendacionesACancelar.Count}\n\n" +
+                    "Las NO marcadas se CANCELARÁN en JW Hub. Estos cambios pueden tener consecuencias reales.\n\n" +
+                    "¿Confirmas las decisiones y el envío posterior del correo S-303?",
+                    "Confirmar recomendaciones y bajas", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                if (confirmacion != MessageBoxResult.Yes) return;
+            }
+            else if (MessageBox.Show(
+                "No hay recomendaciones pendientes para esta congregación. ¿Enviar solo el S-303?",
+                "Confirmar envío", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            // Si hay aprobaciones, el PDF debe existir ANTES de cambiar el estado
+            // de ninguna recomendación en Hub. Si falla Word/LibreOffice, no se
+            // altera Hub ni se envía una carta incompleta.
+            string rutaCartaPdf = null;
+            if (recomendacionesAAprobar.Count > 0)
+            {
+                try
+                {
+                    string rutaDocx = PrepararCartaNombramientos(recomendacionesS2, false);
+                    rutaCartaPdf = ConvertirCartaNombramientosAPdf(rutaDocx);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("No se pudo preparar la carta de nombramientos en PDF. " +
+                                    "No se ha modificado JW Hub ni enviado el correo.\n\n" + ex.Message,
+                                    "Carta de nombramientos", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+            }
 
             if (PanelCargando != null) PanelCargando.Visibility = Visibility.Visible;
+            var botonEnvio = sender as FrameworkElement;
+            if (botonEnvio != null) botonEnvio.IsEnabled = false;
 
             try
             {
+                // Procesamos primero Hub y luego el correo. Cada operación confirmada
+                // se elimina de la bandeja local: una interrupción no debe provocar
+                // que se repitan automáticamente aprobaciones ya ejecutadas.
+                var decisiones = recomendacionesS2.ToList();
+                await Task.Run(() =>
+                {
+                    foreach (var fila in decisiones)
+                    {
+                        if (fila.Aprobar)
+                        {
+                            SincronizadorJWHub.AprobarRecomendacionHubSinCorreo(
+                                folderPath, fila.Original, DateTime.Today);
+                        }
+                        else
+                        {
+                            SincronizadorJWHub.CancelarRecomendacionHub(
+                                folderPath, fila.Original);
+                        }
+
+                        DatabaseHelper.EliminarRecomendacionProcesada(fila.Original);
+                    }
+                });
+
                 await Task.Run(() =>
                 {
                     // 1. AUTOMATIZACIÓN DE SELENIUM PARA EL ENVÍO DEL S-303
@@ -5223,6 +5610,20 @@ namespace SCCosmos
 
                         System.Threading.Thread.Sleep(2000);
 
+                        // Carta: SOLO se adjunta si hubo al menos una aprobación.
+                        if (!string.IsNullOrWhiteSpace(rutaCartaPdf))
+                        {
+                            // El input original puede haberse recreado tras subir el S-303.
+                            var inputCarta = esperaArchivoParaCarta(driver, wait);
+                            inputCarta.SendKeys(rutaCartaPdf);
+                            WebDriverWait esperaCarta = new WebDriverWait(driver, TimeSpan.FromSeconds(90));
+                            string nombreCarta = Path.GetFileNameWithoutExtension(rutaCartaPdf);
+                            if (nombreCarta.Length > 15) nombreCarta = nombreCarta.Substring(0, 15);
+                            esperaCarta.Until(d => d.PageSource.Contains(nombreCarta));
+                            esperaCarta.Until(d => !d.FindElements(By.XPath(
+                                "//div[contains(@class, 'spinnerAnimation')]")).Any(x => x.Displayed));
+                        }
+
                         // Cuerpo del mensaje (Ya está en HTML gracias al editor)
                         IWebElement inputCuerpo = wait.Until(d => {
                             var inputs = d.FindElements(By.XPath("//div[@role='textbox' and @aria-label='Cuerpo del mensaje']"));
@@ -5252,23 +5653,24 @@ namespace SCCosmos
                         if (driver != null) driver.Quit();
                     }
 
-                    // 2. GESTIÓN DE S-2 (Futuro)
-                    if (recomendacionesAAprobar.Count > 0)
-                    {
-                        // Si más adelante programas la lógica para que los S-2 marcados con Check se aprueben, irá aquí.
-                        // SincronizadorJWHub.AprobarRecomendacionMasiva(folderPath, recomendacionesAAprobar); 
-                    }
-
                 });
 
-                MessageBox.Show("El correo con el S-303 se ha enviado con éxito.", "Envío completado", MessageBoxButton.OK, MessageBoxImage.Information);
+                RefrescarTablaRecomendacionesS2();
+                MessageBox.Show("El S-303 se ha enviado. Las aprobaciones y cancelaciones de JW Hub se han procesado. " +
+                                (rutaCartaPdf != null ? "Se adjuntó la carta de nombramientos en PDF." : "No se adjuntó carta porque no hubo aprobaciones."),
+                                "Envío completado", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ha ocurrido un error al intentar enviar el correo:\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                RefrescarTablaRecomendacionesS2();
+                MessageBox.Show("No se ha completado el proceso. Es posible que algunas decisiones en JW Hub " +
+                                "ya estén aplicadas, pero que el correo todavía NO se haya enviado. " +
+                                "Consulta la bandeja de recomendaciones y la carpeta de enviados antes de reintentar.\n\n" +
+                                ex.Message, "Proceso interrumpido", MessageBoxButton.OK, MessageBoxImage.Error);
             }
             finally
             {
+                if (botonEnvio != null) botonEnvio.IsEnabled = true;
                 if (PanelCargando != null) PanelCargando.Visibility = Visibility.Collapsed;
             }
         }

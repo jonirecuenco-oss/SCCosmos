@@ -83,6 +83,12 @@ namespace SCCosmos
 
             _candidatosPredefinidos = candidatosLimitados;
 
+            // La esposa del SC no ve la actividad de la persona.
+            if (!PerfilAcceso.AccesoCompleto)
+            {
+                TabActividad.Visibility = Visibility.Collapsed;
+            }
+
             if (!_httpClient.DefaultRequestHeaders.Contains("User-Agent"))
                 _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 SCCosmos/1.0");
 

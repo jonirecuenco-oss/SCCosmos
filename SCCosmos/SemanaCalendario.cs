@@ -78,7 +78,7 @@ namespace SCCosmos
         public bool RepBetelMensajeEnviado { get; set; }
 
         // Regla: El botón solo aparece si es asamblea y de tipo AC-BR
-        public Visibility VisibilidadAsambleaBR => (Actividad == "Asamblea de circuito" && TipoAsamblea == "AC-BR") ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility VisibilidadAsambleaBR => (PerfilAcceso.AccesoCompleto && Actividad == "Asamblea de circuito" && TipoAsamblea == "AC-BR") ? Visibility.Visible : Visibility.Collapsed;
 
         // Opcional: Para que el botón se ponga gris si ya lo has enviado (si usas esta lógica)
         public string ColorBotonRepBetel => RepBetelMensajeEnviado ? "#15FFFFFF" : "#252528";
@@ -89,9 +89,11 @@ namespace SCCosmos
         public string ColorBotonS302 => S302Enviado ? "#10893E" : "Transparent";
         public string ColorBotonDoc => DocEnviada ? "#10893E" : "Transparent";
 
+        public Visibility VisibilidadAccionesSoloSC => PerfilAcceso.AccesoCompleto ? Visibility.Visible : Visibility.Collapsed;
+
         // Trucos visuales controlados desde C# para la visibilidad de los botones
-        public Visibility VisibilidadVisita => Actividad == "Visita" ? Visibility.Visible : Visibility.Collapsed;
-        public Visibility VisibilidadAsamblea => Actividad == "Asamblea de circuito" ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility VisibilidadVisita => (PerfilAcceso.AccesoCompleto && Actividad == "Visita") ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility VisibilidadAsamblea => (PerfilAcceso.AccesoCompleto && Actividad == "Asamblea de circuito") ? Visibility.Visible : Visibility.Collapsed;
         public Visibility VisibilidadVerVisita => (Actividad == "Visita" && TieneDatosImportados) ? Visibility.Visible : Visibility.Collapsed;
         public Visibility EsClonada { get; set; } = Visibility.Collapsed;
 

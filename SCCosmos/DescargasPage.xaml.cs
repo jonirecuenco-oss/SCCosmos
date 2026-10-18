@@ -17,10 +17,14 @@ namespace SCCosmos
             this.Unloaded += Page_Unloaded;
         }
 
-        private void Page_Loaded(object sender, RoutedEventArgs e)
+        private async void Page_Loaded(object sender, RoutedEventArgs e)
         {
             DescargadorStreamJW.DescargaCambiada += Descargador_EstadoCambiado;
             ActualizarUI_Descarga(DescargadorStreamJW.EstaDescargando);
+
+            // Dejar que la página se pinte antes de montar el explorador.
+            await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background);
+
             CargarExplorador();
         }
 
@@ -165,7 +169,7 @@ namespace SCCosmos
                         Margin = new Thickness(0, 0, 0, 5)
                     };
 
-                    ConstruirArbol(listaCarpetas[i], rootNodo);
+                    ConstruirNivel(listaCarpetas[i], rootNodo);
 
                     // Distribución en 3 columnas
                     if (i < itemsPorColumna) ArbolArchivosCol1.Items.Add(rootNodo);
@@ -207,7 +211,7 @@ namespace SCCosmos
             }
         }
 
-        private void ConstruirArbol(string rutaDirectorio, TreeViewItem nodoPadre)
+        private void ConstruirNivel(string rutaDirectorio, TreeViewItem nodoPadre)
         {
             try
             {
@@ -223,7 +227,26 @@ namespace SCCosmos
                         IsExpanded = false // <--- CERRADAS POR DEFECTO
                     };
 
-                    ConstruirArbol(dir, subNodo);
+                    // El contenido de cada carpeta se construye solo al abrirla:
+                    // así la página entra al instante aunque haya miles de
+                    // archivos. El hijo provisional es para que salga la flecha.
+                    bool tieneContenido = false;
+                    try
+                    {
+                        using (var enumerador = Directory.EnumerateFileSystemEntries(dir).GetEnumerator())
+                        {
+                            tieneContenido = enumerador.MoveNext();
+                        }
+                    }
+                    catch { }
+
+                    if (tieneContenido)
+                    {
+                        subNodo.Items.Add(new TreeViewItem { Visibility = Visibility.Collapsed });
+                        subNodo.Tag = dir;
+                        subNodo.Expanded += NodoCarpeta_Expanded;
+                    }
+
                     nodoPadre.Items.Add(subNodo);
                 }
 
@@ -248,6 +271,25 @@ namespace SCCosmos
                 }
             }
             catch { }
+        }
+
+        private void NodoCarpeta_Expanded(object sender, RoutedEventArgs e)
+        {
+            var nodo = sender as TreeViewItem;
+
+            if (nodo == null || !(nodo.Tag is string ruta))
+            {
+                return;
+            }
+
+            nodo.Expanded -= NodoCarpeta_Expanded;
+            nodo.Items.Clear();
+            ConstruirNivel(ruta, nodo);
+
+            if (nodo.Items.Count == 0)
+            {
+                nodo.Items.Add(new TreeViewItem { Header = "(carpeta vacía)", Foreground = Brushes.Gray });
+            }
         }
 
         

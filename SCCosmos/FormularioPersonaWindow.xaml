@@ -267,7 +267,7 @@
                 </Grid>
             </TabItem>
 
-            <TabItem Header="Actividad">
+            <TabItem x:Name="TabActividad" Header="Actividad">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>

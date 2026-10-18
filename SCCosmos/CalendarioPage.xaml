@@ -31,7 +31,8 @@
 
                 <TextBlock Text="RUTA" FontSize="26" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
 
-                <ui:Button Grid.Column="1" 
+                <ui:Button x:Name="BtnCiclo"
+                           Grid.Column="1" 
                            Content="Configurar Ciclo (3 Años)" 
                            Icon="{ui:SymbolIcon CalendarSettings24}" 
                            Appearance="Secondary" 
@@ -39,17 +40,6 @@
                            Cursor="Hand" 
                            Padding="12,6"/>
             </Grid>
-
-            <!-- 1. BOTÓN PASADO -->
-            <ui:Button x:Name="BtnCargarPasado" 
-                       Grid.Row="1" 
-                       Content="Cargar 6 meses más" 
-                       Icon="{ui:SymbolIcon ChevronUp24}"
-                       Click="BtnCargarPasado_Click"
-                       HorizontalAlignment="Stretch"
-                       Cursor="Hand"
-                       Padding="10,8" 
-                       Margin="0,0,0,10"/>
 
             <!-- 2. LA TABLA (CON SCROLL INTERNO) -->
             <DataGrid x:Name="TablaRuta" 
@@ -192,8 +182,10 @@
                             <DataTemplate>
                                 <StackPanel HorizontalAlignment="Left" Margin="8,0" Orientation="Horizontal" VerticalAlignment="Center">
 
-                                    <!-- Editar (Siempre visible) -->
-                                    <ui:Button Icon="{ui:SymbolIcon Edit24}" Padding="6" Margin="0,0,5,0" Cursor="Hand" Click="BtnEditar_Click" ToolTip="Editar parámetros de la semana"/>
+                                    <!-- Editar (solo para el SC) -->
+                                    <ContentControl Margin="0,0,5,0" Visibility="{Binding VisibilidadAccionesSoloSC}">
+                                        <ui:Button Icon="{ui:SymbolIcon Edit24}" Padding="6" Cursor="Hand" Click="BtnEditar_Click" ToolTip="Editar parámetros de la semana"/>
+                                    </ContentControl>
 
                                     <!-- Botones de VISITA -->
                                     <ContentControl Margin="0,0,5,0" Visibility="{Binding VisibilidadVisita}">
@@ -208,16 +200,11 @@
                                         <ui:Button Icon="{ui:SymbolIcon Chat24}" Appearance="Primary" Background="#25D366" BorderThickness="0" Padding="6" Cursor="Hand" Click="BtnWhatsAppCoordinador_Click" ToolTip="WhatsApp al Coordinador"/>
                                     </ContentControl>
                                     -->
-                                    <!-- Botones de ASAMBLEA -->
-                                    <ContentControl Margin="0,0,5,0" Visibility="{Binding VisibilidadAsamblea}">
-                                        <ui:Button Icon="{ui:SymbolIcon MailAlert24}" Appearance="Secondary" Padding="6" Cursor="Hand" Click="BtnEnviarRecordatorio_Click" ToolTip="Enviar recordatorio asamblea" Background="{Binding ColorBotonRecordatorio}"/>
-                                    </ContentControl>
-
                                     <!-- Botón Mensaje a Rep. de Betel (SOLO AC-BR) -->
                                     <ContentControl Margin="0,0,5,0" Visibility="{Binding VisibilidadAsambleaBR}">
                                         <ui:Button Icon="{ui:SymbolIcon PersonMail24}" Appearance="Secondary" Padding="6" Cursor="Hand" Click="BtnEnviarRepBetel_Click" ToolTip="Enviar mensaje a Rep. de Betel" Background="{Binding ColorBotonRepBetel}"/>
                                     </ContentControl>
-                                    
+
                                     <!-- Botones de HERRAMIENTAS: Importar -->
                                     <ContentControl Margin="0,0,5,0" Visibility="{Binding VisibilidadVisita}">
                                         <ui:Button Icon="{ui:SymbolIcon ArrowImport24}" Appearance="Secondary" Padding="6" Cursor="Hand" Click="BtnImportar_Click" ToolTip="Importar archivos (S-21 / Territorios)"/>
@@ -228,25 +215,29 @@
                                         <ui:Button Icon="{ui:SymbolIcon Eye24}" Appearance="Success" Padding="6" Cursor="Hand" Click="BtnVerVisita_Click" ToolTip="Ver datos de la congregación"/>
                                     </ContentControl>
 
-                                    <ui:Button Icon="{ui:SymbolIcon Delete24}" 
-                                               Appearance="Transparent" 
-                                               Foreground="#D13438"
-                                               Padding="6" 
-                                               Cursor="Hand" 
-                                               Click="BtnEliminarActividad_Click" 
-                                               ToolTip="Eliminar esta actividad extra"
-                                               Visibility="{Binding EsClonada}"/>
+                                    <ContentControl Margin="0,0,5,0" Visibility="{Binding VisibilidadAccionesSoloSC}">
+                                        <ui:Button Icon="{ui:SymbolIcon Delete24}" 
+                                                   Appearance="Transparent" 
+                                                   Foreground="#D13438"
+                                                   Padding="6" 
+                                                   Cursor="Hand" 
+                                                   Click="BtnEliminarActividad_Click" 
+                                                   ToolTip="Eliminar esta actividad extra"
+                                                   Visibility="{Binding EsClonada}"/>
+                                    </ContentControl>
 
                                     <!-- Botones de SOLAPAMIENTO DE ACTIVIDADES -->
-                                    <ui:Button 
-                                               Icon="{ui:SymbolIcon AddCircle24}" 
-                                               Appearance="Transparent" 
-                                               Foreground="#0078D4"
-                                               Padding="6" 
-                                               Cursor="Hand" 
-                                               Click="BtnSolaparActividad_Click" 
-                                               ToolTip="Solapar otra actividad en la misma semana"
-                                               Visibility="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsMouseOver, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                    <ContentControl Margin="0,0,5,0" Visibility="{Binding VisibilidadAccionesSoloSC}">
+                                        <ui:Button 
+                                                   Icon="{ui:SymbolIcon AddCircle24}" 
+                                                   Appearance="Transparent" 
+                                                   Foreground="#0078D4"
+                                                   Padding="6" 
+                                                   Cursor="Hand" 
+                                                   Click="BtnSolaparActividad_Click" 
+                                                   ToolTip="Solapar otra actividad en la misma semana"
+                                                   Visibility="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsMouseOver, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                    </ContentControl>
 
                                 </StackPanel>
                             </DataTemplate>
@@ -255,24 +246,50 @@
                 </DataGrid.Columns>
             </DataGrid>
 
-            <!-- 3. BOTÓN FUTURO -->
-            <ui:Button x:Name="BtnCargarFuturo" 
-                       Grid.Row="3" 
-                       Content="Cargar 6 meses más" 
-                       Icon="{ui:SymbolIcon ChevronDown24}"
-                       Click="BtnCargarFuturo_Click"
-                       HorizontalAlignment="Stretch"
-                       Cursor="Hand"
-                       Padding="10,8" 
-                       Margin="0,10,0,0"/>
         </Grid>
 
         <!-- OVERLAY DE CARGA -->
-        <Grid x:Name="OverlayCargando" Background="#CC000000" Visibility="Collapsed" Panel.ZIndex="100" Grid.RowSpan="10">
-            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                <TextBlock Text="Cargando..." Foreground="White" FontSize="24" FontWeight="Bold" Margin="0,0,0,10" HorizontalAlignment="Center"/>
-                <ProgressBar IsIndeterminate="True" Width="200" Height="8" Foreground="#0078D4"/>
-            </StackPanel>
+        <Grid x:Name="OverlayCargando" Background="#FF141418" Visibility="Collapsed" Panel.ZIndex="100" Grid.RowSpan="10">
+            <Border Background="#FF26262C"
+                    CornerRadius="10"
+                    Padding="28,22"
+                    BorderThickness="1"
+                    BorderBrush="#33FFFFFF"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+                <StackPanel>
+                    <TextBlock Text="Cargando..." Foreground="White" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,14" HorizontalAlignment="Center"/>
+                    <Border Width="220" Height="6" CornerRadius="3" Background="#22FFFFFF" ClipToBounds="True">
+                        <Grid>
+                            <Rectangle x:Name="BarraCarga" Width="70" Height="6" RadiusX="3" RadiusY="3" HorizontalAlignment="Left">
+                                <Rectangle.Fill>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Color="#004BA3E3" Offset="0"/>
+                                        <GradientStop Color="#FF4BA3E3" Offset="0.5"/>
+                                        <GradientStop Color="#004BA3E3" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Rectangle.Fill>
+                                <Rectangle.RenderTransform>
+                                    <TranslateTransform x:Name="TraslacionCarga" X="-70"/>
+                                </Rectangle.RenderTransform>
+                                <Rectangle.Triggers>
+                                    <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="TraslacionCarga"
+                                                                 Storyboard.TargetProperty="X"
+                                                                 From="-70" To="220"
+                                                                 Duration="0:0:1.1"
+                                                                 RepeatBehavior="Forever"/>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </EventTrigger>
+                                </Rectangle.Triggers>
+                            </Rectangle>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </Border>
         </Grid>
     </Grid>
 </Page>

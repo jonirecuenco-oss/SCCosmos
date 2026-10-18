@@ -31,6 +31,11 @@
                          BorderBrush="#1AFFFFFF"
                          Margin="0,0,20,15">
                     <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
@@ -127,6 +132,19 @@
                                    HorizontalAlignment="Left"
                                    VerticalAlignment="Center"
                                    Visibility="Collapsed"/>
+
+                        <!-- PRÓXIMA ACTIVIDAD (enlace al calendario) -->
+                        <TextBlock x:Name="TxtProximaActividad"
+                                   Grid.Row="1"
+                                   Grid.ColumnSpan="2"
+                                   Margin="0,16,0,0"
+                                   FontSize="14"
+                                   Foreground="#80C4FF"
+                                   TextDecorations="Underline"
+                                   TextWrapping="Wrap"
+                                   Cursor="Hand"
+                                   Visibility="Collapsed"
+                                   MouseLeftButtonUp="TxtProximaActividad_Click"/>
                     </Grid>
                 </ui:Card>
 
@@ -213,7 +231,8 @@
                                                     Padding="6,3"
                                                     Margin="0,0,10,0"
                                                     HorizontalAlignment="Left"
-                                                    VerticalAlignment="Center">
+                                                    VerticalAlignment="Center"
+                                                    Visibility="{Binding VerResponsable}">
                                                 <TextBlock Text="{Binding Responsable}"
                                                            Foreground="#EBCB8B"
                                                            FontSize="12"
