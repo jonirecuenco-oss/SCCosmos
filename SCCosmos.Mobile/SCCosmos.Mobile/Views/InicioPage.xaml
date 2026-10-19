@@ -320,7 +320,7 @@
 
                                 <Grid
                                     Padding="12"
-                                    ColumnDefinitions="62,*,Auto"
+                                    ColumnDefinitions="62,*,Auto,Auto"
                                     RowDefinitions="Auto,Auto,Auto"
                                     ColumnSpacing="8"
                                     RowSpacing="2">
@@ -375,6 +375,20 @@
                                         FontSize="12"
                                         LineBreakMode="WordWrap"
                                         IsVisible="{Binding MostrarUbicacion}"/>
+
+                                    <Button
+                                        Grid.Column="3"
+                                        Grid.RowSpan="3"
+                                        Text="📍"
+                                        Clicked="BtnMapaActividadInicio_Clicked"
+                                        CommandParameter="{Binding .}"
+                                        SemanticProperties.Description="Ver en Google Maps"
+                                        FontSize="15"
+                                        Padding="9,4"
+                                        BackgroundColor="#242830"
+                                        TextColor="#8BC9E8"
+                                        CornerRadius="10"
+                                        VerticalOptions="Center"/>
 
                                 </Grid>
 

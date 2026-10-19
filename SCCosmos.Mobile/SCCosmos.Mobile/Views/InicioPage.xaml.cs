@@ -568,6 +568,66 @@ public partial class InicioPage : ContentPage, IActualizableMobile
     }
 
 
+    private async void BtnMapaActividadInicio_Clicked(
+        object sender,
+        EventArgs e)
+    {
+        try
+        {
+            if (sender is not Button boton
+                || boton.CommandParameter is not ActividadHoy actividad)
+            {
+                return;
+            }
+
+            string consulta =
+                "";
+
+            if (actividad.Latitud != 0
+                || actividad.Longitud != 0)
+            {
+                consulta =
+                    actividad.Latitud.ToString(
+                        System.Globalization.CultureInfo.InvariantCulture)
+                    + ","
+                    + actividad.Longitud.ToString(
+                        System.Globalization.CultureInfo.InvariantCulture);
+            }
+            else if (!string.IsNullOrWhiteSpace(
+                         actividad.Direccion))
+            {
+                consulta =
+                    actividad.Direccion.Trim();
+            }
+            else if (!string.IsNullOrWhiteSpace(
+                         _codigoVisitaActual))
+            {
+                Congregacion? congregacion =
+                    DatabaseHelper
+                        .ObtenerCongregacionPorCodigoMobile(
+                            _codigoVisitaActual);
+
+                consulta =
+                    (congregacion?.DireccionSR ?? "")
+                        .Trim();
+            }
+
+            if (string.IsNullOrWhiteSpace(consulta))
+            {
+                return;
+            }
+
+            await Launcher.Default.OpenAsync(
+                new Uri(
+                    "https://www.google.com/maps/search/?api=1&query="
+                    + Uri.EscapeDataString(consulta)));
+        }
+        catch
+        {
+        }
+    }
+
+
     private async Task CargarProgramaDelDiaAsync(
         string congreCodigo,
         string mesReferencia,
@@ -689,7 +749,16 @@ public partial class InicioPage : ContentPage, IActualizableMobile
                                     nombreCompanero),
 
                             Ubicacion =
-                                (actividad.Direccion ?? "").Trim()
+                                (actividad.Direccion ?? "").Trim(),
+
+                            Direccion =
+                                (actividad.Direccion ?? "").Trim(),
+
+                            Latitud =
+                                actividad.Latitud,
+
+                            Longitud =
+                                actividad.Longitud
                         });
                 }
 

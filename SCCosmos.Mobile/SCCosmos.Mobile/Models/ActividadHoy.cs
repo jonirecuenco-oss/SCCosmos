@@ -15,4 +15,8 @@ public class ActividadHoy
 
     public string Ubicacion { get; set; } = "";
     public bool MostrarUbicacion => !string.IsNullOrWhiteSpace(Ubicacion);
+
+    public string Direccion { get; set; } = "";
+    public double Latitud { get; set; }
+    public double Longitud { get; set; }
 }

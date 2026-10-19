@@ -384,7 +384,9 @@ public static partial class DatabaseHelper
             Hora,
             NotasLibro,
             CompaneroId,
-            Direccion
+            COALESCE(NULLIF(Direccion, ''), Ubicacion, '') AS Direccion,
+            Latitud,
+            Longitud
         FROM ProgramaVisitaV2
         WHERE CongreCodigo = $codigo
           AND MesReferencia = $mes
@@ -407,7 +409,9 @@ public static partial class DatabaseHelper
                 Hora = reader.IsDBNull(2) ? "" : reader.GetString(2),
                 NotasLibro = reader.IsDBNull(3) ? "" : reader.GetString(3),
                 CompaneroId = reader.IsDBNull(4) ? 0 : reader.GetInt32(4),
-                Direccion = reader.IsDBNull(5) ? "" : reader.GetString(5)
+                Direccion = reader.IsDBNull(5) ? "" : reader.GetString(5),
+                Latitud = reader.IsDBNull(6) ? 0 : reader.GetDouble(6),
+                Longitud = reader.IsDBNull(7) ? 0 : reader.GetDouble(7)
             });
         }
 

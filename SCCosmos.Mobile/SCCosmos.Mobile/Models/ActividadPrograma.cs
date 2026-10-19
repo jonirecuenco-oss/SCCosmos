@@ -9,4 +9,6 @@ public class ActividadPrograma
 
     public string Responsable { get; set; } = "";
     public string Direccion { get; set; } = "";
+    public double Latitud { get; set; }
+    public double Longitud { get; set; }
 }

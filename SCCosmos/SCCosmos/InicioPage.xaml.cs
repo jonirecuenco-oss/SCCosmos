@@ -421,9 +421,88 @@ namespace SCCosmos
                 VerUbicacion =
                     string.IsNullOrWhiteSpace(ubicacion)
                         ? Visibility.Collapsed
-                        : Visibility.Visible
+                        : Visibility.Visible,
+                Direccion = ubicacion,
+                Latitud = actividad.Latitud,
+                Longitud = actividad.Longitud
             };
         }
+
+        /// <summary>Abre la actividad del día en Google Maps (coordenadas o dirección).</summary>
+        private void BtnMapaActividadInicio_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            try
+            {
+                var actividad =
+                    (sender as System.Windows.FrameworkElement)?.Tag
+                    as ActividadHoy;
+
+                if (actividad == null)
+                {
+                    return;
+                }
+
+                string consulta =
+                    "";
+
+                if (actividad.Latitud != 0
+                    || actividad.Longitud != 0)
+                {
+                    consulta =
+                        actividad.Latitud.ToString(
+                            System.Globalization.CultureInfo.InvariantCulture)
+                        + ","
+                        + actividad.Longitud.ToString(
+                            System.Globalization.CultureInfo.InvariantCulture);
+                }
+                else if (!string.IsNullOrWhiteSpace(
+                             actividad.Direccion))
+                {
+                    consulta =
+                        actividad.Direccion.Trim();
+                }
+                else if (!string.IsNullOrWhiteSpace(
+                             _codigoCongregacionPrograma))
+                {
+                    try
+                    {
+                        consulta =
+                            DatabaseHelper
+                                .ObtenerCongregaciones()
+                                .FirstOrDefault(c => string.Equals(
+                                    c.Codigo,
+                                    _codigoCongregacionPrograma,
+                                    StringComparison.OrdinalIgnoreCase))
+                                ?.DireccionSR
+                                ?.Trim()
+                            ?? "";
+                    }
+                    catch
+                    {
+                        consulta = "";
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(consulta))
+                {
+                    return;
+                }
+
+                System.Diagnostics.Process.Start(
+                    new System.Diagnostics.ProcessStartInfo(
+                        "https://www.google.com/maps/search/?api=1&query="
+                        + Uri.EscapeDataString(consulta))
+                    {
+                        UseShellExecute = true
+                    });
+            }
+            catch
+            {
+            }
+        }
+
 
         private void BtnProgramaDiaAnterior_Click(
             object sender,
@@ -1193,6 +1272,9 @@ namespace SCCosmos
             public string TipoActividad { get; set; }
             public string CompaneroNombre { get; set; }
             public string Ubicacion { get; set; }
+            public string Direccion { get; set; }
+            public double Latitud { get; set; }
+            public double Longitud { get; set; }
             public Visibility VerCompanero { get; set; }
             public Visibility VerUbicacion { get; set; }
             public Visibility VerResponsable { get; set; }
