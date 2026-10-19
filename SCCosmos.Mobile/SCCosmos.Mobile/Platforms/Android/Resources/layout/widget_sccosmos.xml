@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="#1B1F27"
-    android:padding="12dp">
+    android:padding="14dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -19,7 +19,7 @@
             android:layout_weight="1"
             android:text="SCCosmos"
             android:textColor="#FFFFFF"
-            android:textSize="14sp"
+            android:textSize="16sp"
             android:textStyle="bold" />
 
         <TextView
@@ -32,7 +32,7 @@
             android:paddingBottom="4dp"
             android:text="◀"
             android:textColor="#4BA3E3"
-            android:textSize="22sp"
+            android:textSize="24sp"
             android:textStyle="bold" />
 
         <TextView
@@ -43,7 +43,7 @@
             android:paddingRight="2dp"
             android:text=""
             android:textColor="#E6E8EB"
-            android:textSize="12sp" />
+            android:textSize="13sp" />
 
         <TextView
             android:id="@+id/widget_dia_adelante"
@@ -55,7 +55,7 @@
             android:paddingBottom="4dp"
             android:text="▶"
             android:textColor="#4BA3E3"
-            android:textSize="22sp"
+            android:textSize="24sp"
             android:textStyle="bold" />
     </LinearLayout>
 
@@ -63,106 +63,307 @@
         android:id="@+id/widget_seccion_hoy"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="12dp"
         android:text="HOY"
         android:textColor="#4BA3E3"
-        android:textSize="11sp"
+        android:textSize="12sp"
         android:textStyle="bold" />
 
-    <TextView
-        android:id="@+id/widget_programa1"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text=""
-        android:textColor="#E6E8EB"
-        android:textSize="12sp" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="6dp">
 
-    <TextView
-        android:id="@+id/widget_programa2"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text=""
-        android:textColor="#E6E8EB"
-        android:textSize="12sp" />
+        <TextView
+            android:id="@+id/widget_programa1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text=""
+            android:textColor="#E6E8EB"
+            android:textSize="14sp" />
 
-    <TextView
-        android:id="@+id/widget_programa3"
+        <TextView
+            android:id="@+id/widget_programa1_mapa"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="10dp"
+            android:paddingRight="4dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:text="📍"
+            android:textSize="17sp"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text=""
-        android:textColor="#E6E8EB"
-        android:textSize="12sp" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="6dp">
+
+        <TextView
+            android:id="@+id/widget_programa2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text=""
+            android:textColor="#E6E8EB"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/widget_programa2_mapa"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="10dp"
+            android:paddingRight="4dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:text="📍"
+            android:textSize="17sp"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="6dp">
+
+        <TextView
+            android:id="@+id/widget_programa3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text=""
+            android:textColor="#E6E8EB"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/widget_programa3_mapa"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="10dp"
+            android:paddingRight="4dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:text="📍"
+            android:textSize="17sp"
+            android:visibility="gone" />
+    </LinearLayout>
 
     <TextView
         android:id="@+id/widget_seccion_tareas"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="14dp"
         android:text="PRÓXIMAS TAREAS"
         android:textColor="#8BC98B"
-        android:textSize="11sp"
+        android:textSize="12sp"
         android:textStyle="bold" />
 
-    <TextView
-        android:id="@+id/widget_tarea1"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text=""
-        android:textColor="#E6E8EB"
-        android:textSize="12sp" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="6dp">
 
-    <TextView
-        android:id="@+id/widget_tarea2"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text=""
-        android:textColor="#E6E8EB"
-        android:textSize="12sp" />
+        <TextView
+            android:id="@+id/widget_tarea1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text=""
+            android:textColor="#E6E8EB"
+            android:textSize="14sp" />
 
-    <TextView
-        android:id="@+id/widget_tarea3"
+        <TextView
+            android:id="@+id/widget_tarea1_ok"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="10dp"
+            android:paddingRight="4dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:text="✓"
+            android:textColor="#8BC98B"
+            android:textSize="17sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text=""
-        android:textColor="#E6E8EB"
-        android:textSize="12sp" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="6dp">
+
+        <TextView
+            android:id="@+id/widget_tarea2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text=""
+            android:textColor="#E6E8EB"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/widget_tarea2_ok"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="10dp"
+            android:paddingRight="4dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:text="✓"
+            android:textColor="#8BC98B"
+            android:textSize="17sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="6dp">
+
+        <TextView
+            android:id="@+id/widget_tarea3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text=""
+            android:textColor="#E6E8EB"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/widget_tarea3_ok"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="10dp"
+            android:paddingRight="4dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:text="✓"
+            android:textColor="#8BC98B"
+            android:textSize="17sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+    </LinearLayout>
 
     <TextView
         android:id="@+id/widget_seccion_alertas"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="14dp"
         android:text="ALERTAS PENDIENTES"
         android:textColor="#FFB74D"
-        android:textSize="11sp"
+        android:textSize="12sp"
         android:textStyle="bold"
         android:visibility="gone" />
 
-    <TextView
-        android:id="@+id/widget_alerta1"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text=""
-        android:textColor="#E6E8EB"
-        android:textSize="12sp"
-        android:visibility="gone" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="6dp">
 
-    <TextView
-        android:id="@+id/widget_alerta2"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text=""
-        android:textColor="#E6E8EB"
-        android:textSize="12sp"
-        android:visibility="gone" />
+        <TextView
+            android:id="@+id/widget_alerta1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text=""
+            android:textColor="#E6E8EB"
+            android:textSize="14sp"
+            android:visibility="gone" />
 
-    <TextView
-        android:id="@+id/widget_alerta3"
+        <TextView
+            android:id="@+id/widget_alerta1_ok"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="10dp"
+            android:paddingRight="4dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:text="✓"
+            android:textColor="#FFB74D"
+            android:textSize="17sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text=""
-        android:textColor="#E6E8EB"
-        android:textSize="12sp"
-        android:visibility="gone" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="6dp">
+
+        <TextView
+            android:id="@+id/widget_alerta2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text=""
+            android:textColor="#E6E8EB"
+            android:textSize="14sp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/widget_alerta2_ok"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="10dp"
+            android:paddingRight="4dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:text="✓"
+            android:textColor="#FFB74D"
+            android:textSize="17sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="6dp">
+
+        <TextView
+            android:id="@+id/widget_alerta3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text=""
+            android:textColor="#E6E8EB"
+            android:textSize="14sp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/widget_alerta3_ok"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="10dp"
+            android:paddingRight="4dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:text="✓"
+            android:textColor="#FFB74D"
+            android:textSize="17sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+    </LinearLayout>
 
 </LinearLayout>

@@ -77,6 +77,16 @@
                                                 <StackPanel>
                                                     <TextBlock Text="{Binding Titulo}" FontWeight="SemiBold" Foreground="White"/>
                                                     <TextBlock Text="{Binding Descripcion}" Foreground="#CCCCCC" TextWrapping="Wrap" Margin="0,4,0,0" FontSize="13"/>
+                                                    <Button Content="✓ Marcar como leída"
+                                                            Click="BtnAlertaLeida_Click"
+                                                            HorizontalAlignment="Left"
+                                                            Margin="0,7,0,0"
+                                                            Padding="8,2"
+                                                            Background="#2B3038"
+                                                            Foreground="#9FD49F"
+                                                            BorderThickness="0"
+                                                            FontSize="11"
+                                                            Cursor="Hand"/>
                                                 </StackPanel>
                                             </Border>
                                         </DataTemplate>

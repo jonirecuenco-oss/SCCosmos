@@ -1810,3 +1810,11 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   Android (S302/Documentacion/S303/Recordatorio/RepBetel/JWHub, tarea por id+día); migración del
   JSON local de Windows y de las preferencias del móvil; el móvil refresca la notificación de
   alertas al recibir cambios (ServicioActualizacionPaginas).
+- **Widget (Android)**: tipografías mayores y más separación entre filas; botón ✓ en cada tarea del
+  día para completarla desde el propio widget (con aviso a Tareas); botón 📍 en cada evento con
+  dirección o coordenadas; botón ✓ en cada alerta para marcarla como leída (y fuera el icono ⚠️).
+  Acciones por broadcast en `SccosmosWidgetProvider` (acciones `sccosmos_widget_tarea_ok` /
+  `sccosmos_widget_alerta_ok`); al marcar leída también se refresca la notificación del sistema.
+- **Alertas (Windows)**: cada alerta del popup de la campana se puede marcar como leída
+  individualmente (botón «✓ Marcar como leída», además del «marcar todas»); el popup se queda
+  abierto para marcar varias y el estado viaja por la tabla `AlertasLeidas`.

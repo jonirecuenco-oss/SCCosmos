@@ -95,6 +95,19 @@ public class SccosmosWidgetProvider : AppWidgetProvider
     }
 
 
+    private const string AccionTareaOk =
+        "sccosmos_widget_tarea_ok";
+
+    private const string AccionAlertaOk =
+        "sccosmos_widget_alerta_ok";
+
+    private const string ExtraTareaId =
+        "sccosmos_widget_tarea_id";
+
+    private const string ExtraAlertaFirma =
+        "sccosmos_widget_alerta_firma";
+
+
     public override void OnUpdate(
         Context? context,
         AppWidgetManager? appWidgetManager,
@@ -141,6 +154,47 @@ public class SccosmosWidgetProvider : AppWidgetProvider
 
             GuardarDiaSeleccionado(dia);
             ActualizarTodos();
+
+            return;
+        }
+
+        if (accion == AccionTareaOk)
+        {
+            int tareaId =
+                intent?.GetIntExtra(
+                    ExtraTareaId,
+                    0) ?? 0;
+
+            if (tareaId > 0)
+            {
+                DatabaseHelper
+                    .MarcarTareaCompletadaMobile(
+                        tareaId,
+                        true);
+
+                ActualizarTodos();
+            }
+
+            return;
+        }
+
+        if (accion == AccionAlertaOk)
+        {
+            string firma =
+                intent?.GetStringExtra(
+                    ExtraAlertaFirma) ?? "";
+
+            if (!string.IsNullOrWhiteSpace(firma))
+            {
+                Services.AlertasMobileService
+                    .MarcarLeidaPorFirma(
+                        firma);
+
+                _ = Services.AlertasNotificacionService
+                    .ActualizarAsync();
+
+                ActualizarTodos();
+            }
 
             return;
         }
@@ -258,7 +312,7 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                     AccionDiaAdelante));
 
             // Programación del día: programa de la visita.
-            List<string> programa =
+            List<(string Texto, string ConsultaMapa)> programa =
                 ObtenerProgramaDelDia(dia);
 
             vistas.SetTextViewText(
@@ -272,16 +326,62 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                 Resource.Id.widget_programa3
             };
 
-            RellenarLineas(
-                vistas,
-                filasPrograma,
-                programa,
-                "Sin programación para ese día");
+            int[] botonesMapa =
+            {
+                Resource.Id.widget_programa1_mapa,
+                Resource.Id.widget_programa2_mapa,
+                Resource.Id.widget_programa3_mapa
+            };
 
             for (int i = 0;
                  i < filasPrograma.Length;
                  i++)
             {
+                bool hay =
+                    i < programa.Count;
+
+                vistas.SetViewVisibility(
+                    filasPrograma[i],
+                    hay
+                        ? global::Android.Views.ViewStates.Visible
+                        : global::Android.Views.ViewStates.Gone);
+
+                vistas.SetViewVisibility(
+                    botonesMapa[i],
+                    global::Android.Views.ViewStates.Gone);
+
+                if (!hay)
+                {
+                    continue;
+                }
+
+                vistas.SetTextViewText(
+                    filasPrograma[i],
+                    programa[i].Texto);
+
+                string consulta =
+                    programa[i].ConsultaMapa;
+
+                if (!string.IsNullOrWhiteSpace(consulta))
+                {
+                    PendingIntent? mapa =
+                        CrearAbrirMapa(
+                            contexto,
+                            4860 + i,
+                            consulta);
+
+                    if (mapa is not null)
+                    {
+                        vistas.SetOnClickPendingIntent(
+                            botonesMapa[i],
+                            mapa);
+
+                        vistas.SetViewVisibility(
+                            botonesMapa[i],
+                            global::Android.Views.ViewStates.Visible);
+                    }
+                }
+
                 PendingIntent? tocar =
                     CrearActividad(
                         contexto,
@@ -296,8 +396,19 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                 }
             }
 
+            if (programa.Count == 0)
+            {
+                vistas.SetTextViewText(
+                    filasPrograma[0],
+                    "Sin programación para ese día");
+
+                vistas.SetViewVisibility(
+                    filasPrograma[0],
+                    global::Android.Views.ViewStates.Visible);
+            }
+
             // Tareas del día.
-            List<string> tareas =
+            List<(int Id, string Texto)> tareas =
                 ObtenerTareasDelDia(dia);
 
             int[] filasTareas =
@@ -307,16 +418,56 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                 Resource.Id.widget_tarea3
             };
 
-            RellenarLineas(
-                vistas,
-                filasTareas,
-                tareas,
-                "Sin tareas para ese día");
+            int[] botonesTarea =
+            {
+                Resource.Id.widget_tarea1_ok,
+                Resource.Id.widget_tarea2_ok,
+                Resource.Id.widget_tarea3_ok
+            };
 
             for (int i = 0;
                  i < filasTareas.Length;
                  i++)
             {
+                bool hay =
+                    i < tareas.Count;
+
+                vistas.SetViewVisibility(
+                    filasTareas[i],
+                    hay
+                        ? global::Android.Views.ViewStates.Visible
+                        : global::Android.Views.ViewStates.Gone);
+
+                vistas.SetViewVisibility(
+                    botonesTarea[i],
+                    global::Android.Views.ViewStates.Gone);
+
+                if (!hay)
+                {
+                    continue;
+                }
+
+                vistas.SetTextViewText(
+                    filasTareas[i],
+                    tareas[i].Texto);
+
+                PendingIntent? completar =
+                    CrearAccionTarea(
+                        contexto,
+                        4840 + i,
+                        tareas[i].Id);
+
+                if (completar is not null)
+                {
+                    vistas.SetOnClickPendingIntent(
+                        botonesTarea[i],
+                        completar);
+
+                    vistas.SetViewVisibility(
+                        botonesTarea[i],
+                        global::Android.Views.ViewStates.Visible);
+                }
+
                 PendingIntent? tocar =
                     CrearActividad(
                         contexto,
@@ -331,8 +482,19 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                 }
             }
 
+            if (tareas.Count == 0)
+            {
+                vistas.SetTextViewText(
+                    filasTareas[0],
+                    "Sin tareas para ese día");
+
+                vistas.SetViewVisibility(
+                    filasTareas[0],
+                    global::Android.Views.ViewStates.Visible);
+            }
+
             // Alertas pendientes de resolver.
-            List<string> alertas =
+            List<(string Firma, string Texto)> alertas =
                 ObtenerAlertasPendientes();
 
             int[] filasAlertas =
@@ -340,6 +502,13 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                 Resource.Id.widget_alerta1,
                 Resource.Id.widget_alerta2,
                 Resource.Id.widget_alerta3
+            };
+
+            int[] botonesAlerta =
+            {
+                Resource.Id.widget_alerta1_ok,
+                Resource.Id.widget_alerta2_ok,
+                Resource.Id.widget_alerta3_ok
             };
 
             vistas.SetViewVisibility(
@@ -357,11 +526,34 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                 bool visible =
                     i < alertas.Count;
 
+                vistas.SetViewVisibility(
+                    botonesAlerta[i],
+                    global::Android.Views
+                        .ViewStates.Gone);
+
                 if (visible)
                 {
                     vistas.SetTextViewText(
                         filasAlertas[i],
-                        "⚠️ " + alertas[i]);
+                        alertas[i].Texto);
+
+                    PendingIntent? leida =
+                        CrearAccionAlertaLeida(
+                            contexto,
+                            4850 + i,
+                            alertas[i].Firma);
+
+                    if (leida is not null)
+                    {
+                        vistas.SetOnClickPendingIntent(
+                            botonesAlerta[i],
+                            leida);
+
+                        vistas.SetViewVisibility(
+                            botonesAlerta[i],
+                            global::Android.Views
+                                .ViewStates.Visible);
+                    }
                 }
 
                 vistas.SetViewVisibility(
@@ -451,6 +643,107 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                    codigo,
                    intencion,
                    PendingIntentFlags.UpdateCurrent)!;
+    }
+
+
+    private static PendingIntent? CrearAccionTarea(
+        Context contexto,
+        int codigo,
+        int tareaId)
+    {
+        try
+        {
+            var intencion =
+                new Intent(
+                    contexto,
+                    typeof(SccosmosWidgetProvider));
+
+            intencion.SetAction(
+                AccionTareaOk);
+
+            intencion.PutExtra(
+                ExtraTareaId,
+                tareaId);
+
+            return PendingIntent.GetBroadcast(
+                contexto,
+                codigo,
+                intencion,
+                PendingIntentFlags.Immutable
+                | PendingIntentFlags.UpdateCurrent);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+
+    private static PendingIntent? CrearAccionAlertaLeida(
+        Context contexto,
+        int codigo,
+        string firma)
+    {
+        try
+        {
+            var intencion =
+                new Intent(
+                    contexto,
+                    typeof(SccosmosWidgetProvider));
+
+            intencion.SetAction(
+                AccionAlertaOk);
+
+            intencion.PutExtra(
+                ExtraAlertaFirma,
+                firma);
+
+            return PendingIntent.GetBroadcast(
+                contexto,
+                codigo,
+                intencion,
+                PendingIntentFlags.Immutable
+                | PendingIntentFlags.UpdateCurrent);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+
+    private static PendingIntent? CrearAbrirMapa(
+        Context contexto,
+        int codigo,
+        string consulta)
+    {
+        try
+        {
+            var uri =
+                global::Android.Net.Uri.Parse(
+                    "https://www.google.com/maps/search/?api=1&query="
+                    + global::Android.Net.Uri.Encode(
+                        consulta));
+
+            var intencion =
+                new Intent(
+                    Intent.ActionView,
+                    uri);
+
+            intencion.AddFlags(
+                ActivityFlags.NewTask);
+
+            return PendingIntent.GetActivity(
+                contexto,
+                codigo,
+                intencion,
+                PendingIntentFlags.Immutable
+                | PendingIntentFlags.UpdateCurrent);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
 
@@ -545,11 +838,12 @@ public class SccosmosWidgetProvider : AppWidgetProvider
     }
 
 
-    private static List<string> ObtenerProgramaDelDia(
-        DateTime dia)
+    private static List<(string Texto, string ConsultaMapa)>
+        ObtenerProgramaDelDia(
+            DateTime dia)
     {
         var resultado =
-            new List<string>();
+            new List<(string Texto, string ConsultaMapa)>();
 
         try
         {
@@ -680,8 +974,29 @@ public class SccosmosWidgetProvider : AppWidgetProvider
 
                 if (linea.Trim().Length > 0)
                 {
-                    resultado.Add(
-                        linea.Trim());
+                    string consulta =
+                        "";
+
+                    if (actividad.Latitud != 0
+                        || actividad.Longitud != 0)
+                    {
+                        consulta =
+                            actividad.Latitud.ToString(
+                                System.Globalization.CultureInfo.InvariantCulture)
+                            + ","
+                            + actividad.Longitud.ToString(
+                                System.Globalization.CultureInfo.InvariantCulture);
+                    }
+                    else if (!string.IsNullOrWhiteSpace(
+                                 actividad.Direccion))
+                    {
+                        consulta =
+                            actividad.Direccion.Trim();
+                    }
+
+                    resultado.Add((
+                        linea.Trim(),
+                        consulta));
                 }
             }
         }
@@ -693,10 +1008,11 @@ public class SccosmosWidgetProvider : AppWidgetProvider
     }
 
 
-    private static List<string> ObtenerAlertasPendientes()
+    private static List<(string Firma, string Texto)>
+        ObtenerAlertasPendientes()
     {
         var resultado =
-            new List<string>();
+            new List<(string Firma, string Texto)>();
 
         try
         {
@@ -714,7 +1030,10 @@ public class SccosmosWidgetProvider : AppWidgetProvider
 
                 if (!string.IsNullOrWhiteSpace(texto))
                 {
-                    resultado.Add(texto);
+                    resultado.Add((
+                        Services.AlertasMobileService
+                            .FirmaDe(alerta),
+                        texto));
                 }
 
                 if (resultado.Count >= 3)
@@ -731,11 +1050,12 @@ public class SccosmosWidgetProvider : AppWidgetProvider
     }
 
 
-    private static List<string> ObtenerTareasDelDia(
-        DateTime dia)
+    private static List<(int Id, string Texto)>
+        ObtenerTareasDelDia(
+            DateTime dia)
     {
         var resultado =
-            new List<string>();
+            new List<(int Id, string Texto)>();
 
         try
         {
@@ -766,8 +1086,9 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                         ? "Tarea"
                         : tarea.Titulo.Trim();
 
-                resultado.Add(
-                    cuando + titulo);
+                resultado.Add((
+                    tarea.Id,
+                    cuando + titulo));
 
                 if (resultado.Count >= 3)
                 {

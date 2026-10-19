@@ -128,6 +128,36 @@ public static class AlertasMobileService
     }
 
 
+    /// <summary>La firma/identidad pública de una alerta (widget).</summary>
+    public static string FirmaDe(
+        AlertaMobile alerta)
+    {
+        return alerta == null
+            ? ""
+            : Firma(alerta);
+    }
+
+
+    /// <summary>Marca como leída una alerta por su firma (widget).</summary>
+    public static void MarcarLeidaPorFirma(
+        string firma)
+    {
+        if (string.IsNullOrWhiteSpace(firma))
+        {
+            return;
+        }
+
+        HashSet<string> leidas =
+            ObtenerLeidas();
+
+        leidas.Add(
+            firma.Trim());
+
+        DatabaseHelper.GuardarAlertasLeidasMobile(
+            leidas);
+    }
+
+
     public static List<AlertaMobile> Calcular(
         int semanasAtras = 6,
         int semanasAdelante = 8)

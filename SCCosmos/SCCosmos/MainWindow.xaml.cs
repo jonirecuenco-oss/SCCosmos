@@ -1081,6 +1081,40 @@ namespace SCCosmos
             PopupAlertas.IsOpen = false;
         }
 
+        /// <summary>
+        /// Marca como leída una sola alerta (desde su botón ✓). El popup
+        /// se queda abierto para poder marcar varias seguidas.
+        /// </summary>
+        private void BtnAlertaLeida_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            try
+            {
+                if ((sender as System.Windows.FrameworkElement)
+                        ?.DataContext is not AlertaItem alerta)
+                {
+                    return;
+                }
+
+                var firmas =
+                    CargarAlertasLeidas();
+
+                firmas.Add(
+                    FirmaAlerta(alerta));
+
+                GuardarAlertasLeidas(firmas);
+
+                _cantidadAlertasVistas = 0;
+
+                VerificarAlertas();
+            }
+            catch
+            {
+            }
+        }
+
+
         private void MenuSplitter_DragDelta(object sender, DragDeltaEventArgs e)
         {
             double nuevoAncho = MenuPrincipal.OpenPaneLength + e.HorizontalChange;
