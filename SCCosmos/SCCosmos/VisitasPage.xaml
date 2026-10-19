@@ -143,12 +143,11 @@
                                 <!-- ACCIONES DE MINISTERIO -->
                                 <Button Content="➕" ToolTip="Añadir publicador" FontSize="16" FontWeight="SemiBold" Padding="15,8" Background="#10893E" Foreground="White" BorderThickness="0" Cursor="Hand" Click="BtnNuevaPersona_Click" VerticalAlignment="Top" Margin="4,0,0,6"/>
                                 <Button x:Name="BtnGenerarS21" Content="S-21" ToolTip="Generar todas las tarjetas S-21" FontSize="13" FontWeight="SemiBold" Padding="14,9" Background="#2D5F8B" Foreground="White" BorderThickness="0" Cursor="Hand" Click="BtnGenerarTarjetasS21_Click" VerticalAlignment="Top" Margin="4,0,0,6"/>
-                    <Button x:Name="BtnImportarProgramaPdf" Content="Programa PDF" ToolTip="Importar el programa de la visita desde el PDF rellenado" FontSize="13" FontWeight="SemiBold" Padding="14,9" Background="#5B4A9E" Foreground="White" BorderThickness="0" Cursor="Hand" Click="BtnImportarProgramaPdf_Click" VerticalAlignment="Top" Margin="4,0,0,6"/>
 
                                 <Border Background="#252526" BorderBrush="#3A3A3D" BorderThickness="1" CornerRadius="6" Margin="12,0,0,6" Padding="10,4" Height="38" VerticalAlignment="Top">
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                         <TextBlock Text="Buscar:" Foreground="#AAAAAA" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                        <TextBox x:Name="TxtBuscarMinisterio" Width="320" Background="Transparent" Foreground="White" BorderThickness="0" VerticalContentAlignment="Center" TextChanged="TxtBuscarMinisterio_TextChanged" ToolTip="Buscar por nombre común, nombre completo o nombre JW Hub"/>
+                                        <TextBox x:Name="TxtBuscarMinisterio" Width="320" Background="Transparent" Foreground="White" BorderThickness="0" VerticalContentAlignment="Center" FontSize="13.5" Padding="6,0" CaretBrush="White" TextChanged="TxtBuscarMinisterio_TextChanged" ToolTip="Buscar por nombre común, nombre completo o nombre JW Hub"/>
                                     </StackPanel>
                                 </Border>
                             </WrapPanel>
@@ -263,16 +262,31 @@
                                                TextWrapping="Wrap"/>
                                 </StackPanel>
 
-                                <Button Grid.Column="1"
-                                        Content="⇧ Importar JSON"
-                                        Click="BtnImportarProgramaJson_Click"
-                                        Padding="12,7"
-                                        Background="#2D5F8B"
-                                        Foreground="White"
-                                        BorderThickness="0"
-                                        Cursor="Hand"
-                                        VerticalAlignment="Center"
-                                        ToolTip="Importar actividades de miércoles a domingo"/>
+                                <StackPanel Grid.Column="1"
+                                            Orientation="Horizontal"
+                                            VerticalAlignment="Center">
+
+                                    <Button Content="Programa PDF"
+                                            Click="BtnImportarProgramaPdf_Click"
+                                            Padding="12,7"
+                                            Background="#5B4A9E"
+                                            Foreground="White"
+                                            BorderThickness="0"
+                                            Cursor="Hand"
+                                            Margin="0,0,8,0"
+                                            VerticalAlignment="Center"
+                                            ToolTip="Importar el programa desde el PDF rellenado («Programa para la visita del SC»)"/>
+
+                                    <Button Content="⇧ Importar JSON"
+                                            Click="BtnImportarProgramaJson_Click"
+                                            Padding="12,7"
+                                            Background="#2D5F8B"
+                                            Foreground="White"
+                                            BorderThickness="0"
+                                            Cursor="Hand"
+                                            VerticalAlignment="Center"
+                                            ToolTip="Importar actividades de miércoles a domingo"/>
+                                </StackPanel>
                             </Grid>
                         </Border>
 

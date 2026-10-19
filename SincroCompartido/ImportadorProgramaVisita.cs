@@ -407,7 +407,7 @@ public static class ImportadorProgramaVisita
             {
                 DiaSemana = diasComida[i - 1],
                 Turno = "General",
-                Hora = "",
+                Hora = "13:30",
                 TipoActividad = "Comida",
                 Responsable = "Ambos",
                 Notas = Juntar(
