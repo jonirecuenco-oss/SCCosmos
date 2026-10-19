@@ -104,6 +104,8 @@ namespace SCCosmos
                 _semanaActual =
                     DatabaseHelper.ObtenerSemana(fechaIso);
 
+                CargarHorasMes();
+
                 PanelVisita.Visibility = Visibility.Collapsed;
                 PanelOtraActividad.Visibility = Visibility.Collapsed;
                 PanelProgramaDia.Visibility = Visibility.Collapsed;
@@ -433,6 +435,103 @@ namespace SCCosmos
                         : Visibility.Collapsed
             };
         }
+
+        // =========================================================
+        // HORAS PREDICADAS DEL MES
+        // =========================================================
+
+        private void CargarHorasMes()
+        {
+            try
+            {
+                string usuario =
+                    PerfilAcceso.AccesoCompleto
+                        ? "SC"
+                        : "Esposa";
+
+                string mes =
+                    DateTime.Today.ToString("yyyy-MM");
+
+                double horas =
+                    DatabaseHelper.ObtenerHorasMes(
+                        usuario,
+                        mes);
+
+                TxtHorasMes.Text =
+                    horas.ToString("0.#");
+
+                TxtHorasMesEtiqueta.Text =
+                    DateTime.Today.ToString(
+                        "MMMM yyyy",
+                        System.Globalization.CultureInfo
+                            .GetCultureInfo("es-ES"));
+            }
+            catch
+            {
+            }
+        }
+
+
+        private void BtnSumarHoras_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            try
+            {
+                string entrada =
+                    Microsoft.VisualBasic.Interaction.InputBox(
+                        "¿Cuántas horas quieres añadir al mes?",
+                        "Horas predicadas",
+                        "1");
+
+                if (string.IsNullOrWhiteSpace(entrada))
+                {
+                    return;
+                }
+
+                double valor = 0;
+
+                if (!double.TryParse(
+                        entrada.Trim().Replace(',', '.'),
+                        System.Globalization.NumberStyles.Any,
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        out valor)
+                    || valor <= 0
+                    || valor > 99)
+                {
+                    MessageBox.Show(
+                        "Escribe un número de horas válido (por ejemplo 2,5).",
+                        "Horas",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+
+                    return;
+                }
+
+                string usuario =
+                    PerfilAcceso.AccesoCompleto
+                        ? "SC"
+                        : "Esposa";
+
+                string mes =
+                    DateTime.Today.ToString("yyyy-MM");
+
+                DatabaseHelper.SumarHorasMes(
+                    usuario,
+                    mes,
+                    valor);
+
+                DatabaseHelper.AnotarActividad(
+                    "Horas",
+                    $"Añadió {valor:0.#} h de predicación ({usuario})");
+
+                CargarHorasMes();
+            }
+            catch
+            {
+            }
+        }
+
 
         /// <summary>Abre la actividad del día en Google Maps (coordenadas o dirección).</summary>
         private void BtnMapaActividadInicio_Click(

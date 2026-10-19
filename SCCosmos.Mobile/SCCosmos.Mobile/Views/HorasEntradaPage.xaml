@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="SCCosmos.Mobile.Views.HorasEntradaPage"
+             Title="Horas predicadas"
+             BackgroundColor="#101216">
+
+    <VerticalStackLayout Padding="24"
+                         Spacing="16">
+
+        <Label Text="¿Cuántas horas quieres añadir al mes?"
+               TextColor="White"
+               FontSize="17"
+               FontAttributes="Bold"/>
+
+        <Label x:Name="LblMesHoras"
+               Text=""
+               TextColor="#8A929C"
+               FontSize="13"/>
+
+        <Entry x:Name="TxtHoras"
+               Keyboard="Numeric"
+               Placeholder="Ej.: 2,5"
+               PlaceholderColor="#7E858F"
+               TextColor="White"
+               FontSize="20"/>
+
+        <HorizontalStackLayout Spacing="12">
+            <Button Text="Cancelar"
+                    Clicked="BtnCancelar_Clicked"
+                    BackgroundColor="#242830"
+                    TextColor="White"
+                    CornerRadius="10"
+                    Padding="18,8"/>
+            <Button Text="Añadir"
+                    Clicked="BtnAnadir_Clicked"
+                    BackgroundColor="#0B6FC2"
+                    TextColor="White"
+                    CornerRadius="10"
+                    Padding="18,8"/>
+        </HorizontalStackLayout>
+
+    </VerticalStackLayout>
+</ContentPage>

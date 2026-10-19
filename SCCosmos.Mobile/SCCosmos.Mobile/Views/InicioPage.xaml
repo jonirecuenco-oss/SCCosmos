@@ -225,6 +225,62 @@
             </Border>
 
 
+            <!-- HORAS PREDICADAS -->
+            <Border
+                BackgroundColor="{StaticResource Superficie}"
+                Stroke="{StaticResource Borde}"
+                StrokeThickness="1"
+                Padding="18">
+
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="18"/>
+                </Border.StrokeShape>
+
+                <Grid ColumnDefinitions="*,Auto"
+                      ColumnSpacing="12">
+
+                    <VerticalStackLayout
+                        Grid.Column="0"
+                        Spacing="2">
+
+                        <Label
+                            Text="HORAS PREDICADAS ESTE MES"
+                            TextColor="#858C96"
+                            FontSize="12"
+                            FontAttributes="Bold"
+                            CharacterSpacing="1.5"/>
+
+                        <Label
+                            x:Name="LblHorasMes"
+                            Text="0"
+                            TextColor="White"
+                            FontSize="30"
+                            FontAttributes="Bold"/>
+
+                        <Label
+                            x:Name="LblHorasMesEtiqueta"
+                            Text=""
+                            TextColor="#8A929C"
+                            FontSize="12"/>
+                    </VerticalStackLayout>
+
+                    <Button
+                        Grid.Column="1"
+                        Text="+"
+                        Clicked="BtnSumarHoras_Clicked"
+                        SemanticProperties.Description="Añadir horas"
+                        FontSize="22"
+                        FontAttributes="Bold"
+                        WidthRequest="62"
+                        HeightRequest="52"
+                        Padding="0"
+                        BackgroundColor="#0B6FC2"
+                        TextColor="White"
+                        CornerRadius="12"
+                        VerticalOptions="Center"/>
+                </Grid>
+            </Border>
+
             <!-- PROGRAMA DE HOY -->
 
             <VerticalStackLayout

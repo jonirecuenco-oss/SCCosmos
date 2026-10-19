@@ -417,6 +417,74 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                     global::Android.Views.ViewStates.Visible);
             }
 
+            // Horas predicadas del mes (por usuario).
+            try
+            {
+                string usuarioHoras =
+                    SCCosmos.Mobile.Services
+                        .PerfilAccesoService.EsHombre
+                        ? "SC"
+                        : "Esposa";
+
+                DateTime ahoraHoras =
+                    DateTime.Today;
+
+                string mesHoras =
+                    ahoraHoras.ToString("yyyy-MM");
+
+                double horasMes =
+                    DatabaseHelper
+                        .ObtenerHorasMesMobile(
+                            usuarioHoras,
+                            mesHoras);
+
+                vistas.SetTextViewText(
+                    Resource.Id.widget_seccion_horas,
+                    "HORAS PREDICADAS · "
+                    + ahoraHoras.ToString(
+                            "MMMM",
+                            new CultureInfo("es-ES"))
+                        .ToUpperInvariant());
+
+                vistas.SetTextViewText(
+                    Resource.Id.widget_horas,
+                    horasMes.ToString(
+                        "0.#",
+                        new CultureInfo("es-ES"))
+                    + " h");
+
+                vistas.SetViewVisibility(
+                    Resource.Id.widget_seccion_horas,
+                    global::Android.Views
+                        .ViewStates.Visible);
+
+                vistas.SetViewVisibility(
+                    Resource.Id.widget_horas,
+                    global::Android.Views
+                        .ViewStates.Visible);
+
+                vistas.SetViewVisibility(
+                    Resource.Id.widget_horas_mas,
+                    global::Android.Views
+                        .ViewStates.Visible);
+
+                PendingIntent? sumarHoras =
+                    CrearActividad(
+                        contexto,
+                        4870,
+                        "horas");
+
+                if (sumarHoras is not null)
+                {
+                    vistas.SetOnClickPendingIntent(
+                        Resource.Id.widget_horas_mas,
+                        sumarHoras);
+                }
+            }
+            catch
+            {
+            }
+
             // Tareas del día.
             List<(int Id, string Texto)> tareas =
                 ObtenerTareasDelDia(dia);

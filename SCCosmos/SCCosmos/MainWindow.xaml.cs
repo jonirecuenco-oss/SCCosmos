@@ -104,6 +104,7 @@ namespace SCCosmos
             InitializeComponent();
             DatabaseHelper.InicializarDatabase();
             DatabaseHelper.AsegurarAlertasLeidas();
+            DatabaseHelper.AsegurarHorasMes();
 
             // Motor de sincronización entre dispositivos.
             SincronizacionRed.Iniciar();

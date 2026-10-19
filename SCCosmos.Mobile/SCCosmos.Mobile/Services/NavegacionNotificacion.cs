@@ -55,6 +55,32 @@ public static class NavegacionNotificacion
                         _ => ""
                     };
 
+                if (_destino == "horas")
+                {
+                    // Botón + del widget: entrada rápida de horas de
+                    // predicación del mes.
+                    try
+                    {
+                        if (Shell.Current is not null)
+                        {
+                            await MainThread
+                                .InvokeOnMainThreadAsync(
+                                    () => Shell.Current
+                                        .Navigation
+                                        .PushModalAsync(
+                                            new Views.HorasEntradaPage()));
+
+                            _destino = "";
+                            return;
+                        }
+                    }
+                    catch
+                    {
+                    }
+
+                    continue;
+                }
+
                 if (_destino == "alertas")
                 {
                     // Alertas pendientes (campana).

@@ -281,6 +281,8 @@ public partial class InicioPage : ContentPage, IActualizableMobile
 
         _semanaActual = semana;
 
+        CargarHorasMes();
+
         ProgramaHoy.Clear();
 
         _codigoVisitaActual = "";
@@ -622,6 +624,111 @@ public partial class InicioPage : ContentPage, IActualizableMobile
 
             LblDiaPrograma.Text =
                 texto;
+        }
+        catch
+        {
+        }
+    }
+
+
+    // =========================================================
+    // HORAS PREDICADAS DEL MES
+    // =========================================================
+
+    private void CargarHorasMes()
+    {
+        try
+        {
+            string usuario =
+                PerfilAccesoService.EsHombre
+                    ? "SC"
+                    : "Esposa";
+
+            string mes =
+                DateTime.Today.ToString("yyyy-MM");
+
+            double horas =
+                DatabaseHelper.ObtenerHorasMesMobile(
+                    usuario,
+                    mes);
+
+            LblHorasMes.Text =
+                horas.ToString("0.#");
+
+            LblHorasMesEtiqueta.Text =
+                DateTime.Today.ToString(
+                    "MMMM yyyy",
+                    System.Globalization.CultureInfo
+                        .GetCultureInfo("es-ES"));
+        }
+        catch
+        {
+        }
+    }
+
+
+    private async void BtnSumarHoras_Clicked(
+        object sender,
+        EventArgs e)
+    {
+        try
+        {
+            string? entrada =
+                await DisplayPromptAsync(
+                    "Horas predicadas",
+                    "¿Cuántas horas quieres añadir al mes?",
+                    "Añadir",
+                    "Cancelar",
+                    "Ej.: 2,5",
+                    6,
+                    Keyboard.Numeric);
+
+            if (string.IsNullOrWhiteSpace(entrada))
+            {
+                return;
+            }
+
+            double valor = 0;
+
+            if (!double.TryParse(
+                    entrada.Trim().Replace(',', '.'),
+                    System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out valor)
+                || valor <= 0
+                || valor > 99)
+            {
+                await DisplayAlert(
+                    "Horas",
+                    "Escribe un número de horas válido (por ejemplo 2,5).",
+                    "Aceptar");
+
+                return;
+            }
+
+            string usuario =
+                PerfilAccesoService.EsHombre
+                    ? "SC"
+                    : "Esposa";
+
+            string mes =
+                DateTime.Today.ToString("yyyy-MM");
+
+            await Task.Run(
+                () => DatabaseHelper.SumarHorasMesMobile(
+                    usuario,
+                    mes,
+                    valor));
+
+            DatabaseHelper.AnotarActividadMobile(
+                "Horas",
+                $"Añadió {valor:0.#} h de predicación ({usuario})");
+
+            CargarHorasMes();
+
+            SCCosmos.Mobile.Platforms.Android
+                .SccosmosWidgetProvider
+                .ActualizarTodos();
         }
         catch
         {

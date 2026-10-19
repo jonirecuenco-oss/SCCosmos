@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="#1B1F27"
-    android:padding="14dp">
+    android:padding="16dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -19,7 +19,7 @@
             android:layout_weight="1"
             android:text="SCCosmos"
             android:textColor="#FFFFFF"
-            android:textSize="16sp"
+            android:textSize="17sp"
             android:textStyle="bold" />
 
         <TextView
@@ -32,7 +32,7 @@
             android:paddingBottom="4dp"
             android:text="◀"
             android:textColor="#4BA3E3"
-            android:textSize="24sp"
+            android:textSize="25sp"
             android:textStyle="bold" />
 
         <TextView
@@ -43,7 +43,7 @@
             android:paddingRight="2dp"
             android:text=""
             android:textColor="#E6E8EB"
-            android:textSize="13sp" />
+            android:textSize="14sp" />
 
         <TextView
             android:id="@+id/widget_dia_adelante"
@@ -55,7 +55,7 @@
             android:paddingBottom="4dp"
             android:text="▶"
             android:textColor="#4BA3E3"
-            android:textSize="24sp"
+            android:textSize="25sp"
             android:textStyle="bold" />
     </LinearLayout>
 
@@ -63,10 +63,10 @@
         android:id="@+id/widget_seccion_hoy"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="14dp"
         android:text="HOY"
         android:textColor="#4BA3E3"
-        android:textSize="12sp"
+        android:textSize="13sp"
         android:textStyle="bold" />
 
     <LinearLayout
@@ -74,7 +74,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginTop="6dp">
+        android:layout_marginTop="7dp">
 
         <TextView
             android:id="@+id/widget_programa1"
@@ -83,18 +83,18 @@
             android:layout_weight="1"
             android:text=""
             android:textColor="#E6E8EB"
-            android:textSize="14sp" />
+            android:textSize="16sp" />
 
         <TextView
             android:id="@+id/widget_programa1_mapa"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingLeft="10dp"
+            android:paddingLeft="12dp"
             android:paddingRight="4dp"
             android:paddingTop="2dp"
             android:paddingBottom="2dp"
             android:text="📍"
-            android:textSize="17sp"
+            android:textSize="19sp"
             android:visibility="gone" />
     </LinearLayout>
 
@@ -103,7 +103,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginTop="6dp">
+        android:layout_marginTop="7dp">
 
         <TextView
             android:id="@+id/widget_programa2"
@@ -112,18 +112,18 @@
             android:layout_weight="1"
             android:text=""
             android:textColor="#E6E8EB"
-            android:textSize="14sp" />
+            android:textSize="16sp" />
 
         <TextView
             android:id="@+id/widget_programa2_mapa"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingLeft="10dp"
+            android:paddingLeft="12dp"
             android:paddingRight="4dp"
             android:paddingTop="2dp"
             android:paddingBottom="2dp"
             android:text="📍"
-            android:textSize="17sp"
+            android:textSize="19sp"
             android:visibility="gone" />
     </LinearLayout>
 
@@ -132,7 +132,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginTop="6dp">
+        android:layout_marginTop="7dp">
 
         <TextView
             android:id="@+id/widget_programa3"
@@ -141,18 +141,18 @@
             android:layout_weight="1"
             android:text=""
             android:textColor="#E6E8EB"
-            android:textSize="14sp" />
+            android:textSize="16sp" />
 
         <TextView
             android:id="@+id/widget_programa3_mapa"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingLeft="10dp"
+            android:paddingLeft="12dp"
             android:paddingRight="4dp"
             android:paddingTop="2dp"
             android:paddingBottom="2dp"
             android:text="📍"
-            android:textSize="17sp"
+            android:textSize="19sp"
             android:visibility="gone" />
     </LinearLayout>
 
@@ -161,7 +161,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginTop="6dp">
+        android:layout_marginTop="7dp">
 
         <TextView
             android:id="@+id/widget_programa4"
@@ -170,18 +170,18 @@
             android:layout_weight="1"
             android:text=""
             android:textColor="#E6E8EB"
-            android:textSize="14sp" />
+            android:textSize="16sp" />
 
         <TextView
             android:id="@+id/widget_programa4_mapa"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingLeft="10dp"
+            android:paddingLeft="12dp"
             android:paddingRight="4dp"
             android:paddingTop="2dp"
             android:paddingBottom="2dp"
             android:text="📍"
-            android:textSize="17sp"
+            android:textSize="19sp"
             android:visibility="gone" />
     </LinearLayout>
 
@@ -190,7 +190,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginTop="6dp">
+        android:layout_marginTop="7dp">
 
         <TextView
             android:id="@+id/widget_programa5"
@@ -199,18 +199,18 @@
             android:layout_weight="1"
             android:text=""
             android:textColor="#E6E8EB"
-            android:textSize="14sp" />
+            android:textSize="16sp" />
 
         <TextView
             android:id="@+id/widget_programa5_mapa"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingLeft="10dp"
+            android:paddingLeft="12dp"
             android:paddingRight="4dp"
             android:paddingTop="2dp"
             android:paddingBottom="2dp"
             android:text="📍"
-            android:textSize="17sp"
+            android:textSize="19sp"
             android:visibility="gone" />
     </LinearLayout>
 
@@ -219,7 +219,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginTop="6dp">
+        android:layout_marginTop="7dp">
 
         <TextView
             android:id="@+id/widget_programa6"
@@ -228,18 +228,18 @@
             android:layout_weight="1"
             android:text=""
             android:textColor="#E6E8EB"
-            android:textSize="14sp" />
+            android:textSize="16sp" />
 
         <TextView
             android:id="@+id/widget_programa6_mapa"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingLeft="10dp"
+            android:paddingLeft="12dp"
             android:paddingRight="4dp"
             android:paddingTop="2dp"
             android:paddingBottom="2dp"
             android:text="📍"
-            android:textSize="17sp"
+            android:textSize="19sp"
             android:visibility="gone" />
     </LinearLayout>
 
@@ -248,7 +248,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginTop="6dp">
+        android:layout_marginTop="7dp">
 
         <TextView
             android:id="@+id/widget_programa7"
@@ -257,18 +257,18 @@
             android:layout_weight="1"
             android:text=""
             android:textColor="#E6E8EB"
-            android:textSize="14sp" />
+            android:textSize="16sp" />
 
         <TextView
             android:id="@+id/widget_programa7_mapa"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingLeft="10dp"
+            android:paddingLeft="12dp"
             android:paddingRight="4dp"
             android:paddingTop="2dp"
             android:paddingBottom="2dp"
             android:text="📍"
-            android:textSize="17sp"
+            android:textSize="19sp"
             android:visibility="gone" />
     </LinearLayout>
 
@@ -277,7 +277,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginTop="6dp">
+        android:layout_marginTop="7dp">
 
         <TextView
             android:id="@+id/widget_programa8"
@@ -286,19 +286,59 @@
             android:layout_weight="1"
             android:text=""
             android:textColor="#E6E8EB"
-            android:textSize="14sp" />
+            android:textSize="16sp" />
 
         <TextView
             android:id="@+id/widget_programa8_mapa"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingLeft="10dp"
+            android:paddingLeft="12dp"
             android:paddingRight="4dp"
             android:paddingTop="2dp"
             android:paddingBottom="2dp"
             android:text="📍"
-            android:textSize="17sp"
+            android:textSize="19sp"
             android:visibility="gone" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/widget_seccion_horas"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:text="HORAS PREDICADAS"
+        android:textColor="#9CC3F5"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="7dp">
+
+        <TextView
+            android:id="@+id/widget_horas"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text=""
+            android:textColor="#E6E8EB"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/widget_horas_mas"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="14dp"
+            android:paddingRight="8dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:text="+"
+            android:textColor="#4BA3E3"
+            android:textSize="24sp"
+            android:textStyle="bold" />
     </LinearLayout>
 
     <TextView
@@ -308,7 +348,7 @@
         android:layout_marginTop="14dp"
         android:text="PRÓXIMAS TAREAS"
         android:textColor="#8BC98B"
-        android:textSize="12sp"
+        android:textSize="13sp"
         android:textStyle="bold" />
 
     <LinearLayout
@@ -316,7 +356,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginTop="6dp">
+        android:layout_marginTop="7dp">
 
         <TextView
             android:id="@+id/widget_tarea1"
@@ -325,19 +365,19 @@
             android:layout_weight="1"
             android:text=""
             android:textColor="#E6E8EB"
-            android:textSize="14sp" />
+            android:textSize="16sp" />
 
         <TextView
             android:id="@+id/widget_tarea1_ok"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingLeft="10dp"
+            android:paddingLeft="12dp"
             android:paddingRight="4dp"
             android:paddingTop="2dp"
             android:paddingBottom="2dp"
             android:text="✓"
             android:textColor="#8BC98B"
-            android:textSize="17sp"
+            android:textSize="19sp"
             android:textStyle="bold"
             android:visibility="gone" />
     </LinearLayout>
@@ -347,7 +387,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginTop="6dp">
+        android:layout_marginTop="7dp">
 
         <TextView
             android:id="@+id/widget_tarea2"
@@ -356,19 +396,19 @@
             android:layout_weight="1"
             android:text=""
             android:textColor="#E6E8EB"
-            android:textSize="14sp" />
+            android:textSize="16sp" />
 
         <TextView
             android:id="@+id/widget_tarea2_ok"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingLeft="10dp"
+            android:paddingLeft="12dp"
             android:paddingRight="4dp"
             android:paddingTop="2dp"
             android:paddingBottom="2dp"
             android:text="✓"
             android:textColor="#8BC98B"
-            android:textSize="17sp"
+            android:textSize="19sp"
             android:textStyle="bold"
             android:visibility="gone" />
     </LinearLayout>
@@ -378,7 +418,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginTop="6dp">
+        android:layout_marginTop="7dp">
 
         <TextView
             android:id="@+id/widget_tarea3"
@@ -387,19 +427,19 @@
             android:layout_weight="1"
             android:text=""
             android:textColor="#E6E8EB"
-            android:textSize="14sp" />
+            android:textSize="16sp" />
 
         <TextView
             android:id="@+id/widget_tarea3_ok"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingLeft="10dp"
+            android:paddingLeft="12dp"
             android:paddingRight="4dp"
             android:paddingTop="2dp"
             android:paddingBottom="2dp"
             android:text="✓"
             android:textColor="#8BC98B"
-            android:textSize="17sp"
+            android:textSize="19sp"
             android:textStyle="bold"
             android:visibility="gone" />
     </LinearLayout>
@@ -411,7 +451,7 @@
         android:layout_marginTop="14dp"
         android:text="ALERTAS PENDIENTES"
         android:textColor="#FFB74D"
-        android:textSize="12sp"
+        android:textSize="13sp"
         android:textStyle="bold"
         android:visibility="gone" />
 
@@ -420,7 +460,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginTop="6dp">
+        android:layout_marginTop="7dp">
 
         <TextView
             android:id="@+id/widget_alerta1"
@@ -429,20 +469,20 @@
             android:layout_weight="1"
             android:text=""
             android:textColor="#E6E8EB"
-            android:textSize="14sp"
+            android:textSize="16sp"
             android:visibility="gone" />
 
         <TextView
             android:id="@+id/widget_alerta1_ok"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingLeft="10dp"
+            android:paddingLeft="12dp"
             android:paddingRight="4dp"
             android:paddingTop="2dp"
             android:paddingBottom="2dp"
             android:text="✓"
             android:textColor="#FFB74D"
-            android:textSize="17sp"
+            android:textSize="19sp"
             android:textStyle="bold"
             android:visibility="gone" />
     </LinearLayout>
@@ -452,7 +492,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginTop="6dp">
+        android:layout_marginTop="7dp">
 
         <TextView
             android:id="@+id/widget_alerta2"
@@ -461,20 +501,20 @@
             android:layout_weight="1"
             android:text=""
             android:textColor="#E6E8EB"
-            android:textSize="14sp"
+            android:textSize="16sp"
             android:visibility="gone" />
 
         <TextView
             android:id="@+id/widget_alerta2_ok"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingLeft="10dp"
+            android:paddingLeft="12dp"
             android:paddingRight="4dp"
             android:paddingTop="2dp"
             android:paddingBottom="2dp"
             android:text="✓"
             android:textColor="#FFB74D"
-            android:textSize="17sp"
+            android:textSize="19sp"
             android:textStyle="bold"
             android:visibility="gone" />
     </LinearLayout>
@@ -484,7 +524,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginTop="6dp">
+        android:layout_marginTop="7dp">
 
         <TextView
             android:id="@+id/widget_alerta3"
@@ -493,20 +533,20 @@
             android:layout_weight="1"
             android:text=""
             android:textColor="#E6E8EB"
-            android:textSize="14sp"
+            android:textSize="16sp"
             android:visibility="gone" />
 
         <TextView
             android:id="@+id/widget_alerta3_ok"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingLeft="10dp"
+            android:paddingLeft="12dp"
             android:paddingRight="4dp"
             android:paddingTop="2dp"
             android:paddingBottom="2dp"
             android:text="✓"
             android:textColor="#FFB74D"
-            android:textSize="17sp"
+            android:textSize="19sp"
             android:textStyle="bold"
             android:visibility="gone" />
     </LinearLayout>

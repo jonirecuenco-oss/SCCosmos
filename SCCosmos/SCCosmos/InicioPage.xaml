@@ -277,6 +277,53 @@
                         </ItemsControl>
                     </StackPanel>
                 </ui:Card>
+
+                <!-- TARJETA: HORAS PREDICADAS -->
+                <ui:Card Width="300"
+                         VerticalAlignment="Top"
+                         Padding="24"
+                         Background="#0AFFFFFF"
+                         BorderBrush="#1AFFFFFF"
+                         Margin="0,0,20,15">
+                    <StackPanel>
+                        <TextBlock Text="HORAS PREDICADAS ESTE MES"
+                                   FontSize="12"
+                                   FontWeight="Bold"
+                                   Foreground="#8A929C"/>
+
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0"
+                                        VerticalAlignment="Center">
+                                <TextBlock x:Name="TxtHorasMes"
+                                           Text="0"
+                                           FontSize="34"
+                                           FontWeight="SemiBold"
+                                           Foreground="White"/>
+                                <TextBlock x:Name="TxtHorasMesEtiqueta"
+                                           Text=""
+                                           FontSize="12"
+                                           Foreground="#8A929C"/>
+                            </StackPanel>
+
+                            <ui:Button x:Name="BtnSumarHoras"
+                                       Grid.Column="1"
+                                       Content="+"
+                                       Appearance="Primary"
+                                       FontSize="20"
+                                       FontWeight="Bold"
+                                       Padding="16,8"
+                                       Cursor="Hand"
+                                       VerticalAlignment="Center"
+                                       ToolTip="Añadir horas de predicación"
+                                       Click="BtnSumarHoras_Click"/>
+                        </Grid>
+                    </StackPanel>
+                </ui:Card>
             </WrapPanel>
 
             <!-- Título Estadísticas -->

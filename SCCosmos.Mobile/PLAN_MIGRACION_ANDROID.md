@@ -1841,3 +1841,10 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   `appiconfg.svg` (átomo encuadrado, escala 0.78) para el lanzador de Android; `sccosmos.ico`
   regenerado con Pillow (7 tamaños, trazo reforzado en 16-32 px); `Resources/Images/atomo.svg` y
   átomo en la cabecera del menú lateral del móvil (AppShell) junto a «SCCosmos».
+- **Horas predicadas del mes (por usuario)**: tabla sincronizada `HorasMes (Usuario, Mes, Horas)`;
+  botón + en Inicio (ambas apps) y en el widget (sección HORAS PREDICADAS con +): pide el número y lo
+  SUMA al total del mes del usuario actual (SC/Esposa); se anota en Actividad. El + del widget abre
+  `HorasEntradaPage` (modal) vía el destino «horas» de `NavegacionNotificacion`. En Windows el + usa
+  `Interaction.InputBox`.
+- **Widget (Android)**: filas más altas y anchas, letra a 16sp, cabeceras a 13sp, iconos a 19sp y
+  nueva sección de horas con su botón +.

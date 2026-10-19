@@ -22,6 +22,7 @@ namespace SCCosmos.Mobile
             // disparadores de fusión (que detectan las tablas nuevas).
             DatabaseHelper.AsegurarTablaTareasMobile();
             DatabaseHelper.AsegurarTablaAlertasLeidasMobile();
+            DatabaseHelper.AsegurarTablaHorasMesMobile();
 
             // Tabla del registro de actividad (historial de acciones).
             DatabaseHelper.AsegurarTablaRegistroActividadMobile();
