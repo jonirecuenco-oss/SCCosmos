@@ -1805,3 +1805,8 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
 - **Inicio (Android)**: bajo el tipo de evento se muestra la línea de notas del programa (de donde
   sale el acompañante en las visitas, «Con Marisa de Durán…»); el acompañante vinculado a personas
   sigue mostrándose como «con X».
+- **Alertas leídas sincronizadas**: nueva tabla `AlertasLeidas` (Clave PK) descubierta por el motor
+  (disparadores `SCCosmos_red_AlertasLeidas_*`); identidades estables compartidas entre Windows y
+  Android (S302/Documentacion/S303/Recordatorio/RepBetel/JWHub, tarea por id+día); migración del
+  JSON local de Windows y de las preferencias del móvil; el móvil refresca la notificación de
+  alertas al recibir cambios (ServicioActualizacionPaginas).
