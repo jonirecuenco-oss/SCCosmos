@@ -1822,3 +1822,6 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   controles (ruta + selector de carpeta + comprobaciones); la base vive dentro de la app y no se
   toca su ubicación. Limpiados `TxtRutaBaseDatos`/`BtnCambiarRuta_Click` (Windows) y `LblRuta`/
   `LblEstado`/`BtnSeleccionarCarpeta_Click`/`ComprobarBaseDatos`/`AutoSync_EstadoCambiado` (móvil).
+- **Alertas (Android)**: umbrales iguales a Windows — el S-302 sale a ≤90 días, la documentación a
+  ≤42, el recordatorio de asamblea a ≤60 y el S-303 hasta 14 días después de la visita; ventana de
+  cálculo ampliada a 13 semanas para cubrir los 90 días.

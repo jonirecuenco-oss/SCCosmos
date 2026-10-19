@@ -160,7 +160,7 @@ public static class AlertasMobileService
 
     public static List<AlertaMobile> Calcular(
         int semanasAtras = 6,
-        int semanasAdelante = 8)
+        int semanasAdelante = 13)
     {
         var alertas =
             new List<AlertaMobile>();
@@ -269,6 +269,12 @@ public static class AlertasMobileService
         bool futura =
             finSemana >= hoy;
 
+        // Los mismos umbrales que en Windows: el S-302 sale dentro de
+        // 90 días, la documentación dentro de 42, el recordatorio de
+        // asamblea dentro de 60 y el S-303 hasta 14 días después.
+        int diasFaltantes =
+            (semana.FechaMartes.Date - hoy.Date).Days;
+
         if (esVisita)
         {
             string codigoAlerta =
@@ -281,7 +287,9 @@ public static class AlertasMobileService
 
             if (futura
                 &&
-                !semana.S302Enviado)
+                !semana.S302Enviado
+                &&
+                diasFaltantes <= 90)
             {
                 alertas.Add(
                     new AlertaMobile
@@ -298,7 +306,9 @@ public static class AlertasMobileService
 
             if (futura
                 &&
-                !semana.DocEnviada)
+                !semana.DocEnviada
+                &&
+                diasFaltantes <= 42)
             {
                 alertas.Add(
                     new AlertaMobile
@@ -314,6 +324,8 @@ public static class AlertasMobileService
             }
 
             if (!futura
+                &&
+                (hoy.Date - finSemana.Date).TotalDays <= 14
                 &&
                 FaltaS303(semana))
             {
@@ -335,7 +347,9 @@ public static class AlertasMobileService
             &&
             futura
             &&
-            !semana.RecordatorioEnviado)
+            !semana.RecordatorioEnviado
+            &&
+            diasFaltantes <= 60)
         {
             alertas.Add(
                 new AlertaMobile
