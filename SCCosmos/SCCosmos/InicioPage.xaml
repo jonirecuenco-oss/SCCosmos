@@ -277,9 +277,10 @@
                         </ItemsControl>
                     </StackPanel>
                 </ui:Card>
+            </WrapPanel>
 
-                <!-- TARJETA: HORAS PREDICADAS -->
-                <ui:Card Width="300"
+            <!-- TARJETA: HORAS PREDICADAS -->
+            <ui:Card Width="520"
                          VerticalAlignment="Top"
                          Padding="24"
                          Background="#0AFFFFFF"
@@ -324,7 +325,6 @@
                         </Grid>
                     </StackPanel>
                 </ui:Card>
-            </WrapPanel>
 
             <!-- Título Estadísticas -->
             <TextBlock Grid.Row="3" Text="Resumen del circuito" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,15"/>
