@@ -41,8 +41,15 @@ public partial class CalendarioPage : ContentPage, IActualizableMobile
         bool accesoCompleto =
             PerfilAccesoService.AccesoCompleto;
 
-        BtnCiclo.IsVisible =
-            accesoCompleto;
+        // La esposa del SC no ve el botón de Ciclo: se quita de la barra
+        // superior (el ToolbarItem no tiene IsVisible).
+        if (!accesoCompleto
+            && ToolbarItems.Contains(
+                BtnCiclo))
+        {
+            ToolbarItems.Remove(
+                BtnCiclo);
+        }
 
         BtnHoy.IsVisible =
             accesoCompleto;

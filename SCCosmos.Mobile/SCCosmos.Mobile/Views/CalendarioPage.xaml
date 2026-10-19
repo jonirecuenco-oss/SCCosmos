@@ -6,43 +6,20 @@
     Title="Calendario"
     BackgroundColor="#101216">
 
+    <ContentPage.ToolbarItems>
+        <ToolbarItem x:Name="BtnCiclo"
+                     Text="🔄"
+                     Order="Primary"
+                     Priority="0"
+                     Clicked="BtnConfigurarCiclo_Clicked" />
+    </ContentPage.ToolbarItems>
+
     <Grid RowDefinitions="Auto,Auto,*,Auto"
-          Padding="0,14,0,14"
-          RowSpacing="10">
+          Padding="0,6,0,10"
+          RowSpacing="8">
 
-        <!-- CABECERA -->
-        <Grid Grid.Row="0"
-              ColumnDefinitions="*,Auto"
-              ColumnSpacing="10"
-              Margin="16,0,16,4">
-            <VerticalStackLayout Spacing="3">
-                <Label Text="CALENDARIO"
-                       Style="{StaticResource Antetitulo}" />
-                <Label Text="Ruta semanal del circuito"
-                       Style="{StaticResource SubtituloPagina}" />
-            </VerticalStackLayout>
-
-            <HorizontalStackLayout Grid.Column="1"
-                                   Spacing="7"
-                                   VerticalOptions="Center">
-
-                <Button x:Name="BtnCiclo"
-                        Text="Ciclo"
-                        Clicked="BtnConfigurarCiclo_Clicked"
-                        Style="{StaticResource BotonSecundario}"
-                        HeightRequest="40"
-                        Padding="12,6"
-                        FontSize="12.5" />
-
-                <Button x:Name="BtnHoy"
-                        Text="Hoy"
-                        Clicked="BtnHoy_Clicked"
-                        Style="{StaticResource BotonSecundario}"
-                        HeightRequest="40"
-                        Padding="12,6"
-                        FontSize="12.5" />
-            </HorizontalStackLayout>
-        </Grid>
+        <!-- El título ya está en la barra superior; «Ciclo» va en la barra
+             (icono arriba a la derecha) y «Hoy» es el botón flotante. -->
 
         <!-- LISTADO -->
         <RefreshView x:Name="RefrescarCalendario"
@@ -87,7 +64,7 @@
                         <Border BackgroundColor="{Binding Fondo}"
                                 Stroke="{Binding Borde}"
                                 StrokeThickness="{Binding GrosorBorde}"
-                                Padding="13,13,13,5"
+                                Padding="13,5,13,5"
                                 Margin="16,0,16,8">
 
                             <Border.StrokeShape>
@@ -253,6 +230,29 @@
                        HorizontalTextAlignment="Center" />
             </VerticalStackLayout>
         </Grid>
+
+        <!-- BOTÓN FLOTANTE: HOY (por encima de la lista) -->
+        <Button x:Name="BtnHoy"
+                Grid.Row="2"
+                Text="Hoy"
+                Clicked="BtnHoy_Clicked"
+                HorizontalOptions="End"
+                VerticalOptions="End"
+                Margin="0,0,18,16"
+                BackgroundColor="#0B6FC2"
+                TextColor="White"
+                FontAttributes="Bold"
+                FontSize="13"
+                CornerRadius="22"
+                HeightRequest="44"
+                Padding="18,0">
+            <Button.Shadow>
+                <Shadow Brush="#000000"
+                        Opacity="0.4"
+                        Radius="8"
+                        Offset="0,3" />
+            </Button.Shadow>
+        </Button>
 
     </Grid>
 </ContentPage>

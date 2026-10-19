@@ -33,7 +33,7 @@
 
                 <ui:Button x:Name="BtnCiclo"
                            Grid.Column="1" 
-                           Content="Configurar Ciclo (3 Años)" 
+                           ToolTip="Configurar Ciclo (3 Años)" 
                            Icon="{ui:SymbolIcon CalendarSettings24}" 
                            Appearance="Secondary" 
                            Click="BtnConfigurarCiclo_Click" 
