@@ -325,6 +325,11 @@ public partial class CalendarioPage : ContentPage, IActualizableMobile
 
             await Task.Delay(100);
 
+            if (_vistaCalendario)
+            {
+                PintarMesCalendario();
+            }
+
             if (centrarEnActual)
             {
                 ScrollASemanaActual();
@@ -626,6 +631,302 @@ public partial class CalendarioPage : ContentPage, IActualizableMobile
         }
     }
 
+    // =========================================================
+    // VISTA DE CALENDARIO (MES)
+    // =========================================================
+
+    private bool _vistaCalendario;
+
+    private DateTime _mesCalendario =
+        new(
+            DateTime.Today.Year,
+            DateTime.Today.Month,
+            1);
+
+    private void BtnCambiarVista_Clicked(
+        object sender,
+        EventArgs e)
+    {
+        try
+        {
+            _vistaCalendario =
+                !_vistaCalendario;
+
+            RefrescarCalendario.IsVisible =
+                !_vistaCalendario;
+
+            PanelCalendario.IsVisible =
+                _vistaCalendario;
+
+            BtnVista.Text =
+                _vistaCalendario
+                    ? "📋"
+                    : "📅";
+
+            if (_vistaCalendario)
+            {
+                PintarMesCalendario();
+            }
+        }
+        catch
+        {
+        }
+    }
+
+
+    private void BtnMesAnterior_Clicked(
+        object sender,
+        EventArgs e)
+    {
+        _mesCalendario =
+            _mesCalendario.AddMonths(-1);
+
+        PintarMesCalendario();
+    }
+
+
+    private void BtnMesSiguiente_Clicked(
+        object sender,
+        EventArgs e)
+    {
+        _mesCalendario =
+            _mesCalendario.AddMonths(1);
+
+        PintarMesCalendario();
+    }
+
+
+    private void PintarMesCalendario()
+    {
+        try
+        {
+            GridMesCalendario.Children.Clear();
+            GridMesCalendario.ColumnDefinitions.Clear();
+            GridMesCalendario.RowDefinitions.Clear();
+
+            for (int c = 0; c < 7; c++)
+            {
+                GridMesCalendario.ColumnDefinitions.Add(
+                    new ColumnDefinition
+                    {
+                        Width =
+                            GridLength.Star
+                    });
+            }
+
+            for (int r = 0; r < 7; r++)
+            {
+                GridMesCalendario.RowDefinitions.Add(
+                    new RowDefinition
+                    {
+                        Height =
+                            GridLength.Auto
+                    });
+            }
+
+            string[] nombresDias =
+            {
+                "L", "M", "X", "J", "V", "S", "D"
+            };
+
+            for (int c = 0; c < 7; c++)
+            {
+                var cabecera =
+                    new Label
+                    {
+                        Text = nombresDias[c],
+                        TextColor =
+                            Color.FromArgb("#8A929C"),
+                        FontSize = 12.5,
+                        FontAttributes =
+                            FontAttributes.Bold,
+                        HorizontalTextAlignment =
+                            TextAlignment.Center
+                    };
+
+                Grid.SetRow(cabecera, 0);
+                Grid.SetColumn(cabecera, c);
+                GridMesCalendario.Children.Add(cabecera);
+            }
+
+            DateTime primero =
+                new DateTime(
+                    _mesCalendario.Year,
+                    _mesCalendario.Month,
+                    1);
+
+            DateTime inicio =
+                primero.AddDays(
+                    -(((int)primero.DayOfWeek + 6) % 7));
+
+            for (int i = 0; i < 42; i++)
+            {
+                DateTime dia =
+                    inicio.AddDays(i);
+
+                var celda =
+                    new Border
+                    {
+                        HeightRequest = 46,
+                        StrokeThickness = 1,
+                        Stroke =
+                            new SolidColorBrush(
+                                Color.FromArgb("#2A3038")),
+                        BackgroundColor =
+                            Color.FromArgb("#1C2028"),
+                        StrokeShape =
+                            new Microsoft.Maui.Controls.Shapes
+                                .RoundRectangle
+                            {
+                                CornerRadius =
+                                    new CornerRadius(10)
+                            }
+                    };
+
+                var numero =
+                    new Label
+                    {
+                        Text = dia.Day.ToString(),
+                        FontSize = 14,
+                        FontAttributes =
+                            FontAttributes.Bold,
+                        TextColor =
+                            dia.Month == _mesCalendario.Month
+                                ? Colors.White
+                                : Color.FromArgb("#5E6672"),
+                        HorizontalTextAlignment =
+                            TextAlignment.Center,
+                        VerticalTextAlignment =
+                            TextAlignment.Center
+                    };
+
+                celda.Content =
+                    numero;
+
+                if (dia.Month == _mesCalendario.Month)
+                {
+                    celda.BackgroundColor =
+                        ColorDeActividad(
+                            ActividadDeLaFecha(dia));
+                }
+
+                if (dia.Date == DateTime.Today)
+                {
+                    celda.Stroke =
+                        new SolidColorBrush(
+                            Color.FromArgb("#FFB900"));
+
+                    celda.StrokeThickness = 2;
+                }
+
+                Grid.SetRow(celda, 1 + i / 7);
+                Grid.SetColumn(celda, i % 7);
+                GridMesCalendario.Children.Add(celda);
+            }
+
+            LblMesCalendario.Text =
+                primero.ToString(
+                    "MMMM yyyy",
+                    System.Globalization.CultureInfo
+                        .GetCultureInfo("es-ES"))
+                .ToUpperInvariant();
+        }
+        catch
+        {
+        }
+    }
+
+
+    private string ActividadDeLaFecha(
+        DateTime fecha)
+    {
+        DateTime martes =
+            MartesDeLaFecha(fecha);
+
+        string actividad =
+            "";
+
+        int prioridad =
+            -1;
+
+        foreach (CalendarioGrupoMes grupo in _grupos)
+        {
+            foreach (CalendarioItem item in grupo)
+            {
+                if (item.Semana.FechaMartes.Date != martes.Date)
+                {
+                    continue;
+                }
+
+                string act =
+                    (item.Semana.Actividad ?? "").Trim();
+
+                int p =
+                    act.Equals("Visita", StringComparison.OrdinalIgnoreCase) ? 4
+                    : act.Equals("Asamblea de circuito", StringComparison.OrdinalIgnoreCase) ? 3
+                    : act.Equals("Asamblea regional", StringComparison.OrdinalIgnoreCase) ? 2
+                    : act.StartsWith("Semana de precursor", StringComparison.OrdinalIgnoreCase) ? 1
+                    : act.Length > 0 ? 0
+                    : -1;
+
+                if (p > prioridad)
+                {
+                    prioridad = p;
+                    actividad = act;
+                }
+            }
+        }
+
+        return actividad;
+    }
+
+
+    private static DateTime MartesDeLaFecha(
+        DateTime fecha)
+    {
+        DateTime lunes =
+            fecha.AddDays(
+                -(((int)fecha.DayOfWeek + 6) % 7));
+
+        return lunes.AddDays(1);
+    }
+
+
+    private static Color ColorDeActividad(
+        string actividad)
+    {
+        string a =
+            (actividad ?? "").Trim();
+
+        if (a.Equals("Visita", StringComparison.OrdinalIgnoreCase))
+        {
+            return Color.FromArgb("#2C5C8F");
+        }
+
+        if (a.Equals("Asamblea de circuito", StringComparison.OrdinalIgnoreCase))
+        {
+            return Color.FromArgb("#8A5A1E");
+        }
+
+        if (a.Equals("Asamblea regional", StringComparison.OrdinalIgnoreCase))
+        {
+            return Color.FromArgb("#5E3F90");
+        }
+
+        if (a.StartsWith("Semana de precursor", StringComparison.OrdinalIgnoreCase))
+        {
+            return Color.FromArgb("#2F6B3C");
+        }
+
+        if (a.Length > 0)
+        {
+            return Color.FromArgb("#2A3140");
+        }
+
+        return Color.FromArgb("#1C2028");
+    }
+
+
     private async void BtnConfigurarCiclo_Clicked(
         object sender,
         EventArgs e)
@@ -641,6 +942,19 @@ public partial class CalendarioPage : ContentPage, IActualizableMobile
         object sender,
         EventArgs e)
     {
+        if (_vistaCalendario)
+        {
+            _mesCalendario =
+                new DateTime(
+                    DateTime.Today.Year,
+                    DateTime.Today.Month,
+                    1);
+
+            PintarMesCalendario();
+
+            return;
+        }
+
         _anclaSemana =
             null;
 

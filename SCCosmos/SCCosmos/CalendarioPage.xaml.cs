@@ -41,6 +41,13 @@ namespace SCCosmos
         private const byte VK_RETURN = 0x0D; // Código de la tecla ENTER
         private const int KEYEVENTF_KEYUP = 0x0002;
 
+        private bool _vistaCalendario;
+        private DateTime _mesCalendario =
+            new DateTime(
+                DateTime.Today.Year,
+                DateTime.Today.Month,
+                1);
+
         public CalendarioPage()
         {
             InitializeComponent();
@@ -493,9 +500,389 @@ namespace SCCosmos
 
             if (completado)
             {
+                if (_vistaCalendario)
+                {
+                    PintarMesCalendario();
+                }
+
                 await ResaltarSemanaPendienteAsync();
             }
         }
+
+        // =========================================================
+        // VISTA DE CALENDARIO (MES) Y BOTÓN HOY
+        // =========================================================
+
+        private void BtnCambiarVista_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            try
+            {
+                _vistaCalendario =
+                    !_vistaCalendario;
+
+                TablaRuta.Visibility =
+                    _vistaCalendario
+                        ? Visibility.Collapsed
+                        : Visibility.Visible;
+
+                PanelCalendario.Visibility =
+                    _vistaCalendario
+                        ? Visibility.Visible
+                        : Visibility.Collapsed;
+
+                BtnVista.Icon =
+                    new Wpf.Ui.Controls.SymbolIcon(
+                        _vistaCalendario
+                            ? Wpf.Ui.Controls.SymbolRegular.TextBulletListLtr24
+                            : Wpf.Ui.Controls.SymbolRegular.CalendarLtr24);
+
+                if (_vistaCalendario)
+                {
+                    PintarMesCalendario();
+                }
+            }
+            catch
+            {
+            }
+        }
+
+
+        private void BtnMesAnterior_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            _mesCalendario =
+                _mesCalendario.AddMonths(-1);
+
+            PintarMesCalendario();
+        }
+
+
+        private void BtnMesSiguiente_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            _mesCalendario =
+                _mesCalendario.AddMonths(1);
+
+            PintarMesCalendario();
+        }
+
+
+        private void PintarMesCalendario()
+        {
+            try
+            {
+                GridMesCalendario.Children.Clear();
+                GridMesCalendario.ColumnDefinitions.Clear();
+                GridMesCalendario.RowDefinitions.Clear();
+
+                for (int c = 0; c < 7; c++)
+                {
+                    GridMesCalendario.ColumnDefinitions.Add(
+                        new ColumnDefinition
+                        {
+                            Width =
+                                new GridLength(
+                                    1,
+                                    GridUnitType.Star)
+                        });
+                }
+
+                for (int r = 0; r < 7; r++)
+                {
+                    GridMesCalendario.RowDefinitions.Add(
+                        new RowDefinition
+                        {
+                            Height =
+                                GridLength.Auto
+                        });
+                }
+
+                string[] nombresDias =
+                {
+                    "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"
+                };
+
+                for (int c = 0; c < 7; c++)
+                {
+                    var cabecera =
+                        new TextBlock
+                        {
+                            Text = nombresDias[c],
+                            Foreground =
+                                new SolidColorBrush(
+                                    (Color)ColorConverter
+                                        .ConvertFromString("#8A929C")),
+                            FontSize = 12,
+                            FontWeight =
+                                FontWeights.SemiBold,
+                            HorizontalAlignment =
+                                HorizontalAlignment.Center,
+                            Margin =
+                                new Thickness(0, 0, 0, 6)
+                        };
+
+                    Grid.SetRow(cabecera, 0);
+                    Grid.SetColumn(cabecera, c);
+                    GridMesCalendario.Children.Add(cabecera);
+                }
+
+                DateTime primero =
+                    new DateTime(
+                        _mesCalendario.Year,
+                        _mesCalendario.Month,
+                        1);
+
+                DateTime inicio =
+                    primero.AddDays(
+                        -(((int)primero.DayOfWeek + 6) % 7));
+
+                for (int i = 0; i < 42; i++)
+                {
+                    DateTime dia =
+                        inicio.AddDays(i);
+
+                    bool enMes =
+                        dia.Month == _mesCalendario.Month
+                        && dia.Year == _mesCalendario.Year;
+
+                    var celda =
+                        new Border
+                        {
+                            Height = 42,
+                            Margin =
+                                new Thickness(2),
+                            CornerRadius =
+                                new CornerRadius(8),
+                            BorderThickness =
+                                new Thickness(1),
+                            BorderBrush =
+                                new SolidColorBrush(
+                                    (Color)ColorConverter
+                                        .ConvertFromString("#2A3038")),
+                            Background =
+                                new SolidColorBrush(
+                                    (Color)ColorConverter
+                                        .ConvertFromString("#1C2028")),
+                            Child =
+                                new TextBlock
+                                {
+                                    Text = dia.Day.ToString(),
+                                    FontSize = 13,
+                                    FontWeight =
+                                        FontWeights.SemiBold,
+                                    Foreground =
+                                        enMes
+                                            ? Brushes.White
+                                            : new SolidColorBrush(
+                                                (Color)ColorConverter
+                                                    .ConvertFromString("#5E6672")),
+                                    HorizontalAlignment =
+                                        HorizontalAlignment.Center,
+                                    VerticalAlignment =
+                                        VerticalAlignment.Center
+                                }
+                        };
+
+                    if (enMes)
+                    {
+                        SolidColorBrush? fondo =
+                            BrushDeActividad(
+                                ActividadDeLaFecha(dia));
+
+                        if (fondo != null)
+                        {
+                            celda.Background = fondo;
+                        }
+                    }
+
+                    if (dia.Date == DateTime.Today)
+                    {
+                        celda.BorderBrush =
+                            new SolidColorBrush(
+                                (Color)ColorConverter
+                                    .ConvertFromString("#FFB900"));
+
+                        celda.BorderThickness =
+                            new Thickness(2);
+                    }
+
+                    Grid.SetRow(celda, 1 + i / 7);
+                    Grid.SetColumn(celda, i % 7);
+                    GridMesCalendario.Children.Add(celda);
+                }
+
+                TxtMesCalendario.Text =
+                    primero.ToString(
+                        "MMMM yyyy",
+                        System.Globalization.CultureInfo
+                            .GetCultureInfo("es-ES"))
+                    .ToUpperInvariant();
+            }
+            catch
+            {
+            }
+        }
+
+
+        private string ActividadDeLaFecha(
+            DateTime fecha)
+        {
+            DateTime martes =
+                MartesDeLaFecha(fecha);
+
+            string actividad =
+                "";
+
+            int prioridad =
+                -1;
+
+            foreach (SemanaCalendario semana in ColeccionSemanas)
+            {
+                if (semana.FechaMartes.Date != martes.Date)
+                {
+                    continue;
+                }
+
+                string act =
+                    (semana.Actividad ?? "").Trim();
+
+                int p =
+                    act.Equals("Visita", StringComparison.OrdinalIgnoreCase) ? 4
+                    : act.Equals("Asamblea de circuito", StringComparison.OrdinalIgnoreCase) ? 3
+                    : act.Equals("Asamblea regional", StringComparison.OrdinalIgnoreCase) ? 2
+                    : act.StartsWith("Semana de precursor", StringComparison.OrdinalIgnoreCase) ? 1
+                    : act.Length > 0 ? 0
+                    : -1;
+
+                if (p > prioridad)
+                {
+                    prioridad = p;
+                    actividad = act;
+                }
+            }
+
+            return actividad;
+        }
+
+
+        private static DateTime MartesDeLaFecha(
+            DateTime fecha)
+        {
+            DateTime lunes =
+                fecha.AddDays(
+                    -(((int)fecha.DayOfWeek + 6) % 7));
+
+            return lunes.AddDays(1);
+        }
+
+
+        private static SolidColorBrush? BrushDeActividad(
+            string actividad)
+        {
+            string a =
+                (actividad ?? "").Trim();
+
+            if (a.Equals("Visita", StringComparison.OrdinalIgnoreCase))
+            {
+                return new SolidColorBrush(
+                    (Color)ColorConverter.ConvertFromString("#2C5C8F"));
+            }
+
+            if (a.Equals("Asamblea de circuito", StringComparison.OrdinalIgnoreCase))
+            {
+                return new SolidColorBrush(
+                    (Color)ColorConverter.ConvertFromString("#8A5A1E"));
+            }
+
+            if (a.Equals("Asamblea regional", StringComparison.OrdinalIgnoreCase))
+            {
+                return new SolidColorBrush(
+                    (Color)ColorConverter.ConvertFromString("#5E3F90"));
+            }
+
+            if (a.StartsWith("Semana de precursor", StringComparison.OrdinalIgnoreCase))
+            {
+                return new SolidColorBrush(
+                    (Color)ColorConverter.ConvertFromString("#2F6B3C"));
+            }
+
+            if (a.Length > 0)
+            {
+                return new SolidColorBrush(
+                    (Color)ColorConverter.ConvertFromString("#2A3140"));
+            }
+
+            return null;
+        }
+
+
+        private void BtnHoy_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            try
+            {
+                if (_vistaCalendario)
+                {
+                    _mesCalendario =
+                        new DateTime(
+                            DateTime.Today.Year,
+                            DateTime.Today.Month,
+                            1);
+
+                    PintarMesCalendario();
+
+                    return;
+                }
+
+                DateTime martes =
+                    DateTime.Today;
+
+                while (martes.DayOfWeek
+                       != DayOfWeek.Tuesday)
+                {
+                    martes =
+                        martes.AddDays(-1);
+                }
+
+                SemanaCalendario? objetivo =
+                    null;
+
+                foreach (SemanaCalendario semana in ColeccionSemanas)
+                {
+                    if (semana.FechaMartes.Date
+                        == martes.Date)
+                    {
+                        objetivo =
+                            semana;
+
+                        break;
+                    }
+
+                    if (objetivo == null
+                        && semana.FechaMartes.Date
+                           > martes.Date)
+                    {
+                        objetivo =
+                            semana;
+                    }
+                }
+
+                if (objetivo != null)
+                {
+                    TablaRuta.ScrollIntoView(
+                        objetivo);
+                }
+            }
+            catch
+            {
+            }
+        }
+
 
         private void CalendarioPage_Unloaded(object sender, RoutedEventArgs e)
         {

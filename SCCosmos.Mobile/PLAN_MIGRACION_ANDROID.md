@@ -1830,3 +1830,7 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
 - **Tareas (Android)**: la etiqueta «👫 Compartida» usaba una propiedad inexistente
   (`EstaCompartida`) y salía en TODAS las tareas; se añade `EstaCompartida` al modelo `Tarea`
   (sale solo si el interruptor «Compartir con mi esposa» está activo).
+- **Calendario (Windows y Android)**: botón de cambio de vista junto a «Ciclo» (📅/📋) que alterna
+  entre la lista actual y una vista de calendario mensual: rejilla L-D con navegación ◀ mes ▶,
+  celdas coloreadas por actividad (visita/asamblea/precursor), día de hoy marcado y leyenda. En
+  Windows además botón flotante «Hoy» (en lista: va a la semana actual; en calendario: mes actual).

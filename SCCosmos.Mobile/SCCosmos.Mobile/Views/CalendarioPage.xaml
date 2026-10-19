@@ -12,6 +12,11 @@
                      Order="Primary"
                      Priority="0"
                      Clicked="BtnConfigurarCiclo_Clicked" />
+        <ToolbarItem x:Name="BtnVista"
+                     Text="📅"
+                     Order="Primary"
+                     Priority="1"
+                     Clicked="BtnCambiarVista_Clicked" />
     </ContentPage.ToolbarItems>
 
     <Grid RowDefinitions="Auto,Auto,*,Auto"
@@ -208,6 +213,61 @@
                 </CollectionView.ItemTemplate>
             </CollectionView>
         </RefreshView>
+
+        <!-- VISTA DE CALENDARIO (MES) -->
+        <VerticalStackLayout x:Name="PanelCalendario"
+                             Grid.Row="2"
+                             IsVisible="False"
+                             Spacing="14">
+
+            <Grid ColumnDefinitions="Auto,*,Auto"
+                  ColumnSpacing="8">
+
+                <Button Text="◀"
+                        Clicked="BtnMesAnterior_Clicked"
+                        FontSize="16"
+                        Padding="12,4"
+                        BackgroundColor="#242830"
+                        TextColor="#4BA3E3"
+                        CornerRadius="10"/>
+
+                <Label x:Name="LblMesCalendario"
+                       Grid.Column="1"
+                       Text=""
+                       TextColor="White"
+                       FontSize="18"
+                       FontAttributes="Bold"
+                       HorizontalTextAlignment="Center"
+                       VerticalTextAlignment="Center"/>
+
+                <Button Grid.Column="2"
+                        Text="▶"
+                        Clicked="BtnMesSiguiente_Clicked"
+                        FontSize="16"
+                        Padding="12,4"
+                        BackgroundColor="#242830"
+                        TextColor="#4BA3E3"
+                        CornerRadius="10"/>
+            </Grid>
+
+            <Grid x:Name="GridMesCalendario"
+                  ColumnSpacing="4"
+                  RowSpacing="4"/>
+
+            <HorizontalStackLayout Spacing="14"
+                                   HorizontalOptions="Center">
+                <Label Text="● Visita"
+                       TextColor="#4BA3E3"
+                       FontSize="12.5"/>
+                <Label Text="● Asamblea"
+                       TextColor="#E8A33D"
+                       FontSize="12.5"/>
+                <Label Text="● Precursor"
+                       TextColor="#7ED889"
+                       FontSize="12.5"/>
+            </HorizontalStackLayout>
+
+        </VerticalStackLayout>
 
         <!-- OVERLAY -->
         <Grid x:Name="OverlayCargando"

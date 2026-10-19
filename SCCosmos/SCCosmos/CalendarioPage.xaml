@@ -31,14 +31,25 @@
 
                 <TextBlock Text="RUTA" FontSize="26" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
 
-                <ui:Button x:Name="BtnCiclo"
-                           Grid.Column="1" 
-                           ToolTip="Configurar Ciclo (3 Años)" 
-                           Icon="{ui:SymbolIcon CalendarSettings24}" 
-                           Appearance="Secondary" 
-                           Click="BtnConfigurarCiclo_Click" 
-                           Cursor="Hand" 
-                           Padding="12,6"/>
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center">
+                    <ui:Button x:Name="BtnVista"
+                               ToolTip="Cambiar vista (lista / calendario)"
+                               Icon="{ui:SymbolIcon CalendarLtr24}"
+                               Appearance="Secondary"
+                               Click="BtnCambiarVista_Click"
+                               Cursor="Hand"
+                               Padding="12,6"
+                               Margin="0,0,8,0"/>
+                    <ui:Button x:Name="BtnCiclo"
+                               ToolTip="Configurar Ciclo (3 Años)"
+                               Icon="{ui:SymbolIcon CalendarSettings24}"
+                               Appearance="Secondary"
+                               Click="BtnConfigurarCiclo_Click"
+                               Cursor="Hand"
+                               Padding="12,6"/>
+                </StackPanel>
             </Grid>
 
             <!-- 2. LA TABLA (CON SCROLL INTERNO) -->
@@ -246,6 +257,77 @@
                     </DataGridTemplateColumn>
                 </DataGrid.Columns>
             </DataGrid>
+
+            <!-- VISTA DE CALENDARIO (MES) -->
+            <ScrollViewer x:Name="PanelCalendario"
+                          Grid.Row="2"
+                          VerticalScrollBarVisibility="Auto"
+                          Visibility="Collapsed">
+                <StackPanel>
+                    <Grid Margin="0,0,0,14">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <ui:Button x:Name="BtnMesAnterior"
+                                   Grid.Column="0"
+                                   Icon="{ui:SymbolIcon ChevronLeft24}"
+                                   Appearance="Secondary"
+                                   Padding="10,5"
+                                   Cursor="Hand"
+                                   Click="BtnMesAnterior_Click"/>
+
+                        <TextBlock x:Name="TxtMesCalendario"
+                                   Grid.Column="1"
+                                   FontSize="20"
+                                   FontWeight="SemiBold"
+                                   Foreground="White"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+
+                        <ui:Button x:Name="BtnMesSiguiente"
+                                   Grid.Column="2"
+                                   Icon="{ui:SymbolIcon ChevronRight24}"
+                                   Appearance="Secondary"
+                                   Padding="10,5"
+                                   Cursor="Hand"
+                                   Click="BtnMesSiguiente_Click"/>
+                    </Grid>
+
+                    <Grid x:Name="GridMesCalendario"
+                          MaxWidth="900"
+                          HorizontalAlignment="Left"/>
+
+                    <StackPanel Orientation="Horizontal"
+                                Margin="0,14,0,0"
+                                HorizontalAlignment="Center">
+                        <TextBlock Text="● Visita"
+                                   Foreground="#4BA3E3"
+                                   Margin="0,0,16,0"/>
+                        <TextBlock Text="● Asamblea"
+                                   Foreground="#E8A33D"
+                                   Margin="0,0,16,0"/>
+                        <TextBlock Text="● Precursor"
+                                   Foreground="#7ED889"/>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- BOTÓN HOY (FLOTANTE) -->
+            <ui:Button x:Name="BtnHoy"
+                       Grid.Row="2"
+                       Content="Hoy"
+                       Appearance="Primary"
+                       FontWeight="SemiBold"
+                       Padding="18,10"
+                       Cursor="Hand"
+                       HorizontalAlignment="Right"
+                       VerticalAlignment="Bottom"
+                       Margin="0,0,22,22"
+                       Panel.ZIndex="50"
+                       Click="BtnHoy_Click"/>
 
         </Grid>
 
