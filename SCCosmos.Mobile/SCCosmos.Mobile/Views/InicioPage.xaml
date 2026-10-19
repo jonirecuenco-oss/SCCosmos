@@ -347,6 +347,16 @@
                                         FontSize="13"
                                         IsVisible="{Binding VerCompanero}"/>
 
+                                    <Label
+                                        Grid.Row="2"
+                                        Grid.Column="1"
+                                        Grid.ColumnSpan="2"
+                                        Text="{Binding Notas}"
+                                        TextColor="#8A919B"
+                                        FontSize="12.5"
+                                        LineBreakMode="WordWrap"
+                                        IsVisible="{Binding MostrarNotas}"/>
+
                                     <Button
                                         Grid.Column="3"
                                         Grid.RowSpan="3"

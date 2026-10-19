@@ -819,7 +819,10 @@ public partial class InicioPage : ContentPage, IActualizableMobile
                                 actividad.Latitud,
 
                             Longitud =
-                                actividad.Longitud
+                                actividad.Longitud,
+
+                            Notas =
+                                (actividad.NotasLibro ?? "").Trim()
                         });
                 }
 

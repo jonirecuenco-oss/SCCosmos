@@ -111,7 +111,12 @@ namespace SCCosmos
             // cambios de otro dispositivo.
             SincronizacionPaginas.Iniciar(this);
 
-            this.Closed += (s, e) => SincronizacionRed.Detener();
+            this.Closed += (s, e) =>
+            {
+                SincronizacionRed.Detener();
+
+                AvisosWindows.Cerrar();
+            };
             this.Closing += MainWindow_Closing;
 
             PopupAlertas.PlacementTarget = BtnAlertas;
@@ -940,6 +945,17 @@ namespace SCCosmos
                 TxtSinAlertas.Visibility = Visibility.Visible;
                 BtnMarcarAlertasLeidas.Visibility = Visibility.Collapsed;
             }
+
+            // Notificaciones del sistema (globos), como en Android:
+            // avisos de tareas a su hora y alertas nuevas.
+            AvisosWindows.Procesar(
+                _alertasActuales
+                    .Where(a => !string.Equals(
+                        a.TipoAlerta,
+                        "Tarea",
+                        StringComparison.OrdinalIgnoreCase))
+                    .Select(a => a.Titulo)
+                    .ToList());
         }
 
         // =========================================================

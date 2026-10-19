@@ -20,6 +20,9 @@ public class ActividadHoy
     public double Latitud { get; set; }
     public double Longitud { get; set; }
 
+    public string Notas { get; set; } = "";
+    public bool MostrarNotas => !string.IsNullOrWhiteSpace(Notas);
+
     public bool MostrarMapa =>
         Latitud != 0
         || Longitud != 0

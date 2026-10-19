@@ -1798,3 +1798,10 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   ojo a la derecha, fechas con 📅, «Próxima: …»); los eventos del día se ordenan de verdad por hora
   («9:30» antes que «13:30») y ya no se muestra la línea de dirección (queda el botón 📍); el widget
   usa el mismo orden.
+- **Notificaciones (Windows)**: nuevo `AvisosWindows.cs` — globos de la bandeja equivalentes a las
+  notificaciones de Android: avisos de tareas (a su hora y con la antelación, una vez por ocurrencia)
+  y aviso de alertas nuevas (S-302, documentación, asambleas, JW Hub…). Se dispara desde la
+  comprobación de cada minuto de `VerificarAlertas`; el icono se oculta al cerrar.
+- **Inicio (Android)**: bajo el tipo de evento se muestra la línea de notas del programa (de donde
+  sale el acompañante en las visitas, «Con Marisa de Durán…»); el acompañante vinculado a personas
+  sigue mostrándose como «con X».

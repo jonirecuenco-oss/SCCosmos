@@ -6,8 +6,17 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
     <ApplicationIcon>sccosmos.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Windows Forms se usa solo para el icono de bandeja (avisos del
+         sistema). Se quitan sus usings globales para no chocar con WPF
+         (Brush, Point, Size, UserControl...). -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
 
   <ItemGroup>
     <None Remove="ffmpeg.exe" />
