@@ -2072,19 +2072,21 @@ namespace SCCosmos
 
             IEnumerable<FilaVisitaPublisher> consulta = _filasVisitasGlobal;
 
-            if (TabGrupos?.SelectedItem is string grupoSeleccionado)
-            {
-                consulta = consulta.Where(f =>
-                    string.Equals(f.GrupoPredicacion, grupoSeleccionado, StringComparison.OrdinalIgnoreCase));
-            }
-
             string busqueda = NormalizarTextoBusquedaMinisterio(_busquedaMinisterio);
+
+            // Si hay búsqueda, se mira en TODOS los grupos (no solo en el
+            // que esté seleccionado).
             if (!string.IsNullOrWhiteSpace(busqueda))
             {
                 consulta = consulta.Where(f =>
                     ContieneBusquedaMinisterio(f.NombreComun, busqueda) ||
                     ContieneBusquedaMinisterio(f.Nombre, busqueda) ||
                     ContieneBusquedaMinisterio(f.NombreJWHub, busqueda));
+            }
+            else if (TabGrupos?.SelectedItem is string grupoSeleccionado)
+            {
+                consulta = consulta.Where(f =>
+                    string.Equals(f.GrupoPredicacion, grupoSeleccionado, StringComparison.OrdinalIgnoreCase));
             }
 
             TablaVisitas.ItemsSource = consulta.ToList();
