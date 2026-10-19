@@ -348,14 +348,16 @@
                         Keyboard="Numeric"/>
 
                     <Label
-                        Text="Dirección por internet del otro dispositivo (Tailscale o IP:puerto, opcional)"
+                        Text="Dirección por internet del otro dispositivo (Tailscale o IP:puerto; una por línea o separadas por comas)"
                         TextColor="#CCCCCC"
                         FontSize="13"/>
-                    <Entry
+                    <Editor
                         x:Name="TxtDireccionesSincro"
                         TextColor="White"
                         Placeholder="ej.: mi-pc.tailxxxx.ts.net"
-                        PlaceholderColor="#7E858F"/>
+                        PlaceholderColor="#7E858F"
+                        AutoSize="TextChanges"
+                        MinimumHeightRequest="44"/>
 
                     <Label
                         Text="Dispositivos (desmarca los que no quieras sincronizar con este móvil)"

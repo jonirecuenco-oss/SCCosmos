@@ -175,7 +175,7 @@ public static class SincronizacionMobile
             _config.Direcciones =
                 (value ?? "")
                     .Split(
-                        new[] { '\r', '\n' },
+                        new[] { '\r', '\n', ',', ';' },
                         StringSplitOptions.RemoveEmptyEntries)
                     .Select(x => x.Trim())
                     .Where(x => x.Length > 0)

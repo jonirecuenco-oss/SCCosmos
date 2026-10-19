@@ -220,6 +220,13 @@
 
                             <TextBlock Text="Dispositivos (desmarca los que no quieras sincronizar con este equipo)" Foreground="#CCC" Margin="0,14,0,5"/>
                             <ListBox x:Name="ListaDispositivosSincro" Height="110" Background="#1E1E1E" Foreground="#DDDDDD">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                                        <Setter Property="Padding" Value="4,1"/>
+                                        <Setter Property="MinHeight" Value="0"/>
+                                        <Setter Property="Margin" Value="0"/>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
                                 <ListBox.ItemTemplate>
                                     <DataTemplate>
                                         <Grid Margin="2,3">
