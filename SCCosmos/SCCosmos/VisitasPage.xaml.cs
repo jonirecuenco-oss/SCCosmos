@@ -518,6 +518,111 @@ namespace SCCosmos
         // ==========================================
         // CREADORES DE MÓDULOS (PROGRAMA Y NOTAS)
         // ==========================================
+        /// <summary>
+        /// Importa el programa de la visita desde el PDF rellenable
+        /// («Programa para la visita del SC») y sustituye el programa del
+        /// mes por los eventos leídos.
+        /// </summary>
+        private void BtnImportarProgramaPdf_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            var dialogo = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "Importar programa de la visita (PDF)",
+                Filter = "Archivos PDF (*.pdf)|*.pdf",
+                Multiselect = false
+            };
+
+            if (dialogo.ShowDialog() != true)
+            {
+                return;
+            }
+
+            try
+            {
+                var eventos =
+                    SCCosmos.Sincro.ImportadorProgramaVisita
+                        .LeerPdf(dialogo.FileName);
+
+                if (eventos.Count == 0)
+                {
+                    MessageBox.Show(
+                        "No se han encontrado eventos en el PDF. Comprueba que es el formulario «Programa para la visita del SC» ya rellenado.",
+                        "Importar programa",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+
+                    return;
+                }
+
+                string resumen =
+                    string.Join(
+                        Environment.NewLine,
+                        eventos
+                            .Take(12)
+                            .Select(v =>
+                                "· " + v.DiaSemana + " " + v.Hora
+                                + " — " + v.TipoActividad
+                                + (string.IsNullOrWhiteSpace(v.Responsable)
+                                    ? ""
+                                    : " (" + v.Responsable + ")")));
+
+                if (eventos.Count > 12)
+                {
+                    resumen +=
+                        Environment.NewLine
+                        + $"… y {eventos.Count - 12} más.";
+                }
+
+                var respuesta =
+                    MessageBox.Show(
+                        $"Se han leído {eventos.Count} eventos del programa:"
+                        + Environment.NewLine + Environment.NewLine
+                        + resumen
+                        + Environment.NewLine + Environment.NewLine
+                        + "Se sustituirá el programa de este mes por estos eventos. ¿Continuar?",
+                        "Importar programa de la visita",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Question);
+
+                if (respuesta != MessageBoxResult.Yes)
+                {
+                    return;
+                }
+
+                int creados =
+                    DatabaseHelper.ReemplazarProgramaMesVisita(
+                        _congreCodigo,
+                        _mesPrograma.ToString("yyyy-MM"),
+                        eventos);
+
+                MessageBox.Show(
+                    $"Importado: {creados} eventos en el programa de la visita.",
+                    "Importar programa",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+
+                try
+                {
+                    CargarPrograma(
+                        _mesPrograma);
+                }
+                catch
+                {
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "No se pudo importar el programa:\n" + ex.Message,
+                    "Importar programa",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+        }
+
+
         private void CargarPrograma(DateTime mesReferencia)
         {
             string mesRefStr = mesReferencia.ToString("yyyy-MM");

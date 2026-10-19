@@ -1930,6 +1930,65 @@ namespace SCCosmos
 
         #region 6. GESTIÓN DE CONGREGACIONES, MAPAS KMZ Y SECCIONES
 
+        /// <summary>
+        /// Sustituye el programa de la visita de un mes y congregación por
+        /// los eventos leídos del PDF del programa (los nombres de personas
+        /// quedan en las notas).
+        /// </summary>
+        public static int ReemplazarProgramaMesVisita(
+            string congreCodigo,
+            string mesReferencia,
+            System.Collections.Generic.IEnumerable<SCCosmos.Sincro.EventoProgramaVisita> eventos)
+        {
+            int total = 0;
+
+            try
+            {
+                using var connection = new SqliteConnection(ConnectionString);
+                connection.Open();
+
+                using (var borrar = connection.CreateCommand())
+                {
+                    borrar.CommandText =
+                        "DELETE FROM ProgramaVisitaV2 WHERE CongreCodigo = @Codigo AND MesReferencia = @Mes;";
+                    borrar.Parameters.AddWithValue("@Codigo", congreCodigo ?? "");
+                    borrar.Parameters.AddWithValue("@Mes", mesReferencia ?? "");
+                    borrar.ExecuteNonQuery();
+                }
+
+                foreach (var evento in eventos)
+                {
+                    using var cmd = connection.CreateCommand();
+                    cmd.CommandText = @"
+                        INSERT INTO ProgramaVisitaV2
+                            (CongreCodigo, MesReferencia, DiaSemana, Turno,
+                             Responsable, TipoActividad, Hora, NotasLibro,
+                             CompaneroId, Direccion, Latitud, Longitud)
+                        VALUES
+                            (@Codigo, @Mes, @Dia, @Turno,
+                             @Responsable, @Tipo, @Hora, @Notas,
+                             0, '', 0, 0);";
+                    cmd.Parameters.AddWithValue("@Codigo", congreCodigo ?? "");
+                    cmd.Parameters.AddWithValue("@Mes", mesReferencia ?? "");
+                    cmd.Parameters.AddWithValue("@Dia", evento.DiaSemana ?? "");
+                    cmd.Parameters.AddWithValue("@Turno", evento.Turno ?? "");
+                    cmd.Parameters.AddWithValue("@Responsable", evento.Responsable ?? "");
+                    cmd.Parameters.AddWithValue("@Tipo", evento.TipoActividad ?? "");
+                    cmd.Parameters.AddWithValue("@Hora", evento.Hora ?? "");
+                    cmd.Parameters.AddWithValue("@Notas", evento.Notas ?? "");
+                    cmd.ExecuteNonQuery();
+
+                    total++;
+                }
+            }
+            catch
+            {
+            }
+
+            return total;
+        }
+
+
         public static string ObtenerCodigoCongregacion(string nombreCongregacion)
         {
             using (var connection = new SqliteConnection(ConnectionString))
