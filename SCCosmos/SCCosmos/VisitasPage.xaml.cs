@@ -800,57 +800,6 @@ namespace SCCosmos
                         })
                         .ToList();
 
-                // A la misma hora, una sola tarjeta: la hora aparece una vez
-                // y se muestran los datos de él y de ella.
-                var agrupadas =
-                    new List<BotonActividadUI>();
-
-                foreach (var grupo in actividadesDia.GroupBy(x => x.Hora))
-                {
-                    BotonActividadUI primera =
-                        grupo.First();
-
-                    if (grupo.Count() > 1)
-                    {
-                        var detalles =
-                            new List<string>();
-
-                        foreach (BotonActividadUI fila in grupo)
-                        {
-                            if (string.IsNullOrWhiteSpace(fila.Acompanante)
-                                || string.Equals(
-                                    fila.Acompanante,
-                                    "Sin acompañante",
-                                    StringComparison.OrdinalIgnoreCase))
-                            {
-                                continue;
-                            }
-
-                            string quien =
-                                string.IsNullOrWhiteSpace(fila.Responsable)
-                                    ? ""
-                                    : fila.Responsable + ": ";
-
-                            detalles.Add(
-                                quien + fila.Acompanante);
-                        }
-
-                        if (detalles.Count > 0)
-                        {
-                            primera.Acompanante =
-                                string.Join(
-                                    "\n",
-                                    detalles);
-                        }
-
-                        primera.Responsable = "";
-                    }
-
-                    agrupadas.Add(primera);
-                }
-
-                actividadesDia = agrupadas;
-
                 diasPrograma.Add(
                     new DiaProgramaUI
                     {
