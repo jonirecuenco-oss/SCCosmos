@@ -373,7 +373,8 @@
                                                                             CornerRadius="4"
                                                                             Padding="7,4"
                                                                             HorizontalAlignment="Left"
-                                                                            VerticalAlignment="Center">
+                                                                            VerticalAlignment="Center"
+                                                                            Visibility="{Binding VerResponsable}">
                                                                         <TextBlock Text="{Binding Responsable}"
                                                                                    Foreground="#EBCB8B"
                                                                                    FontSize="12"

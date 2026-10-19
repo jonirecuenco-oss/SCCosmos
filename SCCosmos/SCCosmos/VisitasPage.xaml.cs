@@ -518,6 +518,30 @@ namespace SCCosmos
         // ==========================================
         // CREADORES DE MÓDULOS (PROGRAMA Y NOTAS)
         // ==========================================
+        /// <summary>Nombre de pila para la insignia (vacío si es común).</summary>
+        private static string NombreCortoResponsable(string responsable)
+        {
+            string valor =
+                (responsable ?? "").Trim();
+
+            if (string.Equals(valor, "SC", StringComparison.OrdinalIgnoreCase))
+            {
+                return DatabaseHelper
+                    .ObtenerConfiguracion("NombreSC", "")
+                    .Trim();
+            }
+
+            if (string.Equals(valor, "Esposa", StringComparison.OrdinalIgnoreCase))
+            {
+                return DatabaseHelper
+                    .ObtenerConfiguracion("NombreEsposaSC", "")
+                    .Trim();
+            }
+
+            return "";
+        }
+
+
         /// <summary>
         /// Importa el programa de la visita desde el PDF rellenable
         /// («Programa para la visita del SC») y sustituye el programa del
@@ -544,6 +568,60 @@ namespace SCCosmos
                 var eventos =
                     SCCosmos.Sincro.ImportadorProgramaVisita
                         .LeerPdf(dialogo.FileName);
+
+                // Las reuniones y las salidas de predicación son en el salón
+                // del Reino: se les pone su dirección como ubicación.
+                try
+                {
+                    string direccionSalon =
+                        DatabaseHelper
+                            .ObtenerCongregaciones()
+                            .FirstOrDefault(c =>
+                                string.Equals(
+                                    c.Codigo,
+                                    _congreCodigo,
+                                    StringComparison.OrdinalIgnoreCase))
+                            ?.DireccionSR
+                            ?.Trim()
+                        ?? "";
+
+                    if (!string.IsNullOrWhiteSpace(direccionSalon))
+                    {
+                        foreach (var evento in eventos)
+                        {
+                            bool esReunion =
+                                (evento.TipoActividad ?? "")
+                                    .StartsWith(
+                                        "Reunión",
+                                        StringComparison.OrdinalIgnoreCase);
+
+                            bool esViernes =
+                                string.Equals(
+                                    evento.DiaSemana,
+                                    "Viernes",
+                                    StringComparison.OrdinalIgnoreCase)
+                                && string.Equals(
+                                    evento.Turno,
+                                    "General",
+                                    StringComparison.OrdinalIgnoreCase);
+
+                            bool esPredicacion =
+                                string.Equals(
+                                    evento.TipoActividad,
+                                    "Predicación",
+                                    StringComparison.OrdinalIgnoreCase);
+
+                            if (esReunion || esViernes || esPredicacion)
+                            {
+                                evento.Ubicacion =
+                                    direccionSalon;
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                }
 
                 if (eventos.Count == 0)
                 {
@@ -689,8 +767,9 @@ namespace SCCosmos
                             }
 
                             string responsable =
-                                NormalizarResponsablePrograma(
-                                    a.Responsable);
+                                NombreCortoResponsable(
+                                    NormalizarResponsablePrograma(
+                                        a.Responsable));
 
                             return new BotonActividadUI
                             {
@@ -720,6 +799,57 @@ namespace SCCosmos
                             };
                         })
                         .ToList();
+
+                // A la misma hora, una sola tarjeta: la hora aparece una vez
+                // y se muestran los datos de él y de ella.
+                var agrupadas =
+                    new List<BotonActividadUI>();
+
+                foreach (var grupo in actividadesDia.GroupBy(x => x.Hora))
+                {
+                    BotonActividadUI primera =
+                        grupo.First();
+
+                    if (grupo.Count() > 1)
+                    {
+                        var detalles =
+                            new List<string>();
+
+                        foreach (BotonActividadUI fila in grupo)
+                        {
+                            if (string.IsNullOrWhiteSpace(fila.Acompanante)
+                                || string.Equals(
+                                    fila.Acompanante,
+                                    "Sin acompañante",
+                                    StringComparison.OrdinalIgnoreCase))
+                            {
+                                continue;
+                            }
+
+                            string quien =
+                                string.IsNullOrWhiteSpace(fila.Responsable)
+                                    ? ""
+                                    : fila.Responsable + ": ";
+
+                            detalles.Add(
+                                quien + fila.Acompanante);
+                        }
+
+                        if (detalles.Count > 0)
+                        {
+                            primera.Acompanante =
+                                string.Join(
+                                    "\n",
+                                    detalles);
+                        }
+
+                        primera.Responsable = "";
+                    }
+
+                    agrupadas.Add(primera);
+                }
+
+                actividadesDia = agrupadas;
 
                 diasPrograma.Add(
                     new DiaProgramaUI
@@ -6020,6 +6150,12 @@ namespace SCCosmos
             public string Turno { get; set; }
             public string Responsable { get; set; }
             public DatabaseHelper.ActividadPrograma ActividadDB { get; set; }
+
+            /// <summary>La insignia solo aparece si hay persona concreta.</summary>
+            public System.Windows.Visibility VerResponsable =>
+                string.IsNullOrWhiteSpace(Responsable)
+                    ? System.Windows.Visibility.Collapsed
+                    : System.Windows.Visibility.Visible;
         }
 
         public class FilaContabilidad : INotifyPropertyChanged

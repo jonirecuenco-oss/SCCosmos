@@ -347,6 +347,24 @@ namespace SCCosmos
                 NormalizarResponsablePrograma(
                     actividad.Responsable);
 
+            // Nuestros nombres de pila en lugar de SC/Esposa.
+            if (string.Equals(responsable, "SC", StringComparison.OrdinalIgnoreCase))
+            {
+                responsable = DatabaseHelper
+                    .ObtenerConfiguracion("NombreSC", "")
+                    .Trim();
+            }
+            else if (string.Equals(responsable, "Esposa", StringComparison.OrdinalIgnoreCase))
+            {
+                responsable = DatabaseHelper
+                    .ObtenerConfiguracion("NombreEsposaSC", "")
+                    .Trim();
+            }
+            else if (string.Equals(responsable, "Ambos", StringComparison.OrdinalIgnoreCase))
+            {
+                responsable = "";
+            }
+
             string tipo =
                 actividad.TipoActividad?.Trim() ?? "";
 

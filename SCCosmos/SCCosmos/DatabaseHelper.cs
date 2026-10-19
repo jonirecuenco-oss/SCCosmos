@@ -1967,7 +1967,7 @@ namespace SCCosmos
                         VALUES
                             (@Codigo, @Mes, @Dia, @Turno,
                              @Responsable, @Tipo, @Hora, @Notas,
-                             0, '', 0, 0);";
+                             0, @Direccion, 0, 0);";
                     cmd.Parameters.AddWithValue("@Codigo", congreCodigo ?? "");
                     cmd.Parameters.AddWithValue("@Mes", mesReferencia ?? "");
                     cmd.Parameters.AddWithValue("@Dia", evento.DiaSemana ?? "");
@@ -1976,6 +1976,7 @@ namespace SCCosmos
                     cmd.Parameters.AddWithValue("@Tipo", evento.TipoActividad ?? "");
                     cmd.Parameters.AddWithValue("@Hora", evento.Hora ?? "");
                     cmd.Parameters.AddWithValue("@Notas", evento.Notas ?? "");
+                    cmd.Parameters.AddWithValue("@Direccion", evento.Ubicacion ?? "");
                     cmd.ExecuteNonQuery();
 
                     total++;

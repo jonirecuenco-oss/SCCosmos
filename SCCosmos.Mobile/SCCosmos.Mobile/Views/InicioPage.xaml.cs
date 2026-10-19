@@ -510,11 +510,11 @@ public partial class InicioPage : ContentPage, IActualizableMobile
 
                     string responsable =
                         responsableCrudo.Equals("Ambos", StringComparison.OrdinalIgnoreCase)
-                            ? "Ambos"
+                            ? ""
                             : (responsableCrudo.Equals("Rebe", StringComparison.OrdinalIgnoreCase)
                                || responsableCrudo.Equals("Esposa", StringComparison.OrdinalIgnoreCase))
-                                ? "Esposa"
-                                : "SC";
+                                ? DatabaseHelper.ObtenerConfiguracion("NombreEsposaSC", "").Trim()
+                                : DatabaseHelper.ObtenerConfiguracion("NombreSC", "").Trim();
 
                     if (esLegacy)
                     {

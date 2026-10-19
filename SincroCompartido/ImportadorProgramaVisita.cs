@@ -35,6 +35,9 @@ public sealed class EventoProgramaVisita
     public string Responsable { get; set; } = "";
 
     public string Notas { get; set; } = "";
+
+    /// <summary>Dirección/ubicación del evento (p. ej. el salón del Reino).</summary>
+    public string Ubicacion { get; set; } = "";
 }
 
 
