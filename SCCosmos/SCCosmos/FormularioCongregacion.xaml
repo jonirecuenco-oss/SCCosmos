@@ -49,6 +49,15 @@
             <TextBlock Text="Dirección del Salón del Reino:" Foreground="White" Margin="0,0,0,5"/>
             <TextBox x:Name="TxtDireccion" Margin="0,0,0,15" Padding="6"/>
 
+            <TextBlock Text="ID de Zoom:" Foreground="White" Margin="0,0,0,5"/>
+            <TextBox x:Name="TxtIdZoom" Margin="0,0,0,15" Padding="6"/>
+
+            <TextBlock Text="Contraseña de Zoom:" Foreground="White" Margin="0,0,0,5"/>
+            <TextBox x:Name="TxtClaveZoom" Margin="0,0,0,15" Padding="6"/>
+
+            <TextBlock Text="Email del AV:" Foreground="White" Margin="0,0,0,5"/>
+            <TextBox x:Name="TxtEmailAV" Margin="0,0,0,15" Padding="6"/>
+
             <!-- BLOQUE: REUNIÓN DE ENTRE SEMANA -->
             <Grid Margin="0,0,0,15">
                 <Grid.ColumnDefinitions>

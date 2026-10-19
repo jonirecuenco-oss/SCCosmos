@@ -16,6 +16,11 @@
     public int Poblacion { get; set; }
     public String Provincia { get; set; }
     public String Municipio { get; set; }
+
+    // ID y contraseña de Zoom y email del AV (campos nuevos).
+    public string IdZoom { get; set; }
+    public string ClaveZoom { get; set; }
+    public string EmailAV { get; set; }
 }
 
 public class ElementoMapa

@@ -55,6 +55,44 @@ public static class NavegacionNotificacion
                         _ => ""
                     };
 
+                if (_destino == "visita")
+                {
+                    // Programa de la visita de la semana actual.
+                    try
+                    {
+                        DateTime hoy = DateTime.Today;
+
+                        int diasDesdeLunes =
+                            ((int)hoy.DayOfWeek - (int)DayOfWeek.Monday + 7) % 7;
+
+                        DateTime martes =
+                            hoy.AddDays(-diasDesdeLunes).Date.AddDays(1);
+
+                        var semana =
+                            Data.DatabaseHelper.ObtenerSemana(
+                                martes.ToString("yyyy-MM-dd"));
+
+                        if (semana is not null && Shell.Current is not null)
+                        {
+                            await MainThread
+                                .InvokeOnMainThreadAsync(
+                                    () => Shell.Current
+                                        .Navigation
+                                        .PushAsync(
+                                            new Views.VisitaDetallePage(
+                                                semana)));
+
+                            _destino = "";
+                            return;
+                        }
+                    }
+                    catch
+                    {
+                    }
+
+                    continue;
+                }
+
                 if (ruta.Length == 0)
                 {
                     _destino = "";

@@ -70,6 +70,24 @@
                         <Entry x:Name="TxtDireccion"
                                TextColor="White" />
 
+                        <Label Text="ID de Zoom"
+                               TextColor="#9299A3"
+                               FontSize="12" />
+                        <Entry x:Name="TxtIdZoom"
+                               TextColor="White" />
+
+                        <Label Text="Contraseña de Zoom"
+                               TextColor="#9299A3"
+                               FontSize="12" />
+                        <Entry x:Name="TxtClaveZoom"
+                               TextColor="White" />
+
+                        <Label Text="Email del AV"
+                               TextColor="#9299A3"
+                               FontSize="12" />
+                        <Entry x:Name="TxtEmailAV"
+                               TextColor="White" />
+
                         <Grid ColumnDefinitions="*,*"
                               ColumnSpacing="12">
                             <VerticalStackLayout Grid.Column="0"

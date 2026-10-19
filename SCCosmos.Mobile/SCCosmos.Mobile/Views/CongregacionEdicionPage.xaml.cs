@@ -108,6 +108,21 @@ public partial class CongregacionEdicionPage : ContentPage
         TxtDireccion.Text =
             c.DireccionSR;
 
+        // Campos nuevos: Zoom y email del AV.
+        var extras =
+            DatabaseHelper
+                .ObtenerDatosExtraCongregacionMobile(
+                    c.Codigo);
+
+        TxtIdZoom.Text =
+            extras.IdZoom;
+
+        TxtClaveZoom.Text =
+            extras.ClaveZoom;
+
+        TxtEmailAV.Text =
+            extras.EmailAV;
+
         TxtDiaEntre.Text =
             c.DiaEntreSemana;
 
@@ -233,6 +248,9 @@ public partial class CongregacionEdicionPage : ContentPage
                 Provincia = TxtProvincia.Text?.Trim() ?? "",
                 Municipio = TxtMunicipio.Text?.Trim() ?? "",
                 DireccionSR = TxtDireccion.Text?.Trim() ?? "",
+                IdZoom = TxtIdZoom.Text?.Trim() ?? "",
+                ClaveZoom = TxtClaveZoom.Text?.Trim() ?? "",
+                EmailAV = TxtEmailAV.Text?.Trim() ?? "",
                 DiaEntreSemana = TxtDiaEntre.Text?.Trim() ?? "",
                 HoraEntreSemana = TxtHoraEntre.Text?.Trim() ?? "",
                 DiaFinSemana = TxtDiaFin.Text?.Trim() ?? "",
@@ -258,6 +276,14 @@ public partial class CongregacionEdicionPage : ContentPage
                             .ActualizarCongregacionMobile(
                                 cong);
                     }
+
+                    // Campos nuevos (Zoom y AV).
+                    DatabaseHelper
+                        .GuardarDatosExtraCongregacionMobile(
+                            cong.Codigo,
+                            cong.IdZoom,
+                            cong.ClaveZoom,
+                            cong.EmailAV);
                 });
 
             _resultado.TrySetResult(

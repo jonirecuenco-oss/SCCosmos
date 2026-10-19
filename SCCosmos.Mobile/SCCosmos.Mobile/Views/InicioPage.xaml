@@ -182,12 +182,17 @@
                             IsVisible="False"/>
 
                         <Button
-                            Text="Ver visita"
+                            Text="👁️"
+                            SemanticProperties.Description="Ver visita"
                             Clicked="BtnVerVisitaInicio_Click"
                             BackgroundColor="#0B6FC2"
                             TextColor="White"
+                            FontSize="20"
                             CornerRadius="9"
                             HeightRequest="44"
+                            MaximumWidthRequest="120"
+                            HorizontalOptions="Center"
+                            Padding="0"
                             Margin="0,4,0,0"/>
 
                     </VerticalStackLayout>

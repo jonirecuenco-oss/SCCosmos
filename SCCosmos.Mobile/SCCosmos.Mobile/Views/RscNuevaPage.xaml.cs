@@ -44,6 +44,44 @@ public partial class RscNuevaPage : ContentPage
                 _congregaciones
                     .Select(c => c.Nombre)
                     .ToList();
+
+            // Si ahora mismo hay una visita en curso, se deja ya elegida la
+            // congregación visitada.
+            try
+            {
+                DateTime hoy = DateTime.Today;
+
+                int diasDesdeLunes =
+                    ((int)hoy.DayOfWeek - (int)DayOfWeek.Monday + 7) % 7;
+
+                DateTime martes =
+                    hoy.AddDays(-diasDesdeLunes).Date.AddDays(1);
+
+                var semana = await Task.Run(
+                    () => DatabaseHelper.ObtenerSemana(
+                        martes.ToString("yyyy-MM-dd")));
+
+                if (semana is not null
+                    && (semana.Actividad ?? "").Trim().Equals(
+                        "Visita",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    int indice =
+                        _congregaciones.FindIndex(
+                            c => string.Equals(
+                                c.Nombre,
+                                semana.Congregacion,
+                                StringComparison.OrdinalIgnoreCase));
+
+                    if (indice >= 0)
+                    {
+                        CmbCongregacion.SelectedIndex = indice;
+                    }
+                }
+            }
+            catch
+            {
+            }
         }
         catch (Exception ex)
         {

@@ -50,6 +50,8 @@
                      Refreshing="RefrescarCalendario_Refreshing">
 
             <CollectionView x:Name="ListaCalendario"
+                            MaximumWidthRequest="820"
+                            HorizontalOptions="Center"
                             IsGrouped="True"
                             SelectionMode="None"
                             Scrolled="ListaCalendario_Scrolled"

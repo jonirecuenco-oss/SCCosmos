@@ -38,6 +38,14 @@ namespace SCCosmos
             TxtEmail.Text = congre.Email;
             TxtMunicipio.Text = congre.Municipio;
             TxtDireccion.Text = congre.DireccionSR;
+
+            // Campos nuevos: Zoom y email del AV.
+            var extrasCongregacion =
+                DatabaseHelper.ObtenerDatosExtraCongregacion(congre.Codigo);
+
+            TxtIdZoom.Text = extrasCongregacion.IdZoom;
+            TxtClaveZoom.Text = extrasCongregacion.ClaveZoom;
+            TxtEmailAV.Text = extrasCongregacion.EmailAV;
             TxtHoraEntreSemana.Text = congre.HoraEntreSemana;
             TxtHoraFinSemana.Text = congre.HoraFinSemana;
 
@@ -89,6 +97,9 @@ namespace SCCosmos
             CongregacionResult.Provincia = ComboProvincia.SelectedItem?.ToString() ?? "";
             CongregacionResult.Municipio = TxtMunicipio.Text.Trim();
             CongregacionResult.DireccionSR = TxtDireccion.Text.Trim();
+            CongregacionResult.IdZoom = TxtIdZoom.Text.Trim();
+            CongregacionResult.ClaveZoom = TxtClaveZoom.Text.Trim();
+            CongregacionResult.EmailAV = TxtEmailAV.Text.Trim();
             CongregacionResult.HoraEntreSemana = TxtHoraEntreSemana.Text.Trim();
             CongregacionResult.HoraFinSemana = TxtHoraFinSemana.Text.Trim();
 

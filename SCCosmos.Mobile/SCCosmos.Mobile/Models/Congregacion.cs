@@ -24,6 +24,11 @@ public class Congregacion
     public string Provincia { get; set; } = "";
     public string Municipio { get; set; } = "";
 
+    // ID y contraseña de Zoom y email del AV (campos nuevos).
+    public string IdZoom { get; set; } = "";
+    public string ClaveZoom { get; set; } = "";
+    public string EmailAV { get; set; } = "";
+
     public string DetalleLista
     {
         get

@@ -1755,3 +1755,19 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   importar, añadir, eliminar) pasan a una **columna compacta a la derecha de la tarjeta** (2 por
   fila, 38×32) en vez de la fila grande con salto de línea: la tarjeta es bastante más corta y todo
   sigue siendo pulsable. Verificado con captura en el emulador.
+
+### Mejoras varias 3 (19/10, lote mejoras 3)
+
+- **Tarjetas del Calendario (móvil)**: ancho máximo 820 y centradas; en pantallas anchas ya no se
+  estiran de lado a lado. Verificado en el emulador con pantalla ancha (1600 px): las tarjetas quedan
+  estrechas y centradas.
+- **RSC nueva**: si hay una visita en curso, la congregación visitada aparece ya elegida (Windows y
+  Android).
+- **KMZ en Android** (página Circuito): botón «🗺️ KMZ» para elegir el mapa y actualizar las
+  coordenadas de los salones por nombre, como en Windows.
+- **Congregaciones**: campos nuevos **ID de Zoom, Contraseña de Zoom y Email AV** (editables en
+  Windows y Android; columnas IdZoom/ClaveZoom/EmailAV con migración automática).
+- **Inicio (Android)**: el botón de ver la visita es un **ojo 👁️**, como en Windows.
+- **Widget (Android)**: flechas ◀ ▶ para moverse de día (con la fecha y «Hoy/Mañana/Ayer»), muestra
+  la programación y las tareas **de ese día**, y al pulsar una actividad abre el programa de la
+  visita y al pulsar una tarea abre la página de Tareas.

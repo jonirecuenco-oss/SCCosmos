@@ -5,16 +5,18 @@ using Android.Appwidget;
 using Android.Content;
 using Android.Widget;
 
+using Microsoft.Maui.Storage;
+
 using SCCosmos.Mobile.Data;
 using SCCosmos.Mobile.Models;
 
 namespace SCCosmos.Mobile.Platforms.Android;
 
 /// <summary>
-/// Widget de SCCosmos: programación de hoy (programa de la visita) y las
-/// próximas tareas. Se actualiza al pulsar la app, al mandarla a segundo
-/// plano y, de forma automática, cada media hora (updatePeriodMillis).
-/// Al pulsar el widget se abre la aplicación.
+/// Widget de SCCosmos: programación del día elegido (programa de la visita)
+/// y sus tareas. Se puede mover un día adelante o atrás con las flechas.
+/// Al pulsar una actividad se abre el programa de la visita y al pulsar una
+/// tarea se abre la página de Tareas.
 /// </summary>
 [BroadcastReceiver(
     Enabled = true,
@@ -32,6 +34,65 @@ public class SccosmosWidgetProvider : AppWidgetProvider
 {
     private const int IdTocar =
         4800;
+
+    private const int IdDiaAtras =
+        4801;
+
+    private const int IdDiaAdelante =
+        4802;
+
+    private const string AccionDiaAtras =
+        "sccosmos.widget.dia_atras";
+
+    private const string AccionDiaAdelante =
+        "sccosmos.widget.dia_adelante";
+
+    private const string ClaveDia =
+        "Sccosmos_WidgetDia";
+
+    private const string ExtraDestino =
+        "sccosmos_destino";
+
+
+    public static DateTime ObtenerDiaSeleccionado()
+    {
+        try
+        {
+            string texto =
+                Preferences.Default.Get(
+                    ClaveDia,
+                    "");
+
+            if (DateTime.TryParseExact(
+                    texto,
+                    "yyyy-MM-dd",
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.None,
+                    out DateTime dia))
+            {
+                return dia.Date;
+            }
+        }
+        catch
+        {
+        }
+
+        return DateTime.Today;
+    }
+
+
+    private static void GuardarDiaSeleccionado(DateTime dia)
+    {
+        try
+        {
+            Preferences.Default.Set(
+                ClaveDia,
+                dia.ToString("yyyy-MM-dd"));
+        }
+        catch
+        {
+        }
+    }
 
 
     public override void OnUpdate(
@@ -58,6 +119,33 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                 appWidgetManager,
                 id);
         }
+    }
+
+
+    public override void OnReceive(
+        Context? context,
+        Intent? intent)
+    {
+        string accion =
+            intent?.Action ?? "";
+
+        if (accion == AccionDiaAtras
+            || accion == AccionDiaAdelante)
+        {
+            DateTime dia =
+                ObtenerDiaSeleccionado()
+                    .AddDays(
+                        accion == AccionDiaAtras
+                            ? -1
+                            : 1);
+
+            GuardarDiaSeleccionado(dia);
+            ActualizarTodos();
+
+            return;
+        }
+
+        base.OnReceive(context, intent);
     }
 
 
@@ -119,61 +207,129 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                     contexto.PackageName,
                     Resource.Layout.widget_sccosmos);
 
-            // Al pulsar el widget se abre la aplicación.
-            Intent? intencion =
-                contexto.PackageManager
-                    ?.GetLaunchIntentForPackage(
-                        contexto.PackageName ?? "");
+            // Al pulsar el título se abre la aplicación.
+            PendingIntent? abrir =
+                CrearActividad(
+                    contexto,
+                    IdTocar,
+                    "");
 
-            PendingIntent? pendiente =
-                intencion is null
-                    ? null
-                    : PendingIntent.GetActivity(
-                        contexto,
-                        IdTocar,
-                        intencion,
-                        PendingIntentFlags.Immutable
-                        | PendingIntentFlags.UpdateCurrent);
-
-            if (pendiente is not null)
+            if (abrir is not null)
             {
                 vistas.SetOnClickPendingIntent(
                     Resource.Id.widget_titulo,
-                    pendiente);
+                    abrir);
             }
+
+            DateTime dia =
+                ObtenerDiaSeleccionado();
+
+            DateTime hoy =
+                DateTime.Today;
+
+            string etiquetaDia =
+                dia == hoy
+                    ? "Hoy"
+                    : dia == hoy.AddDays(1)
+                        ? "Mañana"
+                        : dia == hoy.AddDays(-1)
+                            ? "Ayer"
+                            : dia.ToString(
+                                "ddd d MMM",
+                                new CultureInfo("es-ES"));
 
             vistas.SetTextViewText(
                 Resource.Id.widget_fecha,
-                DateTime.Now.ToString(
-                    "ddd d MMM",
-                    new CultureInfo("es-ES")));
+                etiquetaDia);
 
-            // Programa de hoy.
+            // Flechas para moverse de día.
+            vistas.SetOnClickPendingIntent(
+                Resource.Id.widget_dia_atras,
+                CrearAccionDia(
+                    contexto,
+                    IdDiaAtras,
+                    AccionDiaAtras));
+
+            vistas.SetOnClickPendingIntent(
+                Resource.Id.widget_dia_adelante,
+                CrearAccionDia(
+                    contexto,
+                    IdDiaAdelante,
+                    AccionDiaAdelante));
+
+            // Programación del día: programa de la visita.
             List<string> programa =
-                ObtenerProgramaDeHoy();
+                ObtenerProgramaDelDia(dia);
+
+            vistas.SetTextViewText(
+                Resource.Id.widget_seccion_hoy,
+                "PROGRAMACIÓN · " + etiquetaDia.ToUpperInvariant());
+
+            int[] filasPrograma =
+            {
+                Resource.Id.widget_programa1,
+                Resource.Id.widget_programa2,
+                Resource.Id.widget_programa3
+            };
 
             RellenarLineas(
                 vistas,
-                new[]
-                {
-                    Resource.Id.widget_programa1,
-                    Resource.Id.widget_programa2,
-                    Resource.Id.widget_programa3
-                },
+                filasPrograma,
                 programa,
-                "Sin programación para hoy");
+                "Sin programación para ese día");
 
-            // Próximas tareas.
+            for (int i = 0;
+                 i < filasPrograma.Length;
+                 i++)
+            {
+                PendingIntent? tocar =
+                    CrearActividad(
+                        contexto,
+                        4810 + i,
+                        "visita");
+
+                if (tocar is not null)
+                {
+                    vistas.SetOnClickPendingIntent(
+                        filasPrograma[i],
+                        tocar);
+                }
+            }
+
+            // Tareas del día.
+            List<string> tareas =
+                ObtenerTareasDelDia(dia);
+
+            int[] filasTareas =
+            {
+                Resource.Id.widget_tarea1,
+                Resource.Id.widget_tarea2,
+                Resource.Id.widget_tarea3
+            };
+
             RellenarLineas(
                 vistas,
-                new[]
+                filasTareas,
+                tareas,
+                "Sin tareas para ese día");
+
+            for (int i = 0;
+                 i < filasTareas.Length;
+                 i++)
+            {
+                PendingIntent? tocar =
+                    CrearActividad(
+                        contexto,
+                        4820 + i,
+                        "tareas");
+
+                if (tocar is not null)
                 {
-                    Resource.Id.widget_tarea1,
-                    Resource.Id.widget_tarea2,
-                    Resource.Id.widget_tarea3
-                },
-                ObtenerProximasTareas(),
-                "Sin tareas pendientes");
+                    vistas.SetOnClickPendingIntent(
+                        filasTareas[i],
+                        tocar);
+                }
+            }
 
             gestor.UpdateAppWidget(
                 id,
@@ -182,6 +338,64 @@ public class SccosmosWidgetProvider : AppWidgetProvider
         catch
         {
         }
+    }
+
+
+    private static PendingIntent? CrearActividad(
+        Context contexto,
+        int codigo,
+        string destino)
+    {
+        Intent? intencion =
+            contexto.PackageManager
+                ?.GetLaunchIntentForPackage(
+                    contexto.PackageName ?? "");
+
+        if (intencion is null)
+        {
+            return null;
+        }
+
+        if (!string.IsNullOrWhiteSpace(destino))
+        {
+            intencion.PutExtra(
+                ExtraDestino,
+                destino);
+        }
+
+        return PendingIntent.GetActivity(
+            contexto,
+            codigo,
+            intencion,
+            PendingIntentFlags.Immutable
+            | PendingIntentFlags.UpdateCurrent);
+    }
+
+
+    private static PendingIntent CrearAccionDia(
+        Context contexto,
+        int codigo,
+        string accion)
+    {
+        var intencion =
+            new Intent(
+                contexto,
+                typeof(SccosmosWidgetProvider));
+
+        intencion.SetAction(
+            accion);
+
+        return PendingIntent.GetBroadcast(
+                   contexto,
+                   codigo,
+                   intencion,
+                   PendingIntentFlags.Immutable
+                   | PendingIntentFlags.UpdateCurrent)
+               ?? PendingIntent.GetBroadcast(
+                   contexto,
+                   codigo,
+                   intencion,
+                   PendingIntentFlags.UpdateCurrent)!;
     }
 
 
@@ -234,28 +448,28 @@ public class SccosmosWidgetProvider : AppWidgetProvider
     }
 
 
-    private static List<string> ObtenerProgramaDeHoy()
+    private static List<string> ObtenerProgramaDelDia(
+        DateTime dia)
     {
         var resultado =
             new List<string>();
 
         try
         {
-            DateTime hoy =
-                DateTime.Today;
-
-            // La semana de la visita va de lunes a domingo y el martes es
-            // la fecha con la que se guarda en la base.
+            // La semana va de lunes a domingo y el martes es la fecha con
+            // la que se guardan las semanas.
             DateTime lunes =
-                hoy.AddDays(
-                    -(((int)hoy.DayOfWeek + 6) % 7));
+                dia.AddDays(
+                    -(((int)dia.DayOfWeek + 6) % 7));
 
             DateTime martes =
                 lunes.AddDays(1);
 
             string diaDb =
-                hoy.DayOfWeek switch
+                dia.DayOfWeek switch
                 {
+                    DayOfWeek.Monday => "Lunes",
+                    DayOfWeek.Tuesday => "Martes",
                     DayOfWeek.Wednesday => "Miércoles",
                     DayOfWeek.Thursday => "Jueves",
                     DayOfWeek.Friday => "Viernes",
@@ -323,7 +537,6 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                 string responsable =
                     (actividad.Responsable ?? "").Trim();
 
-                // Formato antiguo: el responsable traía la actividad.
                 if (responsable.Equals(
                         "Comida",
                         StringComparison.OrdinalIgnoreCase)
@@ -382,56 +595,34 @@ public class SccosmosWidgetProvider : AppWidgetProvider
     }
 
 
-    private static List<string> ObtenerProximasTareas()
+    private static List<string> ObtenerTareasDelDia(
+        DateTime dia)
     {
         var resultado =
             new List<string>();
 
         try
         {
-            DateTime hoy =
-                DateTime.Today;
-
-            var tareas =
-                DatabaseHelper
-                    .ObtenerTareasMobile()
-                    .Where(t => !t.Completada)
-                    .OrderBy(
-                        t => string.IsNullOrWhiteSpace(
-                                 t.FechaInicio)
-                             ? "9999"
-                             : t.FechaInicio)
-                    .ThenBy(t => t.Hora ?? "")
-                    .Take(3);
-
-            foreach (Tarea tarea in tareas)
+            foreach (Tarea tarea
+                     in DatabaseHelper
+                         .ObtenerTareasMobile()
+                         .Where(t => !t.Completada)
+                         .OrderBy(t => t.Hora ?? ""))
             {
-                string cuando =
-                    "";
-
-                if (DateTime.TryParse(
+                if (!DateTime.TryParse(
                         tarea.FechaInicio,
-                        out DateTime fecha))
+                        out DateTime fecha)
+                    || fecha.Date != dia.Date)
                 {
-                    cuando =
-                        fecha.Date == hoy
-                            ? "Hoy"
-                            : fecha.Date == hoy.AddDays(1)
-                                ? "Mañana"
-                                : fecha.ToString(
-                                    "d MMM",
-                                    new CultureInfo("es-ES"));
+                    continue;
                 }
 
-                if (!tarea.TodoElDia
+                string cuando =
+                    !tarea.TodoElDia
                     && !string.IsNullOrWhiteSpace(
-                        tarea.Hora))
-                {
-                    cuando =
-                        cuando.Length > 0
-                            ? cuando + " " + tarea.Hora.Trim()
-                            : tarea.Hora.Trim();
-                }
+                        tarea.Hora)
+                        ? tarea.Hora.Trim() + " · "
+                        : "";
 
                 string titulo =
                     string.IsNullOrWhiteSpace(
@@ -440,9 +631,12 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                         : tarea.Titulo.Trim();
 
                 resultado.Add(
-                    cuando.Length > 0
-                        ? cuando + " · " + titulo
-                        : titulo);
+                    cuando + titulo);
+
+                if (resultado.Count >= 3)
+                {
+                    break;
+                }
             }
         }
         catch

@@ -481,6 +481,26 @@ namespace SCCosmos
 
             CmbCongNueva.SelectedItem = null;
 
+            // Si ahora mismo hay una visita en curso, se deja ya elegida la
+            // congregación visitada.
+            string congregacionEnVisita =
+                DatabaseHelper.ObtenerCongregacionEnVisitaActual();
+
+            if (!string.IsNullOrWhiteSpace(congregacionEnVisita))
+            {
+                foreach (ComboBoxItem elemento in CmbCongNueva.Items)
+                {
+                    if (string.Equals(
+                            elemento.Content?.ToString(),
+                            congregacionEnVisita,
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        CmbCongNueva.SelectedItem = elemento;
+                        break;
+                    }
+                }
+            }
+
             OverlayNuevaRsc.Visibility = Visibility.Visible;
         }
 

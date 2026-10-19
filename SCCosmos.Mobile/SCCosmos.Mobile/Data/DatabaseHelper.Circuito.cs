@@ -332,6 +332,199 @@ public static partial class DatabaseHelper
     }
 
 
+    /// <summary>
+    /// ID de Zoom, contraseña de Zoom y email del AV de una congregación.
+    /// </summary>
+    public static (string IdZoom, string ClaveZoom, string EmailAV)
+        ObtenerDatosExtraCongregacionMobile(
+            string codigo)
+    {
+        try
+        {
+            using var connection =
+                new SqliteConnection(
+                    ConnectionString);
+
+            connection.Open();
+
+            AsegurarColumnasExtraCongregacionMobile(
+                connection);
+
+            using var cmd =
+                connection.CreateCommand();
+
+            cmd.CommandText =
+                "SELECT IdZoom, ClaveZoom, EmailAV FROM Congregaciones WHERE Codigo = $codigo LIMIT 1;";
+
+            cmd.Parameters.AddWithValue(
+                "$codigo",
+                codigo ?? "");
+
+            using var reader =
+                cmd.ExecuteReader();
+
+            if (reader.Read())
+            {
+                return (
+                    reader.IsDBNull(0) ? "" : reader.GetString(0),
+                    reader.IsDBNull(1) ? "" : reader.GetString(1),
+                    reader.IsDBNull(2) ? "" : reader.GetString(2));
+            }
+        }
+        catch
+        {
+        }
+
+        return ("", "", "");
+    }
+
+
+    public static void GuardarDatosExtraCongregacionMobile(
+        string codigo,
+        string idZoom,
+        string claveZoom,
+        string emailAV)
+    {
+        try
+        {
+            using var connection =
+                new SqliteConnection(
+                    ConnectionString);
+
+            connection.Open();
+
+            AsegurarColumnasExtraCongregacionMobile(
+                connection);
+
+            using var cmd =
+                connection.CreateCommand();
+
+            cmd.CommandText =
+                "UPDATE Congregaciones SET IdZoom = $idZoom, ClaveZoom = $clave, EmailAV = $email WHERE Codigo = $codigo;";
+
+            cmd.Parameters.AddWithValue(
+                "$idZoom",
+                idZoom ?? "");
+
+            cmd.Parameters.AddWithValue(
+                "$clave",
+                claveZoom ?? "");
+
+            cmd.Parameters.AddWithValue(
+                "$email",
+                emailAV ?? "");
+
+            cmd.Parameters.AddWithValue(
+                "$codigo",
+                codigo ?? "");
+
+            cmd.ExecuteNonQuery();
+        }
+        catch
+        {
+        }
+    }
+
+
+    private static void AsegurarColumnasExtraCongregacionMobile(
+        SqliteConnection connection)
+    {
+        try
+        {
+            var columnas =
+                new HashSet<string>(
+                    StringComparer.OrdinalIgnoreCase);
+
+            using (var cmd =
+                   connection.CreateCommand())
+            {
+                cmd.CommandText =
+                    "PRAGMA table_info(Congregaciones);";
+
+                using var reader =
+                    cmd.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    if (!reader.IsDBNull(1))
+                    {
+                        columnas.Add(
+                            reader.GetString(1));
+                    }
+                }
+            }
+
+            foreach ((string columna, string tipo) in new[]
+                     {
+                         ("IdZoom", "TEXT"),
+                         ("ClaveZoom", "TEXT"),
+                         ("EmailAV", "TEXT")
+                     })
+            {
+                if (columnas.Contains(columna))
+                {
+                    continue;
+                }
+
+                using var cmdAlter =
+                    connection.CreateCommand();
+
+                cmdAlter.CommandText =
+                    $"ALTER TABLE Congregaciones ADD COLUMN {columna} {tipo};";
+
+                cmdAlter.ExecuteNonQuery();
+            }
+        }
+        catch
+        {
+        }
+    }
+
+
+    /// <summary>
+    /// Coordenadas del salón de una congregación, buscando por nombre (para
+    /// la importación del KMZ en el móvil, como en Windows).
+    /// </summary>
+    public static bool ActualizarCoordenadasCongregacionMobile(
+        string nombre,
+        double latitud,
+        double longitud)
+    {
+        try
+        {
+            using var connection =
+                new SqliteConnection(
+                    ConnectionString);
+
+            connection.Open();
+
+            using var cmd =
+                connection.CreateCommand();
+
+            cmd.CommandText =
+                "UPDATE Congregaciones SET Latitud = $lat, Longitud = $lon WHERE lower(trim(Nombre)) = lower(trim($nombre));";
+
+            cmd.Parameters.AddWithValue(
+                "$lat",
+                latitud);
+
+            cmd.Parameters.AddWithValue(
+                "$lon",
+                longitud);
+
+            cmd.Parameters.AddWithValue(
+                "$nombre",
+                nombre ?? "");
+
+            return cmd.ExecuteNonQuery() > 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+
     public static void EliminarCongregacionMobile(
         string codigo)
     {

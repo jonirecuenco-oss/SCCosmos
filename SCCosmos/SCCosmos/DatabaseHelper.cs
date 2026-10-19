@@ -258,6 +258,9 @@ namespace SCCosmos
             AsegurarColumna(connection, "ReunionPrecursoresSesiones", "Lugar", "TEXT");
 
             AsegurarColumna(connection, "Congregaciones", "Latitud", "REAL DEFAULT 0");
+            AsegurarColumna(connection, "Congregaciones", "IdZoom", "TEXT");
+            AsegurarColumna(connection, "Congregaciones", "ClaveZoom", "TEXT");
+            AsegurarColumna(connection, "Congregaciones", "EmailAV", "TEXT");
             AsegurarColumna(connection, "Congregaciones", "Longitud", "REAL DEFAULT 0");
             AsegurarColumna(connection, "Congregaciones", "Capacidad", "INTEGER DEFAULT 0");
             AsegurarColumna(connection, "Congregaciones", "Poblacion", "INTEGER DEFAULT 0");
@@ -2005,8 +2008,8 @@ namespace SCCosmos
                 connection.Open();
                 var cmd = connection.CreateCommand();
                 cmd.CommandText = @"
-                    INSERT INTO Congregaciones (Codigo, Nombre, Email, SeccionId, Provincia, Municipio, DireccionSR, DiaEntreSemana, HoraEntreSemana, DiaFinSemana, HoraFinSemana, Capacidad, Poblacion)
-                    VALUES (@Codigo, @Nombre, @Email, @SeccionId, @Provincia, @Municipio, @DireccionSR, @DiaEntreSemana, @HoraEntreSemana, @DiaFinSemana, @HoraFinSemana, @Capacidad, @Poblacion)";
+                    INSERT INTO Congregaciones (Codigo, Nombre, Email, SeccionId, Provincia, Municipio, DireccionSR, DiaEntreSemana, HoraEntreSemana, DiaFinSemana, HoraFinSemana, Capacidad, Poblacion, IdZoom, ClaveZoom, EmailAV)
+                    VALUES (@Codigo, @Nombre, @Email, @SeccionId, @Provincia, @Municipio, @DireccionSR, @DiaEntreSemana, @HoraEntreSemana, @DiaFinSemana, @HoraFinSemana, @Capacidad, @Poblacion, @IdZoom, @ClaveZoom, @EmailAV)";
                 cmd.Parameters.AddWithValue("@Codigo", cong.Codigo ?? "");
                 cmd.Parameters.AddWithValue("@Nombre", cong.Nombre ?? "");
                 cmd.Parameters.AddWithValue("@Email", cong.Email ?? "");
@@ -2014,6 +2017,9 @@ namespace SCCosmos
                 cmd.Parameters.AddWithValue("@Provincia", cong.Provincia ?? "");
                 cmd.Parameters.AddWithValue("@Municipio", cong.Municipio ?? "");
                 cmd.Parameters.AddWithValue("@DireccionSR", cong.DireccionSR ?? "");
+                cmd.Parameters.AddWithValue("@IdZoom", cong.IdZoom ?? "");
+                cmd.Parameters.AddWithValue("@ClaveZoom", cong.ClaveZoom ?? "");
+                cmd.Parameters.AddWithValue("@EmailAV", cong.EmailAV ?? "");
                 cmd.Parameters.AddWithValue("@DiaEntreSemana", cong.DiaEntreSemana ?? "");
                 cmd.Parameters.AddWithValue("@HoraEntreSemana", cong.HoraEntreSemana ?? "");
                 cmd.Parameters.AddWithValue("@DiaFinSemana", cong.DiaFinSemana ?? "");
@@ -2035,7 +2041,8 @@ namespace SCCosmos
                         Nombre = @Nombre, Email = @Email, SeccionId = @SeccionId, 
                         Provincia = @Provincia, Municipio = @Municipio,
                         DireccionSR = @DireccionSR, DiaEntreSemana = @DiaEntreSemana, HoraEntreSemana = @HoraEntreSemana, 
-                        DiaFinSemana = @DiaFinSemana, HoraFinSemana = @HoraFinSemana, Capacidad = @Capacidad, Poblacion = @Poblacion
+                        DiaFinSemana = @DiaFinSemana, HoraFinSemana = @HoraFinSemana, Capacidad = @Capacidad, Poblacion = @Poblacion,
+                        IdZoom = @IdZoom, ClaveZoom = @ClaveZoom, EmailAV = @EmailAV
                     WHERE Codigo = @Codigo";
                 cmd.Parameters.AddWithValue("@Codigo", cong.Codigo ?? "");
                 cmd.Parameters.AddWithValue("@Nombre", cong.Nombre ?? "");
@@ -2044,6 +2051,9 @@ namespace SCCosmos
                 cmd.Parameters.AddWithValue("@Provincia", cong.Provincia ?? "");
                 cmd.Parameters.AddWithValue("@Municipio", cong.Municipio ?? "");
                 cmd.Parameters.AddWithValue("@DireccionSR", cong.DireccionSR ?? "");
+                cmd.Parameters.AddWithValue("@IdZoom", cong.IdZoom ?? "");
+                cmd.Parameters.AddWithValue("@ClaveZoom", cong.ClaveZoom ?? "");
+                cmd.Parameters.AddWithValue("@EmailAV", cong.EmailAV ?? "");
                 cmd.Parameters.AddWithValue("@DiaEntreSemana", cong.DiaEntreSemana ?? "");
                 cmd.Parameters.AddWithValue("@HoraEntreSemana", cong.HoraEntreSemana ?? "");
                 cmd.Parameters.AddWithValue("@DiaFinSemana", cong.DiaFinSemana ?? "");
@@ -2053,6 +2063,71 @@ namespace SCCosmos
                 cmd.ExecuteNonQuery();
             }
         }
+
+        /// <summary>
+        /// ID de Zoom, contraseña de Zoom y email del AV de una congregación.
+        /// </summary>
+        public static (string IdZoom, string ClaveZoom, string EmailAV) ObtenerDatosExtraCongregacion(string codigo)
+        {
+            try
+            {
+                using var connection = new SqliteConnection(ConnectionString);
+                connection.Open();
+
+                AsegurarColumnasExtraCongregacion(connection);
+
+                using var cmd = connection.CreateCommand();
+                cmd.CommandText = "SELECT IdZoom, ClaveZoom, EmailAV FROM Congregaciones WHERE Codigo = @Codigo LIMIT 1;";
+                cmd.Parameters.AddWithValue("@Codigo", codigo ?? "");
+
+                using var reader = cmd.ExecuteReader();
+
+                if (reader.Read())
+                {
+                    return (
+                        reader.IsDBNull(0) ? "" : reader.GetString(0),
+                        reader.IsDBNull(1) ? "" : reader.GetString(1),
+                        reader.IsDBNull(2) ? "" : reader.GetString(2));
+                }
+            }
+            catch
+            {
+            }
+
+            return ("", "", "");
+        }
+
+
+        public static void GuardarDatosExtraCongregacion(string codigo, string idZoom, string claveZoom, string emailAV)
+        {
+            try
+            {
+                using var connection = new SqliteConnection(ConnectionString);
+                connection.Open();
+
+                AsegurarColumnasExtraCongregacion(connection);
+
+                using var cmd = connection.CreateCommand();
+                cmd.CommandText = "UPDATE Congregaciones SET IdZoom = @IdZoom, ClaveZoom = @Clave, EmailAV = @Email WHERE Codigo = @Codigo;";
+                cmd.Parameters.AddWithValue("@IdZoom", idZoom ?? "");
+                cmd.Parameters.AddWithValue("@Clave", claveZoom ?? "");
+                cmd.Parameters.AddWithValue("@Email", emailAV ?? "");
+                cmd.Parameters.AddWithValue("@Codigo", codigo ?? "");
+                cmd.ExecuteNonQuery();
+            }
+            catch
+            {
+            }
+        }
+
+
+        private static void AsegurarColumnasExtraCongregacion(SqliteConnection connection)
+        {
+            AsegurarColumna(connection, "Congregaciones", "IdZoom", "TEXT");
+            AsegurarColumna(connection, "Congregaciones", "ClaveZoom", "TEXT");
+            AsegurarColumna(connection, "Congregaciones", "EmailAV", "TEXT");
+        }
+
 
         public static void EliminarCongregacion(string codigo)
         {
@@ -2329,6 +2404,41 @@ namespace SCCosmos
         /// los que usa la página de Asambleas: sección, tipo y año de
         /// servicio (de septiembre a agosto).
         /// </summary>
+        /// <summary>
+        /// Nombre de la congregación que se está visitando hoy (la semana
+        /// actual), si la hay.
+        /// </summary>
+        public static string ObtenerCongregacionEnVisitaActual()
+        {
+            try
+            {
+                DateTime hoy = DateTime.Today;
+
+                int diasDesdeLunes =
+                    ((int)hoy.DayOfWeek - (int)DayOfWeek.Monday + 7) % 7;
+
+                DateTime martes =
+                    hoy.AddDays(-diasDesdeLunes).Date.AddDays(1);
+
+                var semana =
+                    ObtenerSemana(martes.ToString("yyyy-MM-dd"));
+
+                if (semana != null
+                    && (semana.Actividad ?? "").Trim().Equals(
+                        "Visita",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return semana.Congregacion ?? "";
+                }
+            }
+            catch
+            {
+            }
+
+            return "";
+        }
+
+
         public static (string Seccion, string Tipo, string Anio) ObtenerProximaAsambleaCalendario()
         {
             try

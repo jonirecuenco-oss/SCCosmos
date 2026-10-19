@@ -21,7 +21,7 @@
                        Style="{StaticResource SubtituloPagina}" />
             </VerticalStackLayout>
 
-            <Grid ColumnDefinitions="*,*"
+            <Grid ColumnDefinitions="*,*,*"
                   ColumnSpacing="8">
                 <Button Grid.Column="0"
                         Text="Ver secciones"
@@ -31,6 +31,11 @@
                         Text="+ Congregación"
                         Clicked="BtnAnadir_Clicked"
                         Style="{StaticResource BotonPrincipal}" />
+                <Button Grid.Column="2"
+                        Text="🗺️ KMZ"
+                        SemanticProperties.Description="Subir mapa KMZ"
+                        Clicked="BtnSubirKmz_Clicked"
+                        Style="{StaticResource BotonSecundario}" />
             </Grid>
 
         </VerticalStackLayout>

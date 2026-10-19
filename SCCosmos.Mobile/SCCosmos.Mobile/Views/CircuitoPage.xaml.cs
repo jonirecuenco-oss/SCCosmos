@@ -1,12 +1,15 @@
-﻿using SCCosmos.Mobile.Data;
+﻿using System.Globalization;
+using System.IO.Compression;
+using System.Xml.Linq;
+
+using SCCosmos.Mobile.Data;
 using SCCosmos.Mobile.Models;
 
 namespace SCCosmos.Mobile.Views;
 
 /// <summary>
-/// Módulo Circuito: listado y edición de congregaciones y secciones.
-/// Réplica funcional de CircuitoPage de WPF (sin importación KMZ, que
-/// se documenta como pendiente por depender del flujo de escritorio).
+/// Módulo Circuito: listado y edición de congregaciones y secciones, y
+/// subida del KMZ (coordenadas de los salones), como en Windows.
 /// </summary>
 public partial class CircuitoPage : ContentPage, IActualizableMobile
 {
@@ -30,6 +33,170 @@ public partial class CircuitoPage : ContentPage, IActualizableMobile
         }
         catch
         {
+        }
+    }
+
+
+    private async void BtnSubirKmz_Clicked(
+        object sender,
+        EventArgs e)
+    {
+        try
+        {
+            FileResult? archivo =
+                await FilePicker.Default.PickAsync(
+                    new PickOptions
+                    {
+                        PickerTitle = "Seleccionar mapa KMZ o KML"
+                    });
+
+            if (archivo is null)
+            {
+                return;
+            }
+
+            string contenido = "";
+
+            if (archivo.FileName.EndsWith(
+                    ".kmz",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                using var flujo =
+                    await archivo.OpenReadAsync();
+
+                using var comprimido =
+                    new ZipArchive(
+                        flujo,
+                        ZipArchiveMode.Read);
+
+                var entrada =
+                    comprimido.Entries.FirstOrDefault(
+                        x => x.FullName.EndsWith(
+                            ".kml",
+                            StringComparison.OrdinalIgnoreCase));
+
+                if (entrada is not null)
+                {
+                    using var lector =
+                        new StreamReader(
+                            entrada.Open());
+
+                    contenido =
+                        await lector.ReadToEndAsync();
+                }
+            }
+            else
+            {
+                using var flujo =
+                    await archivo.OpenReadAsync();
+
+                using var lector =
+                    new StreamReader(
+                        flujo);
+
+                contenido =
+                    await lector.ReadToEndAsync();
+            }
+
+            if (string.IsNullOrWhiteSpace(contenido))
+            {
+                await DisplayAlert(
+                    "KMZ",
+                    "No se encontró información en el archivo.",
+                    "Aceptar");
+
+                return;
+            }
+
+            int actualizadas =
+                await Task.Run(
+                    () =>
+                    {
+                        int total = 0;
+
+                        var documento =
+                            XDocument.Parse(contenido);
+
+                        XNamespace ns =
+                            documento.Root!.GetDefaultNamespace();
+
+                        foreach (var marcador
+                                 in documento.Descendants(
+                                     ns + "Placemark"))
+                        {
+                            string nombre =
+                                marcador.Element(
+                                        ns + "name")?
+                                    .Value?
+                                    .Trim() ?? "";
+
+                            if (string.IsNullOrWhiteSpace(nombre))
+                            {
+                                continue;
+                            }
+
+                            string punto =
+                                marcador.Descendants(
+                                        ns + "Point")
+                                    .FirstOrDefault()?
+                                    .Element(
+                                        ns + "coordinates")?
+                                    .Value?
+                                    .Trim() ?? "";
+
+                            if (string.IsNullOrWhiteSpace(punto))
+                            {
+                                continue;
+                            }
+
+                            string[] partes =
+                                punto.Split(',');
+
+                            if (partes.Length < 2)
+                            {
+                                continue;
+                            }
+
+                            if (double.TryParse(
+                                    partes[0],
+                                    NumberStyles.Any,
+                                    CultureInfo.InvariantCulture,
+                                    out double lon)
+                                && double.TryParse(
+                                    partes[1],
+                                    NumberStyles.Any,
+                                    CultureInfo.InvariantCulture,
+                                    out double lat))
+                            {
+                                if (DatabaseHelper
+                                    .ActualizarCoordenadasCongregacionMobile(
+                                        nombre,
+                                        lat,
+                                        lon))
+                                {
+                                    total++;
+                                }
+                            }
+                        }
+
+                        return total;
+                    });
+
+            await CargarAsync();
+
+            await DisplayAlert(
+                "KMZ",
+                actualizadas == 0
+                    ? "No se actualizó ninguna congregación (los nombres del mapa no coinciden con los de la lista)."
+                    : $"Mapa importado: {actualizadas} congregaciones actualizadas con sus coordenadas.",
+                "Aceptar");
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert(
+                "KMZ",
+                "No se pudo leer el archivo:\n" + ex.Message,
+                "Aceptar");
         }
     }
 

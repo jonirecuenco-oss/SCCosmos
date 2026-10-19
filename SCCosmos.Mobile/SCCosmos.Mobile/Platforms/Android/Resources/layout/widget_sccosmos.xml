@@ -9,6 +9,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:gravity="center_vertical"
         android:orientation="horizontal">
 
         <TextView
@@ -22,12 +23,38 @@
             android:textStyle="bold" />
 
         <TextView
+            android:id="@+id/widget_dia_atras"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="10dp"
+            android:paddingRight="8dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:text="◀"
+            android:textColor="#4BA3E3"
+            android:textSize="14sp" />
+
+        <TextView
             android:id="@+id/widget_fecha"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:paddingLeft="2dp"
+            android:paddingRight="2dp"
             android:text=""
-            android:textColor="#9EA4AE"
-            android:textSize="11sp" />
+            android:textColor="#E6E8EB"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/widget_dia_adelante"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="8dp"
+            android:paddingRight="2dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:text="▶"
+            android:textColor="#4BA3E3"
+            android:textSize="14sp" />
     </LinearLayout>
 
     <TextView
