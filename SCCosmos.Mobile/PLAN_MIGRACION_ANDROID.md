@@ -1790,3 +1790,6 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
 - **Inicio (Android)**: la tarjeta de la semana quita el punto azul (el ojo queda junto al nombre);
   al cambiar de día el programa ya no se acumula (se limpia antes de pintar); los eventos **sin hora
   salen al final del día** (también en el widget). En Windows ya se ordenaban así (int.MaxValue).
+- **Windows**: la clave de sincronización ya es editable en Configuración (antes era solo
+  lectura). Al cambiarla se guarda y se reinicia el motor; hay que poner la misma clave en los
+  demás dispositivos.

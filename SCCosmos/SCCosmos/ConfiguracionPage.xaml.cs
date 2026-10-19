@@ -470,6 +470,7 @@ namespace SCCosmos
 
             TxtNombreSincro.LostFocus += (s, e) => GuardarNombreSincro();
             TxtDireccionesSincro.LostFocus += (s, e) => GuardarDireccionesSincro();
+            TxtClaveSincro.LostFocus += (s, e) => GuardarClaveSincro();
             ToggleSincroActivo.Checked += (s, e) => AplicarSincroAutomatico();
             ToggleSincroActivo.Unchecked += (s, e) => AplicarSincroAutomatico();
         }
@@ -704,6 +705,59 @@ namespace SCCosmos
                     config.NombreDispositivo = nombre;
                     SincronizacionRed.Guardar();
                 }
+            }
+            catch
+            {
+            }
+        }
+
+
+        /// <summary>
+        /// Guarda la clave de sincronización (igual en todos los
+        /// dispositivos) y reinicia el motor para aplicarla.
+        /// </summary>
+        private void GuardarClaveSincro()
+        {
+            try
+            {
+                if (_autoguardando)
+                {
+                    return;
+                }
+
+                var config = SincronizacionRed.Config;
+
+                if (config is null)
+                {
+                    return;
+                }
+
+                string clave =
+                    TxtClaveSincro.Text?.Trim() ?? "";
+
+                if (clave.Length == 0
+                    || string.Equals(
+                        config.Clave,
+                        clave,
+                        StringComparison.Ordinal))
+                {
+                    // Si se queda vacía se restaura la que estaba.
+                    TxtClaveSincro.Text =
+                        config.Clave;
+
+                    return;
+                }
+
+                config.Clave = clave;
+
+                SincronizacionRed.Guardar();
+                SincronizacionRed.Reiniciar();
+
+                DatabaseHelper.AnotarActividad(
+                    "Configuración",
+                    "Cambió la clave de sincronización entre dispositivos");
+
+                RefrescarEstadoSincro();
             }
             catch
             {

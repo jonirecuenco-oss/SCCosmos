@@ -209,7 +209,7 @@
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
-                                        <ui:TextBox x:Name="TxtClaveSincro" Grid.Column="0" IsReadOnly="True" Background="#1E1E1E" Foreground="White"/>
+                                        <ui:TextBox x:Name="TxtClaveSincro" Grid.Column="0" Background="#1E1E1E" Foreground="White"/>
                                         <ui:Button Grid.Column="1" Content="Copiar" Margin="10,0,0,0" Appearance="Secondary" Click="BtnCopiarClaveSincro_Click"/>
                                     </Grid>
                                 </StackPanel>
