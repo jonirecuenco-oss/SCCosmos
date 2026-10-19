@@ -367,7 +367,6 @@ namespace SCCosmos
             TxtRutaArchivoCircuito.Text = DatabaseHelper.ObtenerConfiguracion("RutaArchivoCircuito", "");
 
             // 2. CARGAR DATOS LOCALES (Este PC)
-            TxtRutaBaseDatos.Text = DatabaseHelper.RutaBaseDatos;
 
             if (File.Exists(_rutaArchivoLocalSettings))
             {
@@ -821,37 +820,6 @@ namespace SCCosmos
             {
                 TxtRutaDescargas.Text = dialog.FolderName;
                 GuardarTodo();
-            }
-        }
-
-        private void BtnCambiarRuta_Click(object sender, RoutedEventArgs e)
-        {
-            var dialog = new Microsoft.Win32.OpenFolderDialog
-            {
-                Title = "Selecciona la carpeta general de archivos de SCCosmos",
-                InitialDirectory = DatabaseHelper.RutaDirectorioDatos
-            };
-
-            if (dialog.ShowDialog() == true)
-            {
-                try
-                {
-                    // La base de datos ya no se mueve: vive dentro de la
-                    // aplicación. Esta carpeta se usa para el Archivo del
-                    // circuito y demás archivos.
-                    DatabaseHelper.RutaDirectorioDatos = dialog.FolderName;
-                    TxtRutaBaseDatos.Text = DatabaseHelper.RutaBaseDatos;
-
-                    DatabaseHelper.AnotarActividad(
-                        "Configuración",
-                        "Cambió la carpeta de archivos a " + dialog.FolderName);
-
-                    MessageBox.Show("Carpeta actualizada.\n\nSe usará para el Archivo del circuito y los archivos relacionados.", "Carpeta", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Hubo un error al intentar cambiar la carpeta:\n\n{ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
             }
         }
 

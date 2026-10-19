@@ -1818,3 +1818,7 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
 - **Alertas (Windows)**: cada alerta del popup de la campana se puede marcar como leída
   individualmente (botón «✓ Marcar como leída», además del «marcar todas»); el popup se queda
   abierto para marcar varias y el estado viaja por la tabla `AlertasLeidas`.
+- **Configuración (Windows y Android)**: eliminada la tarjeta «Base de datos y almacenamiento» y sus
+  controles (ruta + selector de carpeta + comprobaciones); la base vive dentro de la app y no se
+  toca su ubicación. Limpiados `TxtRutaBaseDatos`/`BtnCambiarRuta_Click` (Windows) y `LblRuta`/
+  `LblEstado`/`BtnSeleccionarCarpeta_Click`/`ComprobarBaseDatos`/`AutoSync_EstadoCambiado` (móvil).

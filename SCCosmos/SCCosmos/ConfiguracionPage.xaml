@@ -154,28 +154,6 @@
                 </ui:Card>
 
                 <!-- TARJETA: ALMACENAMIENTO DE LA BBDD -->
-                <ui:Card Padding="20" Margin="0,0,0,15">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <ui:SymbolIcon Grid.Column="0" Symbol="FolderSync24" FontSize="36" Margin="0,0,20,0" VerticalAlignment="Center" Foreground="#4CAF50"/>
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                            <TextBlock Text="Base de datos y almacenamiento" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,5"/>
-                            <TextBlock Text="La base de datos ahora vive dentro de la aplicación y se sincroniza sola entre tus dispositivos (nunca se sube a internet). Aquí puedes ver dónde está y elegir la carpeta general de archivos." Foreground="#AAAAAA" TextWrapping="Wrap" FontSize="13" Margin="0,0,0,10"/>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <ui:TextBox x:Name="TxtRutaBaseDatos" Grid.Column="0" IsReadOnly="True" PlaceholderText="Cargando ruta..." Background="#1E1E1E" Foreground="White"/>
-                                <ui:Button Grid.Column="1" Content="Carpeta de archivos" Margin="10,0,0,0" Appearance="Secondary" Icon="{ui:SymbolIcon Folder24}" Click="BtnCambiarRuta_Click"/>
-                            </Grid>
-                        </StackPanel>
-                    </Grid>
-                </ui:Card>
-
                 <!-- TARJETA: SINCRONIZACIÓN ENTRE DISPOSITIVOS -->
                 <ui:Card x:Name="CardSincronizacion" Padding="20" Margin="0,0,0,15">
                     <Grid>

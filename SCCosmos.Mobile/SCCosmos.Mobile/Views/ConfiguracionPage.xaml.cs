@@ -12,7 +12,6 @@ namespace SCCosmos.Mobile.Views;
 
 public partial class ConfiguracionPage : ContentPage
 {
-    private const string ClaveRutaDb = "RutaCarpetaSCCosmos";
     private bool _cargandoConfiguracionJwHub;
 
     public ConfiguracionPage()
@@ -20,18 +19,12 @@ public partial class ConfiguracionPage : ContentPage
         InitializeComponent();
         HookAutoguardado();
         CargarConfiguracionJwHub();
-        CargarRutaGuardada();
         CargarDatosGlobales();
         CargarPerfil();
 
         // La sincronización es siempre automática: no hay interruptor.
         AutoSyncService.Activo =
             true;
-
-        AutoSyncService.EstadoCambiado +=
-            AutoSync_EstadoCambiado;
-
-        ComprobarBaseDatos();
 
         // Selector nuevo entre dispositivos.
         CargarSincronizacion();
@@ -240,29 +233,6 @@ public partial class ConfiguracionPage : ContentPage
             ? ""
             : texto + "\n\n";
     }
-
-    /// <summary>
-    /// La comprobación de la base de datos es automática: se muestra el
-    /// resultado junto al botón de seleccionar carpeta.
-    /// </summary>
-    private void AutoSync_EstadoCambiado(string mensaje)
-    {
-        MainThread.BeginInvokeOnMainThread(
-            () =>
-            {
-                if (string.IsNullOrWhiteSpace(mensaje))
-                {
-                    return;
-                }
-
-                LblEstado.Text =
-                    $"{_estadoBaseDatos} · {mensaje}";
-            });
-    }
-
-    private string _estadoBaseDatos =
-        "Comprobando la base de datos…";
-
 
     // =========================================================
     // SINCRONIZACIÓN ENTRE DISPOSITIVOS
@@ -795,164 +765,6 @@ public partial class ConfiguracionPage : ContentPage
 
         ActualizarTextoJwHubAuto();
         ActualizarEstadoSesionJwHub();
-    }
-
-    private void CargarRutaGuardada()
-    {
-        if (SyncFolderService.EstaConfigurada)
-        {
-            LblRuta.Text =
-                $"Carpeta: {SyncFolderService.NombreCarpeta}";
-
-            ComprobarBaseDatos();
-        }
-        else
-        {
-            LblRuta.Text =
-                "No se ha seleccionado ninguna carpeta.";
-        }
-    }
-
-    private async void BtnSeleccionarCarpeta_Click(
-        object sender,
-        EventArgs e)
-    {
-        try
-        {
-            string? uri =
-                await SyncFolderService
-                    .SeleccionarCarpetaAsync();
-
-            if (string.IsNullOrWhiteSpace(uri))
-            {
-                LblEstado.Text =
-                    "No se seleccionó ninguna carpeta.";
-
-                LblEstado.TextColor =
-                    Colors.Orange;
-
-                return;
-            }
-
-            LblRuta.Text =
-                $"Carpeta: {SyncFolderService.NombreCarpeta}";
-
-            ComprobarBaseDatos();
-
-            // Antes había que reiniciar la app: al elegir la carpeta solo se
-            // comprobaba que existiera la base de datos y la importación se
-            // hacía únicamente al arrancar. Ahora se usa la base de datos de
-            // la carpeta al momento.
-            if (!SyncFolderService.ExisteBaseDatos())
-            {
-                return;
-            }
-
-            if (AutoSyncService.HayCambiosLocalesSinSincronizar())
-            {
-                bool usarCarpeta =
-                    await DisplayAlert(
-                        "Base de datos",
-                        "En el móvil hay cambios que todavía no se han " +
-                        "enviado a la carpeta.\n\n" +
-                        "¿Quieres usar la base de datos de la carpeta o " +
-                        "mantener la del móvil?",
-                        "Usar la de la carpeta",
-                        "Mantener la del móvil");
-
-                if (!usarCarpeta)
-                {
-                    LblEstado.Text =
-                        "Se mantiene la base de datos del móvil.";
-
-                    LblEstado.TextColor =
-                        Colors.Orange;
-
-                    return;
-                }
-            }
-
-            LblEstado.Text =
-                "Importando la base de datos de la carpeta...";
-
-            LblEstado.TextColor =
-                Colors.White;
-
-            ResultadoSincronizacion resultado =
-                await AutoSyncService.ImportarAhoraAsync();
-
-            if (!resultado.Correcto)
-            {
-                LblEstado.Text =
-                    "✗ " + resultado.Mensaje;
-
-                LblEstado.TextColor =
-                    Colors.OrangeRed;
-
-                return;
-            }
-
-            _estadoBaseDatos =
-                "✓ sccosmos.db encontrado y accesible";
-
-            LblEstado.Text =
-                "✓ Base de datos actualizada desde la carpeta";
-
-            LblEstado.TextColor =
-                Colors.LightGreen;
-
-            // Se abre Inicio para que se vean los datos recién importados:
-            // cada sección vuelve a cargar sus datos al entrar en ella.
-            await Shell.Current.GoToAsync("//inicio");
-        }
-        catch (Exception ex)
-        {
-            LblEstado.Text =
-                $"Error al seleccionar la carpeta:\n{ex.Message}";
-
-            LblEstado.TextColor =
-                Colors.Red;
-        }
-    }
-
-    private void ComprobarBaseDatos()
-    {
-        if (!SyncFolderService.EstaConfigurada)
-        {
-            _estadoBaseDatos =
-                "Primero selecciona la carpeta SCCosmos.";
-
-            LblEstado.Text =
-                _estadoBaseDatos;
-
-            LblEstado.TextColor =
-                Colors.Orange;
-
-            return;
-        }
-
-        if (SyncFolderService.ExisteBaseDatos())
-        {
-            _estadoBaseDatos =
-                "✓ sccosmos.db encontrado y accesible";
-
-            LblEstado.Text =
-                _estadoBaseDatos;
-
-            LblEstado.TextColor =
-                Colors.LightGreen;
-        }
-        else
-        {
-            _estadoBaseDatos =
-                "✗ No se encuentra sccosmos.db dentro de la carpeta seleccionada.";
-
-            LblEstado.Text =
-                _estadoBaseDatos;
-
-            LblEstado.TextColor =
-                Colors.OrangeRed;
-        }
     }
 
     private void CargarConfiguracionJwHub()
