@@ -692,22 +692,6 @@ namespace SCCosmos
                                 NormalizarResponsablePrograma(
                                     a.Responsable);
 
-                            System.Windows.Visibility visComun =
-                                string.IsNullOrWhiteSpace(responsable)
-                                || string.Equals(responsable, "Ambos", StringComparison.OrdinalIgnoreCase)
-                                    ? System.Windows.Visibility.Visible
-                                    : System.Windows.Visibility.Collapsed;
-
-                            System.Windows.Visibility visSc =
-                                string.Equals(responsable, "SC", StringComparison.OrdinalIgnoreCase)
-                                    ? System.Windows.Visibility.Visible
-                                    : System.Windows.Visibility.Collapsed;
-
-                            System.Windows.Visibility visEsposa =
-                                string.Equals(responsable, "Esposa", StringComparison.OrdinalIgnoreCase)
-                                    ? System.Windows.Visibility.Visible
-                                    : System.Windows.Visibility.Collapsed;
-
                             return new BotonActividadUI
                             {
                                 Hora =
@@ -732,10 +716,7 @@ namespace SCCosmos
                                 Dia = dia,
                                 Turno = "General",
                                 Responsable = responsable,
-                                ActividadDB = a,
-                                VisComun = visComun,
-                                VisSc = visSc,
-                                VisEsposa = visEsposa
+                                ActividadDB = a
                             };
                         })
                         .ToList();
@@ -746,35 +727,6 @@ namespace SCCosmos
                         Dia = dia,
                         Actividades = actividadesDia
                     });
-            }
-
-            // Cabecera de la tabla por horas con nuestros nombres.
-            try
-            {
-                string nombreSc =
-                    (DatabaseHelper.ObtenerConfiguracion("NombreSC", "")
-                     + " "
-                     + DatabaseHelper.ObtenerConfiguracion("ApellidoSC", ""))
-                    .Trim();
-
-                string nombreEsposa =
-                    (DatabaseHelper.ObtenerConfiguracion("NombreEsposaSC", "")
-                     + " "
-                     + DatabaseHelper.ObtenerConfiguracion("ApellidoEsposaSC", ""))
-                    .Trim();
-
-                LblCabeceraSc.Text =
-                    string.IsNullOrWhiteSpace(nombreSc)
-                        ? "SC"
-                        : nombreSc;
-
-                LblCabeceraEsposa.Text =
-                    string.IsNullOrWhiteSpace(nombreEsposa)
-                        ? "Esposa"
-                        : nombreEsposa;
-            }
-            catch
-            {
             }
 
             ListaProgramaDias.ItemsSource = diasPrograma;
@@ -6068,37 +6020,6 @@ namespace SCCosmos
             public string Turno { get; set; }
             public string Responsable { get; set; }
             public DatabaseHelper.ActividadPrograma ActividadDB { get; set; }
-
-            // Tabla por horas: Hora | SC | Esposa.
-            public System.Windows.Visibility VisComun { get; set; }
-            public System.Windows.Visibility VisSc { get; set; }
-            public System.Windows.Visibility VisEsposa { get; set; }
-
-            /// <summary>Texto de la celda de la persona (actividad + acompañante + notas).</summary>
-            public string TextoPersona
-            {
-                get
-                {
-                    string texto =
-                        TipoActividad ?? "";
-
-                    if (!string.IsNullOrWhiteSpace(Acompanante)
-                        && !string.Equals(
-                            Acompanante,
-                            "Sin acompañante",
-                            StringComparison.OrdinalIgnoreCase))
-                    {
-                        texto += " · " + Acompanante;
-                    }
-
-                    if (!string.IsNullOrWhiteSpace(Notas))
-                    {
-                        texto += "\n" + Notas;
-                    }
-
-                    return texto;
-                }
-            }
         }
 
         public class FilaContabilidad : INotifyPropertyChanged

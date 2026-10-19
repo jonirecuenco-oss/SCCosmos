@@ -290,37 +290,6 @@
                             </Grid>
                         </Border>
 
-                        <!-- CABECERA DE LA TABLA (Hora | SC | Esposa) -->
-                        <Grid Margin="14,0,14,6">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="70"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-
-                            <TextBlock Text="Hora"
-                                       Foreground="#888888"
-                                       FontSize="12"
-                                       FontWeight="SemiBold"/>
-
-                            <TextBlock x:Name="LblCabeceraSc"
-                                       Grid.Column="1"
-                                       Text="SC"
-                                       Foreground="#EBCB8B"
-                                       FontSize="12"
-                                       FontWeight="SemiBold"
-                                       Margin="8,0,10,0"/>
-
-                            <TextBlock x:Name="LblCabeceraEsposa"
-                                       Grid.Column="2"
-                                       Text="Esposa"
-                                       Foreground="#EBCB8B"
-                                       FontSize="12"
-                                       FontWeight="SemiBold"
-                                       Margin="8,0,10,0"/>
-                        </Grid>
-
                         <ItemsControl x:Name="ListaProgramaDias"
                                       PreviewMouseWheel="UIElement_PreviewMouseWheel">
                             <ItemsControl.ItemTemplate>
@@ -386,47 +355,64 @@
                                                                 <Grid>
                                                                     <Grid.ColumnDefinitions>
                                                                         <ColumnDefinition Width="70"/>
-                                                                        <ColumnDefinition Width="*"/>
-                                                                        <ColumnDefinition Width="*"/>
+                                                                        <ColumnDefinition Width="82"/>
+                                                                        <ColumnDefinition Width="2.2*"/>
+                                                                        <ColumnDefinition Width="2*"/>
                                                                         <ColumnDefinition Width="Auto"/>
                                                                     </Grid.ColumnDefinitions>
 
                                                                     <TextBlock Grid.Column="0"
                                                                                Text="{Binding Hora}"
                                                                                Foreground="#4BA3E3"
-                                                                               FontSize="14"
+                                                                               FontSize="15"
                                                                                FontWeight="Bold"
-                                                                               VerticalAlignment="Top"
-                                                                               Margin="0,1,0,0"/>
+                                                                               VerticalAlignment="Center"/>
 
-                                                                    <TextBlock Grid.Column="1"
-                                                                               Grid.ColumnSpan="2"
-                                                                               Text="{Binding TextoPersona}"
-                                                                               Foreground="White"
-                                                                               FontSize="13"
-                                                                               TextWrapping="Wrap"
-                                                                               Margin="8,1,10,0"
-                                                                               Visibility="{Binding VisComun}"/>
+                                                                    <Border Grid.Column="1"
+                                                                            Background="#333338"
+                                                                            CornerRadius="4"
+                                                                            Padding="7,4"
+                                                                            HorizontalAlignment="Left"
+                                                                            VerticalAlignment="Center">
+                                                                        <TextBlock Text="{Binding Responsable}"
+                                                                                   Foreground="#EBCB8B"
+                                                                                   FontSize="12"
+                                                                                   FontWeight="SemiBold"/>
+                                                                    </Border>
 
-                                                                    <TextBlock Grid.Column="1"
-                                                                               Text="{Binding TextoPersona}"
-                                                                               Foreground="White"
-                                                                               FontSize="13"
-                                                                               TextWrapping="Wrap"
-                                                                               Margin="8,1,10,0"
-                                                                               Visibility="{Binding VisSc}"/>
-
-                                                                    <TextBlock Grid.Column="2"
-                                                                               Text="{Binding TextoPersona}"
-                                                                               Foreground="White"
-                                                                               FontSize="13"
-                                                                               TextWrapping="Wrap"
-                                                                               Margin="8,1,10,0"
-                                                                               Visibility="{Binding VisEsposa}"/>
+                                                                    <StackPanel Grid.Column="2"
+                                                                                Margin="8,0,12,0"
+                                                                                VerticalAlignment="Center">
+                                                                        <TextBlock Text="{Binding TipoActividad}"
+                                                                                   Foreground="White"
+                                                                                   FontSize="13"
+                                                                                   FontWeight="SemiBold"
+                                                                                   TextWrapping="Wrap"/>
+                                                                        <TextBlock Text="{Binding Acompanante}"
+                                                                                   Foreground="#AAAAAA"
+                                                                                   FontSize="12"
+                                                                                   Margin="0,3,0,0"
+                                                                                   TextWrapping="Wrap"/>
+                                                                    </StackPanel>
 
                                                                     <StackPanel Grid.Column="3"
+                                                                                Margin="0,0,12,0"
+                                                                                VerticalAlignment="Center">
+                                                                        <TextBlock Text="{Binding Ubicacion}"
+                                                                                   Foreground="#B8B8B8"
+                                                                                   FontSize="12"
+                                                                                   TextWrapping="Wrap"/>
+                                                                        <TextBlock Text="{Binding Notas}"
+                                                                                   Foreground="#777777"
+                                                                                   FontSize="11"
+                                                                                   FontStyle="Italic"
+                                                                                   Margin="0,3,0,0"
+                                                                                   TextWrapping="Wrap"/>
+                                                                    </StackPanel>
+
+                                                                    <StackPanel Grid.Column="4"
                                                                                 Orientation="Horizontal"
-                                                                                VerticalAlignment="Top">
+                                                                                VerticalAlignment="Center">
                                                                         <Button Content="✏️"
                                                                                 ToolTip="Editar"
                                                                                 Tag="{Binding}"
