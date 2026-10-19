@@ -1834,3 +1834,6 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   entre la lista actual y una vista de calendario mensual: rejilla L-D con navegación ◀ mes ▶,
   celdas coloreadas por actividad (visita/asamblea/precursor), día de hoy marcado y leyenda. En
   Windows además botón flotante «Hoy» (en lista: va a la semana actual; en calendario: mes actual).
+- **Vista de calendario con eventos por semana**: el evento de cada semana (Visita · congregación /
+  Asamblea…) se muestra en la propia línea de la semana (columna derecha en Windows, línea bajo la
+  semana en el móvil); la leyenda inferior se eliminó.

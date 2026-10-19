@@ -300,18 +300,6 @@
                           MaxWidth="1000"
                           HorizontalAlignment="Stretch"/>
 
-                    <StackPanel Orientation="Horizontal"
-                                Margin="0,14,0,0"
-                                HorizontalAlignment="Center">
-                        <TextBlock Text="● Visita"
-                                   Foreground="#4BA3E3"
-                                   Margin="0,0,16,0"/>
-                        <TextBlock Text="● Asamblea"
-                                   Foreground="#E8A33D"
-                                   Margin="0,0,16,0"/>
-                        <TextBlock Text="● Precursor"
-                                   Foreground="#7ED889"/>
-                    </StackPanel>
                 </StackPanel>
             </ScrollViewer>
 

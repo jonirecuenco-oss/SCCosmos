@@ -714,7 +714,7 @@ public partial class CalendarioPage : ContentPage, IActualizableMobile
                     });
             }
 
-            for (int r = 0; r < 7; r++)
+            for (int r = 0; r < 13; r++)
             {
                 GridMesCalendario.RowDefinitions.Add(
                     new RowDefinition
@@ -819,9 +819,42 @@ public partial class CalendarioPage : ContentPage, IActualizableMobile
                     celda.StrokeThickness = 2;
                 }
 
-                Grid.SetRow(celda, 1 + i / 7);
+                Grid.SetRow(celda, 1 + (i / 7) * 2);
                 Grid.SetColumn(celda, i % 7);
                 GridMesCalendario.Children.Add(celda);
+            }
+
+            for (int fila = 0; fila < 6; fila++)
+            {
+                DateTime martesFila =
+                    inicio.AddDays(
+                        fila * 7 + 1);
+
+                string texto =
+                    EventosDeLaSemana(martesFila);
+
+                if (texto.Length == 0)
+                {
+                    continue;
+                }
+
+                var etiqueta =
+                    new Label
+                    {
+                        Text = texto,
+                        TextColor =
+                            Color.FromArgb("#AAB2BC"),
+                        FontSize = 11.5,
+                        LineBreakMode =
+                            LineBreakMode.TailTruncation,
+                        Margin =
+                            new Thickness(2, 0, 2, 4)
+                    };
+
+                Grid.SetRow(etiqueta, 2 + fila * 2);
+                Grid.SetColumn(etiqueta, 0);
+                Grid.SetColumnSpan(etiqueta, 7);
+                GridMesCalendario.Children.Add(etiqueta);
             }
 
             LblMesCalendario.Text =
@@ -834,6 +867,50 @@ public partial class CalendarioPage : ContentPage, IActualizableMobile
         catch
         {
         }
+    }
+
+
+    /// <summary>Eventos de la semana de ese martes, para su fila del mes.</summary>
+    private string EventosDeLaSemana(
+        DateTime martes)
+    {
+        var partes =
+            new List<string>();
+
+        foreach (CalendarioGrupoMes grupo in _grupos)
+        {
+            foreach (CalendarioItem item in grupo)
+            {
+                if (item.Semana.FechaMartes.Date != martes.Date)
+                {
+                    continue;
+                }
+
+                string act =
+                    (item.Semana.Actividad ?? "").Trim();
+
+                string texto =
+                    act.Equals(
+                        "Visita",
+                        StringComparison.OrdinalIgnoreCase)
+                        ? (string.IsNullOrWhiteSpace(
+                               item.Semana.Congregacion)
+                            ? "Visita"
+                            : "Visita · "
+                              + item.Semana.Congregacion.Trim())
+                        : act;
+
+                if (texto.Length > 0
+                    && !partes.Contains(texto))
+                {
+                    partes.Add(texto);
+                }
+            }
+        }
+
+        return string.Join(
+            "   ·   ",
+            partes);
     }
 
 

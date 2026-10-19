@@ -254,19 +254,6 @@
                   ColumnSpacing="4"
                   RowSpacing="4"/>
 
-            <HorizontalStackLayout Spacing="14"
-                                   HorizontalOptions="Center">
-                <Label Text="● Visita"
-                       TextColor="#4BA3E3"
-                       FontSize="12.5"/>
-                <Label Text="● Asamblea"
-                       TextColor="#E8A33D"
-                       FontSize="12.5"/>
-                <Label Text="● Precursor"
-                       TextColor="#7ED889"
-                       FontSize="12.5"/>
-            </HorizontalStackLayout>
-
         </VerticalStackLayout>
 
         <!-- OVERLAY -->

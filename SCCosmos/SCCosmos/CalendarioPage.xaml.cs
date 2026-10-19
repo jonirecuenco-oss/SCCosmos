@@ -579,15 +579,19 @@ namespace SCCosmos
                 GridMesCalendario.ColumnDefinitions.Clear();
                 GridMesCalendario.RowDefinitions.Clear();
 
-                for (int c = 0; c < 7; c++)
+                for (int c = 0; c < 8; c++)
                 {
                     GridMesCalendario.ColumnDefinitions.Add(
                         new ColumnDefinition
                         {
                             Width =
-                                new GridLength(
-                                    1,
-                                    GridUnitType.Star)
+                                c < 7
+                                    ? new GridLength(
+                                        1,
+                                        GridUnitType.Star)
+                                    : new GridLength(
+                                        2,
+                                        GridUnitType.Star)
                         });
                 }
 
@@ -715,6 +719,42 @@ namespace SCCosmos
                     GridMesCalendario.Children.Add(celda);
                 }
 
+                for (int fila = 0; fila < 6; fila++)
+                {
+                    DateTime martesFila =
+                        inicio.AddDays(
+                            fila * 7 + 1);
+
+                    string texto =
+                        EventosDeLaSemana(martesFila);
+
+                    if (texto.Length == 0)
+                    {
+                        continue;
+                    }
+
+                    var etiqueta =
+                        new TextBlock
+                        {
+                            Text = texto,
+                            Foreground =
+                                new SolidColorBrush(
+                                    (Color)ColorConverter
+                                        .ConvertFromString("#AAB2BC")),
+                            FontSize = 12,
+                            TextTrimming =
+                                TextTrimming.CharacterEllipsis,
+                            VerticalAlignment =
+                                VerticalAlignment.Center,
+                            Margin =
+                                new Thickness(12, 0, 4, 0)
+                        };
+
+                    Grid.SetRow(etiqueta, 1 + fila);
+                    Grid.SetColumn(etiqueta, 7);
+                    GridMesCalendario.Children.Add(etiqueta);
+                }
+
                 TxtMesCalendario.Text =
                     primero.ToString(
                         "MMMM yyyy",
@@ -725,6 +765,47 @@ namespace SCCosmos
             catch
             {
             }
+        }
+
+
+        /// <summary>Eventos de la semana de ese martes, para su fila del mes.</summary>
+        private string EventosDeLaSemana(
+            DateTime martes)
+        {
+            var partes =
+                new List<string>();
+
+            foreach (SemanaCalendario semana in ColeccionSemanas)
+            {
+                if (semana.FechaMartes.Date != martes.Date)
+                {
+                    continue;
+                }
+
+                string act =
+                    (semana.Actividad ?? "").Trim();
+
+                string texto =
+                    act.Equals(
+                        "Visita",
+                        StringComparison.OrdinalIgnoreCase)
+                        ? (string.IsNullOrWhiteSpace(
+                               semana.Congregacion)
+                            ? "Visita"
+                            : "Visita · "
+                              + semana.Congregacion.Trim())
+                        : act;
+
+                if (texto.Length > 0
+                    && !partes.Contains(texto))
+                {
+                    partes.Add(texto);
+                }
+            }
+
+            return string.Join(
+                "   ·   ",
+                partes);
         }
 
 
