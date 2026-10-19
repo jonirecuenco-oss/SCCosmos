@@ -893,13 +893,48 @@ namespace SCCosmos
 
                 var personas = await Task.Run(() => DatabaseHelper.ObtenerPersonas());
 
+                // Filtros de la sección «Estudiantes»: solo los que les toca
+                // hacer la escuela (precursorado y última escuela según el
+                // año de servicio) y que no estén descartados.
+                int anioInicioServicio =
+                    DateTime.Today.Month >= 9
+                        ? DateTime.Today.Year
+                        : DateTime.Today.Year - 1;
+
+                DateTime fechaLimiteInicioPrec =
+                    new DateTime(anioInicioServicio, 9, 1);
+
+                DateTime fechaCorteUltimaEscuela =
+                    new DateTime(anioInicioServicio - 4, 8, 31);
+
+                string descartadosStr =
+                    DatabaseHelper.ObtenerConfiguracion(
+                        "DescartadosEscuelas_" + anioInicioServicio,
+                        "");
+
+                var descartadosLista =
+                    string.IsNullOrWhiteSpace(descartadosStr)
+                        ? new List<int>()
+                        : descartadosStr
+                            .Split(',')
+                            .Select(s => int.TryParse(s, out int n) ? n : 0)
+                            .Where(n => n > 0)
+                            .ToList();
+
                 _posiblesAlumnos = personas
                     .Where(p =>
                         !yaApuntados.Contains(p.Id)
+                        && !descartadosLista.Contains(p.Id)
                         && (p.Servicio ?? "").Length > 0
                         && ((p.Servicio ?? "").IndexOf("Precursor regular", StringComparison.OrdinalIgnoreCase) >= 0
                             || (p.Servicio ?? "").IndexOf("Precursor especial", StringComparison.OrdinalIgnoreCase) >= 0
-                            || (p.Servicio ?? "").IndexOf("Misionero", StringComparison.OrdinalIgnoreCase) >= 0))
+                            || (p.Servicio ?? "").IndexOf("Misionero", StringComparison.OrdinalIgnoreCase) >= 0)
+                        && !string.IsNullOrWhiteSpace(p.FechaInicioPrec)
+                        && TryParseFechaFlexible(p.FechaInicioPrec, out DateTime fechaPrecAlumno)
+                        && fechaPrecAlumno <= fechaLimiteInicioPrec
+                        && (string.IsNullOrWhiteSpace(p.FechaUltimaEscuela)
+                            || !TryParseFechaFlexible(p.FechaUltimaEscuela, out DateTime fechaEscuelaAlumno)
+                            || fechaEscuelaAlumno <= fechaCorteUltimaEscuela))
                     .Select(p => new AlumnoPosibleEscuela
                     {
                         Persona = p,

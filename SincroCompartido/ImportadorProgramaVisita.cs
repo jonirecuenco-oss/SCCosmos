@@ -419,6 +419,90 @@ public static class ImportadorProgramaVisita
             });
         }
 
+        // ---- Alojamiento (si se ha pedido): un evento cada día ----
+        var alojamientos =
+            new List<string>();
+
+        foreach (var campo in campos)
+        {
+            if (!campo.Key.StartsWith(
+                    "Publicador o familia",
+                    StringComparison.OrdinalIgnoreCase)
+                || Sufijo(campo.Key) < 6)
+            {
+                continue;
+            }
+
+            string familia =
+                Limpio(campo.Value);
+
+            if (EsVacio(familia))
+            {
+                continue;
+            }
+
+            string sufijo =
+                "_" + Sufijo(campo.Key);
+
+            string telefonoAlojamiento =
+                Limpio(
+                    campos
+                        .Where(c => c.Key.StartsWith(
+                                        "Teléfono",
+                                        StringComparison.OrdinalIgnoreCase)
+                                    && c.Key.EndsWith(sufijo))
+                        .Select(c => c.Value)
+                        .FirstOrDefault()
+                    ?? "");
+
+            string direccionAlojamiento =
+                Limpio(
+                    campos
+                        .Where(c => c.Key.StartsWith(
+                                        "Dirección",
+                                        StringComparison.OrdinalIgnoreCase)
+                                    && c.Key.EndsWith(sufijo))
+                        .Select(c => c.Value)
+                        .FirstOrDefault()
+                    ?? "");
+
+            alojamientos.Add(
+                Juntar(
+                    Juntar(
+                        familia,
+                        telefonoAlojamiento),
+                    direccionAlojamiento));
+        }
+
+        if (alojamientos.Count > 0)
+        {
+            string textoAlojamiento =
+                string.Join(
+                    " | ",
+                    alojamientos);
+
+            foreach (string dia in new[]
+                     {
+                         "Martes",
+                         "Miércoles",
+                         "Jueves",
+                         "Viernes",
+                         "Sábado",
+                         "Domingo"
+                     })
+            {
+                eventos.Add(new EventoProgramaVisita
+                {
+                    DiaSemana = dia,
+                    Turno = "General",
+                    Hora = "",
+                    TipoActividad = "Alojamiento",
+                    Responsable = "Ambos",
+                    Notas = textoAlojamiento
+                });
+            }
+        }
+
         // Orden: por día y hora.
         return eventos
             .OrderBy(e => IndiceDia(e.DiaSemana))
