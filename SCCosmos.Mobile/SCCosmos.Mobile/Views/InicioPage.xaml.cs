@@ -292,6 +292,7 @@ public partial class InicioPage : ContentPage, IActualizableMobile
         TxtSinDatos.IsVisible = false;
         LblTipoSemana.IsVisible = true;
         TxtSinProgramaDia.IsVisible = false;
+        MarcoIconoSemana.IsVisible = true;
 
         if (semana == null)
         {
@@ -322,8 +323,11 @@ public partial class InicioPage : ContentPage, IActualizableMobile
         if (EsVisita(semana))
         {
             // Tarjeta simplificada: sin el antetítulo «VISITA A
-            // CONGREGACIÓN»; el nombre va bajo las fechas.
+            // CONGREGACIÓN» ni el punto azul; el ojo va junto al nombre.
             LblTipoSemana.IsVisible =
+                false;
+
+            MarcoIconoSemana.IsVisible =
                 false;
 
             LblIconoSemana.Text =
@@ -770,9 +774,13 @@ public partial class InicioPage : ContentPage, IActualizableMobile
                 }
 
                 return resultado
-                    .OrderBy(x => x.Hora)
+                    .OrderBy(x => string.IsNullOrWhiteSpace(
+                        x.Hora))
+                    .ThenBy(x => x.Hora)
                     .ToList();
             });
+
+        ProgramaHoy.Clear();
 
         foreach (ActividadHoy actividad
                  in programa)

@@ -1787,3 +1787,6 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   y las flechas ◀ ▶ para recorrer la semana. La tarjeta de la semana queda simplificada
   (Visita · Del… al… · congregación · Próxima…) sin los antetítulos. El PC sincroniza por internet
   con Tailscale (direcciones manuales configuradas en ambos lados).
+- **Inicio (Android)**: la tarjeta de la semana quita el punto azul (el ojo queda junto al nombre);
+  al cambiar de día el programa ya no se acumula (se limpia antes de pintar); los eventos **sin hora
+  salen al final del día** (también en el widget). En Windows ya se ordenaban así (int.MaxValue).

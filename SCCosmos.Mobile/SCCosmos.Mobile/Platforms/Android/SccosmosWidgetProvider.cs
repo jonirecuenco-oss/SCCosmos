@@ -581,7 +581,10 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                          .ObtenerActividadesProgramaDia(
                              codigo,
                              mes,
-                             diaDb))
+                             diaDb)
+                         .OrderBy(a => string.IsNullOrWhiteSpace(
+                             a.Hora))
+                         .ThenBy(a => a.Hora))
             {
                 string hora =
                     (actividad.Hora ?? "").Trim();

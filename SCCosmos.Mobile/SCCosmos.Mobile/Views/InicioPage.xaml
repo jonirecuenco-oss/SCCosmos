@@ -124,6 +124,7 @@
                         </VerticalStackLayout>
 
                         <Border
+                            x:Name="MarcoIconoSemana"
                             Grid.Column="1"
                             BackgroundColor="#222832"
                             Padding="11"
