@@ -51,22 +51,34 @@
             Padding="22,20"
             BackgroundColor="#121419">
 
-            <VerticalStackLayout
+            <HorizontalStackLayout
                 VerticalOptions="End"
-                Spacing="3">
+                Spacing="12">
 
-                <Label
-                    Text="SCCosmos"
-                    TextColor="White"
-                    FontSize="26"
-                    FontAttributes="Bold"/>
+                <Image
+                    Source="atomo.png"
+                    WidthRequest="46"
+                    HeightRequest="46"
+                    VerticalOptions="Center"/>
 
-                <Label
-                    Text="Gestión del circuito"
-                    TextColor="#9EA4AE"
-                    FontSize="13"/>
+                <VerticalStackLayout
+                    Spacing="3"
+                    VerticalOptions="Center">
 
-            </VerticalStackLayout>
+                    <Label
+                        Text="SCCosmos"
+                        TextColor="White"
+                        FontSize="26"
+                        FontAttributes="Bold"/>
+
+                    <Label
+                        Text="Gestión del circuito"
+                        TextColor="#9EA4AE"
+                        FontSize="13"/>
+
+                </VerticalStackLayout>
+
+            </HorizontalStackLayout>
 
         </Grid>
 

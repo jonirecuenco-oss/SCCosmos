@@ -1837,3 +1837,7 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
 - **Vista de calendario con eventos por semana**: el evento de cada semana (Visita · congregación /
   Asamblea…) se muestra en la propia línea de la semana (columna derecha en Windows, línea bajo la
   semana en el móvil); la leyenda inferior se eliminó.
+- **Icono de la app rehecho** a partir del átomo del splash: `appicon.svg` (fondo oscuro) +
+  `appiconfg.svg` (átomo encuadrado, escala 0.78) para el lanzador de Android; `sccosmos.ico`
+  regenerado con Pillow (7 tamaños, trazo reforzado en 16-32 px); `Resources/Images/atomo.svg` y
+  átomo en la cabecera del menú lateral del móvil (AppShell) junto a «SCCosmos».
