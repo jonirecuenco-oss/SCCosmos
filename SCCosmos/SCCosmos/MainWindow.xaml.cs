@@ -103,6 +103,7 @@ namespace SCCosmos
         {
             InitializeComponent();
             DatabaseHelper.InicializarDatabase();
+            DatabaseHelper.AsegurarAlertasLeidas();
 
             // Motor de sincronización entre dispositivos.
             SincronizacionRed.Iniciar();
@@ -598,6 +599,7 @@ namespace SCCosmos
         {
             public string Titulo { get; set; }
             public string Descripcion { get; set; }
+            public string Identidad { get; set; } = "";
             public string ColorBorde { get; set; }
             public int Dias { get; set; }
             public string TipoAlerta { get; set; }
@@ -706,6 +708,7 @@ namespace SCCosmos
                     Descripcion = "Haz clic aquí para revisar las altas, bajas y modificaciones detectadas por la sincronización automática.",
                     ColorBorde = "#9C27B0", // Morado
                     Dias = -2,
+                    Identidad = "JWHub",
                     TipoAlerta = "SincronizacionJWHub"
                 });
             }
@@ -720,6 +723,7 @@ namespace SCCosmos
                     Descripcion = $"El sistema ha descargado {nuevasDescargas} audios nuevos automáticamente.",
                     ColorBorde = "#107C10", // Verde vibrante
                     Dias = -1,
+                    Identidad = "Descargas",
                     TipoAlerta = "DescargaJW"
                 });
             }
@@ -755,6 +759,7 @@ namespace SCCosmos
                         Descripcion = cuandoTarea + (string.IsNullOrWhiteSpace(tarea.Descripcion) ? "" : " · " + tarea.Descripcion),
                         ColorBorde = "#E8A33D",
                         Dias = 0,
+                        Identidad = $"Tarea|{tarea.Id}|{cita.Value:yyyyMMdd}",
                         TipoAlerta = "Tarea"
                     });
                 }
@@ -803,6 +808,13 @@ namespace SCCosmos
                             {
                                 if (actividad == "Visita")
                                 {
+                                    string codigoAlerta =
+                                        DatabaseHelper.ObtenerCodigoCongregacion(
+                                            congregacion);
+
+                                    string mesAlerta =
+                                        fechaMartes.ToString("yyyy-MM");
+
                                     if (!s302 && diasFaltantes <= 90)
                                     {
                                         _alertasActuales.Add(new AlertaItem
@@ -811,6 +823,7 @@ namespace SCCosmos
                                             Descripcion = $"Quedan {diasFaltantes} días para la visita a {nombreCon}.",
                                             ColorBorde = "#FFA500", // Naranja
                                             Dias = diasFaltantes,
+                                            Identidad = $"S302|{codigoAlerta}|{mesAlerta}",
                                             TipoAlerta = "S302"
                                         });
                                     }
@@ -823,6 +836,7 @@ namespace SCCosmos
                                             Descripcion = $"Quedan {diasFaltantes} días para la visita a {nombreCon}.",
                                             ColorBorde = "#D13438", // Rojo
                                             Dias = diasFaltantes,
+                                            Identidad = $"Documentacion|{codigoAlerta}|{mesAlerta}",
                                             TipoAlerta = "Documentacion"
                                         });
                                     }
@@ -838,6 +852,7 @@ namespace SCCosmos
                                             Descripcion = $"Quedan {diasFaltantes} días para la asamblea de la Sección {seccion}.",
                                             ColorBorde = "#0078D4", // Azul
                                             Dias = diasFaltantes,
+                                            Identidad = $"Recordatorio|{seccion}|{fechaMartes:yyyy-MM-dd}",
                                             TipoAlerta = "Recordatorio"
                                         });
                                     }
@@ -852,6 +867,7 @@ namespace SCCosmos
                                             Descripcion = $"Quedan {diasFaltantes} días para la asamblea AC-BR (Sec. {seccion}). Aún no has enviado el email al representante.",
                                             ColorBorde = "#8A2BE2", // Púrpura elegante
                                             Dias = diasFaltantes,
+                                            Identidad = $"RepBetel|{seccion}|{fechaMartes:yyyy-MM-dd}",
                                             TipoAlerta = "RepBetel"
                                         });
                                     }
@@ -885,6 +901,7 @@ namespace SCCosmos
                                                 Descripcion = $"La visita a {nombreCon} ha concluido. Recuerda completar y enviar el informe S-303.",
                                                 ColorBorde = "#E81123", // Rojo Fuerte
                                                 Dias = -100 + diasFaltantes,
+                                                Identidad = $"S303|{congreCodigo}|{mesRef}",
                                                 TipoAlerta = "S303Pendiente"
                                             });
                                         }
@@ -970,42 +987,74 @@ namespace SCCosmos
                 "alertas_leidas.json");
 
         private static string FirmaAlerta(AlertaItem a) =>
-            (a.Titulo ?? "") + "|" + (a.Descripcion ?? "");
+            !string.IsNullOrWhiteSpace(a.Identidad)
+                ? a.Identidad
+                : (a.Titulo ?? "") + "|" + (a.Descripcion ?? "");
 
         private static HashSet<string> CargarAlertasLeidas()
         {
+            var firmas =
+                new HashSet<string>(
+                    StringComparer.Ordinal);
+
             try
             {
-                string ruta = RutaAlertasLeidas;
-
-                if (System.IO.File.Exists(ruta))
+                foreach (string firma
+                         in DatabaseHelper.ObtenerAlertasLeidas())
                 {
-                    return new HashSet<string>(
-                        System.IO.File.ReadAllLines(ruta),
-                        StringComparer.Ordinal);
+                    firmas.Add(firma);
                 }
             }
             catch
             {
             }
 
-            return new HashSet<string>(StringComparer.Ordinal);
+            // Migración única: las leídas que estuvieran solo en el
+            // JSON local pasan a la base (y así se sincronizan).
+            try
+            {
+                string ruta = RutaAlertasLeidas;
+
+                if (System.IO.File.Exists(ruta))
+                {
+                    var lineas =
+                        System.IO.File.ReadAllLines(ruta);
+
+                    var nuevas =
+                        lineas
+                            .Where(x => !string.IsNullOrWhiteSpace(x))
+                            .Where(x => !firmas.Contains(x))
+                            .ToList();
+
+                    if (nuevas.Count > 0)
+                    {
+                        DatabaseHelper.GuardarAlertasLeidas(nuevas);
+                    }
+
+                    foreach (string firma in lineas)
+                    {
+                        if (!string.IsNullOrWhiteSpace(firma))
+                        {
+                            firmas.Add(firma);
+                        }
+                    }
+
+                    System.IO.File.Delete(ruta);
+                }
+            }
+            catch
+            {
+            }
+
+            return firmas;
         }
 
         private static void GuardarAlertasLeidas(HashSet<string> firmas)
         {
             try
             {
-                string ruta = RutaAlertasLeidas;
-
-                string carpeta = System.IO.Path.GetDirectoryName(ruta);
-
-                if (!string.IsNullOrWhiteSpace(carpeta))
-                {
-                    System.IO.Directory.CreateDirectory(carpeta);
-                }
-
-                System.IO.File.WriteAllLines(ruta, firmas);
+                DatabaseHelper.GuardarAlertasLeidas(
+                    firmas);
             }
             catch
             {

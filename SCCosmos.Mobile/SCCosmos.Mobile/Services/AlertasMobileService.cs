@@ -21,6 +21,12 @@ public static class AlertasMobileService
     private static string Firma(
         AlertaMobile alerta)
     {
+        if (!string.IsNullOrWhiteSpace(
+                alerta.Identidad))
+        {
+            return alerta.Identidad;
+        }
+
         return alerta.Tipo + "|" +
                alerta.Titulo + "|" +
                alerta.Descripcion;
@@ -28,6 +34,23 @@ public static class AlertasMobileService
 
     private static HashSet<string> ObtenerLeidas()
     {
+        var leidas =
+            new HashSet<string>(
+                StringComparer.Ordinal);
+
+        try
+        {
+            foreach (string firma
+                     in DatabaseHelper.ObtenerAlertasLeidasMobile())
+            {
+                leidas.Add(firma);
+            }
+        }
+        catch
+        {
+        }
+
+        // Migración única desde las preferencias locales.
         try
         {
             string texto =
@@ -35,24 +58,38 @@ public static class AlertasMobileService
                     ClaveLeidas,
                     "");
 
-            if (string.IsNullOrWhiteSpace(
-                    texto))
+            if (!string.IsNullOrWhiteSpace(texto))
             {
-                return new HashSet<string>(
-                    StringComparer.Ordinal);
-            }
+                string[] antiguas =
+                    texto.Split(
+                        '\u0001',
+                        StringSplitOptions.RemoveEmptyEntries);
 
-            return new HashSet<string>(
-                texto.Split(
-                    '\u0001',
-                    StringSplitOptions.RemoveEmptyEntries),
-                StringComparer.Ordinal);
+                var nuevas =
+                    antiguas
+                        .Where(x => !leidas.Contains(x))
+                        .ToList();
+
+                if (nuevas.Count > 0)
+                {
+                    DatabaseHelper.GuardarAlertasLeidasMobile(
+                        nuevas);
+                }
+
+                foreach (string firma in antiguas)
+                {
+                    leidas.Add(firma);
+                }
+
+                Preferences.Default.Remove(
+                    ClaveLeidas);
+            }
         }
         catch
         {
-            return new HashSet<string>(
-                StringComparer.Ordinal);
         }
+
+        return leidas;
     }
 
     public static void MarcarTodasLeidas(
@@ -67,11 +104,8 @@ public static class AlertasMobileService
                 Firma(alerta));
         }
 
-        Preferences.Default.Set(
-            ClaveLeidas,
-            string.Join(
-                "\u0001",
-                leidas));
+        DatabaseHelper.GuardarAlertasLeidasMobile(
+            leidas);
     }
 
     /// <summary>Marca una sola alerta como leída.</summary>
@@ -89,11 +123,8 @@ public static class AlertasMobileService
         leidas.Add(
             Firma(alerta));
 
-        Preferences.Default.Set(
-            ClaveLeidas,
-            string.Join(
-                "\u0001",
-                leidas));
+        DatabaseHelper.GuardarAlertasLeidasMobile(
+            leidas);
     }
 
 
@@ -158,6 +189,7 @@ public static class AlertasMobileService
                     new AlertaMobile
                     {
                         Tipo = "JWHub",
+                        Identidad = "JWHub",
                         Titulo =
                             "Revisión de JW Hub pendiente",
                         Descripcion =
@@ -209,6 +241,14 @@ public static class AlertasMobileService
 
         if (esVisita)
         {
+            string codigoAlerta =
+                DatabaseHelper.ObtenerCodigoCongregacion(
+                    semana.Congregacion);
+
+            string mesAlerta =
+                $"{semana.FechaMartes.Year:D4}-" +
+                $"{semana.FechaMartes.Month:D2}";
+
             if (futura
                 &&
                 !semana.S302Enviado)
@@ -217,6 +257,7 @@ public static class AlertasMobileService
                     new AlertaMobile
                     {
                         Tipo = "S302",
+                        Identidad = $"S302|{codigoAlerta}|{mesAlerta}",
                         Titulo =
                             $"S-302 pendiente · {semana.Congregacion}",
                         Descripcion =
@@ -233,6 +274,7 @@ public static class AlertasMobileService
                     new AlertaMobile
                     {
                         Tipo = "Documentacion",
+                        Identidad = $"Documentacion|{codigoAlerta}|{mesAlerta}",
                         Titulo =
                             $"Documentación pendiente · {semana.Congregacion}",
                         Descripcion =
@@ -249,6 +291,7 @@ public static class AlertasMobileService
                     new AlertaMobile
                     {
                         Tipo = "S303",
+                        Identidad = $"S303|{codigoAlerta}|{mesAlerta}",
                         Titulo =
                             $"S-303 pendiente · {semana.Congregacion}",
                         Descripcion =
@@ -268,6 +311,9 @@ public static class AlertasMobileService
                 new AlertaMobile
                 {
                     Tipo = "Recordatorio",
+                        Identidad =
+                            $"Recordatorio|{semana.SeccionAsamblea}|" +
+                            $"{semana.FechaMartes:yyyy-MM-dd}",
                     Titulo =
                         "Recordatorio de asamblea pendiente",
                     Descripcion =

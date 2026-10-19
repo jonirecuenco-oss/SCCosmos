@@ -15,4 +15,10 @@ public class AlertaMobile
     /// Recordatorio.
     /// </summary>
     public string Tipo { get; set; } = "";
+
+    /// <summary>
+    /// Identidad estable de la alerta (compartida con Windows):
+    /// permite marcar como leída en cualquier dispositivo.
+    /// </summary>
+    public string Identidad { get; set; } = "";
 }

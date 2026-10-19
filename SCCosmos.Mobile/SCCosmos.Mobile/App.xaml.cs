@@ -21,6 +21,7 @@ namespace SCCosmos.Mobile
             // La tabla de tareas debe existir antes de crear los
             // disparadores de fusión (que detectan las tablas nuevas).
             DatabaseHelper.AsegurarTablaTareasMobile();
+            DatabaseHelper.AsegurarTablaAlertasLeidasMobile();
 
             // Tabla del registro de actividad (historial de acciones).
             DatabaseHelper.AsegurarTablaRegistroActividadMobile();

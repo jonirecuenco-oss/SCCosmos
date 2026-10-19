@@ -41,7 +41,14 @@ public static class ActualizacionPaginasMobile
         try
         {
             SincronizacionMobile.DatosRecibidos +=
-                _ => Programar();
+                n =>
+                {
+                    Programar();
+
+                    // El estado de alertas leídas puede haber cambiado en
+                    // otro dispositivo: se refresca la notificación.
+                    _ = AlertasNotificacionService.ActualizarAsync();
+                };
         }
         catch
         {
