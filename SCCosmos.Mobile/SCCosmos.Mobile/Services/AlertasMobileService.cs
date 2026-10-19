@@ -74,6 +74,29 @@ public static class AlertasMobileService
                 leidas));
     }
 
+    /// <summary>Marca una sola alerta como leída.</summary>
+    public static void MarcarLeida(
+        AlertaMobile alerta)
+    {
+        if (alerta == null)
+        {
+            return;
+        }
+
+        HashSet<string> leidas =
+            ObtenerLeidas();
+
+        leidas.Add(
+            Firma(alerta));
+
+        Preferences.Default.Set(
+            ClaveLeidas,
+            string.Join(
+                "\u0001",
+                leidas));
+    }
+
+
     public static List<AlertaMobile> Calcular(
         int semanasAtras = 6,
         int semanasAdelante = 8)

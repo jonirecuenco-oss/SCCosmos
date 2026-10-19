@@ -261,12 +261,44 @@
                 IsVisible="False"
                 Spacing="11">
 
-                <Label
-                    Text="HOY"
-                    TextColor="#858C96"
-                    FontSize="12"
-                    FontAttributes="Bold"
-                    CharacterSpacing="1.5"/>
+                <Grid
+                    ColumnDefinitions="Auto,*,Auto"
+                    ColumnSpacing="6">
+
+                    <Button
+                        Text="◀"
+                        Clicked="BtnDiaAnterior_Clicked"
+                        SemanticProperties.Description="Día anterior"
+                        Padding="10,2"
+                        FontSize="14"
+                        BackgroundColor="#242830"
+                        TextColor="#4BA3E3"
+                        CornerRadius="8"
+                        VerticalOptions="Center"/>
+
+                    <Label
+                        x:Name="LblDiaPrograma"
+                        Grid.Column="1"
+                        Text="HOY"
+                        TextColor="#858C96"
+                        FontSize="12"
+                        FontAttributes="Bold"
+                        CharacterSpacing="1.5"
+                        HorizontalTextAlignment="Center"
+                        VerticalTextAlignment="Center"/>
+
+                    <Button
+                        Grid.Column="2"
+                        Text="▶"
+                        Clicked="BtnDiaSiguiente_Clicked"
+                        SemanticProperties.Description="Día siguiente"
+                        Padding="10,2"
+                        FontSize="14"
+                        BackgroundColor="#242830"
+                        TextColor="#4BA3E3"
+                        CornerRadius="8"
+                        VerticalOptions="Center"/>
+                </Grid>
 
                 <Border
                     BackgroundColor="{StaticResource Superficie}"

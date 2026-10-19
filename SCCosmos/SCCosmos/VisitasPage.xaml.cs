@@ -518,6 +518,85 @@ namespace SCCosmos
         // ==========================================
         // CREADORES DE MÓDULOS (PROGRAMA Y NOTAS)
         // ==========================================
+        /// <summary>Abre el evento del programa en Google Maps.</summary>
+        private void BtnMapaActividad_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            try
+            {
+                var activo =
+                    (sender as System.Windows.FrameworkElement)?.Tag
+                    as BotonActividadUI;
+
+                if (activo == null)
+                {
+                    return;
+                }
+
+                string consulta =
+                    (activo.ActividadDB?.Direccion ?? "").Trim();
+
+                if (string.IsNullOrWhiteSpace(consulta))
+                {
+                    string ubicacion =
+                        (activo.Ubicacion ?? "").Trim();
+
+                    if (ubicacion.Equals(
+                            "Sin ubicación",
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Sin dirección propia: la del salón del circuito.
+                        try
+                        {
+                            consulta =
+                                DatabaseHelper
+                                    .ObtenerCongregaciones()
+                                    .FirstOrDefault(c => string.Equals(
+                                        c.Codigo,
+                                        _congreCodigo,
+                                        StringComparison.OrdinalIgnoreCase))
+                                    ?.DireccionSR
+                                    ?.Trim()
+                                ?? "";
+                        }
+                        catch
+                        {
+                            consulta = "";
+                        }
+                    }
+                    else
+                    {
+                        // Quita el icono del pin si lo lleva delante.
+                        int espacio =
+                            ubicacion.IndexOf(' ');
+
+                        consulta =
+                            espacio >= 0
+                                ? ubicacion.Substring(espacio + 1).Trim()
+                                : ubicacion;
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(consulta))
+                {
+                    return;
+                }
+
+                System.Diagnostics.Process.Start(
+                    new System.Diagnostics.ProcessStartInfo(
+                        "https://www.google.com/maps/search/?api=1&query="
+                        + Uri.EscapeDataString(consulta))
+                    {
+                        UseShellExecute = true
+                    });
+            }
+            catch
+            {
+            }
+        }
+
+
         /// <summary>Nombre de pila para la insignia (vacío si es común).</summary>
         private static string NombreCortoResponsable(string responsable)
         {

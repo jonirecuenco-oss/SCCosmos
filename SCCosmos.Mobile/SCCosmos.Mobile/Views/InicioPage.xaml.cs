@@ -13,6 +13,13 @@ public partial class InicioPage : ContentPage, IActualizableMobile
 
     private SemanaCalendario? _semanaActual;
 
+    // Programa del día en Inicio: código y mes de la visita en curso, día
+    // elegido y el lunes de esa semana (para no salirse de ella).
+    private string _codigoVisitaActual = "";
+    private string _mesVisitaActual = "";
+    private DateTime _diaPrograma;
+    private DateTime _lunesVisitaActual;
+
     private SemanaCalendario? _proximaActividad;
 
     public InicioPage()
@@ -347,6 +354,21 @@ public partial class InicioPage : ContentPage, IActualizableMobile
                     martesDeEstaSemana.ToString(
                         "yyyy-MM");
 
+                // Para poder mover el programa de día en día.
+                _codigoVisitaActual =
+                    codigo;
+
+                _mesVisitaActual =
+                    mes;
+
+                _lunesVisitaActual =
+                    martesDeEstaSemana.AddDays(-1);
+
+                _diaPrograma =
+                    hoy;
+
+                ActualizarEtiquetaDiaPrograma();
+
                 await CargarProgramaDelDiaAsync(
                     codigo,
                     mes,
@@ -460,6 +482,91 @@ public partial class InicioPage : ContentPage, IActualizableMobile
             GridEstadisticas.SetColumn(hijo, i % columnas);
         }
     }
+
+    private async void BtnDiaAnterior_Clicked(
+        object sender,
+        EventArgs e)
+    {
+        await CambiarDiaProgramaAsync(-1);
+    }
+
+
+    private async void BtnDiaSiguiente_Clicked(
+        object sender,
+        EventArgs e)
+    {
+        await CambiarDiaProgramaAsync(1);
+    }
+
+
+    private async Task CambiarDiaProgramaAsync(
+        int dias)
+    {
+        if (string.IsNullOrWhiteSpace(
+                _codigoVisitaActual))
+        {
+            return;
+        }
+
+        DateTime nuevo =
+            _diaPrograma.AddDays(dias);
+
+        // Dentro de la semana de la visita (lunes a domingo).
+        if (_lunesVisitaActual != default
+            && (nuevo < _lunesVisitaActual
+                || nuevo > _lunesVisitaActual.AddDays(6)))
+        {
+            return;
+        }
+
+        _diaPrograma =
+            nuevo;
+
+        ActualizarEtiquetaDiaPrograma();
+
+        await CargarProgramaDelDiaAsync(
+            _codigoVisitaActual,
+            _mesVisitaActual,
+            nuevo.DayOfWeek);
+    }
+
+
+    private void ActualizarEtiquetaDiaPrograma()
+    {
+        try
+        {
+            string texto;
+
+            if (_diaPrograma.Date == DateTime.Today)
+            {
+                texto = "HOY";
+            }
+            else if (_diaPrograma.Date == DateTime.Today.AddDays(1))
+            {
+                texto = "MAÑANA";
+            }
+            else if (_diaPrograma.Date == DateTime.Today.AddDays(-1))
+            {
+                texto = "AYER";
+            }
+            else
+            {
+                texto =
+                    _diaPrograma.ToString(
+                        "dddd d MMM",
+                        System.Globalization.CultureInfo
+                            .GetCultureInfo("es-ES"))
+                        .ToUpperInvariant();
+            }
+
+            LblDiaPrograma.Text =
+                texto;
+        }
+        catch
+        {
+        }
+    }
+
 
     private async Task CargarProgramaDelDiaAsync(
         string congreCodigo,

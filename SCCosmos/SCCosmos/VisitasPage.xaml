@@ -414,6 +414,15 @@
                                                                     <StackPanel Grid.Column="4"
                                                                                 Orientation="Horizontal"
                                                                                 VerticalAlignment="Center">
+                                                                        <Button Content="📍"
+                                                                                ToolTip="Ver en Google Maps"
+                                                                                Tag="{Binding}"
+                                                                                Click="BtnMapaActividad_Click"
+                                                                                Background="Transparent"
+                                                                                Foreground="#8BC9E8"
+                                                                                BorderThickness="0"
+                                                                                Padding="5"
+                                                                                Cursor="Hand"/>
                                                                         <Button Content="✏️"
                                                                                 ToolTip="Editar"
                                                                                 Tag="{Binding}"

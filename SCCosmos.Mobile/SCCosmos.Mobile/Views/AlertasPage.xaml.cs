@@ -47,6 +47,27 @@ public partial class AlertasPage : ContentPage, IActualizableMobile
         await CargarAsync();
     }
 
+    private async void BtnLeidaAlerta_Clicked(
+        object sender,
+        EventArgs e)
+    {
+        try
+        {
+            if (sender is Button boton
+                && boton.CommandParameter is AlertaMobile alerta)
+            {
+                AlertasMobileService.MarcarLeida(
+                    alerta);
+
+                await CargarAsync();
+            }
+        }
+        catch
+        {
+        }
+    }
+
+
     public void DatosActualizados()
     {
         try

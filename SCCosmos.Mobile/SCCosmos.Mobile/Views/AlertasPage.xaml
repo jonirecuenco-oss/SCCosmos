@@ -74,6 +74,17 @@
                                 <Label Text="{Binding Descripcion}"
                                        FontSize="12"
                                        TextColor="#AEB4BC" />
+
+                                <Button Text="✓ Marcar como leída"
+                                        Clicked="BtnLeidaAlerta_Clicked"
+                                        CommandParameter="{Binding .}"
+                                        FontSize="11.5"
+                                        Padding="9,3"
+                                        Margin="0,5,0,0"
+                                        HorizontalOptions="Start"
+                                        BackgroundColor="#242830"
+                                        TextColor="#9FD49F"
+                                        CornerRadius="8" />
                             </VerticalStackLayout>
                         </Border>
                     </DataTemplate>
