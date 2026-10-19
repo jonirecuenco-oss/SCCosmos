@@ -246,15 +246,19 @@ public partial class InicioPage : ContentPage, IActualizableMobile
         DateTime hoy =
             DateTime.Today;
 
-        int diferencia =
-            hoy.DayOfWeek -
-            DayOfWeek.Tuesday;
+        // La semana empieza en LUNES: se toma el lunes de esta semana y el
+        // martes (la fecha con la que se guardan las semanas) es el
+        // siguiente día. Así en lunes ya aparece la semana que empieza.
+        int diasDesdeLunes =
+            ((int)hoy.DayOfWeek
+             - (int)DayOfWeek.Monday
+             + 7) % 7;
 
-        if (diferencia < 0)
-            diferencia += 7;
+        DateTime lunesDeEstaSemana =
+            hoy.AddDays(-diasDesdeLunes).Date;
 
         DateTime martesDeEstaSemana =
-            hoy.AddDays(-diferencia).Date;
+            lunesDeEstaSemana.AddDays(1);
 
         string fechaIso =
             martesDeEstaSemana.ToString(
@@ -464,6 +468,8 @@ public partial class InicioPage : ContentPage, IActualizableMobile
     {
         string diaDb = diaHoy switch
         {
+            DayOfWeek.Monday => "Lunes",
+            DayOfWeek.Tuesday => "Martes",
             DayOfWeek.Wednesday => "Miércoles",
             DayOfWeek.Thursday => "Jueves",
             DayOfWeek.Friday => "Viernes",

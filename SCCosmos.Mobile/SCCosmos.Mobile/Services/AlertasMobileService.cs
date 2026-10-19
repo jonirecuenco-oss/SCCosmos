@@ -294,17 +294,16 @@ public static class AlertasMobileService
         DateTime hoy =
             DateTime.Today;
 
-        int diferencia =
-            (int)hoy.DayOfWeek -
-            (int)DayOfWeek.Tuesday;
-
-        if (diferencia < 0)
-        {
-            diferencia += 7;
-        }
+        // La semana empieza en LUNES: el martes de esta semana es el día
+        // siguiente al lunes.
+        int diasDesdeLunes =
+            ((int)hoy.DayOfWeek
+             - (int)DayOfWeek.Monday
+             + 7) % 7;
 
         return hoy
-            .AddDays(-diferencia)
-            .Date;
+            .AddDays(-diasDesdeLunes)
+            .Date
+            .AddDays(1);
     }
 }

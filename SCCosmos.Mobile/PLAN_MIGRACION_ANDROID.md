@@ -1738,3 +1738,20 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   cada ~30 min de forma automática. Verificado el registro del widget en el manifiesto.
 - **Visitas (Android)**: los cuadros de horas/check/equis son más bajos y el **asterisco de nota
   aparece al lado del número o del check/equis** (y el indicador «PA» en la fila del mes).
+
+### Mejoras varias 2 (19/10, lote mejoras 2)
+
+- **Semana en lunes**: el cálculo de la semana actual (Inicio, Calendario y alertas del móvil) usaba
+  el martes como inicio, así que en lunes todavía mostraba la semana anterior. Ahora se toma el
+  **lunes de esta semana** (martes = lunes + 1 para buscar la fila): hoy aparece el programa de la
+  semana actual (San Vicente). Verificado en el emulador (Inicio: «del 19-oct al 25-oct»; Calendario:
+  «SEMANA ACTUAL» en esa semana). El programa de hoy incluye ya también lunes y martes.
+- **Colores por actividad en el Calendario**: el nombre de la actividad se pinta según el tipo —
+  asamblea en naranja, conmemoración en morado, escuela en verde azulado, precursor en verde,
+  vacaciones en amarillo, semana libre en azul claro, ESP en cian, «otro» en gris; **la visita se
+  queda como estaba** (azul). Solo se colorea el nombre, no la fila. Verificado en Windows
+  (captura: «Asamblea» en naranja) y en el móvil.
+- **Botones del Calendario en Android**: los botones de cada semana (editar, ver visita, acciones,
+  importar, añadir, eliminar) pasan a una **columna compacta a la derecha de la tarjeta** (2 por
+  fila, 38×32) en vez de la fila grande con salto de línea: la tarjeta es bastante más corta y todo
+  sigue siendo pulsable. Verificado con captura en el emulador.

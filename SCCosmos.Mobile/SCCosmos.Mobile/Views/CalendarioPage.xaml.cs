@@ -1059,18 +1059,17 @@ public partial class CalendarioPage : ContentPage, IActualizableMobile
         DateTime hoy =
             DateTime.Today;
 
-        int diferencia =
-            (int)hoy.DayOfWeek -
-            (int)DayOfWeek.Tuesday;
-
-        if (diferencia < 0)
-        {
-            diferencia += 7;
-        }
+        // La semana empieza en LUNES: el martes (la fecha con la que se
+        // guardan las semanas) es el día siguiente al lunes de esta semana.
+        int diasDesdeLunes =
+            ((int)hoy.DayOfWeek
+             - (int)DayOfWeek.Monday
+             + 7) % 7;
 
         return hoy
-            .AddDays(-diferencia)
-            .Date;
+            .AddDays(-diasDesdeLunes)
+            .Date
+            .AddDays(1);
     }
 
     private void MostrarCarga(
@@ -1198,6 +1197,64 @@ public sealed class CalendarioItem
             Semana.Actividad)
             ? "Sin actividad"
             : Semana.Actividad;
+
+    /// <summary>
+    /// Color con el que se pinta el nombre de la actividad (la visita se
+    /// queda como estaba).
+    /// </summary>
+    public Color ColorActividad
+    {
+        get
+        {
+            string actividad =
+                (Semana.Actividad ?? "")
+                    .ToLowerInvariant();
+
+            if (actividad.Contains("asamblea"))
+            {
+                return Color.FromArgb("#FFB74D");
+            }
+
+            if (actividad.Contains("conmemor"))
+            {
+                return Color.FromArgb("#CE93D8");
+            }
+
+            if (actividad.Contains("escuela"))
+            {
+                return Color.FromArgb("#4DB6AC");
+            }
+
+            if (actividad.Contains("precursor"))
+            {
+                return Color.FromArgb("#81C784");
+            }
+
+            if (actividad.Contains("vacaciones"))
+            {
+                return Color.FromArgb("#FFD54F");
+            }
+
+            if (actividad.Contains("libre"))
+            {
+                return Color.FromArgb("#64B5F6");
+            }
+
+            if (actividad.Contains("esp"))
+            {
+                return Color.FromArgb("#4DD0E1");
+            }
+
+            if (actividad.Contains("otro")
+                || string.IsNullOrWhiteSpace(actividad))
+            {
+                return Color.FromArgb("#B0BEC5");
+            }
+
+            // Visita (y por defecto): el azul de siempre.
+            return Color.FromArgb("#4BA3E3");
+        }
+    }
 
     public bool MostrarDetallePrincipal =>
         !string.IsNullOrWhiteSpace(

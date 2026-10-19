@@ -98,7 +98,7 @@
                                     CommandParameter="{Binding .}" />
                             </Border.GestureRecognizers>
 
-                            <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto"
+                            <Grid RowDefinitions="Auto,Auto,Auto,Auto"
                                   ColumnDefinitions="*,Auto"
                                   RowSpacing="5">
 
@@ -115,27 +115,21 @@
                                            FontAttributes="Bold"
                                            TextColor="#80C4FF"
                                            IsVisible="{Binding EsActual}" />
+                                    <Label Text="{Binding MarcadorParalela}"
+                                           FontSize="11"
+                                           TextColor="#9EA4AE"
+                                           IsVisible="{Binding EsActividadParalela}" />
                                 </VerticalStackLayout>
-
-                                <Label Grid.Row="0"
-                                       Grid.Column="1"
-                                       Text="{Binding MarcadorParalela}"
-                                       FontSize="11"
-                                       TextColor="#9EA4AE"
-                                       VerticalOptions="Center"
-                                       IsVisible="{Binding EsActividadParalela}" />
 
                                 <!-- ACTIVIDAD -->
                                 <Label Grid.Row="1"
-                                       Grid.ColumnSpan="2"
                                        Text="{Binding ActividadVisual}"
                                        FontSize="15"
                                        FontAttributes="Bold"
-                                       TextColor="#4BA3E3" />
+                                       TextColor="{Binding ColorActividad}" />
 
                                 <!-- CONGREGACIÓN / ASAMBLEA -->
                                 <Label Grid.Row="2"
-                                       Grid.ColumnSpan="2"
                                        Text="{Binding DetallePrincipal}"
                                        FontSize="14"
                                        TextColor="#E7E9EC"
@@ -144,30 +138,33 @@
 
                                 <!-- TIPO / ACOMPAÑANTE / ALOJAMIENTO -->
                                 <Label Grid.Row="3"
-                                       Grid.ColumnSpan="2"
                                        Text="{Binding DetalleSecundario}"
                                        FontSize="12"
                                        TextColor="#AEB4BC"
                                        IsVisible="{Binding MostrarDetalleSecundario}"
                                        LineBreakMode="WordWrap" />
 
-                                <!-- ACCIONES -->
-                                <FlexLayout Grid.Row="4"
-                                            Grid.ColumnSpan="2"
+                                <!-- ACCIONES (compactas, a la derecha de la tarjeta) -->
+                                <FlexLayout Grid.Row="1"
+                                            Grid.RowSpan="3"
+                                            Grid.Column="1"
                                             Direction="Row"
                                             Wrap="Wrap"
                                             AlignItems="Start"
-                                            Margin="0,7,0,0">
+                                            JustifyContent="End"
+                                            WidthRequest="86"
+                                            Margin="6,2,0,0"
+                                            VerticalOptions="Center">
 
                                     <Button Text="✏️"
                                             Clicked="BtnEditar_Clicked"
                                             CommandParameter="{Binding .}"
                                             SemanticProperties.Description="Editar semana"
                                             Padding="0"
-                                            Margin="0,0,8,8"
-                                            FontSize="20"
-                                            WidthRequest="52"
-                                            HeightRequest="46"
+                                            Margin="0,0,6,6"
+                                            FontSize="15"
+                                            WidthRequest="38"
+                                            HeightRequest="32"
                                             BackgroundColor="#242830"
                                             CornerRadius="8"
                                             IsVisible="{Binding MostrarBotonEditar}" />
@@ -177,10 +174,10 @@
                                             CommandParameter="{Binding .}"
                                             SemanticProperties.Description="Ver visita"
                                             Padding="0"
-                                            Margin="0,0,8,8"
-                                            FontSize="20"
-                                            WidthRequest="52"
-                                            HeightRequest="46"
+                                            Margin="0,0,6,6"
+                                            FontSize="15"
+                                            WidthRequest="38"
+                                            HeightRequest="32"
                                             BackgroundColor="#0B6FC2"
                                             CornerRadius="8"
                                             IsVisible="{Binding MostrarVerVisita}" />
@@ -190,10 +187,10 @@
                                             CommandParameter="{Binding .}"
                                             SemanticProperties.Description="Acciones de la semana"
                                             Padding="0"
-                                            Margin="0,0,8,8"
-                                            FontSize="20"
-                                            WidthRequest="52"
-                                            HeightRequest="46"
+                                            Margin="0,0,6,6"
+                                            FontSize="15"
+                                            WidthRequest="38"
+                                            HeightRequest="32"
                                             BackgroundColor="#3A3520"
                                             CornerRadius="8"
                                             IsVisible="{Binding MostrarBotonAcciones}" />
@@ -203,10 +200,10 @@
                                             CommandParameter="{Binding .}"
                                             SemanticProperties.Description="Importar o actualizar JSON"
                                             Padding="0"
-                                            Margin="0,0,8,8"
-                                            FontSize="20"
-                                            WidthRequest="52"
-                                            HeightRequest="46"
+                                            Margin="0,0,6,6"
+                                            FontSize="15"
+                                            WidthRequest="38"
+                                            HeightRequest="32"
                                             BackgroundColor="#265B36"
                                             CornerRadius="8"
                                             IsVisible="{Binding MostrarBotonImportarJson}" />
@@ -216,10 +213,10 @@
                                             CommandParameter="{Binding .}"
                                             SemanticProperties.Description="Añadir actividad"
                                             Padding="0"
-                                            Margin="0,0,8,8"
-                                            FontSize="20"
-                                            WidthRequest="52"
-                                            HeightRequest="46"
+                                            Margin="0,0,6,6"
+                                            FontSize="15"
+                                            WidthRequest="38"
+                                            HeightRequest="32"
                                             BackgroundColor="#163553"
                                             CornerRadius="8"
                                             IsVisible="{Binding MostrarBotonSolapar}" />
@@ -229,10 +226,10 @@
                                             CommandParameter="{Binding .}"
                                             SemanticProperties.Description="Eliminar actividad"
                                             Padding="0"
-                                            Margin="0,0,8,8"
-                                            FontSize="20"
-                                            WidthRequest="52"
-                                            HeightRequest="46"
+                                            Margin="0,0,6,6"
+                                            FontSize="15"
+                                            WidthRequest="38"
+                                            HeightRequest="32"
                                             BackgroundColor="#3A2023"
                                             CornerRadius="8"
                                             IsVisible="{Binding MostrarBotonEliminar}" />

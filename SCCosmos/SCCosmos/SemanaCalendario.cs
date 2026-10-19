@@ -60,6 +60,64 @@ namespace SCCosmos
         // TRUCO VISUAL: Mostrará la sección en la columna "Congregación" si es asamblea
         public string CongregacionVisual => Actividad == "Asamblea de circuito" && !string.IsNullOrEmpty(SeccionAsamblea) ? $"Sección {SeccionAsamblea}" : Congregacion;
 
+        /// <summary>
+        /// Color con el que se pinta el nombre de la actividad (la visita se
+        /// queda como estaba).
+        /// </summary>
+        public string ColorActividad
+        {
+            get
+            {
+                string actividad =
+                    (Actividad ?? "")
+                        .ToLowerInvariant();
+
+                if (actividad.Contains("asamblea"))
+                {
+                    return "#FFB74D";
+                }
+
+                if (actividad.Contains("conmemor"))
+                {
+                    return "#CE93D8";
+                }
+
+                if (actividad.Contains("escuela"))
+                {
+                    return "#4DB6AC";
+                }
+
+                if (actividad.Contains("precursor"))
+                {
+                    return "#81C784";
+                }
+
+                if (actividad.Contains("vacaciones"))
+                {
+                    return "#FFD54F";
+                }
+
+                if (actividad.Contains("libre"))
+                {
+                    return "#64B5F6";
+                }
+
+                if (actividad.Contains("esp"))
+                {
+                    return "#4DD0E1";
+                }
+
+                if (actividad.Contains("otro")
+                    || string.IsNullOrWhiteSpace(actividad))
+                {
+                    return "#B0BEC5";
+                }
+
+                // Visita (y por defecto): el azul de siempre.
+                return "#4BA3E3";
+            }
+        }
+
         public bool IsActual
         {
             get
