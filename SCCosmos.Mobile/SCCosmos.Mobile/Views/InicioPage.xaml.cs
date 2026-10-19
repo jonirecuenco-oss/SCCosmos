@@ -283,10 +283,15 @@ public partial class InicioPage : ContentPage, IActualizableMobile
 
         ProgramaHoy.Clear();
 
+        _codigoVisitaActual = "";
+        _mesVisitaActual = "";
+
         PanelProgramaDia.IsVisible = false;
         PanelVisita.IsVisible = false;
         PanelOtraActividad.IsVisible = false;
         TxtSinDatos.IsVisible = false;
+        LblTipoSemana.IsVisible = true;
+        TxtSinProgramaDia.IsVisible = false;
 
         if (semana == null)
         {
@@ -316,8 +321,10 @@ public partial class InicioPage : ContentPage, IActualizableMobile
 
         if (EsVisita(semana))
         {
-            LblTipoSemana.Text =
-                "VISITA A CONGREGACIÓN";
+            // Tarjeta simplificada: sin el antetítulo «VISITA A
+            // CONGREGACIÓN»; el nombre va bajo las fechas.
+            LblTipoSemana.IsVisible =
+                false;
 
             LblIconoSemana.Text =
                 "●";
@@ -773,7 +780,21 @@ public partial class InicioPage : ContentPage, IActualizableMobile
             ProgramaHoy.Add(actividad);
         }
 
+        // Durante una visita el panel se mantiene visible aunque el día
+        // esté vacío (p. ej. un lunes), para poder pasar de día.
+        bool esDiaDeVisita =
+            !string.IsNullOrWhiteSpace(
+                _codigoVisitaActual);
+
         PanelProgramaDia.IsVisible =
+            ProgramaHoy.Count > 0
+            || esDiaDeVisita;
+
+        TxtSinProgramaDia.IsVisible =
+            ProgramaHoy.Count == 0
+            && esDiaDeVisita;
+
+        MarcoListaProgramaDia.IsVisible =
             ProgramaHoy.Count > 0;
     }
 

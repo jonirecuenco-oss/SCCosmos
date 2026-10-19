@@ -1782,3 +1782,8 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   la dirección, si no la del salón); si no hay ninguna, el botón no aparece. Además, el importador
   del PDF ahora pone la **dirección de las comidas en el campo Dirección del evento** (las notas
   conservan publicador/familia y teléfono).
+- **Inicio (Android)**: durante una visita el programa del día ya no desaparece cuando el día está
+  vacío (p. ej. el lunes): se mantiene con el mensaje «No hay actividades programadas para este día»
+  y las flechas ◀ ▶ para recorrer la semana. La tarjeta de la semana queda simplificada
+  (Visita · Del… al… · congregación · Próxima…) sin los antetítulos. El PC sincroniza por internet
+  con Tailscale (direcciones manuales configuradas en ambos lados).
