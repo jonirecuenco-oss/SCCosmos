@@ -4,7 +4,8 @@ using SCCosmos.Mobile.Services;
 namespace SCCosmos.Mobile.Views;
 
 // =============================================================
-// ENTRADA RÁPIDA DE HORAS DE PREDICACIÓN (BOTÓN + DEL WIDGET)
+// ENTRADA RÁPIDA DE PREDICACIÓN DEL MES (BOTÓN + DEL WIDGET):
+// HORAS Y CURSOS BÍBLICOS.
 // =============================================================
 
 public partial class HorasEntradaPage : ContentPage
@@ -19,7 +20,10 @@ public partial class HorasEntradaPage : ContentPage
                 new System.Globalization.CultureInfo("es-ES"));
 
         TxtHoras.Text =
-            "1";
+            "0";
+
+        TxtCbs.Text =
+            "0";
     }
 
 
@@ -37,22 +41,37 @@ public partial class HorasEntradaPage : ContentPage
     {
         try
         {
-            string texto =
+            double horas = 0;
+
+            double.TryParse(
                 (TxtHoras.Text ?? "")
                     .Trim()
-                    .Replace(',', '.');
+                    .Replace(',', '.'),
+                System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out horas);
 
-            if (!double.TryParse(
-                    texto,
-                    System.Globalization.NumberStyles.Any,
-                    System.Globalization.CultureInfo.InvariantCulture,
-                    out double valor)
-                || valor <= 0
-                || valor > 99)
+            int cbs = 0;
+
+            int.TryParse(
+                (TxtCbs.Text ?? "").Trim(),
+                out cbs);
+
+            if (horas < 0)
+            {
+                horas = 0;
+            }
+
+            if (cbs < 0)
+            {
+                cbs = 0;
+            }
+
+            if (horas == 0 && cbs == 0)
             {
                 await DisplayAlert(
-                    "Horas",
-                    "Escribe un número de horas válido (por ejemplo 2,5).",
+                    "Predicación",
+                    "Escribe las horas o los cursos bíblicos que quieres añadir.",
                     "Aceptar");
 
                 return;
@@ -67,14 +86,19 @@ public partial class HorasEntradaPage : ContentPage
                 DateTime.Today.ToString("yyyy-MM");
 
             await Task.Run(
-                () => DatabaseHelper.SumarHorasMesMobile(
+                () => DatabaseHelper.SumarPredicacionMesMobile(
                     usuario,
                     mes,
-                    valor));
+                    horas,
+                    cbs));
 
             DatabaseHelper.AnotarActividadMobile(
-                "Horas",
-                $"Añadió {valor:0.#} h de predicación ({usuario})");
+                "Predicación",
+                $"Añadió al mes: "
+                + (horas > 0 ? $"{horas:0.#} h" : "")
+                + (horas > 0 && cbs > 0 ? " y " : "")
+                + (cbs > 0 ? $"{cbs} CB" + (cbs == 1 ? "" : "s") : "")
+                + $" ({usuario})");
 
             SCCosmos.Mobile.Platforms.Android
                 .SccosmosWidgetProvider

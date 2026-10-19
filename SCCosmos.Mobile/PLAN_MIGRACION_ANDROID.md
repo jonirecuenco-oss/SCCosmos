@@ -1848,3 +1848,8 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   `Interaction.InputBox`.
 - **Widget (Android)**: filas más altas y anchas, letra a 16sp, cabeceras a 13sp, iconos a 19sp y
   nueva sección de horas con su botón +.
+- **Predicación este mes (horas + CBs, por usuario)**: `HorasMes` gana la columna `CBs`
+  (migración ALTER) y `SumarPredicacionMes(...)`; la tarjeta de Inicio se titula «Predicación este
+  mes» y muestra «X h · Y CBs»; el + pide horas y CBs (dos diálogos / dos campos en
+  `HorasEntradaPage`); el widget mueve la sección al final con título «PREDICACIÓN ESTE MES» y el
+  mismo +. Cada usuario (SC/Esposa) tiene su contador.

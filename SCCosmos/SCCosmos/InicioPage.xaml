@@ -287,7 +287,7 @@
                          BorderBrush="#1AFFFFFF"
                          Margin="0,0,20,15">
                     <StackPanel>
-                        <TextBlock Text="HORAS PREDICADAS ESTE MES"
+                        <TextBlock Text="PREDICACIÓN ESTE MES"
                                    FontSize="12"
                                    FontWeight="Bold"
                                    Foreground="#8A929C"/>

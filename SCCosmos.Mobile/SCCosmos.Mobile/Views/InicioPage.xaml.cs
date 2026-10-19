@@ -652,8 +652,16 @@ public partial class InicioPage : ContentPage, IActualizableMobile
                     usuario,
                     mes);
 
+            int cbs =
+                DatabaseHelper.ObtenerCbsMesMobile(
+                    usuario,
+                    mes);
+
             LblHorasMes.Text =
-                horas.ToString("0.#");
+                horas.ToString("0.#")
+                + " h  ·  "
+                + cbs.ToString()
+                + " CBs";
 
             LblHorasMesEtiqueta.Text =
                 DateTime.Today.ToString(
@@ -673,36 +681,62 @@ public partial class InicioPage : ContentPage, IActualizableMobile
     {
         try
         {
-            string? entrada =
+            string? entradaHoras =
                 await DisplayPromptAsync(
-                    "Horas predicadas",
-                    "¿Cuántas horas quieres añadir al mes?",
-                    "Añadir",
+                    "Predicación este mes",
+                    "¿Cuántas horas quieres añadir? (0 si ninguna)",
+                    "Continuar",
                     "Cancelar",
-                    "Ej.: 2,5",
+                    "0",
                     6,
                     Keyboard.Numeric);
 
-            if (string.IsNullOrWhiteSpace(entrada))
+            if (entradaHoras == null)
             {
                 return;
             }
 
-            double valor = 0;
+            string? entradaCbs =
+                await DisplayPromptAsync(
+                    "Predicación este mes",
+                    "¿Cuántos cursos bíblicos añades? (0 si ninguno)",
+                    "Añadir",
+                    "Cancelar",
+                    "0",
+                    4,
+                    Keyboard.Numeric);
 
-            if (!double.TryParse(
-                    entrada.Trim().Replace(',', '.'),
-                    System.Globalization.NumberStyles.Any,
-                    System.Globalization.CultureInfo.InvariantCulture,
-                    out valor)
-                || valor <= 0
-                || valor > 99)
+            if (entradaCbs == null)
             {
-                await DisplayAlert(
-                    "Horas",
-                    "Escribe un número de horas válido (por ejemplo 2,5).",
-                    "Aceptar");
+                return;
+            }
 
+            double horas = 0;
+
+            double.TryParse(
+                (entradaHoras ?? "").Trim().Replace(',', '.'),
+                System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out horas);
+
+            int cbs = 0;
+
+            int.TryParse(
+                (entradaCbs ?? "").Trim(),
+                out cbs);
+
+            if (horas < 0)
+            {
+                horas = 0;
+            }
+
+            if (cbs < 0)
+            {
+                cbs = 0;
+            }
+
+            if (horas == 0 && cbs == 0)
+            {
                 return;
             }
 
@@ -715,14 +749,19 @@ public partial class InicioPage : ContentPage, IActualizableMobile
                 DateTime.Today.ToString("yyyy-MM");
 
             await Task.Run(
-                () => DatabaseHelper.SumarHorasMesMobile(
+                () => DatabaseHelper.SumarPredicacionMesMobile(
                     usuario,
                     mes,
-                    valor));
+                    horas,
+                    cbs));
 
             DatabaseHelper.AnotarActividadMobile(
-                "Horas",
-                $"Añadió {valor:0.#} h de predicación ({usuario})");
+                "Predicación",
+                $"Añadió al mes: "
+                + (horas > 0 ? $"{horas:0.#} h" : "")
+                + (horas > 0 && cbs > 0 ? " y " : "")
+                + (cbs > 0 ? $"{cbs} CB" + (cbs == 1 ? "" : "s") : "")
+                + $" ({usuario})");
 
             CargarHorasMes();
 

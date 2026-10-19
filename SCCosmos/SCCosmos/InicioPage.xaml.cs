@@ -457,8 +457,16 @@ namespace SCCosmos
                         usuario,
                         mes);
 
+                int cbs =
+                    DatabaseHelper.ObtenerCbsMes(
+                        usuario,
+                        mes);
+
                 TxtHorasMes.Text =
-                    horas.ToString("0.#");
+                    horas.ToString("0.#")
+                    + " h  ·  "
+                    + cbs.ToString()
+                    + " CBs";
 
                 TxtHorasMesEtiqueta.Text =
                     DateTime.Today.ToString(
@@ -478,33 +486,44 @@ namespace SCCosmos
         {
             try
             {
-                string entrada =
+                string entradaHoras =
                     Microsoft.VisualBasic.Interaction.InputBox(
-                        "¿Cuántas horas quieres añadir al mes?",
-                        "Horas predicadas",
-                        "1");
+                        "¿Cuántas horas quieres añadir al mes? (0 si ninguna)",
+                        "Predicación este mes",
+                        "0");
 
-                if (string.IsNullOrWhiteSpace(entrada))
+                string entradaCbs =
+                    Microsoft.VisualBasic.Interaction.InputBox(
+                        "¿Cuántos cursos bíblicos añades? (0 si ninguno)",
+                        "Predicación este mes",
+                        "0");
+
+                double horas = 0;
+
+                double.TryParse(
+                    (entradaHoras ?? "").Trim().Replace(',', '.'),
+                    System.Globalization.NumberStyles.Any,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out horas);
+
+                int cbs = 0;
+
+                int.TryParse(
+                    (entradaCbs ?? "").Trim(),
+                    out cbs);
+
+                if (horas < 0)
                 {
-                    return;
+                    horas = 0;
                 }
 
-                double valor = 0;
-
-                if (!double.TryParse(
-                        entrada.Trim().Replace(',', '.'),
-                        System.Globalization.NumberStyles.Any,
-                        System.Globalization.CultureInfo.InvariantCulture,
-                        out valor)
-                    || valor <= 0
-                    || valor > 99)
+                if (cbs < 0)
                 {
-                    MessageBox.Show(
-                        "Escribe un número de horas válido (por ejemplo 2,5).",
-                        "Horas",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
+                    cbs = 0;
+                }
 
+                if (horas == 0 && cbs == 0)
+                {
                     return;
                 }
 
@@ -516,14 +535,19 @@ namespace SCCosmos
                 string mes =
                     DateTime.Today.ToString("yyyy-MM");
 
-                DatabaseHelper.SumarHorasMes(
+                DatabaseHelper.SumarPredicacionMes(
                     usuario,
                     mes,
-                    valor);
+                    horas,
+                    cbs);
 
                 DatabaseHelper.AnotarActividad(
-                    "Horas",
-                    $"Añadió {valor:0.#} h de predicación ({usuario})");
+                    "Predicación",
+                    $"Añadió al mes: "
+                    + (horas > 0 ? $"{horas:0.#} h" : "")
+                    + (horas > 0 && cbs > 0 ? " y " : "")
+                    + (cbs > 0 ? $"{cbs} CB" + (cbs == 1 ? "" : "s") : "")
+                    + $" ({usuario})");
 
                 CargarHorasMes();
             }

@@ -244,7 +244,7 @@
                         Spacing="2">
 
                         <Label
-                            Text="HORAS PREDICADAS ESTE MES"
+                            Text="PREDICACIÓN ESTE MES"
                             TextColor="#858C96"
                             FontSize="12"
                             FontAttributes="Bold"

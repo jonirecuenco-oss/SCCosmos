@@ -2,13 +2,13 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="SCCosmos.Mobile.Views.HorasEntradaPage"
-             Title="Horas predicadas"
+             Title="Predicación este mes"
              BackgroundColor="#101216">
 
     <VerticalStackLayout Padding="24"
-                         Spacing="16">
+                         Spacing="14">
 
-        <Label Text="¿Cuántas horas quieres añadir al mes?"
+        <Label Text="Predicación este mes"
                TextColor="White"
                FontSize="17"
                FontAttributes="Bold"/>
@@ -18,9 +18,22 @@
                TextColor="#8A929C"
                FontSize="13"/>
 
+        <Label Text="Horas a añadir (ej.: 2,5; deja 0 si ninguna)"
+               TextColor="#CCCCCC"
+               FontSize="13"/>
         <Entry x:Name="TxtHoras"
                Keyboard="Numeric"
-               Placeholder="Ej.: 2,5"
+               Placeholder="0"
+               PlaceholderColor="#7E858F"
+               TextColor="White"
+               FontSize="20"/>
+
+        <Label Text="Cursos bíblicos a añadir (deja 0 si ninguno)"
+               TextColor="#CCCCCC"
+               FontSize="13"/>
+        <Entry x:Name="TxtCbs"
+               Keyboard="Numeric"
+               Placeholder="0"
                PlaceholderColor="#7E858F"
                TextColor="White"
                FontSize="20"/>
