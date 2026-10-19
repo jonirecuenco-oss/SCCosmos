@@ -331,6 +331,61 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                 }
             }
 
+            // Alertas pendientes de resolver.
+            List<string> alertas =
+                ObtenerAlertasPendientes();
+
+            int[] filasAlertas =
+            {
+                Resource.Id.widget_alerta1,
+                Resource.Id.widget_alerta2,
+                Resource.Id.widget_alerta3
+            };
+
+            vistas.SetViewVisibility(
+                Resource.Id.widget_seccion_alertas,
+                alertas.Count > 0
+                    ? global::Android.Views
+                        .ViewStates.Visible
+                    : global::Android.Views
+                        .ViewStates.Gone);
+
+            for (int i = 0;
+                 i < filasAlertas.Length;
+                 i++)
+            {
+                bool visible =
+                    i < alertas.Count;
+
+                if (visible)
+                {
+                    vistas.SetTextViewText(
+                        filasAlertas[i],
+                        "⚠️ " + alertas[i]);
+                }
+
+                vistas.SetViewVisibility(
+                    filasAlertas[i],
+                    visible
+                        ? global::Android.Views
+                            .ViewStates.Visible
+                        : global::Android.Views
+                            .ViewStates.Gone);
+
+                PendingIntent? tocar =
+                    CrearActividad(
+                        contexto,
+                        4830 + i,
+                        "alertas");
+
+                if (tocar is not null)
+                {
+                    vistas.SetOnClickPendingIntent(
+                        filasAlertas[i],
+                        tocar);
+                }
+            }
+
             gestor.UpdateAppWidget(
                 id,
                 vistas);
@@ -584,6 +639,44 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                 {
                     resultado.Add(
                         linea.Trim());
+                }
+            }
+        }
+        catch
+        {
+        }
+
+        return resultado;
+    }
+
+
+    private static List<string> ObtenerAlertasPendientes()
+    {
+        var resultado =
+            new List<string>();
+
+        try
+        {
+            foreach (AlertaMobile alerta
+                     in Services.AlertasMobileService
+                         .Calcular())
+            {
+                string texto =
+                    string.IsNullOrWhiteSpace(
+                        alerta.Descripcion)
+                        ? alerta.Titulo
+                        : alerta.Titulo
+                          + " — "
+                          + alerta.Descripcion;
+
+                if (!string.IsNullOrWhiteSpace(texto))
+                {
+                    resultado.Add(texto);
+                }
+
+                if (resultado.Count >= 3)
+                {
+                    break;
                 }
             }
         }

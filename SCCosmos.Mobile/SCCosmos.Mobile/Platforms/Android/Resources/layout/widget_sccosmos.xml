@@ -26,13 +26,14 @@
             android:id="@+id/widget_dia_atras"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingLeft="10dp"
-            android:paddingRight="8dp"
-            android:paddingTop="2dp"
-            android:paddingBottom="2dp"
+            android:paddingLeft="14dp"
+            android:paddingRight="12dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
             android:text="◀"
             android:textColor="#4BA3E3"
-            android:textSize="14sp" />
+            android:textSize="22sp"
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/widget_fecha"
@@ -48,13 +49,14 @@
             android:id="@+id/widget_dia_adelante"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingLeft="8dp"
-            android:paddingRight="2dp"
-            android:paddingTop="2dp"
-            android:paddingBottom="2dp"
+            android:paddingLeft="12dp"
+            android:paddingRight="4dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
             android:text="▶"
             android:textColor="#4BA3E3"
-            android:textSize="14sp" />
+            android:textSize="22sp"
+            android:textStyle="bold" />
     </LinearLayout>
 
     <TextView
@@ -124,5 +126,43 @@
         android:text=""
         android:textColor="#E6E8EB"
         android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/widget_seccion_alertas"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="ALERTAS PENDIENTES"
+        android:textColor="#FFB74D"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/widget_alerta1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textColor="#E6E8EB"
+        android:textSize="12sp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/widget_alerta2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textColor="#E6E8EB"
+        android:textSize="12sp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/widget_alerta3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textColor="#E6E8EB"
+        android:textSize="12sp"
+        android:visibility="gone" />
 
 </LinearLayout>

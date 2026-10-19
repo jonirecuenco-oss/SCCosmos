@@ -55,6 +55,31 @@ public static class NavegacionNotificacion
                         _ => ""
                     };
 
+                if (_destino == "alertas")
+                {
+                    // Alertas pendientes (campana).
+                    try
+                    {
+                        if (Shell.Current is not null)
+                        {
+                            await MainThread
+                                .InvokeOnMainThreadAsync(
+                                    () => Shell.Current
+                                        .Navigation
+                                        .PushAsync(
+                                            new Views.AlertasPage()));
+
+                            _destino = "";
+                            return;
+                        }
+                    }
+                    catch
+                    {
+                    }
+
+                    continue;
+                }
+
                 if (_destino == "visita")
                 {
                     // Programa de la visita de la semana actual.

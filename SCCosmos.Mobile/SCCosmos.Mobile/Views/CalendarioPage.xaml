@@ -100,9 +100,9 @@
                                     CommandParameter="{Binding .}" />
                             </Border.GestureRecognizers>
 
-                            <Grid RowDefinitions="Auto,Auto,Auto,Auto"
+                            <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto"
                                   ColumnDefinitions="*,Auto"
-                                  RowSpacing="5">
+                                  RowSpacing="3">
 
                                 <!-- FECHAS -->
                                 <VerticalStackLayout Grid.Row="0"
@@ -146,29 +146,25 @@
                                        IsVisible="{Binding MostrarDetalleSecundario}"
                                        LineBreakMode="WordWrap" />
 
-                                <!-- ACCIONES (compactas, a la derecha de la tarjeta) -->
-                                <FlexLayout Grid.Row="1"
-                                            Grid.RowSpan="3"
-                                            Grid.Column="1"
+                                <!-- ACCIONES (una sola fila compacta abajo) -->
+                                <FlexLayout Grid.Row="4"
+                                            Grid.ColumnSpan="2"
                                             Direction="Row"
                                             Wrap="Wrap"
-                                            AlignItems="Start"
-                                            JustifyContent="End"
-                                            WidthRequest="86"
-                                            Margin="6,2,0,0"
-                                            VerticalOptions="Center">
+                                            AlignItems="Center"
+                                            Margin="0,3,0,0">
 
                                     <Button Text="✏️"
                                             Clicked="BtnEditar_Clicked"
                                             CommandParameter="{Binding .}"
                                             SemanticProperties.Description="Editar semana"
                                             Padding="0"
-                                            Margin="0,0,6,6"
-                                            FontSize="15"
-                                            WidthRequest="38"
-                                            HeightRequest="32"
+                                            Margin="0,0,5,0"
+                                            FontSize="13"
+                                            WidthRequest="30"
+                                            HeightRequest="28"
                                             BackgroundColor="#242830"
-                                            CornerRadius="8"
+                                            CornerRadius="7"
                                             IsVisible="{Binding MostrarBotonEditar}" />
 
                                     <Button Text="👁️"
@@ -176,12 +172,12 @@
                                             CommandParameter="{Binding .}"
                                             SemanticProperties.Description="Ver visita"
                                             Padding="0"
-                                            Margin="0,0,6,6"
-                                            FontSize="15"
-                                            WidthRequest="38"
-                                            HeightRequest="32"
+                                            Margin="0,0,5,0"
+                                            FontSize="13"
+                                            WidthRequest="30"
+                                            HeightRequest="28"
                                             BackgroundColor="#0B6FC2"
-                                            CornerRadius="8"
+                                            CornerRadius="7"
                                             IsVisible="{Binding MostrarVerVisita}" />
 
                                     <Button Text="📨"
@@ -189,12 +185,12 @@
                                             CommandParameter="{Binding .}"
                                             SemanticProperties.Description="Acciones de la semana"
                                             Padding="0"
-                                            Margin="0,0,6,6"
-                                            FontSize="15"
-                                            WidthRequest="38"
-                                            HeightRequest="32"
+                                            Margin="0,0,5,0"
+                                            FontSize="13"
+                                            WidthRequest="30"
+                                            HeightRequest="28"
                                             BackgroundColor="#3A3520"
-                                            CornerRadius="8"
+                                            CornerRadius="7"
                                             IsVisible="{Binding MostrarBotonAcciones}" />
 
                                     <Button Text="🗂️"
@@ -202,12 +198,12 @@
                                             CommandParameter="{Binding .}"
                                             SemanticProperties.Description="Importar o actualizar JSON"
                                             Padding="0"
-                                            Margin="0,0,6,6"
-                                            FontSize="15"
-                                            WidthRequest="38"
-                                            HeightRequest="32"
+                                            Margin="0,0,5,0"
+                                            FontSize="13"
+                                            WidthRequest="30"
+                                            HeightRequest="28"
                                             BackgroundColor="#265B36"
-                                            CornerRadius="8"
+                                            CornerRadius="7"
                                             IsVisible="{Binding MostrarBotonImportarJson}" />
 
                                     <Button Text="➕"
@@ -215,12 +211,12 @@
                                             CommandParameter="{Binding .}"
                                             SemanticProperties.Description="Añadir actividad"
                                             Padding="0"
-                                            Margin="0,0,6,6"
-                                            FontSize="15"
-                                            WidthRequest="38"
-                                            HeightRequest="32"
+                                            Margin="0,0,5,0"
+                                            FontSize="13"
+                                            WidthRequest="30"
+                                            HeightRequest="28"
                                             BackgroundColor="#163553"
-                                            CornerRadius="8"
+                                            CornerRadius="7"
                                             IsVisible="{Binding MostrarBotonSolapar}" />
 
                                     <Button Text="🗑️"
@@ -228,12 +224,12 @@
                                             CommandParameter="{Binding .}"
                                             SemanticProperties.Description="Eliminar actividad"
                                             Padding="0"
-                                            Margin="0,0,6,6"
-                                            FontSize="15"
-                                            WidthRequest="38"
-                                            HeightRequest="32"
+                                            Margin="0,0,5,0"
+                                            FontSize="13"
+                                            WidthRequest="30"
+                                            HeightRequest="28"
                                             BackgroundColor="#3A2023"
-                                            CornerRadius="8"
+                                            CornerRadius="7"
                                             IsVisible="{Binding MostrarBotonEliminar}" />
                                 </FlexLayout>
                             </Grid>
