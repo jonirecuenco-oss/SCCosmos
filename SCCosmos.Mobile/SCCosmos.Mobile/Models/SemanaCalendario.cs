@@ -26,7 +26,8 @@ public class SemanaCalendario
         get
         {
             string formatoFechas =
-                $"Del {FechaLunes:dd-MMM} al {FechaDomingo:dd-MMM}".ToLower();
+                "Del " +
+                $"{FechaLunes:dd-MMM} al {FechaDomingo:dd-MMM}".ToLower();
 
             if (Actividad == "Asamblea de circuito" &&
                 !string.IsNullOrEmpty(FechaAsamblea))

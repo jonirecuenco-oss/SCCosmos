@@ -1192,11 +1192,27 @@ public sealed class CalendarioItem
     public string RangoFechas =>
         Semana.RangoFechas;
 
-    public string ActividadVisual =>
-        string.IsNullOrWhiteSpace(
-            Semana.Actividad)
-            ? "Sin actividad"
-            : Semana.Actividad;
+    public string ActividadVisual
+    {
+        get
+        {
+            string actividad =
+                string.IsNullOrWhiteSpace(
+                    Semana.Actividad)
+                    ? "Sin actividad"
+                    : Semana.Actividad;
+
+            // En las visitas, el nombre de la congregación va al lado.
+            if (actividad == "Visita"
+                && !string.IsNullOrWhiteSpace(
+                    Semana.Congregacion))
+            {
+                return actividad + " · " + Semana.Congregacion;
+            }
+
+            return actividad;
+        }
+    }
 
     /// <summary>
     /// Color con el que se pinta el nombre de la actividad (la visita se
@@ -1257,7 +1273,8 @@ public sealed class CalendarioItem
     }
 
     public bool MostrarDetallePrincipal =>
-        !string.IsNullOrWhiteSpace(
+        Semana.Actividad != "Visita"
+        && !string.IsNullOrWhiteSpace(
             DetallePrincipal);
 
     public bool MostrarDetalleSecundario =>
