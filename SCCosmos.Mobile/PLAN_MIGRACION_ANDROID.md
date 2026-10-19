@@ -1793,3 +1793,8 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
 - **Windows**: la clave de sincronización ya es editable en Configuración (antes era solo
   lectura). Al cambiarla se guarda y se reinicia el motor; hay que poner la misma clave en los
   demás dispositivos.
+- **Inicio (Android)**: fuera el título «TU SEMANA»; la tarjeta de la semana queda con el formato
+  de Windows (antetítulo azul «VISITA A CONGREGACIÓN», nombre de la congregación como título con el
+  ojo a la derecha, fechas con 📅, «Próxima: …»); los eventos del día se ordenan de verdad por hora
+  («9:30» antes que «13:30») y ya no se muestra la línea de dirección (queda el botón 📍); el widget
+  usa el mismo orden.

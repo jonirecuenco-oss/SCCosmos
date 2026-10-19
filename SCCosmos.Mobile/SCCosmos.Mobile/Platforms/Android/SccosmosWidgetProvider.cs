@@ -503,6 +503,48 @@ public class SccosmosWidgetProvider : AppWidgetProvider
     }
 
 
+    /// <summary>Minutos de la hora («9:30» → 570); sin hora, al final.</summary>
+    private static int OrdenHora(
+        string hora)
+    {
+        string valor =
+            (hora ?? "").Trim();
+
+        if (valor.Length == 0)
+        {
+            return int.MaxValue;
+        }
+
+        string[] formatos =
+        {
+            @"h\:mm",
+            @"hh\:mm",
+            @"h\.mm",
+            @"hh\.mm"
+        };
+
+        if (TimeSpan.TryParseExact(
+                valor,
+                formatos,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out TimeSpan ts))
+        {
+            return (int)ts.TotalMinutes;
+        }
+
+        if (DateTime.TryParse(
+                valor,
+                System.Globalization.CultureInfo.GetCultureInfo("es-ES"),
+                System.Globalization.DateTimeStyles.NoCurrentDateDefault,
+                out DateTime dt))
+        {
+            return dt.Hour * 60 + dt.Minute;
+        }
+
+        return int.MaxValue - 1;
+    }
+
+
     private static List<string> ObtenerProgramaDelDia(
         DateTime dia)
     {
@@ -582,9 +624,7 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                              codigo,
                              mes,
                              diaDb)
-                         .OrderBy(a => string.IsNullOrWhiteSpace(
-                             a.Hora))
-                         .ThenBy(a => a.Hora))
+                         .OrderBy(a => OrdenHora(a.Hora)))
             {
                 string hora =
                     (actividad.Hora ?? "").Trim();

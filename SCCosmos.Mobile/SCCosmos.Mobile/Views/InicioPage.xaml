@@ -81,15 +81,6 @@
             </Grid>
 
 
-            <!-- SEMANA ACTUAL -->
-
-            <Label
-                Text="TU SEMANA"
-                TextColor="#858C96"
-                FontSize="12"
-                FontAttributes="Bold"
-                CharacterSpacing="1.5"/>
-
             <Border
                 BackgroundColor="{StaticResource Superficie}"
                 Stroke="{StaticResource Borde}"
@@ -142,6 +133,22 @@
 
                         </Border>
 
+                        <Button
+                            x:Name="BtnVerVisitaSemana"
+                            Grid.Column="1"
+                            Text="👁️"
+                            SemanticProperties.Description="Ver visita"
+                            Clicked="BtnVerVisitaInicio_Click"
+                            BackgroundColor="#0B6FC2"
+                            TextColor="White"
+                            FontSize="20"
+                            CornerRadius="9"
+                            WidthRequest="54"
+                            HeightRequest="44"
+                            Padding="0"
+                            IsVisible="False"
+                            VerticalOptions="Center"/>
+
                     </Grid>
 
                     <Label
@@ -156,32 +163,6 @@
                         x:Name="PanelVisita"
                         IsVisible="False"
                         Spacing="7">
-
-                        <Grid ColumnDefinitions="*,Auto"
-                              ColumnSpacing="8">
-
-                            <Label
-                                x:Name="LblCongregacion"
-                                Text=""
-                                TextColor="White"
-                                FontSize="18"
-                                FontAttributes="Bold"
-                                VerticalTextAlignment="Center"/>
-
-                            <Button
-                                Grid.Column="1"
-                                Text="👁️"
-                                SemanticProperties.Description="Ver visita"
-                                Clicked="BtnVerVisitaInicio_Click"
-                                BackgroundColor="#0B6FC2"
-                                TextColor="White"
-                                FontSize="20"
-                                CornerRadius="9"
-                                WidthRequest="54"
-                                HeightRequest="44"
-                                Padding="0"
-                                VerticalOptions="Center"/>
-                        </Grid>
 
                         <Label
                             x:Name="LblAcompanante"
@@ -365,16 +346,6 @@
                                         TextColor="#9299A3"
                                         FontSize="13"
                                         IsVisible="{Binding VerCompanero}"/>
-
-                                    <Label
-                                        Grid.Row="2"
-                                        Grid.Column="1"
-                                        Grid.ColumnSpan="2"
-                                        Text="{Binding Ubicacion}"
-                                        TextColor="#7F8791"
-                                        FontSize="12"
-                                        LineBreakMode="WordWrap"
-                                        IsVisible="{Binding MostrarUbicacion}"/>
 
                                     <Button
                                         Grid.Column="3"

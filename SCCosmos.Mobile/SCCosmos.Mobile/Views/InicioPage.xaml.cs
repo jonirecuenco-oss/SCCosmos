@@ -291,8 +291,10 @@ public partial class InicioPage : ContentPage, IActualizableMobile
         PanelOtraActividad.IsVisible = false;
         TxtSinDatos.IsVisible = false;
         LblTipoSemana.IsVisible = true;
+        LblTipoSemana.TextColor = Color.FromArgb("#858C96");
         TxtSinProgramaDia.IsVisible = false;
         MarcoIconoSemana.IsVisible = true;
+        BtnVerVisitaSemana.IsVisible = false;
 
         if (semana == null)
         {
@@ -312,7 +314,7 @@ public partial class InicioPage : ContentPage, IActualizableMobile
         }
 
         LblFechas.Text =
-            semana.RangoFechas;
+            "📅 " + semana.RangoFechas;
 
         LblActividad.Text =
             string.IsNullOrWhiteSpace(
@@ -322,21 +324,27 @@ public partial class InicioPage : ContentPage, IActualizableMobile
 
         if (EsVisita(semana))
         {
-            // Tarjeta simplificada: sin el antetítulo «VISITA A
-            // CONGREGACIÓN» ni el punto azul; el ojo va junto al nombre.
-            LblTipoSemana.IsVisible =
-                false;
+            // Tarjeta como la de Windows: antetítulo azul, nombre de la
+            // congregación como título (ojo a la derecha) y fechas.
+            LblTipoSemana.Text =
+                "VISITA A CONGREGACIÓN";
+
+            LblTipoSemana.TextColor =
+                Color.FromArgb("#4BA3E3");
 
             MarcoIconoSemana.IsVisible =
                 false;
 
-            LblIconoSemana.Text =
-                "●";
+            BtnVerVisitaSemana.IsVisible =
+                true;
 
             PanelVisita.IsVisible = true;
 
-            LblCongregacion.Text =
-                semana.Congregacion;
+            LblActividad.Text =
+                string.IsNullOrWhiteSpace(
+                    semana.Congregacion)
+                    ? "Visita"
+                    : semana.Congregacion;
 
             if (!string.IsNullOrWhiteSpace(
                     semana.Acompanante))
@@ -416,6 +424,48 @@ public partial class InicioPage : ContentPage, IActualizableMobile
     /// cualquier variante de mayúsculas/minúsculas o espacios y también el
     /// tipo «Visita SC».
     /// </summary>
+    /// <summary>Minutos de la hora («9:30» → 570); sin hora, al final.</summary>
+    private static int OrdenHora(
+        string hora)
+    {
+        string valor =
+            (hora ?? "").Trim();
+
+        if (valor.Length == 0)
+        {
+            return int.MaxValue;
+        }
+
+        string[] formatos =
+        {
+            @"h\:mm",
+            @"hh\:mm",
+            @"h\.mm",
+            @"hh\.mm"
+        };
+
+        if (TimeSpan.TryParseExact(
+                valor,
+                formatos,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out TimeSpan ts))
+        {
+            return (int)ts.TotalMinutes;
+        }
+
+        if (DateTime.TryParse(
+                valor,
+                System.Globalization.CultureInfo.GetCultureInfo("es-ES"),
+                System.Globalization.DateTimeStyles.NoCurrentDateDefault,
+                out DateTime dt))
+        {
+            return dt.Hour * 60 + dt.Minute;
+        }
+
+        return int.MaxValue - 1;
+    }
+
+
     private static bool EsVisita(
         SemanaCalendario semana)
     {
@@ -774,9 +824,7 @@ public partial class InicioPage : ContentPage, IActualizableMobile
                 }
 
                 return resultado
-                    .OrderBy(x => string.IsNullOrWhiteSpace(
-                        x.Hora))
-                    .ThenBy(x => x.Hora)
+                    .OrderBy(x => OrdenHora(x.Hora))
                     .ToList();
             });
 
