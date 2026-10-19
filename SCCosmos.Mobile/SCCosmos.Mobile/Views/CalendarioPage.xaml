@@ -142,19 +142,17 @@
                                        LineBreakMode="WordWrap" />
 
                                 <!-- ACCIONES (una sola fila compacta abajo) -->
-                                <FlexLayout Grid.Row="4"
-                                            Grid.ColumnSpan="2"
-                                            Direction="Row"
-                                            Wrap="Wrap"
-                                            AlignItems="Center"
-                                            Margin="0,3,0,0">
+                                <HorizontalStackLayout Grid.Row="4"
+                                                       Grid.ColumnSpan="2"
+                                                       Spacing="7"
+                                                       Margin="0,3,0,0">
 
                                     <Button Text="✏️"
                                             Clicked="BtnEditar_Clicked"
                                             CommandParameter="{Binding .}"
                                             SemanticProperties.Description="Editar semana"
                                             Padding="0"
-                                            Margin="0,0,6,0"
+                                            Margin="0"
                                             FontSize="11"
                                             WidthRequest="26"
                                             HeightRequest="24"
@@ -167,7 +165,7 @@
                                             CommandParameter="{Binding .}"
                                             SemanticProperties.Description="Ver visita"
                                             Padding="0"
-                                            Margin="0,0,6,0"
+                                            Margin="0"
                                             FontSize="11"
                                             WidthRequest="26"
                                             HeightRequest="24"
@@ -180,7 +178,7 @@
                                             CommandParameter="{Binding .}"
                                             SemanticProperties.Description="Acciones de la semana"
                                             Padding="0"
-                                            Margin="0,0,6,0"
+                                            Margin="0"
                                             FontSize="11"
                                             WidthRequest="26"
                                             HeightRequest="24"
@@ -193,7 +191,7 @@
                                             CommandParameter="{Binding .}"
                                             SemanticProperties.Description="Importar o actualizar JSON"
                                             Padding="0"
-                                            Margin="0,0,6,0"
+                                            Margin="0"
                                             FontSize="11"
                                             WidthRequest="26"
                                             HeightRequest="24"
@@ -206,7 +204,7 @@
                                             CommandParameter="{Binding .}"
                                             SemanticProperties.Description="Añadir actividad"
                                             Padding="0"
-                                            Margin="0,0,6,0"
+                                            Margin="0"
                                             FontSize="11"
                                             WidthRequest="26"
                                             HeightRequest="24"
@@ -219,14 +217,14 @@
                                             CommandParameter="{Binding .}"
                                             SemanticProperties.Description="Eliminar actividad"
                                             Padding="0"
-                                            Margin="0,0,6,0"
+                                            Margin="0"
                                             FontSize="11"
                                             WidthRequest="26"
                                             HeightRequest="24"
                                             BackgroundColor="#3A2023"
                                             CornerRadius="7"
                                             IsVisible="{Binding MostrarBotonEliminar}" />
-                                </FlexLayout>
+                                </HorizontalStackLayout>
                             </Grid>
                         </Border>
                     </DataTemplate>
