@@ -215,6 +215,9 @@
                                 </StackPanel>
                             </Grid>
 
+                            <TextBlock Text="Dirección por internet del otro dispositivo (Tailscale o IP:puerto, opcional)" Foreground="#CCC" Margin="0,14,0,5"/>
+                            <ui:TextBox x:Name="TxtDireccionesSincro" Background="#1E1E1E" Foreground="White" AcceptsReturn="True" TextWrapping="Wrap" Height="54"/>
+
                             <TextBlock Text="Dispositivos (desmarca los que no quieras sincronizar con este equipo)" Foreground="#CCC" Margin="0,14,0,5"/>
                             <ListBox x:Name="ListaDispositivosSincro" Height="110" Background="#1E1E1E" Foreground="#DDDDDD">
                                 <ListBox.ItemTemplate>

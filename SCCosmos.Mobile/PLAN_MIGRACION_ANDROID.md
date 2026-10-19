@@ -1771,3 +1771,9 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
 - **Widget (Android)**: flechas ◀ ▶ para moverse de día (con la fecha y «Hoy/Mañana/Ayer»), muestra
   la programación y las tareas **de ese día**, y al pulsar una actividad abre el programa de la
   visita y al pulsar una tarea abre la página de Tareas.
+- **Sincronización por internet (Tailscale)**: campo nuevo «Dirección por internet del otro
+  dispositivo» en Configuración → Sincronización (Windows y Android). El motor ya usaba
+  `SincroConfiguracion.Direcciones` para sondear direcciones manuales (`host[:puerto]`, por defecto
+  47311); ahora se puede rellenar desde la interfaz. Con Tailscale instalado en PC y móvil (red
+  privada gratuita), la sincronización funciona entre redes distintas (datos móviles incluidos) sin
+  depender de Syncthing ni de la wifi compartida.

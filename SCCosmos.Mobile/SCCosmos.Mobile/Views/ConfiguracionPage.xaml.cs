@@ -288,6 +288,9 @@ public partial class ConfiguracionPage : ContentPage
             TxtClaveSincro.Text =
                 SincronizacionMobile.Clave;
 
+            TxtDireccionesSincro.Text =
+                SincronizacionMobile.DireccionesTexto;
+
             _autoguardando =
                 false;
 
@@ -391,6 +394,9 @@ public partial class ConfiguracionPage : ContentPage
             string claveNueva =
                 (TxtClaveSincro.Text ?? "").Trim();
 
+            string direccionesNuevas =
+                (TxtDireccionesSincro.Text ?? "").Trim();
+
             bool cambio =
                 activoAntes != SincronizacionMobile.ConfiguracionActiva
                 || !string.Equals(
@@ -400,6 +406,10 @@ public partial class ConfiguracionPage : ContentPage
                 || !string.Equals(
                     claveNueva,
                     SincronizacionMobile.Clave,
+                    StringComparison.Ordinal)
+                || !string.Equals(
+                    direccionesNuevas,
+                    SincronizacionMobile.DireccionesTexto.Trim(),
                     StringComparison.Ordinal);
 
             if (!cambio)
@@ -412,6 +422,9 @@ public partial class ConfiguracionPage : ContentPage
 
             SincronizacionMobile.Clave =
                 claveNueva;
+
+            SincronizacionMobile.DireccionesTexto =
+                direccionesNuevas;
 
             SincronizacionMobile.Aplicar();
 
@@ -730,6 +743,9 @@ public partial class ConfiguracionPage : ContentPage
             (s, e) => AplicarSincroAutomatico();
 
         TxtClaveSincro.Unfocused +=
+            (s, e) => AplicarSincroAutomatico();
+
+        TxtDireccionesSincro.Unfocused +=
             (s, e) => AplicarSincroAutomatico();
 
         SwSincroActivo.Toggled +=

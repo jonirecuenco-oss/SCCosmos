@@ -469,6 +469,7 @@ namespace SCCosmos
             ToggleSincronizacion.Unchecked += (s, e) => Autoguardar();
 
             TxtNombreSincro.LostFocus += (s, e) => GuardarNombreSincro();
+            TxtDireccionesSincro.LostFocus += (s, e) => GuardarDireccionesSincro();
             ToggleSincroActivo.Checked += (s, e) => AplicarSincroAutomatico();
             ToggleSincroActivo.Unchecked += (s, e) => AplicarSincroAutomatico();
         }
@@ -495,6 +496,9 @@ namespace SCCosmos
                 ToggleSincroActivo.IsChecked = config.Activo;
                 TxtNombreSincro.Text = config.NombreDispositivo;
                 TxtClaveSincro.Text = config.Clave;
+                TxtDireccionesSincro.Text = string.Join(
+                    Environment.NewLine,
+                    config.Direcciones);
 
                 _autoguardando = false;
 
@@ -614,6 +618,56 @@ namespace SCCosmos
                 }
 
                 RefrescarEstadoSincro();
+            }
+            catch
+            {
+            }
+        }
+
+
+        /// <summary>
+        /// Guarda las direcciones manuales (Tailscale, IP:puerto...) que se
+        /// usan cuando la red local no basta.
+        /// </summary>
+        private void GuardarDireccionesSincro()
+        {
+            try
+            {
+                if (_autoguardando)
+                {
+                    return;
+                }
+
+                var config = SincronizacionRed.Config;
+
+                if (config is null)
+                {
+                    return;
+                }
+
+                var direcciones = (TxtDireccionesSincro.Text ?? "")
+                    .Split(
+                        new[] { '\r', '\n', ',', ';' },
+                        StringSplitOptions.RemoveEmptyEntries)
+                    .Select(x => x.Trim())
+                    .Where(x => x.Length > 0)
+                    .ToList();
+
+                bool iguales =
+                    direcciones.Count == config.Direcciones.Count
+                    && !direcciones
+                        .Where((d, i) => !string.Equals(
+                            d,
+                            config.Direcciones[i],
+                            StringComparison.OrdinalIgnoreCase))
+                        .Any();
+
+                if (!iguales)
+                {
+                    config.Direcciones = direcciones;
+                    SincronizacionRed.Guardar();
+                    SincronizacionRed.Reiniciar();
+                }
             }
             catch
             {
