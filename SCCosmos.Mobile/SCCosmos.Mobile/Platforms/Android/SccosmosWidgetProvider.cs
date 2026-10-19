@@ -323,14 +323,24 @@ public class SccosmosWidgetProvider : AppWidgetProvider
             {
                 Resource.Id.widget_programa1,
                 Resource.Id.widget_programa2,
-                Resource.Id.widget_programa3
+                Resource.Id.widget_programa3,
+                Resource.Id.widget_programa4,
+                Resource.Id.widget_programa5,
+                Resource.Id.widget_programa6,
+                Resource.Id.widget_programa7,
+                Resource.Id.widget_programa8
             };
 
             int[] botonesMapa =
             {
                 Resource.Id.widget_programa1_mapa,
                 Resource.Id.widget_programa2_mapa,
-                Resource.Id.widget_programa3_mapa
+                Resource.Id.widget_programa3_mapa,
+                Resource.Id.widget_programa4_mapa,
+                Resource.Id.widget_programa5_mapa,
+                Resource.Id.widget_programa6_mapa,
+                Resource.Id.widget_programa7_mapa,
+                Resource.Id.widget_programa8_mapa
             };
 
             for (int i = 0;

@@ -1825,3 +1825,8 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
 - **Alertas (Android)**: umbrales iguales a Windows — el S-302 sale a ≤90 días, la documentación a
   ≤42, el recordatorio de asamblea a ≤60 y el S-303 hasta 14 días después de la visita; ventana de
   cálculo ampliada a 13 semanas para cubrir los 90 días.
+- **Widget (Android)**: hasta 8 actividades del día (antes solo 3) — los días de visita con
+  alojamiento, comidas y varias predicaciones ya se ven completos.
+- **Tareas (Android)**: la etiqueta «👫 Compartida» usaba una propiedad inexistente
+  (`EstaCompartida`) y salía en TODAS las tareas; se añade `EstaCompartida` al modelo `Tarea`
+  (sale solo si el interruptor «Compartir con mi esposa» está activo).

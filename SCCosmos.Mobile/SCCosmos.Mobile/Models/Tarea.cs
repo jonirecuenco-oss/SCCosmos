@@ -94,6 +94,10 @@ public class Tarea
             ? "🔁 " + Repeticion
             : "";
 
+    /// <summary>Etiqueta «Compartida» de la lista (según el interruptor).</summary>
+    public bool EstaCompartida =>
+        Compartida;
+
 
     public bool MostrarAviso =>
         AvisoMinutos >= 0;
