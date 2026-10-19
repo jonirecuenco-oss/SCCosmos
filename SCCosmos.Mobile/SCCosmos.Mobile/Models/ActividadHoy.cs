@@ -19,4 +19,9 @@ public class ActividadHoy
     public string Direccion { get; set; } = "";
     public double Latitud { get; set; }
     public double Longitud { get; set; }
+
+    public bool MostrarMapa =>
+        Latitud != 0
+        || Longitud != 0
+        || !string.IsNullOrWhiteSpace(Direccion);
 }

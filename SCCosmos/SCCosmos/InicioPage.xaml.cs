@@ -424,7 +424,13 @@ namespace SCCosmos
                         : Visibility.Visible,
                 Direccion = ubicacion,
                 Latitud = actividad.Latitud,
-                Longitud = actividad.Longitud
+                Longitud = actividad.Longitud,
+                VerMapa =
+                    (actividad.Latitud != 0
+                     || actividad.Longitud != 0
+                     || !string.IsNullOrWhiteSpace(ubicacion))
+                        ? Visibility.Visible
+                        : Visibility.Collapsed
             };
         }
 
@@ -1278,6 +1284,7 @@ namespace SCCosmos
             public Visibility VerCompanero { get; set; }
             public Visibility VerUbicacion { get; set; }
             public Visibility VerResponsable { get; set; }
+            public Visibility VerMapa { get; set; }
         }
     }
 }

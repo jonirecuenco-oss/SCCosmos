@@ -415,6 +415,7 @@
                                                                                 Orientation="Horizontal"
                                                                                 VerticalAlignment="Center">
                                                                         <Button Content="📍"
+                                                                                Visibility="{Binding VerMapa}"
                                                                                 ToolTip="Ver en Google Maps"
                                                                                 Tag="{Binding}"
                                                                                 Click="BtnMapaActividad_Click"

@@ -413,9 +413,8 @@ public static class ImportadorProgramaVisita
                 Hora = "13:30",
                 TipoActividad = "Comida",
                 Responsable = "Ambos",
-                Notas = Juntar(
-                    Juntar(familia, telefono),
-                    direccion)
+                Ubicacion = direccion,
+                Notas = Juntar(familia, telefono)
             });
         }
 

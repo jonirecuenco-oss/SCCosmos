@@ -6184,6 +6184,16 @@ namespace SCCosmos
                 string.IsNullOrWhiteSpace(Responsable)
                     ? System.Windows.Visibility.Collapsed
                     : System.Windows.Visibility.Visible;
+
+            /// <summary>El botón de Google Maps solo aparece si hay ubicación.</summary>
+            public System.Windows.Visibility VerMapa =>
+                (ActividadDB != null
+                 && (ActividadDB.Latitud != 0
+                     || ActividadDB.Longitud != 0
+                     || !string.IsNullOrWhiteSpace(
+                         ActividadDB.Direccion)))
+                    ? System.Windows.Visibility.Visible
+                    : System.Windows.Visibility.Collapsed;
         }
 
         public class FilaContabilidad : INotifyPropertyChanged

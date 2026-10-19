@@ -1777,3 +1777,8 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   47311); ahora se puede rellenar desde la interfaz. Con Tailscale instalado en PC y móvil (red
   privada gratuita), la sincronización funciona entre redes distintas (datos móviles incluidos) sin
   depender de Syncthing ni de la wifi compartida.
+- **Botón Google Maps en el programa (Windows y Android)**: en Visitas (Windows) y en Inicio (ambas
+  apps) cada actividad con ubicación tiene un 📍 que abre Google Maps (coordenadas si las hay, si no
+  la dirección, si no la del salón); si no hay ninguna, el botón no aparece. Además, el importador
+  del PDF ahora pone la **dirección de las comidas en el campo Dirección del evento** (las notas
+  conservan publicador/familia y teléfono).
