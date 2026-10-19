@@ -266,10 +266,13 @@ namespace SCCosmos
             ItemCorrespondencia.Visibility = visibilidad;
             ItemCircuito.Visibility = visibilidad;
             ItemEscuelas.Visibility = visibilidad;
-            ItemRsc.Visibility = visibilidad;
             ItemAsambleas.Visibility = visibilidad;
             ItemActividad.Visibility = visibilidad;
             ItemArchivo.Visibility = visibilidad;
+
+            // La RSC la ve también la esposa (el SC la va rellenando en
+            // directo y ella lo sigue desde su dispositivo).
+            ItemRsc.Visibility = Visibility.Visible;
 
             // Descargas está oculta: solo aparece tras activarla con el
             // código especial del perfil (y luego ya se queda siempre).

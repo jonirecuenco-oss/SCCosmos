@@ -84,69 +84,6 @@ public static class AlertasMobileService
         DateTime hoy =
             DateTime.Today;
 
-        // Tareas y eventos con el aviso vencido y sin completar.
-        try
-        {
-            DateTime ahoraTareas =
-                DateTime.Now;
-
-            HashSet<string> leidasTareas =
-                ObtenerLeidas();
-
-            foreach (Tarea tarea
-                     in DatabaseHelper.ObtenerTareasMobile())
-            {
-                if (tarea.Completada
-                    || tarea.AvisoMinutos < 0)
-                {
-                    continue;
-                }
-
-                DateTime? cita =
-                    TareasAvisoService.OcurrenciaAvisoVencida(
-                        tarea,
-                        ahoraTareas);
-
-                if (cita == null)
-                {
-                    continue;
-                }
-
-                string cuando =
-                    cita.Value.Date == hoy
-                        ? $"Hoy {cita.Value:HH:mm}"
-                        : cita.Value.Date == hoy.AddDays(1)
-                            ? $"Mañana {cita.Value:HH:mm}"
-                            : cita.Value.ToString("dd MMM HH:mm");
-
-                var alertaTarea =
-                    new AlertaMobile
-                    {
-                        Tipo = "Tarea",
-                        Titulo =
-                            "⏰ " +
-                            (string.IsNullOrWhiteSpace(tarea.Titulo)
-                                ? "Tarea"
-                                : tarea.Titulo),
-                        Descripcion =
-                            cuando +
-                            (string.IsNullOrWhiteSpace(tarea.Descripcion)
-                                ? ""
-                                : " · " + tarea.Descripcion)
-                    };
-
-                if (!leidasTareas.Contains(
-                        Firma(alertaTarea)))
-                {
-                    alertas.Add(
-                        alertaTarea);
-                }
-            }
-        }
-        catch
-        {
-        }
-
         DateTime martesActual =
             ObtenerMartesActual();
 

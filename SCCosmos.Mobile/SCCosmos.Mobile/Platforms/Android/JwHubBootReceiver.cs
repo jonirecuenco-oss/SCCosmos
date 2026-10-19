@@ -25,5 +25,25 @@ public class JwHubBootReceiver :
             JwHubAutoScheduler
                 .ProgramarSiguiente();
         }
+
+        // Las alarmas se borran al reiniciar: se vuelven a programar la
+        // revisión diaria de alertas y el próximo aviso de tareas.
+        try
+        {
+            AlertasAlarmScheduler
+                .ProgramarSiguiente();
+        }
+        catch
+        {
+        }
+
+        try
+        {
+            TareasAvisoAlarmScheduler
+                .ProgramarSiguiente();
+        }
+        catch
+        {
+        }
     }
 }

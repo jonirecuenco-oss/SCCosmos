@@ -99,8 +99,11 @@ namespace SCCosmos.Mobile
             ItemArchivo.IsVisible = completo;
             ItemAsambleas.IsVisible = completo;
             ItemEscuelas.IsVisible = completo;
-            ItemRsc.IsVisible = completo;
             ItemActividad.IsVisible = completo;
+
+            // La RSC la ve también la esposa (el SC la va rellenando en
+            // directo y ella lo sigue desde su dispositivo).
+            ItemRsc.IsVisible = true;
 
             // Donaciones la ven tanto el SC como su esposa.
             ItemDonaciones.IsVisible = true;

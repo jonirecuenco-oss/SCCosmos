@@ -445,6 +445,52 @@ public static partial class DatabaseHelper
 
             cmd.ExecuteNonQuery();
 
+            // El superintendente y su esposa van marcados por defecto en
+            // toda RSC nueva.
+            var porDefecto =
+                new List<RscPersonaMobile>();
+
+            string nombreSc = (
+                ObtenerConfiguracion("NombreSC", "")
+                + " "
+                + ObtenerConfiguracion("ApellidoSC", ""))
+                .Trim();
+
+            string nombreEsposa = (
+                ObtenerConfiguracion("NombreEsposaSC", "")
+                + " "
+                + ObtenerConfiguracion("ApellidoEsposaSC", ""))
+                .Trim();
+
+            if (!string.IsNullOrWhiteSpace(nombreSc))
+            {
+                porDefecto.Add(
+                    new RscPersonaMobile
+                    {
+                        PersonaId = RscVirtualesMobile.Superintendente,
+                        Nombre = nombreSc,
+                        Sexo = "Hombre"
+                    });
+            }
+
+            if (!string.IsNullOrWhiteSpace(nombreEsposa))
+            {
+                porDefecto.Add(
+                    new RscPersonaMobile
+                    {
+                        PersonaId = RscVirtualesMobile.Esposa,
+                        Nombre = nombreEsposa,
+                        Sexo = "Mujer"
+                    });
+            }
+
+            if (porDefecto.Count > 0)
+            {
+                AnadirAsistentesRscMobile(
+                    id,
+                    porDefecto);
+            }
+
             return id;
         }
         catch

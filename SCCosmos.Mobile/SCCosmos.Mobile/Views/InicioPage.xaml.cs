@@ -914,8 +914,7 @@ public partial class InicioPage : ContentPage, IActualizableMobile
                 semana.SeccionAsamblea;
         }
 
-        return actividad + " (" +
-            semana.RangoFechas.ToLower() + ")";
+        return actividad;
     }
 
 

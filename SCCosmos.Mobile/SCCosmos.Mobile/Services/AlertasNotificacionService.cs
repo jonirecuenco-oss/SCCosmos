@@ -42,6 +42,9 @@ public static class AlertasNotificacionService
             var titulos =
                 new List<string>();
 
+            var destinos =
+                new List<string>();
+
             foreach (AlertaMobile alerta in alertas)
             {
                 string descripcion =
@@ -51,11 +54,22 @@ public static class AlertasNotificacionService
                     string.IsNullOrWhiteSpace(descripcion)
                         ? alerta.Titulo
                         : $"{alerta.Titulo} — {descripcion}");
+
+                // Al pulsar: la revisión de JW Hub lleva a Personas; el
+                // resto abre la app en Inicio.
+                destinos.Add(
+                    string.Equals(
+                        alerta.Tipo,
+                        "JWHub",
+                        StringComparison.OrdinalIgnoreCase)
+                        ? "personas"
+                        : "");
             }
 
             AlertasNotificacionAndroid.Actualizar(
                 alertas.Count,
-                titulos);
+                titulos,
+                destinos);
         }
         catch
         {

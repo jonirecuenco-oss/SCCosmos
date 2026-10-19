@@ -598,7 +598,7 @@ namespace SCCosmos
 
             fila.Background =
                 new SolidColorBrush(
-                    Color.FromArgb(0x66, 0x4B, 0xA3, 0xE3));
+                    Color.FromArgb(0x66, 0xFF, 0x9E, 0x2C));
 
             fila.BorderBrush =
                 new SolidColorBrush(

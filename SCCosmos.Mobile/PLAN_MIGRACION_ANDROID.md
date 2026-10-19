@@ -1717,3 +1717,24 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
 - **Verificado**: Windows (2027 · AC (con rep. de Betel) · sección A · Palacio de Congresos de
   Cáceres · domingo 22 de noviembre, con su programa de 19 partes) y emulador (mismos selectores +
   tarjeta resaltada en Programa y en Organigrama; captura con el borde dorado).
+
+### Mejoras varias (19/10, lote mejoras)
+
+- **Inicio · «Próxima»**: el enlace ya no muestra la fecha, solo la actividad (Windows y Android).
+- **Calendario (Windows)**: la semana actual lleva el fondo azul (más marcado) y el resaltado
+  temporal de la próxima semana es naranja (como en Android; en Android el fondo del resaltado
+  también es naranja). Verificado con capturas y muestreo de píxeles.
+- **RSC visible para la esposa** (menú de las dos apps) con refresco automático (las tablas RSC van
+  por la sincronización, así que ve los cambios del SC en directo). Además, en toda RSC nueva el
+  **SC y su esposa van marcados por defecto** (también las casillas vienen marcadas en el selector).
+- **Notificaciones de tareas (Android)**: canal propio «Tareas de SCCosmos» (importancia alta) y
+  alarma que suena en el momento de cada aviso: **empezar el día** (tareas de todo el día, 00:00),
+  **la hora de la tarea** y el **aviso previo** (con la antelación configurada). Al pulsar la
+  notificación se abre la página de **Tareas**. Verificado en el emulador (notificación «Tarea:
+  PRUEBA» + canal + el intent abre Tareas).
+- **Notificación de JW Hub (personas)**: al pulsarla se abre la página de **Personas**.
+- **Widget de Android**: «SCCosmos» muestra la **programación de hoy** (programa de la visita del
+  día) y las **próximas tareas**; se actualiza al arrancar la app, al mandarla a segundo plano y
+  cada ~30 min de forma automática. Verificado el registro del widget en el manifiesto.
+- **Visitas (Android)**: los cuadros de horas/check/equis son más bajos y el **asterisco de nota
+  aparece al lado del número o del check/equis** (y el indicador «PA» en la fila del mes).

@@ -9,6 +9,46 @@ namespace SCCosmos.Mobile
     [Activity(Theme = "@style/Maui.SplashTheme", MainLauncher = true, LaunchMode = LaunchMode.SingleTop, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation | ConfigChanges.UiMode | ConfigChanges.ScreenLayout | ConfigChanges.SmallestScreenSize | ConfigChanges.Density)]
     public class MainActivity : MauiAppCompatActivity
     {
+        protected override void OnCreate(Bundle? savedInstanceState)
+        {
+            base.OnCreate(savedInstanceState);
+
+            ProcesarDestinoNotificacion(Intent);
+        }
+
+
+        protected override void OnNewIntent(Intent? intent)
+        {
+            base.OnNewIntent(intent);
+
+            ProcesarDestinoNotificacion(intent);
+        }
+
+
+        /// <summary>
+        /// Si la app se abrió desde una notificación (Tareas, Personas...),
+        /// se navega a esa página en cuanto el Shell esté listo.
+        /// </summary>
+        private static void ProcesarDestinoNotificacion(Intent? intent)
+        {
+            try
+            {
+                string? destino =
+                    intent?.GetStringExtra(
+                        "sccosmos_destino");
+
+                if (!string.IsNullOrWhiteSpace(destino))
+                {
+                    NavegacionNotificacion.Solicitar(
+                        destino);
+                }
+            }
+            catch
+            {
+            }
+        }
+
+
         protected override void OnStop()
         {
             // Al cerrar o mandar la app a segundo plano, se vacían los

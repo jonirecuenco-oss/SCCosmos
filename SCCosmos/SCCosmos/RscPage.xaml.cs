@@ -564,6 +564,11 @@ namespace SCCosmos
                     + nueva.FechaVisual + " · " + turno + ")");
 
                 AbrirEditor(nueva);
+
+                // El superintendente y su esposa van marcados por defecto
+                // en toda RSC nueva.
+                AnadirSuperintendenteYEsposaPorDefecto();
+
                 RefrescarLista();
             }
             catch
@@ -1140,7 +1145,10 @@ namespace SCCosmos
             {
                 Content = texto + (yaEsta ? "  —  ya está" : ""),
                 Foreground = Brushes.White,
-                IsEnabled = !yaEsta
+                IsEnabled = !yaEsta,
+                // Marcadas por defecto: el SC y su esposa siempre van en la
+                // RSC salvo que se desmarquen a propósito.
+                IsChecked = !yaEsta
             };
 
             _checkVirtuales[check] = personaId;
@@ -1381,6 +1389,52 @@ namespace SCCosmos
                     a => a.Nombre,
                     StringComparer.CurrentCultureIgnoreCase)
                 .ToList();
+        }
+
+
+        /// <summary>
+        /// Marca por defecto al superintendente y a su esposa como
+        /// asistentes de la RSC abierta (si aún no estaban).
+        /// </summary>
+        private void AnadirSuperintendenteYEsposaPorDefecto()
+        {
+            string nombreSc = (
+                DatabaseHelper.ObtenerConfiguracion("NombreSC", "")
+                + " "
+                + DatabaseHelper.ObtenerConfiguracion("ApellidoSC", ""))
+                .Trim();
+
+            string nombreEsposa = (
+                DatabaseHelper.ObtenerConfiguracion("NombreEsposaSC", "")
+                + " "
+                + DatabaseHelper.ObtenerConfiguracion("ApellidoEsposaSC", ""))
+                .Trim();
+
+            bool anadida = false;
+
+            if (!string.IsNullOrWhiteSpace(nombreSc))
+            {
+                anadida |= AnadirAsistente(
+                    RscVirtuales.Superintendente,
+                    nombreSc,
+                    "Hombre");
+            }
+
+            if (!string.IsNullOrWhiteSpace(nombreEsposa))
+            {
+                anadida |= AnadirAsistente(
+                    RscVirtuales.Esposa,
+                    nombreEsposa,
+                    "Mujer");
+            }
+
+            if (anadida)
+            {
+                OrdenarAsistentes();
+                GuardarTodo();
+                RefrescarAsistentes();
+                RefrescarGrupos();
+            }
         }
 
 

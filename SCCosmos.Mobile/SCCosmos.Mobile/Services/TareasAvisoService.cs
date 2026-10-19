@@ -1,5 +1,6 @@
 using SCCosmos.Mobile.Data;
 using SCCosmos.Mobile.Models;
+using SCCosmos.Mobile.Platforms.Android;
 
 namespace SCCosmos.Mobile.Services;
 
@@ -190,8 +191,9 @@ public static class TareasAvisoService
 
 
     /// <summary>
-    /// Comprueba si hay avisos nuevos y, si los hay, actualiza las
-    /// notificaciones del sistema (contador incluido).
+    /// Comprueba si hay avisos de tareas nuevos y los publica como
+    /// notificaciones del sistema (una por aviso). Después reprograma la
+    /// siguiente alarma de tareas.
     /// </summary>
     public static async Task VerificarAsync()
     {
@@ -204,63 +206,290 @@ public static class TareasAvisoService
 
         try
         {
-            List<Tarea> tareas =
+            var (nuevos, _) =
                 await Task.Run(
-                    () => DatabaseHelper.ObtenerTareasMobile());
+                    () => CalcularAvisos(DateTime.Now));
 
-            DateTime ahora =
-                DateTime.Now;
-
-            bool hayNuevas =
-                false;
-
-            lock (_candado)
+            if (nuevos.Count > 0)
             {
-                foreach (Tarea tarea in tareas)
+                foreach (AvisoDeTarea aviso in nuevos)
                 {
-                    if (tarea.Completada
-                        || tarea.AvisoMinutos < 0)
-                    {
-                        continue;
-                    }
-
-                    DateTime? cita =
-                        OcurrenciaAvisoVencida(
-                            tarea,
-                            ahora);
-
-                    if (cita == null)
-                    {
-                        continue;
-                    }
-
-                    string clave =
-                        tarea.Id +
-                        "|" +
-                        cita.Value.ToString("yyyy-MM-dd-HHmm");
-
-                    if (Avisadas.Add(clave))
-                    {
-                        hayNuevas =
-                            true;
-                    }
+                    AlertasNotificacionAndroid
+                        .PublicarAvisoTarea(
+                            aviso.Clave,
+                            aviso.Titulo,
+                            aviso.Texto);
                 }
 
-                if (hayNuevas)
+                lock (_candado)
                 {
+                    foreach (AvisoDeTarea aviso in nuevos)
+                    {
+                        Avisadas.Add(aviso.Clave);
+                    }
+
                     Guardar();
                 }
-            }
-
-            if (hayNuevas)
-            {
-                await AlertasNotificacionService
-                    .ActualizarAsync();
             }
         }
         catch
         {
-            // Silencioso: se reintentará en la siguiente comprobación.
         }
+
+        ProgramarSiguiente();
     }
+
+
+    /// <summary>
+    /// Programa la siguiente alarma de avisos de tareas (Android).
+    /// </summary>
+    public static void ProgramarSiguiente()
+    {
+#if ANDROID
+        try
+        {
+            SCCosmos.Mobile.Platforms.Android
+                .TareasAvisoAlarmScheduler
+                .ProgramarSiguiente();
+        }
+        catch
+        {
+        }
+#endif
+    }
+
+
+    /// <summary>
+    /// Avisos de tareas ya vencidos que aún no se han mostrado (de las
+    /// últimas 24 horas) y el momento del siguiente aviso:
+    ///
+    ///   · Tarea de todo el día → al empezar el día (00:00).
+    ///   · Tarea con una hora → a su hora.
+    ///   · Con aviso previo → además, con la antelación configurada.
+    /// </summary>
+    public static (List<AvisoDeTarea> Nuevos, DateTime? Proximo)
+        CalcularAvisos(
+            DateTime ahora)
+    {
+        var nuevos =
+            new List<AvisoDeTarea>();
+
+        DateTime? proximo =
+            null;
+
+        try
+        {
+            foreach (Tarea tarea
+                     in DatabaseHelper.ObtenerTareasMobile())
+            {
+                if (tarea.Completada
+                    || string.IsNullOrWhiteSpace(tarea.FechaInicio)
+                    || !DateTime.TryParse(
+                        tarea.FechaInicio,
+                        out DateTime inicio))
+                {
+                    continue;
+                }
+
+                DateTime? finRango =
+                    null;
+
+                if (!string.IsNullOrWhiteSpace(tarea.FechaFin)
+                    && DateTime.TryParse(
+                        tarea.FechaFin,
+                        out DateTime fin))
+                {
+                    finRango =
+                        fin.Date;
+                }
+
+                string repeticion =
+                    (tarea.Repeticion ?? "Ninguna").Trim();
+
+                DateTime fecha =
+                    inicio.Date;
+
+                for (int i = 0; i < 4000; i++)
+                {
+                    if (finRango.HasValue
+                        && fecha.Date > finRango.Value)
+                    {
+                        break;
+                    }
+
+                    DateTime cita =
+                        CitaDe(
+                            tarea,
+                            fecha);
+
+                    foreach ((DateTime momento, bool esPrevio)
+                             in MomentosDe(tarea, cita))
+                    {
+                        if (momento > ahora)
+                        {
+                            if (proximo == null
+                                || momento < proximo)
+                            {
+                                proximo =
+                                    momento;
+                            }
+
+                            break;
+                        }
+
+                        if (momento < ahora.AddHours(-24))
+                        {
+                            continue;
+                        }
+
+                        string clave =
+                            Clave(
+                                tarea,
+                                fecha,
+                                esPrevio);
+
+                        if (Avisadas.Contains(
+                                clave))
+                        {
+                            continue;
+                        }
+
+                        nuevos.Add(
+                            new AvisoDeTarea
+                            {
+                                Clave = clave,
+                                Titulo =
+                                    "Tarea: "
+                                    + (string.IsNullOrWhiteSpace(
+                                            tarea.Titulo)
+                                        ? "sin título"
+                                        : tarea.Titulo),
+                                Texto =
+                                    TextoDe(
+                                        tarea,
+                                        momento,
+                                        esPrevio)
+                            });
+                    }
+
+                    if (repeticion == "Diaria")
+                    {
+                        fecha =
+                            fecha.AddDays(1);
+                    }
+                    else if (repeticion == "Semanal")
+                    {
+                        fecha =
+                            fecha.AddDays(7);
+                    }
+                    else if (repeticion == "Mensual")
+                    {
+                        fecha =
+                            fecha.AddMonths(1);
+                    }
+                    else if (repeticion == "Anual")
+                    {
+                        fecha =
+                            fecha.AddYears(1);
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+        catch
+        {
+        }
+
+        return (nuevos, proximo);
+    }
+
+
+    /// <summary>
+    /// Los momentos de aviso de una ocurrencia: el aviso previo (si hay
+    /// antelación) y el momento de inicio.
+    /// </summary>
+    private static IEnumerable<(DateTime Momento, bool EsPrevio)>
+        MomentosDe(
+            Tarea tarea,
+            DateTime cita)
+    {
+        int antelacion =
+            Math.Max(
+                0,
+                tarea.AvisoMinutos);
+
+        if (antelacion > 0)
+        {
+            yield return (
+                cita.AddMinutes(-antelacion),
+                true);
+        }
+
+        yield return (cita, false);
+    }
+
+
+    private static string Clave(
+        Tarea tarea,
+        DateTime fecha,
+        bool esPrevio)
+    {
+        return tarea.Id
+               + "|"
+               + fecha.ToString("yyyy-MM-dd")
+               + (esPrevio
+                   ? "|previo"
+                   : "|inicio");
+    }
+
+
+    private static string TextoDe(
+        Tarea tarea,
+        DateTime momento,
+        bool esPrevio)
+    {
+        DateTime hoy =
+            DateTime.Today;
+
+        string cuando =
+            momento.Date == hoy
+                ? $"Empieza hoy a las {momento:HH:mm}"
+                : momento.Date == hoy.AddDays(1)
+                    ? $"Empieza mañana a las {momento:HH:mm}"
+                    : "Empieza el "
+                      + momento.ToString("dd MMM 'a las' HH:mm");
+
+        if (esPrevio)
+        {
+            cuando =
+                $"En {Math.Max(0, tarea.AvisoMinutos)} min · "
+                + cuando;
+        }
+
+        string texto =
+            cuando;
+
+        if (!string.IsNullOrWhiteSpace(
+                tarea.Descripcion))
+        {
+            texto +=
+                " · " + tarea.Descripcion;
+        }
+
+        return texto;
+    }
+}
+
+
+/// <summary>Un aviso de tarea listo para publicar como notificación.</summary>
+public sealed class AvisoDeTarea
+{
+    public string Clave { get; set; } = "";
+
+    public string Titulo { get; set; } = "";
+
+    public string Texto { get; set; } = "";
 }

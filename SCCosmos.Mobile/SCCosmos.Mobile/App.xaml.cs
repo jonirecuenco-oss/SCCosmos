@@ -52,8 +52,21 @@ namespace SCCosmos.Mobile
             AlertasNotificacionService
                 .ProgramarRevisionDiaria();
 
+            // Avisos de tareas: alarma para el siguiente aviso (empezar el
+            // día, la hora de la tarea o su aviso previo).
+            TareasAvisoService
+                .ProgramarSiguiente();
+
             _ = AlertasNotificacionService
                 .ActualizarAsync();
+
+            _ = TareasAvisoService
+                .VerificarAsync();
+
+            // Widget del escritorio: programación de hoy y próximas tareas.
+            SCCosmos.Mobile.Platforms.Android
+                .SccosmosWidgetProvider
+                .ActualizarTodos();
 
             var shell =
                 new AppShell();
@@ -112,6 +125,16 @@ namespace SCCosmos.Mobile
 
             // Sistema antiguo de carpeta (solo si siguiera activo).
             _ = AutoSyncService.SincronizarSiHayCambiosAsync();
+
+            // Se reprograma el próximo aviso de tareas con lo último que
+            // haya guardado (por si se tocaron tareas hace un momento).
+            TareasAvisoService
+                .ProgramarSiguiente();
+
+            // El widget se refresca con lo último guardado.
+            SCCosmos.Mobile.Platforms.Android
+                .SccosmosWidgetProvider
+                .ActualizarTodos();
 
             base.OnSleep();
         }

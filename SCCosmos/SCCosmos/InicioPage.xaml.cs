@@ -248,8 +248,7 @@ namespace SCCosmos
                     semana.SeccionAsamblea;
             }
 
-            return actividad + " (" +
-                semana.RangoFechas.ToLower() + ")";
+            return actividad;
         }
 
         private void TxtProximaActividad_Click(

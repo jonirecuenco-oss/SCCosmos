@@ -160,7 +160,7 @@ public partial class CalendarioPage : ContentPage, IActualizableMobile
         tarjeta.StrokeThickness = 3;
 
         tarjeta.BackgroundColor =
-            Color.FromArgb("#2A3446");
+            Color.FromArgb("#4DFF9E2C");
 
         await Task.Delay(1700);
 

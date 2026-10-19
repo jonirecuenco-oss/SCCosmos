@@ -185,6 +185,9 @@ public partial class RscPersonasPickerPage : ContentPage
             {
                 Color = Color.FromArgb("#4BA3E3"),
                 IsEnabled = !yaEsta,
+                // Marcadas por defecto: el SC y su esposa siempre van en la
+                // RSC salvo que se desmarquen a propósito.
+                IsChecked = !yaEsta,
                 VerticalOptions =
                     LayoutOptions.Center
             };

@@ -130,6 +130,7 @@ public static class PerfilAccesoService
                 "inicio",
                 "Calendario",
                 "personas",
+                "rsc",
                 "configuracion"
             };
 
