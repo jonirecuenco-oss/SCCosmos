@@ -33,6 +33,34 @@ public sealed class VersionPublicada
     /// <summary>Notas de la versión (cambios).</summary>
     public string Notas { get; set; } = "";
 
+
+    /// <summary>
+    /// Deja solo los cambios: quita el pie de «Archivos» que añade el
+    /// script de publicación al release.
+    /// </summary>
+    public static string LimpiarNotas(
+        string notas)
+    {
+        string limpio =
+            (notas ?? "").Trim();
+
+        int corte =
+            limpio.IndexOf(
+                "**Archivos**",
+                StringComparison.OrdinalIgnoreCase);
+
+        if (corte >= 0)
+        {
+            limpio =
+                limpio.Substring(
+                    0,
+                    corte).TrimEnd(
+                        ' ', '\r', '\n', '-', '—');
+        }
+
+        return limpio;
+    }
+
     /// <summary>Enlace de descarga del APK de Android.</summary>
     public string UrlApk { get; set; } = "";
 
@@ -132,11 +160,12 @@ public static class ActualizadorSccosmos
                             : "",
 
                     Notas =
-                        raiz.TryGetProperty(
-                            "body",
-                            out JsonElement notas)
-                            ? notas.GetString() ?? ""
-                            : ""
+                        VersionPublicada.LimpiarNotas(
+                            raiz.TryGetProperty(
+                                "body",
+                                out JsonElement notas)
+                                ? notas.GetString() ?? ""
+                                : "")
                 };
 
             if (raiz.TryGetProperty(
