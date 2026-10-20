@@ -22,6 +22,10 @@ public partial class ConfiguracionPage : ContentPage
         CargarDatosGlobales();
         CargarPerfil();
 
+        // Clave opcional de Google Maps para los tiempos de viaje.
+        TxtGmapsKey.Text =
+            TiempoViajeService.ObtenerClaveGoogle();
+
         // La sincronización es siempre automática: no hay interruptor.
         AutoSyncService.Activo =
             true;
@@ -491,6 +495,27 @@ public partial class ConfiguracionPage : ContentPage
     {
         ActualizarPanelCodigoPerfil();
     }
+
+    private void TxtGmapsKey_Unfocused(
+        object? sender,
+        FocusEventArgs e)
+    {
+        try
+        {
+            TiempoViajeService.GuardarClaveGoogle(
+                TxtGmapsKey.Text);
+
+            LblGmapsGuardada.Text =
+                string.IsNullOrWhiteSpace(
+                    TiempoViajeService.ObtenerClaveGoogle())
+                    ? "Sin clave: se usan tiempos gratuitos (sin tráfico)."
+                    : "Clave guardada: los tiempos incluirán el tráfico.";
+        }
+        catch
+        {
+        }
+    }
+
 
     private void ActualizarEstadoPerfil()
     {

@@ -1,6 +1,8 @@
-﻿namespace SCCosmos.Mobile.Models;
+﻿using System.ComponentModel;
 
-public class ActividadHoy
+namespace SCCosmos.Mobile.Models;
+
+public class ActividadHoy : INotifyPropertyChanged
 {
     public string Hora { get; set; } = "";
     public string TipoActividad { get; set; } = "";
@@ -27,4 +29,28 @@ public class ActividadHoy
         Latitud != 0
         || Longitud != 0
         || !string.IsNullOrWhiteSpace(Direccion);
+
+    private string _tiempoCocheTexto = "";
+
+    /// <summary>Tiempo en coche («🚗 18 min»), si se conoce.</summary>
+    public string TiempoCocheTexto
+    {
+        get => _tiempoCocheTexto;
+        set
+        {
+            _tiempoCocheTexto = value ?? "";
+            OnPropertyChanged(nameof(TiempoCocheTexto));
+            OnPropertyChanged(nameof(VerTiempoCoche));
+        }
+    }
+
+    public bool VerTiempoCoche =>
+        !string.IsNullOrWhiteSpace(_tiempoCocheTexto);
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    protected void OnPropertyChanged(string nombre) =>
+        PropertyChanged?.Invoke(
+            this,
+            new PropertyChangedEventArgs(nombre));
 }

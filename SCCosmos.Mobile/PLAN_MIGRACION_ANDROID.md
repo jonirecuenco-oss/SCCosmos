@@ -1917,3 +1917,9 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
 - **Widget con acompañante**: debajo de cada actividad de la programación del widget aparece el
   acompañante («con Nombre») cuando el evento tiene uno (`widget_programaN_acompanante`, misma
   regla que Inicio: solo eventos no legacy con `CompaneroId`).
+- **Tiempo de viaje (en coche)**: `TiempoViajeService` calcula los minutos desde la ubicación actual
+  (Google Directions si hay clave; si no, Nominatim + OSRM, gratis). Inicio muestra «🚗 X min» en los
+  eventos con ubicación (pide permiso de ubicación la primera vez); el widget lo añade a la línea
+  secundaria («con Joni · 🚗 18 min») y se repinta solo al terminar el cálculo en segundo plano. La
+  ubicación se guarda en Preferences (se refresca al abrir Inicio; válida 6 h) y la clave opcional de
+  Google Maps se configura en Configuración → «Tiempo de viaje».

@@ -395,13 +395,22 @@
                                             FontAttributes="Bold"/>
                                     </Border>
 
-                                    <Label
+                                    <HorizontalStackLayout
                                         Grid.Row="1"
                                         Grid.Column="1"
-                                        Text="{Binding CompaneroNombre, StringFormat='con {0}'}"
-                                        TextColor="#9299A3"
-                                        FontSize="13"
-                                        IsVisible="{Binding VerCompanero}"/>
+                                        Spacing="10">
+                                        <Label
+                                            Text="{Binding CompaneroNombre, StringFormat='con {0}'}"
+                                            TextColor="#9299A3"
+                                            FontSize="13"
+                                            IsVisible="{Binding VerCompanero}"/>
+                                        <Label
+                                            Text="{Binding TiempoCocheTexto}"
+                                            TextColor="#8BC9E8"
+                                            FontSize="13"
+                                            FontAttributes="Bold"
+                                            IsVisible="{Binding VerTiempoCoche}"/>
+                                    </HorizontalStackLayout>
 
                                     <Label
                                         Grid.Row="2"

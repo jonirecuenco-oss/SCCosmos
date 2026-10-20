@@ -364,6 +364,49 @@
                 </VerticalStackLayout>
             </Border>
 
+            <!-- TIEMPO DE VIAJE -->
+
+            <Border
+                BackgroundColor="{StaticResource Superficie}"
+                Stroke="{StaticResource Borde}"
+                StrokeThickness="1"
+                Padding="14">
+
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="12"/>
+                </Border.StrokeShape>
+
+                <VerticalStackLayout Spacing="10">
+
+                    <Label
+                        Text="Tiempo de viaje (en coche)"
+                        TextColor="White"
+                        FontAttributes="Bold"
+                        FontSize="15"/>
+
+                    <Label
+                        Text="Inicio y el widget muestran cuánto se tarda en coche hasta cada evento, con tu ubicación actual. Funciona gratis desde el primer momento; si pegas una clave de Google Maps (Directions API), los tiempos incluyen el tráfico en tiempo real."
+                        TextColor="#9EA4AE"
+                        FontSize="12.5"
+                        LineBreakMode="WordWrap"/>
+
+                    <Entry
+                        x:Name="TxtGmapsKey"
+                        Placeholder="Clave de Google Maps (opcional)"
+                        TextColor="White"
+                        PlaceholderColor="#6E767F"
+                        BackgroundColor="#1B1F26"
+                        Unfocused="TxtGmapsKey_Unfocused"/>
+
+                    <Label
+                        x:Name="LblGmapsGuardada"
+                        Text=""
+                        TextColor="#7BC87B"
+                        FontSize="12"/>
+
+                </VerticalStackLayout>
+            </Border>
+
             <!-- VERSIÓN Y ACTUALIZACIONES -->
 
             <Border

@@ -9,6 +9,7 @@ using Microsoft.Maui.Storage;
 
 using SCCosmos.Mobile.Data;
 using SCCosmos.Mobile.Models;
+using SCCosmos.Mobile.Services;
 
 namespace SCCosmos.Mobile.Platforms.Android;
 
@@ -312,7 +313,7 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                     AccionDiaAdelante));
 
             // Programación del día: programa de la visita.
-            List<(string Texto, string ConsultaMapa, string Acompanante)> programa =
+            List<(string Texto, string ConsultaMapa, string Acompanante, string Tiempo)> programa =
                 ObtenerProgramaDelDia(dia);
 
             vistas.SetTextViewText(
@@ -385,15 +386,26 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                     filasPrograma[i],
                     programa[i].Texto);
 
-                // Acompañante del evento, debajo de la actividad.
-                string acompanante =
+                // Línea secundaria: acompañante y tiempo en coche.
+                string secundaria =
                     programa[i].Acompanante;
 
-                if (!string.IsNullOrWhiteSpace(acompanante))
+                string tiempoFila =
+                    programa[i].Tiempo;
+
+                if (!string.IsNullOrWhiteSpace(tiempoFila))
+                {
+                    secundaria =
+                        string.IsNullOrWhiteSpace(secundaria)
+                            ? tiempoFila
+                            : secundaria + " · " + tiempoFila;
+                }
+
+                if (!string.IsNullOrWhiteSpace(secundaria))
                 {
                     vistas.SetTextViewText(
                         filasAcompanante[i],
-                        acompanante);
+                        secundaria);
 
                     vistas.SetViewVisibility(
                         filasAcompanante[i],
@@ -966,12 +978,17 @@ public class SccosmosWidgetProvider : AppWidgetProvider
     }
 
 
-    private static List<(string Texto, string ConsultaMapa, string Acompanante)>
+    private static List<(string Texto, string ConsultaMapa, string Acompanante, string Tiempo)>
         ObtenerProgramaDelDia(
             DateTime dia)
     {
         var resultado =
-            new List<(string Texto, string ConsultaMapa, string Acompanante)>();
+            new List<(string Texto, string ConsultaMapa, string Acompanante, string Tiempo)>();
+
+        // Destinos sin tiempo calculado todavía (se calculan en segundo
+        // plano y el widget se repinta al terminar).
+        var pendientes =
+            new List<(double Lat, double Lng, string Direccion)>();
 
         try
         {
@@ -1159,11 +1176,38 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                             actividad.Direccion.Trim();
                     }
 
+                    string tiempo =
+                        string.IsNullOrWhiteSpace(consulta)
+                            ? ""
+                            : (TiempoViajeService
+                                   .ObtenerTiempoTextoCacheado(
+                                       actividad.Latitud,
+                                       actividad.Longitud,
+                                       actividad.Direccion)
+                               ?? "");
+
+                    if (tiempo.Length == 0
+                        && !string.IsNullOrWhiteSpace(consulta))
+                    {
+                        pendientes.Add((
+                            actividad.Latitud,
+                            actividad.Longitud,
+                            actividad.Direccion));
+                    }
+
                     resultado.Add((
                         linea.Trim(),
                         consulta,
-                        acompanante));
+                        acompanante,
+                        tiempo));
                 }
+            }
+
+            if (pendientes.Count > 0)
+            {
+                TiempoViajeService.RefrescarEnSegundoPlano(
+                    pendientes,
+                    ActualizarTodos);
             }
         }
         catch

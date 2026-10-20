@@ -942,6 +942,89 @@ public partial class InicioPage : ContentPage, IActualizableMobile
 
         MarcoListaProgramaDia.IsVisible =
             ProgramaHoy.Count > 0;
+
+        // Tiempo en coche hasta los eventos con ubicación (con la
+        // ubicación actual del dispositivo).
+        _ = RefrescarTiemposViajeAsync();
+    }
+
+
+    private bool _refrescandoTiempos;
+
+    /// <summary>
+    /// Pinta el tiempo en coche de cada evento con ubicación: primero lo
+    /// que ya esté en caché y después calcula el resto (pide el permiso
+    /// de ubicación la primera vez; si se deniega, no se muestra nada).
+    /// </summary>
+    private async Task RefrescarTiemposViajeAsync()
+    {
+        if (_refrescandoTiempos)
+        {
+            return;
+        }
+
+        _refrescandoTiempos = true;
+
+        try
+        {
+            List<ActividadHoy> conUbicacion =
+                ProgramaHoy
+                    .Where(a => a.MostrarMapa)
+                    .ToList();
+
+            if (conUbicacion.Count == 0)
+            {
+                return;
+            }
+
+            await TiempoViajeService.ActualizarUbicacionAsync();
+
+            // Lo que ya esté en caché se pinta al momento.
+            foreach (ActividadHoy actividad in conUbicacion)
+            {
+                string? cacheado =
+                    TiempoViajeService.ObtenerTiempoTextoCacheado(
+                        actividad.Latitud,
+                        actividad.Longitud,
+                        actividad.Direccion);
+
+                if (!string.IsNullOrWhiteSpace(cacheado))
+                {
+                    actividad.TiempoCocheTexto = cacheado;
+                }
+            }
+
+            // El resto se calcula aquí (la caché evita repetir llamadas).
+            foreach (ActividadHoy actividad in conUbicacion)
+            {
+                if (!string.IsNullOrWhiteSpace(
+                        actividad.TiempoCocheTexto))
+                {
+                    continue;
+                }
+
+                int? minutos =
+                    await TiempoViajeService
+                        .CalcularMinutosCocheAsync(
+                            actividad.Latitud,
+                            actividad.Longitud,
+                            actividad.Direccion);
+
+                if (minutos is int valor)
+                {
+                    actividad.TiempoCocheTexto =
+                        "🚗 " +
+                        TiempoViajeService.FormatearMinutos(valor);
+                }
+            }
+        }
+        catch
+        {
+        }
+        finally
+        {
+            _refrescandoTiempos = false;
+        }
     }
 
     private async Task CargarEstadisticasAsync()
