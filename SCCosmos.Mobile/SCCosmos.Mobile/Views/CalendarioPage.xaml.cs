@@ -20,6 +20,7 @@ public partial class CalendarioPage : ContentPage, IActualizableMobile
 
     private bool _extendiendo;
     private bool _cargandoCalendario;
+    private bool _recargaPendienteCalendario;
     private DateTime? _anclaSemana;
 
     private readonly ObservableCollection<CalendarioGrupoMes>
@@ -212,6 +213,15 @@ public partial class CalendarioPage : ContentPage, IActualizableMobile
     {
         try
         {
+            // Si ya hay una recarga en curso, no se lanza otra: se marca
+            // pendiente y se relanza al terminar (evita solapes).
+            if (_cargandoCalendario)
+            {
+                _recargaPendienteCalendario = true;
+
+                return;
+            }
+
             if (_anclaSemana.HasValue)
             {
                 _ = CargarCalendarioAsync(
@@ -285,6 +295,13 @@ public partial class CalendarioPage : ContentPage, IActualizableMobile
         bool centrarEnActual,
         DateTime? ancla = null)
     {
+        if (_cargandoCalendario)
+        {
+            _recargaPendienteCalendario = true;
+
+            return;
+        }
+
         if (!DatabaseHelper.ExisteBaseLocal)
         {
             _grupos.Clear();
@@ -356,6 +373,15 @@ public partial class CalendarioPage : ContentPage, IActualizableMobile
 
             MostrarCarga(
                 false);
+
+            if (_recargaPendienteCalendario)
+            {
+                _recargaPendienteCalendario =
+                    false;
+
+                _ = CargarCalendarioAsync(
+                    centrarEnActual: false);
+            }
         }
     }
 

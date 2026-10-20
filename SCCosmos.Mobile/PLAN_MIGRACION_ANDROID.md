@@ -1888,3 +1888,8 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
 - **Revisión de Visita/VisitaDetalle**: sin patrones N+1 en la carga principal (lecturas en bloque);
   el `delayEstado` del Calendario Windows es un no-op. Pendiente si sigue notándose: revisar la
   construcción de UI de VisitaDetalle.
+- **Calendario «rayado» con sincronización (BUG)**: en Windows, `DatosActualizados` llamaba a
+  `CargarCalendarioAsync` sin `ColeccionSemanas.Clear()` — cada cambio recibido volvía a añadir las
+  ~105 semanas encima → calendario duplicado/rayado. Ahora se limpia antes de volcar, y tanto
+  Windows como Android tienen guardia de recarga (si ya hay una en curso se marca pendiente y se
+  relanza al terminar), evitando recargas solapadas.

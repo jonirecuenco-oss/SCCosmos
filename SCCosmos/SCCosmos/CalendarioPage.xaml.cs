@@ -34,6 +34,8 @@ namespace SCCosmos
         private ScrollViewer _scrollPadreFantasma;
         private bool _cargaIniciada;
         private bool _cancelarCarga;
+        private bool _cargandoCalendario;
+        private bool _recargaPendiente;
 
         // Importación nativa de Windows para simular el teclado
         [DllImport("user32.dll", SetLastError = true)]
@@ -406,6 +408,16 @@ namespace SCCosmos
         {
             try
             {
+                // Si ya hay una recarga en curso, no se lanza otra: se
+                // marca pendiente y se relanza al terminar (evita que se
+                // dupliquen o se solapen las semanas).
+                if (_cargandoCalendario)
+                {
+                    _recargaPendiente = true;
+
+                    return;
+                }
+
                 _ = CargarCalendarioAsync();
             }
             catch
@@ -416,6 +428,15 @@ namespace SCCosmos
 
         private async Task CargarCalendarioAsync()
         {
+            if (_cargandoCalendario)
+            {
+                _recargaPendiente = true;
+
+                return;
+            }
+
+            _cargandoCalendario = true;
+
             bool completado = false;
 
             try
@@ -425,6 +446,11 @@ namespace SCCosmos
                 await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
 
                 List<SemanaCalendario> semanas = await ConstruirSemanasAsync();
+
+                // Se limpia antes de volcar: si llegan cambios por
+                // sincronización, el calendario se reemplaza entero (antes
+                // se iban acumulando las semanas y se "rayaba").
+                ColeccionSemanas.Clear();
 
                 // La tabla se rellena por tandas pequeñas y entre tanda y tanda
                 // se cede el turno: así la barra del aviso se mantiene fluida y
@@ -495,7 +521,17 @@ namespace SCCosmos
             }
             finally
             {
+                _cargandoCalendario = false;
+
                 OverlayCargando.Visibility = Visibility.Collapsed;
+
+                if (_recargaPendiente
+                    && !_cancelarCarga)
+                {
+                    _recargaPendiente = false;
+
+                    _ = CargarCalendarioAsync();
+                }
             }
 
             if (completado)
