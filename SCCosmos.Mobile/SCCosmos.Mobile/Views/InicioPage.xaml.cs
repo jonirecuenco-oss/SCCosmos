@@ -958,10 +958,9 @@ public partial class InicioPage : ContentPage, IActualizableMobile
     /// </summary>
     private async Task RefrescarTiemposViajeAsync()
     {
-        // Solo se calcula si hay clave de Google configurada.
+        // Solo se calcula si hay alguna clave configurada (TomTom o Google).
         if (_refrescandoTiempos
-            || string.IsNullOrWhiteSpace(
-                TiempoViajeService.ObtenerClaveGoogle()))
+            || !TiempoViajeService.HayClaveConfigurada())
         {
             return;
         }

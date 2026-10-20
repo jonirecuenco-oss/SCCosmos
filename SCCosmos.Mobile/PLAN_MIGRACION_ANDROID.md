@@ -1939,3 +1939,6 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   coche); con Google, Directions + Geocoding. Sin ninguna clave no se calcula nada. La tarjeta de
   Configuración → «Tiempo de viaje» tiene ahora los dos campos (TomTom y Google) y un mensaje que
   indica qué servicio está activo.
+- **Inicio con TomTom (corrección)**: la guarda de `RefrescarTiemposViajeAsync` en Inicio seguía
+  comprobando solo la clave de Google, así que con solo TomTom el tiempo no aparecía en la página
+  de Inicio (el widget sí, porque usa las guardas del servicio). Ahora usa `HayClaveConfigurada()`.
