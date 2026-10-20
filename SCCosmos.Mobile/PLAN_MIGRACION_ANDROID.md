@@ -1874,3 +1874,8 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   (`PerfilAccesoService`), con lo que se apaga la campana de Inicio, la página de alertas y la
   sección del widget; en Windows la campana ya se ocultaba y `VerificarAlertas`/`AvisosWindows` no
   se ejecutan para ella. Tareas, programación y predicación le siguen apareciendo igual.
+- **Tareas de quien las crea**: `ObtenerTareasMobile` (Android) y `ObtenerTareas` (Windows) filtran
+  por creador — cada usuario ve las suyas y las compartidas (`Compartida`); las antiguas sin creador
+  las ven todos. De una vez quedan filtrados la lista de Tareas, el widget, las notificaciones de
+  tareas y la campana/avisos de Windows. Los dos formularios ya guardaban «SC»/«Esposa» en
+  `CreadaPor` según el perfil.

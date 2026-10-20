@@ -84,7 +84,22 @@ namespace SCCosmos
                 }
             }
 
-            return lista;
+            // Las tareas son de quien las crea: cada usuario ve las suyas y
+            // las compartidas (las antiguas sin creador las ven todos).
+            string usuario =
+                PerfilAcceso.AccesoCompleto
+                    ? "SC"
+                    : "Esposa";
+
+            return lista
+                .Where(t =>
+                    t.Compartida
+                    || string.IsNullOrWhiteSpace(t.CreadaPor)
+                    || string.Equals(
+                        t.CreadaPor.Trim(),
+                        usuario,
+                        StringComparison.OrdinalIgnoreCase))
+                .ToList();
         }
 
 

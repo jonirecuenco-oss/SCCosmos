@@ -114,7 +114,23 @@ public static partial class DatabaseHelper
             });
         }
 
-        return lista;
+        // Las tareas son de quien las crea: cada usuario ve las suyas y
+        // las compartidas (las antiguas sin creador las ven todos).
+        string usuario =
+            SCCosmos.Mobile.Services
+                .PerfilAccesoService.EsHombre
+                ? "SC"
+                : "Esposa";
+
+        return lista
+            .Where(t =>
+                t.Compartida
+                || string.IsNullOrWhiteSpace(t.CreadaPor)
+                || string.Equals(
+                    t.CreadaPor.Trim(),
+                    usuario,
+                    StringComparison.OrdinalIgnoreCase))
+            .ToList();
     }
 
 
