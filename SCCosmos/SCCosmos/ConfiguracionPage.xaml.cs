@@ -55,8 +55,10 @@ namespace SCCosmos
             {
                 CardJwHub.Visibility = Visibility.Collapsed;
                 CardArchivoCircuito.Visibility = Visibility.Collapsed;
-                CardSincronizacion.Visibility = Visibility.Collapsed;
-                ToggleSincronizacion.Visibility = Visibility.Collapsed;
+
+                // La sincronización entre dispositivos la puede ajustar
+                // también la esposa (su equipo necesita sus direcciones,
+                // clave y dispositivos).
 
                 LblNumCircuito.Visibility = Visibility.Collapsed;
                 TxtNumCircuito.Visibility = Visibility.Collapsed;

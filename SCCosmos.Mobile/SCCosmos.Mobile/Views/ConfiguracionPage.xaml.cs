@@ -32,18 +32,8 @@ public partial class ConfiguracionPage : ContentPage
         // Versión y actualizaciones.
         CargarActualizaciones();
 
-        // La esposa no gestiona dispositivos.
-        try
-        {
-            if (!PerfilAccesoService.EsHombre)
-            {
-                CardSincroMobile.IsVisible =
-                    false;
-            }
-        }
-        catch
-        {
-        }
+        // La sincronización entre dispositivos también la ajusta la
+        // esposa: su móvil necesita sus propias direcciones y clave.
     }
 
 

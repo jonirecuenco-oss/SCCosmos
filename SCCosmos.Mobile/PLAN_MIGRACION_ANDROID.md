@@ -1898,3 +1898,7 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   hay copias del .db en vivo y el móvil usa la API BackupDatabase para exportar). Revisado: las
   estadísticas de Inicio del móvil ya van en Task.Run; el arranque de VisitasPage (Windows) es
   ligero; sin más bucles N+1 localizados en los cargadores principales.
+- **Sincronización visible para la esposa**: se elimina el ocultado de `CardSincroMobile` (Android) y
+  de `CardSincronizacion`/`ToggleSincronizacion` (Windows) para el perfil limitado — la esposa ya
+  puede ver y editar la sincronización entre dispositivos en Configuración (lo demás del gating se
+  mantiene: JW Hub y datos del SC siguen ocultos para ella).
