@@ -1914,3 +1914,6 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   Envío de S-303 tiene dos apartados nuevos (S-303 y Carta de nombramientos) con los archivos
   antiguos repartidos por nombre. Visitas > S-302: la decisión es un select Sí/No, la carta sale
   del apartado nuevo y las decisiones se aplican a JW Hub como antes.
+- **Widget con acompañante**: debajo de cada actividad de la programación del widget aparece el
+  acompañante («con Nombre») cuando el evento tiene uno (`widget_programaN_acompanante`, misma
+  regla que Inicio: solo eventos no legacy con `CompaneroId`).

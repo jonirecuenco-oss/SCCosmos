@@ -101,6 +101,17 @@
             android:visibility="gone" />
     </LinearLayout>
 
+    <TextView
+        android:id="@+id/widget_programa1_acompanante"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textColor="#9AA3AD"
+        android:textSize="13sp"
+        android:layout_marginTop="1dp"
+        android:paddingLeft="2dp"
+        android:visibility="gone" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -130,6 +141,17 @@
             android:textSize="21sp"
             android:visibility="gone" />
     </LinearLayout>
+
+    <TextView
+        android:id="@+id/widget_programa2_acompanante"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textColor="#9AA3AD"
+        android:textSize="13sp"
+        android:layout_marginTop="1dp"
+        android:paddingLeft="2dp"
+        android:visibility="gone" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -161,6 +183,17 @@
             android:visibility="gone" />
     </LinearLayout>
 
+    <TextView
+        android:id="@+id/widget_programa3_acompanante"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textColor="#9AA3AD"
+        android:textSize="13sp"
+        android:layout_marginTop="1dp"
+        android:paddingLeft="2dp"
+        android:visibility="gone" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -190,6 +223,17 @@
             android:textSize="21sp"
             android:visibility="gone" />
     </LinearLayout>
+
+    <TextView
+        android:id="@+id/widget_programa4_acompanante"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textColor="#9AA3AD"
+        android:textSize="13sp"
+        android:layout_marginTop="1dp"
+        android:paddingLeft="2dp"
+        android:visibility="gone" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -221,6 +265,17 @@
             android:visibility="gone" />
     </LinearLayout>
 
+    <TextView
+        android:id="@+id/widget_programa5_acompanante"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textColor="#9AA3AD"
+        android:textSize="13sp"
+        android:layout_marginTop="1dp"
+        android:paddingLeft="2dp"
+        android:visibility="gone" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -250,6 +305,17 @@
             android:textSize="21sp"
             android:visibility="gone" />
     </LinearLayout>
+
+    <TextView
+        android:id="@+id/widget_programa6_acompanante"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textColor="#9AA3AD"
+        android:textSize="13sp"
+        android:layout_marginTop="1dp"
+        android:paddingLeft="2dp"
+        android:visibility="gone" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -281,6 +347,17 @@
             android:visibility="gone" />
     </LinearLayout>
 
+    <TextView
+        android:id="@+id/widget_programa7_acompanante"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textColor="#9AA3AD"
+        android:textSize="13sp"
+        android:layout_marginTop="1dp"
+        android:paddingLeft="2dp"
+        android:visibility="gone" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -310,6 +387,17 @@
             android:textSize="21sp"
             android:visibility="gone" />
     </LinearLayout>
+
+    <TextView
+        android:id="@+id/widget_programa8_acompanante"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textColor="#9AA3AD"
+        android:textSize="13sp"
+        android:layout_marginTop="1dp"
+        android:paddingLeft="2dp"
+        android:visibility="gone" />
 
     <TextView
         android:id="@+id/widget_seccion_tareas"

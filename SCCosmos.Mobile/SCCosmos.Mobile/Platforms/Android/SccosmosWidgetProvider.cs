@@ -312,7 +312,7 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                     AccionDiaAdelante));
 
             // Programación del día: programa de la visita.
-            List<(string Texto, string ConsultaMapa)> programa =
+            List<(string Texto, string ConsultaMapa, string Acompanante)> programa =
                 ObtenerProgramaDelDia(dia);
 
             vistas.SetTextViewText(
@@ -343,6 +343,18 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                 Resource.Id.widget_programa8_mapa
             };
 
+            int[] filasAcompanante =
+            {
+                Resource.Id.widget_programa1_acompanante,
+                Resource.Id.widget_programa2_acompanante,
+                Resource.Id.widget_programa3_acompanante,
+                Resource.Id.widget_programa4_acompanante,
+                Resource.Id.widget_programa5_acompanante,
+                Resource.Id.widget_programa6_acompanante,
+                Resource.Id.widget_programa7_acompanante,
+                Resource.Id.widget_programa8_acompanante
+            };
+
             for (int i = 0;
                  i < filasPrograma.Length;
                  i++)
@@ -360,6 +372,10 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                     botonesMapa[i],
                     global::Android.Views.ViewStates.Gone);
 
+                vistas.SetViewVisibility(
+                    filasAcompanante[i],
+                    global::Android.Views.ViewStates.Gone);
+
                 if (!hay)
                 {
                     continue;
@@ -368,6 +384,21 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                 vistas.SetTextViewText(
                     filasPrograma[i],
                     programa[i].Texto);
+
+                // Acompañante del evento, debajo de la actividad.
+                string acompanante =
+                    programa[i].Acompanante;
+
+                if (!string.IsNullOrWhiteSpace(acompanante))
+                {
+                    vistas.SetTextViewText(
+                        filasAcompanante[i],
+                        acompanante);
+
+                    vistas.SetViewVisibility(
+                        filasAcompanante[i],
+                        global::Android.Views.ViewStates.Visible);
+                }
 
                 string consulta =
                     programa[i].ConsultaMapa;
@@ -935,12 +966,12 @@ public class SccosmosWidgetProvider : AppWidgetProvider
     }
 
 
-    private static List<(string Texto, string ConsultaMapa)>
+    private static List<(string Texto, string ConsultaMapa, string Acompanante)>
         ObtenerProgramaDelDia(
             DateTime dia)
     {
         var resultado =
-            new List<(string Texto, string ConsultaMapa)>();
+            new List<(string Texto, string ConsultaMapa, string Acompanante)>();
 
         try
         {
@@ -1026,7 +1057,8 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                 string responsable =
                     (actividad.Responsable ?? "").Trim();
 
-                if (responsable.Equals(
+                bool esLegacy =
+                    responsable.Equals(
                         "Comida",
                         StringComparison.OrdinalIgnoreCase)
                     || responsable.Equals(
@@ -1034,7 +1066,9 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                         StringComparison.OrdinalIgnoreCase)
                     || responsable.Equals(
                         "Dormir",
-                        StringComparison.OrdinalIgnoreCase))
+                        StringComparison.OrdinalIgnoreCase);
+
+                if (esLegacy)
                 {
                     if (tipo.Length == 0)
                     {
@@ -1069,6 +1103,40 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                         ? " (" + responsable + ")"
                         : "");
 
+                // Acompañante del evento (solo cuando el evento tiene uno):
+                // se muestra debajo de la actividad en el widget.
+                string acompanante =
+                    "";
+
+                if (!esLegacy
+                    && actividad.CompaneroId > 0)
+                {
+                    Persona? persona =
+                        DatabaseHelper
+                            .ObtenerPersonaPorId(
+                                actividad.CompaneroId);
+
+                    if (persona != null
+                        && !string.IsNullOrWhiteSpace(
+                            persona.Nombre))
+                    {
+                        string primerNombre =
+                            persona.Nombre
+                                .Split(
+                                    ' ',
+                                    StringSplitOptions
+                                        .RemoveEmptyEntries)
+                                .FirstOrDefault()
+                            ?? "";
+
+                        if (primerNombre.Length > 0)
+                        {
+                            acompanante =
+                                "con " + primerNombre;
+                        }
+                    }
+                }
+
                 if (linea.Trim().Length > 0)
                 {
                     string consulta =
@@ -1093,7 +1161,8 @@ public class SccosmosWidgetProvider : AppWidgetProvider
 
                     resultado.Add((
                         linea.Trim(),
-                        consulta));
+                        consulta,
+                        acompanante));
                 }
             }
         }
