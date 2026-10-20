@@ -129,6 +129,20 @@ namespace SCCosmos
             using (var connection = new SqliteConnection(ConnectionString))
             {
                 connection.Open();
+
+                // Modo WAL: lecturas y escrituras mucho más rápidas
+                // (sobre todo durante ráfagas de sincronización). Es una
+                // propiedad persistente del archivo; aquí se asegura en
+                // cada arranque. En Windows no hay copias del .db en vivo,
+                // así que es seguro.
+                try
+                {
+                    EjecutarQuery(connection, "PRAGMA journal_mode=WAL;");
+                }
+                catch
+                {
+                }
+
                 //BorrarPersonasYActividad();
                 CrearTablasPrincipales(connection);
                 AsegurarTablasAsambleasInterno(connection);

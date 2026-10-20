@@ -1893,3 +1893,8 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   ~105 semanas encima → calendario duplicado/rayado. Ahora se limpia antes de volcar, y tanto
   Windows como Android tienen guardia de recarga (si ya hay una en curso se marca pendiente y se
   relanza al terminar), evitando recargas solapadas.
+- **RENDIMIENTO (pasada 2)**: Windows activa `PRAGMA journal_mode=WAL` en `InicializarDatabase`
+  (commits mucho más baratos, en especial por los disparadores de sincronización; seguro porque no
+  hay copias del .db en vivo y el móvil usa la API BackupDatabase para exportar). Revisado: las
+  estadísticas de Inicio del móvil ya van en Task.Run; el arranque de VisitasPage (Windows) es
+  ligero; sin más bucles N+1 localizados en los cargadores principales.
