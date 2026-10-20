@@ -368,45 +368,75 @@ public partial class CalendarioPage : ContentPage, IActualizableMobile
         DateTime martesActual =
             ObtenerMartesActual();
 
+        // Una sola consulta para todo el rango (antes: una por semana).
+        List<SemanaCalendario> todas =
+            DatabaseHelper
+                .ObtenerSemanasEnRangoMobile(
+                    _fechaLimiteAnterior.ToString(
+                        "yyyy-MM-dd",
+                        CultureInfo.InvariantCulture),
+                    _fechaLimitePosterior.ToString(
+                        "yyyy-MM-dd",
+                        CultureInfo.InvariantCulture));
+
+        var porFecha =
+            new Dictionary<DateTime, List<SemanaCalendario>>();
+
+        foreach (SemanaCalendario semana in todas)
+        {
+            DateTime clave =
+                semana.FechaMartes.Date;
+
+            if (!porFecha.TryGetValue(
+                    clave,
+                    out List<SemanaCalendario>? lista))
+            {
+                lista =
+                    new List<SemanaCalendario>();
+
+                porFecha[clave] =
+                    lista;
+            }
+
+            lista.Add(
+                semana);
+        }
+
         DateTime fecha =
             _fechaLimiteAnterior;
 
         while (fecha <=
                _fechaLimitePosterior)
         {
-            string iso =
-                fecha.ToString(
-                    "yyyy-MM-dd",
-                    CultureInfo.InvariantCulture);
-
-            List<SemanaCalendario> semanas =
-                DatabaseHelper
-                    .ObtenerTodasSemanasPorFecha(
-                        iso);
-
-            if (semanas.Count == 0)
+            if (!porFecha.TryGetValue(
+                    fecha.Date,
+                    out List<SemanaCalendario>? semanas)
+                || semanas.Count == 0)
             {
-                semanas.Add(
-                    new SemanaCalendario
+                semanas =
+                    new List<SemanaCalendario>
                     {
-                        FechaMartes =
-                            fecha,
+                        new SemanaCalendario
+                        {
+                            FechaMartes =
+                                fecha,
 
-                        Actividad =
-                            "",
+                            Actividad =
+                                "",
 
-                        Congregacion =
-                            "",
+                            Congregacion =
+                                "",
 
-                        Acompanante =
-                            "",
+                            Acompanante =
+                                "",
 
-                        Tipo =
-                            "",
+                            Tipo =
+                                "",
 
-                        Alojamiento =
-                            ""
-                    });
+                            Alojamiento =
+                                ""
+                        }
+                    };
             }
 
             for (int i = 0;

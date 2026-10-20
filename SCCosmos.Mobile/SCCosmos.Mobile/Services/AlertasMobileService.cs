@@ -179,31 +179,26 @@ public static class AlertasMobileService
         DateTime martesActual =
             ObtenerMartesActual();
 
-        for (int w = -semanasAtras;
-             w <= semanasAdelante;
-             w++)
+        // Una sola consulta para todo el rango (antes: una por semana).
+        try
         {
-            DateTime fecha =
-                martesActual.AddDays(w * 7);
+            DateTime desde =
+                martesActual.AddDays(
+                    -semanasAtras * 7);
 
-            string iso =
-                fecha.ToString(
-                    "yyyy-MM-dd",
-                    CultureInfo.InvariantCulture);
+            DateTime hasta =
+                martesActual.AddDays(
+                    semanasAdelante * 7);
 
-            List<SemanaCalendario> semanas;
-
-            try
-            {
-                semanas =
-                    DatabaseHelper
-                        .ObtenerTodasSemanasPorFecha(
-                            iso);
-            }
-            catch
-            {
-                continue;
-            }
+            List<SemanaCalendario> semanas =
+                DatabaseHelper
+                    .ObtenerSemanasEnRangoMobile(
+                        desde.ToString(
+                            "yyyy-MM-dd",
+                            CultureInfo.InvariantCulture),
+                        hasta.ToString(
+                            "yyyy-MM-dd",
+                            CultureInfo.InvariantCulture));
 
             foreach (SemanaCalendario semana in semanas)
             {
@@ -212,6 +207,9 @@ public static class AlertasMobileService
                     semana,
                     hoy);
             }
+        }
+        catch
+        {
         }
 
 #if ANDROID

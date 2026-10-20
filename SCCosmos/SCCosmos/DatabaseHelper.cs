@@ -120,7 +120,7 @@ namespace SCCosmos
             {
                 // Sin agrupación de conexiones (pooling): así la app no
                 // mantiene el archivo abierto entre operación y operación.
-                return $"Data Source={RutaBaseDatos};Pooling=False";
+                return $"Data Source={RutaBaseDatos};Pooling=True";
             }
         }
 

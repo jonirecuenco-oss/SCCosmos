@@ -1879,3 +1879,12 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   las ven todos. De una vez quedan filtrados la lista de Tareas, el widget, las notificaciones de
   tareas y la campana/avisos de Windows. Los dos formularios ya guardaban «SC»/«Esposa» en
   `CreadaPor` según el perfil.
+- **RENDIMIENTO (pasada 1)**: Windows pasa de `Pooling=False` a `Pooling=True` en las conexiones de
+  la app (DatabaseHelper, MainWindow, Visitas ×2, Inicio, Personas) — antes cada consulta abría el
+  archivo de base de datos desde cero, causa principal del lag general; el motor de sincronización
+  conserva su conexión sin pooling (hace copias de archivo). Android: nuevo
+  `ObtenerSemanasEnRangoMobile` — el Calendario pasa de ~105 consultas a 1, y
+  `AlertasMobileService.Calcular` de ~20 a 1 (también afecta al widget y a las notificaciones).
+- **Revisión de Visita/VisitaDetalle**: sin patrones N+1 en la carga principal (lecturas en bloque);
+  el `delayEstado` del Calendario Windows es un no-op. Pendiente si sigue notándose: revisar la
+  construcción de UI de VisitaDetalle.

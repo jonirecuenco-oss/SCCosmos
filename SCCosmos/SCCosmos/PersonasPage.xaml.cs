@@ -613,7 +613,7 @@ namespace SCCosmos
                                 p.Latitud = lat;
                                 p.Longitud = lon;
 
-                                using (var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={DatabaseHelper.RutaBaseDatos};Pooling=False"))
+                                using (var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={DatabaseHelper.RutaBaseDatos};Pooling=True"))
                                 {
                                     connection.Open();
                                     var cmd = connection.CreateCommand();

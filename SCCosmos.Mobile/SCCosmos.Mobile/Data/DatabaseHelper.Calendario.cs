@@ -94,6 +94,75 @@ public static partial class DatabaseHelper
 
 
     // ========================================================================
+    // OBTENER SEMANAS EN UN RANGO (UNA SOLA CONSULTA)
+    // ========================================================================
+
+    public static List<SemanaCalendario>
+        ObtenerSemanasEnRangoMobile(
+            string desdeIso,
+            string hastaIso)
+    {
+        var resultado =
+            new List<SemanaCalendario>();
+
+        using var connection =
+            new SqliteConnection(
+                ConnectionString);
+
+        connection.Open();
+
+        AsegurarEstructuraCalendarioMobile(
+            connection);
+
+        using var cmd =
+            connection.CreateCommand();
+
+        cmd.CommandText =
+            """
+            SELECT
+                Id,
+                FechaMartes,
+                Actividad,
+                Congregacion,
+                Tipo,
+                Acompanante,
+                Alojamiento,
+                S302Enviado,
+                DocEnviada,
+                SeccionAsamblea,
+                FechaAsamblea,
+                NotificacionEnviada,
+                RecordatorioEnviado,
+                DatosImportados
+            FROM Semanas
+            WHERE date(FechaMartes) >= date($desde)
+              AND date(FechaMartes) <= date($hasta)
+            ORDER BY FechaMartes ASC, Id ASC;
+            """;
+
+        cmd.Parameters.AddWithValue(
+            "$desde",
+            desdeIso);
+
+        cmd.Parameters.AddWithValue(
+            "$hasta",
+            hastaIso);
+
+        using SqliteDataReader reader =
+            cmd.ExecuteReader();
+
+        while (reader.Read())
+        {
+            resultado.Add(
+                LeerSemanaCalendarioMobile(
+                    reader));
+        }
+
+        return resultado;
+    }
+
+
+    // ========================================================================
     // GUARDAR / ACTUALIZAR SEMANA
     // ========================================================================
 

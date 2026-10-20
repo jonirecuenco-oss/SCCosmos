@@ -769,7 +769,7 @@ namespace SCCosmos
             {
             }
 
-            string connectionString = $"Data Source={DatabaseHelper.RutaBaseDatos};Pooling=False";
+            string connectionString = $"Data Source={DatabaseHelper.RutaBaseDatos};Pooling=True";
 
             try
             {

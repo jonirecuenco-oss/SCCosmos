@@ -1028,7 +1028,7 @@ namespace SCCosmos
 
             using (var connection =
                    new SqliteConnection(
-                       $"Data Source={dbPath};Pooling=False"))
+                       $"Data Source={dbPath};Pooling=True"))
             {
                 connection.Open();
 
