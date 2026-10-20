@@ -1853,3 +1853,12 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   mes» y muestra «X h · Y CBs»; el + pide horas y CBs (dos diálogos / dos campos en
   `HorasEntradaPage`); el widget mueve la sección al final con título «PREDICACIÓN ESTE MES» y el
   mismo +. Cada usuario (SC/Esposa) tiene su contador.
+- **Widget (Android, + de Predicación)**: el botón abre ahora una **ventanita emergente nativa**
+  (`HorasDialogActivity`, tema `Theme.Material.Dialog.Alert` + `dialog_horas.xml`) sin traer al
+  frente la app; añade horas y CBs y refresca el widget.
+- **Personas (Android)**: al guardar una ficha se vacían los pendientes al momento
+  (`SincronizacionMobile.VaciarPendientesAsync`) y el aviso pasa a «se sincronizan solos»
+  (se eliminó la referencia a Configuración → Guardar cambios en carpeta).
+- **Bajas de JW Hub (Android)**: solo se proponen como posibles bajas las fichas con
+  `OrigenRegistro` de JW Hub (`TieneOrigenJWHub`, igual que Windows); las creadas desde S-21 ya no
+  aparecen.

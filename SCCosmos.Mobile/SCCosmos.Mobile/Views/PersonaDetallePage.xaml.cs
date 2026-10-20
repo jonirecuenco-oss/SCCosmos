@@ -1194,6 +1194,19 @@ public partial class PersonaDetallePage : ContentPage
                         requisito);
             });
 
+            // Los cambios se envían de inmediato (dispositivos y carpeta):
+            // ya no hace falta el paso manual por Configuración.
+            try
+            {
+                await SCCosmos.Mobile.Services
+                    .SincronizacionMobile
+                    .VaciarPendientesAsync(
+                        TimeSpan.FromSeconds(6));
+            }
+            catch
+            {
+            }
+
             // Volvemos a consultar para obtener
             // también el nombre de congregación.
             _persona =
@@ -1206,7 +1219,7 @@ public partial class PersonaDetallePage : ContentPage
 
             await DisplayAlert(
                 "Guardado",
-                "Los cambios se han guardado en la base de datos local del móvil.\n\nPara enviarlos al PC, usa Configuración → Guardar cambios en carpeta.",
+                "Los cambios se han guardado y se sincronizan solos.",
                 "Aceptar");
 
             await Navigation.PopAsync();

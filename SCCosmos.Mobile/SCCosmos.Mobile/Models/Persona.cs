@@ -59,6 +59,14 @@ public class Persona
 
     // Campos de origen / traslado / aprobación (compartidos con WPF).
     public string OrigenRegistro { get; set; } = "DESCONOCIDO";
+
+    /// <summary>Igual que en Windows: la ficha vino alguna vez de JW Hub.</summary>
+    public bool TieneOrigenJWHub =>
+        !string.IsNullOrWhiteSpace(OrigenRegistro) &&
+        OrigenRegistro.IndexOf(
+            "JWHub",
+            StringComparison.OrdinalIgnoreCase) >= 0;
+
     public bool AprobadoExhibidores { get; set; }
     public int TrasladoAnteriorId { get; set; }
     public int TrasladoSiguienteId { get; set; }

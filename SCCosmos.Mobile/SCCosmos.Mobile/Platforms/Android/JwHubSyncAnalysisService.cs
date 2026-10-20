@@ -649,6 +649,14 @@ public static class JwHubSyncAnalysisService
                     continue;
                 }
 
+                // Como en Windows: solo se consideran posibles bajas
+                // las fichas que alguna vez vinieron de JW Hub; las
+                // creadas únicamente desde S-21 no aparecen aquí.
+                if (!dbItem.TieneOrigenJWHub)
+                {
+                    continue;
+                }
+
 
                 resultado.Bajas.Add(
                     new JwHubSyncItemAnalisis

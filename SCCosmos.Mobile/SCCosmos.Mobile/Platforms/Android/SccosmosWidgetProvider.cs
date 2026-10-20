@@ -640,11 +640,29 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                     global::Android.Views
                         .ViewStates.Visible);
 
-                PendingIntent? sumarHoras =
-                    CrearActividad(
-                        contexto,
-                        4870,
-                        "horas");
+                PendingIntent? sumarHoras = null;
+
+                try
+                {
+                    var intencionHoras =
+                        new Intent(
+                            contexto,
+                            typeof(HorasDialogActivity));
+
+                    intencionHoras.AddFlags(
+                        ActivityFlags.NewTask);
+
+                    sumarHoras =
+                        PendingIntent.GetActivity(
+                            contexto,
+                            4870,
+                            intencionHoras,
+                            PendingIntentFlags.Immutable
+                            | PendingIntentFlags.UpdateCurrent);
+                }
+                catch
+                {
+                }
 
                 if (sumarHoras is not null)
                 {
