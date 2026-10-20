@@ -62,7 +62,7 @@ public static class ActualizadorSccosmos
 {
     /// <summary>Versión instalada de la aplicación.</summary>
     public const string VersionApp =
-        "1.5.4";
+        "1.5.5";
 
     private const string Propietario =
         "jonirecuenco-oss";
