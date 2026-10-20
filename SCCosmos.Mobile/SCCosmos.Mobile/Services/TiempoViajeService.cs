@@ -7,10 +7,10 @@ namespace SCCosmos.Mobile.Services;
 
 /// <summary>
 /// Tiempo en coche hasta un destino (coordenadas o dirección) desde la
-/// ubicación actual del dispositivo. Usa la API de Google Maps cuando hay
-/// una clave configurada (tiempos con tráfico en tiempo real); si no,
-/// usa servicios abiertos y gratuitos (Nominatim + OSRM) para que
-/// funcione sin configurar nada.
+/// ubicación actual del dispositivo. Solo se calcula cuando hay una clave
+/// de Google Maps configurada (Directions API + Geocoding API) en
+/// Configuración → «Tiempo de viaje»; sin clave no se calcula ni se
+/// muestra nada.
 /// </summary>
 public static class TiempoViajeService
 {
@@ -101,6 +101,12 @@ public static class TiempoViajeService
     /// </summary>
     public static async Task ActualizarUbicacionAsync()
     {
+        // Sin clave de Google no hace falta la ubicación.
+        if (ObtenerClaveGoogle().Length == 0)
+        {
+            return;
+        }
+
         try
         {
             PermissionStatus permiso =
@@ -162,6 +168,12 @@ public static class TiempoViajeService
         double lng,
         string direccion)
     {
+        // Solo se muestra si hay clave de Google configurada.
+        if (ObtenerClaveGoogle().Length == 0)
+        {
+            return null;
+        }
+
         string? clave = CrearClaveDestino(lat, lng, direccion);
 
         if (clave is null)
@@ -184,6 +196,12 @@ public static class TiempoViajeService
         double lng,
         string direccion)
     {
+        // Solo se calcula con clave de Google configurada.
+        if (ObtenerClaveGoogle().Length == 0)
+        {
+            return null;
+        }
+
         try
         {
             string? clave = CrearClaveDestino(lat, lng, direccion);
@@ -277,7 +295,9 @@ public static class TiempoViajeService
         IEnumerable<(double Lat, double Lng, string Direccion)> destinos,
         Action alTerminar)
     {
-        if (_calculando || ObtenerUbicacionGuardada() is null)
+        if (_calculando
+            || ObtenerClaveGoogle().Length == 0
+            || ObtenerUbicacionGuardada() is null)
         {
             return;
         }
@@ -395,16 +415,10 @@ public static class TiempoViajeService
 
         foreach (string consulta in CrearConsultasGeocodificacion(direccionTexto))
         {
-            (double Lat, double Lng)? resultado = null;
-
-            if (claveGoogle.Length > 0)
-            {
-                resultado = await GeocodificarConGoogleAsync(claveGoogle, consulta);
-            }
-
-            // Si Google no da resultado (o no hay clave), se prueba con
-            // el servicio abierto.
-            resultado ??= await GeocodificarConNominatimAsync(consulta);
+            (double Lat, double Lng)? resultado =
+                await GeocodificarConGoogleAsync(
+                    claveGoogle,
+                    consulta);
 
             if (resultado is { } punto)
             {
@@ -502,61 +516,17 @@ public static class TiempoViajeService
     }
 
 
-    private static async Task<(double Lat, double Lng)?> GeocodificarConNominatimAsync(
-        string consulta)
-    {
-        try
-        {
-            string url =
-                "https://nominatim.openstreetmap.org/search"
-                + "?format=json&limit=1&q="
-                + Uri.EscapeDataString(consulta);
 
-            using JsonDocument json =
-                JsonDocument.Parse(
-                    await Cliente.GetStringAsync(url));
-
-            JsonElement raiz = json.RootElement;
-
-            if (raiz.ValueKind == JsonValueKind.Array
-                && raiz.GetArrayLength() > 0)
-            {
-                JsonElement primero = raiz[0];
-
-                return (
-                    double.Parse(
-                        primero.GetProperty("lat").GetString() ?? "0",
-                        System.Globalization.CultureInfo.InvariantCulture),
-                    double.Parse(
-                        primero.GetProperty("lon").GetString() ?? "0",
-                        System.Globalization.CultureInfo.InvariantCulture));
-            }
-        }
-        catch
-        {
-        }
-
-        return null;
-    }
 
 
     private static async Task<int?> CalcularRutaAsync(
         (double Lat, double Lng) origen,
         (double Lat, double Lng) destino)
     {
-        string clave = ObtenerClaveGoogle();
-
-        if (clave.Length > 0)
-        {
-            int? conGoogle = await RutaConGoogleAsync(clave, origen, destino);
-
-            if (conGoogle is int valorGoogle)
-            {
-                return valorGoogle;
-            }
-        }
-
-        return await RutaConOsrmAsync(origen, destino);
+        return await RutaConGoogleAsync(
+            ObtenerClaveGoogle(),
+            origen,
+            destino);
     }
 
 
@@ -613,39 +583,7 @@ public static class TiempoViajeService
     }
 
 
-    private static async Task<int?> RutaConOsrmAsync(
-        (double Lat, double Lng) origen,
-        (double Lat, double Lng) destino)
-    {
-        try
-        {
-            string url =
-                "https://router.project-osrm.org/route/v1/driving/"
-                + Numero(origen.Lng) + "," + Numero(origen.Lat) + ";"
-                + Numero(destino.Lng) + "," + Numero(destino.Lat)
-                + "?overview=false";
 
-            using JsonDocument json =
-                JsonDocument.Parse(
-                    await Cliente.GetStringAsync(url));
-
-            JsonElement raiz = json.RootElement;
-
-            if (raiz.TryGetProperty("routes", out JsonElement rutas)
-                && rutas.GetArrayLength() > 0)
-            {
-                double segundos =
-                    rutas[0].GetProperty("duration").GetDouble();
-
-                return (int)Math.Ceiling(segundos / 60.0);
-            }
-        }
-        catch
-        {
-        }
-
-        return null;
-    }
 
 
     private static string Numero(double valor) =>

@@ -1930,3 +1930,7 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   del evento (NotasLibro, como Inicio; máx. 2 líneas) en vez del acompañante. Tiempo de viaje: los
   destinos que fallan no bloquean a los demás (espera de 30 min antes de reintentar), las direcciones
   se prueban con variantes (sin paréntesis, con «España») y hay respaldo Google→Nominatim/OSRM.
+- **Tiempo de viaje solo con clave Google**: por ahora el cálculo queda desactivado sin clave — sin
+  clave no se calcula, no se muestra en ningún sitio (Inicio ni widget) y ni siquiera se pide el
+  permiso de ubicación. Se eliminaron los servicios abiertos (Nominatim/OSRM); con clave se usan
+  Directions + Geocoding de Google (con variantes de dirección y espera de 30 min tras un fallo).

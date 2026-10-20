@@ -508,7 +508,7 @@ public partial class ConfiguracionPage : ContentPage
             LblGmapsGuardada.Text =
                 string.IsNullOrWhiteSpace(
                     TiempoViajeService.ObtenerClaveGoogle())
-                    ? "Sin clave: se usan tiempos gratuitos (sin tráfico)."
+                    ? "Sin clave: el tiempo de viaje no se mostrará."
                     : "Clave guardada: los tiempos incluirán el tráfico.";
         }
         catch

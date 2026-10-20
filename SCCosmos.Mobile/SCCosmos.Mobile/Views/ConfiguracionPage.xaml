@@ -385,7 +385,7 @@
                         FontSize="15"/>
 
                     <Label
-                        Text="Inicio y el widget muestran cuánto se tarda en coche hasta cada evento, con tu ubicación actual. Funciona gratis desde el primer momento; si pegas una clave de Google Maps (Directions API), los tiempos incluyen el tráfico en tiempo real."
+                        Text="Inicio y el widget muestran cuánto se tarda en coche hasta cada evento, con tu ubicación actual. El cálculo solo funciona con una clave de Google Maps (Directions API y Geocoding API): sin clave no se muestra el tiempo ni se pide la ubicación."
                         TextColor="#9EA4AE"
                         FontSize="12.5"
                         LineBreakMode="WordWrap"/>
