@@ -979,21 +979,14 @@ public partial class InicioPage : ContentPage, IActualizableMobile
 
         try
         {
-            DateTime hoy = DateTime.Today;
-
-            bool esHoy =
-                _diaPrograma.Date == hoy;
-
-            bool esFuturo =
-                _diaPrograma.Date > hoy;
-
-            if (!esHoy && !esFuturo)
+            // El tiempo se muestra SOLO en el primer evento de HOY (el
+            // próximo por hora) del SC y de la esposa; en otros días no
+            // aparece.
+            if (_diaPrograma.Date != DateTime.Today)
             {
                 return;
             }
 
-            // El tiempo se muestra SOLO en el próximo evento (por hora)
-            // del SC y en el próximo de la esposa.
             int ahora =
                 DateTime.Now.Hour * 60
                 + DateTime.Now.Minute;
@@ -1008,7 +1001,7 @@ public partial class InicioPage : ContentPage, IActualizableMobile
                         actividad.Hora);
 
                 if (minutos < 0
-                    || (esHoy && minutos < ahora))
+                    || minutos < ahora)
                 {
                     continue;
                 }

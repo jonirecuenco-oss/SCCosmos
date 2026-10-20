@@ -846,22 +846,17 @@ public class SccosmosWidgetProvider : AppWidgetProvider
             bool esHoy =
                 dia.Date == hoy;
 
-            bool esFuturo =
-                dia.Date > hoy;
-
             int siguienteSC =
                 -1;
 
             int siguienteEsposa =
                 -1;
 
-            if (esHoy || esFuturo)
+            // El tiempo en coche solo aparece en el primer evento de HOY
+            // (el próximo por hora): ni en días siguientes ni en días ya
+            // pasados.
+            if (esHoy)
             {
-                int desde =
-                    esFuturo
-                        ? 0
-                        : ahora;
-
                 for (int i = 0;
                      i < filas.Count;
                      i++)
@@ -870,7 +865,7 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                         filas[i].Minutos;
 
                     if (minutos < 0
-                        || minutos < desde)
+                        || minutos < ahora)
                     {
                         continue;
                     }
@@ -1091,8 +1086,7 @@ public class SccosmosWidgetProvider : AppWidgetProvider
 
 
     /// <summary>
-    /// Título y texto de la predicación en vigor: mes actual con su año y
-    /// el año de servicio en vigor (septiembre-agosto).
+    /// Título y texto de la predicación en vigor: el mes actual con su año.
     /// </summary>
     internal static (string Titulo, string Texto)
         ObtenerPredicacionWidget()
@@ -1127,17 +1121,10 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                     "MMMM",
                     new CultureInfo("es-ES"));
 
-            int anioServicio =
-                hoy.Month >= 9
-                    ? hoy.Year
-                    : hoy.Year - 1;
-
             string titulo =
                 "PREDICACIÓN · "
                 + mesNombre.ToUpperInvariant()
-                + " " + hoy.Year
-                + " · AÑO EN VIGOR "
-                + anioServicio + "/" + (anioServicio + 1);
+                + " " + hoy.Year;
 
             string texto =
                 horasMes.ToString(

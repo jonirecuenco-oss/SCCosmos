@@ -1950,3 +1950,7 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   3 (la lista se desplaza). El tiempo de viaje ahora se calcula solo para el PRÓXIMO evento por hora
   del SC y de la esposa, en widget e Inicio (por evento de cada uno, con clasificación de
   `Responsable`).
+- **Correcciones 1.8.1**: el título de predicación del widget queda como «PREDICACIÓN · <MES> <AÑO>»
+  (sin «año en vigor»); el tiempo en coche solo se calcula y muestra en el primer evento de HOY (el
+  próximo por hora) del SC y de la esposa — nada en días siguientes ni pasados (ni en widget ni en
+  Inicio, y sin llamadas a la API para esos días).
