@@ -1217,11 +1217,6 @@ public partial class PersonaDetallePage : ContentPage
 
             TerminarEdicion();
 
-            await DisplayAlert(
-                "Guardado",
-                "Los cambios se han guardado y se sincronizan solos.",
-                "Aceptar");
-
             await Navigation.PopAsync();
         }
         catch (Exception ex)
