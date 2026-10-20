@@ -299,7 +299,8 @@
                            Cursor="Hand" 
                            Click="BtnAprobarRecomendacion_Click" 
                            Tag="{Binding}" 
-                           ToolTip="Aprobar recomendación"/>
+                                                  IsEnabled="{Binding EsProcesable}"
+                           ToolTip="Aprobar recomendación (solo «Entre visitas»)"/>
 
                                                     <ui:Button Content="Cancelar" 
                            Appearance="Danger" 
@@ -309,7 +310,8 @@
                            Cursor="Hand" 
                            Click="BtnCancelarRecomendacion_Click" 
                            Tag="{Binding}" 
-                           ToolTip="Cancelar recomendación"/>
+                           IsEnabled="{Binding EsProcesable}"
+                           ToolTip="Cancelar recomendación (solo «Entre visitas»)"/>
                                                 </StackPanel>
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>

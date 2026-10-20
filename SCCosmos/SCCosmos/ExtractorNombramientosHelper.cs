@@ -12,6 +12,11 @@ namespace SCCosmos
         public string Hermano { get; set; }
         public string RecomendadoComo { get; set; } // NUEVA
 
+        // Solo las recomendaciones de tipo «Entre visitas» pueden aprobarse
+        // o cancelarse (las de «Visita regular» quedan pendientes en Hub).
+        public bool EsProcesable =>
+            string.Equals((Tipo ?? "").Trim(), "Entre visitas", StringComparison.OrdinalIgnoreCase);
+
         public List<ArchivoDocumento> ArchivosAdjuntos { get; set; }
     }
 

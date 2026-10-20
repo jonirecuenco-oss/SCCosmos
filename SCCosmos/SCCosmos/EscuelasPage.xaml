@@ -235,22 +235,23 @@
                             <StackPanel>
                                 <TextBlock Text="ESTUDIANTES DE LA CLASE" Foreground="#8B94A0" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8"/>
                                 <ItemsControl x:Name="ListaAlumnosEscuela">
+                                    <!-- Fichas compactas: caben varios estudiantes por fila. -->
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Border Background="#12FFFFFF" CornerRadius="8" Padding="10" Margin="0,0,0,6">
-                                                <Grid>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                    </Grid.ColumnDefinitions>
-
-                                                    <StackPanel Grid.Column="0">
-                                                        <TextBlock Text="{Binding Nombre}" Foreground="White" FontSize="14"/>
-                                                        <TextBlock Text="{Binding Detalle}" Foreground="#8B94A0" FontSize="12"/>
+                                            <Border Background="#12FFFFFF" CornerRadius="8" Padding="9,6" Margin="0,0,6,6">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <StackPanel Margin="0,0,8,0" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Nombre}" Foreground="White" FontSize="13"/>
+                                                        <TextBlock Text="{Binding Detalle}" Foreground="#8B94A0" FontSize="11"/>
                                                     </StackPanel>
 
-                                                    <ui:Button Grid.Column="1" Content="Quitar" Appearance="Secondary" Padding="8,3" FontSize="12" Tag="{Binding}" Click="BtnQuitarAlumno_Click"/>
-                                                </Grid>
+                                                    <ui:Button Content="Quitar" Appearance="Secondary" Padding="6,2" FontSize="11" VerticalAlignment="Center" Tag="{Binding}" Click="BtnQuitarAlumno_Click"/>
+                                                </StackPanel>
                                             </Border>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>

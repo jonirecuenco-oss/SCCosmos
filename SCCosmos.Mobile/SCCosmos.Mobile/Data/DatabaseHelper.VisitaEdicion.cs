@@ -1387,9 +1387,11 @@ public static partial class DatabaseHelper
                 RutaLocal,
                 ContenidoArchivo
             FROM Documentos
-            WHERE Categoria = 'Envío de S-303'
+            WHERE Categoria IN ('Envío de S-303|S-303', 'Envío de S-303')
               AND lower(NombreArchivo) LIKE '%.pdf'
-            ORDER BY Id DESC
+            ORDER BY
+                CASE WHEN Categoria = 'Envío de S-303|S-303' THEN 0 ELSE 1 END,
+                Id DESC
             LIMIT 1;
             """;
 
@@ -1903,6 +1905,145 @@ public static partial class DatabaseHelper
     }
 
 
+    /// <summary>
+    /// Reemplaza la bandeja local de recomendaciones por lo que JW Hub
+    /// tenga ahora mismo. Espejo de GuardarRecomendaciones de WPF.
+    /// </summary>
+    public static void GuardarRecomendacionesNombramientosMobile(
+        List<RecomendacionHubMobile> recomendaciones)
+    {
+        recomendaciones ??=
+            new List<RecomendacionHubMobile>();
+
+        using var connection =
+            new SqliteConnection(
+                ConnectionString);
+
+        connection.Open();
+
+        using (SqliteCommand crear =
+               connection.CreateCommand())
+        {
+            crear.CommandText =
+                """
+                CREATE TABLE IF NOT EXISTS RecomendacionesNombramientos (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    Hermano TEXT,
+                    Tipo TEXT,
+                    Congregacion TEXT,
+                    Fecha TEXT,
+                    FechaDescarga TEXT,
+                    UrlDetalle TEXT,
+                    RecomendadoComo TEXT
+                );
+                """;
+
+            crear.ExecuteNonQuery();
+        }
+
+        try
+        {
+            using SqliteCommand alter =
+                connection.CreateCommand();
+
+            alter.CommandText =
+                "ALTER TABLE RecomendacionesNombramientos ADD COLUMN UrlDetalle TEXT;";
+
+            alter.ExecuteNonQuery();
+        }
+        catch
+        {
+        }
+
+        try
+        {
+            using SqliteCommand alter =
+                connection.CreateCommand();
+
+            alter.CommandText =
+                "ALTER TABLE RecomendacionesNombramientos ADD COLUMN RecomendadoComo TEXT;";
+
+            alter.ExecuteNonQuery();
+        }
+        catch
+        {
+        }
+
+        using var transaction =
+            connection.BeginTransaction();
+
+        using (SqliteCommand borrar =
+               connection.CreateCommand())
+        {
+            borrar.Transaction =
+                transaction;
+
+            borrar.CommandText =
+                "DELETE FROM RecomendacionesNombramientos;";
+
+            borrar.ExecuteNonQuery();
+        }
+
+        foreach (RecomendacionHubMobile rec in recomendaciones)
+        {
+            using SqliteCommand insertar =
+                connection.CreateCommand();
+
+            insertar.Transaction =
+                transaction;
+
+            insertar.CommandText =
+                """
+                INSERT INTO RecomendacionesNombramientos
+                    (Hermano, Tipo, Congregacion, Fecha, FechaDescarga, UrlDetalle, RecomendadoComo)
+                VALUES
+                    ($h, $t, $c, $f, $fd, $url, $rc);
+                """;
+
+            insertar.Parameters.AddWithValue(
+                "$h",
+                rec.Hermano ?? "");
+
+            insertar.Parameters.AddWithValue(
+                "$t",
+                rec.Tipo ?? "");
+
+            insertar.Parameters.AddWithValue(
+                "$c",
+                rec.Congregacion ?? "");
+
+            insertar.Parameters.AddWithValue(
+                "$f",
+                rec.Fecha ?? "");
+
+            insertar.Parameters.AddWithValue(
+                "$fd",
+                DateTime.Now.ToString(
+                    "dd/MM/yyyy HH:mm"));
+
+            insertar.Parameters.AddWithValue(
+                "$url",
+                rec.UrlDetalle ?? "");
+
+            insertar.Parameters.AddWithValue(
+                "$rc",
+                rec.RecomendadoComo ?? "");
+
+            insertar.ExecuteNonQuery();
+        }
+
+        transaction.Commit();
+    }
+
+
+    /// <summary>
+    /// Recomendación extraída de JW Hub por la app móvil (espejo de
+    /// RecomendacionHub de WPF).
+    /// </summary>
+    // (La clase RecomendacionHubMobile está declarada más abajo, fuera
+    //  de DatabaseHelper, junto a los demás modelos.)
+
+
     public static string ObtenerConfiguracionVisitaMobile(
         string clave,
         string valorPorDefecto = "")
@@ -2018,6 +2159,21 @@ public sealed class RecomendacionS2Mobile
 }
 
 
+/// <summary>
+/// Recomendación extraída de JW Hub por la app móvil (espejo de
+/// RecomendacionHub de WPF).
+/// </summary>
+public sealed class RecomendacionHubMobile
+{
+    public string Hermano { get; set; } = "";
+    public string Tipo { get; set; } = "";
+    public string Congregacion { get; set; } = "";
+    public string Fecha { get; set; } = "";
+    public string UrlDetalle { get; set; } = "";
+    public string RecomendadoComo { get; set; } = "";
+}
+
+
 public sealed class RecomendacionNombramientoMobile
 {
     public int Id { get; set; }
@@ -2027,6 +2183,13 @@ public sealed class RecomendacionNombramientoMobile
     public string Fecha { get; set; } = "";
     public string RecomendadoComo { get; set; } = "";
     public string UrlDetalle { get; set; } = "";
+
+    // Solo las recomendaciones de tipo «Entre visitas» pueden procesarse.
+    public bool EsProcesable =>
+        string.Equals(
+            (Tipo ?? "").Trim(),
+            "Entre visitas",
+            StringComparison.OrdinalIgnoreCase);
 
     public string Resumen
     {

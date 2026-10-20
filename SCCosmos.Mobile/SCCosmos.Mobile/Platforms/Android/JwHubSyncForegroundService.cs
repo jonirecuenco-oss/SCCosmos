@@ -303,6 +303,10 @@ public sealed class JwHubSyncForegroundService
             "";
 
 
+        int totalNombramientos =
+            -1;
+
+
         try
         {
             token.ThrowIfCancellationRequested();
@@ -319,6 +323,46 @@ public sealed class JwHubSyncForegroundService
 
 
             token.ThrowIfCancellationRequested();
+
+
+            // =================================================
+            // 1b. NOMBRAMIENTOS DE JW HUB (espejo de Windows)
+            //
+            // La bandeja local de recomendaciones se reemplaza por lo
+            // que Hub tenga ahora mismo. Un fallo aquí no debe
+            // impedir la sincronización de personas.
+            // =================================================
+
+            try
+            {
+                JwHubSyncState.Establecer(
+                    EstadoJwHubSync.Sintonizando,
+                    0,
+                    0,
+                    "Extrayendo nombramientos de JW Hub...",
+                    automatico);
+
+                var recomendaciones =
+                    await JwHubAccionesAndroid
+                        .SintonizarNombramientosAsync();
+
+                totalNombramientos =
+                    recomendaciones.Count;
+
+                await Task.Run(
+                    () =>
+                        SCCosmos.Mobile.Data.DatabaseHelper
+                            .GuardarRecomendacionesNombramientosMobile(
+                                recomendaciones),
+                    token);
+            }
+            catch (System.OperationCanceledException)
+            {
+                throw;
+            }
+            catch
+            {
+            }
 
 
             // =================================================
@@ -426,6 +470,13 @@ public sealed class JwHubSyncForegroundService
 
                 mensajeFinal =
                     resumen;
+
+                if (totalNombramientos >= 0)
+                {
+                    mensajeFinal +=
+                        $" · Nombramientos en Hub: " +
+                        $"{totalNombramientos}.";
+                }
             }
 
             // =================================================

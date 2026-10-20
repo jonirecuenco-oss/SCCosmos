@@ -1397,10 +1397,17 @@
                                         </Style>
                                     </DataGrid.RowStyle>
                                     <DataGrid.Columns>
-                                        <DataGridTemplateColumn Header="Aprobar" Width="75">
+                                        <DataGridTemplateColumn Header="¿Aprobar?" Width="90">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <CheckBox IsChecked="{Binding Aprobar, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" ToolTip="Marcada = aprobar; sin marcar = cancelar en JW Hub al enviar" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    <ComboBox Width="72" FontSize="12" Margin="6,3" VerticalAlignment="Center"
+                                                              Background="#2D2D30" Foreground="White" BorderThickness="0"
+                                                              SelectedValuePath="Content"
+                                                              SelectedValue="{Binding Decision, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                              ToolTip="Sí = aprobar en JW Hub; No = cancelar en JW Hub al enviar">
+                                                        <ComboBoxItem Content="Sí"/>
+                                                        <ComboBoxItem Content="No"/>
+                                                    </ComboBox>
                                                 </DataTemplate>
                                             </DataGridTemplateColumn.CellTemplate>
                                         </DataGridTemplateColumn>
@@ -1418,7 +1425,7 @@
                                         BorderBrush="#3B4652" BorderThickness="1">
                                     <StackPanel>
                                         <TextBlock Text="Carta de nombramientos" FontSize="13" FontWeight="SemiBold" Foreground="White"/>
-                                        <TextBlock Text="Usa 'Carta de nombramiento.docx' de Correspondencia → Visitas a congregaciones → Envío de S-303. La carta incluye únicamente las decisiones marcadas como Aprobar."
+                                        <TextBlock Text="Usa la carta subida en Correspondencia → Visitas a congregaciones → Envío de S-303 (apartado «Carta de nombramientos»). La carta incluye únicamente los nombramientos marcados como «Sí»."
                                                    Foreground="#ABB7C4" FontSize="11" Margin="0,5,0,10" TextWrapping="Wrap"/>
                                         <WrapPanel>
                                             <Button x:Name="BtnAbrirCartaNombramiento" Content="Abrir / editar carta"
@@ -1430,8 +1437,7 @@
                                         </WrapPanel>
                                         <TextBlock x:Name="TxtEstadoCarta" Text="Puedes abrir la carta, revisarla y editarla antes del envío."
                                                    Foreground="#AAB3BD" Margin="0,9,0,0" FontSize="11" TextWrapping="Wrap"/>
-                                        <TextBlock Text="Importante: las filas sin marcar se CANCELARÁN en JW Hub al enviar. Se pedirá confirmación."
-                                                   Foreground="#EAC18B" Margin="0,8,0,0" FontSize="11" TextWrapping="Wrap"/>
+
                                     </StackPanel>
                                 </Border>
                             </StackPanel>

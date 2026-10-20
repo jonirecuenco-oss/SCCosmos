@@ -320,6 +320,13 @@ namespace SCCosmos
             var boton = sender as FrameworkElement;
             if (boton == null || !(boton.Tag is RecomendacionHub rec)) return;
 
+            // Solo las recomendaciones de tipo «Entre visitas» pueden procesarse.
+            if (!rec.EsProcesable)
+            {
+                MessageBox.Show("Solo se pueden procesar las recomendaciones de tipo «Entre visitas».\n\nTipo de esta recomendación: " + (string.IsNullOrWhiteSpace(rec.Tipo) ? "sin indicar" : rec.Tipo) + ".", "Nombramientos y bajas", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
             if (MessageBox.Show($"¿Estás seguro de querer cancelar esta recomendación para {rec.Hermano}?", "Confirmar Cancelación", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
             {
                 string folderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SCCosmos", "PerfilFirefoxCorreo");
@@ -362,6 +369,13 @@ namespace SCCosmos
         {
             var boton = sender as FrameworkElement;
             if (boton == null || !(boton.Tag is RecomendacionHub rec)) return;
+
+            // Solo las recomendaciones de tipo «Entre visitas» pueden procesarse.
+            if (!rec.EsProcesable)
+            {
+                MessageBox.Show("Solo se pueden procesar las recomendaciones de tipo «Entre visitas».\n\nTipo de esta recomendación: " + (string.IsNullOrWhiteSpace(rec.Tipo) ? "sin indicar" : rec.Tipo) + ".", "Nombramientos y bajas", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
 
             var ventana = new AprobarNombramientoWindow(rec);
             ventana.Owner = Window.GetWindow(this);

@@ -125,6 +125,299 @@ public static class JwHubAccionesAndroid
     }
 
 
+    // =========================================================
+    // SINCRONIZACIÓN DE NOMBRAMIENTOS (BANDEJA DE RECOMENDACIONES)
+    //
+    // Espejo de la fase 2 de Windows: carga la página de nombramientos
+    // de JW Hub, extrae las recomendaciones y completa el
+    // «recomendado como» visitando cada detalle.
+    // =========================================================
+
+    private const string UrlNombramientos =
+        "https://hub.jw.org/" +
+        "congregation-persons/es/circuits/" +
+        "512bc4a5-94aa-ea11-815e-0050560012f5/" +
+        "appointments";
+
+
+    public static async Task<
+        List<SCCosmos.Mobile.Data.RecomendacionHubMobile>>
+        SintonizarNombramientosAsync()
+    {
+        AWebView? webView =
+            null;
+
+        try
+        {
+            webView =
+                await CrearWebViewAsync();
+
+            await NavegarAsync(
+                webView,
+                UrlNombramientos);
+
+            string html =
+                "";
+
+            for (int i = 0; i < 40; i++)
+            {
+                await Task.Delay(500);
+
+                string ruta =
+                    await EvaluarJsAsync(
+                        webView,
+                        "location.pathname || ''");
+
+                if (ruta.Contains(
+                        "/login",
+                        StringComparison.OrdinalIgnoreCase)
+                    ||
+                    ruta.Contains(
+                        "/signin",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException(
+                        "La sesión de JW Hub no está iniciada.");
+                }
+
+                string estado =
+                    await EvaluarJsAsync(
+                        webView,
+                        "document.readyState");
+
+                if (!estado.Contains(
+                        "complete",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                string cuerpo =
+                    await EvaluarJsAsync(
+                        webView,
+                        "document.body ? document.body.innerText : ''");
+
+                if (cuerpo.Contains(
+                        "nombr",
+                        StringComparison.OrdinalIgnoreCase)
+                    ||
+                    cuerpo.Contains(
+                        "recomend",
+                        StringComparison.OrdinalIgnoreCase)
+                    ||
+                    cuerpo.Contains(
+                        "appointment",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    html =
+                        DesescaparJson(
+                            await EvaluarJsAsync(
+                                webView,
+                                "document.documentElement.outerHTML"));
+
+                    break;
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(
+                    html))
+            {
+                throw new InvalidOperationException(
+                    "La página de nombramientos de JW Hub no " +
+                    "terminó de cargar.");
+            }
+
+            var recomendaciones =
+                ExtraerRecomendacionesDelHtml(
+                    html);
+
+            // El «recomendado como» está en la página de detalle: se
+            // visita cada recomendación para completarlo.
+            foreach (var rec
+                     in recomendaciones)
+            {
+                try
+                {
+                    await NavegarAsync(
+                        webView,
+                        rec.UrlDetalle);
+
+                    await Task.Delay(1500);
+
+                    string recComo =
+                        await EvaluarJsAsync(
+                            webView,
+                            "(function(){var dts=document.querySelectorAll('dt');" +
+                            "for(var i=0;i<dts.length;i++){var t=(dts[i].textContent||'').toLowerCase();" +
+                            "if(t.indexOf('recomendaci')>=0){var dd=dts[i].nextElementSibling;" +
+                            "return dd?(dd.textContent||'').trim():'';}}return '';})()");
+
+                    rec.RecomendadoComo =
+                        DesescaparJson(
+                            recComo).Trim();
+                }
+                catch
+                {
+                }
+            }
+
+            return recomendaciones;
+        }
+        finally
+        {
+            if (webView is not null)
+            {
+                Destruir(webView);
+            }
+        }
+    }
+
+
+    private static string DesescaparJson(
+        string valor)
+    {
+        if (string.IsNullOrWhiteSpace(
+                valor)
+            ||
+            valor == "null")
+        {
+            return "";
+        }
+
+        try
+        {
+            string? desescapado =
+                System.Text.Json.JsonSerializer
+                    .Deserialize<string>(valor);
+
+            if (desescapado is not null)
+            {
+                return desescapado;
+            }
+        }
+        catch
+        {
+        }
+
+        return valor;
+    }
+
+
+    private static List<
+        SCCosmos.Mobile.Data.RecomendacionHubMobile>
+        ExtraerRecomendacionesDelHtml(
+            string html)
+    {
+        var resultados =
+            new List<
+                SCCosmos.Mobile.Data.RecomendacionHubMobile>();
+
+        string[] partes =
+            System.Text.RegularExpressions.Regex.Split(
+                html,
+                @"<h3[^>]*>.*?<ptrn-translate>(Entre visitas|Visita regular)</ptrn-translate>");
+
+        for (int i = 1;
+             i + 1 < partes.Length;
+             i += 2)
+        {
+            string tipoVisita =
+                partes[i];
+
+            string contenidoBloque =
+                partes[i + 1];
+
+            var regexTarjeta =
+                new System.Text.RegularExpressions.Regex(
+                    @"<article class=""card card--clickable[^>]*>.*?</article>",
+                    System.Text.RegularExpressions.RegexOptions.Singleline);
+
+            foreach (System.Text.RegularExpressions.Match tarjeta
+                     in regexTarjeta.Matches(contenidoBloque))
+            {
+                string tarjetaHtml =
+                    tarjeta.Value;
+
+                var enlace =
+                    System.Text.RegularExpressions.Regex.Match(
+                        tarjetaHtml,
+                        @"<a ptrnactiontarget="""" href=""([^""]+)""[^>]*>\s*(.*?)\s*</a>");
+
+                string url =
+                    enlace.Success
+                        ? enlace.Groups[1].Value
+                        : "";
+
+                string congre =
+                    enlace.Success
+                        ? enlace.Groups[2].Value.Trim()
+                        : "";
+
+                var fechaMatch =
+                    System.Text.RegularExpressions.Regex.Match(
+                        tarjetaHtml,
+                        @"<dt[^>]*>.*?(?:Enviado el|Próxima visita).*?</dt>\s*<dd[^>]*>(.*?)</dd>",
+                        System.Text.RegularExpressions.RegexOptions.Singleline);
+
+                string fecha =
+                    fechaMatch.Success
+                        ? fechaMatch.Groups[1].Value.Trim()
+                        : "";
+
+                var hermanoMatch =
+                    System.Text.RegularExpressions.Regex.Match(
+                        tarjetaHtml,
+                        @"<span class=""transliteration__vernacular[^>]*>(.*?)</span>");
+
+                string hermano =
+                    hermanoMatch.Success
+                        ? hermanoMatch.Groups[1].Value.Trim()
+                        : "";
+
+                if (!string.IsNullOrEmpty(
+                        url))
+                {
+                    resultados.Add(
+                        new SCCosmos.Mobile.Data.RecomendacionHubMobile
+                        {
+                            Tipo =
+                                tipoVisita,
+
+                            Congregacion =
+                                congre,
+
+                            UrlDetalle =
+                                UrlAbsoluta(url),
+
+                            Fecha =
+                                fecha,
+
+                            Hermano =
+                                hermano
+                        });
+                }
+            }
+        }
+
+        return resultados;
+    }
+
+
+    private static string UrlAbsoluta(
+        string ruta)
+    {
+        if (Uri.TryCreate(
+                new Uri("https://hub.jw.org"),
+                ruta,
+                out Uri url))
+        {
+            return url.AbsoluteUri;
+        }
+
+        return ruta;
+    }
+
+
     private static string ValidarUrl(
         string ruta)
     {

@@ -137,8 +137,9 @@ namespace SCCosmos
             var envioS303 = new CategoriaVista
             {
                 Titulo = "Envío de S-303",
-                Descripcion = "Sube y envía el informe oficial S-303 de la visita.",
-                VisibilidadSimple = Visibility.Visible,
+                Descripcion = "Sube el informe oficial S-303 de la visita y, en su apartado, la carta de nombramientos.",
+                VisibilidadSimple = Visibility.Collapsed,
+                VisibilidadS303 = Visibility.Visible,
                 VisibilidadColumnas = Visibility.Collapsed,
                 VisibilidadAlojamientoEspecial = Visibility.Collapsed
             };
@@ -1007,6 +1008,11 @@ namespace SCCosmos
         public string TagDiscurso => Titulo + "|Discurso";
         public string TagDiscursoSerie => Titulo + "|Discurso (serie)";
 
+        // Envío de S-303: dos apartados (informe S-303 y carta de nombramientos).
+        public Visibility VisibilidadS303 { get; set; } = Visibility.Collapsed;
+        public string TagS303 => Titulo + "|S-303";
+        public string TagCartaNombramientos => Titulo + "|Carta de nombramientos";
+
         private ObservableCollection<ArchivoDocumento> _archivosSimples;
         public ObservableCollection<ArchivoDocumento> ArchivosSimples { get => _archivosSimples; set { _archivosSimples = value; OnPropertyChanged(nameof(ArchivosSimples)); } }
 
@@ -1034,6 +1040,12 @@ namespace SCCosmos
         private ObservableCollection<ArchivoDocumento> _archivosDiscursoSerie;
         public ObservableCollection<ArchivoDocumento> ArchivosDiscursoSerie { get => _archivosDiscursoSerie; set { _archivosDiscursoSerie = value; OnPropertyChanged(nameof(ArchivosDiscursoSerie)); } }
 
+        private ObservableCollection<ArchivoDocumento> _archivosS303;
+        public ObservableCollection<ArchivoDocumento> ArchivosS303 { get => _archivosS303; set { _archivosS303 = value; OnPropertyChanged(nameof(ArchivosS303)); } }
+
+        private ObservableCollection<ArchivoDocumento> _archivosCartaNombramientos;
+        public ObservableCollection<ArchivoDocumento> ArchivosCartaNombramientos { get => _archivosCartaNombramientos; set { _archivosCartaNombramientos = value; OnPropertyChanged(nameof(ArchivosCartaNombramientos)); } }
+
         public void RecargarArchivos()
         {
             ArchivosSimples = new ObservableCollection<ArchivoDocumento>(DatabaseHelper.ObtenerDocumentos(Titulo));
@@ -1046,6 +1058,28 @@ namespace SCCosmos
             ArchivosOracionInicial = new ObservableCollection<ArchivoDocumento>(DatabaseHelper.ObtenerDocumentos(TagOracionInicial));
             ArchivosDiscurso = new ObservableCollection<ArchivoDocumento>(DatabaseHelper.ObtenerDocumentos(TagDiscurso));
             ArchivosDiscursoSerie = new ObservableCollection<ArchivoDocumento>(DatabaseHelper.ObtenerDocumentos(TagDiscursoSerie));
+
+            if (VisibilidadS303 == Visibility.Visible)
+            {
+                // Cada apartado muestra sus archivos nuevos y, además, los
+                // antiguos (categoría simple): la carta de nombramiento va por
+                // su nombre y el resto acompaña al S-303.
+                var antiguos = DatabaseHelper.ObtenerDocumentos(Titulo);
+                var antiguasCartas = antiguos.Where(d => EsArchivoDeCarta(d.NombreArchivo)).ToList();
+                var antiguosS303 = antiguos.Where(d => !EsArchivoDeCarta(d.NombreArchivo)).ToList();
+
+                ArchivosS303 = new ObservableCollection<ArchivoDocumento>(
+                    DatabaseHelper.ObtenerDocumentos(TagS303).Concat(antiguosS303));
+
+                ArchivosCartaNombramientos = new ObservableCollection<ArchivoDocumento>(
+                    DatabaseHelper.ObtenerDocumentos(TagCartaNombramientos).Concat(antiguasCartas));
+            }
+        }
+
+        private static bool EsArchivoDeCarta(string nombreArchivo)
+        {
+            string nombre = (nombreArchivo ?? "").ToLowerInvariant();
+            return nombre.Contains("carta") || nombre.Contains("nombramiento");
         }
     }
 

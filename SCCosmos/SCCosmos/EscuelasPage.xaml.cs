@@ -941,7 +941,10 @@ namespace SCCosmos
                         Nombre = string.IsNullOrWhiteSpace(p.NombreComun) ? p.Nombre : p.NombreComun,
                         Detalle = string.IsNullOrWhiteSpace(p.CongregacionNombre) ? p.CongregacionCodigo : p.CongregacionNombre
                     })
-                    .OrderBy(a => a.Nombre)
+                    // Orden por congregación y, dentro de cada una, por nombre:
+                    // así los estudiantes de la misma congregación salen juntos.
+                    .OrderBy(a => a.Detalle ?? "", StringComparer.CurrentCultureIgnoreCase)
+                    .ThenBy(a => a.Nombre ?? "", StringComparer.CurrentCultureIgnoreCase)
                     .ToList();
 
                 SubtituloAlumnos.Text = _escuelaDetalle.SemanaTexto;

@@ -5426,8 +5426,14 @@ namespace SCCosmos
             }
             else
             {
-                var plantilla = DatabaseHelper.ObtenerDocumentos("Envío de S-303")
-                    .FirstOrDefault(d => d.NombreArchivo.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase));
+                // Se busca primero en el apartado nuevo del S-303 y, si aún no
+                // hay nada, en la categoría clásica (archivos antiguos).
+                var plantilla = DatabaseHelper.ObtenerDocumentos("Envío de S-303|S-303")
+                    .Where(d => d.NombreArchivo.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                    .OrderByDescending(d => d.Id)
+                    .FirstOrDefault()
+                    ?? DatabaseHelper.ObtenerDocumentos("Envío de S-303")
+                        .FirstOrDefault(d => d.NombreArchivo.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase));
 
                 if (plantilla != null)
                 {
@@ -5478,7 +5484,7 @@ namespace SCCosmos
                 // Incluir tanto nombramientos como bajas. Hub puede devolver
                 // congregación con código, por lo que no se exige igualdad literal.
                 .Where(r => EsRecomendacionDeCongregacionActual(r.Congregacion))
-                .Select(r => new RecomendacionS2UI { Original = r, Aprobar = false })
+                .Select(r => new RecomendacionS2UI { Original = r, Decision = "No" })
                 .ToList();
 
             if (recomendaciones.Count > 0)
@@ -5544,6 +5550,13 @@ namespace SCCosmos
 
         private ArchivoDocumento ObtenerPlantillaCartaNombramientos()
         {
+            // Apartado nuevo de la carta; si aún no hay nada ahí, se busca el
+            // archivo clásico subido en la categoría simple.
+            var nueva = DatabaseHelper.ObtenerDocumentos("Envío de S-303|Carta de nombramientos")
+                .OrderByDescending(d => d.Id).FirstOrDefault();
+
+            if (nueva != null) return nueva;
+
             return DatabaseHelper.ObtenerDocumentos("Envío de S-303")
                 .Where(d => string.Equals(d.NombreArchivo?.Trim(), "Carta de nombramiento.docx", StringComparison.OrdinalIgnoreCase))
                 .OrderByDescending(d => d.Id).FirstOrDefault();
@@ -5712,7 +5725,7 @@ namespace SCCosmos
             string rutaS303 = docEspecifico.RutaLocal;
             bool copiaSrv = ChkCopiaSRV.IsChecked == true;
 
-            // Extraemos las recomendaciones (S-2) que el usuario haya marcado con el CheckBox para aprobar
+            // Extraemos las recomendaciones (S-2) con la decisión Sí/No elegida.
             var recomendacionesS2 = (TablaS2.ItemsSource as IEnumerable<RecomendacionS2UI>)?.ToList()
                                     ?? new List<RecomendacionS2UI>();
             var recomendacionesAAprobar = recomendacionesS2.Where(r => r.Aprobar).Select(r => r.Original).ToList();
@@ -5724,7 +5737,7 @@ namespace SCCosmos
                     $"Se van a procesar {recomendacionesS2.Count} recomendaciones de {_congreNombre}:\n\n" +
                     $"  • APROBAR: {recomendacionesAAprobar.Count}\n" +
                     $"  • CANCELAR: {recomendacionesACancelar.Count}\n\n" +
-                    "Las NO marcadas se CANCELARÁN en JW Hub. Estos cambios pueden tener consecuencias reales.\n\n" +
+                    "Las marcadas como «No» se CANCELARÁN en JW Hub. Estos cambios pueden tener consecuencias reales.\n\n" +
                     "¿Confirmas las decisiones y el envío posterior del correo S-303?",
                     "Confirmar recomendaciones y bajas", MessageBoxButton.YesNo, MessageBoxImage.Warning);
                 if (confirmacion != MessageBoxResult.Yes) return;
@@ -5951,12 +5964,22 @@ namespace SCCosmos
             public string Tipo => Original?.Tipo;
             public string RecomendadoComo => Original?.RecomendadoComo;
 
-            private bool _aprobar;
-            public bool Aprobar
+            // Decisión elegida en el select: «Sí» = aprobar en JW Hub;
+            // «No» = cancelar en JW Hub al enviar.
+            private string _decision = "No";
+            public string Decision
             {
-                get { return _aprobar; }
-                set { _aprobar = value; OnPropertyChanged("Aprobar"); }
+                get { return _decision; }
+                set
+                {
+                    _decision = value ?? "No";
+                    OnPropertyChanged("Decision");
+                    OnPropertyChanged("Aprobar");
+                }
             }
+
+            public bool Aprobar =>
+                string.Equals(_decision, "Sí", StringComparison.OrdinalIgnoreCase);
 
             public event PropertyChangedEventHandler PropertyChanged;
             protected void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));

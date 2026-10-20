@@ -1906,3 +1906,11 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   maestro con `SelectedIndex=0` y, sobre todo, los TabControl internos
   (`TabsCategoriasVisitas`/`TabsCategoriasAsambleas`) que recibían la lista después de cargar y se
   quedaban sin selección: ahora al llenarse seleccionan la primera pestaña (Dispatcher Background).
+- **Lote 1.6.5**: Escuelas (Windows) ordena los posibles estudiantes por congregación y los ya
+  asignados se ven como fichas compactas (WrapPanel). Personas > Nombramientos y bajas: aprobar o
+  cancelar solo está habilitado para recomendaciones «Entre visitas» (Windows y Android). El sync
+  de personas en Android también trae los nombramientos de JW Hub (`JwHubAccionesAndroid.
+  SintonizarNombramientosAsync` + `GuardarRecomendacionesNombramientosMobile`). Correspondencia >
+  Envío de S-303 tiene dos apartados nuevos (S-303 y Carta de nombramientos) con los archivos
+  antiguos repartidos por nombre. Visitas > S-302: la decisión es un select Sí/No, la carta sale
+  del apartado nuevo y las decisiones se aplican a JW Hub como antes.

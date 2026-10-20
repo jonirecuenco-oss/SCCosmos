@@ -105,6 +105,20 @@ public partial class NombramientosPage : ContentPage, IActualizableMobile
         bool aprobar)
     {
 #if ANDROID
+        if (!rec.EsProcesable)
+        {
+            await DisplayAlert(
+                "Nombramientos",
+                "Solo se pueden procesar las recomendaciones de tipo " +
+                "«Entre visitas».\n\nTipo de esta recomendación: " +
+                (string.IsNullOrWhiteSpace(rec.Tipo)
+                    ? "sin indicar"
+                    : rec.Tipo) + ".",
+                "Aceptar");
+
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(
                 rec.UrlDetalle))
         {

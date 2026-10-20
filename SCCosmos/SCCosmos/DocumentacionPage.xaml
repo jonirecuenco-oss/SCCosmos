@@ -256,6 +256,34 @@
                         <ItemsControl ItemsSource="{Binding ArchivosSimples}" ItemTemplate="{StaticResource ArchivoFilaTemplate}"/>
                     </StackPanel>
 
+                    <!-- VISTA ENVÍO DE S-303: INFORME Y CARTA DE NOMBRAMIENTOS -->
+                    <TabControl Visibility="{Binding VisibilidadS303}"
+                                Background="#121416"
+                                BorderBrush="#2C3035"
+                                BorderThickness="1"
+                                Padding="8,8,8,0"
+                                Foreground="White"
+                                ItemContainerStyle="{StaticResource TabDetalleStyle}">
+
+                        <TabItem>
+                            <TabItem.Header><TextBlock Text="S-303"/></TabItem.Header>
+                            <StackPanel Margin="0,15,0,0">
+                                <TextBlock Text="Sube aquí el informe S-303 (la plantilla y las copias que se enviarán)." Foreground="#9FB3C8" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                                <ui:Button Content="Añadir el S-303" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding TagS303}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
+                                <ItemsControl ItemsSource="{Binding ArchivosS303}" ItemTemplate="{StaticResource ArchivoFilaTemplate}"/>
+                            </StackPanel>
+                        </TabItem>
+
+                        <TabItem>
+                            <TabItem.Header><TextBlock Text="Carta de nombramientos"/></TabItem.Header>
+                            <StackPanel Margin="0,15,0,0">
+                                <TextBlock Text="Sube aquí la carta de nombramientos que se enviará tras la visita." Foreground="#9FB3C8" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                                <ui:Button Content="Añadir la carta" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" Click="BtnSubirArchivo_Click" Tag="{Binding TagCartaNombramientos}" HorizontalAlignment="Right" Margin="0,0,0,15"/>
+                                <ItemsControl ItemsSource="{Binding ArchivosCartaNombramientos}" ItemTemplate="{StaticResource ArchivoFilaTemplate}"/>
+                            </StackPanel>
+                        </TabItem>
+                    </TabControl>
+
                     <!-- VISTA COMPLEJA (ETIQUETAS DIFERENCIADAS) -->
                     <TabControl Visibility="{Binding VisibilidadColumnas}"
                                 Background="#121416"
