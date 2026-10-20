@@ -1862,3 +1862,11 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
 - **Bajas de JW Hub (Android)**: solo se proponen como posibles bajas las fichas con
   `OrigenRegistro` de JW Hub (`TieneOrigenJWHub`, igual que Windows); las creadas desde S-21 ya no
   aparecen.
+- **Ventanita de predicación unificada**: el + de Inicio (Android) abre la MISMA
+  `HorasDialogActivity` del widget (con evento `AlGuardar` para refrescar Inicio); en Windows el +
+  abre la nueva `VentanaPredicacion` (un solo diálogo con horas y CBs, en lugar de dos InputBox).
+- **Inicio (Windows)**: la tarjeta «Predicación este mes» se coloca dentro del WrapPanel, justo
+  antes de la tarjeta del programa del día (como en Android).
+- **Calendario (Windows)**: la rejilla del mes ocupa todo el ancho (sin MaxWidth).
+- **Widget (Android)**: botones más fáciles de pulsar (minWidth 46-52dp / minHeight 46dp + iconos
+  más grandes: 📍 21sp, ✓ 22sp, + 26sp, flechas con área 46dp).

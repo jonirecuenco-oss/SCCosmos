@@ -486,46 +486,23 @@ namespace SCCosmos
         {
             try
             {
-                string entradaHoras =
-                    Microsoft.VisualBasic.Interaction.InputBox(
-                        "¿Cuántas horas quieres añadir al mes? (0 si ninguna)",
-                        "Predicación este mes",
-                        "0");
+                var ventana =
+                    new VentanaPredicacion
+                    {
+                        Owner =
+                            Window.GetWindow(this)
+                    };
 
-                string entradaCbs =
-                    Microsoft.VisualBasic.Interaction.InputBox(
-                        "¿Cuántos cursos bíblicos añades? (0 si ninguno)",
-                        "Predicación este mes",
-                        "0");
-
-                double horas = 0;
-
-                double.TryParse(
-                    (entradaHoras ?? "").Trim().Replace(',', '.'),
-                    System.Globalization.NumberStyles.Any,
-                    System.Globalization.CultureInfo.InvariantCulture,
-                    out horas);
-
-                int cbs = 0;
-
-                int.TryParse(
-                    (entradaCbs ?? "").Trim(),
-                    out cbs);
-
-                if (horas < 0)
-                {
-                    horas = 0;
-                }
-
-                if (cbs < 0)
-                {
-                    cbs = 0;
-                }
-
-                if (horas == 0 && cbs == 0)
+                if (ventana.ShowDialog() != true)
                 {
                     return;
                 }
+
+                double horas =
+                    ventana.Horas;
+
+                int cbs =
+                    ventana.Cbs;
 
                 string usuario =
                     PerfilAcceso.AccesoCompleto

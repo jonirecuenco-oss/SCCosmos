@@ -635,10 +635,24 @@ public partial class InicioPage : ContentPage, IActualizableMobile
     // HORAS PREDICADAS DEL MES
     // =========================================================
 
+    private bool _suscritoHorasDialog;
+
     private void CargarHorasMes()
     {
         try
         {
+            if (!_suscritoHorasDialog)
+            {
+                _suscritoHorasDialog =
+                    true;
+
+                SCCosmos.Mobile.Platforms.Android
+                    .HorasDialogActivity.AlGuardar +=
+                    () => MainThread
+                        .BeginInvokeOnMainThread(
+                            CargarHorasMes);
+            }
+
             string usuario =
                 PerfilAccesoService.EsHombre
                     ? "SC"
@@ -675,99 +689,26 @@ public partial class InicioPage : ContentPage, IActualizableMobile
     }
 
 
-    private async void BtnSumarHoras_Clicked(
+    private void BtnSumarHoras_Clicked(
         object sender,
         EventArgs e)
     {
         try
         {
-            string? entradaHoras =
-                await DisplayPromptAsync(
-                    "Predicación este mes",
-                    "¿Cuántas horas quieres añadir? (0 si ninguna)",
-                    "Continuar",
-                    "Cancelar",
-                    "0",
-                    6,
-                    Keyboard.Numeric);
+            // La misma ventanita que usa el widget (sin abrir la app).
+            var intencion =
+                new global::Android.Content.Intent(
+                    global::Android.App.Application.Context,
+                    typeof(SCCosmos.Mobile.Platforms.Android
+                        .HorasDialogActivity));
 
-            if (entradaHoras == null)
-            {
-                return;
-            }
+            intencion.AddFlags(
+                global::Android.Content.ActivityFlags
+                    .NewTask);
 
-            string? entradaCbs =
-                await DisplayPromptAsync(
-                    "Predicación este mes",
-                    "¿Cuántos cursos bíblicos añades? (0 si ninguno)",
-                    "Añadir",
-                    "Cancelar",
-                    "0",
-                    4,
-                    Keyboard.Numeric);
-
-            if (entradaCbs == null)
-            {
-                return;
-            }
-
-            double horas = 0;
-
-            double.TryParse(
-                (entradaHoras ?? "").Trim().Replace(',', '.'),
-                System.Globalization.NumberStyles.Any,
-                System.Globalization.CultureInfo.InvariantCulture,
-                out horas);
-
-            int cbs = 0;
-
-            int.TryParse(
-                (entradaCbs ?? "").Trim(),
-                out cbs);
-
-            if (horas < 0)
-            {
-                horas = 0;
-            }
-
-            if (cbs < 0)
-            {
-                cbs = 0;
-            }
-
-            if (horas == 0 && cbs == 0)
-            {
-                return;
-            }
-
-            string usuario =
-                PerfilAccesoService.EsHombre
-                    ? "SC"
-                    : "Esposa";
-
-            string mes =
-                DateTime.Today.ToString("yyyy-MM");
-
-            await Task.Run(
-                () => DatabaseHelper.SumarPredicacionMesMobile(
-                    usuario,
-                    mes,
-                    horas,
-                    cbs));
-
-            DatabaseHelper.AnotarActividadMobile(
-                "Predicación",
-                $"Añadió al mes: "
-                + (horas > 0 ? $"{horas:0.#} h" : "")
-                + (horas > 0 && cbs > 0 ? " y " : "")
-                + (cbs > 0 ? $"{cbs} CB" + (cbs == 1 ? "" : "s") : "")
-                + $" ({usuario})");
-
-            CargarHorasMes();
-
-            SCCosmos.Mobile.Platforms.Android
-                .SccosmosWidgetProvider
-                .ActualizarTodos();
+            global::Android.App.Application.Context
+                .StartActivity(
+                    intencion);
         }
         catch
         {

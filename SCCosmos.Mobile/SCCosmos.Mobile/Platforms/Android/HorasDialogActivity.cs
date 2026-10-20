@@ -16,6 +16,10 @@ namespace SCCosmos.Mobile.Platforms.Android;
     Label = "Predicación este mes")]
 public class HorasDialogActivity : global::Android.App.Activity
 {
+    /// <summary>Avisa a las pantallas abiertas de que se guardó.</summary>
+    public static event Action? AlGuardar;
+
+
     protected override void OnCreate(
         global::Android.OS.Bundle? savedInstanceState)
     {
@@ -123,6 +127,8 @@ public class HorasDialogActivity : global::Android.App.Activity
 
                         SccosmosWidgetProvider
                             .ActualizarTodos();
+
+                        AlGuardar?.Invoke();
                     }
 
                     Finish();

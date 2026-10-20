@@ -297,7 +297,6 @@
                     </Grid>
 
                     <Grid x:Name="GridMesCalendario"
-                          MaxWidth="1000"
                           HorizontalAlignment="Stretch"/>
 
                 </StackPanel>
