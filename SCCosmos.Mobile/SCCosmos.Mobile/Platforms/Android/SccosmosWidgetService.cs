@@ -149,7 +149,9 @@ public class SccosmosWidgetFactory
                 _filas.Add(new Fila
                 {
                     Tipo = TipoPrograma,
-                    Texto = "Sin programación para ese día"
+                    Texto = dia.Date == DateTime.Today
+                        ? "Sin actividades pendientes por ahora"
+                        : "Sin programación para ese día"
                 });
             }
             else

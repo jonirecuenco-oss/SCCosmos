@@ -74,6 +74,10 @@ public class SccosmosWidgetProvider : AppWidgetProvider
     internal const string ColorSeccionTareas =
         "#8BC98B";
 
+    // Minutos de margen antes de ocultar una actividad ya pasada.
+    private const int MargenActividadMinutos =
+        30;
+
 
     public static DateTime ObtenerDiaSeleccionado()
     {
@@ -709,6 +713,16 @@ public class SccosmosWidgetProvider : AppWidgetProvider
             string mes =
                 martes.ToString("yyyy-MM");
 
+            DateTime hoy =
+                DateTime.Today;
+
+            bool esHoy =
+                dia.Date == hoy;
+
+            int ahora =
+                DateTime.Now.Hour * 60
+                + DateTime.Now.Minute;
+
             var filas =
                 new List<(
                     string Texto,
@@ -818,6 +832,15 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                     minutos = -1;
                 }
 
+                // Las actividades van desapareciendo conforme pasa su hora
+                // (con media hora de margen), solo al mostrar el día de hoy.
+                if (esHoy
+                    && minutos >= 0
+                    && minutos + MargenActividadMinutos <= ahora)
+                {
+                    continue;
+                }
+
                 (bool paraSC, bool paraEsposa) =
                     ClasificarResponsable(
                         responsableCrudo);
@@ -836,16 +859,6 @@ public class SccosmosWidgetProvider : AppWidgetProvider
 
             // Próximo evento (por hora) del SC y de la esposa: solo esos
             // dos muestran el tiempo en coche.
-            int ahora =
-                DateTime.Now.Hour * 60
-                + DateTime.Now.Minute;
-
-            DateTime hoy =
-                DateTime.Today;
-
-            bool esHoy =
-                dia.Date == hoy;
-
             int siguienteSC =
                 -1;
 

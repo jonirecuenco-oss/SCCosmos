@@ -1954,3 +1954,7 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   (sin «año en vigor»); el tiempo en coche solo se calcula y muestra en el primer evento de HOY (el
   próximo por hora) del SC y de la esposa — nada en días siguientes ni pasados (ni en widget ni en
   Inicio, y sin llamadas a la API para esos días).
+- **Programa que se vacía (1.8.2)**: en el widget, las actividades del «PROGRAMA DE ACTIVIDAD» van
+  desapareciendo conforme pasa su hora con 30 min de margen (`MargenActividadMinutos`, solo el día de
+  hoy; otros días completos). Si no queda ninguna pendiente hoy, el apartado muestra «Sin actividades
+  pendientes por ahora». El widget se refresca cada 30 min (updatePeriodMillis), alineado con el margen.
