@@ -1902,3 +1902,7 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   de `CardSincronizacion`/`ToggleSincronizacion` (Windows) para el perfil limitado — la esposa ya
   puede ver y editar la sincronización entre dispositivos en Configuración (lo demás del gating se
   mantiene: JW Hub y datos del SC siguen ocultos para ella).
+- **Correspondencia (Windows)**: al entrar se abre por defecto la primera pestaña — el TabControl
+  maestro con `SelectedIndex=0` y, sobre todo, los TabControl internos
+  (`TabsCategoriasVisitas`/`TabsCategoriasAsambleas`) que recibían la lista después de cargar y se
+  quedaban sin selección: ahora al llenarse seleccionan la primera pestaña (Dispatcher Background).

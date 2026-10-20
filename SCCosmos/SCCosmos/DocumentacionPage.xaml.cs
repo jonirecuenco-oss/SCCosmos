@@ -162,6 +162,17 @@ namespace SCCosmos
 
             CategoriasVisitas = listaVisitas;
 
+            // La primera pestaña se abre sola al entrar.
+            Dispatcher.InvokeAsync(
+                () =>
+                {
+                    if (TabsCategoriasVisitas.Items.Count > 0)
+                    {
+                        TabsCategoriasVisitas.SelectedIndex = 0;
+                    }
+                },
+                System.Windows.Threading.DispatcherPriority.Background);
+
             var listaAsambleas = new ObservableCollection<CategoriaVista>();
 
             var notificacionAsamblea = new CategoriaVista
@@ -256,6 +267,17 @@ namespace SCCosmos
             listaAsambleas.Add(mensajeRepBetel);
 
             CategoriasAsambleas = listaAsambleas;
+
+            // La primera pestaña se abre sola al entrar.
+            Dispatcher.InvokeAsync(
+                () =>
+                {
+                    if (TabsCategoriasAsambleas.Items.Count > 0)
+                    {
+                        TabsCategoriasAsambleas.SelectedIndex = 0;
+                    }
+                },
+                System.Windows.Threading.DispatcherPriority.Background);
         }
 
         private CategoriaVista CrearCategoriaColumnas(string titulo, string descripcion)

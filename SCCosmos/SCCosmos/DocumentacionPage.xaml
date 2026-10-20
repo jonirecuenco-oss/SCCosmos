@@ -393,10 +393,11 @@
             </Grid>
 
             <!-- PESTAÑAS MAESTRAS -->
-            <TabControl Margin="0,50,0,0" Background="Transparent" BorderThickness="0" Foreground="White" ItemContainerStyle="{StaticResource TabPrincipalStyle}">
+            <TabControl Margin="0,50,0,0" Background="Transparent" BorderThickness="0" Foreground="White" ItemContainerStyle="{StaticResource TabPrincipalStyle}" SelectedIndex="0">
 
                 <TabItem Header="Visitas a congregaciones">
-                    <TabControl ItemsSource="{Binding CategoriasVisitas}"
+                    <TabControl x:Name="TabsCategoriasVisitas"
+                                ItemsSource="{Binding CategoriasVisitas}"
                                 ContentTemplate="{StaticResource CategoriaContentTemplate}"
                                 ItemContainerStyle="{StaticResource TabMensajeStyle}"
                                 Background="Transparent" BorderThickness="0" Margin="0,16,0,0">
@@ -409,7 +410,8 @@
                 </TabItem>
 
                 <TabItem Header="Asambleas de circuito">
-                    <TabControl ItemsSource="{Binding CategoriasAsambleas}"
+                    <TabControl x:Name="TabsCategoriasAsambleas"
+                                ItemsSource="{Binding CategoriasAsambleas}"
                                 ContentTemplate="{StaticResource CategoriaContentTemplate}"
                                 ItemContainerStyle="{StaticResource TabMensajeStyle}"
                                 Background="Transparent" BorderThickness="0" Margin="0,16,0,0">
