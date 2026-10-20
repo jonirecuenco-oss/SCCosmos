@@ -1934,3 +1934,8 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   clave no se calcula, no se muestra en ningún sitio (Inicio ni widget) y ni siquiera se pide el
   permiso de ubicación. Se eliminaron los servicios abiertos (Nominatim/OSRM); con clave se usan
   Directions + Geocoding de Google (con variantes de dirección y espera de 30 min tras un fallo).
+- **TomTom para los tiempos de viaje**: `TiempoViajeService` acepta clave de TomTom (tiene prioridad)
+  o Google. Con TomTom usa Search/Geocoding + Routing API v1 (`traffic=true`, ruta más rápida en
+  coche); con Google, Directions + Geocoding. Sin ninguna clave no se calcula nada. La tarjeta de
+  Configuración → «Tiempo de viaje» tiene ahora los dos campos (TomTom y Google) y un mensaje que
+  indica qué servicio está activo.

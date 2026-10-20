@@ -8,12 +8,12 @@ namespace SCCosmos.Mobile.Services;
 /// <summary>
 /// Tiempo en coche hasta un destino (coordenadas o dirección) desde la
 /// ubicación actual del dispositivo. Solo se calcula cuando hay una clave
-/// de Google Maps configurada (Directions API + Geocoding API) en
-/// Configuración → «Tiempo de viaje»; sin clave no se calcula ni se
-/// muestra nada.
+/// configurada: TomTom (plan gratuito; tiene prioridad) o Google Maps.
+/// Sin ninguna clave no se calcula ni se muestra nada.
 /// </summary>
 public static class TiempoViajeService
 {
+    private const string ClaveTomTom = "TomTomApiKey";
     private const string ClaveGoogleMaps = "GoogleMapsApiKey";
     private const string ClaveLatitud = "TiempoViajeLat";
     private const string ClaveLongitud = "TiempoViajeLng";
@@ -56,14 +56,26 @@ public static class TiempoViajeService
 
 
     // =========================================================
-    // CLAVE DE GOOGLE MAPS (opcional)
+    // CLAVES (TomTom o Google Maps)
     // =========================================================
+
+    /// <summary>Clave de TomTom (si está puesta, se usa TomTom).</summary>
+    public static string ObtenerClaveTomTom() =>
+        (Preferences.Get(ClaveTomTom, "") ?? "").Trim();
+
+    public static void GuardarClaveTomTom(string clave) =>
+        Preferences.Set(ClaveTomTom, (clave ?? "").Trim());
 
     public static string ObtenerClaveGoogle() =>
         (Preferences.Get(ClaveGoogleMaps, "") ?? "").Trim();
 
     public static void GuardarClaveGoogle(string clave) =>
         Preferences.Set(ClaveGoogleMaps, (clave ?? "").Trim());
+
+    /// <summary>true si hay alguna clave configurada (TomTom o Google).</summary>
+    public static bool HayClaveConfigurada() =>
+        ObtenerClaveTomTom().Length > 0
+        || ObtenerClaveGoogle().Length > 0;
 
 
     // =========================================================
@@ -101,8 +113,8 @@ public static class TiempoViajeService
     /// </summary>
     public static async Task ActualizarUbicacionAsync()
     {
-        // Sin clave de Google no hace falta la ubicación.
-        if (ObtenerClaveGoogle().Length == 0)
+        // Sin ninguna clave no hace falta la ubicación.
+        if (!HayClaveConfigurada())
         {
             return;
         }
@@ -168,8 +180,8 @@ public static class TiempoViajeService
         double lng,
         string direccion)
     {
-        // Solo se muestra si hay clave de Google configurada.
-        if (ObtenerClaveGoogle().Length == 0)
+        // Solo se muestra si hay alguna clave configurada.
+        if (!HayClaveConfigurada())
         {
             return null;
         }
@@ -196,8 +208,8 @@ public static class TiempoViajeService
         double lng,
         string direccion)
     {
-        // Solo se calcula con clave de Google configurada.
-        if (ObtenerClaveGoogle().Length == 0)
+        // Solo se calcula con alguna clave configurada.
+        if (!HayClaveConfigurada())
         {
             return null;
         }
@@ -287,16 +299,16 @@ public static class TiempoViajeService
 
 
     /// <summary>
-    /// Calcula en segundo plano los destinos pendientes y, si alguno se
-    /// consigue, avisa al terminar (el widget se vuelve a pintar). Sin
-    /// ubicación guardada no hace nada.
+    /// Calcula en segundo plano los destinos pendientes y avisa al
+    /// terminar (el widget se vuelve a pintar). Sin clave ni ubicación
+    /// guardada no hace nada.
     /// </summary>
     public static void RefrescarEnSegundoPlano(
         IEnumerable<(double Lat, double Lng, string Direccion)> destinos,
         Action alTerminar)
     {
         if (_calculando
-            || ObtenerClaveGoogle().Length == 0
+            || !HayClaveConfigurada()
             || ObtenerUbicacionGuardada() is null)
         {
             return;
@@ -411,14 +423,15 @@ public static class TiempoViajeService
             return guardada;
         }
 
+        string claveTomTom = ObtenerClaveTomTom();
         string claveGoogle = ObtenerClaveGoogle();
 
         foreach (string consulta in CrearConsultasGeocodificacion(direccionTexto))
         {
             (double Lat, double Lng)? resultado =
-                await GeocodificarConGoogleAsync(
-                    claveGoogle,
-                    consulta);
+                claveTomTom.Length > 0
+                    ? await GeocodificarConTomTomAsync(claveTomTom, consulta)
+                    : await GeocodificarConGoogleAsync(claveGoogle, consulta);
 
             if (resultado is { } punto)
             {
@@ -479,6 +492,41 @@ public static class TiempoViajeService
     }
 
 
+    private static async Task<(double Lat, double Lng)?> GeocodificarConTomTomAsync(
+        string clave,
+        string consulta)
+    {
+        try
+        {
+            string url =
+                "https://api.tomtom.com/search/2/geocode/"
+                + Uri.EscapeDataString(consulta)
+                + ".json?limit=1&language=es-ES&key="
+                + Uri.EscapeDataString(clave);
+
+            using JsonDocument json =
+                JsonDocument.Parse(
+                    await Cliente.GetStringAsync(url));
+
+            JsonElement raiz = json.RootElement;
+
+            if (raiz.TryGetProperty("results", out JsonElement resultados)
+                && resultados.GetArrayLength() > 0
+                && resultados[0].TryGetProperty("position", out JsonElement posicion))
+            {
+                return (
+                    posicion.GetProperty("lat").GetDouble(),
+                    posicion.GetProperty("lon").GetDouble());
+            }
+        }
+        catch
+        {
+        }
+
+        return null;
+    }
+
+
     private static async Task<(double Lat, double Lng)?> GeocodificarConGoogleAsync(
         string clave,
         string consulta)
@@ -516,17 +564,64 @@ public static class TiempoViajeService
     }
 
 
-
-
-
     private static async Task<int?> CalcularRutaAsync(
         (double Lat, double Lng) origen,
         (double Lat, double Lng) destino)
     {
+        string claveTomTom = ObtenerClaveTomTom();
+
+        if (claveTomTom.Length > 0)
+        {
+            return await RutaConTomTomAsync(claveTomTom, origen, destino);
+        }
+
         return await RutaConGoogleAsync(
             ObtenerClaveGoogle(),
             origen,
             destino);
+    }
+
+
+    /// <summary>
+    /// Ruta con TomTom (Routing API). Con tráfico: el tiempo incluye el
+    /// estado del tráfico en tiempo real.
+    /// </summary>
+    private static async Task<int?> RutaConTomTomAsync(
+        string clave,
+        (double Lat, double Lng) origen,
+        (double Lat, double Lng) destino)
+    {
+        try
+        {
+            string url =
+                "https://api.tomtom.com/routing/1/calculateRoute/"
+                + Numero(origen.Lat) + "," + Numero(origen.Lng) + ":"
+                + Numero(destino.Lat) + "," + Numero(destino.Lng)
+                + "/json?traffic=true&travelMode=car&routeType=fastest"
+                + "&language=es-ES&key=" + Uri.EscapeDataString(clave);
+
+            using JsonDocument json =
+                JsonDocument.Parse(
+                    await Cliente.GetStringAsync(url));
+
+            JsonElement raiz = json.RootElement;
+
+            if (raiz.TryGetProperty("routes", out JsonElement rutas)
+                && rutas.GetArrayLength() > 0
+                && rutas[0].TryGetProperty("summary", out JsonElement resumen)
+                && resumen.TryGetProperty(
+                    "travelTimeInSeconds",
+                    out JsonElement segundos))
+            {
+                return (int)Math.Ceiling(
+                    segundos.GetDouble() / 60.0);
+            }
+        }
+        catch
+        {
+        }
+
+        return null;
     }
 
 
@@ -581,9 +676,6 @@ public static class TiempoViajeService
 
         return null;
     }
-
-
-
 
 
     private static string Numero(double valor) =>

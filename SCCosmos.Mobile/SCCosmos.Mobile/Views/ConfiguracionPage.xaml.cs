@@ -22,9 +22,14 @@ public partial class ConfiguracionPage : ContentPage
         CargarDatosGlobales();
         CargarPerfil();
 
-        // Clave opcional de Google Maps para los tiempos de viaje.
+        // Claves opcionales para los tiempos de viaje (TomTom/Google).
+        TxtTomTomKey.Text =
+            TiempoViajeService.ObtenerClaveTomTom();
+
         TxtGmapsKey.Text =
             TiempoViajeService.ObtenerClaveGoogle();
+
+        ActualizarMensajeClavesViaje();
 
         // La sincronización es siempre automática: no hay interruptor.
         AutoSyncService.Activo =
@@ -496,6 +501,23 @@ public partial class ConfiguracionPage : ContentPage
         ActualizarPanelCodigoPerfil();
     }
 
+    private void TxtTomTomKey_Unfocused(
+        object? sender,
+        FocusEventArgs e)
+    {
+        try
+        {
+            TiempoViajeService.GuardarClaveTomTom(
+                TxtTomTomKey.Text);
+
+            ActualizarMensajeClavesViaje();
+        }
+        catch
+        {
+        }
+    }
+
+
     private void TxtGmapsKey_Unfocused(
         object? sender,
         FocusEventArgs e)
@@ -505,15 +527,36 @@ public partial class ConfiguracionPage : ContentPage
             TiempoViajeService.GuardarClaveGoogle(
                 TxtGmapsKey.Text);
 
-            LblGmapsGuardada.Text =
-                string.IsNullOrWhiteSpace(
-                    TiempoViajeService.ObtenerClaveGoogle())
-                    ? "Sin clave: el tiempo de viaje no se mostrará."
-                    : "Clave guardada: los tiempos incluirán el tráfico.";
+            ActualizarMensajeClavesViaje();
         }
         catch
         {
         }
+    }
+
+
+    private void ActualizarMensajeClavesViaje()
+    {
+        if (!string.IsNullOrWhiteSpace(
+                TiempoViajeService.ObtenerClaveTomTom()))
+        {
+            LblGmapsGuardada.Text =
+                "Clave de TomTom guardada: los tiempos " +
+                "incluirán el tráfico.";
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(
+                TiempoViajeService.ObtenerClaveGoogle()))
+        {
+            LblGmapsGuardada.Text =
+                "Clave de Google guardada: los tiempos " +
+                "incluirán el tráfico.";
+            return;
+        }
+
+        LblGmapsGuardada.Text =
+            "Sin clave: el tiempo de viaje no se mostrará.";
     }
 
 
