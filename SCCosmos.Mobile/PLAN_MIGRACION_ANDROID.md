@@ -1942,3 +1942,11 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
 - **Inicio con TomTom (corrección)**: la guarda de `RefrescarTiemposViajeAsync` en Inicio seguía
   comprobando solo la clave de Google, así que con solo TomTom el tiempo no aparecía en la página
   de Inicio (el widget sí, porque usa las guardas del servicio). Ahora usa `HayClaveConfigurada()`.
+- **Lote 1.8.0 (widget desplazable)**: el widget pasa a ser un widget de colección — cabecera fija
+  (icono de la app + título + flechas de día) y contenido en un `ListView` con
+  `SccosmosWidgetService`/`SccosmosWidgetFactory` (fila a fila: secciones, eventos, tareas, alertas,
+  predicación). Apartados renombrados: «PROGRAMA DE ACTIVIDAD», «TAREAS» y «PREDICACIÓN · <MES> <AÑO>
+  · AÑO EN VIGOR <yy/yy>»; menos separación entre apartados; tareas y alertas ya no están limitadas a
+  3 (la lista se desplaza). El tiempo de viaje ahora se calcula solo para el PRÓXIMO evento por hora
+  del SC y de la esposa, en widget e Inicio (por evento de cada uno, con clasificación de
+  `Responsable`).

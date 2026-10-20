@@ -14,10 +14,11 @@ using SCCosmos.Mobile.Services;
 namespace SCCosmos.Mobile.Platforms.Android;
 
 /// <summary>
-/// Widget de SCCosmos: programación del día elegido (programa de la visita)
-/// y sus tareas. Se puede mover un día adelante o atrás con las flechas.
-/// Al pulsar una actividad se abre el programa de la visita y al pulsar una
-/// tarea se abre la página de Tareas.
+/// Widget de SCCosmos: programación del día elegido (programa de la
+/// visita), tareas, alertas y predicación. El contenido va en una lista
+/// desplazable (widget de colección) para que todo quepa aunque la celda
+/// del escritorio sea pequeña. La cabecera (icono, título, flechas de
+/// día) queda fija arriba.
 /// </summary>
 [BroadcastReceiver(
     Enabled = true,
@@ -53,6 +54,25 @@ public class SccosmosWidgetProvider : AppWidgetProvider
 
     private const string ExtraDestino =
         "sccosmos_destino";
+
+    private const string AccionTareaOk =
+        "sccosmos_widget_tarea_ok";
+
+    private const string AccionAlertaOk =
+        "sccosmos_widget_alerta_ok";
+
+    private const string ExtraTareaId =
+        "sccosmos_widget_tarea_id";
+
+    private const string ExtraAlertaFirma =
+        "sccosmos_widget_alerta_firma";
+
+    // Colores compartidos con las filas de la lista.
+    internal const string ColorTareaVencida =
+        "#FF7B7B";
+
+    internal const string ColorSeccionTareas =
+        "#8BC98B";
 
 
     public static DateTime ObtenerDiaSeleccionado()
@@ -94,27 +114,6 @@ public class SccosmosWidgetProvider : AppWidgetProvider
         {
         }
     }
-
-
-    private const string AccionTareaOk =
-        "sccosmos_widget_tarea_ok";
-
-    // Colores de la sección de tareas: las atrasadas sin completar van
-    // en rojo.
-    private static readonly global::Android.Graphics.Color ColorTareaVencida =
-        global::Android.Graphics.Color.ParseColor("#FF7B7B");
-
-    private static readonly global::Android.Graphics.Color ColorSeccionTareas =
-        global::Android.Graphics.Color.ParseColor("#8BC98B");
-
-    private const string AccionAlertaOk =
-        "sccosmos_widget_alerta_ok";
-
-    private const string ExtraTareaId =
-        "sccosmos_widget_tarea_id";
-
-    private const string ExtraAlertaFirma =
-        "sccosmos_widget_alerta_firma";
 
 
     public override void OnUpdate(
@@ -320,440 +319,28 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                     IdDiaAdelante,
                     AccionDiaAdelante));
 
-            // Programación del día: programa de la visita.
-            List<(string Texto, string ConsultaMapa, string Descripcion, string Tiempo)> programa =
-                ObtenerProgramaDelDia(dia);
-
-            vistas.SetTextViewText(
-                Resource.Id.widget_seccion_hoy,
-                "PROGRAMACIÓN · " + etiquetaDia.ToUpperInvariant());
-
-            int[] filasPrograma =
-            {
-                Resource.Id.widget_programa1,
-                Resource.Id.widget_programa2,
-                Resource.Id.widget_programa3,
-                Resource.Id.widget_programa4,
-                Resource.Id.widget_programa5,
-                Resource.Id.widget_programa6,
-                Resource.Id.widget_programa7,
-                Resource.Id.widget_programa8
-            };
-
-            int[] botonesMapa =
-            {
-                Resource.Id.widget_programa1_mapa,
-                Resource.Id.widget_programa2_mapa,
-                Resource.Id.widget_programa3_mapa,
-                Resource.Id.widget_programa4_mapa,
-                Resource.Id.widget_programa5_mapa,
-                Resource.Id.widget_programa6_mapa,
-                Resource.Id.widget_programa7_mapa,
-                Resource.Id.widget_programa8_mapa
-            };
-
-            int[] filasAcompanante =
-            {
-                Resource.Id.widget_programa1_acompanante,
-                Resource.Id.widget_programa2_acompanante,
-                Resource.Id.widget_programa3_acompanante,
-                Resource.Id.widget_programa4_acompanante,
-                Resource.Id.widget_programa5_acompanante,
-                Resource.Id.widget_programa6_acompanante,
-                Resource.Id.widget_programa7_acompanante,
-                Resource.Id.widget_programa8_acompanante
-            };
-
-            for (int i = 0;
-                 i < filasPrograma.Length;
-                 i++)
-            {
-                bool hay =
-                    i < programa.Count;
-
-                vistas.SetViewVisibility(
-                    filasPrograma[i],
-                    hay
-                        ? global::Android.Views.ViewStates.Visible
-                        : global::Android.Views.ViewStates.Gone);
-
-                vistas.SetViewVisibility(
-                    botonesMapa[i],
-                    global::Android.Views.ViewStates.Gone);
-
-                vistas.SetViewVisibility(
-                    filasAcompanante[i],
-                    global::Android.Views.ViewStates.Gone);
-
-                if (!hay)
-                {
-                    continue;
-                }
-
-                vistas.SetTextViewText(
-                    filasPrograma[i],
-                    programa[i].Texto);
-
-                // Línea secundaria: descripción del evento y tiempo en coche.
-                string secundaria =
-                    programa[i].Descripcion;
-
-                string tiempoFila =
-                    programa[i].Tiempo;
-
-                if (!string.IsNullOrWhiteSpace(tiempoFila))
-                {
-                    secundaria =
-                        string.IsNullOrWhiteSpace(secundaria)
-                            ? tiempoFila
-                            : secundaria + " · " + tiempoFila;
-                }
-
-                if (!string.IsNullOrWhiteSpace(secundaria))
-                {
-                    vistas.SetTextViewText(
-                        filasAcompanante[i],
-                        secundaria);
-
-                    vistas.SetViewVisibility(
-                        filasAcompanante[i],
-                        global::Android.Views.ViewStates.Visible);
-                }
-
-                string consulta =
-                    programa[i].ConsultaMapa;
-
-                if (!string.IsNullOrWhiteSpace(consulta))
-                {
-                    PendingIntent? mapa =
-                        CrearAbrirMapa(
-                            contexto,
-                            4860 + i,
-                            consulta);
-
-                    if (mapa is not null)
-                    {
-                        vistas.SetOnClickPendingIntent(
-                            botonesMapa[i],
-                            mapa);
-
-                        vistas.SetViewVisibility(
-                            botonesMapa[i],
-                            global::Android.Views.ViewStates.Visible);
-                    }
-                }
-
-                PendingIntent? tocar =
-                    CrearActividad(
-                        contexto,
-                        4810 + i,
-                        "visita");
-
-                if (tocar is not null)
-                {
-                    vistas.SetOnClickPendingIntent(
-                        filasPrograma[i],
-                        tocar);
-                }
-            }
-
-            if (programa.Count == 0)
-            {
-                vistas.SetTextViewText(
-                    filasPrograma[0],
-                    "Sin programación para ese día");
-
-                vistas.SetViewVisibility(
-                    filasPrograma[0],
-                    global::Android.Views.ViewStates.Visible);
-            }
-
-            // Tareas: primero las atrasadas sin completar (en rojo) y
-            // después las del día elegido.
-            var tareasInfo =
-                ObtenerTareasDelDia(dia);
-
-            List<(int Id, string Texto, bool Vencida)> tareas =
-                tareasInfo.Tareas;
-
-            int vencidasTotal =
-                tareasInfo.Vencidas;
-
-            vistas.SetTextViewText(
-                Resource.Id.widget_seccion_tareas,
-                vencidasTotal > 0
-                    ? "PRÓXIMAS TAREAS · " + vencidasTotal
-                      + (vencidasTotal == 1
-                          ? " ATRASADA"
-                          : " ATRASADAS")
-                    : "PRÓXIMAS TAREAS");
-
-            vistas.SetTextColor(
-                Resource.Id.widget_seccion_tareas,
-                vencidasTotal > 0
-                    ? ColorTareaVencida
-                    : ColorSeccionTareas);
-
-            int[] filasTareas =
-            {
-                Resource.Id.widget_tarea1,
-                Resource.Id.widget_tarea2,
-                Resource.Id.widget_tarea3
-            };
-
-            int[] botonesTarea =
-            {
-                Resource.Id.widget_tarea1_ok,
-                Resource.Id.widget_tarea2_ok,
-                Resource.Id.widget_tarea3_ok
-            };
-
-            for (int i = 0;
-                 i < filasTareas.Length;
-                 i++)
-            {
-                bool hay =
-                    i < tareas.Count;
-
-                vistas.SetViewVisibility(
-                    filasTareas[i],
-                    hay
-                        ? global::Android.Views.ViewStates.Visible
-                        : global::Android.Views.ViewStates.Gone);
-
-                vistas.SetViewVisibility(
-                    botonesTarea[i],
-                    global::Android.Views.ViewStates.Gone);
-
-                if (!hay)
-                {
-                    continue;
-                }
-
-                vistas.SetTextViewText(
-                    filasTareas[i],
-                    tareas[i].Texto);
-
-                // Las tareas atrasadas sin completar van en rojo.
-                vistas.SetTextColor(
-                    filasTareas[i],
-                    tareas[i].Vencida
-                        ? ColorTareaVencida
-                        : global::Android.Graphics.Color.ParseColor("#E6E8EB"));
-
-                PendingIntent? completar =
-                    CrearAccionTarea(
-                        contexto,
-                        4840 + i,
-                        tareas[i].Id);
-
-                if (completar is not null)
-                {
-                    vistas.SetOnClickPendingIntent(
-                        botonesTarea[i],
-                        completar);
-
-                    vistas.SetViewVisibility(
-                        botonesTarea[i],
-                        global::Android.Views.ViewStates.Visible);
-                }
-
-                PendingIntent? tocar =
-                    CrearActividad(
-                        contexto,
-                        4820 + i,
-                        "tareas");
-
-                if (tocar is not null)
-                {
-                    vistas.SetOnClickPendingIntent(
-                        filasTareas[i],
-                        tocar);
-                }
-            }
-
-            if (tareas.Count == 0)
-            {
-                vistas.SetTextViewText(
-                    filasTareas[0],
-                    "Sin tareas para ese día");
-
-                vistas.SetTextColor(
-                    filasTareas[0],
-                    global::Android.Graphics.Color.ParseColor("#E6E8EB"));
-
-                vistas.SetViewVisibility(
-                    filasTareas[0],
-                    global::Android.Views.ViewStates.Visible);
-            }
-
-            // Alertas pendientes de resolver.
-            List<(string Firma, string Texto)> alertas =
-                ObtenerAlertasPendientes();
-
-            int[] filasAlertas =
-            {
-                Resource.Id.widget_alerta1,
-                Resource.Id.widget_alerta2,
-                Resource.Id.widget_alerta3
-            };
-
-            int[] botonesAlerta =
-            {
-                Resource.Id.widget_alerta1_ok,
-                Resource.Id.widget_alerta2_ok,
-                Resource.Id.widget_alerta3_ok
-            };
-
-            vistas.SetViewVisibility(
-                Resource.Id.widget_seccion_alertas,
-                alertas.Count > 0
-                    ? global::Android.Views
-                        .ViewStates.Visible
-                    : global::Android.Views
-                        .ViewStates.Gone);
-
-            for (int i = 0;
-                 i < filasAlertas.Length;
-                 i++)
-            {
-                bool visible =
-                    i < alertas.Count;
-
-                vistas.SetViewVisibility(
-                    botonesAlerta[i],
-                    global::Android.Views
-                        .ViewStates.Gone);
-
-                if (visible)
-                {
-                    vistas.SetTextViewText(
-                        filasAlertas[i],
-                        alertas[i].Texto);
-
-                    PendingIntent? leida =
-                        CrearAccionAlertaLeida(
-                            contexto,
-                            4850 + i,
-                            alertas[i].Firma);
-
-                    if (leida is not null)
-                    {
-                        vistas.SetOnClickPendingIntent(
-                            botonesAlerta[i],
-                            leida);
-
-                        vistas.SetViewVisibility(
-                            botonesAlerta[i],
-                            global::Android.Views
-                                .ViewStates.Visible);
-                    }
-                }
-
-                vistas.SetViewVisibility(
-                    filasAlertas[i],
-                    visible
-                        ? global::Android.Views
-                            .ViewStates.Visible
-                        : global::Android.Views
-                            .ViewStates.Gone);
-
-                PendingIntent? tocar =
-                    CrearActividad(
-                        contexto,
-                        4830 + i,
-                        "alertas");
-
-                if (tocar is not null)
-                {
-                    vistas.SetOnClickPendingIntent(
-                        filasAlertas[i],
-                        tocar);
-                }
-            }
-
-            // Predicación este mes (horas y CBs, por usuario), al final.
+            // Contenido desplazable: lista con filas (sección, evento,
+            // tarea, alerta, predicación).
             try
             {
-                string usuarioHoras =
-                    SCCosmos.Mobile.Services
-                        .PerfilAccesoService.EsHombre
-                        ? "SC"
-                        : "Esposa";
+                var intencion =
+                    new Intent(
+                        contexto,
+                        typeof(SccosmosWidgetService));
 
-                string mesHoras =
-                    DateTime.Today.ToString("yyyy-MM");
+                intencion.PutExtra(
+                    AppWidgetManager.ExtraAppwidgetId,
+                    id);
 
-                double horasMes =
-                    DatabaseHelper
-                        .ObtenerHorasMesMobile(
-                            usuarioHoras,
-                            mesHoras);
+                intencion.SetData(
+                    global::Android.Net.Uri.Parse(
+                        intencion.ToUri(
+                            global::Android.Content.IntentUriType.Scheme)));
 
-                int cbsMes =
-                    DatabaseHelper
-                        .ObtenerCbsMesMobile(
-                            usuarioHoras,
-                            mesHoras);
-
-                vistas.SetTextViewText(
-                    Resource.Id.widget_seccion_horas,
-                    "PREDICACIÓN ESTE MES");
-
-                vistas.SetTextViewText(
-                    Resource.Id.widget_horas,
-                    horasMes.ToString(
-                        "0.#",
-                        new CultureInfo("es-ES"))
-                    + " h  ·  "
-                    + cbsMes.ToString()
-                    + " CBs");
-
-                vistas.SetViewVisibility(
-                    Resource.Id.widget_seccion_horas,
-                    global::Android.Views
-                        .ViewStates.Visible);
-
-                vistas.SetViewVisibility(
-                    Resource.Id.widget_horas,
-                    global::Android.Views
-                        .ViewStates.Visible);
-
-                vistas.SetViewVisibility(
-                    Resource.Id.widget_horas_mas,
-                    global::Android.Views
-                        .ViewStates.Visible);
-
-                PendingIntent? sumarHoras = null;
-
-                try
-                {
-                    var intencionHoras =
-                        new Intent(
-                            contexto,
-                            typeof(HorasDialogActivity));
-
-                    intencionHoras.AddFlags(
-                        ActivityFlags.NewTask);
-
-                    sumarHoras =
-                        PendingIntent.GetActivity(
-                            contexto,
-                            4870,
-                            intencionHoras,
-                            PendingIntentFlags.Immutable
-                            | PendingIntentFlags.UpdateCurrent);
-                }
-                catch
-                {
-                }
-
-                if (sumarHoras is not null)
-                {
-                    vistas.SetOnClickPendingIntent(
-                        Resource.Id.widget_horas_mas,
-                        sumarHoras);
-                }
+                vistas.SetRemoteAdapter(
+                    id,
+                    Resource.Id.widget_lista,
+                    intencion);
             }
             catch
             {
@@ -762,6 +349,10 @@ public class SccosmosWidgetProvider : AppWidgetProvider
             gestor.UpdateAppWidget(
                 id,
                 vistas);
+
+            gestor.NotifyAppWidgetViewDataChanged(
+                id,
+                Resource.Id.widget_lista);
         }
         catch
         {
@@ -769,7 +360,7 @@ public class SccosmosWidgetProvider : AppWidgetProvider
     }
 
 
-    private static PendingIntent? CrearActividad(
+    internal static PendingIntent? CrearActividad(
         Context contexto,
         int codigo,
         string destino)
@@ -827,7 +418,7 @@ public class SccosmosWidgetProvider : AppWidgetProvider
     }
 
 
-    private static PendingIntent? CrearAccionTarea(
+    internal static PendingIntent? CrearAccionTarea(
         Context contexto,
         int codigo,
         int tareaId)
@@ -860,7 +451,7 @@ public class SccosmosWidgetProvider : AppWidgetProvider
     }
 
 
-    private static PendingIntent? CrearAccionAlertaLeida(
+    internal static PendingIntent? CrearAccionAlertaLeida(
         Context contexto,
         int codigo,
         string firma)
@@ -893,7 +484,7 @@ public class SccosmosWidgetProvider : AppWidgetProvider
     }
 
 
-    private static PendingIntent? CrearAbrirMapa(
+    internal static PendingIntent? CrearAbrirMapa(
         Context contexto,
         int codigo,
         string consulta)
@@ -928,57 +519,8 @@ public class SccosmosWidgetProvider : AppWidgetProvider
     }
 
 
-    private static void RellenarLineas(
-        RemoteViews vistas,
-        int[] ids,
-        List<string> lineas,
-        string textoVacio)
-    {
-        if (lineas.Count == 0)
-        {
-            vistas.SetTextViewText(
-                ids[0],
-                textoVacio);
-        }
-
-        for (int i = 0;
-             i < ids.Length;
-             i++)
-        {
-            if (i < lineas.Count)
-            {
-                vistas.SetTextViewText(
-                    ids[i],
-                    lineas[i]);
-
-                vistas.SetViewVisibility(
-                    ids[i],
-                    global::Android.Views
-                        .ViewStates.Visible);
-            }
-            else if (lineas.Count > 0)
-            {
-                vistas.SetViewVisibility(
-                    ids[i],
-                    global::Android.Views
-                        .ViewStates.Gone);
-            }
-            else
-            {
-                vistas.SetViewVisibility(
-                    ids[i],
-                    i == 0
-                        ? global::Android.Views
-                            .ViewStates.Visible
-                        : global::Android.Views
-                            .ViewStates.Gone);
-            }
-        }
-    }
-
-
     /// <summary>Minutos de la hora («9:30» → 570); sin hora, al final.</summary>
-    private static int OrdenHora(
+    internal static int OrdenHora(
         string hora)
     {
         string valor =
@@ -1000,7 +542,7 @@ public class SccosmosWidgetProvider : AppWidgetProvider
         if (TimeSpan.TryParseExact(
                 valor,
                 formatos,
-                System.Globalization.CultureInfo.InvariantCulture,
+                CultureInfo.InvariantCulture,
                 out TimeSpan ts))
         {
             return (int)ts.TotalMinutes;
@@ -1008,8 +550,8 @@ public class SccosmosWidgetProvider : AppWidgetProvider
 
         if (DateTime.TryParse(
                 valor,
-                System.Globalization.CultureInfo.GetCultureInfo("es-ES"),
-                System.Globalization.DateTimeStyles.NoCurrentDateDefault,
+                CultureInfo.GetCultureInfo("es-ES"),
+                DateTimeStyles.NoCurrentDateDefault,
                 out DateTime dt))
         {
             return dt.Hour * 60 + dt.Minute;
@@ -1019,15 +561,84 @@ public class SccosmosWidgetProvider : AppWidgetProvider
     }
 
 
-    private static List<(string Texto, string ConsultaMapa, string Descripcion, string Tiempo)>
+    /// <summary>
+    /// A quién pertenece la actividad: (SC, esposa). «Ambos» y los
+    /// valores desconocidos cuentan para los dos.
+    /// </summary>
+    internal static (bool SC, bool Esposa) ClasificarResponsable(
+        string valor)
+    {
+        string v =
+            (valor ?? "").Trim();
+
+        if (v.Length == 0
+            || v.Equals("Ambos", StringComparison.OrdinalIgnoreCase))
+        {
+            return (true, true);
+        }
+
+        if (v.Equals("SC", StringComparison.OrdinalIgnoreCase))
+        {
+            return (true, false);
+        }
+
+        if (v.Equals("Esposa", StringComparison.OrdinalIgnoreCase)
+            || v.Equals("Rebe", StringComparison.OrdinalIgnoreCase))
+        {
+            return (false, true);
+        }
+
+        try
+        {
+            string nombreSC =
+                DatabaseHelper
+                    .ObtenerConfiguracion(
+                        "NombreSC",
+                        "")
+                    .Trim();
+
+            if (nombreSC.Length > 0
+                && v.Equals(
+                    nombreSC,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return (true, false);
+            }
+
+            string nombreEsposa =
+                DatabaseHelper
+                    .ObtenerConfiguracion(
+                        "NombreEsposaSC",
+                        "")
+                    .Trim();
+
+            if (nombreEsposa.Length > 0
+                && v.Equals(
+                    nombreEsposa,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return (false, true);
+            }
+        }
+        catch
+        {
+        }
+
+        // Cualquier otro nombre (p. ej. un acompañante): cuenta para los
+        // dos, así nunca se pierde el tiempo del próximo evento.
+        return (true, true);
+    }
+
+
+    internal static List<(string Texto, string ConsultaMapa, string Descripcion, string Tiempo)>
         ObtenerProgramaDelDia(
             DateTime dia)
     {
         var resultado =
             new List<(string Texto, string ConsultaMapa, string Descripcion, string Tiempo)>();
 
-        // Destinos sin tiempo calculado todavía (se calculan en segundo
-        // plano y el widget se repinta al terminar).
+        // Destinos del PRÓXIMO evento (del SC y de la esposa) sin tiempo
+        // calculado todavía; se calculan en segundo plano.
         var pendientes =
             new List<(double Lat, double Lng, string Direccion)>();
 
@@ -1098,6 +709,18 @@ public class SccosmosWidgetProvider : AppWidgetProvider
             string mes =
                 martes.ToString("yyyy-MM");
 
+            var filas =
+                new List<(
+                    string Texto,
+                    string ConsultaMapa,
+                    string Descripcion,
+                    double Lat,
+                    double Lng,
+                    string Direccion,
+                    int Minutos,
+                    bool SC,
+                    bool Esposa)>();
+
             foreach (ActividadPrograma actividad
                      in DatabaseHelper
                          .ObtenerActividadesProgramaDia(
@@ -1112,17 +735,20 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                 string tipo =
                     (actividad.TipoActividad ?? "").Trim();
 
-                string responsable =
+                string responsableCrudo =
                     (actividad.Responsable ?? "").Trim();
 
+                string responsable =
+                    responsableCrudo;
+
                 bool esLegacy =
-                    responsable.Equals(
+                    responsableCrudo.Equals(
                         "Comida",
                         StringComparison.OrdinalIgnoreCase)
-                    || responsable.Equals(
+                    || responsableCrudo.Equals(
                         "Cenar",
                         StringComparison.OrdinalIgnoreCase)
-                    || responsable.Equals(
+                    || responsableCrudo.Equals(
                         "Dormir",
                         StringComparison.OrdinalIgnoreCase);
 
@@ -1161,62 +787,152 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                         ? " (" + responsable + ")"
                         : "");
 
-                // Descripción del evento (como en la página de Inicio):
-                // se muestra debajo de la actividad en el widget.
-                string descripcion =
-                    (actividad.NotasLibro ?? "").Trim();
-
-                if (linea.Trim().Length > 0)
+                if (linea.Trim().Length == 0)
                 {
-                    string consulta =
-                        "";
+                    continue;
+                }
 
-                    if (actividad.Latitud != 0
-                        || actividad.Longitud != 0)
+                string consulta =
+                    "";
+
+                if (actividad.Latitud != 0
+                    || actividad.Longitud != 0)
+                {
+                    consulta =
+                        actividad.Latitud.ToString(CultureInfo.InvariantCulture)
+                        + ","
+                        + actividad.Longitud.ToString(CultureInfo.InvariantCulture);
+                }
+                else if (!string.IsNullOrWhiteSpace(
+                             actividad.Direccion))
+                {
+                    consulta =
+                        actividad.Direccion.Trim();
+                }
+
+                int minutos =
+                    OrdenHora(hora);
+
+                if (minutos >= int.MaxValue - 1)
+                {
+                    minutos = -1;
+                }
+
+                (bool paraSC, bool paraEsposa) =
+                    ClasificarResponsable(
+                        responsableCrudo);
+
+                filas.Add((
+                    linea.Trim(),
+                    consulta,
+                    (actividad.NotasLibro ?? "").Trim(),
+                    actividad.Latitud,
+                    actividad.Longitud,
+                    (actividad.Direccion ?? "").Trim(),
+                    minutos,
+                    paraSC,
+                    paraEsposa));
+            }
+
+            // Próximo evento (por hora) del SC y de la esposa: solo esos
+            // dos muestran el tiempo en coche.
+            int ahora =
+                DateTime.Now.Hour * 60
+                + DateTime.Now.Minute;
+
+            DateTime hoy =
+                DateTime.Today;
+
+            bool esHoy =
+                dia.Date == hoy;
+
+            bool esFuturo =
+                dia.Date > hoy;
+
+            int siguienteSC =
+                -1;
+
+            int siguienteEsposa =
+                -1;
+
+            if (esHoy || esFuturo)
+            {
+                int desde =
+                    esFuturo
+                        ? 0
+                        : ahora;
+
+                for (int i = 0;
+                     i < filas.Count;
+                     i++)
+                {
+                    int minutos =
+                        filas[i].Minutos;
+
+                    if (minutos < 0
+                        || minutos < desde)
                     {
-                        consulta =
-                            actividad.Latitud.ToString(
-                                System.Globalization.CultureInfo.InvariantCulture)
-                            + ","
-                            + actividad.Longitud.ToString(
-                                System.Globalization.CultureInfo.InvariantCulture);
-                    }
-                    else if (!string.IsNullOrWhiteSpace(
-                                 actividad.Direccion))
-                    {
-                        consulta =
-                            actividad.Direccion.Trim();
+                        continue;
                     }
 
-                    string tiempo =
-                        string.IsNullOrWhiteSpace(consulta)
-                            ? ""
-                            : (TiempoViajeService
-                                   .ObtenerTiempoTextoCacheado(
-                                       actividad.Latitud,
-                                       actividad.Longitud,
-                                       actividad.Direccion)
-                               ?? "");
+                    if (siguienteSC < 0
+                        && filas[i].SC)
+                    {
+                        siguienteSC = i;
+                    }
+
+                    if (siguienteEsposa < 0
+                        && filas[i].Esposa)
+                    {
+                        siguienteEsposa = i;
+                    }
+
+                    if (siguienteSC >= 0
+                        && siguienteEsposa >= 0)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            for (int i = 0;
+                 i < filas.Count;
+                 i++)
+            {
+                string tiempo =
+                    "";
+
+                if (i == siguienteSC
+                    || i == siguienteEsposa)
+                {
+                    tiempo =
+                        TiempoViajeService
+                            .ObtenerTiempoTextoCacheado(
+                                filas[i].Lat,
+                                filas[i].Lng,
+                                filas[i].Direccion)
+                        ?? "";
 
                     if (tiempo.Length == 0
-                        && !string.IsNullOrWhiteSpace(consulta)
+                        && !string.IsNullOrWhiteSpace(
+                            filas[i].ConsultaMapa)
                         && !TiempoViajeService.EnFalloReciente(
-                            actividad.Latitud,
-                            actividad.Longitud,
-                            actividad.Direccion))
+                            filas[i].Lat,
+                            filas[i].Lng,
+                            filas[i].Direccion))
                     {
                         pendientes.Add((
-                            actividad.Latitud,
-                            actividad.Longitud,
-                            actividad.Direccion));
+                            filas[i].Lat,
+                            filas[i].Lng,
+                            filas[i].Direccion));
                     }
-
-                    resultado.Add((
-                        linea.Trim(),
-                        consulta,
-                        descripcion,
-                        tiempo));
                 }
+
+                resultado.Add((
+                    filas[i].Texto,
+                    filas[i].ConsultaMapa,
+                    filas[i].Descripcion,
+                    tiempo));
             }
 
             if (pendientes.Count > 0)
@@ -1234,7 +950,7 @@ public class SccosmosWidgetProvider : AppWidgetProvider
     }
 
 
-    private static List<(string Firma, string Texto)>
+    internal static List<(string Firma, string Texto)>
         ObtenerAlertasPendientes()
     {
         var resultado =
@@ -1261,11 +977,6 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                             .FirmaDe(alerta),
                         texto));
                 }
-
-                if (resultado.Count >= 3)
-                {
-                    break;
-                }
             }
         }
         catch
@@ -1276,7 +987,7 @@ public class SccosmosWidgetProvider : AppWidgetProvider
     }
 
 
-    private static (
+    internal static (
         List<(int Id, string Texto, bool Vencida)> Tareas,
         int Vencidas)
         ObtenerTareasDelDia(
@@ -1334,8 +1045,7 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                 Tarea tarea,
                 bool vencida)
             {
-                if (seleccion.Count >= 3
-                    || seleccion.Any(
+                if (seleccion.Any(
                         s => s.Id == tarea.Id))
                 {
                     return;
@@ -1360,9 +1070,7 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                     vencida));
             }
 
-            // Dos atrasadas como máximo para que el día elegido conserve
-            // su hueco; los huecos libres se rellenan con más atrasadas.
-            foreach (var v in vencidas.Take(2))
+            foreach (var v in vencidas)
             {
                 Agregar(v.Tarea, true);
             }
@@ -1373,16 +1081,77 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                     d.Tarea,
                     d.Fecha.Date < hoy);
             }
-
-            foreach (var v in vencidas.Skip(2))
-            {
-                Agregar(v.Tarea, true);
-            }
         }
         catch
         {
         }
 
         return (seleccion, totalVencidas);
+    }
+
+
+    /// <summary>
+    /// Título y texto de la predicación en vigor: mes actual con su año y
+    /// el año de servicio en vigor (septiembre-agosto).
+    /// </summary>
+    internal static (string Titulo, string Texto)
+        ObtenerPredicacionWidget()
+    {
+        try
+        {
+            string usuario =
+                PerfilAccesoService.EsHombre
+                    ? "SC"
+                    : "Esposa";
+
+            DateTime hoy =
+                DateTime.Today;
+
+            string mesHoras =
+                hoy.ToString("yyyy-MM");
+
+            double horasMes =
+                DatabaseHelper
+                    .ObtenerHorasMesMobile(
+                        usuario,
+                        mesHoras);
+
+            int cbsMes =
+                DatabaseHelper
+                    .ObtenerCbsMesMobile(
+                        usuario,
+                        mesHoras);
+
+            string mesNombre =
+                hoy.ToString(
+                    "MMMM",
+                    new CultureInfo("es-ES"));
+
+            int anioServicio =
+                hoy.Month >= 9
+                    ? hoy.Year
+                    : hoy.Year - 1;
+
+            string titulo =
+                "PREDICACIÓN · "
+                + mesNombre.ToUpperInvariant()
+                + " " + hoy.Year
+                + " · AÑO EN VIGOR "
+                + anioServicio + "/" + (anioServicio + 1);
+
+            string texto =
+                horasMes.ToString(
+                    "0.#",
+                    new CultureInfo("es-ES"))
+                + " h  ·  "
+                + cbsMes.ToString()
+                + " CBs";
+
+            return (titulo, texto);
+        }
+        catch
+        {
+            return ("PREDICACIÓN", "0 h  ·  0 CBs");
+        }
     }
 }

@@ -25,6 +25,12 @@ public class ActividadHoy : INotifyPropertyChanged
     public string Notas { get; set; } = "";
     public bool MostrarNotas => !string.IsNullOrWhiteSpace(Notas);
 
+    // A quién pertenece la actividad (para elegir el próximo evento de
+    // cada uno en el tiempo de viaje).
+    public bool EsDelSC { get; set; }
+
+    public bool EsDeLaEsposa { get; set; }
+
     public bool MostrarMapa =>
         Latitud != 0
         || Longitud != 0

@@ -876,6 +876,10 @@ public partial class InicioPage : ContentPage, IActualizableMobile
                         }
                     }
 
+                    (bool paraSC, bool paraEsposa) =
+                        ClasificarResponsableActividad(
+                            responsableCrudo);
+
                     resultado.Add(
                         new ActividadHoy
                         {
@@ -895,6 +899,12 @@ public partial class InicioPage : ContentPage, IActualizableMobile
                                 !esLegacy &&
                                 !string.IsNullOrWhiteSpace(
                                     nombreCompanero),
+
+                            EsDelSC =
+                                paraSC,
+
+                            EsDeLaEsposa =
+                                paraEsposa,
 
                             Ubicacion =
                                 (actividad.Direccion ?? "").Trim(),
@@ -969,21 +979,91 @@ public partial class InicioPage : ContentPage, IActualizableMobile
 
         try
         {
-            List<ActividadHoy> conUbicacion =
-                ProgramaHoy
-                    .Where(a => a.MostrarMapa)
-                    .ToList();
+            DateTime hoy = DateTime.Today;
 
-            if (conUbicacion.Count == 0)
+            bool esHoy =
+                _diaPrograma.Date == hoy;
+
+            bool esFuturo =
+                _diaPrograma.Date > hoy;
+
+            if (!esHoy && !esFuturo)
+            {
+                return;
+            }
+
+            // El tiempo se muestra SOLO en el próximo evento (por hora)
+            // del SC y en el próximo de la esposa.
+            int ahora =
+                DateTime.Now.Hour * 60
+                + DateTime.Now.Minute;
+
+            ActividadHoy? proximoSC = null;
+            ActividadHoy? proximaEsposa = null;
+
+            foreach (ActividadHoy actividad in ProgramaHoy)
+            {
+                int minutos =
+                    MinutosDeHora(
+                        actividad.Hora);
+
+                if (minutos < 0
+                    || (esHoy && minutos < ahora))
+                {
+                    continue;
+                }
+
+                if (proximoSC is null
+                    && actividad.EsDelSC)
+                {
+                    proximoSC = actividad;
+                }
+
+                if (proximaEsposa is null
+                    && actividad.EsDeLaEsposa)
+                {
+                    proximaEsposa = actividad;
+                }
+
+                if (proximoSC is not null
+                    && proximaEsposa is not null)
+                {
+                    break;
+                }
+            }
+
+            var objetivos =
+                new List<ActividadHoy>();
+
+            if (proximoSC is not null)
+            {
+                objetivos.Add(proximoSC);
+            }
+
+            if (proximaEsposa is not null
+                && !ReferenceEquals(
+                    proximaEsposa,
+                    proximoSC))
+            {
+                objetivos.Add(proximaEsposa);
+            }
+
+            if (objetivos.Count == 0
+                || objetivos.All(
+                    a => !a.MostrarMapa))
             {
                 return;
             }
 
             await TiempoViajeService.ActualizarUbicacionAsync();
 
-            // Lo que ya esté en caché se pinta al momento.
-            foreach (ActividadHoy actividad in conUbicacion)
+            foreach (ActividadHoy actividad in objetivos)
             {
+                if (!actividad.MostrarMapa)
+                {
+                    continue;
+                }
+
                 string? cacheado =
                     TiempoViajeService.ObtenerTiempoTextoCacheado(
                         actividad.Latitud,
@@ -993,15 +1073,6 @@ public partial class InicioPage : ContentPage, IActualizableMobile
                 if (!string.IsNullOrWhiteSpace(cacheado))
                 {
                     actividad.TiempoCocheTexto = cacheado;
-                }
-            }
-
-            // El resto se calcula aquí (la caché evita repetir llamadas).
-            foreach (ActividadHoy actividad in conUbicacion)
-            {
-                if (!string.IsNullOrWhiteSpace(
-                        actividad.TiempoCocheTexto))
-                {
                     continue;
                 }
 
@@ -1027,6 +1098,125 @@ public partial class InicioPage : ContentPage, IActualizableMobile
         {
             _refrescandoTiempos = false;
         }
+    }
+
+
+    /// <summary>Minutos de la hora («9:30» → 570); sin hora, −1.</summary>
+    private static int MinutosDeHora(
+        string hora)
+    {
+        string valor =
+            (hora ?? "").Trim();
+
+        if (valor.Length == 0)
+        {
+            return -1;
+        }
+
+        string[] formatos =
+        {
+            @"h\:mm",
+            @"hh\:mm",
+            @"h\.mm",
+            @"hh\.mm"
+        };
+
+        if (TimeSpan.TryParseExact(
+                valor,
+                formatos,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out TimeSpan ts))
+        {
+            return (int)ts.TotalMinutes;
+        }
+
+        if (DateTime.TryParse(
+                valor,
+                System.Globalization.CultureInfo.GetCultureInfo("es-ES"),
+                System.Globalization.DateTimeStyles.NoCurrentDateDefault,
+                out DateTime dt))
+        {
+            return dt.Hour * 60 + dt.Minute;
+        }
+
+        return -1;
+    }
+
+
+    /// <summary>
+    /// A quién pertenece la actividad: (SC, esposa). «Ambos» y los
+    /// valores desconocidos cuentan para los dos.
+    /// </summary>
+    private static (bool SC, bool Esposa) ClasificarResponsableActividad(
+        string valor)
+    {
+        string v =
+            (valor ?? "").Trim();
+
+        if (v.Length == 0
+            || v.Equals(
+                "Ambos",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return (true, true);
+        }
+
+        if (v.Equals(
+                "SC",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return (true, false);
+        }
+
+        if (v.Equals(
+                "Esposa",
+                StringComparison.OrdinalIgnoreCase)
+            || v.Equals(
+                "Rebe",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return (false, true);
+        }
+
+        try
+        {
+            string nombreSC =
+                DatabaseHelper
+                    .ObtenerConfiguracion(
+                        "NombreSC",
+                        "")
+                    .Trim();
+
+            if (nombreSC.Length > 0
+                && v.Equals(
+                    nombreSC,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return (true, false);
+            }
+
+            string nombreEsposa =
+                DatabaseHelper
+                    .ObtenerConfiguracion(
+                        "NombreEsposaSC",
+                        "")
+                    .Trim();
+
+            if (nombreEsposa.Length > 0
+                && v.Equals(
+                    nombreEsposa,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return (false, true);
+            }
+        }
+        catch
+        {
+        }
+
+        // Cualquier otro nombre (p. ej. un acompañante): cuenta para los
+        // dos, así nunca se pierde el tiempo del próximo evento.
+        return (true, true);
     }
 
     private async Task CargarEstadisticasAsync()
