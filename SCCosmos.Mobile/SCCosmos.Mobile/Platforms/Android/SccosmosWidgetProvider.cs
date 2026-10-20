@@ -321,7 +321,7 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                     AccionDiaAdelante));
 
             // Programación del día: programa de la visita.
-            List<(string Texto, string ConsultaMapa, string Acompanante, string Tiempo)> programa =
+            List<(string Texto, string ConsultaMapa, string Descripcion, string Tiempo)> programa =
                 ObtenerProgramaDelDia(dia);
 
             vistas.SetTextViewText(
@@ -394,9 +394,9 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                     filasPrograma[i],
                     programa[i].Texto);
 
-                // Línea secundaria: acompañante y tiempo en coche.
+                // Línea secundaria: descripción del evento y tiempo en coche.
                 string secundaria =
-                    programa[i].Acompanante;
+                    programa[i].Descripcion;
 
                 string tiempoFila =
                     programa[i].Tiempo;
@@ -1019,12 +1019,12 @@ public class SccosmosWidgetProvider : AppWidgetProvider
     }
 
 
-    private static List<(string Texto, string ConsultaMapa, string Acompanante, string Tiempo)>
+    private static List<(string Texto, string ConsultaMapa, string Descripcion, string Tiempo)>
         ObtenerProgramaDelDia(
             DateTime dia)
     {
         var resultado =
-            new List<(string Texto, string ConsultaMapa, string Acompanante, string Tiempo)>();
+            new List<(string Texto, string ConsultaMapa, string Descripcion, string Tiempo)>();
 
         // Destinos sin tiempo calculado todavía (se calculan en segundo
         // plano y el widget se repinta al terminar).
@@ -1161,39 +1161,10 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                         ? " (" + responsable + ")"
                         : "");
 
-                // Acompañante del evento (solo cuando el evento tiene uno):
+                // Descripción del evento (como en la página de Inicio):
                 // se muestra debajo de la actividad en el widget.
-                string acompanante =
-                    "";
-
-                if (!esLegacy
-                    && actividad.CompaneroId > 0)
-                {
-                    Persona? persona =
-                        DatabaseHelper
-                            .ObtenerPersonaPorId(
-                                actividad.CompaneroId);
-
-                    if (persona != null
-                        && !string.IsNullOrWhiteSpace(
-                            persona.Nombre))
-                    {
-                        string primerNombre =
-                            persona.Nombre
-                                .Split(
-                                    ' ',
-                                    StringSplitOptions
-                                        .RemoveEmptyEntries)
-                                .FirstOrDefault()
-                            ?? "";
-
-                        if (primerNombre.Length > 0)
-                        {
-                            acompanante =
-                                "con " + primerNombre;
-                        }
-                    }
-                }
+                string descripcion =
+                    (actividad.NotasLibro ?? "").Trim();
 
                 if (linea.Trim().Length > 0)
                 {
@@ -1228,7 +1199,11 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                                ?? "");
 
                     if (tiempo.Length == 0
-                        && !string.IsNullOrWhiteSpace(consulta))
+                        && !string.IsNullOrWhiteSpace(consulta)
+                        && !TiempoViajeService.EnFalloReciente(
+                            actividad.Latitud,
+                            actividad.Longitud,
+                            actividad.Direccion))
                     {
                         pendientes.Add((
                             actividad.Latitud,
@@ -1239,7 +1214,7 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                     resultado.Add((
                         linea.Trim(),
                         consulta,
-                        acompanante,
+                        descripcion,
                         tiempo));
                 }
             }

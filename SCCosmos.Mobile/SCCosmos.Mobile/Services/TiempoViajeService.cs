@@ -27,6 +27,12 @@ public static class TiempoViajeService
     private static readonly Dictionary<string, (DateTime Fecha, int Minutos)> CacheTiempos = new();
     private static readonly Dictionary<string, (double Lat, double Lng)> CacheGeocodificacion = new();
 
+    // Destinos que acaban de fallar (geocodificación o ruta): no se
+    // reintentan hasta pasado un rato, para no bloquear a los demás.
+    private static readonly Dictionary<string, DateTime> CacheFallos = new();
+
+    private const int MinutosEsperaTrasFallo = 30;
+
     private static bool _calculando;
 
 
@@ -193,6 +199,13 @@ public static class TiempoViajeService
                 return entrada.Minutos;
             }
 
+            // Un fallo reciente (geocodificación o ruta) no se reintenta
+            // todavía: así deja avanzar al resto de destinos.
+            if (EnFalloReciente(clave))
+            {
+                return null;
+            }
+
             var origen = ObtenerUbicacionGuardada();
 
             if (origen is null)
@@ -204,22 +217,54 @@ public static class TiempoViajeService
 
             if (destino is null)
             {
+                MarcarFallo(clave);
                 return null;
             }
 
             int? minutos = await CalcularRutaAsync(origen.Value, destino.Value);
 
-            if (minutos is int valor)
+            if (minutos is not int valor)
             {
-                CacheTiempos[clave] = (DateTime.Now, valor);
+                MarcarFallo(clave);
+                return null;
             }
 
-            return minutos;
+            CacheFallos.Remove(clave);
+            CacheTiempos[clave] = (DateTime.Now, valor);
+            return valor;
         }
         catch
         {
             return null;
         }
+    }
+
+
+    /// <summary>
+    /// true si el destino falló hace poco (no conviene reintentarlo aún).
+    /// </summary>
+    public static bool EnFalloReciente(
+        double lat,
+        double lng,
+        string direccion)
+    {
+        string? clave = CrearClaveDestino(lat, lng, direccion);
+
+        return clave is not null
+            && EnFalloReciente(clave);
+    }
+
+
+    private static bool EnFalloReciente(string clave)
+    {
+        return CacheFallos.TryGetValue(clave, out DateTime fallo)
+            && (DateTime.Now - fallo).TotalMinutes <= MinutosEsperaTrasFallo;
+    }
+
+
+    private static void MarcarFallo(string clave)
+    {
+        CacheFallos[clave] = DateTime.Now;
     }
 
 
@@ -249,19 +294,14 @@ public static class TiempoViajeService
 
         _ = Task.Run(async () =>
         {
-            bool alguno = false;
-
             try
             {
                 foreach (var destino in lista)
                 {
-                    if (await CalcularMinutosCocheAsync(
-                            destino.Lat,
-                            destino.Lng,
-                            destino.Direccion) is not null)
-                    {
-                        alguno = true;
-                    }
+                    await CalcularMinutosCocheAsync(
+                        destino.Lat,
+                        destino.Lng,
+                        destino.Direccion);
                 }
             }
             catch
@@ -272,15 +312,15 @@ public static class TiempoViajeService
                 _calculando = false;
             }
 
-            if (alguno)
+            // Se repinta después de cada tanda: los éxitos ya se ven y
+            // los fallos quedan apartados un rato, así la siguiente
+            // pasada intenta destinos nuevos (sin bucles infinitos).
+            try
             {
-                try
-                {
-                    alTerminar();
-                }
-                catch
-                {
-                }
+                alTerminar();
+            }
+            catch
+            {
             }
         });
     }
@@ -344,76 +384,152 @@ public static class TiempoViajeService
             return null;
         }
 
-        if (CacheGeocodificacion.TryGetValue(
-                direccionTexto.ToLowerInvariant(),
-                out var guardada))
+        string claveCache = direccionTexto.ToLowerInvariant();
+
+        if (CacheGeocodificacion.TryGetValue(claveCache, out var guardada))
         {
             return guardada;
         }
 
-        try
-        {
-            string clave = ObtenerClaveGoogle();
+        string claveGoogle = ObtenerClaveGoogle();
 
+        foreach (string consulta in CrearConsultasGeocodificacion(direccionTexto))
+        {
             (double Lat, double Lng)? resultado = null;
 
-            if (clave.Length > 0)
+            if (claveGoogle.Length > 0)
             {
-                string url =
-                    "https://maps.googleapis.com/maps/api/geocode/json"
-                    + "?address=" + Uri.EscapeDataString(direccionTexto)
-                    + "&language=es&key=" + Uri.EscapeDataString(clave);
-
-                using JsonDocument json =
-                    JsonDocument.Parse(
-                        await Cliente.GetStringAsync(url));
-
-                JsonElement raiz = json.RootElement;
-
-                if (raiz.TryGetProperty("results", out JsonElement resultados)
-                    && resultados.GetArrayLength() > 0)
-                {
-                    JsonElement ubicacion = resultados[0]
-                        .GetProperty("geometry")
-                        .GetProperty("location");
-
-                    resultado = (
-                        ubicacion.GetProperty("lat").GetDouble(),
-                        ubicacion.GetProperty("lng").GetDouble());
-                }
+                resultado = await GeocodificarConGoogleAsync(claveGoogle, consulta);
             }
-            else
-            {
-                string url =
-                    "https://nominatim.openstreetmap.org/search"
-                    + "?format=json&limit=1&q="
-                    + Uri.EscapeDataString(direccionTexto);
 
-                using JsonDocument json =
-                    JsonDocument.Parse(
-                        await Cliente.GetStringAsync(url));
-
-                JsonElement raiz = json.RootElement;
-
-                if (raiz.ValueKind == JsonValueKind.Array
-                    && raiz.GetArrayLength() > 0)
-                {
-                    JsonElement primero = raiz[0];
-
-                    resultado = (
-                        double.Parse(
-                            primero.GetProperty("lat").GetString() ?? "0",
-                            System.Globalization.CultureInfo.InvariantCulture),
-                        double.Parse(
-                            primero.GetProperty("lon").GetString() ?? "0",
-                            System.Globalization.CultureInfo.InvariantCulture));
-                }
-            }
+            // Si Google no da resultado (o no hay clave), se prueba con
+            // el servicio abierto.
+            resultado ??= await GeocodificarConNominatimAsync(consulta);
 
             if (resultado is { } punto)
             {
-                CacheGeocodificacion[direccionTexto.ToLowerInvariant()] = punto;
+                CacheGeocodificacion[claveCache] = punto;
                 return punto;
+            }
+        }
+
+        return null;
+    }
+
+
+    /// <summary>
+    /// Variantes de la dirección para el geocodificador: tal cual, sin
+    /// paréntesis y con el país (mejora los aciertos).
+    /// </summary>
+    private static List<string> CrearConsultasGeocodificacion(string direccion)
+    {
+        var consultas = new List<string>();
+
+        void Anadir(string texto)
+        {
+            texto = (texto ?? "").Trim();
+
+            if (texto.Length > 0
+                && !consultas.Any(c => string.Equals(
+                    c,
+                    texto,
+                    StringComparison.OrdinalIgnoreCase)))
+            {
+                consultas.Add(texto);
+            }
+        }
+
+        Anadir(direccion);
+
+        string sinParentesis =
+            System.Text.RegularExpressions.Regex.Replace(
+                direccion,
+                @"\([^)]*\)",
+                " ");
+        sinParentesis =
+            System.Text.RegularExpressions.Regex.Replace(
+                sinParentesis,
+                @"\s+",
+                " ").Trim();
+
+        Anadir(sinParentesis);
+
+        if (!direccion.Contains("España", StringComparison.OrdinalIgnoreCase)
+            && !direccion.Contains("Spain", StringComparison.OrdinalIgnoreCase))
+        {
+            Anadir(sinParentesis + ", España");
+            Anadir(direccion + ", España");
+        }
+
+        return consultas;
+    }
+
+
+    private static async Task<(double Lat, double Lng)?> GeocodificarConGoogleAsync(
+        string clave,
+        string consulta)
+    {
+        try
+        {
+            string url =
+                "https://maps.googleapis.com/maps/api/geocode/json"
+                + "?address=" + Uri.EscapeDataString(consulta)
+                + "&language=es&key=" + Uri.EscapeDataString(clave);
+
+            using JsonDocument json =
+                JsonDocument.Parse(
+                    await Cliente.GetStringAsync(url));
+
+            JsonElement raiz = json.RootElement;
+
+            if (raiz.TryGetProperty("results", out JsonElement resultados)
+                && resultados.GetArrayLength() > 0)
+            {
+                JsonElement ubicacion = resultados[0]
+                    .GetProperty("geometry")
+                    .GetProperty("location");
+
+                return (
+                    ubicacion.GetProperty("lat").GetDouble(),
+                    ubicacion.GetProperty("lng").GetDouble());
+            }
+        }
+        catch
+        {
+        }
+
+        return null;
+    }
+
+
+    private static async Task<(double Lat, double Lng)?> GeocodificarConNominatimAsync(
+        string consulta)
+    {
+        try
+        {
+            string url =
+                "https://nominatim.openstreetmap.org/search"
+                + "?format=json&limit=1&q="
+                + Uri.EscapeDataString(consulta);
+
+            using JsonDocument json =
+                JsonDocument.Parse(
+                    await Cliente.GetStringAsync(url));
+
+            JsonElement raiz = json.RootElement;
+
+            if (raiz.ValueKind == JsonValueKind.Array
+                && raiz.GetArrayLength() > 0)
+            {
+                JsonElement primero = raiz[0];
+
+                return (
+                    double.Parse(
+                        primero.GetProperty("lat").GetString() ?? "0",
+                        System.Globalization.CultureInfo.InvariantCulture),
+                    double.Parse(
+                        primero.GetProperty("lon").GetString() ?? "0",
+                        System.Globalization.CultureInfo.InvariantCulture));
             }
         }
         catch
@@ -430,68 +546,96 @@ public static class TiempoViajeService
     {
         string clave = ObtenerClaveGoogle();
 
+        if (clave.Length > 0)
+        {
+            int? conGoogle = await RutaConGoogleAsync(clave, origen, destino);
+
+            if (conGoogle is int valorGoogle)
+            {
+                return valorGoogle;
+            }
+        }
+
+        return await RutaConOsrmAsync(origen, destino);
+    }
+
+
+    private static async Task<int?> RutaConGoogleAsync(
+        string clave,
+        (double Lat, double Lng) origen,
+        (double Lat, double Lng) destino)
+    {
         try
         {
-            if (clave.Length > 0)
+            string url =
+                "https://maps.googleapis.com/maps/api/directions/json"
+                + "?origin=" + Numero(origen.Lat) + "," + Numero(origen.Lng)
+                + "&destination=" + Numero(destino.Lat) + "," + Numero(destino.Lng)
+                + "&mode=driving&language=es&departure_time=now"
+                + "&key=" + Uri.EscapeDataString(clave);
+
+            using JsonDocument json =
+                JsonDocument.Parse(
+                    await Cliente.GetStringAsync(url));
+
+            JsonElement raiz = json.RootElement;
+
+            if (raiz.TryGetProperty("routes", out JsonElement rutas)
+                && rutas.GetArrayLength() > 0)
             {
-                string url =
-                    "https://maps.googleapis.com/maps/api/directions/json"
-                    + "?origin=" + Numero(origen.Lat) + "," + Numero(origen.Lng)
-                    + "&destination=" + Numero(destino.Lat) + "," + Numero(destino.Lng)
-                    + "&mode=driving&language=es&departure_time=now"
-                    + "&key=" + Uri.EscapeDataString(clave);
+                JsonElement pierna = rutas[0].GetProperty("legs")[0];
 
-                using JsonDocument json =
-                    JsonDocument.Parse(
-                        await Cliente.GetStringAsync(url));
+                double segundos;
 
-                JsonElement raiz = json.RootElement;
-
-                if (raiz.TryGetProperty("routes", out JsonElement rutas)
-                    && rutas.GetArrayLength() > 0)
+                if (pierna.TryGetProperty(
+                        "duration_in_traffic",
+                        out JsonElement conTrafico))
                 {
-                    JsonElement pierna = rutas[0].GetProperty("legs")[0];
-
-                    double segundos;
-
-                    if (pierna.TryGetProperty(
-                            "duration_in_traffic",
-                            out JsonElement conTrafico))
-                    {
-                        segundos =
-                            conTrafico.GetProperty("value").GetDouble();
-                    }
-                    else
-                    {
-                        segundos = pierna
-                            .GetProperty("duration")
-                            .GetProperty("value")
-                            .GetDouble();
-                    }
-
-                    return (int)Math.Ceiling(segundos / 60.0);
+                    segundos =
+                        conTrafico.GetProperty("value").GetDouble();
+                }
+                else
+                {
+                    segundos = pierna
+                        .GetProperty("duration")
+                        .GetProperty("value")
+                        .GetDouble();
                 }
 
-                return null;
+                return (int)Math.Ceiling(segundos / 60.0);
             }
+        }
+        catch
+        {
+        }
 
-            string urlOsrm =
+        return null;
+    }
+
+
+    private static async Task<int?> RutaConOsrmAsync(
+        (double Lat, double Lng) origen,
+        (double Lat, double Lng) destino)
+    {
+        try
+        {
+            string url =
                 "https://router.project-osrm.org/route/v1/driving/"
                 + Numero(origen.Lng) + "," + Numero(origen.Lat) + ";"
                 + Numero(destino.Lng) + "," + Numero(destino.Lat)
                 + "?overview=false";
 
-            using JsonDocument jsonOsrm =
+            using JsonDocument json =
                 JsonDocument.Parse(
-                    await Cliente.GetStringAsync(urlOsrm));
+                    await Cliente.GetStringAsync(url));
 
-            JsonElement raizOsrm = jsonOsrm.RootElement;
+            JsonElement raiz = json.RootElement;
 
-            if (raizOsrm.TryGetProperty("routes", out JsonElement rutasOsrm)
-                && rutasOsrm.GetArrayLength() > 0)
+            if (raiz.TryGetProperty("routes", out JsonElement rutas)
+                && rutas.GetArrayLength() > 0)
             {
                 double segundos =
-                    rutasOsrm[0].GetProperty("duration").GetDouble();
+                    rutas[0].GetProperty("duration").GetDouble();
 
                 return (int)Math.Ceiling(segundos / 60.0);
             }

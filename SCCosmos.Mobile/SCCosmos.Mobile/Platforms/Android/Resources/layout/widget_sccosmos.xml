@@ -110,6 +110,8 @@
         android:textSize="13sp"
         android:layout_marginTop="1dp"
         android:paddingLeft="2dp"
+        android:maxLines="2"
+        android:ellipsize="end"
         android:visibility="gone" />
 
     <LinearLayout
@@ -151,6 +153,8 @@
         android:textSize="13sp"
         android:layout_marginTop="1dp"
         android:paddingLeft="2dp"
+        android:maxLines="2"
+        android:ellipsize="end"
         android:visibility="gone" />
 
     <LinearLayout
@@ -192,6 +196,8 @@
         android:textSize="13sp"
         android:layout_marginTop="1dp"
         android:paddingLeft="2dp"
+        android:maxLines="2"
+        android:ellipsize="end"
         android:visibility="gone" />
 
     <LinearLayout
@@ -233,6 +239,8 @@
         android:textSize="13sp"
         android:layout_marginTop="1dp"
         android:paddingLeft="2dp"
+        android:maxLines="2"
+        android:ellipsize="end"
         android:visibility="gone" />
 
     <LinearLayout
@@ -274,6 +282,8 @@
         android:textSize="13sp"
         android:layout_marginTop="1dp"
         android:paddingLeft="2dp"
+        android:maxLines="2"
+        android:ellipsize="end"
         android:visibility="gone" />
 
     <LinearLayout
@@ -315,6 +325,8 @@
         android:textSize="13sp"
         android:layout_marginTop="1dp"
         android:paddingLeft="2dp"
+        android:maxLines="2"
+        android:ellipsize="end"
         android:visibility="gone" />
 
     <LinearLayout
@@ -356,6 +368,8 @@
         android:textSize="13sp"
         android:layout_marginTop="1dp"
         android:paddingLeft="2dp"
+        android:maxLines="2"
+        android:ellipsize="end"
         android:visibility="gone" />
 
     <LinearLayout
@@ -397,6 +411,8 @@
         android:textSize="13sp"
         android:layout_marginTop="1dp"
         android:paddingLeft="2dp"
+        android:maxLines="2"
+        android:ellipsize="end"
         android:visibility="gone" />
 
     <TextView

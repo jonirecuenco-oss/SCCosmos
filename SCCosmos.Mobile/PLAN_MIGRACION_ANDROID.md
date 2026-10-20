@@ -1926,3 +1926,7 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
 - **Widget · tareas atrasadas**: las tareas pendientes de días anteriores aparecen en rojo delante de
   las del día (máx. 2 atrasadas + relleno de huecos), la cabecera cuenta las atrasadas («PRÓXIMAS
   TAREAS · N ATRASADAS») y el ✓ del widget las completa como siempre.
+- **Widget · descripción + tiempos robustos**: la línea secundaria del widget muestra la descripción
+  del evento (NotasLibro, como Inicio; máx. 2 líneas) en vez del acompañante. Tiempo de viaje: los
+  destinos que fallan no bloquean a los demás (espera de 30 min antes de reintentar), las direcciones
+  se prueban con variantes (sin paréntesis, con «España») y hay respaldo Google→Nominatim/OSRM.
