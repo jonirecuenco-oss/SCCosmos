@@ -1923,3 +1923,6 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   secundaria («con Joni · 🚗 18 min») y se repinta solo al terminar el cálculo en segundo plano. La
   ubicación se guarda en Preferences (se refresca al abrir Inicio; válida 6 h) y la clave opcional de
   Google Maps se configura en Configuración → «Tiempo de viaje».
+- **Widget · tareas atrasadas**: las tareas pendientes de días anteriores aparecen en rojo delante de
+  las del día (máx. 2 atrasadas + relleno de huecos), la cabecera cuenta las atrasadas («PRÓXIMAS
+  TAREAS · N ATRASADAS») y el ✓ del widget las completa como siempre.

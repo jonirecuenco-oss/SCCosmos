@@ -99,6 +99,14 @@ public class SccosmosWidgetProvider : AppWidgetProvider
     private const string AccionTareaOk =
         "sccosmos_widget_tarea_ok";
 
+    // Colores de la sección de tareas: las atrasadas sin completar van
+    // en rojo.
+    private static readonly global::Android.Graphics.Color ColorTareaVencida =
+        global::Android.Graphics.Color.ParseColor("#FF7B7B");
+
+    private static readonly global::Android.Graphics.Color ColorSeccionTareas =
+        global::Android.Graphics.Color.ParseColor("#8BC98B");
+
     private const string AccionAlertaOk =
         "sccosmos_widget_alerta_ok";
 
@@ -460,9 +468,31 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                     global::Android.Views.ViewStates.Visible);
             }
 
-            // Tareas del día.
-            List<(int Id, string Texto)> tareas =
+            // Tareas: primero las atrasadas sin completar (en rojo) y
+            // después las del día elegido.
+            var tareasInfo =
                 ObtenerTareasDelDia(dia);
+
+            List<(int Id, string Texto, bool Vencida)> tareas =
+                tareasInfo.Tareas;
+
+            int vencidasTotal =
+                tareasInfo.Vencidas;
+
+            vistas.SetTextViewText(
+                Resource.Id.widget_seccion_tareas,
+                vencidasTotal > 0
+                    ? "PRÓXIMAS TAREAS · " + vencidasTotal
+                      + (vencidasTotal == 1
+                          ? " ATRASADA"
+                          : " ATRASADAS")
+                    : "PRÓXIMAS TAREAS");
+
+            vistas.SetTextColor(
+                Resource.Id.widget_seccion_tareas,
+                vencidasTotal > 0
+                    ? ColorTareaVencida
+                    : ColorSeccionTareas);
 
             int[] filasTareas =
             {
@@ -504,6 +534,13 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                     filasTareas[i],
                     tareas[i].Texto);
 
+                // Las tareas atrasadas sin completar van en rojo.
+                vistas.SetTextColor(
+                    filasTareas[i],
+                    tareas[i].Vencida
+                        ? ColorTareaVencida
+                        : global::Android.Graphics.Color.ParseColor("#E6E8EB"));
+
                 PendingIntent? completar =
                     CrearAccionTarea(
                         contexto,
@@ -540,6 +577,10 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                 vistas.SetTextViewText(
                     filasTareas[0],
                     "Sin tareas para ese día");
+
+                vistas.SetTextColor(
+                    filasTareas[0],
+                    global::Android.Graphics.Color.ParseColor("#E6E8EB"));
 
                 vistas.SetViewVisibility(
                     filasTareas[0],
@@ -1260,27 +1301,69 @@ public class SccosmosWidgetProvider : AppWidgetProvider
     }
 
 
-    private static List<(int Id, string Texto)>
+    private static (
+        List<(int Id, string Texto, bool Vencida)> Tareas,
+        int Vencidas)
         ObtenerTareasDelDia(
             DateTime dia)
     {
-        var resultado =
-            new List<(int Id, string Texto)>();
+        var seleccion =
+            new List<(int Id, string Texto, bool Vencida)>();
+
+        int totalVencidas =
+            0;
 
         try
         {
+            DateTime hoy =
+                DateTime.Today;
+
+            var pendientes =
+                new List<(Tarea Tarea, DateTime Fecha)>();
+
             foreach (Tarea tarea
                      in DatabaseHelper
-                         .ObtenerTareasMobile()
-                         .Where(t => !t.Completada)
-                         .OrderBy(t => t.Hora ?? ""))
+                         .ObtenerTareasMobile())
             {
-                if (!DateTime.TryParse(
+                if (tarea.Completada
+                    || !DateTime.TryParse(
                         tarea.FechaInicio,
-                        out DateTime fecha)
-                    || fecha.Date != dia.Date)
+                        out DateTime fecha))
                 {
                     continue;
+                }
+
+                pendientes.Add((
+                    tarea,
+                    fecha));
+            }
+
+            // Tareas de días anteriores sin completar (la más reciente
+            // primero): van en rojo y delante de las del día.
+            var vencidas =
+                pendientes
+                    .Where(p => p.Fecha.Date < hoy)
+                    .OrderByDescending(p => p.Fecha)
+                    .ToList();
+
+            totalVencidas =
+                vencidas.Count;
+
+            var delDia =
+                pendientes
+                    .Where(p => p.Fecha.Date == dia.Date)
+                    .OrderBy(p => p.Tarea.Hora ?? "")
+                    .ToList();
+
+            void Agregar(
+                Tarea tarea,
+                bool vencida)
+            {
+                if (seleccion.Count >= 3
+                    || seleccion.Any(
+                        s => s.Id == tarea.Id))
+                {
+                    return;
                 }
 
                 string cuando =
@@ -1296,20 +1379,35 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                         ? "Tarea"
                         : tarea.Titulo.Trim();
 
-                resultado.Add((
+                seleccion.Add((
                     tarea.Id,
-                    cuando + titulo));
+                    cuando + titulo,
+                    vencida));
+            }
 
-                if (resultado.Count >= 3)
-                {
-                    break;
-                }
+            // Dos atrasadas como máximo para que el día elegido conserve
+            // su hueco; los huecos libres se rellenan con más atrasadas.
+            foreach (var v in vencidas.Take(2))
+            {
+                Agregar(v.Tarea, true);
+            }
+
+            foreach (var d in delDia)
+            {
+                Agregar(
+                    d.Tarea,
+                    d.Fecha.Date < hoy);
+            }
+
+            foreach (var v in vencidas.Skip(2))
+            {
+                Agregar(v.Tarea, true);
             }
         }
         catch
         {
         }
 
-        return resultado;
+        return (seleccion, totalVencidas);
     }
 }
