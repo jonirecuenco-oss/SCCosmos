@@ -1870,3 +1870,7 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
 - **Calendario (Windows)**: la rejilla del mes ocupa todo el ancho (sin MaxWidth).
 - **Widget (Android)**: botones más fáciles de pulsar (minWidth 46-52dp / minHeight 46dp + iconos
   más grandes: 📍 21sp, ✓ 22sp, + 26sp, flechas con área 46dp).
+- **Alertas solo para el esposo**: `AlertasMobileService.Calcular` devuelve vacío para la esposa
+  (`PerfilAccesoService`), con lo que se apaga la campana de Inicio, la página de alertas y la
+  sección del widget; en Windows la campana ya se ocultaba y `VerificarAlertas`/`AvisosWindows` no
+  se ejecutan para ella. Tareas, programación y predicación le siguen apareciendo igual.

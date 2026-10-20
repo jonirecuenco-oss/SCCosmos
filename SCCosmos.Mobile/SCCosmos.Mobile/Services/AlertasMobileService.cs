@@ -162,6 +162,14 @@ public static class AlertasMobileService
         int semanasAtras = 6,
         int semanasAdelante = 13)
     {
+        // La esposa del SC no ve alertas: la programación, las tareas y
+        // la predicación sí, pero las alertas son solo del esposo.
+        if (PerfilAccesoService.Configurado
+            && !PerfilAccesoService.EsHombre)
+        {
+            return new List<AlertaMobile>();
+        }
+
         var alertas =
             new List<AlertaMobile>();
 
