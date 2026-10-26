@@ -1999,3 +1999,9 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   el botón S-21 pasa a icono de exportar (`ArrowExport24`) con 46×38, igual que el botón «➕»; se
   elimina el botón «Aa» (formatear nombre común) y sus métodos `BtnFormatearNombreComun_Click`,
   `FormatearNombreComunMinisterio` y `CapitalizarNombreEspanol`.
+- **Publicadores inactivos (1.9.4, Windows Visitas)**: quien lleva 6 meses (los 6 meses mostrados)
+  sin informar horas ni participación se marca `EsInactivo` y deja de contar en `statPersonas` (y en
+  hombres/mujeres, precursores, ancianos, irregulares…), en el panel de estadísticas y en
+  `CargarGruposPredicacion`. Los grupos cuentan solo activos y aparece un bloque final
+  «PUBLICADORES INACTIVOS (n)» que muestra solo a esos. No se marca a quien no tiene ningún registro
+  histórico (datos desconocidos) ni a fichas creadas dentro de esos 6 meses.

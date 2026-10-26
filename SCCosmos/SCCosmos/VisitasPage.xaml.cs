@@ -46,11 +46,18 @@ namespace SCCosmos
         // La búsqueda espera a que se deje de escribir (como en Personas).
         private DispatcherTimer _timerBusquedaMinisterio;
 
+        // Personas sin actividad informada en los últimos 6 meses (por su
+        // id raíz). Se excluyen de los contadores y de las estadísticas.
+        private HashSet<int> _idsInactivos = new HashSet<int>();
+
         /// <summary>Grupo de predicación con su número de personas.</summary>
         public sealed class GrupoVisitaUI
         {
             public string Nombre { get; set; } = "";
             public int Cantidad { get; set; }
+
+            // Bloque final con los publicadores inactivos.
+            public bool EsInactivos { get; set; }
 
             public override string ToString() =>
                 Cantidad > 0 ? $"{Nombre} ({Cantidad})" : Nombre;
@@ -1897,6 +1904,8 @@ namespace SCCosmos
             var territoriosBD = DatabaseHelper.ObtenerTerritoriosPorCongregacion(_congreCodigo);
             var filasGrid = new List<FilaVisitaPublisher>();
 
+            _idsInactivos.Clear();
+
             DateTime mesInicioVisualizado = meses[0];
             DateTime mesReferenciaGrid = meses[5];
             DateTime mesFinVisualizado = mesReferenciaGrid.AddMonths(1).AddDays(-1);
@@ -2001,7 +2010,57 @@ namespace SCCosmos
                 double edadNumerica = fn.HasValue ? Math.Round((DateTime.Today - fn.Value).TotalDays / 365.2425, 1) : 0;
                 double bautNumerica = fb.HasValue ? Math.Round((DateTime.Today - fb.Value).TotalDays / 365.2425, 1) : 0;
 
-                if (h.Grupo > 0)
+                // ── PUBLICADOR INACTIVO ────────────────────────────
+                // Se considera inactivo quien lleva 6 meses seguidos sin
+                // informar actividad (ni horas ni participación). No se
+                // aplica a fichas creadas dentro de esos 6 meses.
+                bool reportoActividad = false;
+
+                for (int i = 0; i < 6; i++)
+                {
+                    string ms = nombresMesesJson[meses[i].Month - 1];
+                    string ys = (meses[i].Month >= 9)
+                        ? (meses[i].Year + 1).ToString()
+                        : meses[i].Year.ToString();
+
+                    var reg = informesHistoricos.FirstOrDefault(
+                        x => x.Mes.ToLower() == ms && x.AnioServicio == ys);
+
+                    if (reg == null)
+                    {
+                        continue;
+                    }
+
+                    string horasRaw = (reg.Horas ?? "").Replace(" ", "").Trim();
+                    bool tieneHoras = !string.IsNullOrEmpty(horasRaw)
+                        && horasRaw != "0" && horasRaw != "0.0" && horasRaw != "0,0";
+
+                    if (tieneHoras || reg.Participacion)
+                    {
+                        reportoActividad = true;
+                        break;
+                    }
+                }
+
+                bool fichaReciente = fCrea.HasValue
+                    && new DateTime(fCrea.Value.Year, fCrea.Value.Month, 1) > mesInicioVisualizado;
+
+                // Sin ningún registro histórico no se puede saber si está
+                // inactivo (p. ej. fichas que solo existen en JW Hub): se
+                // deja como activo y solo se marca inactivo a quien tenía
+                // actividad y lleva 6 meses sin informar nada.
+                bool tieneHistorial = informesHistoricos.Count > 0;
+
+                bool esInactivo = tieneHistorial && !reportoActividad && !fichaReciente;
+
+                if (esInactivo)
+                {
+                    _idsInactivos.Add(idRaizActual);
+                }
+
+                // Los inactivos no cuentan en las estadísticas ni en el
+                // número de publicadores activos.
+                if (h.Grupo > 0 && !esInactivo)
                 {
                     statPersonas++;
                     if (sexoLimpio.Equals("Hombre", StringComparison.OrdinalIgnoreCase)) statHombres++;
@@ -2242,6 +2301,7 @@ namespace SCCosmos
                     Nombramiento = nombramientoLimpio,
                     Servicio = servicioLimpio,
                     EsPrecursor = esPrec,
+                    EsInactivo = esInactivo,
                     Edad = (fn.HasValue && fn.Value.Year > 1900 && edadNumerica > 0 && edadNumerica <= 120) ? edadNumerica.ToString("0.0") : "-",
                     AniosBautizado = (fb.HasValue && fb.Value.Year > 1900 && bautNumerica > 0 && bautNumerica <= 120) ? bautNumerica.ToString("0.0") : "-",
                     Sexo = sexoLimpio,
@@ -2299,9 +2359,14 @@ namespace SCCosmos
 
             _filasVisitasGlobal = filasGrid.OrderBy(f => (f.NombreComun ?? "").Replace("(", "").Replace(")", "").Trim()).ThenBy(f => f.FechaNacimientoReal).ToList();
 
-            // Cada grupo muestra cuántas personas tiene (también
-            // «SIN ASIGNAR»).
-            var gruposUnicos = _filasVisitasGlobal
+            // Cada grupo muestra cuántas personas ACTIVAS tiene (también
+            // «SIN ASIGNAR»). Los inactivos van en un bloque aparte al
+            // final y no suman en ningún grupo.
+            var activos = _filasVisitasGlobal
+                .Where(f => !f.EsInactivo)
+                .ToList();
+
+            var gruposUnicos = activos
                 .GroupBy(f => f.GrupoPredicacion)
                 .Select(g => new GrupoVisitaUI
                 {
@@ -2311,6 +2376,18 @@ namespace SCCosmos
                 .OrderBy(g => g.Nombre == "SIN ASIGNAR" ? 1 : 0)
                 .ThenBy(g => g.Nombre)
                 .ToList();
+
+            int totalInactivos = _filasVisitasGlobal.Count(f => f.EsInactivo);
+
+            if (totalInactivos > 0)
+            {
+                gruposUnicos.Add(new GrupoVisitaUI
+                {
+                    Nombre = "PUBLICADORES INACTIVOS",
+                    Cantidad = totalInactivos,
+                    EsInactivos = true
+                });
+            }
             TabGrupos.SelectionChanged -= TabGrupos_SelectionChanged;
             TabGrupos.ItemsSource = gruposUnicos;
             TabGrupos.SelectionChanged += TabGrupos_SelectionChanged;
@@ -2333,6 +2410,9 @@ namespace SCCosmos
         {
             var estadisticas = listadoHermanos
                 .Where(p => p.Grupo > 0)
+                // Los publicadores inactivos no cuentan en las
+                // estadísticas de los grupos.
+                .Where(p => !_idsInactivos.Contains(p.PersonaRaizId > 0 ? p.PersonaRaizId : p.Id))
                 .GroupBy(p => p.Grupo)
                 .Select(g => new EstadisticasGrupo
                 {
@@ -2391,8 +2471,19 @@ namespace SCCosmos
             }
             else if (TabGrupos?.SelectedItem is GrupoVisitaUI grupoSeleccionado)
             {
-                consulta = consulta.Where(f =>
-                    string.Equals(f.GrupoPredicacion, grupoSeleccionado.Nombre, StringComparison.OrdinalIgnoreCase));
+                if (grupoSeleccionado.EsInactivos)
+                {
+                    consulta = consulta.Where(f => f.EsInactivo);
+                }
+                else
+                {
+                    consulta = consulta.Where(f =>
+                        !f.EsInactivo &&
+                        string.Equals(
+                            f.GrupoPredicacion,
+                            grupoSeleccionado.Nombre,
+                            StringComparison.OrdinalIgnoreCase));
+                }
             }
 
             TablaVisitas.ItemsSource = consulta.ToList();
@@ -5930,6 +6021,9 @@ namespace SCCosmos
             public string CursosUltimoMes { get; set; }
             public string TerritoriosTrabajados { get; set; }
             public bool EsPrecursor { get; set; }
+
+            // Sin actividad informada en los últimos 6 meses.
+            public bool EsInactivo { get; set; }
         }
 
         public class FilaTablaTerritorio
