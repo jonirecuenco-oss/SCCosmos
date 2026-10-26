@@ -1958,3 +1958,11 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   desapareciendo conforme pasa su hora con 30 min de margen (`MargenActividadMinutos`, solo el día de
   hoy; otros días completos). Si no queda ninguna pendiente hoy, el apartado muestra «Sin actividades
   pendientes por ahora». El widget se refresca cada 30 min (updatePeriodMillis), alineado con el margen.
+- **Importador S-21 por geometría (1.8.3)**: las tarjetas «REGISTRO DE PUBLICADOR» (p. ej. Mérida
+  Centro) metían las HORAS en NOTAS porque el lector usaba umbrales fijos de x (≥340 = notas). Ahora
+  `DetectarColumnasTabla` deduce las columnas de la rejilla real (líneas verticales de alto ≈ fila,
+  ignorando los bordes de las casillas de 7 px) y las identifica por sus CABECERAS (participación,
+  cursos, auxiliar, horas, notas, mes), con relleno por orden clásico si falta alguna. Se aplica a
+  `TarjetaAntigua` y `TarjetaImpresa` (C#) y a la herramienta `Herramientas\convertir_s21.py`;
+  `DetectarCasillas` ya no confunde el borde de una casilla con una marca. Verificado con los dos
+  PDF de Mérida Centro: 147 tarjetas, 55 con horas, 28 con cursos (antes: 0 con horas).

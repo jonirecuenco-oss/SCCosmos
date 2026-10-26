@@ -1774,8 +1774,14 @@ public static class ConvertidorS21
                 continue;
             }
 
+            // El propio borde de la casilla (si se dibuja como un
+            // rectángulo) no cuenta como marca.
             bool marcada = diagonales.Any(d =>
-                Math.Min(d.X0, d.X1) >= x0 - 0.4f
+                !(Math.Abs(Math.Min(d.X0, d.X1) - x0) <= 0.6f
+                  && Math.Abs(Math.Max(d.X0, d.X1) - x1) <= 0.6f
+                  && Math.Abs(Math.Min(d.Y0, d.Y1) - y0) <= 0.6f
+                  && Math.Abs(Math.Max(d.Y0, d.Y1) - y1) <= 0.6f)
+                && Math.Min(d.X0, d.X1) >= x0 - 0.4f
                 && Math.Max(d.X0, d.X1) <= x1 + 0.4f
                 && Math.Min(d.Y0, d.Y1) >= y0 - 0.4f
                 && Math.Max(d.Y0, d.Y1) <= y1 + 0.4f);
@@ -1810,6 +1816,305 @@ public static class ConvertidorS21
             return false;
         }
     }
+
+    private sealed class ColumnaTabla
+    {
+        public float X0;
+        public float X1;
+        public string Tipo = "";
+    }
+
+
+
+    /// <summary>
+    /// Diagnóstico (solo lectura): columnas detectadas en la primera
+    /// página de un PDF. Útil para revisar plantillas nuevas.
+    /// </summary>
+    public static string DescribirColumnas(string ruta)
+    {
+        var sb = new StringBuilder();
+
+        using (var lector = new PdfReader(
+            ruta,
+            new ReaderProperties().SetPassword(Array.Empty<byte>())))
+        using (var documento = new PdfDocument(lector))
+        {
+            var pagina = documento.GetPage(1);
+
+            var recolector = new Recolector();
+            new PdfCanvasProcessor(recolector).ProcessPageContent(pagina);
+
+            var contenido = recolector.Terminar(
+                pagina.GetPageSize().GetHeight());
+
+            var filas = FilasDeMeses(contenido, 160);
+
+            foreach (var columna in DetectarColumnasTabla(contenido, filas))
+            {
+                sb.AppendLine(string.Format(
+                    CultureInfo.InvariantCulture,
+                    "{0:0.0}-{1:0.0} = {2}",
+                    columna.X0,
+                    columna.X1,
+                    columna.Tipo));
+            }
+        }
+
+        return sb.ToString();
+    }
+
+
+    /// <summary>
+    /// Detecta las columnas de la tabla de meses por su propia rejilla y
+    /// por sus cabeceras. Así funciona aunque cada plantilla del S-21
+    /// reparta el ancho de otra forma (no se usan posiciones fijas).
+    /// </summary>
+    private static List<ColumnaTabla> DetectarColumnasTabla(
+        ContenidoPagina contenido,
+        List<(string Mes, float Y)> filasMeses)
+    {
+        var columnas = new List<ColumnaTabla>();
+
+        if (filasMeses.Count == 0)
+        {
+            return columnas;
+        }
+
+        float arriba = filasMeses[0].Y - 14;
+        float abajo = filasMeses[^1].Y + 14;
+
+        // Alto de una fila, para no confundir los bordes de las casillas
+        // (7-9 px) con los separadores de columna.
+        float altoFila = filasMeses.Count > 1
+            ? (filasMeses[^1].Y - filasMeses[0].Y) / (filasMeses.Count - 1)
+            : 15f;
+
+        float minimoAlto = Math.Max(6f, altoFila * 0.7f);
+
+        // Bordes verticales de la tabla.
+        var xs = new List<float>();
+
+        foreach (var trazo in contenido.Trazos)
+        {
+            if (trazo.Ancho < 1f && trazo.Alto >= minimoAlto)
+            {
+                float cy = (trazo.Y0 + trazo.Y1) / 2;
+
+                if (cy >= arriba - 20 && cy <= abajo + 20)
+                {
+                    xs.Add(Math.Min(trazo.X0, trazo.X1));
+                }
+            }
+        }
+
+        xs.Sort();
+
+        var bordes = new List<float>();
+
+        foreach (float x in xs)
+        {
+            if (bordes.Count == 0 || Math.Abs(x - bordes[^1]) > 2f)
+            {
+                bordes.Add(x);
+            }
+        }
+
+        for (int i = 0; i + 1 < bordes.Count; i++)
+        {
+            if (bordes[i + 1] - bordes[i] >= 10)
+            {
+                columnas.Add(new ColumnaTabla
+                {
+                    X0 = bordes[i],
+                    X1 = bordes[i + 1],
+                });
+            }
+        }
+
+        if (columnas.Count < 2)
+        {
+            return new List<ColumnaTabla>();
+        }
+
+        // Cabeceras: cada palabra de encima de la tabla, en su columna.
+        var textos = new string[columnas.Count];
+
+        foreach (var palabra in contenido.Palabras)
+        {
+            float cy = palabra.CentroY;
+
+            if (cy > arriba - 2 || cy < arriba - 90)
+            {
+                continue;
+            }
+
+            float cx = (palabra.X0 + palabra.X1) / 2;
+
+            for (int i = 0; i < columnas.Count; i++)
+            {
+                if (cx >= columnas[i].X0 - 2 && cx <= columnas[i].X1 + 2)
+                {
+                    textos[i] += " " + palabra.Texto.ToLowerInvariant();
+                    break;
+                }
+            }
+        }
+
+        for (int i = 0; i < columnas.Count; i++)
+        {
+            string texto = textos[i] ?? "";
+
+            columnas[i].Tipo =
+                texto.Contains("participa") ? "participacion"
+                : texto.Contains("cursos") || texto.Contains("bibl") ? "cursos"
+                : texto.Contains("auxiliar") ? "auxiliar"
+                : texto.Contains("hora") ? "horas"
+                : texto.Contains("nota") ? "notas"
+                : Meses.Any(m => texto.Contains(m)) ? "mes"
+                : "";
+        }
+
+        // Las columnas sin cabecera clara se rellenan en el orden clásico.
+        string[] orden =
+        {
+            "mes", "participacion", "cursos", "auxiliar", "horas", "notas",
+        };
+
+        var usados = new HashSet<string>(
+            columnas.Where(c => c.Tipo.Length > 0).Select(c => c.Tipo));
+
+        foreach (var columna in columnas.Where(c => c.Tipo.Length == 0))
+        {
+            foreach (string candidato in orden)
+            {
+                if (!usados.Contains(candidato))
+                {
+                    columna.Tipo = candidato;
+                    usados.Add(candidato);
+                    break;
+                }
+            }
+        }
+
+        return columnas;
+    }
+
+
+    /// <summary>Lee una fila de meses usando las columnas detectadas.</summary>
+    private static InformeS21 LeerFilaTabla(
+        string mes,
+        float y,
+        List<ColumnaTabla> columnas,
+        ContenidoPagina contenido,
+        List<Casilla> casillas)
+    {
+        bool participa = false;
+        bool auxiliar = false;
+        object cursos = "";
+        object horas = "";
+        string notas = "";
+
+        foreach (var columna in columnas)
+        {
+            bool Marcada() => casillas.Any(c =>
+                c.Marcada
+                && c.CentroX >= columna.X0 - 1
+                && c.CentroX <= columna.X1 + 1
+                && Math.Abs(c.CentroY - y) <= 9);
+
+            switch (columna.Tipo)
+            {
+                case "participacion":
+                    participa = Marcada();
+                    break;
+
+                case "auxiliar":
+                    auxiliar = Marcada();
+                    break;
+
+                case "cursos":
+                case "horas":
+                {
+                    foreach (var palabra in contenido.Palabras)
+                    {
+                        if (Math.Abs(palabra.CentroY - y) > 5)
+                        {
+                            continue;
+                        }
+
+                        float cx = (palabra.X0 + palabra.X1) / 2;
+
+                        if (cx < columna.X0 - 2 || cx > columna.X1 + 2)
+                        {
+                            continue;
+                        }
+
+                        string limpio = palabra.Texto.Trim();
+
+                        if (limpio.Length > 0 && limpio.All(char.IsDigit))
+                        {
+                            if (columna.Tipo == "cursos")
+                            {
+                                cursos = int.Parse(limpio, CultureInfo.InvariantCulture);
+                            }
+                            else
+                            {
+                                horas = int.Parse(limpio, CultureInfo.InvariantCulture);
+                            }
+
+                            break;
+                        }
+                    }
+
+                    break;
+                }
+
+                case "notas":
+                {
+                    var propias = new List<string>();
+
+                    foreach (var palabra in contenido.Palabras)
+                    {
+                        if (Math.Abs(palabra.CentroY - y) > 5)
+                        {
+                            continue;
+                        }
+
+                        float cx = (palabra.X0 + palabra.X1) / 2;
+
+                        if (cx >= columna.X0 - 2 && cx <= columna.X1 + 2)
+                        {
+                            propias.Add(palabra.Texto);
+                        }
+                    }
+
+                    notas = LimpiarEspacios(string.Join(" ", propias));
+                    break;
+                }
+            }
+        }
+
+        return new InformeS21
+        {
+            Mes = mes,
+            Participacion = participa,
+            CursosBiblicos = cursos,
+            PrecursorAuxiliar = auxiliar,
+            Horas = horas,
+            Notas = notas,
+        };
+    }
+
+
+    private static bool FilaConDatos(InformeS21 fila)
+    {
+        return fila.Participacion
+            || fila.PrecursorAuxiliar
+            || !(fila.Horas is string horas && horas.Length == 0)
+            || !(fila.CursosBiblicos is string cursos && cursos.Length == 0)
+            || !string.IsNullOrWhiteSpace(fila.Notas);
+    }
+
 
     private static Marcas DetectarMarcas(ContenidoPagina contenido)
     {
@@ -1975,8 +2280,24 @@ public static class ConvertidorS21
 
         var informe = new List<InformeS21>();
 
+        // Columnas detectadas por la rejilla y las cabeceras; si no se
+        // reconocen, se usa el método anterior.
+        var columnas = DetectarColumnasTabla(contenido, filasMeses);
+
         foreach (var (mes, y) in filasMeses)
         {
+            if (columnas.Count > 0)
+            {
+                informe.Add(LeerFilaTabla(
+                    mes,
+                    y,
+                    columnas,
+                    contenido,
+                    casillas));
+
+                continue;
+            }
+
             var fila = tabla
                 .Where(c => Math.Abs(c.CentroY - y) <= 7)
                 .OrderBy(c => c.X0)
@@ -2236,41 +2557,9 @@ public static class ConvertidorS21
             }
         }
 
-        // Columnas de la tabla
-        var tablaCajas = casillasTodas
-            .Where(c => c.Y >= primeraY - 12
-                        && c.Y <= filasMeses[^1].Y + 14)
-            .ToList();
-
-        float corte = 0;
-
-        if (tablaCajas.Count > 0)
-        {
-            var xs = tablaCajas.Select(c => c.X).OrderBy(x => x).ToList();
-
-            float mayorSalto = 0;
-
-            for (int i = 0; i < xs.Count - 1; i++)
-            {
-                float salto = xs[i + 1] - xs[i];
-
-                if (salto > mayorSalto)
-                {
-                    mayorSalto = salto;
-                    corte = (xs[i] + xs[i + 1]) / 2;
-                }
-            }
-        }
-
-        float partX = corte > 0
-            ? tablaCajas.Where(c => c.X < corte)
-                .Select(c => c.X).DefaultIfEmpty(133f).Average()
-            : 133f;
-
-        float auxX = corte > 0
-            ? tablaCajas.Where(c => c.X >= corte)
-                .Select(c => c.X).DefaultIfEmpty(235f).Average()
-            : 235f;
+        // Columnas de la tabla: por la rejilla y las cabeceras de esta
+        // misma tarjeta (cada plantilla puede repartirlas distinto).
+        var columnas = DetectarColumnasTabla(contenido, filasMeses);
 
         List<InformeS21> LeerSeccion(
             List<(string Mes, float Y)> filas,
@@ -2278,6 +2567,65 @@ public static class ConvertidorS21
         {
             var datos = new List<InformeS21>();
             int cuenta = 0;
+
+            if (columnas.Count > 0)
+            {
+                foreach (var (mes, y) in filas)
+                {
+                    var fila = LeerFilaTabla(
+                        mes,
+                        y,
+                        columnas,
+                        contenido,
+                        casillas);
+
+                    if (FilaConDatos(fila))
+                    {
+                        cuenta++;
+                    }
+
+                    datos.Add(fila);
+                }
+
+                rellenos = cuenta;
+                return datos;
+            }
+
+            // Sin rejilla reconocible: se usan las casillas como antes.
+            var tablaCajas = casillasTodas
+                .Where(c => c.Y >= primeraY - 12
+                            && c.Y <= filasMeses[^1].Y + 14)
+                .ToList();
+
+            float corte = 0;
+
+            if (tablaCajas.Count > 0)
+            {
+                var xs = tablaCajas.Select(c => c.X).OrderBy(x => x).ToList();
+
+                float mayorSalto = 0;
+
+                for (int i = 0; i < xs.Count - 1; i++)
+                {
+                    float salto = xs[i + 1] - xs[i];
+
+                    if (salto > mayorSalto)
+                    {
+                        mayorSalto = salto;
+                        corte = (xs[i] + xs[i + 1]) / 2;
+                    }
+                }
+            }
+
+            float partX = corte > 0
+                ? tablaCajas.Where(c => c.X < corte)
+                    .Select(c => c.X).DefaultIfEmpty(133f).Average()
+                : 133f;
+
+            float auxX = corte > 0
+                ? tablaCajas.Where(c => c.X >= corte)
+                    .Select(c => c.X).DefaultIfEmpty(235f).Average()
+                : 235f;
 
             foreach (var (mes, y) in filas)
             {
