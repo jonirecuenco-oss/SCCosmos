@@ -116,51 +116,83 @@
 
             <CollectionView.ItemTemplate>
                 <DataTemplate>
-                    <Border BackgroundColor="{StaticResource Superficie}"
-                            Stroke="{StaticResource Borde}"
-                            StrokeThickness="1"
-                            Padding="12"
-                            Margin="0,0,0,8">
-                        <Border.StrokeShape>
-                            <RoundRectangle CornerRadius="11" />
-                        </Border.StrokeShape>
-                        <Border.GestureRecognizers>
-                            <TapGestureRecognizer
-                                Tapped="Donacion_Tapped"
-                                CommandParameter="{Binding .}" />
-                        </Border.GestureRecognizers>
+                    <Grid>
 
-                        <Grid ColumnDefinitions="*,Auto"
-                              ColumnSpacing="10">
+                        <!-- Tarjeta de una donación -->
+                        <Border BackgroundColor="{StaticResource Superficie}"
+                                Stroke="{StaticResource Borde}"
+                                StrokeThickness="1"
+                                Padding="12"
+                                Margin="0,0,0,8"
+                                IsVisible="{Binding EsTarjeta}">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="11" />
+                            </Border.StrokeShape>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer
+                                    Tapped="Donacion_Tapped"
+                                    CommandParameter="{Binding .}" />
+                            </Border.GestureRecognizers>
 
-                            <VerticalStackLayout Grid.Column="0"
-                                                 Spacing="2">
-                                <Label Text="{Binding PersonaVisual}"
-                                       TextColor="White"
-                                       FontSize="14"
-                                       FontAttributes="Bold" />
-                                <Label Text="{Binding DetalleVisual}"
-                                       Style="{StaticResource TextoTarjeta}" />
-                                <Label Text="{Binding Notas}"
-                                       Style="{StaticResource TextoNota}"
-                                       IsVisible="{Binding TieneNotas}" />
-                            </VerticalStackLayout>
+                            <Grid ColumnDefinitions="*,Auto"
+                                  ColumnSpacing="10">
 
-                            <VerticalStackLayout Grid.Column="1"
-                                                 Spacing="2"
-                                                 VerticalOptions="Center">
-                                <Label Text="{Binding CantidadVisual}"
-                                       TextColor="#8EE29D"
-                                       FontSize="15"
+                                <VerticalStackLayout Grid.Column="0"
+                                                     Spacing="2">
+                                    <Label Text="{Binding PersonaVisual}"
+                                           TextColor="White"
+                                           FontSize="14"
+                                           FontAttributes="Bold" />
+                                    <Label Text="{Binding DetalleVisual}"
+                                           Style="{StaticResource TextoTarjeta}" />
+                                    <Label Text="{Binding Notas}"
+                                           Style="{StaticResource TextoNota}"
+                                           IsVisible="{Binding TieneNotas}" />
+                                </VerticalStackLayout>
+
+                                <VerticalStackLayout Grid.Column="1"
+                                                     Spacing="2"
+                                                     VerticalOptions="Center">
+                                    <Label Text="{Binding CantidadVisual}"
+                                           TextColor="#8EE29D"
+                                           FontSize="15"
+                                           FontAttributes="Bold"
+                                           HorizontalTextAlignment="End" />
+                                    <Label Text="Editar"
+                                           Style="{StaticResource TextoAccion}"
+                                           HorizontalTextAlignment="End" />
+                                </VerticalStackLayout>
+
+                            </Grid>
+                        </Border>
+
+                        <!-- Total al final de cada semana -->
+                        <Border BackgroundColor="#1A4BA3E3"
+                                StrokeThickness="0"
+                                Padding="12,7"
+                                Margin="0,0,0,8"
+                                IsVisible="{Binding EsSeparador}">
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="9" />
+                            </Border.StrokeShape>
+
+                            <Grid ColumnDefinitions="*,Auto"
+                                  ColumnSpacing="10">
+                                <Label Text="{Binding TextoSeparador}"
+                                       TextColor="#9CC7F0"
+                                       FontSize="12"
                                        FontAttributes="Bold"
-                                       HorizontalTextAlignment="End" />
-                                <Label Text="Editar"
-                                       Style="{StaticResource TextoAccion}"
-                                       HorizontalTextAlignment="End" />
-                            </VerticalStackLayout>
+                                       VerticalOptions="Center" />
+                                <Label Grid.Column="1"
+                                       Text="{Binding TotalSeparador}"
+                                       TextColor="#9CC7F0"
+                                       FontSize="12"
+                                       FontAttributes="Bold"
+                                       VerticalOptions="Center" />
+                            </Grid>
+                        </Border>
 
-                        </Grid>
-                    </Border>
+                    </Grid>
                 </DataTemplate>
             </CollectionView.ItemTemplate>
         </CollectionView>

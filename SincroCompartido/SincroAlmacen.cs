@@ -74,6 +74,25 @@ public sealed class SincroAlmacen
 
         conexion.Open();
 
+        // Los cambios llegan en cualquier orden (p. ej., la actividad de
+        // una persona antes que la persona). Las claves foráneas solo
+        // deben vigilar las escrituras normales de la app, no la
+        // aplicación de un lote: si se comprobaran aquí, se descartarían
+        // filas válidas que se completan con el resto del lote.
+        try
+        {
+            using var cmd =
+                conexion.CreateCommand();
+
+            cmd.CommandText =
+                "PRAGMA foreign_keys = OFF;";
+
+            cmd.ExecuteNonQuery();
+        }
+        catch
+        {
+        }
+
         return conexion;
     }
 
@@ -206,6 +225,184 @@ public sealed class SincroAlmacen
                 "delete",
                 "D",
                 "OLD");
+        }
+
+        // El contador nunca puede quedarse por detrás de lo ya enviado o
+        // recibido: si una fusión restaura una copia antigua, los cambios
+        // nuevos recibirían números de secuencia viejos y los demás
+        // equipos no los pedirían nunca (se quedarían sin recibir).
+        try
+        {
+            using var contador =
+                conexion.CreateCommand();
+
+            contador.CommandText =
+                $"""
+                UPDATE {TablaContador}
+                SET Valor = MAX(
+                    Valor,
+                    COALESCE((SELECT MAX(Seq) FROM {TablaCambios}), 0),
+                    COALESCE((SELECT MAX(UltimoEnviado) FROM {TablaPares}), 0),
+                    COALESCE((SELECT MAX(UltimoRecibido) FROM {TablaPares}), 0));
+                """;
+
+            contador.ExecuteNonQuery();
+        }
+        catch
+        {
+        }
+
+        SembrarFilasFaltantes(
+            conexion);
+    }
+
+
+    /// <summary>
+    /// Las filas que ya existían ANTES de activar la sincronización no
+    /// están en el registro de cambios. Sin esto, un dispositivo nuevo
+    /// (o uno que se quedó con una copia antigua) nunca las recibiría:
+    /// el otro equipo no tiene nada que enviar porque nunca se modificaron.
+    ///
+    /// Se anotan una sola vez como «base» (Tipo B, momento antiguo). Al
+    /// recibirlas, el otro equipo SOLO las inserta si esa fila no existe:
+    /// nunca pisan datos que ya tenga. Así se rellenan huecos sin riesgo.
+    /// </summary>
+    private void SembrarFilasFaltantes(
+        SqliteConnection conexion)
+    {
+        try
+        {
+            using (var comprobar =
+                   conexion.CreateCommand())
+            {
+                comprobar.CommandText =
+                    "SELECT COUNT(*) FROM SCCosmos_SincroEstado WHERE Clave = 'BaseSembrada' AND Valor = '2';";
+
+                if (Convert.ToInt64(
+                        comprobar.ExecuteScalar()) > 0)
+                {
+                    return;
+                }
+            }
+
+            long contador;
+
+            using (var cmd =
+                   conexion.CreateCommand())
+            {
+                cmd.CommandText =
+                    $"SELECT Valor FROM {TablaContador};";
+
+                contador =
+                    Convert.ToInt64(
+                        cmd.ExecuteScalar());
+            }
+
+            string origen =
+                _idDispositivo.Replace(
+                    "'",
+                    "''");
+
+            const string momento =
+                "2000-01-01T00:00:00.000Z";
+
+            foreach ((string tabla, string claves) in
+                     TablasConClave(
+                         conexion))
+            {
+                string tablaEscapada =
+                    tabla.Replace(
+                        "'",
+                        "''");
+
+                string claveSql =
+                    ClaveSql(
+                        claves,
+                        "t");
+
+                string faltanSql =
+                    $"""
+                    FROM "{tabla}" t
+                    WHERE NOT EXISTS
+                    (
+                        SELECT 1 FROM {TablaCambios} c
+                        WHERE c.Tabla = '{tablaEscapada}'
+                          AND c.Clave = {claveSql}
+                    );
+                    """;
+
+                long faltan;
+
+                using (var contar =
+                       conexion.CreateCommand())
+                {
+                    contar.CommandText =
+                        "SELECT COUNT(*) " + faltanSql;
+
+                    faltan =
+                        Convert.ToInt64(
+                            contar.ExecuteScalar());
+                }
+
+                if (faltan == 0)
+                {
+                    continue;
+                }
+
+                using (var insertar =
+                       conexion.CreateCommand())
+                {
+                    insertar.CommandText =
+                        $"""
+                        INSERT INTO {TablaCambios}
+                            (Tabla, Clave, Tipo, Momento, Origen, Seq)
+                        SELECT
+                            '{tablaEscapada}',
+                            {claveSql},
+                            'B',
+                            '{momento}',
+                            '{origen}',
+                            $base + ROW_NUMBER() OVER (ORDER BY {claveSql})
+                        {faltanSql}
+                        """;
+
+                    insertar.Parameters.AddWithValue(
+                        "$base",
+                        contador);
+
+                    insertar.ExecuteNonQuery();
+                }
+
+                contador +=
+                    faltan;
+            }
+
+            using (var cmd =
+                   conexion.CreateCommand())
+            {
+                cmd.CommandText =
+                    $"UPDATE {TablaContador} SET Valor = $valor;";
+
+                cmd.Parameters.AddWithValue(
+                    "$valor",
+                    contador);
+
+                cmd.ExecuteNonQuery();
+            }
+
+            using (var cmd =
+                   conexion.CreateCommand())
+            {
+                cmd.CommandText =
+                    "INSERT INTO SCCosmos_SincroEstado (Clave, Valor) " +
+                    "VALUES ('BaseSembrada', '2') " +
+                    "ON CONFLICT (Clave) DO UPDATE SET Valor = excluded.Valor;";
+
+                cmd.ExecuteNonQuery();
+            }
+        }
+        catch
+        {
         }
     }
 
@@ -473,11 +670,41 @@ public sealed class SincroAlmacen
                         resultado.Ignorados++;
                     }
                 }
-                catch
+                catch (Exception error)
                 {
                     // Un cambio con datos incompatibles no debe
-                    // tumbar el lote entero.
+                    // tumbar el lote entero. Se guarda el último error
+                    // para poder diagnosticar desde Configuración.
                     resultado.Ignorados++;
+
+                    try
+                    {
+                        using var anotar =
+                            conexion.CreateCommand();
+
+                        anotar.Transaction =
+                            transaccion;
+
+                        anotar.CommandText =
+                            "INSERT INTO SCCosmos_SincroEstado (Clave, Valor) " +
+                            "VALUES ('UltimoError', $valor) " +
+                            "ON CONFLICT (Clave) DO UPDATE SET Valor = excluded.Valor;";
+
+                        string texto =
+                            cambio.Tabla + "/" + cambio.Clave + ": " +
+                            error.GetType().Name + ": " + error.Message;
+
+                        anotar.Parameters.AddWithValue(
+                            "$valor",
+                            texto.Length > 300
+                                ? texto.Substring(0, 300)
+                                : texto);
+
+                        anotar.ExecuteNonQuery();
+                    }
+                    catch
+                    {
+                    }
                 }
             }
 
@@ -512,6 +739,23 @@ public sealed class SincroAlmacen
         if (claves.Length == 0)
         {
             // La tabla no existe en esta base.
+            return false;
+        }
+
+        // Las filas de «base» solo rellenan huecos: si la fila ya existe
+        // aquí (aunque nunca se haya registrado un cambio), no se toca.
+        if (string.Equals(
+                cambio.Tipo,
+                "B",
+                StringComparison.Ordinal)
+            &&
+            ExisteFila(
+                conexion,
+                transaccion,
+                cambio.Tabla,
+                claves,
+                cambio.Clave))
+        {
             return false;
         }
 
@@ -1092,6 +1336,33 @@ public sealed class SincroAlmacen
         }
 
         return fila;
+    }
+
+
+    private static bool ExisteFila(
+        SqliteConnection conexion,
+        SqliteTransaction transaccion,
+        string tabla,
+        string claves,
+        string clave)
+    {
+        using var cmd =
+            conexion.CreateCommand();
+
+        cmd.Transaction =
+            transaccion;
+
+        cmd.CommandText =
+            ConstruirSelect(
+                tabla,
+                claves,
+                clave,
+                cmd);
+
+        using var lector =
+            cmd.ExecuteReader();
+
+        return lector.Read();
     }
 
 

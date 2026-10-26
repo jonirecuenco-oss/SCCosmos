@@ -229,7 +229,9 @@ public partial class DonacionesPage : ContentPage, IActualizableMobile
         }
 
         Lista.ItemsSource =
-            _donaciones;
+            ConstruirFilasSemanales(
+                _donaciones,
+                CultureInfo.GetCultureInfo("es-ES"));
 
         var cultura =
             CultureInfo.GetCultureInfo("es-ES");
@@ -254,6 +256,77 @@ public partial class DonacionesPage : ContentPage, IActualizableMobile
             $"efectivo: {efectivo.ToString("N2", cultura)} € · " +
             $"bizum/transferencia: {bizum.ToString("N2", cultura)} €";
     }
+
+    /// <summary>
+    /// Intercala un separador con el total al final de cada semana
+    /// (lunes a domingo), igual que en Windows. Se mantiene el orden
+    /// actual: primero lo más reciente.
+    /// </summary>
+    private static List<FilaRendimientoUi> ConstruirFilasSemanales(
+        List<DonacionMobile> donaciones,
+        CultureInfo cultura)
+    {
+        var filas =
+            new List<FilaRendimientoUi>();
+
+        var semanas =
+            donaciones
+                .OrderByDescending(
+                    d => FechaDe(d))
+                .GroupBy(FechaLunesDe);
+
+        foreach (var semana in semanas)
+        {
+            foreach (DonacionMobile donacion in semana)
+            {
+                filas.Add(
+                    new FilaRendimientoUi
+                    {
+                        Donacion = donacion
+                    });
+            }
+
+            filas.Add(
+                new FilaRendimientoUi
+                {
+                    EsSeparador = true,
+                    TextoSeparador =
+                        "TOTAL SEMANA "
+                        + semana.Key.ToString("dd/MM", cultura)
+                        + " – "
+                        + semana.Key.AddDays(6).ToString("dd/MM", cultura),
+                    TotalSeparador =
+                        semana.Sum(d => d.Cantidad)
+                            .ToString("N2", cultura) + " €"
+                });
+        }
+
+        return filas;
+    }
+
+
+    private static DateTime FechaDe(DonacionMobile donacion) =>
+        DateTime.TryParse(
+            donacion.Fecha,
+            out DateTime fecha)
+            ? fecha
+            : DateTime.MinValue;
+
+
+    private static DateTime FechaLunesDe(DonacionMobile donacion)
+    {
+        DateTime dia =
+            FechaDe(donacion);
+
+        if (dia == DateTime.MinValue)
+        {
+            dia = DateTime.Today;
+        }
+
+        return dia.Date.AddDays(
+            -(((int)dia.DayOfWeek + 6) % 7));
+    }
+
 
     private async void Filtro_Changed(
         object sender,
@@ -310,8 +383,8 @@ public partial class DonacionesPage : ContentPage, IActualizableMobile
         object sender,
         TappedEventArgs e)
     {
-        if (e.Parameter is not
-            DonacionMobile donacion)
+        if (e.Parameter is not FilaRendimientoUi fila
+            || fila.Donacion is not DonacionMobile donacion)
         {
             return;
         }
@@ -332,6 +405,7 @@ public partial class DonacionesPage : ContentPage, IActualizableMobile
         // reciben los toques.
         await Navigation.PushAsync(
             editor);
+
 
         bool cambiado =
             await editor.EsperarResultadoAsync();
@@ -356,4 +430,39 @@ public partial class DonacionesPage : ContentPage, IActualizableMobile
             await RecargarAsync();
         }
     }
+}
+
+
+/// <summary>
+/// Fila de la lista de Rendimientos: una donación o el total de una
+/// semana (separador).
+/// </summary>
+public sealed class FilaRendimientoUi
+{
+    public bool EsSeparador { get; set; }
+
+    public bool EsTarjeta =>
+        !EsSeparador;
+
+    public DonacionMobile? Donacion { get; set; }
+
+    public string PersonaVisual =>
+        Donacion?.PersonaVisual ?? "";
+
+    public string DetalleVisual =>
+        Donacion?.DetalleVisual ?? "";
+
+    public string Notas =>
+        Donacion?.Notas ?? "";
+
+    public bool TieneNotas =>
+        !string.IsNullOrWhiteSpace(
+            Donacion?.Notas);
+
+    public string CantidadVisual =>
+        Donacion?.CantidadVisual ?? "";
+
+    public string TextoSeparador { get; set; } = "";
+
+    public string TotalSeparador { get; set; } = "";
 }

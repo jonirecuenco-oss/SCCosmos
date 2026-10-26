@@ -2097,3 +2097,20 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   estado completo (cada fila se resuelve por fecha: gana la más reciente). Sirve para un móvil
   que se haya quedado con datos viejos (p. ej., 95 personas y 5 grupos en vez de 125 y 8).
   La «última recepción» se guarda en `SCCosmos_UltimaRecepcionSync` al aplicar cambios.
+- **Sincronización 2.0.5 (reparación de datos entre dispositivos)**: al activar la sincronización,
+  las filas que ya existían antes no estaban en `SCCosmos_Cambios`, así que un móvil nuevo (o con
+  una copia antigua) nunca las recibía. Medido en el móvil real: 947 personas / Mérida 78 (4 grupos)
+  / 45 filas de actividad por mes, frente a 1032 / 150 (8) / 135 en el PC. Cambios:
+  (1) `SincroAlmacen.SembrarFilasFaltantes`: anota una sola vez todas las filas actuales que no
+  estén en el registro como Tipo `B` (momento `2000-01-01T00:00:00.000Z`); al aplicarlas,
+  `AplicarCambio` solo inserta si la fila no existe (nunca pisa datos que ya tenga el otro equipo).
+  (2) El contador de secuencia ya no puede quedar por detrás de `UltimoEnviado`/`UltimoRecibido`
+  (una fusión lo hizo retroceder y los cambios nuevos recibían Seq viejos: nunca se enviaban).
+  (3) La conexión del sincronizador aplica con `PRAGMA foreign_keys = OFF` porque la actividad
+  llegaba antes que las personas y se descartaba con «FOREIGN KEY constraint failed»; el último
+  error se guarda en `SCCosmos_SincroEstado/UltimoError`.
+  Prueba real PC↔móvil (reenvío completo 0→49197): móvil **947→1032 personas, Mérida 78→150 y
+  4→8 grupos, actividad 7632→7752 (135/mes)**; la visita queda en **125 activos y 8 grupos**.
+- **Rendimientos Android 2.0.5 (semanas)**: separador «TOTAL SEMANA dd/MM – dd/MM» al final de
+  cada semana (lunes a domingo), como en Windows, manteniendo el orden de lo más reciente; la
+  lista mezcla tarjetas y separadores con un `DataTemplate` que muestra uno u otro.
