@@ -2027,3 +2027,8 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   calendario, pestañas en ambas apps, la esposa sin pestañas y categoría por defecto = pestaña actual;
   las notificaciones ya ignoran las tareas completadas. (5) Rendimientos: separador por semana con el
   total («TOTAL SEMANA dd/MM – dd/MM»).
+- **Corrección 1.9.8**: al abrir Tareas en Windows saltaba «No se pudieron cargar las tareas: Object
+  reference…» porque el `RadioButton` marcado por defecto disparaba `Checked` durante
+  `InitializeComponent` y `Cargar()` usaba controles aún sin crear. Se ignora el evento si `!IsLoaded`
+  y `Cargar()` sale si faltan `ListaTareas`/`TxtResumen`. Verificado abriendo la página: carga las
+  tres pestañas y las tareas sin error.

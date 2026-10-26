@@ -35,6 +35,13 @@ namespace SCCosmos
             object sender,
             RoutedEventArgs e)
         {
+            // Al construir la página, la pestaña marcada por defecto
+            // dispara Checked antes de que existan los controles.
+            if (!IsLoaded)
+            {
+                return;
+            }
+
             if (sender is RadioButton boton
                 && boton.Tag is string categoria)
             {
@@ -58,6 +65,11 @@ namespace SCCosmos
 
         private void Cargar()
         {
+            if (ListaTareas == null || TxtResumen == null)
+            {
+                return;
+            }
+
             try
             {
                 var todas =
