@@ -36,7 +36,6 @@
         <DataTemplate x:Key="BotonEditarTemplate">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                 <Button Content="✏️" ToolTip="Editar" Click="BtnEditarPersona_Click" Background="Transparent" Foreground="White" BorderThickness="0" Cursor="Hand" Margin="2,0,6,0" FontSize="14"/>
-                <Button Content="Aa" ToolTip="Formatear nombre común" Click="BtnFormatearNombreComun_Click" Background="Transparent" Foreground="#4BA3E3" BorderThickness="0" Cursor="Hand" Margin="0,0,6,0" FontSize="12" FontWeight="Bold"/>
                 <Button Content="🗑️" ToolTip="Eliminar" Background="Transparent" Foreground="White" BorderThickness="0" Cursor="Hand" Margin="0,0,2,0" FontSize="14" Click="BtnEliminarPersona_Click"/>
             </StackPanel>
         </DataTemplate>
@@ -85,7 +84,7 @@
 
         <ScrollViewer x:Name="MainScrollViewer" VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="20">
-                <TextBlock x:Name="TxtTitulo" Text="DATOS DE LA CONGREGACIÓN" FontSize="24" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,20"/>
+                <TextBlock x:Name="TxtTitulo" Text="VISITA" FontSize="24" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,20"/>
 
                 <TabControl x:Name="TabsVisita"
                             SelectedIndex="0"
@@ -141,8 +140,10 @@
                                 </ListBox>
 
                                 <!-- ACCIONES DE MINISTERIO -->
-                                <Button Content="➕" ToolTip="Añadir publicador" FontSize="16" FontWeight="SemiBold" Padding="15,8" Background="#10893E" Foreground="White" BorderThickness="0" Cursor="Hand" Click="BtnNuevaPersona_Click" VerticalAlignment="Top" Margin="4,0,0,6"/>
-                                <Button x:Name="BtnGenerarS21" Content="S-21" ToolTip="Generar todas las tarjetas S-21" FontSize="13" FontWeight="SemiBold" Padding="14,9" Background="#2D5F8B" Foreground="White" BorderThickness="0" Cursor="Hand" Click="BtnGenerarTarjetasS21_Click" VerticalAlignment="Top" Margin="4,0,0,6"/>
+                                <Button Content="➕" ToolTip="Añadir publicador" FontSize="16" FontWeight="SemiBold" Width="46" Height="38" Padding="0" Background="#10893E" Foreground="White" BorderThickness="0" Cursor="Hand" Click="BtnNuevaPersona_Click" VerticalAlignment="Top" Margin="4,0,0,6"/>
+                                <Button x:Name="BtnGenerarS21" ToolTip="Generar todas las tarjetas S-21" Width="46" Height="38" Padding="0" Background="#2D5F8B" Foreground="White" BorderThickness="0" Cursor="Hand" Click="BtnGenerarTarjetasS21_Click" VerticalAlignment="Top" Margin="4,0,0,6">
+                                    <ui:SymbolIcon Symbol="ArrowExport24" FontSize="16" Foreground="White"/>
+                                </Button>
 
                                 <Border Background="#252526" BorderBrush="#3A3A3D" BorderThickness="1" CornerRadius="6" Margin="12,0,0,6" Padding="10,4" Height="38" VerticalAlignment="Top">
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">

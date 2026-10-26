@@ -42,6 +42,19 @@ namespace SCCosmos
 
         private List<FilaVisitaPublisher> _filasVisitasGlobal = new List<FilaVisitaPublisher>();
         private string _busquedaMinisterio = "";
+
+        // La búsqueda espera a que se deje de escribir (como en Personas).
+        private DispatcherTimer _timerBusquedaMinisterio;
+
+        /// <summary>Grupo de predicación con su número de personas.</summary>
+        public sealed class GrupoVisitaUI
+        {
+            public string Nombre { get; set; } = "";
+            public int Cantidad { get; set; }
+
+            public override string ToString() =>
+                Cantidad > 0 ? $"{Nombre} ({Cantidad})" : Nombre;
+        }
         private List<FilaTablaTerritorio> _territoriosGlobal = new List<FilaTablaTerritorio>();
         private int _paginaActual = 1;
         private const int _itemsPorPagina = 20;
@@ -73,6 +86,11 @@ namespace SCCosmos
         {
             InitializeComponent();
             AplicarPerfilAccesoVisita();
+
+            _timerBusquedaMinisterio = new DispatcherTimer();
+            _timerBusquedaMinisterio.Interval = TimeSpan.FromMilliseconds(400);
+            _timerBusquedaMinisterio.Tick += TimerBusquedaMinisterio_Tick;
+
             this.Loaded += Page_Loaded;
         }
 
@@ -85,7 +103,7 @@ namespace SCCosmos
 
             _congreCodigo = CodigoPendiente;
             _congreNombre = NombrePendiente;
-            TxtTitulo.Text = $"DATOS DE LA CONGREGACIÓN: {_congreNombre.ToUpper()}";
+            TxtTitulo.Text = $"VISITA - {_congreNombre}";
 
             InicializarMeses();
             CargarS303yS2();
@@ -2281,7 +2299,18 @@ namespace SCCosmos
 
             _filasVisitasGlobal = filasGrid.OrderBy(f => (f.NombreComun ?? "").Replace("(", "").Replace(")", "").Trim()).ThenBy(f => f.FechaNacimientoReal).ToList();
 
-            var gruposUnicos = _filasVisitasGlobal.Select(f => f.GrupoPredicacion).Distinct().OrderBy(g => g == "SIN ASIGNAR" ? 1 : 0).ThenBy(g => g).ToList();
+            // Cada grupo muestra cuántas personas tiene (también
+            // «SIN ASIGNAR»).
+            var gruposUnicos = _filasVisitasGlobal
+                .GroupBy(f => f.GrupoPredicacion)
+                .Select(g => new GrupoVisitaUI
+                {
+                    Nombre = g.Key,
+                    Cantidad = g.Count()
+                })
+                .OrderBy(g => g.Nombre == "SIN ASIGNAR" ? 1 : 0)
+                .ThenBy(g => g.Nombre)
+                .ToList();
             TabGrupos.SelectionChanged -= TabGrupos_SelectionChanged;
             TabGrupos.ItemsSource = gruposUnicos;
             TabGrupos.SelectionChanged += TabGrupos_SelectionChanged;
@@ -2326,6 +2355,19 @@ namespace SCCosmos
 
         private void TxtBuscarMinisterio_TextChanged(object sender, TextChangedEventArgs e)
         {
+            // Igual que en la página Personas: se espera a que el usuario
+            // deje de escribir antes de filtrar (escribir letra a letra
+            // bloqueaba la página).
+            if (_timerBusquedaMinisterio == null) return;
+
+            _timerBusquedaMinisterio.Stop();
+            _timerBusquedaMinisterio.Start();
+        }
+
+        private void TimerBusquedaMinisterio_Tick(object sender, EventArgs e)
+        {
+            _timerBusquedaMinisterio.Stop();
+
             _busquedaMinisterio = TxtBuscarMinisterio?.Text?.Trim() ?? "";
             AplicarFiltrosMinisterio();
         }
@@ -2347,10 +2389,10 @@ namespace SCCosmos
                     ContieneBusquedaMinisterio(f.Nombre, busqueda) ||
                     ContieneBusquedaMinisterio(f.NombreJWHub, busqueda));
             }
-            else if (TabGrupos?.SelectedItem is string grupoSeleccionado)
+            else if (TabGrupos?.SelectedItem is GrupoVisitaUI grupoSeleccionado)
             {
                 consulta = consulta.Where(f =>
-                    string.Equals(f.GrupoPredicacion, grupoSeleccionado, StringComparison.OrdinalIgnoreCase));
+                    string.Equals(f.GrupoPredicacion, grupoSeleccionado.Nombre, StringComparison.OrdinalIgnoreCase));
             }
 
             TablaVisitas.ItemsSource = consulta.ToList();
@@ -3612,146 +3654,6 @@ namespace SCCosmos
                 AbrirFormularioPersona(
                     personaRaizId);
             }
-        }
-
-        private void BtnFormatearNombreComun_Click(object sender, RoutedEventArgs e)
-        {
-            if (!(sender is Button btn) || !(btn.DataContext is FilaVisitaPublisher fila)) return;
-
-            int personaRaizId = fila.PersonaRaizId > 0 ? fila.PersonaRaizId : fila.PersonaId;
-            Persona persona = DatabaseHelper.ObtenerPersonaPorId(personaRaizId);
-            if (persona == null) return;
-
-            // El botón parte del Nombre completo oficial. NombreJWHub se usa
-            // únicamente como respaldo si la ficha no tiene Nombre.
-            string nombreFuente = !string.IsNullOrWhiteSpace(persona.Nombre)
-                ? persona.Nombre
-                : persona.NombreJWHub;
-
-            string nombreFormateado = FormatearNombreComunMinisterio(nombreFuente);
-            if (string.IsNullOrWhiteSpace(nombreFormateado)) return;
-
-            persona.NombreComun = nombreFormateado;
-            DatabaseHelper.ActualizarPersonaDesdeVisitas(
-                persona,
-                _mesMinisterio.ToString("yyyy-MM"));
-
-            ActualizarUI_MesMinisterio();
-            ActualizarUI_MesTerritorios();
-        }
-
-        private static string FormatearNombreComunMinisterio(string nombreCompleto)
-        {
-            if (string.IsNullOrWhiteSpace(nombreCompleto)) return "";
-
-            string limpio = string.Join(" ",
-                nombreCompleto
-                    .Replace("\u200B", "")
-                    .Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries));
-
-            string[] partes = limpio.Split(new[] { ',' }, 2);
-
-            // Formato habitual de Hub/S-21: APELLIDO, NOMBRE ...
-            if (partes.Length == 2)
-            {
-                string apellidosCabecera = CapitalizarNombreEspanol(partes[0]);
-                var derechaOriginal = partes[1]
-                    .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
-                    .ToList();
-
-                bool terminaEnDe = derechaOriginal.Count > 0 &&
-                    string.Equals(derechaOriginal[derechaOriginal.Count - 1], "DE", StringComparison.OrdinalIgnoreCase);
-
-                if (terminaEnDe)
-                    derechaOriginal.RemoveAt(derechaOriginal.Count - 1);
-
-                if (derechaOriginal.Count == 0)
-                    return apellidosCabecera;
-
-                string nombre = CapitalizarNombreEspanol(derechaOriginal[0]);
-
-                // Convención "..., NOMBRE APELLIDO ... DE": conservamos el primer
-                // apellido tras el nombre y añadimos el apellido de cabecera.
-                // Ej.: MARTÍNEZ, FLORENCIA GONZALEZ LUMBRERAS DE
-                //      -> Florencia González Martínez.
-                if (terminaEnDe && derechaOriginal.Count >= 2)
-                {
-                    string apellidoIntermedio = CapitalizarNombreEspanol(derechaOriginal[1]);
-                    return string.Join(" ", new[] { nombre, apellidoIntermedio, apellidosCabecera }
-                        .Where(x => !string.IsNullOrWhiteSpace(x)));
-                }
-
-                return string.Join(" ", new[] { nombre, apellidosCabecera }
-                    .Where(x => !string.IsNullOrWhiteSpace(x)));
-            }
-
-            var tokens = limpio
-                .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
-                .ToList();
-
-            if (tokens.Count > 0 &&
-                string.Equals(tokens[tokens.Count - 1], "DE", StringComparison.OrdinalIgnoreCase))
-            {
-                tokens.RemoveAt(tokens.Count - 1);
-            }
-
-            return CapitalizarNombreEspanol(string.Join(" ", tokens));
-        }
-
-        private static string CapitalizarNombreEspanol(string texto)
-        {
-            if (string.IsNullOrWhiteSpace(texto)) return "";
-
-            var cultura = new CultureInfo("es-ES");
-            var textInfo = cultura.TextInfo;
-            var particulas = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            {
-                "de", "del", "la", "las", "los", "y"
-            };
-
-            var acentosComunes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["GONZALEZ"] = "González",
-                ["MARTINEZ"] = "Martínez",
-                ["RAMIREZ"] = "Ramírez",
-                ["SANCHEZ"] = "Sánchez",
-                ["RODRIGUEZ"] = "Rodríguez",
-                ["PEREZ"] = "Pérez",
-                ["GOMEZ"] = "Gómez",
-                ["JIMENEZ"] = "Jiménez",
-                ["FERNANDEZ"] = "Fernández",
-                ["LOPEZ"] = "López",
-                ["DIAZ"] = "Díaz",
-                ["GARCIA"] = "García",
-                ["VAZQUEZ"] = "Vázquez",
-                ["SUAREZ"] = "Suárez",
-                ["ALVAREZ"] = "Álvarez",
-                ["MUÑOZ"] = "Muñoz"
-            };
-
-            var palabras = texto
-                .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-
-            for (int i = 0; i < palabras.Length; i++)
-            {
-                string original = palabras[i].Trim();
-                string clave = original.ToUpperInvariant();
-
-                if (acentosComunes.TryGetValue(clave, out string corregida))
-                {
-                    palabras[i] = corregida;
-                }
-                else if (i > 0 && particulas.Contains(original))
-                {
-                    palabras[i] = original.ToLower(cultura);
-                }
-                else
-                {
-                    palabras[i] = textInfo.ToTitleCase(original.ToLower(cultura));
-                }
-            }
-
-            return string.Join(" ", palabras);
         }
 
         private async void BtnGenerarTarjetasS21_Click(object sender, RoutedEventArgs e)

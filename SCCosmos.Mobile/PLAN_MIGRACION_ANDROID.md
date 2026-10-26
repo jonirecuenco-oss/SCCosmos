@@ -1993,3 +1993,9 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   YA existían al analizar (`_personasExistentes`) y la pasa como candidatos, así no aparecen las
   añadidas desde el JSON en la misma sesión; (3) al vincular, si la fecha de nacimiento o bautismo del
   JSON viene vacía se conserva la que ya tenía la ficha (aunque sea de JW Hub).
+- **Página Visitas (1.9.3)**: título «VISITA - <congregación>»; la búsqueda de Ministerio usa un
+  `DispatcherTimer` de 400 ms (igual que Personas) en vez de filtrar en cada pulsación; los grupos
+  muestran su número de personas («GRUPO 1 (12)», también «SIN ASIGNAR (n)») mediante `GrupoVisitaUI`;
+  el botón S-21 pasa a icono de exportar (`ArrowExport24`) con 46×38, igual que el botón «➕»; se
+  elimina el botón «Aa» (formatear nombre común) y sus métodos `BtnFormatearNombreComun_Click`,
+  `FormatearNombreComunMinisterio` y `CapitalizarNombreEspanol`.
