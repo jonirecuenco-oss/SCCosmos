@@ -2064,3 +2064,26 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   columna y `PersonaListaUi` la pide con `ObtenerFotoPersonaMobile(Id)` (con caché) al pintar cada
   fila visible. Personas **201 → ~95–148 ms**. Verificado en el móvil: fotos correctas y la ficha
   abre bien.
+- **Rendimiento Windows 2.0.3 (páginas)**: medido con `SCCosmos\SCCosmos\Perf.cs`
+  (`%TEMP%\sccosmos_perf.log`, se limpia en cada arranque; `Arranque.*`, `Inicio`, `Calendario.*`,
+  `Personas`, `Visitas.Ministerio`).
+  (1) **Visitas**: la actividad se pide en **una sola consulta**
+  (`DatabaseHelper.ObtenerActividadesPorPersonas`) en vez de una por persona (N+1 de cientos de
+  consultas); fuera el `Task.Delay(1)` cada 10 personas del bucle (cada espera cuesta ~15,6 ms en
+  Windows → cientos de ms); el filtro de grupos ya no se aplica dos veces (se fija el índice con el
+  manejador desconectado y se llama una vez) y el reajuste de anchos de columna se hace una sola vez
+  y solo con columnas estrella → preparación de la tabla **~600–712 → ~30 ms** (`Visitas.Ministerio`;
+  la página queda lista con el pintado en ~200 ms).
+  (2) Las consultas de personas por congregación (actual e histórica) ya traen `RequisitoHoras`, así
+  que los precursores no se reescriben en la base de datos en cada carga (antes `0 != requisito`
+  siempre → un `UPDATE` por precursor).
+  (3) **Calendario**: la colección se llena con la tabla **desenlazada** y se enlaza una sola vez
+  (antes cada alta refrescaba el DataGrid y el relleno costaba ~1,6 s); el salto a la semana actual
+  se hace al quedar la página cargada y mueve el scroll con la posición calculada (34 px por fila +
+  alto real de las cabeceras de mes), sin `ScrollIntoView`/`UpdateLayout` → **~1,7 s → ~40 ms** y
+  abre directamente en el mes actual (verificado: 26-oct al 01-nov resaltada).
+  (4) Resto de páginas medido (navegar → pintada): Inicio 22, Personas ~217 (antes ~450), Circuito
+  ~324 (12 ms de datos; el resto es pintado de la tabla), Escuelas 67, RSC 88, Asambleas 216–229,
+  Archivo 173–254, Rendimientos 127–132, Tareas 32–41, Actividad 117–136, Descargas 183–197,
+  Correspondencia 186–197, Configuración 96–129 ms. Arranque Windows **~234 ms** (base 127, sync
+  +100, Inicio 22).

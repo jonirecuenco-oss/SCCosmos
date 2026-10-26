@@ -296,7 +296,12 @@ namespace SCCosmos
 
                 var listadoHermanosHistorico = DatabaseHelper.ObtenerPersonasHistoricasPorMes(_congreCodigo, _mesMinisterio.ToString("yyyy-MM"));
 
+                var relojMinisterio = System.Diagnostics.Stopwatch.StartNew();
+
                 await ProcesarColumnasYDatosDinamicos(mesesARenderizar, listadoHermanosHistorico);
+
+                Perf.Registrar("Visitas.Ministerio", relojMinisterio.ElapsedMilliseconds);
+
                 CargarGruposPredicacion(listadoHermanosHistorico);
             }
             finally { _cargandoDatos = false; }
@@ -2054,8 +2059,6 @@ namespace SCCosmos
             int statHombres = 0, statMujeres = 0, statAuxiliaresMesActual = 0;
             List<double> statEdades = new List<double>();
 
-            int contadorRespiro = 0;
-
             // Las instantáneas históricas conservan los datos ministeriales del mes,
             // pero los datos de identidad se muestran desde la ficha raíz actual.
             var personasActualesPorId =
@@ -2064,6 +2067,17 @@ namespace SCCosmos
                     .ToDictionary(
                         p => p.Id,
                         p => p);
+
+            // Toda la actividad de la congregación en una sola consulta
+            // (antes se hacía una por persona: cientos por carga).
+            var idsActividad =
+                listadoHermanos
+                    .Select(h => (int)(h.PersonaRaizId > 0 ? h.PersonaRaizId : h.Id))
+                    .Distinct()
+                    .ToList();
+
+            var actividadesPorPersona =
+                DatabaseHelper.ObtenerActividadesPorPersonas(idsActividad);
 
             foreach (var h in listadoHermanos)
             {
@@ -2087,9 +2101,6 @@ namespace SCCosmos
                 {
                     continue;
                 }
-
-                contadorRespiro++;
-                if (contadorRespiro % 10 == 0) await Task.Delay(1);
 
                 int idRaizActual =
                     h.PersonaRaizId > 0
@@ -2126,7 +2137,10 @@ namespace SCCosmos
                 bool esPrec = !string.IsNullOrWhiteSpace(servicioLimpio) && (servicioLimpio.ToLower().Contains("precursor") || servicioLimpio.ToLower().Contains("misionero"));
 
                 long idParaActividad = h.PersonaRaizId > 0 ? h.PersonaRaizId : h.Id;
-                var informesHistoricos = DatabaseHelper.ObtenerActividadPersona((int)idParaActividad);
+                var informesHistoricos =
+                    actividadesPorPersona.TryGetValue((int)idParaActividad, out var informesPersona)
+                        ? informesPersona
+                        : new List<ActividadMensual>();
                 int conteoDevueltos = 0;
 
                 foreach (var t in territoriosBD)
@@ -2514,14 +2528,22 @@ namespace SCCosmos
             // al final de la tabla y bajo su propio apartado.
             TabGrupos.SelectionChanged -= TabGrupos_SelectionChanged;
             TabGrupos.ItemsSource = gruposUnicos;
-            TabGrupos.SelectionChanged += TabGrupos_SelectionChanged;
 
+            // El índice se fija con el manejador desconectado y se aplica el
+            // filtro UNA sola vez (antes se hacía dos: una por el cambio de
+            // índice y otra a mano, duplicando el trabajo de la tabla).
             if (gruposUnicos.Count > 0)
             {
                 int idx = TabGrupos.SelectedIndex >= 0 ? TabGrupos.SelectedIndex : 0;
                 if (idx >= gruposUnicos.Count) idx = 0;
 
                 TabGrupos.SelectedIndex = idx;
+            }
+
+            TabGrupos.SelectionChanged += TabGrupos_SelectionChanged;
+
+            if (gruposUnicos.Count > 0)
+            {
                 AplicarFiltrosMinisterio();
             }
             else
@@ -2625,14 +2647,25 @@ namespace SCCosmos
 
             TablaVisitas.ItemsSource = vista;
 
+            // Al cambiar las columnas y las filas hay que recalcular los
+            // anchos (con estrellas) una vez la tabla ya está maquetada; si
+            // no, las últimas columnas se salen por la derecha. Se hace una
+            // sola vez (antes se lanzaba dos veces por el doble filtro).
             Dispatcher.BeginInvoke(new Action(() =>
             {
                 if (TablaVisitas == null) return;
+
                 TablaVisitas.UpdateLayout();
+
                 foreach (var col in TablaVisitas.Columns)
                 {
+                    if (col.Width.UnitType != DataGridLengthUnitType.Star)
+                    {
+                        continue;
+                    }
+
                     var anchoActual = col.Width;
-                    col.Width = 0;
+                    col.Width = new DataGridLength(0);
                     col.Width = anchoActual;
                 }
             }), DispatcherPriority.Loaded);
@@ -2906,21 +2939,9 @@ namespace SCCosmos
             var cacheFuzzy =
                 new Dictionary<string, string>();
 
-            int contadorRespiro =
-                0;
-
-
             foreach (var grupo
                      in grupos)
             {
-                contadorRespiro++;
-
-                if (contadorRespiro % 10 == 0)
-                {
-                    await Task.Delay(1);
-                }
-
-
                 var asignaciones =
                     grupo
                         .ToList();

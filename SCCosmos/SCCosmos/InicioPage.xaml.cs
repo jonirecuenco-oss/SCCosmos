@@ -21,6 +21,8 @@ namespace SCCosmos
 
         public InicioPage()
         {
+            var reloj = System.Diagnostics.Stopwatch.StartNew();
+
             InitializeComponent();
 
             // Si el equipo lo usa la esposa del SC, el saludo es con su
@@ -54,6 +56,8 @@ namespace SCCosmos
 
             CargarSemanaActual();
             _ = CargarEstadisticasAsync();
+
+            Perf.Registrar("Inicio", reloj.ElapsedMilliseconds);
         }
 
         // =====================================================

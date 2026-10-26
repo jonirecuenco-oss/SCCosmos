@@ -265,6 +265,8 @@ namespace SCCosmos
 
         private async Task CargarListaPersonasAsync()
         {
+            var reloj = System.Diagnostics.Stopwatch.StartNew();
+
             //SpinnerCargando.Visibility = Visibility.Visible;
             TablaPersonas.ItemsSource = null;
 
@@ -283,6 +285,8 @@ namespace SCCosmos
             LstCongre.ItemsSource = congregaciones;
 
             AplicarFiltroYPaginar();
+
+            Perf.Registrar("Personas", reloj.ElapsedMilliseconds);
 
             //if (!SincronizadorJWHub.EstaSincronizando)
                 //SpinnerCargando.Visibility = Visibility.Collapsed;

@@ -9,6 +9,14 @@ namespace SCCosmos
     /// </summary>
     public partial class App : Application
     {
+        protected override void OnStartup(
+            StartupEventArgs e)
+        {
+            // Cada arranque empieza con el registro de tiempos limpio.
+            Perf.Limpiar();
+
+            base.OnStartup(e);
+        }
     }
 
 }

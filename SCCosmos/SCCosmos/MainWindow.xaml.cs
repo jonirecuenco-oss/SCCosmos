@@ -101,17 +101,26 @@ namespace SCCosmos
 
         public MainWindow()
         {
+            var relojArranque =
+                System.Diagnostics.Stopwatch.StartNew();
+
             InitializeComponent();
             DatabaseHelper.InicializarDatabase();
             DatabaseHelper.AsegurarAlertasLeidas();
             DatabaseHelper.AsegurarHorasMes();
 
+            Perf.Registrar("Arranque.Base", relojArranque.ElapsedMilliseconds);
+
             // Motor de sincronización entre dispositivos.
             SincronizacionRed.Iniciar();
+
+            Perf.Registrar("Arranque.Sync", relojArranque.ElapsedMilliseconds);
 
             // Refresco automático de la página abierta cuando llegan
             // cambios de otro dispositivo.
             SincronizacionPaginas.Iniciar(this);
+
+            Perf.Registrar("Arranque.Ventana", relojArranque.ElapsedMilliseconds);
 
             this.Closed += (s, e) =>
             {

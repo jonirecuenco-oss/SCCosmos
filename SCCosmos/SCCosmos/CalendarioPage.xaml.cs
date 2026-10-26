@@ -426,6 +426,139 @@ namespace SCCosmos
         }
 
 
+        /// <summary>
+        /// Lleva la tabla a una fila concreta moviendo su scroll (las filas
+        /// miden 34 px fijos), sin forzar la maquetación de toda la tabla.
+        /// </summary>
+        private void DesplazarTablaA(int indice)
+        {
+            if (indice < 0 || indice >= ColeccionSemanas.Count)
+            {
+                return;
+            }
+
+            try
+            {
+                var scroll = BuscarScrollViewer(TablaRuta);
+
+                if (scroll == null)
+                {
+                    return;
+                }
+
+                SemanaCalendario destino = ColeccionSemanas[indice];
+
+                // Posición real de la fila: las semanas miden 34 px y entre
+                // cada mes hay una cabecera más alta. Se cuentan las filas y
+                // las cabeceras que quedan por encima y se mueve el scroll,
+                // sin obligar a maquetar la tabla entera (ScrollIntoView
+                // tardaba segundos o no hacía nada con la tabla agrupada).
+                int filasAntes = 0;
+                int gruposAntes = 0;
+
+                try
+                {
+                    foreach (var grupoObjeto in _vistaAgrupada.Groups)
+                    {
+                        if (grupoObjeto is not System.Windows.Data.CollectionViewGroup grupo)
+                        {
+                            continue;
+                        }
+
+                        var elementos = grupo.Items.Cast<object>().ToList();
+
+                        if (elementos.Contains(destino))
+                        {
+                            break;
+                        }
+
+                        filasAntes += elementos.Count;
+                        gruposAntes++;
+                    }
+                }
+                catch
+                {
+                    filasAntes = indice;
+                    gruposAntes = 0;
+                }
+
+                double alturaCabecera = 36;
+
+                var grupoVisual = BuscarPrimer<System.Windows.Controls.GroupItem>(TablaRuta);
+
+                if (grupoVisual != null)
+                {
+                    var panel = VisualTreeHelper.GetChild(grupoVisual, 0);
+
+                    if (panel != null && VisualTreeHelper.GetChildrenCount(panel) > 0)
+                    {
+                        if (VisualTreeHelper.GetChild(panel, 0) is FrameworkElement cabecera
+                            && cabecera.ActualHeight > 0)
+                        {
+                            alturaCabecera = cabecera.ActualHeight;
+                        }
+                    }
+                }
+
+                double desplazamiento =
+                    filasAntes * 34.0 + gruposAntes * alturaCabecera;
+
+                scroll.ScrollToVerticalOffset(Math.Max(0, desplazamiento - 34.0));
+            }
+            catch
+            {
+            }
+        }
+
+        private static T BuscarPrimer<T>(System.Windows.DependencyObject raiz)
+            where T : System.Windows.DependencyObject
+        {
+            if (raiz is T encontrado)
+            {
+                return encontrado;
+            }
+
+            int hijos = System.Windows.Media.VisualTreeHelper.GetChildrenCount(raiz);
+
+            for (int i = 0; i < hijos; i++)
+            {
+                var resultado = BuscarPrimer<T>(
+                    System.Windows.Media.VisualTreeHelper.GetChild(raiz, i));
+
+                if (resultado != null)
+                {
+                    return resultado;
+                }
+            }
+
+            return null;
+        }
+
+        private static System.Windows.Controls.ScrollViewer BuscarScrollViewer(
+            System.Windows.DependencyObject raiz)
+        {
+            if (raiz is System.Windows.Controls.ScrollViewer encontrado)
+            {
+                return encontrado;
+            }
+
+            int hijos = System.Windows.Media.VisualTreeHelper.GetChildrenCount(raiz);
+
+            for (int i = 0; i < hijos; i++)
+            {
+                var resultado = BuscarScrollViewer(
+                    System.Windows.Media.VisualTreeHelper.GetChild(raiz, i));
+
+                if (resultado != null)
+                {
+                    return resultado;
+                }
+            }
+
+            return null;
+        }
+
+
         private async Task CargarCalendarioAsync()
         {
             if (_cargandoCalendario)
@@ -437,6 +570,8 @@ namespace SCCosmos
 
             _cargandoCalendario = true;
 
+            var reloj = System.Diagnostics.Stopwatch.StartNew();
+
             bool completado = false;
 
             try
@@ -447,32 +582,26 @@ namespace SCCosmos
 
                 List<SemanaCalendario> semanas = await ConstruirSemanasAsync();
 
-                // Se limpia antes de volcar: si llegan cambios por
-                // sincronización, el calendario se reemplaza entero (antes
-                // se iban acumulando las semanas y se "rayaba").
+                Perf.Registrar("Calendario.DB", reloj.ElapsedMilliseconds);
+
+                if (_cancelarCarga)
+                {
+                    return;
+                }
+
+                // Se llena la colección con la tabla DESENLAZADA y se enlaza
+                // una sola vez al final. Antes cada alta refrescaba el
+                // DataGrid y las ~105 semanas tardaban más de 1,6 s.
+                TablaRuta.ItemsSource = null;
+
                 ColeccionSemanas.Clear();
 
-                // La tabla se rellena por tandas pequeñas y entre tanda y tanda
-                // se cede el turno: así la barra del aviso se mantiene fluida y
-                // el menú sigue respondiendo (al salir, la carga se cancela).
-                const int tamanoTanda = 3;
-
-                for (int i = 0; i < semanas.Count; i += tamanoTanda)
+                foreach (SemanaCalendario semana in semanas)
                 {
-                    if (_cancelarCarga)
-                    {
-                        return;
-                    }
-
-                    int finTanda = Math.Min(i + tamanoTanda, semanas.Count);
-
-                    for (int j = i; j < finTanda; j++)
-                    {
-                        ColeccionSemanas.Add(semanas[j]);
-                    }
-
-                    await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+                    ColeccionSemanas.Add(semana);
                 }
+
+                TablaRuta.ItemsSource = _vistaAgrupada;
 
                 // Con las altas por tandas, WPF deja mal repartidos los anchos
                 // en estrella de las columnas: se piden de nuevo al terminar.
@@ -505,13 +634,37 @@ namespace SCCosmos
                     }
                 }
 
+                Perf.Registrar("Calendario.Relleno", reloj.ElapsedMilliseconds);
+
                 if (indiceActual != -1)
                 {
                     int indiceConMargen = Math.Max(0, indiceActual - 1);
-                    TablaRuta.ScrollIntoView(ColeccionSemanas[ColeccionSemanas.Count - 1]);
-                    TablaRuta.UpdateLayout();
-                    TablaRuta.ScrollIntoView(ColeccionSemanas[indiceConMargen]);
+
+                    // El salto se hace cuando la página ya está cargada y la
+                    // tabla maquetada; si se programa antes, la tabla todavía
+                    // no tiene altura y el desplazamiento no surte efecto.
+                    if (!this.IsLoaded)
+                    {
+                        void AlCargarPagina(object remitente, RoutedEventArgs args)
+                        {
+                            this.Loaded -= AlCargarPagina;
+
+                            _ = Dispatcher.InvokeAsync(
+                                () => DesplazarTablaA(indiceConMargen),
+                                DispatcherPriority.ContextIdle);
+                        }
+
+                        this.Loaded += AlCargarPagina;
+                    }
+                    else
+                    {
+                        _ = Dispatcher.InvokeAsync(
+                            () => DesplazarTablaA(indiceConMargen),
+                            DispatcherPriority.ContextIdle);
+                    }
                 }
+
+                Perf.Registrar("Calendario", reloj.ElapsedMilliseconds);
 
                 completado = true;
             }

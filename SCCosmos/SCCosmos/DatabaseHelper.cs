@@ -593,7 +593,7 @@ namespace SCCosmos
                 command.CommandText = @"SELECT Id, Nombre, Nombramiento, Servicio, Grupo, FechaNacimiento, Sexo, FechaBautismo, Esperanza,
                     NombreJWHub, FechaCreacion, FechaEliminacion, NombreComun, Solicitudes, Privilegios,
                     Foto, Email, Telefono, FechaInicioPrec, FechaUltimaEscuela, CongregacionCodigo,
-                    Direccion, Latitud, Longitud, ConyugeId, EmailJW, PersonaRaizId, MesHistorico, FechaExactaHistorico, Notas, OrigenRegistro, AprobadoExhibidores, TrasladoAnteriorId, TrasladoSiguienteId, FechaTraslado
+                    Direccion, Latitud, Longitud, ConyugeId, EmailJW, PersonaRaizId, MesHistorico, FechaExactaHistorico, Notas, OrigenRegistro, AprobadoExhibidores, TrasladoAnteriorId, TrasladoSiguienteId, FechaTraslado, RequisitoHoras
              FROM Personas 
              WHERE CongregacionCodigo = $codigo AND MesHistorico IS NULL ORDER BY Nombre ASC;";
                 command.Parameters.AddWithValue("$codigo", congreCodigo);
@@ -638,7 +638,8 @@ namespace SCCosmos
                             AprobadoExhibidores = !reader.IsDBNull(31) && reader.GetInt32(31) == 1,
                             TrasladoAnteriorId = reader.IsDBNull(32) ? 0 : reader.GetInt32(32),
                             TrasladoSiguienteId = reader.IsDBNull(33) ? 0 : reader.GetInt32(33),
-                            FechaTraslado = reader.IsDBNull(34) ? "" : reader.GetString(34)
+                            FechaTraslado = reader.IsDBNull(34) ? "" : reader.GetString(34),
+                            RequisitoHoras = reader.IsDBNull(35) ? 0 : reader.GetInt32(35)
                         });
                     }
                 }
@@ -658,7 +659,7 @@ namespace SCCosmos
                     SELECT Id, Nombre, Nombramiento, Servicio, Grupo, FechaNacimiento, Sexo, FechaBautismo, Esperanza,
                            NombreJWHub, FechaCreacion, FechaEliminacion, NombreComun, Solicitudes, Privilegios,
                            Foto, Email, Telefono, FechaInicioPrec, FechaUltimaEscuela, CongregacionCodigo,
-                           Direccion, Latitud, Longitud, ConyugeId, EmailJW, PersonaRaizId, MesHistorico, FechaExactaHistorico, Notas, OrigenRegistro, AprobadoExhibidores, TrasladoAnteriorId, TrasladoSiguienteId, FechaTraslado
+                           Direccion, Latitud, Longitud, ConyugeId, EmailJW, PersonaRaizId, MesHistorico, FechaExactaHistorico, Notas, OrigenRegistro, AprobadoExhibidores, TrasladoAnteriorId, TrasladoSiguienteId, FechaTraslado, RequisitoHoras
                     FROM Personas 
                     WHERE Id IN (
                         SELECT MAX(Id)
@@ -714,7 +715,8 @@ namespace SCCosmos
                             AprobadoExhibidores = !reader.IsDBNull(31) && reader.GetInt32(31) == 1,
                             TrasladoAnteriorId = reader.IsDBNull(32) ? 0 : reader.GetInt32(32),
                             TrasladoSiguienteId = reader.IsDBNull(33) ? 0 : reader.GetInt32(33),
-                            FechaTraslado = reader.IsDBNull(34) ? "" : reader.GetString(34)
+                            FechaTraslado = reader.IsDBNull(34) ? "" : reader.GetString(34),
+                            RequisitoHoras = reader.IsDBNull(35) ? 0 : reader.GetInt32(35)
                         };
                         lista.Add(p);
                     }
@@ -1936,6 +1938,81 @@ namespace SCCosmos
             {
                 return 0;
             }
+        }
+
+        /// <summary>
+        /// Actividad de varias personas en UNA sola consulta (antes Visitas
+        /// hacía una por persona, cientos en cada carga).
+        /// </summary>
+        public static Dictionary<int, List<ActividadMensual>> ObtenerActividadesPorPersonas(
+            IEnumerable<int> ids)
+        {
+            var resultado = new Dictionary<int, List<ActividadMensual>>();
+
+            var lista = (ids ?? Enumerable.Empty<int>())
+                .Where(i => i > 0)
+                .Distinct()
+                .ToList();
+
+            if (lista.Count == 0)
+            {
+                return resultado;
+            }
+
+            try
+            {
+                using (var connection = new SqliteConnection(ConnectionString))
+                {
+                    connection.Open();
+                    var command = connection.CreateCommand();
+
+                    var parametros = new List<string>();
+
+                    for (int i = 0; i < lista.Count; i++)
+                    {
+                        string nombre = "$p" + i;
+                        parametros.Add(nombre);
+                        command.Parameters.AddWithValue(nombre, lista[i]);
+                    }
+
+                    command.CommandText = $@"
+                        SELECT PersonaId, Mes, AnioServicio, Participacion,
+                               COALESCE(NULLIF(Cursos, ''), CAST(CursosBiblicos AS TEXT), ''),
+                               PrecursorAuxiliar, Horas, Notas
+                        FROM ActividadPersonas
+                        WHERE PersonaId IN ({string.Join(", ", parametros)});";
+
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            int personaId = reader.GetInt32(0);
+
+                            if (!resultado.TryGetValue(personaId, out var listaPersona))
+                            {
+                                listaPersona = new List<ActividadMensual>();
+                                resultado[personaId] = listaPersona;
+                            }
+
+                            listaPersona.Add(new ActividadMensual
+                            {
+                                Mes = reader.IsDBNull(1) ? "" : reader.GetString(1),
+                                AnioServicio = reader.IsDBNull(2) ? "" : reader.GetString(2),
+                                Participacion = !reader.IsDBNull(3) && reader.GetInt32(3) == 1,
+                                CursosBiblicos = reader.IsDBNull(4) ? "" : reader.GetString(4),
+                                PrecursorAuxiliar = !reader.IsDBNull(5) && reader.GetInt32(5) == 1,
+                                Horas = reader.IsDBNull(6) ? "" : reader.GetString(6),
+                                Notas = reader.IsDBNull(7) ? "" : reader.GetString(7)
+                            });
+                        }
+                    }
+                }
+            }
+            catch
+            {
+            }
+
+            return resultado;
         }
 
         public static void GuardarActividadMensualEditada(int personaId, string mes, string anioServicio, string horas, bool participacion, string cursos, bool precAux, string notas)
