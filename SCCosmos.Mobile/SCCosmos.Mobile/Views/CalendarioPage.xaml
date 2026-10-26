@@ -87,18 +87,20 @@
                                   RowSpacing="2">
 
                                 <!-- FECHAS -->
-                                <VerticalStackLayout Grid.Row="0"
-                                                     Grid.Column="0"
-                                                     Spacing="1">
-                                    <Label Text="{Binding RangoFechas}"
-                                           FontSize="16"
-                                           FontAttributes="Bold"
-                                           TextColor="White" />
-                                    <Label Text="{Binding MarcadorParalela}"
-                                           FontSize="11"
-                                           TextColor="#9EA4AE"
-                                           IsVisible="{Binding EsActividadParalela}" />
-                                </VerticalStackLayout>
+                                <Label Grid.Row="0"
+                                       Grid.Column="0"
+                                       Text="{Binding RangoFechas}"
+                                       FontSize="16"
+                                       FontAttributes="Bold"
+                                       TextColor="White" />
+
+                                <Label Grid.Row="0"
+                                       Grid.Column="1"
+                                       Text="{Binding MarcadorParalela}"
+                                       FontSize="11"
+                                       TextColor="#9EA4AE"
+                                       VerticalOptions="Center"
+                                       IsVisible="{Binding EsActividadParalela}" />
 
                                 <!-- ACTIVIDAD -->
                                 <Label Grid.Row="1"
@@ -155,57 +157,21 @@
                                             CornerRadius="7"
                                             IsVisible="{Binding MostrarVerVisita}" />
 
-                                    <Button Text="📨"
-                                            Clicked="BtnAcciones_Clicked"
+                                    <!-- El resto de acciones, en un menú: así cada
+                                         tarjeta crea 3 botones en vez de 6. -->
+                                    <Button Text="⋯"
+                                            Clicked="BtnMenuSemana_Clicked"
                                             CommandParameter="{Binding .}"
-                                            SemanticProperties.Description="Acciones de la semana"
+                                            SemanticProperties.Description="Más acciones de la semana"
                                             Padding="0"
                                             Margin="0"
-                                            FontSize="11"
+                                            FontSize="13"
                                             WidthRequest="26"
                                             HeightRequest="24"
-                                            BackgroundColor="#3A3520"
+                                            BackgroundColor="#2A3038"
+                                            TextColor="White"
                                             CornerRadius="7"
-                                            IsVisible="{Binding MostrarBotonAcciones}" />
-
-                                    <Button Text="🗂️"
-                                            Clicked="BtnImportarJson_Clicked"
-                                            CommandParameter="{Binding .}"
-                                            SemanticProperties.Description="Importar o actualizar JSON"
-                                            Padding="0"
-                                            Margin="0"
-                                            FontSize="11"
-                                            WidthRequest="26"
-                                            HeightRequest="24"
-                                            BackgroundColor="#265B36"
-                                            CornerRadius="7"
-                                            IsVisible="{Binding MostrarBotonImportarJson}" />
-
-                                    <Button Text="➕"
-                                            Clicked="BtnSolapar_Clicked"
-                                            CommandParameter="{Binding .}"
-                                            SemanticProperties.Description="Añadir actividad"
-                                            Padding="0"
-                                            Margin="0"
-                                            FontSize="11"
-                                            WidthRequest="26"
-                                            HeightRequest="24"
-                                            BackgroundColor="#163553"
-                                            CornerRadius="7"
-                                            IsVisible="{Binding MostrarBotonSolapar}" />
-
-                                    <Button Text="🗑️"
-                                            Clicked="BtnEliminar_Clicked"
-                                            CommandParameter="{Binding .}"
-                                            SemanticProperties.Description="Eliminar actividad"
-                                            Padding="0"
-                                            Margin="0"
-                                            FontSize="11"
-                                            WidthRequest="26"
-                                            HeightRequest="24"
-                                            BackgroundColor="#3A2023"
-                                            CornerRadius="7"
-                                            IsVisible="{Binding MostrarBotonEliminar}" />
+                                            IsVisible="{Binding MostrarMenuSemana}" />
                                 </HorizontalStackLayout>
                             </Grid>
                         </Border>

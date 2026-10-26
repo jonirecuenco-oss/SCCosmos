@@ -336,33 +336,35 @@ public partial class CorrespondenciaPage : ContentPage, IActualizableMobile
     {
         try
         {
-            string asunto =
-                DatabaseHelper
-                    .ObtenerConfiguracionVisitaMobile(
-                        "Asunto_" + categoria,
-                        "");
-
-            string cuerpo =
-                DatabaseHelper
-                    .ObtenerConfiguracionVisitaMobile(
-                        "Email_" + categoria,
-                        "");
-
-            TxtAsunto.Text =
-                asunto;
-
-            TxtCuerpo.Text =
-                cuerpo;
-
-            await CargarHtmlEnEditorAsync(
-                cuerpo);
-
-            _adjuntos =
-                await Task.Run(
-                    () =>
+            // Las tres lecturas, juntas y fuera del hilo de interfaz.
+            var datos =
+                await Task.Run(() => (
+                    Asunto:
+                        DatabaseHelper
+                            .ObtenerConfiguracionVisitaMobile(
+                                "Asunto_" + categoria,
+                                ""),
+                    Cuerpo:
+                        DatabaseHelper
+                            .ObtenerConfiguracionVisitaMobile(
+                                "Email_" + categoria,
+                                ""),
+                    Adjuntos:
                         DatabaseHelper
                             .ObtenerDocumentosVisitaMobile(
-                                categoria));
+                                categoria)));
+
+            TxtAsunto.Text =
+                datos.Asunto;
+
+            TxtCuerpo.Text =
+                datos.Cuerpo;
+
+            await CargarHtmlEnEditorAsync(
+                datos.Cuerpo);
+
+            _adjuntos =
+                datos.Adjuntos;
 
             BindableLayout.SetItemsSource(
                 ListaAdjuntos,

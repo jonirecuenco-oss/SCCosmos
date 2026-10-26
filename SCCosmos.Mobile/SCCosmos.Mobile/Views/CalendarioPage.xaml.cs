@@ -1264,6 +1264,94 @@ public partial class CalendarioPage : ContentPage, IActualizableMobile
     // ACCIONES DE CORRESPONDENCIA (S-302, documentación, WhatsApp)
     // =========================================================
 
+    /// <summary>
+    /// Menú «⋯» de la tarjeta: agrupa las acciones menos frecuentes para
+    /// que cada fila cree 3 botones en vez de 6.
+    /// </summary>
+    private async void BtnMenuSemana_Clicked(
+        object sender,
+        EventArgs e)
+    {
+        if (sender is not Button boton
+            || boton.CommandParameter is not CalendarioItem item)
+        {
+            return;
+        }
+
+        var opciones = new List<string>();
+        var claves = new List<string>();
+
+        if (item.MostrarBotonAcciones)
+        {
+            opciones.Add("Acciones de la semana");
+            claves.Add("acciones");
+        }
+
+        if (item.MostrarBotonImportarJson)
+        {
+            opciones.Add(item.TextoImportarJson);
+            claves.Add("json");
+        }
+
+        if (item.MostrarBotonSolapar)
+        {
+            opciones.Add("Añadir actividad");
+            claves.Add("anadir");
+        }
+
+        if (item.MostrarBotonEliminar)
+        {
+            opciones.Add("Eliminar actividad");
+            claves.Add("eliminar");
+        }
+
+        if (opciones.Count == 0)
+        {
+            return;
+        }
+
+        string elegido =
+            await DisplayActionSheet(
+                item.RangoFechas,
+                "Cancelar",
+                null,
+                opciones.ToArray());
+
+        int indice =
+            opciones.IndexOf(elegido);
+
+        if (indice < 0)
+        {
+            return;
+        }
+
+        var disparador =
+            new Button
+            {
+                CommandParameter = item
+            };
+
+        switch (claves[indice])
+        {
+            case "acciones":
+                BtnAcciones_Clicked(disparador, EventArgs.Empty);
+                break;
+
+            case "json":
+                BtnImportarJson_Clicked(disparador, EventArgs.Empty);
+                break;
+
+            case "anadir":
+                BtnSolapar_Clicked(disparador, EventArgs.Empty);
+                break;
+
+            case "eliminar":
+                BtnEliminar_Clicked(disparador, EventArgs.Empty);
+                break;
+        }
+    }
+
+
     private async void BtnAcciones_Clicked(
         object sender,
         EventArgs e)
@@ -1677,6 +1765,16 @@ public sealed class CalendarioItem
     public bool MostrarBotonEliminar =>
         MostrarAcciones
         && EsActividadParalela;
+
+    /// <summary>
+    /// Menú «⋯» con las acciones menos frecuentes (acciones, JSON,
+    /// añadir actividad y eliminar). Se muestra si hay alguna.
+    /// </summary>
+    public bool MostrarMenuSemana =>
+        MostrarBotonAcciones
+        || MostrarBotonImportarJson
+        || MostrarBotonSolapar
+        || MostrarBotonEliminar;
 
     /// <summary>
     /// El botón de "Ver visita" solo aparece si la semana es una visita y

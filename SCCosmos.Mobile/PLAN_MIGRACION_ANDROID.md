@@ -2053,3 +2053,9 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   lado: ~200 → ~100 semanas). Archivo 251 ms (los tres JSON se leen en paralelo). Resto medido:
   Personas 181, Correspondencia 198, Asambleas 151, Escuelas 138, Rendimientos 76, RSC 27, Tareas 25,
   Circuito 18, Actividad 14 ms.
+- **Rendimiento 2.0.1 (maquetación)**: la tarjeta del calendario crea 3 botones en vez de 6 (✏️, 👁️
+  y «⋯» con Acciones/JSON/Añadir/Eliminar en un `DisplayActionSheet`) y se quitó un `VerticalStackLayout`
+  → Calendario **~342/310 → ~152 ms**. Correspondencia: las tres lecturas (asunto, cuerpo y adjuntos)
+  van juntas en `Task.Run` → **198 → ~90 ms**. Medición final: Personas 201, Escuelas 148, Asambleas
+  133, Rendimientos 96, Tareas 22, RSC 20, Circuito 20, Actividad 13 ms. Siguiente candidato si hiciera
+  falta: Personas (decodifica la foto de las ~1000 fichas al cargar).
