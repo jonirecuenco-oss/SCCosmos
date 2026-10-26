@@ -1073,6 +1073,55 @@ public static partial class DatabaseHelper
               AND AnioServicio IN ({string.Join(", ", parametrosAnio)});
             """;
 
+        // Historial completo (no solo estos 6 meses): una persona que
+        // informó hace un año y lleva 6 meses sin hacerlo está inactiva.
+        // Antes solo se miraban los 6 meses cargados y esas personas se
+        // contaban como activas (134 en vez de 125).
+        try
+        {
+            using SqliteCommand cmdHistorial =
+                connection.CreateCommand();
+
+            cmdHistorial.CommandText =
+                $"""
+                SELECT DISTINCT PersonaId
+                FROM ActividadPersonas
+                WHERE PersonaId IN ({string.Join(", ", parametrosId)});
+                """;
+
+            for (int i = 0;
+                 i < ids.Length;
+                 i++)
+            {
+                cmdHistorial.Parameters.AddWithValue(
+                    "$p" + i,
+                    ids[i]);
+            }
+
+            var conHistorial =
+                new HashSet<int>();
+
+            using SqliteDataReader lectorHistorial =
+                cmdHistorial.ExecuteReader();
+
+            while (lectorHistorial.Read())
+            {
+                conHistorial.Add(
+                    lectorHistorial.GetInt32(0));
+            }
+
+            foreach (VistaPersonaVisitaMobile persona in
+                     personas)
+            {
+                persona.TieneHistorial =
+                    conHistorial.Contains(
+                        persona.PersonaActividadId);
+            }
+        }
+        catch
+        {
+        }
+
         var porPersona =
             personas
                 .GroupBy(
@@ -1169,7 +1218,7 @@ public static partial class DatabaseHelper
                  in personas)
         {
             bool tieneHistorial =
-                persona.Actividad.Any(a => a.ExisteRegistro);
+                persona.TieneHistorial;
 
             bool reporto =
                 persona.Actividad.Any(a =>
@@ -2538,6 +2587,13 @@ public sealed class VistaPersonaVisitaMobile
     /// previo). No cuenta en estadísticas ni en el número de publicadores.
     /// </summary>
     public bool EsInactivo { get; set; }
+
+    /// <summary>
+    /// Tiene algún informe de actividad en cualquier mes (no solo en
+    /// los 6 que se muestran). Sin historial no se puede saber si está
+    /// inactivo y se deja como activo.
+    /// </summary>
+    public bool TieneHistorial { get; set; }
 }
 
 

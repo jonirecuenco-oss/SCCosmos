@@ -2114,3 +2114,10 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
 - **Rendimientos Android 2.0.5 (semanas)**: separador «TOTAL SEMANA dd/MM – dd/MM» al final de
   cada semana (lunes a domingo), como en Windows, manteniendo el orden de lo más reciente; la
   lista mezcla tarjetas y separadores con un `DataTemplate` que muestra uno u otro.
+- **Recuento de publicadores 2.0.6**: dos ajustes para que la visita cuadre con Windows y con el
+  S-21. (1) La tarjeta «Publicadores» usa `vista.TotalPersonas` (activos **con grupo**): antes
+  contaba todas las fichas no inactivas y daba 130-134 por 6 fichas sin grupo (JW Hub o sin
+  asignar). (2) La inactividad usa `TieneHistorial` calculado con **todo** `ActividadPersonas`
+  (consulta aparte por los ids de la visita), no solo con las 6 filas visibles: quien informó hace
+  más de 6 meses ya se marca inactivo. Verificado en el móvil: **125 publicadores** y 8 grupos en
+  Mérida - Centro.

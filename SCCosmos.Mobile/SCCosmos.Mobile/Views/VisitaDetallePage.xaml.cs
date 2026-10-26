@@ -345,12 +345,11 @@ public partial class VisitaDetallePage
             return;
         }
 
-        // Todas las personas del mes (también las que aún no tienen
-        // grupo), pero SIN los inactivos: no cuentan en ningún total.
+        // Publicadores activos con grupo (los inactivos y las fichas sin
+        // grupo no cuentan), igual que «Publicadores activos» en Windows
+        // y que la suma de los grupos.
         LblPublicadores.Text =
-            _vista.Personas
-                .Count(p => !p.EsInactivo)
-                .ToString();
+            _vista.TotalPersonas.ToString();
 
         LblEdad.Text =
             _vista.MediaEdad > 0
