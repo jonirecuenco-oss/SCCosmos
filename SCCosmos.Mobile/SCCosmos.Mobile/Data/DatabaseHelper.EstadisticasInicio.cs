@@ -90,4 +90,36 @@ public static partial class DatabaseHelper
 
         return lista;
     }
+
+
+    /// <summary>Foto (base64) de una persona, para cargarla bajo demanda.</summary>
+    public static string ObtenerFotoPersonaMobile(int id)
+    {
+        if (id <= 0)
+        {
+            return "";
+        }
+
+        try
+        {
+            using var connection =
+                new SqliteConnection(ConnectionString);
+
+            connection.Open();
+
+            using var cmd =
+                connection.CreateCommand();
+
+            cmd.CommandText =
+                "SELECT COALESCE(Foto, '') FROM Personas WHERE Id = $id LIMIT 1;";
+
+            cmd.Parameters.AddWithValue("$id", id);
+
+            return cmd.ExecuteScalar()?.ToString() ?? "";
+        }
+        catch
+        {
+            return "";
+        }
+    }
 }

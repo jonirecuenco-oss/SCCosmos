@@ -149,11 +149,12 @@ public partial class PersonasPage
             }
 
 
+            // Sin fotos: se piden solo para las fichas visibles.
             _todasLasPersonas =
                 await Task.Run(
                     () =>
                         DatabaseHelper
-                            .ObtenerPersonas()
+                            .ObtenerPersonas(incluirFoto: false)
                             .Where(
                                 p =>
                                     string.IsNullOrWhiteSpace(
@@ -358,7 +359,9 @@ public partial class PersonasPage
 
 
         ListaPersonas.ItemsSource =
-            resultado;
+            resultado
+                .Select(p => new PersonaListaUi(p))
+                .ToList();
 
 
         LblTotal.Text =
@@ -568,16 +571,22 @@ public partial class PersonasPage
         object sender,
         TappedEventArgs e)
     {
-        if (e.Parameter is not
-            Persona persona)
+        int id =
+            e.Parameter switch
+            {
+                PersonaListaUi fila => fila.Id,
+                Persona persona => persona.Id,
+                _ => 0
+            };
+
+        if (id <= 0)
         {
             return;
         }
 
 
         await Navigation.PushAsync(
-            new PersonaDetallePage(
-                persona.Id));
+            new PersonaDetallePage(id));
     }
 
 
@@ -597,6 +606,62 @@ public partial class PersonasPage
     // =========================================================
     // REFRESCAR
     // =========================================================
+
+    /// <summary>
+    /// Fila de la lista: expone lo que pinta la plantilla y carga la foto
+    /// solo cuando la ficha llega a ser visible.
+    /// </summary>
+    public sealed class PersonaListaUi
+    {
+        private static readonly Dictionary<int, string> CacheFotos =
+            new();
+
+        private readonly Persona _persona;
+
+        private string? _foto;
+
+        public PersonaListaUi(Persona persona)
+        {
+            _persona = persona;
+        }
+
+        public int Id => _persona.Id;
+
+        public string NombreMostrarTabla =>
+            _persona.NombreMostrarTabla;
+
+        public string CongregacionNombre =>
+            _persona.CongregacionNombre;
+
+        public string Nombramiento =>
+            _persona.Nombramiento;
+
+        public string Servicio =>
+            _persona.Servicio;
+
+        public string Solicitudes =>
+            _persona.Solicitudes;
+
+        public string Foto
+        {
+            get
+            {
+                if (_foto is null)
+                {
+                    if (!CacheFotos.TryGetValue(_persona.Id, out string? foto))
+                    {
+                        foto = DatabaseHelper.ObtenerFotoPersonaMobile(_persona.Id);
+                        CacheFotos[_persona.Id] = foto;
+                    }
+
+                    _foto = foto;
+                }
+
+                return _foto;
+            }
+        }
+    }
+
 
     private async void RefrescarLista_Refreshing(
         object sender,

@@ -835,7 +835,13 @@ public static partial class DatabaseHelper
         return false;
     }
 
-    public static List<Persona> ObtenerPersonas()
+    /// <summary>
+    /// Personas activas. Con <paramref name="incluirFoto"/> = false se
+    /// omite la foto (puede haber megabytes): la lista la pide solo para
+    /// las fichas visibles.
+    /// </summary>
+    public static List<Persona> ObtenerPersonas(
+        bool incluirFoto = true)
     {
         var lista = new List<Persona>();
 
@@ -846,6 +852,9 @@ public static partial class DatabaseHelper
 
         using var command =
             connection.CreateCommand();
+
+        string columnaFoto =
+            incluirFoto ? "p.Foto" : "''";
 
         command.CommandText = @"
         SELECT
@@ -865,7 +874,7 @@ public static partial class DatabaseHelper
             p.FechaEliminacion,
             p.Solicitudes,
             p.Privilegios,
-            p.Foto,
+            " + columnaFoto + @",
             p.NombreComun,
             p.Telefono,
             p.Email,

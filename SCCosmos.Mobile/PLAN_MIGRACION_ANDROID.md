@@ -2059,3 +2059,8 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   van juntas en `Task.Run` → **198 → ~90 ms**. Medición final: Personas 201, Escuelas 148, Asambleas
   133, Rendimientos 96, Tareas 22, RSC 20, Circuito 20, Actividad 13 ms. Siguiente candidato si hiciera
   falta: Personas (decodifica la foto de las ~1000 fichas al cargar).
+- **Rendimiento 2.0.2 (fotos bajo demanda)**: la lista de Personas cargaba las fotos de las 1016
+  fichas (~6 MB de base64) aunque solo se ven ~8. `ObtenerPersonas(incluirFoto: false)` omite la
+  columna y `PersonaListaUi` la pide con `ObtenerFotoPersonaMobile(Id)` (con caché) al pintar cada
+  fila visible. Personas **201 → ~95–148 ms**. Verificado en el móvil: fotos correctas y la ficha
+  abre bien.
