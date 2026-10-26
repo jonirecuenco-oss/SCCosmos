@@ -44,6 +44,8 @@ public partial class VisitaDetallePage
     private bool _programaPreparado;
     private bool _notasPreparadas;
     private bool _territoriosPreparados;
+    private bool _mapaPreparado;
+    private bool _contabilidadPreparada;
     private bool _s303Preparado;
 
     private DocumentoVisitaMobile? _documentoS303;
@@ -90,8 +92,144 @@ public partial class VisitaDetallePage
         BtnContabilidad.IsVisible = false;
         BtnS303.IsVisible = false;
 
-        // Tampoco ve el selector de meses del Ministerio.
+        // Tampoco ve esas pestañas ni el selector de meses.
+        TabNotas.IsVisible = false;
+        TabTerritorios.IsVisible = false;
+        TabMapa.IsVisible = false;
+        TabContabilidad.IsVisible = false;
+        TabS303.IsVisible = false;
+
         CintaMesMinisterio.IsVisible = false;
+    }
+
+
+    // ========================================================================
+    // PESTAÑAS
+    // ========================================================================
+
+    private async void Tab_Clicked(
+        object? sender,
+        EventArgs e)
+    {
+        if (sender is not Button boton
+            || boton.CommandParameter is not string clave)
+        {
+            return;
+        }
+
+        await MostrarPestanaAsync(clave);
+    }
+
+
+    private async Task MostrarPestanaAsync(string clave)
+    {
+        SeccionMinisterio.IsVisible = clave == "ministerio";
+        SeccionMapa.IsVisible = clave == "mapa";
+        SeccionPrograma.IsVisible = clave == "programa";
+        SeccionNotas.IsVisible = clave == "notas";
+        SeccionInformacion.IsVisible = clave == "informacion";
+        SeccionGrupos.IsVisible = clave == "grupos";
+        SeccionTerritorios.IsVisible = clave == "territorios";
+        SeccionContabilidad.IsVisible = clave == "contabilidad";
+        SeccionS303.IsVisible = clave == "s303";
+
+        PintarPestanaSeleccionada(clave);
+
+        try
+        {
+            await ScrollContenido.ScrollToAsync(
+                0,
+                0,
+                false);
+        }
+        catch
+        {
+        }
+
+        switch (clave)
+        {
+            case "programa":
+                if (!_programaPreparado)
+                {
+                    PintarPrograma();
+                }
+                break;
+
+            case "notas":
+                await PrepararNotasAsync();
+                break;
+
+            case "territorios":
+                if (!_territoriosPreparados)
+                {
+                    PintarTerritorios();
+                }
+                break;
+
+            case "mapa":
+                if (!_mapaPreparado)
+                {
+                    _mapaPreparado = true;
+                    await CargarMapaVisitaAsync();
+                }
+                break;
+
+            case "contabilidad":
+                if (!_contabilidadPreparada)
+                {
+                    _contabilidadPreparada = true;
+                    await CargarContabilidadEditableAsync();
+                }
+                break;
+
+            case "s303":
+                if (!_s303Preparado)
+                {
+                    await CargarS303yS2Async();
+                }
+                break;
+        }
+    }
+
+
+    private void PintarPestanaSeleccionada(
+        string clave)
+    {
+        var botones =
+            new (string Clave, Button Boton)[]
+            {
+                ("ministerio", TabMinisterio),
+                ("mapa", TabMapa),
+                ("programa", TabPrograma),
+                ("notas", TabNotas),
+                ("informacion", TabInformacion),
+                ("grupos", TabGrupos),
+                ("territorios", TabTerritorios),
+                ("contabilidad", TabContabilidad),
+                ("s303", TabS303)
+            };
+
+        foreach ((string claveBoton, Button boton) in botones)
+        {
+            bool activa =
+                claveBoton == clave;
+
+            boton.BackgroundColor =
+                Color.FromArgb(
+                    activa
+                        ? "#1B4E7A"
+                        : "#1A1D22");
+
+            boton.TextColor =
+                activa
+                    ? Colors.White
+                    : Color.FromArgb("#9CC3F5");
+
+            boton.FontAttributes =
+                activa
+                    ? FontAttributes.Bold
+                    : FontAttributes.None;
+        }
     }
 
 
@@ -3496,7 +3634,7 @@ public partial class VisitaDetallePage
     }
 
 
-    private async void BtnCerrar_Clicked(
+    private async void BtnVolver_Clicked(
         object sender,
         EventArgs e)
     {

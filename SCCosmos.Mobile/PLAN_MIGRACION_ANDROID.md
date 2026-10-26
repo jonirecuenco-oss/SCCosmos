@@ -2129,3 +2129,11 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   «PUBLICADORES INACTIVOS (n) · No cuentan en los totales ni en los grupos» antes del bloque de
   inactivos (Windows ya tenía el apartado); verificado en el móvil: Grupo 1 con 16 activos y 2
   inactivos separados.
+- **Visitas con pestañas (Android 2.0.8)**: la página de visita ya no apila todos los apartados.
+  Cabecera con **flecha ←** (vuelve atrás) a la izquierda del título «VISITA / congregación»,
+  botón **Datos** a la derecha y una tira de pestañas desplazable como Windows: **Ministerio**
+  (por defecto), Mapa, Programa, Notas, Información, Grupos, Territorios, Contabilidad y S-303.
+  Cada sección es un `VerticalStackLayout x:Name="Seccion…"` que se muestra u oculta; las pesadas
+  (Mapa, Notas, Contabilidad, S-303) se cargan **al abrir su pestaña** (`_mapaPreparado`,
+  `_contabilidadPreparada`, `_s303Preparado`). El perfil limitado oculta sus pestañas y sigue en
+  Ministerio (sin horas). Medido en el móvil: **VisitaDetalle 410 ms** (Vista 328, Pintar 64).

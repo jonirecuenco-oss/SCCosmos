@@ -7,14 +7,27 @@
     BackgroundColor="#101216"
     Shell.NavBarIsVisible="False" NavigationPage.HasNavigationBar="False">
 
-    <Grid RowDefinitions="Auto,*">
+    <Grid RowDefinitions="Auto,Auto,*">
 
+        <!-- CABECERA: flecha atrás, título y botón Datos -->
         <Grid Grid.Row="0"
-              ColumnDefinitions="*,Auto"
-              Padding="16,14,16,10"
-              ColumnSpacing="10">
+              ColumnDefinitions="Auto,*,Auto"
+              Padding="10,12,16,8"
+              ColumnSpacing="6">
 
-            <VerticalStackLayout Grid.Column="0"
+            <Button Grid.Column="0"
+                    Text="←"
+                    Clicked="BtnVolver_Clicked"
+                    BackgroundColor="#1A1D22"
+                    TextColor="White"
+                    FontSize="20"
+                    Padding="0"
+                    WidthRequest="42"
+                    HeightRequest="40"
+                    CornerRadius="10"
+                    VerticalOptions="Center" />
+
+            <VerticalStackLayout Grid.Column="1"
                                  Spacing="2">
                 <Label x:Name="LblTitulo"
                        Text="VISITA"
@@ -31,26 +44,118 @@
                        TextColor="{StaticResource TextoSecundario}" />
             </VerticalStackLayout>
 
-            <HorizontalStackLayout Grid.Column="1"
-                                   Spacing="6"
-                                   VerticalOptions="Center">
-                <Button Text="Datos"
-                        Clicked="BtnDatos_Clicked"
-                        Style="{StaticResource BotonSecundario}"
-                        HeightRequest="38"
-                        Padding="11,6"
-                        FontSize="12.5" />
-
-                <Button Text="Cerrar"
-                        Clicked="BtnCerrar_Clicked"
-                        Style="{StaticResource BotonSecundario}"
-                        HeightRequest="38"
-                        Padding="11,6"
-                        FontSize="12.5" />
-            </HorizontalStackLayout>
+            <Button Grid.Column="2"
+                    Text="Datos"
+                    Clicked="BtnDatos_Clicked"
+                    Style="{StaticResource BotonSecundario}"
+                    HeightRequest="38"
+                    Padding="11,6"
+                    FontSize="12.5"
+                    VerticalOptions="Center" />
         </Grid>
 
-        <ScrollView Grid.Row="1">
+        <!-- PESTAÑAS -->
+        <ScrollView Grid.Row="1"
+                    Orientation="Horizontal"
+                    HorizontalScrollBarVisibility="Never"
+                    Margin="10,0,10,6">
+            <HorizontalStackLayout Spacing="6">
+
+                <Button x:Name="TabMinisterio"
+                        Text="Ministerio"
+                        Clicked="Tab_Clicked"
+                        CommandParameter="ministerio"
+                        BackgroundColor="#1B4E7A"
+                        TextColor="White"
+                        FontSize="12.5"
+                        FontAttributes="Bold"
+                        CornerRadius="9"
+                        Padding="12,7" />
+
+                <Button x:Name="TabMapa"
+                        Text="Mapa"
+                        Clicked="Tab_Clicked"
+                        CommandParameter="mapa"
+                        BackgroundColor="#1A1D22"
+                        TextColor="#9CC3F5"
+                        FontSize="12.5"
+                        CornerRadius="9"
+                        Padding="12,7" />
+
+                <Button x:Name="TabPrograma"
+                        Text="Programa"
+                        Clicked="Tab_Clicked"
+                        CommandParameter="programa"
+                        BackgroundColor="#1A1D22"
+                        TextColor="#9CC3F5"
+                        FontSize="12.5"
+                        CornerRadius="9"
+                        Padding="12,7" />
+
+                <Button x:Name="TabNotas"
+                        Text="Notas"
+                        Clicked="Tab_Clicked"
+                        CommandParameter="notas"
+                        BackgroundColor="#1A1D22"
+                        TextColor="#9CC3F5"
+                        FontSize="12.5"
+                        CornerRadius="9"
+                        Padding="12,7" />
+
+                <Button x:Name="TabInformacion"
+                        Text="Información"
+                        Clicked="Tab_Clicked"
+                        CommandParameter="informacion"
+                        BackgroundColor="#1A1D22"
+                        TextColor="#9CC3F5"
+                        FontSize="12.5"
+                        CornerRadius="9"
+                        Padding="12,7" />
+
+                <Button x:Name="TabGrupos"
+                        Text="Grupos"
+                        Clicked="Tab_Clicked"
+                        CommandParameter="grupos"
+                        BackgroundColor="#1A1D22"
+                        TextColor="#9CC3F5"
+                        FontSize="12.5"
+                        CornerRadius="9"
+                        Padding="12,7" />
+
+                <Button x:Name="TabTerritorios"
+                        Text="Territorios"
+                        Clicked="Tab_Clicked"
+                        CommandParameter="territorios"
+                        BackgroundColor="#1A1D22"
+                        TextColor="#9CC3F5"
+                        FontSize="12.5"
+                        CornerRadius="9"
+                        Padding="12,7" />
+
+                <Button x:Name="TabContabilidad"
+                        Text="Contabilidad"
+                        Clicked="Tab_Clicked"
+                        CommandParameter="contabilidad"
+                        BackgroundColor="#1A1D22"
+                        TextColor="#9CC3F5"
+                        FontSize="12.5"
+                        CornerRadius="9"
+                        Padding="12,7" />
+
+                <Button x:Name="TabS303"
+                        Text="S-303"
+                        Clicked="Tab_Clicked"
+                        CommandParameter="s303"
+                        BackgroundColor="#1A1D22"
+                        TextColor="#9CC3F5"
+                        FontSize="12.5"
+                        CornerRadius="9"
+                        Padding="12,7" />
+            </HorizontalStackLayout>
+        </ScrollView>
+
+        <ScrollView x:Name="ScrollContenido"
+                    Grid.Row="2">
             <VerticalStackLayout Padding="16,0,16,28"
                                  Spacing="12">
 
@@ -95,6 +200,10 @@
                                 Margin="0,6,0,0" />
                     </VerticalStackLayout>
                 </Border>
+
+                <VerticalStackLayout x:Name="SeccionInformacion"
+                                     IsVisible="False"
+                                     Spacing="12">
 
                 <Label Text="Resumen de la congregación"
                        TextColor="White"
@@ -228,6 +337,12 @@
                     </Border>
                 </Grid>
 
+                </VerticalStackLayout>
+
+                <VerticalStackLayout x:Name="SeccionGrupos"
+                                     IsVisible="False"
+                                     Spacing="12">
+
                 <Label Text="Grupos de predicación"
                        TextColor="White"
                        FontAttributes="Bold"
@@ -302,6 +417,11 @@
                         </DataTemplate>
                     </CollectionView.ItemTemplate>
                 </CollectionView>
+
+                </VerticalStackLayout>
+
+                <VerticalStackLayout x:Name="SeccionMinisterio"
+                                     Spacing="12">
 
                 <Grid ColumnDefinitions="*,Auto"
                       Margin="0,6,0,0">
@@ -590,12 +710,19 @@
                     </CollectionView.ItemTemplate>
                 </CollectionView>
 
+                </VerticalStackLayout>
+
+                <VerticalStackLayout x:Name="SeccionPrograma"
+                                     IsVisible="False"
+                                     Spacing="7">
+
                 <Grid ColumnDefinitions="*,Auto"
                       ColumnSpacing="7"
-                      Margin="-16,6,-16,0">
+                      Margin="0,0,0,0">
                     <Button x:Name="BtnPrograma"
                             Text="Programa de la visita"
                             Clicked="BtnPrograma_Clicked"
+                            IsVisible="False"
                             BackgroundColor="#1B2433"
                             BorderWidth="0"
                             TextColor="#9CC3F5"
@@ -616,7 +743,7 @@
                 </Grid>
 
                 <VerticalStackLayout x:Name="PanelPrograma"
-                                     IsVisible="False"
+                                     IsVisible="True"
                                      Spacing="7">
 
                     <Button Text="Importar programa desde JSON"
@@ -709,9 +836,16 @@
                     </CollectionView>
                 </VerticalStackLayout>
 
+                </VerticalStackLayout>
+
+                <VerticalStackLayout x:Name="SeccionNotas"
+                                     IsVisible="False"
+                                     Spacing="7">
+
                 <Button x:Name="BtnNotas"
                         Text="Notas personales de la visita"
                         Clicked="BtnNotas_Clicked"
+                        IsVisible="False"
                         BackgroundColor="#1B2433"
                         BorderWidth="0"
                         TextColor="#9CC3F5"
@@ -720,10 +854,10 @@
                         HorizontalOptions="Fill"
                         CornerRadius="0"
                         Padding="16,13"
-                        Margin="-16,6,-16,0" />
+                        Margin="0" />
 
                 <VerticalStackLayout x:Name="PanelNotasContenedor"
-                                     IsVisible="False"
+                                     IsVisible="True"
                                      Spacing="8">
 
                     <Picker x:Name="PickerCategoriaNotas"
@@ -742,9 +876,16 @@
                                          Spacing="8" />
                 </VerticalStackLayout>
 
+                </VerticalStackLayout>
+
+                <VerticalStackLayout x:Name="SeccionTerritorios"
+                                     IsVisible="False"
+                                     Spacing="7">
+
                 <Button x:Name="BtnTerritorios"
                         Text="Territorios (S-13)"
                         Clicked="BtnTerritorios_Clicked"
+                        IsVisible="False"
                         BackgroundColor="#1B2433"
                         BorderWidth="0"
                         TextColor="#9CC3F5"
@@ -753,10 +894,10 @@
                         HorizontalOptions="Fill"
                         CornerRadius="0"
                         Padding="16,13"
-                        Margin="-16,6,-16,0" />
+                        Margin="0" />
 
                 <VerticalStackLayout x:Name="PanelTerritorios"
-                                     IsVisible="False"
+                                     IsVisible="True"
                                      Spacing="7">
                     <Label x:Name="LblTotalTerritorios"
                            TextColor="#9EA4AE"
@@ -843,9 +984,16 @@
                     </CollectionView>
                 </VerticalStackLayout>
 
+                </VerticalStackLayout>
+
+                <VerticalStackLayout x:Name="SeccionMapa"
+                                     IsVisible="False"
+                                     Spacing="7">
+
                 <Button x:Name="BtnMapa"
                         Text="Mapa"
                         Clicked="BtnMapa_Clicked"
+                        IsVisible="False"
                         BackgroundColor="#1B2433"
                         BorderWidth="0"
                         TextColor="#9CC3F5"
@@ -854,10 +1002,10 @@
                         HorizontalOptions="Fill"
                         CornerRadius="0"
                         Padding="16,13"
-                        Margin="-16,6,-16,0" />
+                        Margin="0" />
 
                 <VerticalStackLayout x:Name="PanelMapa"
-                                     IsVisible="False"
+                                     IsVisible="True"
                                      Spacing="7">
 
                     <Label x:Name="LblMapaEstado"
@@ -875,9 +1023,16 @@
                     </Border>
                 </VerticalStackLayout>
 
+                </VerticalStackLayout>
+
+                <VerticalStackLayout x:Name="SeccionContabilidad"
+                                     IsVisible="False"
+                                     Spacing="7">
+
                 <Button x:Name="BtnContabilidad"
                         Text="Contabilidad"
                         Clicked="BtnContabilidad_Clicked"
+                        IsVisible="False"
                         BackgroundColor="#1B2433"
                         BorderWidth="0"
                         TextColor="#9CC3F5"
@@ -886,10 +1041,10 @@
                         HorizontalOptions="Fill"
                         CornerRadius="0"
                         Padding="16,13"
-                        Margin="-16,6,-16,0" />
+                        Margin="0" />
 
                 <VerticalStackLayout x:Name="PanelContabilidad"
-                                     IsVisible="False"
+                                     IsVisible="True"
                                      Spacing="8">
 
                     <Grid ColumnDefinitions="Auto,*,Auto"
@@ -923,9 +1078,16 @@
                                          Spacing="8" />
                 </VerticalStackLayout>
 
+                </VerticalStackLayout>
+
+                <VerticalStackLayout x:Name="SeccionS303"
+                                     IsVisible="False"
+                                     Spacing="7">
+
                 <Button x:Name="BtnS303"
                         Text="S-303 y S-2"
                         Clicked="BtnS303_Clicked"
+                        IsVisible="False"
                         BackgroundColor="#1B2433"
                         BorderWidth="0"
                         TextColor="#9CC3F5"
@@ -934,10 +1096,10 @@
                         HorizontalOptions="Fill"
                         CornerRadius="0"
                         Padding="16,13"
-                        Margin="-16,6,-16,0" />
+                        Margin="0" />
 
                 <VerticalStackLayout x:Name="PanelS303"
-                                     IsVisible="False"
+                                     IsVisible="True"
                                      Spacing="10">
 
                     <Border BackgroundColor="{StaticResource Superficie}"
@@ -1065,6 +1227,8 @@
                                     CornerRadius="9" />
                         </VerticalStackLayout>
                     </Border>
+                </VerticalStackLayout>
+
                 </VerticalStackLayout>
 
             </VerticalStackLayout>
