@@ -27,6 +27,36 @@ public static partial class DatabaseHelper
     public static bool ExisteBaseLocal =>
         File.Exists(DatabasePaths.RutaLocal);
 
+    /// <summary>
+    /// Personas actuales de este móvil (sin las copias históricas).
+    /// Sirve para comparar de un vistazo si un dispositivo tiene los
+    /// mismos datos que los demás.
+    /// </summary>
+    public static int ContarPersonasMobile()
+    {
+        try
+        {
+            using var conexion =
+                new SqliteConnection(ConnectionString);
+
+            conexion.Open();
+
+            using var cmd =
+                conexion.CreateCommand();
+
+            cmd.CommandText =
+                "SELECT COUNT(*) FROM Personas WHERE MesHistorico IS NULL;";
+
+            return Convert.ToInt32(
+                cmd.ExecuteScalar());
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
+
     public static ResumenBaseDatos ObtenerResumenPrueba()
     {
         if (!ExisteBaseLocal)

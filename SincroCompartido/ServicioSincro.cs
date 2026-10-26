@@ -727,6 +727,16 @@ public sealed class ServicioSincro
     }
 
 
+    /// <summary>
+    /// Fuerza que la próxima conexión intercambie el estado completo con
+    /// todos los dispositivos (repara uno que se quedó con datos viejos).
+    /// </summary>
+    public void ReiniciarIntercambio()
+    {
+        _almacen.ReiniciarIntercambio();
+    }
+
+
     // ========================================================
     // SESIÓN CON UN DISPOSITIVO
     // ========================================================

@@ -345,10 +345,12 @@ public partial class VisitaDetallePage
             return;
         }
 
-        // Mostramos todas las personas presentes en el S-21 del mes,
-        // también las que todavía no tienen grupo asignado.
+        // Todas las personas del mes (también las que aún no tienen
+        // grupo), pero SIN los inactivos: no cuentan en ningún total.
         LblPublicadores.Text =
-            _vista.Personas.Count.ToString();
+            _vista.Personas
+                .Count(p => !p.EsInactivo)
+                .ToString();
 
         LblEdad.Text =
             _vista.MediaEdad > 0

@@ -669,6 +669,23 @@ public sealed class SincroAlmacen
     // MARCAS DE AGUA POR DISPOSITIVO
     // ========================================================
 
+    /// <summary>
+    /// Olvida hasta dónde se había intercambiado con cada dispositivo:
+    /// la próxima conexión vuelve a enviar y recibir el estado completo.
+    /// Cada cambio se aplica solo si es más reciente que el que ya hay,
+    /// así que sirve para reparar un dispositivo con datos viejos.
+    /// </summary>
+    public void ReiniciarIntercambio()
+    {
+        using var conexion =
+            Abrir();
+
+        Ejecutar(
+            conexion,
+            $"DELETE FROM {TablaPares};");
+    }
+
+
     public (long UltimoEnviado, long UltimoRecibido) ObtenerPar(
         string idPar)
     {

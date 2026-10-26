@@ -280,12 +280,62 @@ public partial class ConfiguracionPage : ContentPage
             LblEstadoSincro.Text =
                 SincronizacionMobile.EstadoTexto;
 
+            int personas =
+                DatabaseHelper.ContarPersonasMobile();
+
+            string ultima =
+                SincronizacionMobile.UltimaRecepcion;
+
+            LblDatosLocales.Text =
+                ultima.Length == 0
+                    ? $"Personas en este móvil: {personas} · Aún no se han recibido cambios de otro dispositivo."
+                    : $"Personas en este móvil: {personas} · Última recepción de cambios: {ultima}.";
+
             BindableLayout.SetItemsSource(
                 ListaDispositivosSincro,
                 SincronizacionMobile.ObtenerDispositivosVista());
         }
         catch
         {
+        }
+    }
+
+
+    private async void BtnRepararSincro_Click(
+        object? sender,
+        EventArgs e)
+    {
+        bool continuar =
+            await DisplayAlert(
+                "Re-sincronizar todo",
+                "Se pedirá a los demás dispositivos su estado completo y se enviará el de este móvil. " +
+                "Úsalo si aquí ves datos más antiguos que en los otros equipos. ¿Continuar?",
+                "Sí, reparar",
+                "Cancelar");
+
+        if (!continuar)
+        {
+            return;
+        }
+
+        try
+        {
+            SincronizacionMobile.ReiniciarIntercambio();
+
+            RefrescarSincro();
+
+            await DisplayAlert(
+                "Re-sincronización",
+                "Hecho. Deja la app abierta y cerca de los otros dispositivos unos segundos: " +
+                "los datos que faltaban irán llegando solos.",
+                "Vale");
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert(
+                "Re-sincronización",
+                "No se pudo reiniciar: " + ex.Message,
+                "Vale");
         }
     }
 

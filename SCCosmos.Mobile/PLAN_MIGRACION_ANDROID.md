@@ -2087,3 +2087,13 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   Archivo 173–254, Rendimientos 127–132, Tareas 32–41, Actividad 117–136, Descargas 183–197,
   Correspondencia 186–197, Configuración 96–129 ms. Arranque Windows **~234 ms** (base 127, sync
   +100, Inicio 22).
+- **Corrección 2.0.4 (contador de publicadores e inactivos)**: la tarjeta «Publicadores» de la
+  visita en Android usaba `_vista.Personas.Count` (todas las fichas del mes, incluidas las
+  inactivas) → ahora cuenta solo las activas (`!EsInactivo`): en Mérida - Centro, **149 → 125**
+  (Windows ya mostraba «Publicadores activos» correctamente). Además, Configuración →
+  Sincronización muestra «Personas en este móvil: N · Última recepción de cambios: fecha» y un
+  botón **Re-sincronizar todo (reparar datos)**: borra los contadores por dispositivo
+  (`SincroAlmacen.ReiniciarIntercambio`), reinicia el motor y la próxima conexión intercambia el
+  estado completo (cada fila se resuelve por fecha: gana la más reciente). Sirve para un móvil
+  que se haya quedado con datos viejos (p. ej., 95 personas y 5 grupos en vez de 125 y 8).
+  La «última recepción» se guarda en `SCCosmos_UltimaRecepcionSync` al aplicar cambios.

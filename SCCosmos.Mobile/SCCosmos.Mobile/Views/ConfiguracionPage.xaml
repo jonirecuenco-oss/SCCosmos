@@ -361,6 +361,22 @@
                         FontSize="13"
                         LineBreakMode="WordWrap"/>
 
+                    <Label
+                        x:Name="LblDatosLocales"
+                        Text=""
+                        TextColor="#9EA4AE"
+                        FontSize="12"
+                        LineBreakMode="WordWrap"/>
+
+                    <Button
+                        x:Name="BtnRepararSincro"
+                        Text="Re-sincronizar todo (reparar datos)"
+                        Clicked="BtnRepararSincro_Click"
+                        BackgroundColor="#242830"
+                        TextColor="White"
+                        CornerRadius="9"
+                        Padding="10,7"/>
+
                 </VerticalStackLayout>
             </Border>
 

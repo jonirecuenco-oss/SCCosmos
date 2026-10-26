@@ -63,6 +63,19 @@ public static class SincronizacionMobile
     private static DateTime _ultimoVaciado =
         DateTime.MinValue;
 
+    private const string ClaveUltimaRecepcion =
+        "SCCosmos_UltimaRecepcionSync";
+
+
+    /// <summary>
+    /// Cuándo llegaron por última vez cambios de otro dispositivo
+    /// (dd/MM/yyyy HH:mm). Sirve para detectar un móvil con datos viejos.
+    /// </summary>
+    public static string UltimaRecepcion =>
+        Preferences.Default.Get(
+            ClaveUltimaRecepcion,
+            "");
+
 
     /// <summary>
     /// Envía ahora lo que quede pendiente (dispositivos vinculados y
@@ -577,13 +590,59 @@ public static class SincronizacionMobile
         try
         {
             servicio.DatosRecibidos +=
-                n => DatosRecibidos?.Invoke(n);
+                n =>
+                {
+                    if (n > 0)
+                    {
+                        Preferences.Default.Set(
+                            ClaveUltimaRecepcion,
+                            DateTime.Now.ToString(
+                                "dd/MM/yyyy HH:mm"));
+                    }
+
+                    DatosRecibidos?.Invoke(n);
+                };
         }
         catch
         {
         }
 
         return servicio;
+    }
+
+
+    /// <summary>
+    /// Repara un móvil que se quedó con datos viejos: olvida los
+    /// contadores de intercambio y reinicia el motor, de modo que la
+    /// próxima conexión reciba (y envíe) el estado completo.
+    /// </summary>
+    public static void ReiniciarIntercambio()
+    {
+        try
+        {
+            _servicio?.Detener();
+
+            _servicio =
+                null;
+
+            if (_almacen is null
+                && _config is not null)
+            {
+                _almacen =
+                    new SincroAlmacen(
+                        DatabasePaths.RutaLocal,
+                        _config.IdDispositivo);
+
+                _almacen.Asegurar();
+            }
+
+            _almacen?.ReiniciarIntercambio();
+
+            Aplicar();
+        }
+        catch
+        {
+        }
     }
 
 
