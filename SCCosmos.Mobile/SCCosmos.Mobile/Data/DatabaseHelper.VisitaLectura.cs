@@ -219,6 +219,40 @@ public static partial class DatabaseHelper
 
         connection.Open();
 
+        // Un mes solo cuenta como «con datos» si informó una parte
+        // significativa de los publicadores (10 %, mínimo 2), igual que
+        // en Windows. Así el mes en curso, con una o dos fichas
+        // sueltas, no aparece como columna vacía.
+        int activos = 0;
+
+        using (SqliteCommand cmdActivos =
+               connection.CreateCommand())
+        {
+            cmdActivos.CommandText =
+                """
+                SELECT COUNT(*)
+                FROM Personas
+                WHERE CongregacionCodigo = $codigo
+                  AND MesHistorico IS NULL
+                  AND Grupo > 0
+                  AND (FechaEliminacion IS NULL OR FechaEliminacion = '');
+                """;
+
+            cmdActivos.Parameters.AddWithValue(
+                "$codigo",
+                codigo);
+
+            activos =
+                Convert.ToInt32(
+                    cmdActivos.ExecuteScalar());
+        }
+
+        int minimo =
+            Math.Max(
+                2,
+                (int)Math.Ceiling(
+                    activos * 0.10));
+
         using SqliteCommand cmd =
             connection.CreateCommand();
 
@@ -227,20 +261,32 @@ public static partial class DatabaseHelper
             SELECT
                 lower(COALESCE(a.Mes, '')),
                 COALESCE(a.AnioServicio, ''),
-                COALESCE(a.Participacion, 0),
-                COALESCE(a.Horas, '')
+                COUNT(DISTINCT a.PersonaId)
             FROM ActividadPersonas a
             JOIN Personas p
               ON p.Id = a.PersonaId
-            WHERE p.CongregacionCodigo = $codigo;
+            WHERE p.CongregacionCodigo = $codigo
+              AND p.MesHistorico IS NULL
+              AND (
+                    a.Participacion = 1
+                    OR CAST(
+                           REPLACE(
+                               REPLACE(
+                                   TRIM(COALESCE(a.Horas, '0')),
+                                   ' ', ''),
+                               ',', '.')
+                           AS REAL) > 0)
+            GROUP BY
+                lower(COALESCE(a.Mes, '')),
+                COALESCE(a.AnioServicio, '');
             """;
 
         cmd.Parameters.AddWithValue(
             "$codigo",
             codigo);
 
-        DateTime maximo =
-            DateTime.MinValue;
+        var conteo =
+            new Dictionary<DateTime, int>();
 
         using SqliteDataReader reader =
             cmd.ExecuteReader();
@@ -260,29 +306,10 @@ public static partial class DatabaseHelper
                     1)
                     .Trim();
 
-            bool participacion =
-                LeerBool(
-                    reader,
-                    2);
-
-            string horas =
-                LeerTexto(
-                    reader,
-                    3);
-
-            bool hayHoras =
-                double.TryParse(
-                    horas.Replace(",", "."),
-                    NumberStyles.Any,
-                    CultureInfo.InvariantCulture,
-                    out double horasValor)
-                && horasValor > 0;
-
-            if (!participacion
-                && !hayHoras)
-            {
-                continue;
-            }
+            int informaron =
+                reader.IsDBNull(2)
+                    ? 0
+                    : reader.GetInt32(2);
 
             int indiceMes =
                 Array.IndexOf(
@@ -302,21 +329,31 @@ public static partial class DatabaseHelper
                     ? anio - 1
                     : anio;
 
-            var fecha =
-                new DateTime(
-                    year,
-                    indiceMes + 1,
-                    1);
-
-            if (fecha > maximo)
-            {
-                maximo = fecha;
-            }
+            conteo[new DateTime(
+                year,
+                indiceMes + 1,
+                1)] = informaron;
         }
 
-        return maximo == DateTime.MinValue
-            ? null
-            : maximo;
+        if (conteo.Count == 0)
+        {
+            return null;
+        }
+
+        var validos =
+            conteo
+                .Where(par => par.Value >= minimo)
+                .Select(par => par.Key)
+                .ToList();
+
+        // Si ningún mes llega al umbral (congregaciones pequeñas o
+        // datos incompletos), se usa el último con cualquier dato.
+        DateTime maximo =
+            validos.Count > 0
+                ? validos.Max()
+                : conteo.Keys.Max();
+
+        return maximo;
     }
 
 

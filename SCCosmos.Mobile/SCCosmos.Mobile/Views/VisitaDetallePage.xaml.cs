@@ -623,6 +623,7 @@ public partial class VisitaDetallePage
                     string.Join(" · ", datosMinisterio),
                 FotoSource = CrearFotoSource(p.Foto),
                 TieneAlertaHoras = p.TieneAlertaHoras,
+                EsInactivo = p.EsInactivo,
                 RequisitoHoras = p.RequisitoHorasCalculado,
                 HorasAcumuladas = p.HorasServicioAcumuladas,
                 MetaHoras = p.MetaHorasProrrateada,
@@ -883,13 +884,17 @@ public partial class VisitaDetallePage
     {
         if (_personasUi.Count == 0)
         {
-            ListaPersonas.ItemsSource = _personasUi;
+            MostrarPersonas(
+                _personasUi);
+
             return;
         }
 
         if (PickerGrupo.SelectedItem is not string textoGrupo)
         {
-            ListaPersonas.ItemsSource = _personasUi;
+            MostrarPersonas(
+                _personasUi);
+
             return;
         }
 
@@ -898,10 +903,10 @@ public partial class VisitaDetallePage
                 "Sin asignar",
                 StringComparison.OrdinalIgnoreCase))
         {
-            ListaPersonas.ItemsSource =
+            MostrarPersonas(
                 _personasUi
                     .Where(p => p.Grupo <= 0)
-                    .ToList();
+                    .ToList());
 
             return;
         }
@@ -913,14 +918,53 @@ public partial class VisitaDetallePage
                         .ToArray()),
                 out int grupo))
         {
-            ListaPersonas.ItemsSource = _personasUi;
+            MostrarPersonas(
+                _personasUi);
+
             return;
         }
 
-        ListaPersonas.ItemsSource =
+        MostrarPersonas(
             _personasUi
                 .Where(p => p.Grupo == grupo)
+                .ToList());
+    }
+
+
+    /// <summary>
+    /// Pinta las personas con un apartado claro para los inactivos (no
+    /// cuentan en los totales ni en los grupos, pero se siguen viendo).
+    /// </summary>
+    private void MostrarPersonas(
+        List<PersonaVisitaUi> personas)
+    {
+        var filas =
+            new List<PersonaVisitaUi>();
+
+        filas.AddRange(
+            personas.Where(p => !p.EsInactivo));
+
+        List<PersonaVisitaUi> inactivos =
+            personas
+                .Where(p => p.EsInactivo)
                 .ToList();
+
+        if (inactivos.Count > 0)
+        {
+            filas.Add(
+                new PersonaVisitaUi
+                {
+                    EsSeparador = true,
+                    TextoSeparador =
+                        $"PUBLICADORES INACTIVOS ({inactivos.Count})"
+                });
+
+            filas.AddRange(
+                inactivos);
+        }
+
+        ListaPersonas.ItemsSource =
+            filas;
     }
 
 
@@ -3468,6 +3512,16 @@ public partial class VisitaDetallePage
 public sealed class PersonaVisitaUi
 {
     public int PersonaId { get; set; }
+
+    public bool EsInactivo { get; set; }
+
+    /// <summary>Fila separadora («PUBLICADORES INACTIVOS»).</summary>
+    public bool EsSeparador { get; set; }
+
+    public bool EsPersona =>
+        !EsSeparador;
+
+    public string TextoSeparador { get; set; } = "";
 
     public bool MostrarCuadrosHoras { get; set; } = true;
 

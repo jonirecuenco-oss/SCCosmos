@@ -287,40 +287,28 @@ namespace SCCosmos
             var filasSemana =
                 new List<DatabaseHelper.DonacionBD>();
 
-            DateTime lunesActual = DateTime.MinValue;
-            double totalSemana = 0;
-
-            foreach (var donacion in _donaciones
+            // El total de cada semana va ARRIBA de sus registros.
+            foreach (var semana in _donaciones
                 .OrderBy(d => DateTime.TryParse(d.Fecha, out DateTime ff)
                     ? ff
-                    : DateTime.MaxValue))
-            {
-                DateTime fecha =
-                    DateTime.TryParse(donacion.Fecha, out DateTime f)
-                        ? f.Date
-                        : DateTime.Today;
-
-                DateTime lunes =
-                    fecha.AddDays(-(((int)fecha.DayOfWeek + 6) % 7));
-
-                if (lunesActual != DateTime.MinValue
-                    && lunes != lunesActual)
+                    : DateTime.MaxValue)
+                .GroupBy(d =>
                 {
-                    filasSemana.Add(
-                        CrearSeparadorSemana(lunesActual, totalSemana, cultura));
+                    DateTime fecha =
+                        DateTime.TryParse(d.Fecha, out DateTime f)
+                            ? f.Date
+                            : DateTime.Today;
 
-                    totalSemana = 0;
-                }
-
-                lunesActual = lunes;
-                filasSemana.Add(donacion);
-                totalSemana += donacion.Cantidad;
-            }
-
-            if (lunesActual != DateTime.MinValue)
+                    return fecha.AddDays(-(((int)fecha.DayOfWeek + 6) % 7));
+                }))
             {
                 filasSemana.Add(
-                    CrearSeparadorSemana(lunesActual, totalSemana, cultura));
+                    CrearSeparadorSemana(
+                        semana.Key,
+                        semana.Sum(d => d.Cantidad),
+                        cultura));
+
+                filasSemana.AddRange(semana);
             }
 
             TablaDonaciones.ItemsSource =

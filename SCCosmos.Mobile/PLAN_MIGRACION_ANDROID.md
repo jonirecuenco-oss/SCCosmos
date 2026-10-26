@@ -2121,3 +2121,11 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   (consulta aparte por los ids de la visita), no solo con las 6 filas visibles: quien informó hace
   más de 6 meses ya se marca inactivo. Verificado en el móvil: **125 publicadores** y 8 grupos en
   Mérida - Centro.
+- **Retoques 2.0.7**: (1) Rendimientos: el total de cada semana va **arriba** de sus registros
+  (Android y Windows), no al final. (2) Visitas: el bloque de predicación termina en el último mes
+  con actividad **significativa** (≥10 % de los publicadores con grupo, mínimo 2), igual que
+  `CalcularMaximoMesActividad` en Windows; así octubre (con 1 informe suelto) ya no aparece como
+  columna vacía y el bloque queda Abr–Sep. (3) Visitas Android: separador visible
+  «PUBLICADORES INACTIVOS (n) · No cuentan en los totales ni en los grupos» antes del bloque de
+  inactivos (Windows ya tenía el apartado); verificado en el móvil: Grupo 1 con 16 activos y 2
+  inactivos separados.

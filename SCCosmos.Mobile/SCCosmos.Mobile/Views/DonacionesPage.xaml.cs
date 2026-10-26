@@ -277,15 +277,7 @@ public partial class DonacionesPage : ContentPage, IActualizableMobile
 
         foreach (var semana in semanas)
         {
-            foreach (DonacionMobile donacion in semana)
-            {
-                filas.Add(
-                    new FilaRendimientoUi
-                    {
-                        Donacion = donacion
-                    });
-            }
-
+            // El total va ARRIBA de los registros de la semana.
             filas.Add(
                 new FilaRendimientoUi
                 {
@@ -299,6 +291,15 @@ public partial class DonacionesPage : ContentPage, IActualizableMobile
                         semana.Sum(d => d.Cantidad)
                             .ToString("N2", cultura) + " €"
                 });
+
+            foreach (DonacionMobile donacion in semana)
+            {
+                filas.Add(
+                    new FilaRendimientoUi
+                    {
+                        Donacion = donacion
+                    });
+            }
         }
 
         return filas;
