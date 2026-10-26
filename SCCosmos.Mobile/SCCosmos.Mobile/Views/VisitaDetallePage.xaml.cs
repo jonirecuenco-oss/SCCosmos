@@ -63,7 +63,6 @@ public partial class VisitaDetallePage
 
         _semana = semana;
 
-        LblTitulo.Text = "VISITA";
         LblCongregacion.Text = semana.Congregacion ?? "";
         LblPeriodo.Text = semana.RangoFechas;
 
@@ -564,9 +563,24 @@ public partial class VisitaDetallePage
 
     private void PintarMesMinisterio()
     {
+        // Abreviado para que quepa junto al selector de grupos
+        // («Sept 2026», «Oct 2026»…).
         LblMesMinisterio.Text =
-            FormatearMesCompleto(
+            FormatearMesCorto(
                 _mesMinisterio);
+    }
+
+
+    private static string FormatearMesCorto(DateTime fecha)
+    {
+        string texto =
+            fecha.ToString(
+                "MMM yyyy",
+                new CultureInfo("es-ES"));
+
+        return texto.Length == 0
+            ? ""
+            : char.ToUpper(texto[0]) + texto.Substring(1);
     }
 
 
@@ -762,6 +776,33 @@ public partial class VisitaDetallePage
             datosMinisterio.Add("INACTIVO");
         }
 
+        string nombramiento =
+            (p.Nombramiento ?? "")
+                .Trim()
+                .ToLowerInvariant();
+
+        string servicio =
+            (p.Servicio ?? "")
+                .Trim()
+                .ToLowerInvariant();
+
+        string etiquetaNombramiento =
+            nombramiento.Contains("anciano")
+                ? "A"
+                : (nombramiento.Contains("siervo")
+                   || nombramiento.Contains("ministerial"))
+                    ? "SM"
+                    : "";
+
+        string etiquetaServicio =
+            servicio.Contains("especial")
+                ? "PEsp"
+                : servicio.Contains("misionero")
+                    ? "Mis."
+                    : servicio.Contains("precursor")
+                        ? "PR"
+                        : "";
+
         var ui =
             new PersonaVisitaUi
             {
@@ -769,6 +810,8 @@ public partial class VisitaDetallePage
                 MostrarCuadrosHoras = PerfilAccesoService.AccesoCompleto,
                 Grupo = p.Grupo,
                 NombreVisual = p.NombreVisual,
+                EtiquetaNombramiento = etiquetaNombramiento,
+                EtiquetaServicio = etiquetaServicio,
                 DatosMinisterio =
                     string.Join(" · ", datosMinisterio),
                 FotoSource = CrearFotoSource(p.Foto),
@@ -3841,6 +3884,18 @@ public partial class VisitaDetallePage
 public sealed class PersonaVisitaUi
 {
     public int PersonaId { get; set; }
+
+    /// <summary>«A» (anciano) o «SM» (siervo ministerial).</summary>
+    public string EtiquetaNombramiento { get; set; } = "";
+
+    public bool MostrarNombramiento =>
+        !string.IsNullOrWhiteSpace(EtiquetaNombramiento);
+
+    /// <summary>«PR», «PEsp» o «Mis.».</summary>
+    public string EtiquetaServicio { get; set; } = "";
+
+    public bool MostrarServicio =>
+        !string.IsNullOrWhiteSpace(EtiquetaServicio);
 
     public bool EsInactivo { get; set; }
 

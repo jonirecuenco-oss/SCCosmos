@@ -17,11 +17,6 @@
                                  VerticalOptions="Center"
                                  Spacing="2"
                                  Margin="58,0">
-                <Label x:Name="LblTitulo"
-                       Text="VISITA"
-                       Style="{StaticResource Antetitulo}"
-                       HorizontalTextAlignment="Center" />
-
                 <Label x:Name="LblCongregacion"
                        FontSize="19"
                        FontAttributes="Bold"
@@ -484,17 +479,15 @@
 
                             <Border BackgroundColor="{StaticResource Superficie}"
                                     Stroke="{StaticResource Borde}"
-                                    Padding="12"
-                                    Margin="0,0,0,9"
+                                    Padding="10"
+                                    Margin="0,0,0,7"
                                     IsVisible="{Binding EsPersona}">
                                 <Border.StrokeShape>
                                     <RoundRectangle CornerRadius="11" />
                                 </Border.StrokeShape>
 
-                                <Grid RowDefinitions="Auto,Auto"
-                                      ColumnDefinitions="66,*"
-                                      ColumnSpacing="11"
-                                      RowSpacing="10">
+                                <Grid ColumnDefinitions="58,*"
+                                      ColumnSpacing="10">
 
                                     <VerticalStackLayout Grid.Row="0"
                                                          Grid.Column="0"
@@ -506,12 +499,12 @@
                                                 Tapped="PersonaVisita_Tapped" />
                                         </VerticalStackLayout.GestureRecognizers>
 
-                                        <Border WidthRequest="54"
-                                                HeightRequest="54"
+                                        <Border WidthRequest="50"
+                                                HeightRequest="50"
                                                 BackgroundColor="#242830"
                                                 StrokeThickness="0">
                                             <Border.StrokeShape>
-                                                <RoundRectangle CornerRadius="27" />
+                                                <RoundRectangle CornerRadius="25" />
                                             </Border.StrokeShape>
                                             <Image Source="{Binding FotoSource}"
                                                    Aspect="AspectFill" />
@@ -529,39 +522,63 @@
                                                 Tapped="PersonaVisita_Tapped" />
                                         </VerticalStackLayout.GestureRecognizers>
 
-                                        <Label Text="{Binding NombreVisual}"
-                                               TextColor="White"
-                                               FontAttributes="Bold"
-                                               FontSize="15" />
+                                        <!-- Nombre + abreviaturas + aviso -->
+                                        <FlexLayout Direction="Row"
+                                                    Wrap="Wrap"
+                                                    AlignItems="Center">
 
-                                        <Grid ColumnDefinitions="Auto,Auto,*"
-                                              ColumnSpacing="4"
-                                              IsVisible="{Binding MostrarDatosMinisterio}">
-                                            <Label Text="{Binding DatosMinisterio}"
-                                                   TextColor="#B6BBC2"
-                                                   FontSize="11"
+                                            <Label Text="{Binding NombreVisual}"
+                                                   TextColor="White"
+                                                   FontAttributes="Bold"
+                                                   FontSize="14.5"
+                                                   Margin="0,0,6,0"
                                                    VerticalTextAlignment="Center" />
 
-                                            <Button Grid.Column="1"
-                                                    Text="⚠"
+                                            <Border BackgroundColor="#2E2418"
+                                                    StrokeThickness="0"
+                                                    Padding="5,1"
+                                                    Margin="0,0,4,0"
+                                                    IsVisible="{Binding MostrarNombramiento}">
+                                                <Border.StrokeShape>
+                                                    <RoundRectangle CornerRadius="4" />
+                                                </Border.StrokeShape>
+                                                <Label Text="{Binding EtiquetaNombramiento}"
+                                                       TextColor="#FFAA75"
+                                                       FontSize="10"
+                                                       FontAttributes="Bold" />
+                                            </Border>
+
+                                            <Border BackgroundColor="#1B2A20"
+                                                    StrokeThickness="0"
+                                                    Padding="5,1"
+                                                    Margin="0,0,4,0"
+                                                    IsVisible="{Binding MostrarServicio}">
+                                                <Border.StrokeShape>
+                                                    <RoundRectangle CornerRadius="4" />
+                                                </Border.StrokeShape>
+                                                <Label Text="{Binding EtiquetaServicio}"
+                                                       TextColor="#7ED889"
+                                                       FontSize="10"
+                                                       FontAttributes="Bold" />
+                                            </Border>
+
+                                            <Button Text="⚠"
                                                     IsVisible="{Binding MostrarAlertaHoras}"
                                                     CommandParameter="{Binding .}"
                                                     Clicked="AdvertenciaHoras_Clicked"
                                                     BackgroundColor="Transparent"
                                                     TextColor="#FFD38A"
-                                                    FontSize="17"
+                                                    FontSize="15"
                                                     Padding="0"
-                                                    Margin="2,0,0,0"
-                                                    WidthRequest="32"
-                                                    HeightRequest="30" />
-                                        </Grid>
-                                    </VerticalStackLayout>
+                                                    WidthRequest="24"
+                                                    HeightRequest="22" />
+                                        </FlexLayout>
 
-                                    <Grid Grid.Row="1"
-                                          Grid.ColumnSpan="2"
-                                          IsVisible="{Binding MostrarCuadrosHoras}"
-                                          ColumnDefinitions="*,*,*,*,*,*"
-                                          ColumnSpacing="4">
+                                        <!-- 6 últimos meses de actividad -->
+                                        <Grid Margin="0,4,0,0"
+                                              IsVisible="{Binding MostrarCuadrosHoras}"
+                                              ColumnDefinitions="*,*,*,*,*,*"
+                                              ColumnSpacing="4">
 
                                         <Border Grid.Column="0"
                                                 BackgroundColor="{Binding Actividad1.Fondo}"
@@ -690,30 +707,21 @@
                                                     SemanticProperties.Description="Abrir detalle del mes" />
                                             </Grid>
                                         </Border>
-                                    </Grid>
+                                        </Grid>
+                                    </VerticalStackLayout>
                                 </Grid>
                             </Border>
 
                             <!-- Separación clara de los inactivos -->
                             <Border BackgroundColor="#2A2117"
-                                    Stroke="#7A5A2E"
-                                    StrokeThickness="1"
-                                    Padding="12,9"
-                                    Margin="0,6,0,9"
+                                    StrokeThickness="0"
+                                    Padding="16,8"
+                                    Margin="-16,8,-16,6"
                                     IsVisible="{Binding EsSeparador}">
-                                <Border.StrokeShape>
-                                    <RoundRectangle CornerRadius="10" />
-                                </Border.StrokeShape>
-
-                                <VerticalStackLayout Spacing="2">
-                                    <Label Text="{Binding TextoSeparador}"
-                                           TextColor="#FFD38A"
-                                           FontSize="13"
-                                           FontAttributes="Bold" />
-                                    <Label Text="No cuentan en los totales ni en los grupos"
-                                           TextColor="#C9A86A"
-                                           FontSize="11" />
-                                </VerticalStackLayout>
+                                <Label Text="{Binding TextoSeparador}"
+                                       TextColor="#FFD38A"
+                                       FontSize="13"
+                                       FontAttributes="Bold" />
                             </Border>
 
                             </Grid>

@@ -2151,3 +2151,12 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   la carta se genera **antes** de tocar Hub y solo con los «Sí». Si Hub o la carta fallan, no se
   prepara el correo. Verificado en el móvil: cabecera centrada, Ministerio con Septiembre 2026,
   Programa estilo Inicio y selector Sí/No en Mess, Joshue.
+- **Visitas compacta (Android 2.0.10)**: (1) fuera la palabra «VISITA» del encabezado (quedan
+  congregación y periodo, centrados); (2) el mes del selector se abrevia con `FormatearMesCorto`
+  («MMM yyyy» es-ES → **Sept 2026**); (3) tarjetas de personas comprimidas: foto de 50 px a la
+  izquierda y a la derecha el nombre con chips de **A** (anciano), **SM** (siervo ministerial),
+  **PR** (precursor regular), **PEsp** (especial) o **Mis.** (misionero) y, justo debajo, los
+  6 meses de actividad (antes iban en una fila aparte); el aviso ⚠ queda junto al nombre;
+  (4) el separador de inactivos es una banda a todo el ancho, sin recuadro ni subtítulo, solo
+  «PUBLICADORES INACTIVOS (n)». Verificado en el móvil: cabecera sin «VISITA», «Sept 2026»,
+  tarjetas con A/PR y SM/PR y banda de inactivos a ancho completo.
