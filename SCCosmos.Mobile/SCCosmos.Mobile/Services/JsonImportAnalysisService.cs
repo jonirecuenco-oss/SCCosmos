@@ -53,8 +53,24 @@ public static class JsonImportAnalysisService
             Territorios = territorios
         };
 
+        // Una persona puede venir en varios años de servicio (una tarjeta
+        // por año): la ficha se revisa una sola vez; la actividad de cada
+        // año se guarda al finalizar (PersonasJson conserva todas).
+        var nombresProcesados =
+            new HashSet<string>(
+                StringComparer.OrdinalIgnoreCase);
+
         foreach (PersonaJsonMobile json in personasJson)
         {
+            string nombreJson =
+                (json.Nombre ?? "").Trim();
+
+            if (nombreJson.Length > 0
+                && !nombresProcesados.Add(nombreJson))
+            {
+                continue;
+            }
+
             Persona? match = BuscarMatchSeguro(json, personasDB, procesadosDB);
 
             if (match is null)

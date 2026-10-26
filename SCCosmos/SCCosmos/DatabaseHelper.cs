@@ -1468,6 +1468,12 @@ namespace SCCosmos
                 {
                     string fechaExacta = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
+                    // Una persona puede venir en varios años de servicio
+                    // (una tarjeta por año): la ficha y la instantánea
+                    // histórica se guardan una sola vez por persona; la
+                    // actividad se guarda para cada año.
+                    var yaProcesadas = new HashSet<long>();
+
                     foreach (var p in listaPersonas)
                     {
                         long personaActualId = 0;
@@ -1481,6 +1487,12 @@ namespace SCCosmos
                         if (idObj != null)
                         {
                             personaActualId = (long)idObj;
+
+                            // Ya procesada en otro año: no se repite la
+                            // instantánea ni la actualización de la ficha;
+                            // solo se añade su actividad de ese año.
+                            if (yaProcesadas.Add(personaActualId))
+                            {
                             var cmdClone = connection.CreateCommand();
                             cmdClone.Transaction = transaction;
 
@@ -1518,6 +1530,7 @@ namespace SCCosmos
                             cmdUpd.Parameters.AddWithValue("$grupo", p.Grupo);
                             cmdUpd.Parameters.AddWithValue("$id", personaActualId);
                             cmdUpd.ExecuteNonQuery();
+                            }
                         }
                         else
                         {
@@ -1539,6 +1552,13 @@ namespace SCCosmos
 
                             var res = cmdInsert.ExecuteScalar();
                             if (res != null) personaActualId = Convert.ToInt64(res);
+
+                            // Ya queda procesada: si vuelve por otro año,
+                            // no se repite la ficha.
+                            if (personaActualId > 0)
+                            {
+                                yaProcesadas.Add(personaActualId);
+                            }
                         }
 
                         if (personaActualId > 0 && p.Informe != null)

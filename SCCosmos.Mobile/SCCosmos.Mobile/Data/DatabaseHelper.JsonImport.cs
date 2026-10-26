@@ -164,12 +164,35 @@ public static partial class DatabaseHelper
                     personaId,
                     resultado.MesReferencia);
 
-                GuardarActividadJson(
-                    connection,
-                    tx,
-                    personaId,
-                    resultado.MesReferencia,
-                    item.PersonaJson);
+                // La misma persona puede traer varios años de servicio
+                // (una tarjeta por año): se guarda la actividad de CADA
+                // año, no solo la de la tarjeta que se revisó.
+                string nombreItem =
+                    (item.PersonaJson.Nombre ?? "").Trim();
+
+                var tarjetasPersona =
+                    resultado.PersonasJson
+                        .Where(j => string.Equals(
+                            (j.Nombre ?? "").Trim(),
+                            nombreItem,
+                            StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+
+                if (tarjetasPersona.Count == 0)
+                {
+                    tarjetasPersona.Add(item.PersonaJson);
+                }
+
+                foreach (PersonaJsonMobile tarjeta
+                         in tarjetasPersona)
+                {
+                    GuardarActividadJson(
+                        connection,
+                        tx,
+                        personaId,
+                        resultado.MesReferencia,
+                        tarjeta);
+                }
             }
 
 

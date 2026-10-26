@@ -49,8 +49,27 @@ namespace SCCosmos
 
             var procesadosDB = new HashSet<int>();
 
+            // Una persona puede venir en varios años de servicio (una
+            // tarjeta por año): la ficha se compara una sola vez y la
+            // actividad de cada año se guarda al finalizar.
+            var nombresProcesados = new HashSet<string>(
+                StringComparer.OrdinalIgnoreCase);
+
             foreach (var jsonItem in _listaJson)
             {
+                if (jsonItem == null)
+                {
+                    continue;
+                }
+
+                string nombreJson = (jsonItem.Nombre ?? "").Trim();
+
+                if (nombreJson.Length > 0
+                    && !nombresProcesados.Add(nombreJson))
+                {
+                    continue;
+                }
+
                 // Convierte el JSON en un objeto Persona "falso" para usarlo luego en la fusión
                 Persona personaDesdeJson = ConvertirJsonAPersona(jsonItem);
 

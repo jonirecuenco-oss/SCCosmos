@@ -194,7 +194,13 @@ public static class ConvertidorS21
 
             foreach (var tarjeta in tarjetas)
             {
-                string clave = ClaveNombre(tarjeta.Nombre);
+                // Una tarjeta por persona y AÑO DE SERVICIO: la misma
+                // persona puede tener actividad en varios años (por
+                // ejemplo, los PDF de 2026 y de 2027). Solo se descartan
+                // los duplicados de la misma persona en el mismo año.
+                string clave = ClaveNombre(tarjeta.Nombre)
+                    + "|"
+                    + (tarjeta.AnioServicio ?? "").Trim();
 
                 if (!vistos.Add(clave))
                 {
@@ -216,6 +222,15 @@ public static class ConvertidorS21
         int anioServicio)
     {
         var lista = new List<TarjetaS21>();
+
+        // Si el nombre del archivo indica el año (S-21_2027, S-21 2026...),
+        // se usa para las tarjetas que no lo traen impreso.
+        int anioArchivo = AnioDelNombre(Path.GetFileName(ruta));
+
+        if (anioArchivo > 0)
+        {
+            anioServicio = anioArchivo;
+        }
 
         // 1) Intento en solo lectura (rápido): formulario rellenable.
         bool hayAnotaciones = false;

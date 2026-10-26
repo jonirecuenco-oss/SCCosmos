@@ -1966,3 +1966,11 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   `TarjetaAntigua` y `TarjetaImpresa` (C#) y a la herramienta `Herramientas\convertir_s21.py`;
   `DetectarCasillas` ya no confunde el borde de una casilla con una marca. Verificado con los dos
   PDF de Mérida Centro: 147 tarjetas, 55 con horas, 28 con cursos (antes: 0 con horas).
+- **S-21 · un registro por persona y año (1.8.4)**: la deduplicación de `ConvertirCarpeta` (y de
+  `convertir_s21.py`) usaba solo el nombre, así que los PDF de varios años se pisaban. Ahora la clave
+  es nombre + año de servicio y, si el nombre del archivo trae el año (`S-21_2027…`), se usa como año
+  por defecto para las tarjetas que no lo imprimen. Diálogos de importación (Windows `SyncJsonWindow`,
+  Android `JsonImportAnalysisService`): la ficha se revisa una vez por persona, pero la actividad se
+  guarda de TODOS los años (`FinalizarImportacionJson` recorre `PersonasJson`), y
+  `GuardarVersionHistoricaJSON` evita clonar dos veces la instantánea histórica. Mérida Centro:
+  147 → 279 registros (INFANTE, Jose Manuel: 2026 = 50 h y 2027 = 40 h).
