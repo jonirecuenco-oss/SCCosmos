@@ -40,6 +40,10 @@ public partial class TareaEdicionPage : ContentPage
     };
 
 
+    /// <summary>Categoría con la que se abre una tarea nueva.</summary>
+    public string CategoriaInicial { get; set; } = "Personal";
+
+
     public TareaEdicionPage(
         Tarea? tarea)
     {
@@ -85,8 +89,49 @@ public partial class TareaEdicionPage : ContentPage
         BtnEliminar.IsVisible =
             !_esNueva;
 
+        // La esposa no ve la categoría: todo lo suyo es personal.
+        if (!PerfilAccesoService.EsHombre)
+        {
+            PckCategoria.IsVisible = false;
+        }
+
         CargarEnFormulario();
+
+        // Para una tarea nueva se usa la pestaña desde la que se crea.
+        Loaded += (s, e) =>
+        {
+            if (_esNueva)
+            {
+                SeleccionarCategoria(CategoriaInicial);
+            }
+        };
     }
+
+
+    private void SeleccionarCategoria(string categoria)
+    {
+        string buscada = string.IsNullOrWhiteSpace(categoria)
+            ? "Personal"
+            : categoria.Trim();
+
+        for (int i = 0; i < PckCategoria.Items.Count; i++)
+        {
+            if (string.Equals(
+                    PckCategoria.Items[i],
+                    buscada,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                PckCategoria.SelectedIndex = i;
+                return;
+            }
+        }
+
+        PckCategoria.SelectedIndex = 0;
+    }
+
+
+    private string CategoriaSeleccionada() =>
+        PckCategoria.SelectedItem as string ?? "Personal";
 
 
     private void CargarEnFormulario()
@@ -96,6 +141,8 @@ public partial class TareaEdicionPage : ContentPage
 
         TxtDescripcion.Text =
             _tarea.Descripcion;
+
+        SeleccionarCategoria(_tarea.Categoria);
 
         if (DateTime.TryParse(
                 _tarea.FechaInicio,
@@ -267,6 +314,11 @@ public partial class TareaEdicionPage : ContentPage
 
             tarea.Compartida =
                 SwCompartir.IsToggled;
+
+            tarea.Categoria =
+                PerfilAccesoService.EsHombre
+                    ? CategoriaSeleccionada()
+                    : "Personal";
 
             if (string.IsNullOrWhiteSpace(tarea.CreadaPor))
             {

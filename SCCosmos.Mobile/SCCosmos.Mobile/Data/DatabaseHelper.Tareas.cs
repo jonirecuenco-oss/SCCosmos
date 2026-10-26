@@ -19,6 +19,7 @@ public static partial class DatabaseHelper
             Repeticion TEXT DEFAULT 'Ninguna',
             Compartida INTEGER DEFAULT 0,
             Completada INTEGER DEFAULT 0,
+            Categoria TEXT DEFAULT 'Personal',
             CreadaPor TEXT DEFAULT '',
             FechaCreacion TEXT DEFAULT '',
             UltimaModificacion TEXT DEFAULT ''
@@ -31,6 +32,8 @@ public static partial class DatabaseHelper
             new SqliteConnection(ConnectionString);
 
         connection.Open();
+
+        AsegurarCategoriaTareasMobile(connection);
 
         AsegurarTablaTareasEnConexion(
             connection);
@@ -52,6 +55,74 @@ public static partial class DatabaseHelper
             SqlTablaTareas;
 
         cmd.ExecuteNonQuery();
+
+        AsegurarCategoriaTareasMobile(connection);
+    }
+
+
+    /// <summary>
+    /// Añade la columna Categoria a bases antiguas y etiqueta como
+    /// «Calendario» las tareas de trámites (solo la primera vez).
+    /// </summary>
+    private static void AsegurarCategoriaTareasMobile(
+        SqliteConnection connection)
+    {
+        try
+        {
+            bool tieneCategoria = false;
+
+            using (var info = connection.CreateCommand())
+            {
+                info.CommandText = "PRAGMA table_info(Tareas);";
+
+                using var lector = info.ExecuteReader();
+
+                while (lector.Read())
+                {
+                    if (!lector.IsDBNull(1)
+                        && string.Equals(
+                            lector.GetString(1),
+                            "Categoria",
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        tieneCategoria = true;
+                    }
+                }
+            }
+
+            if (tieneCategoria)
+            {
+                return;
+            }
+
+            using (var alter = connection.CreateCommand())
+            {
+                alter.CommandText =
+                    "ALTER TABLE Tareas ADD COLUMN Categoria TEXT DEFAULT 'Personal';";
+                alter.ExecuteNonQuery();
+            }
+
+            using var migrar = connection.CreateCommand();
+            migrar.CommandText =
+                """
+                UPDATE Tareas
+                SET Categoria = 'Calendario'
+                WHERE lower(Titulo) LIKE '%s-303%'
+                   OR lower(Titulo) LIKE '%s-302%'
+                   OR lower(Titulo) LIKE '%s-21%'
+                   OR lower(Titulo) LIKE '%betel%'
+                   OR lower(Titulo) LIKE '%documentaci%'
+                   OR lower(Titulo) LIKE '%nombramiento%'
+                   OR lower(Titulo) LIKE '%territorio%'
+                   OR lower(Titulo) LIKE '%informe%'
+                   OR lower(Titulo) LIKE '%envio%'
+                   OR lower(Titulo) LIKE '%envío%';
+                """;
+            migrar.ExecuteNonQuery();
+        }
+        catch
+        {
+        }
     }
 
 
@@ -86,7 +157,8 @@ public static partial class DatabaseHelper
                 Completada,
                 CreadaPor,
                 FechaCreacion,
-                UltimaModificacion
+                UltimaModificacion,
+                COALESCE(Categoria, 'Personal')
             FROM Tareas
             ORDER BY FechaInicio ASC, Id ASC;";
 
@@ -110,7 +182,8 @@ public static partial class DatabaseHelper
                 Completada = !reader.IsDBNull(10) && reader.GetInt32(10) == 1,
                 CreadaPor = reader.IsDBNull(11) ? "" : reader.GetString(11),
                 FechaCreacion = reader.IsDBNull(12) ? "" : reader.GetString(12),
-                UltimaModificacion = reader.IsDBNull(13) ? "" : reader.GetString(13)
+                UltimaModificacion = reader.IsDBNull(13) ? "" : reader.GetString(13),
+                Categoria = reader.IsDBNull(14) ? "Personal" : reader.GetString(14)
             });
         }
 
@@ -168,11 +241,11 @@ public static partial class DatabaseHelper
                 INSERT INTO Tareas
                     (Titulo, Descripcion, FechaInicio, FechaFin, TodoElDia,
                      Hora, AvisoMinutos, Repeticion, Compartida, Completada,
-                     CreadaPor, FechaCreacion, UltimaModificacion)
+                     Categoria, CreadaPor, FechaCreacion, UltimaModificacion)
                 VALUES
                     ($titulo, $descripcion, $inicio, $fin, $todoElDia,
                      $hora, $aviso, $repeticion, $compartida, $completada,
-                     $creadaPor, $fechaCreacion, $ultimaModificacion);
+                     $categoria, $creadaPor, $fechaCreacion, $ultimaModificacion);
                 SELECT last_insert_rowid();";
         }
         else
@@ -189,6 +262,7 @@ public static partial class DatabaseHelper
                     Repeticion = $repeticion,
                     Compartida = $compartida,
                     Completada = $completada,
+                    Categoria = $categoria,
                     CreadaPor = $creadaPor,
                     FechaCreacion = $fechaCreacion,
                     UltimaModificacion = $ultimaModificacion
@@ -209,6 +283,8 @@ public static partial class DatabaseHelper
         cmd.Parameters.AddWithValue("$repeticion", tarea.Repeticion ?? "Ninguna");
         cmd.Parameters.AddWithValue("$compartida", tarea.Compartida ? 1 : 0);
         cmd.Parameters.AddWithValue("$completada", tarea.Completada ? 1 : 0);
+        cmd.Parameters.AddWithValue("$categoria",
+            string.IsNullOrWhiteSpace(tarea.Categoria) ? "Personal" : tarea.Categoria);
         cmd.Parameters.AddWithValue("$creadaPor", tarea.CreadaPor ?? "");
         cmd.Parameters.AddWithValue("$fechaCreacion", tarea.FechaCreacion ?? "");
         cmd.Parameters.AddWithValue("$ultimaModificacion", tarea.UltimaModificacion ?? "");

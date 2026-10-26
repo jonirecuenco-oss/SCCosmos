@@ -48,10 +48,15 @@ namespace SCCosmos
 
             // ------- columnas calculadas para la tabla -------
 
+            // Fila separadora con el total de una semana.
+            public bool EsSeparador { get; set; }
+
+            public string TextoSeparador { get; set; } = "";
+
             public string FechaVisual =>
-                string.IsNullOrWhiteSpace(Fecha)
+                EsSeparador
                     ? ""
-                    : Fecha;
+                    : (string.IsNullOrWhiteSpace(Fecha) ? "" : Fecha);
 
             public string CantidadVisual =>
                 Cantidad.ToString(
@@ -59,16 +64,20 @@ namespace SCCosmos
                     CultureInfo.GetCultureInfo("es-ES")) + " €";
 
             public string PersonaVisual =>
-                string.IsNullOrWhiteSpace(NombrePersona)
-                    ? DonanteDesconocido
-                    : NombrePersona;
+                EsSeparador
+                    ? TextoSeparador
+                    : (string.IsNullOrWhiteSpace(NombrePersona)
+                        ? DonanteDesconocido
+                        : NombrePersona);
 
             public string CongregacionVisual =>
-                !string.IsNullOrWhiteSpace(CongregacionNombre)
-                    ? CongregacionNombre
-                    : (string.IsNullOrWhiteSpace(CongregacionCodigo)
-                        ? ""
-                        : CongregacionCodigo);
+                EsSeparador
+                    ? ""
+                    : (!string.IsNullOrWhiteSpace(CongregacionNombre)
+                        ? CongregacionNombre
+                        : (string.IsNullOrWhiteSpace(CongregacionCodigo)
+                            ? ""
+                            : CongregacionCodigo));
 
             public bool EsDesconocido =>
                 PersonaId <= 0;

@@ -28,6 +28,20 @@
                 </VerticalStackLayout>
 
                 <VerticalStackLayout Spacing="4">
+                    <Label Text="Categoría"
+                           Style="{StaticResource TextoNota}" />
+                    <Picker x:Name="PckCategoria"
+                            TextColor="White"
+                            BackgroundColor="#1A1D22">
+                        <Picker.Items>
+                            <x:String>Personal</x:String>
+                            <x:String>Calendario</x:String>
+                            <x:String>Asambleas</x:String>
+                        </Picker.Items>
+                    </Picker>
+                </VerticalStackLayout>
+
+                <VerticalStackLayout Spacing="4">
                     <Label Text="Descripción"
                            Style="{StaticResource TextoNota}" />
                     <Editor x:Name="TxtDescripcion"

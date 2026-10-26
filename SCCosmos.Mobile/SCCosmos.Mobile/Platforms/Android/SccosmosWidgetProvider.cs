@@ -58,6 +58,27 @@ public class SccosmosWidgetProvider : AppWidgetProvider
     private const string AccionTareaOk =
         "sccosmos_widget_tarea_ok";
 
+    // Acción única para los elementos de la lista: en un widget de
+    // colección los clics de las filas se envían con «fill-in intents»
+    // sobre esta plantilla, no con PendingIntent por vista.
+    internal const string AccionItem =
+        "sccosmos.widget.item";
+
+    internal const string ExtraAccionItem =
+        "w_accion";
+
+    internal const string ExtraTareaItem =
+        "w_tarea";
+
+    internal const string ExtraAlertaItem =
+        "w_alerta";
+
+    internal const string ExtraConsultaItem =
+        "w_consulta";
+
+    internal const string ExtraDestinoItem =
+        "w_destino";
+
     private const string AccionAlertaOk =
         "sccosmos_widget_alerta_ok";
 
@@ -154,6 +175,12 @@ public class SccosmosWidgetProvider : AppWidgetProvider
         string accion =
             intent?.Action ?? "";
 
+        if (accion == AccionItem)
+        {
+            EjecutarAccionItem(context, intent);
+            return;
+        }
+
         if (accion == AccionDiaAtras
             || accion == AccionDiaAdelante)
         {
@@ -212,6 +239,201 @@ public class SccosmosWidgetProvider : AppWidgetProvider
         }
 
         base.OnReceive(context, intent);
+    }
+
+
+    /// <summary>
+    /// Ejecuta lo que se ha pulsado en una fila de la lista del widget.
+    /// </summary>
+    private static void EjecutarAccionItem(
+        Context? contexto,
+        Intent? intent)
+    {
+        if (contexto is null || intent is null)
+        {
+            return;
+        }
+
+        string accion =
+            intent.GetStringExtra(ExtraAccionItem) ?? "";
+
+        switch (accion)
+        {
+            case "tarea":
+            {
+                int id = intent.GetIntExtra(ExtraTareaItem, 0);
+
+                if (id > 0)
+                {
+                    DatabaseHelper.MarcarTareaCompletadaMobile(id, true);
+                    ActualizarTodos();
+                }
+
+                break;
+            }
+
+            case "alerta":
+            {
+                string firma =
+                    intent.GetStringExtra(ExtraAlertaItem) ?? "";
+
+                if (firma.Length > 0)
+                {
+                    Services.AlertasMobileService.MarcarLeidaPorFirma(firma);
+
+                    _ = Services.AlertasNotificacionService.ActualizarAsync();
+
+                    ActualizarTodos();
+                }
+
+                break;
+            }
+
+            case "mapa":
+            {
+                string consulta =
+                    intent.GetStringExtra(ExtraConsultaItem) ?? "";
+
+                if (consulta.Length > 0)
+                {
+                    try
+                    {
+                        var uri =
+                            global::Android.Net.Uri.Parse(
+                                "https://www.google.com/maps/search/?api=1&query="
+                                + global::Android.Net.Uri.Encode(consulta));
+
+                        var ver =
+                            new Intent(Intent.ActionView, uri);
+
+                        ver.AddFlags(ActivityFlags.NewTask);
+
+                        contexto.StartActivity(ver);
+                    }
+                    catch
+                    {
+                    }
+                }
+
+                break;
+            }
+
+            case "horas":
+            {
+                try
+                {
+                    var horas =
+                        new Intent(contexto, typeof(HorasDialogActivity));
+
+                    horas.AddFlags(ActivityFlags.NewTask);
+
+                    contexto.StartActivity(horas);
+                }
+                catch
+                {
+                }
+
+                break;
+            }
+
+            default:
+            {
+                string destino =
+                    intent.GetStringExtra(ExtraDestinoItem) ?? "";
+
+                Intent? abrir =
+                    contexto.PackageManager?.GetLaunchIntentForPackage(
+                        contexto.PackageName ?? "");
+
+                if (abrir is not null)
+                {
+                    if (destino.Length > 0)
+                    {
+                        abrir.PutExtra(ExtraDestino, destino);
+                    }
+
+                    abrir.AddFlags(ActivityFlags.NewTask);
+
+                    try
+                    {
+                        contexto.StartActivity(abrir);
+                    }
+                    catch
+                    {
+                    }
+                }
+
+                break;
+            }
+        }
+    }
+
+
+    /// <summary>Plantilla de clic para las filas de la lista.</summary>
+    private static PendingIntent? CrearPlantillaItem(Context contexto)
+    {
+        try
+        {
+            var intencion =
+                new Intent(contexto, typeof(SccosmosWidgetProvider));
+
+            intencion.SetAction(AccionItem);
+
+            return PendingIntent.GetBroadcast(
+                contexto,
+                4890,
+                intencion,
+                PendingIntentFlags.Mutable
+                | PendingIntentFlags.UpdateCurrent);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+
+    /// <summary>Rellena el clic de un elemento de la lista.</summary>
+    internal static void PonerClicItem(
+        RemoteViews vistas,
+        int idVista,
+        string accion,
+        int tarea = 0,
+        string alerta = "",
+        string consulta = "",
+        string destino = "")
+    {
+        try
+        {
+            var relleno = new Intent();
+
+            relleno.PutExtra(ExtraAccionItem, accion);
+
+            if (tarea > 0)
+            {
+                relleno.PutExtra(ExtraTareaItem, tarea);
+            }
+
+            if (!string.IsNullOrWhiteSpace(alerta))
+            {
+                relleno.PutExtra(ExtraAlertaItem, alerta);
+            }
+
+            if (!string.IsNullOrWhiteSpace(consulta))
+            {
+                relleno.PutExtra(ExtraConsultaItem, consulta);
+            }
+
+            if (!string.IsNullOrWhiteSpace(destino))
+            {
+                relleno.PutExtra(ExtraDestinoItem, destino);
+            }
+
+            vistas.SetOnClickFillInIntent(idVista, relleno);
+        }
+        catch
+        {
+        }
     }
 
 
@@ -345,6 +567,15 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                     id,
                     Resource.Id.widget_lista,
                     intencion);
+
+                PendingIntent? plantilla = CrearPlantillaItem(contexto);
+
+                if (plantilla is not null)
+                {
+                    vistas.SetPendingIntentTemplate(
+                        Resource.Id.widget_lista,
+                        plantilla);
+                }
             }
             catch
             {

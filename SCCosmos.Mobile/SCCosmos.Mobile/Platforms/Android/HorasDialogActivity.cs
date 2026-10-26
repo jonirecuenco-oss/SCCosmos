@@ -3,10 +3,14 @@ using System;
 namespace SCCosmos.Mobile.Platforms.Android;
 
 // =============================================================
-// VENTANITA EMERGENTE DEL WIDGET: AÑADIR HORAS Y CBs
+// VENTANITA EMERGENTE DEL WIDGET: HORAS Y CBs DE UN DÍA
 //
 // Se abre como un diálogo flotante sobre el escritorio (pantalla
 // de inicio): NO trae al frente la interfaz de la app.
+//
+// Por defecto muestra el día de hoy; al cambiar de día se cargan las
+// horas y CBs guardados ese día y al guardar se actualizan (el total
+// del mes se recalcula solo).
 // =============================================================
 
 [global::Android.App.Activity(
@@ -20,6 +24,19 @@ public class HorasDialogActivity : global::Android.App.Activity
     public static event Action? AlGuardar;
 
 
+    private DateTime _fecha = DateTime.Today;
+
+    private global::Android.Widget.Button? _botonFecha;
+
+    private global::Android.Widget.EditText? _horasTexto;
+
+    private global::Android.Widget.EditText? _cbsTexto;
+
+    private global::Android.Widget.TextView? _estadoDia;
+
+    private string _usuario = "SC";
+
+
     protected override void OnCreate(
         global::Android.OS.Bundle? savedInstanceState)
     {
@@ -30,34 +47,27 @@ public class HorasDialogActivity : global::Android.App.Activity
             SetContentView(
                 Resource.Layout.dialog_horas);
 
-            string usuario =
+            _usuario =
                 SCCosmos.Mobile.Services
                     .PerfilAccesoService.EsHombre
                     ? "SC"
                     : "Esposa";
 
-            string mes =
-                DateTime.Today.ToString("yyyy-MM");
+            _botonFecha =
+                FindViewById<global::Android.Widget.Button>(
+                    Resource.Id.dialog_horas_fecha);
 
-            var mesVista =
-                FindViewById<global::Android.Widget.TextView>(
-                    Resource.Id.dialog_horas_mes);
-
-            if (mesVista != null)
-            {
-                mesVista.Text =
-                    DateTime.Today.ToString(
-                        "MMMM yyyy",
-                        new System.Globalization.CultureInfo("es-ES"));
-            }
-
-            var horasTexto =
+            _horasTexto =
                 FindViewById<global::Android.Widget.EditText>(
                     Resource.Id.dialog_horas_horas);
 
-            var cbsTexto =
+            _cbsTexto =
                 FindViewById<global::Android.Widget.EditText>(
                     Resource.Id.dialog_horas_cbs);
+
+            _estadoDia =
+                FindViewById<global::Android.Widget.TextView>(
+                    Resource.Id.dialog_horas_estado_dia);
 
             var cancelar =
                 FindViewById<global::Android.Widget.Button>(
@@ -68,80 +78,172 @@ public class HorasDialogActivity : global::Android.App.Activity
                 cancelar.Click += (s, e) => Finish();
             }
 
-            var anadir =
+            if (_botonFecha != null)
+            {
+                _botonFecha.Click += (s, e) => ElegirDia();
+            }
+
+            var guardar =
                 FindViewById<global::Android.Widget.Button>(
                     Resource.Id.dialog_horas_anadir);
 
-            if (anadir == null)
+            if (guardar == null)
             {
                 return;
             }
 
-            anadir.Click += (s, e) =>
-            {
-                try
-                {
-                    double horas = 0;
+            guardar.Click += (s, e) => Guardar();
 
-                    double.TryParse(
-                        (horasTexto?.Text ?? "")
-                            .Trim()
-                            .Replace(',', '.'),
-                        System.Globalization.NumberStyles.Any,
-                        System.Globalization.CultureInfo.InvariantCulture,
-                        out horas);
-
-                    int cbs = 0;
-
-                    int.TryParse(
-                        (cbsTexto?.Text ?? "").Trim(),
-                        out cbs);
-
-                    if (horas < 0)
-                    {
-                        horas = 0;
-                    }
-
-                    if (cbs < 0)
-                    {
-                        cbs = 0;
-                    }
-
-                    if (horas > 0 || cbs > 0)
-                    {
-                        SCCosmos.Mobile.Data.DatabaseHelper
-                            .SumarPredicacionMesMobile(
-                                usuario,
-                                mes,
-                                horas,
-                                cbs);
-
-                        SCCosmos.Mobile.Data.DatabaseHelper
-                            .AnotarActividadMobile(
-                                "Predicación",
-                                "Añadió al mes: "
-                                + (horas > 0 ? $"{horas:0.#} h" : "")
-                                + (horas > 0 && cbs > 0 ? " y " : "")
-                                + (cbs > 0 ? $"{cbs} CB" + (cbs == 1 ? "" : "s") : "")
-                                + $" ({usuario})");
-
-                        SccosmosWidgetProvider
-                            .ActualizarTodos();
-
-                        AlGuardar?.Invoke();
-                    }
-
-                    Finish();
-                }
-                catch
-                {
-                    Finish();
-                }
-            };
+            CargarDia();
         }
         catch
         {
             Finish();
         }
+    }
+
+
+    private void ElegirDia()
+    {
+        try
+        {
+            var dialogo =
+                new global::Android.App.DatePickerDialog(
+                    this,
+                    (s, e) =>
+                    {
+                        _fecha = new DateTime(
+                            e.Year,
+                            e.Month + 1,
+                            e.DayOfMonth);
+
+                        CargarDia();
+                    },
+                    _fecha.Year,
+                    _fecha.Month - 1,
+                    _fecha.Day);
+
+            dialogo.Show();
+        }
+        catch
+        {
+        }
+    }
+
+
+    private void CargarDia()
+    {
+        try
+        {
+            if (_botonFecha != null)
+            {
+                bool esHoy = _fecha.Date == DateTime.Today;
+
+                _botonFecha.Text = esHoy
+                    ? "Hoy · " + _fecha.ToString("dd/MM/yyyy")
+                    : _fecha.ToString(
+                        "dddd d 'de' MMMM 'de' yyyy",
+                        new System.Globalization.CultureInfo("es-ES"));
+            }
+
+            var mesVista =
+                FindViewById<global::Android.Widget.TextView>(
+                    Resource.Id.dialog_horas_mes);
+
+            if (mesVista != null)
+            {
+                mesVista.Text =
+                    _fecha.ToString(
+                        "MMMM yyyy",
+                        new System.Globalization.CultureInfo("es-ES"));
+            }
+
+            var (horas, cbs) =
+                SCCosmos.Mobile.Data.DatabaseHelper
+                    .ObtenerPredicacionDiaMobile(
+                        _usuario,
+                        _fecha.ToString("yyyy-MM-dd"));
+
+            if (_horasTexto != null)
+            {
+                _horasTexto.Text = horas > 0
+                    ? horas.ToString(
+                        "0.#",
+                        new System.Globalization.CultureInfo("es-ES"))
+                    : "0";
+            }
+
+            if (_cbsTexto != null)
+            {
+                _cbsTexto.Text = cbs.ToString();
+            }
+
+            if (_estadoDia != null)
+            {
+                _estadoDia.Text = (horas > 0 || cbs > 0)
+                    ? "Ya hay datos guardados ese día."
+                    : "Ese día aún no tiene horas guardadas.";
+            }
+        }
+        catch
+        {
+        }
+    }
+
+
+    private void Guardar()
+    {
+        try
+        {
+            double horas = 0;
+
+            double.TryParse(
+                (_horasTexto?.Text ?? "")
+                    .Trim()
+                    .Replace(',', '.'),
+                System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out horas);
+
+            int cbs = 0;
+
+            int.TryParse(
+                (_cbsTexto?.Text ?? "").Trim(),
+                out cbs);
+
+            if (horas < 0)
+            {
+                horas = 0;
+            }
+
+            if (cbs < 0)
+            {
+                cbs = 0;
+            }
+
+            SCCosmos.Mobile.Data.DatabaseHelper
+                .GuardarPredicacionDiaMobile(
+                    _usuario,
+                    _fecha.ToString("yyyy-MM-dd"),
+                    horas,
+                    cbs);
+
+            SCCosmos.Mobile.Data.DatabaseHelper
+                .AnotarActividadMobile(
+                    "Predicación",
+                    $"Guardó el {_fecha:dd/MM/yyyy}: "
+                    + (horas > 0 ? $"{horas:0.#} h" : "0 h")
+                    + (cbs > 0 ? $" y {cbs} CB" + (cbs == 1 ? "" : "s") : "")
+                    + $" ({_usuario})");
+
+            SccosmosWidgetProvider.ActualizarTodos();
+
+            AlGuardar?.Invoke();
+        }
+        catch
+        {
+        }
+
+        Finish();
     }
 }

@@ -13,9 +13,12 @@
         <!-- CABECERA -->
         <Grid Grid.Row="0"
               ColumnDefinitions="*,Auto"
-              ColumnSpacing="10">
+              RowDefinitions="Auto,Auto"
+              ColumnSpacing="10"
+              RowSpacing="10">
 
-            <VerticalStackLayout Spacing="3">
+            <VerticalStackLayout Grid.Row="0"
+                                 Spacing="3">
                 <Label Text="TAREAS Y EVENTOS"
                        Style="{StaticResource Antetitulo}" />
                 <Label x:Name="LblResumen"
@@ -23,7 +26,8 @@
                        Style="{StaticResource SubtituloPagina}" />
             </VerticalStackLayout>
 
-            <Button Grid.Column="1"
+            <Button Grid.Row="0"
+                    Grid.Column="1"
                     Text="＋ Nueva"
                     Clicked="BtnNueva_Clicked"
                     BackgroundColor="#0B6FC2"
@@ -33,6 +37,43 @@
                     Padding="14,0"
                     FontSize="13"
                     VerticalOptions="Center" />
+
+            <!-- Pestañas de categoría (la esposa no las ve) -->
+            <HorizontalStackLayout x:Name="PanelCategorias"
+                                   Grid.Row="1"
+                                   Grid.ColumnSpan="2"
+                                   Spacing="8">
+
+                <Button x:Name="BtnCatPersonal"
+                        Text="Personales"
+                        Clicked="Categoria_Clicked"
+                        CommandParameter="Personal"
+                        BackgroundColor="#0B6FC2"
+                        TextColor="White"
+                        CornerRadius="9"
+                        Padding="12,6"
+                        FontSize="12" />
+
+                <Button x:Name="BtnCatCalendario"
+                        Text="Calendario"
+                        Clicked="Categoria_Clicked"
+                        CommandParameter="Calendario"
+                        BackgroundColor="#242830"
+                        TextColor="White"
+                        CornerRadius="9"
+                        Padding="12,6"
+                        FontSize="12" />
+
+                <Button x:Name="BtnCatAsambleas"
+                        Text="Asambleas"
+                        Clicked="Categoria_Clicked"
+                        CommandParameter="Asambleas"
+                        BackgroundColor="#242830"
+                        TextColor="White"
+                        CornerRadius="9"
+                        Padding="12,6"
+                        FontSize="12" />
+            </HorizontalStackLayout>
         </Grid>
 
         <!-- LISTA -->

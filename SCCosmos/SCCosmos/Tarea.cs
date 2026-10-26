@@ -29,6 +29,10 @@ namespace SCCosmos
 
         public bool Completada { get; set; }
 
+        // Personales, Calendario (envíos de documentación, S-303, S-302,
+        // Betel...) o Asambleas.
+        public string Categoria { get; set; } = "Personal";
+
         public string CreadaPor { get; set; } = "";
 
         public string FechaCreacion { get; set; } = "";

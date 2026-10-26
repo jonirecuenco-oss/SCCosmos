@@ -2017,3 +2017,13 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   nombra los territorios como «1 Barcarrota» (número + zona/localidad normalizada) y genera el JSON
   con las claves de `TerritorioJSON` (`Nombre`, `UltimaFechaCompletado`, `AsignadoA`,
   `FechaAsignado`, `FechaCompletado`); la pestaña Territorios tiene «Importar PDF / Excel (S-13)».
+- **Lote 1.9.7**: (1) el widget usaba `SetOnClickPendingIntent` en las filas de la colección, que
+  Android ignora: ahora hay `SetPendingIntentTemplate` + `SetOnClickFillInIntent` (`PonerClicItem`) y
+  `OnReceive` ejecuta tarea/alerta/mapa/abrir/horas. (2) Inicio (Windows): botón de horas con icono y
+  `Padding=9`, igual que «Ver datos». (3) Horas **por día**: tabla `HorasDia (Usuario, Fecha, Horas,
+  CBs)` en ambas apps, con migración de los totales mensuales antiguos al día 1 y recálculo de
+  `HorasMes`; los diálogos piden fecha (hoy por defecto) y cargan/guardan el día. (4) Tareas con
+  columna `Categoria` (Personal/Calendario/Asambleas), migración por título para los envíos del
+  calendario, pestañas en ambas apps, la esposa sin pestañas y categoría por defecto = pestaña actual;
+  las notificaciones ya ignoran las tareas completadas. (5) Rendimientos: separador por semana con el
+  total («TOTAL SEMANA dd/MM – dd/MM»).

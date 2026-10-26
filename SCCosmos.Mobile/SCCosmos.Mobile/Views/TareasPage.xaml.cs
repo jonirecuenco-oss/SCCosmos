@@ -8,10 +8,39 @@ public partial class TareasPage : ContentPage, IActualizableMobile
     private List<Tarea> _tareas =
         new();
 
+    // La esposa no tiene pestañas: todas sus tareas son personales.
+    private string? _categoria = "Personal";
+
 
     public TareasPage()
     {
         InitializeComponent();
+
+        if (!SCCosmos.Mobile.Services.PerfilAccesoService.AccesoCompleto)
+        {
+            PanelCategorias.IsVisible = false;
+            _categoria = null;
+        }
+    }
+
+
+    private async void Categoria_Clicked(object sender, EventArgs e)
+    {
+        if (sender is not Button boton
+            || boton.CommandParameter is not string categoria)
+        {
+            return;
+        }
+
+        _categoria = categoria;
+
+        BtnCatPersonal.BackgroundColor = Color.FromArgb("#242830");
+        BtnCatCalendario.BackgroundColor = Color.FromArgb("#242830");
+        BtnCatAsambleas.BackgroundColor = Color.FromArgb("#242830");
+
+        boton.BackgroundColor = Color.FromArgb("#0B6FC2");
+
+        await CargarAsync();
     }
 
 
@@ -45,6 +74,13 @@ public partial class TareasPage : ContentPage, IActualizableMobile
 
             _tareas =
                 tareas
+                    .Where(t => string.IsNullOrWhiteSpace(_categoria)
+                        || string.Equals(
+                            string.IsNullOrWhiteSpace(t.Categoria)
+                                ? "Personal"
+                                : t.Categoria.Trim(),
+                            _categoria,
+                            StringComparison.OrdinalIgnoreCase))
                     .OrderBy(t => t.Completada)
                     .ThenBy(t => t.FechaInicio)
                     .ThenBy(t => t.Id)
@@ -81,7 +117,12 @@ public partial class TareasPage : ContentPage, IActualizableMobile
         EventArgs e)
     {
         await Navigation.PushAsync(
-            new TareaEdicionPage(null));
+            new TareaEdicionPage(null)
+            {
+                CategoriaInicial = string.IsNullOrWhiteSpace(_categoria)
+                    ? "Personal"
+                    : _categoria
+            });
     }
 
 

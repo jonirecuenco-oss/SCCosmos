@@ -20,10 +20,28 @@
                    FontSize="13"
                    Margin="0,4,0,0"/>
 
-        <TextBlock Text="Horas a añadir (0 si ninguna)"
+        <TextBlock Text="Día"
                    Foreground="#CCCCCC"
                    FontSize="13"
                    Margin="0,14,0,4"/>
+
+        <DatePicker x:Name="FechaDia"
+                    SelectedDateChanged="FechaDia_SelectedDateChanged"
+                    Background="#1E1E1E"
+                    Foreground="White"
+                    BorderBrush="#3E3E42"
+                    BorderThickness="1"
+                    Padding="6,4"/>
+
+        <TextBlock x:Name="TxtEstadoDia"
+                   Foreground="#8A929C"
+                   FontSize="11.5"
+                   Margin="0,4,0,0"/>
+
+        <TextBlock Text="Horas de ese día"
+                   Foreground="#CCCCCC"
+                   FontSize="13"
+                   Margin="0,12,0,4"/>
 
         <TextBox x:Name="TxtHoras"
                  Text="0"
@@ -33,7 +51,7 @@
                  BorderThickness="1"
                  BorderBrush="#3E3E42"/>
 
-        <TextBlock Text="Cursos bíblicos a añadir (0 si ninguno)"
+        <TextBlock Text="Cursos bíblicos de ese día"
                    Foreground="#CCCCCC"
                    FontSize="13"
                    Margin="0,10,0,4"/>
@@ -56,7 +74,7 @@
                     Foreground="White"
                     BorderThickness="0"
                     Cursor="Hand"/>
-            <Button Content="Añadir"
+            <Button Content="Guardar"
                     Click="BtnAnadir_Click"
                     Padding="14,6"
                     Margin="10,0,0,0"

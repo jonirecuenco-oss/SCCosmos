@@ -1,5 +1,6 @@
 using System;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace SCCosmos
 {
@@ -8,6 +9,9 @@ namespace SCCosmos
         private readonly Tarea _tarea;
 
         private readonly bool _esNueva;
+
+        /// <summary>Categoría con la que se abre una tarea nueva.</summary>
+        public string CategoriaInicial { get; set; } = "Personal";
 
         private static readonly string[] TextosAviso =
         {
@@ -87,6 +91,46 @@ namespace SCCosmos
                     : Visibility.Visible;
 
             CargarEnFormulario();
+
+            // Para una tarea nueva se usa la pestaña desde la que se crea.
+            Loaded += (s, e) =>
+            {
+                if (_esNueva)
+                {
+                    SeleccionarCategoria(CategoriaInicial);
+                }
+            };
+        }
+
+
+        private void SeleccionarCategoria(string categoria)
+        {
+            string buscada = string.IsNullOrWhiteSpace(categoria)
+                ? "Personal"
+                : categoria.Trim();
+
+            foreach (var elemento in PckCategoria.Items)
+            {
+                if (elemento is ComboBoxItem item
+                    && string.Equals(
+                        item.Content?.ToString(),
+                        buscada,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    PckCategoria.SelectedItem = item;
+                    return;
+                }
+            }
+
+            PckCategoria.SelectedIndex = 0;
+        }
+
+
+        private string CategoriaSeleccionada()
+        {
+            return PckCategoria.SelectedItem is ComboBoxItem item
+                ? item.Content?.ToString() ?? "Personal"
+                : "Personal";
         }
 
 
@@ -97,6 +141,8 @@ namespace SCCosmos
 
             TxtDescripcion.Text =
                 _tarea.Descripcion;
+
+            SeleccionarCategoria(_tarea.Categoria);
 
             if (DateTime.TryParse(
                     _tarea.FechaInicio,
@@ -281,6 +327,12 @@ namespace SCCosmos
 
                 _tarea.Compartida =
                     ChkCompartir.IsChecked == true;
+
+                // La esposa siempre guarda tareas personales.
+                _tarea.Categoria =
+                    PerfilAcceso.AccesoCompleto
+                        ? CategoriaSeleccionada()
+                        : "Personal";
 
                 if (string.IsNullOrWhiteSpace(_tarea.CreadaPor))
                 {

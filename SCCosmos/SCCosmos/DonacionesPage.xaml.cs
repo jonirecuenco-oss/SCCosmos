@@ -280,11 +280,51 @@ namespace SCCosmos
                     persona,
                     medio);
 
-            TablaDonaciones.ItemsSource =
-                _donaciones;
-
             var cultura =
                 CultureInfo.GetCultureInfo("es-ES");
+
+            // ── Agrupado por semanas con el total al final de cada una ──
+            var filasSemana =
+                new List<DatabaseHelper.DonacionBD>();
+
+            DateTime lunesActual = DateTime.MinValue;
+            double totalSemana = 0;
+
+            foreach (var donacion in _donaciones
+                .OrderBy(d => DateTime.TryParse(d.Fecha, out DateTime ff)
+                    ? ff
+                    : DateTime.MaxValue))
+            {
+                DateTime fecha =
+                    DateTime.TryParse(donacion.Fecha, out DateTime f)
+                        ? f.Date
+                        : DateTime.Today;
+
+                DateTime lunes =
+                    fecha.AddDays(-(((int)fecha.DayOfWeek + 6) % 7));
+
+                if (lunesActual != DateTime.MinValue
+                    && lunes != lunesActual)
+                {
+                    filasSemana.Add(
+                        CrearSeparadorSemana(lunesActual, totalSemana, cultura));
+
+                    totalSemana = 0;
+                }
+
+                lunesActual = lunes;
+                filasSemana.Add(donacion);
+                totalSemana += donacion.Cantidad;
+            }
+
+            if (lunesActual != DateTime.MinValue)
+            {
+                filasSemana.Add(
+                    CrearSeparadorSemana(lunesActual, totalSemana, cultura));
+            }
+
+            TablaDonaciones.ItemsSource =
+                filasSemana;
 
             double total =
                 DatabaseHelper.CalcularTotalDonaciones(
@@ -306,6 +346,27 @@ namespace SCCosmos
                 $"{_donaciones.Count} registros · " +
                 $"efectivo: {efectivo.ToString("N2", cultura)} € · " +
                 $"bizum/transferencia: {bizum.ToString("N2", cultura)} €";
+        }
+
+
+        /// <summary>Fila separadora con el total de la semana.</summary>
+        private static DatabaseHelper.DonacionBD CrearSeparadorSemana(
+            DateTime lunes,
+            double total,
+            CultureInfo cultura)
+        {
+            DateTime domingo = lunes.AddDays(6);
+
+            return new DatabaseHelper.DonacionBD
+            {
+                EsSeparador = true,
+                TextoSeparador =
+                    "TOTAL SEMANA "
+                    + lunes.ToString("dd/MM", cultura)
+                    + " – "
+                    + domingo.ToString("dd/MM", cultura),
+                Cantidad = total
+            };
         }
 
 
@@ -397,7 +458,8 @@ namespace SCCosmos
         private void AbrirSeleccionada()
         {
             if (TablaDonaciones.SelectedItem
-                is not DatabaseHelper.DonacionBD donacion)
+                is not DatabaseHelper.DonacionBD donacion
+                || donacion.EsSeparador)
             {
                 MessageBox.Show(
                     "Selecciona primero una donación en la tabla.",
@@ -687,7 +749,8 @@ namespace SCCosmos
             RoutedEventArgs e)
         {
             if (TablaDonaciones.SelectedItem
-                is not DatabaseHelper.DonacionBD donacion)
+                is not DatabaseHelper.DonacionBD donacion
+                || donacion.EsSeparador)
             {
                 MessageBox.Show(
                     "Selecciona primero una donación en la tabla.",

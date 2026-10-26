@@ -20,11 +20,28 @@
         android:text=""
         android:textSize="13sp" />
 
-    <TextView
+    <Button
+        android:id="@+id/dialog_horas_fecha"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="14dp"
-        android:text="Horas a añadir (0 si ninguna)"
+        android:gravity="start|center_vertical"
+        android:text="Hoy"
+        android:textAllCaps="false" />
+
+    <TextView
+        android:id="@+id/dialog_horas_estado_dia"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:text=""
+        android:textSize="11sp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="Horas de ese día"
         android:textSize="13sp" />
 
     <EditText
@@ -38,7 +55,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
-        android:text="Cursos bíblicos a añadir (0 si ninguno)"
+        android:text="Cursos bíblicos de ese día"
         android:textSize="13sp" />
 
     <EditText
@@ -66,7 +83,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginLeft="10dp"
-            android:text="Añadir" />
+            android:text="Guardar" />
     </LinearLayout>
 
 </LinearLayout>

@@ -182,11 +182,9 @@
 
                             <ui:Button x:Name="BtnSumarHoras"
                                        Grid.Column="1"
-                                       Content="+"
                                        Appearance="Primary"
-                                       FontSize="20"
-                                       FontWeight="Bold"
-                                       Padding="16,8"
+                                       Icon="{ui:SymbolIcon Add24}"
+                                       Padding="9"
                                        Cursor="Hand"
                                        VerticalAlignment="Center"
                                        ToolTip="Añadir horas de predicación"

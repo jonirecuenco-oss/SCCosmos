@@ -32,6 +32,9 @@ public class Tarea
 
     public bool Completada { get; set; }
 
+    /// <summary>Personal, Calendario o Asambleas.</summary>
+    public string Categoria { get; set; } = "Personal";
+
     /// <summary>SC o Esposa.</summary>
     public string CreadaPor { get; set; } = "";
 

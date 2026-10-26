@@ -25,6 +25,7 @@ namespace SCCosmos
                 Repeticion TEXT DEFAULT 'Ninguna',
                 Compartida INTEGER DEFAULT 0,
                 Completada INTEGER DEFAULT 0,
+                Categoria TEXT DEFAULT 'Personal',
                 CreadaPor TEXT DEFAULT '',
                 FechaCreacion TEXT DEFAULT '',
                 UltimaModificacion TEXT DEFAULT ''
@@ -42,6 +43,63 @@ namespace SCCosmos
             var cmd = connection.CreateCommand();
             cmd.CommandText = SqlTablaTareas;
             cmd.ExecuteNonQuery();
+
+            // Bases creadas antes de las pestañas de tareas.
+            try
+            {
+                bool tieneCategoria = false;
+
+                using (var info = connection.CreateCommand())
+                {
+                    info.CommandText = "PRAGMA table_info(Tareas);";
+
+                    using var lector = info.ExecuteReader();
+
+                    while (lector.Read())
+                    {
+                        if (!lector.IsDBNull(1)
+                            && string.Equals(
+                                lector.GetString(1),
+                                "Categoria",
+                                StringComparison.OrdinalIgnoreCase))
+                        {
+                            tieneCategoria = true;
+                        }
+                    }
+                }
+
+                if (!tieneCategoria)
+                {
+                    using (var alter = connection.CreateCommand())
+                    {
+                        alter.CommandText =
+                            "ALTER TABLE Tareas ADD COLUMN Categoria TEXT DEFAULT 'Personal';";
+                        alter.ExecuteNonQuery();
+                    }
+
+                    // Solo la primera vez: las tareas de trámites del
+                    // calendario pasan a su pestaña. Después manda lo que
+                    // elija el usuario.
+                    using var migrar = connection.CreateCommand();
+                    migrar.CommandText = @"
+                        UPDATE Tareas
+                        SET Categoria = 'Calendario'
+                        WHERE lower(Titulo) LIKE '%s-303%'
+                           OR lower(Titulo) LIKE '%s-302%'
+                           OR lower(Titulo) LIKE '%s-21%'
+                           OR lower(Titulo) LIKE '%betel%'
+                           OR lower(Titulo) LIKE '%documentaci%'
+                           OR lower(Titulo) LIKE '%nombramiento%'
+                           OR lower(Titulo) LIKE '%territorio%'
+                           OR lower(Titulo) LIKE '%informe%'
+                           OR lower(Titulo) LIKE '%envio%'
+                           OR lower(Titulo) LIKE '%envío%';";
+                    migrar.ExecuteNonQuery();
+                }
+            }
+            catch
+            {
+            }
         }
 
 
@@ -57,7 +115,7 @@ namespace SCCosmos
                 AsegurarTablaTareasEnConexion(connection);
 
                 var cmd = connection.CreateCommand();
-                cmd.CommandText = "SELECT Id, Titulo, Descripcion, FechaInicio, FechaFin, TodoElDia, Hora, AvisoMinutos, Repeticion, Compartida, Completada, CreadaPor, FechaCreacion, UltimaModificacion FROM Tareas ORDER BY FechaInicio ASC, Id ASC;";
+                cmd.CommandText = "SELECT Id, Titulo, Descripcion, FechaInicio, FechaFin, TodoElDia, Hora, AvisoMinutos, Repeticion, Compartida, Completada, CreadaPor, FechaCreacion, UltimaModificacion, COALESCE(Categoria, 'Personal') FROM Tareas ORDER BY FechaInicio ASC, Id ASC;";
 
                 using (var reader = cmd.ExecuteReader())
                 {
@@ -77,6 +135,7 @@ namespace SCCosmos
                             Compartida = !reader.IsDBNull(9) && reader.GetInt32(9) == 1,
                             Completada = !reader.IsDBNull(10) && reader.GetInt32(10) == 1,
                             CreadaPor = reader.IsDBNull(11) ? "" : reader.GetString(11),
+                            Categoria = reader.IsDBNull(14) ? "Personal" : reader.GetString(14),
                             FechaCreacion = reader.IsDBNull(12) ? "" : reader.GetString(12),
                             UltimaModificacion = reader.IsDBNull(13) ? "" : reader.GetString(13)
                         });
@@ -132,11 +191,11 @@ namespace SCCosmos
                     cmd.CommandText = @"INSERT INTO Tareas
                         (Titulo, Descripcion, FechaInicio, FechaFin, TodoElDia,
                          Hora, AvisoMinutos, Repeticion, Compartida, Completada,
-                         CreadaPor, FechaCreacion, UltimaModificacion)
+                         Categoria, CreadaPor, FechaCreacion, UltimaModificacion)
                     VALUES
                         ($titulo, $descripcion, $inicio, $fin, $todoElDia,
                          $hora, $aviso, $repeticion, $compartida, $completada,
-                         $creadaPor, $fechaCreacion, $ultimaModificacion);
+                         $categoria, $creadaPor, $fechaCreacion, $ultimaModificacion);
                     SELECT last_insert_rowid();";
                 }
                 else
@@ -152,6 +211,7 @@ namespace SCCosmos
                         Repeticion = $repeticion,
                         Compartida = $compartida,
                         Completada = $completada,
+                        Categoria = $categoria,
                         CreadaPor = $creadaPor,
                         FechaCreacion = $fechaCreacion,
                         UltimaModificacion = $ultimaModificacion
@@ -170,6 +230,8 @@ namespace SCCosmos
                 cmd.Parameters.AddWithValue("$repeticion", tarea.Repeticion ?? "Ninguna");
                 cmd.Parameters.AddWithValue("$compartida", tarea.Compartida ? 1 : 0);
                 cmd.Parameters.AddWithValue("$completada", tarea.Completada ? 1 : 0);
+                cmd.Parameters.AddWithValue("$categoria",
+                    string.IsNullOrWhiteSpace(tarea.Categoria) ? "Personal" : tarea.Categoria);
                 cmd.Parameters.AddWithValue("$creadaPor", tarea.CreadaPor ?? "");
                 cmd.Parameters.AddWithValue("$fechaCreacion", tarea.FechaCreacion ?? "");
                 cmd.Parameters.AddWithValue("$ultimaModificacion", tarea.UltimaModificacion ?? "");

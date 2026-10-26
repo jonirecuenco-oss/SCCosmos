@@ -16,6 +16,7 @@
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -46,8 +47,48 @@
                        Click="BtnNueva_Click"/>
         </Grid>
 
+        <!-- PESTAÑAS DE CATEGORÍA (la esposa no las ve: todo es personal) -->
+        <StackPanel x:Name="PanelCategorias"
+                    Grid.Row="1"
+                    Orientation="Horizontal"
+                    Margin="0,0,0,14">
+
+            <RadioButton x:Name="TabPersonales"
+                         Content="Personales"
+                         Tag="Personal"
+                         GroupName="CategoriaTareas"
+                         IsChecked="True"
+                         Foreground="White"
+                         FontSize="14"
+                         FontWeight="SemiBold"
+                         Margin="0,0,22,0"
+                         Cursor="Hand"
+                         Checked="Categoria_Checked"/>
+
+            <RadioButton x:Name="TabCalendario"
+                         Content="Calendario"
+                         Tag="Calendario"
+                         GroupName="CategoriaTareas"
+                         Foreground="White"
+                         FontSize="14"
+                         FontWeight="SemiBold"
+                         Margin="0,0,22,0"
+                         Cursor="Hand"
+                         Checked="Categoria_Checked"/>
+
+            <RadioButton x:Name="TabAsambleas"
+                         Content="Asambleas"
+                         Tag="Asambleas"
+                         GroupName="CategoriaTareas"
+                         Foreground="White"
+                         FontSize="14"
+                         FontWeight="SemiBold"
+                         Cursor="Hand"
+                         Checked="Categoria_Checked"/>
+        </StackPanel>
+
         <!-- LISTA -->
-        <ScrollViewer Grid.Row="1"
+        <ScrollViewer Grid.Row="2"
                       VerticalScrollBarVisibility="Auto">
             <ItemsControl x:Name="ListaTareas">
                 <ItemsControl.ItemTemplate>

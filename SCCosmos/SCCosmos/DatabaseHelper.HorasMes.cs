@@ -19,6 +19,17 @@ namespace SCCosmos
                 PRIMARY KEY (Usuario, Mes)
             );";
 
+        // Horas y cursos bíblicos de cada DÍA. El total del mes se
+        // recalcula a partir de estos días (HorasMes se mantiene como
+        // resumen para el widget y el resto de pantallas).
+        private const string SqlTablaHorasDia = @"CREATE TABLE IF NOT EXISTS HorasDia (
+                Usuario TEXT DEFAULT '',
+                Fecha TEXT DEFAULT '',
+                Horas REAL DEFAULT 0,
+                CBs INTEGER DEFAULT 0,
+                PRIMARY KEY (Usuario, Fecha)
+            );";
+
 
         public static void AsegurarHorasMes()
         {
@@ -35,6 +46,7 @@ namespace SCCosmos
             SqliteConnection connection)
         {
             EjecutarQuery(connection, SqlTablaHorasMes);
+            EjecutarQuery(connection, SqlTablaHorasDia);
 
             // Migración: bases creadas antes de los CBs.
             try
@@ -71,6 +83,158 @@ namespace SCCosmos
             catch
             {
             }
+
+            MigrarHorasMesADias(connection);
+        }
+
+
+        /// <summary>
+        /// Convierte los totales mensuales antiguos (HorasMes) en un día
+        /// para no perderlos: se crea una fila del día 1 con ese total
+        /// solo si ese mes aún no tiene días guardados.
+        /// </summary>
+        private static void MigrarHorasMesADias(SqliteConnection connection)
+        {
+            try
+            {
+                var cmd = connection.CreateCommand();
+                cmd.CommandText = @"
+                    INSERT INTO HorasDia (Usuario, Fecha, Horas, CBs)
+                    SELECT m.Usuario, m.Mes || '-01', m.Horas, m.CBs
+                    FROM HorasMes m
+                    WHERE COALESCE(m.Horas, 0) <> 0 OR COALESCE(m.CBs, 0) <> 0
+                      AND NOT EXISTS (
+                          SELECT 1 FROM HorasDia d
+                          WHERE d.Usuario = m.Usuario
+                            AND substr(d.Fecha, 1, 7) = m.Mes);";
+
+                cmd.ExecuteNonQuery();
+            }
+            catch
+            {
+            }
+        }
+
+
+        /// <summary>Horas y CBs guardados en un día concreto.</summary>
+        public static (double Horas, int Cbs) ObtenerPredicacionDia(
+            string usuario,
+            string fecha)
+        {
+            try
+            {
+                using (var connection = new SqliteConnection(ConnectionString))
+                {
+                    connection.Open();
+
+                    AsegurarHorasMesEnConexion(connection);
+
+                    var cmd = connection.CreateCommand();
+                    cmd.CommandText = "SELECT COALESCE(Horas, 0), COALESCE(CBs, 0) FROM HorasDia WHERE Usuario = $u AND Fecha = $f;";
+                    cmd.Parameters.AddWithValue("$u", usuario ?? "");
+                    cmd.Parameters.AddWithValue("$f", fecha ?? "");
+
+                    using (var lector = cmd.ExecuteReader())
+                    {
+                        if (lector.Read())
+                        {
+                            return (
+                                lector.IsDBNull(0) ? 0 : lector.GetDouble(0),
+                                lector.IsDBNull(1) ? 0 : lector.GetInt32(1));
+                        }
+                    }
+                }
+            }
+            catch
+            {
+            }
+
+            return (0, 0);
+        }
+
+
+        /// <summary>
+        /// Guarda las horas y CBs de un día y recalcula el total del mes.
+        /// </summary>
+        public static void GuardarPredicacionDia(
+            string usuario,
+            string fecha,
+            double horas,
+            int cbs)
+        {
+            try
+            {
+                using (var connection = new SqliteConnection(ConnectionString))
+                {
+                    connection.Open();
+
+                    AsegurarHorasMesEnConexion(connection);
+
+                    string dia = (fecha ?? "").Trim();
+                    string mes = dia.Length >= 7 ? dia.Substring(0, 7) : "";
+
+                    var cmd = connection.CreateCommand();
+                    cmd.CommandText = @"
+                        INSERT INTO HorasDia (Usuario, Fecha, Horas, CBs)
+                        VALUES ($u, $f, $h, $c)
+                        ON CONFLICT (Usuario, Fecha)
+                        DO UPDATE SET Horas = excluded.Horas,
+                                      CBs = excluded.CBs;";
+                    cmd.Parameters.AddWithValue("$u", usuario ?? "");
+                    cmd.Parameters.AddWithValue("$f", dia);
+                    cmd.Parameters.AddWithValue("$h", horas);
+                    cmd.Parameters.AddWithValue("$c", cbs);
+                    cmd.ExecuteNonQuery();
+
+                    if (mes.Length > 0)
+                    {
+                        RecalcularMesDesdeDias(connection, usuario, mes);
+                    }
+                }
+            }
+            catch
+            {
+            }
+        }
+
+
+        private static void RecalcularMesDesdeDias(
+            SqliteConnection connection,
+            string usuario,
+            string mes)
+        {
+            var suma = connection.CreateCommand();
+            suma.CommandText = @"
+                SELECT COALESCE(SUM(Horas), 0), COALESCE(SUM(CBs), 0)
+                FROM HorasDia
+                WHERE Usuario = $u AND substr(Fecha, 1, 7) = $m;";
+            suma.Parameters.AddWithValue("$u", usuario ?? "");
+            suma.Parameters.AddWithValue("$m", mes ?? "");
+
+            double horas = 0;
+            int cbs = 0;
+
+            using (var lector = suma.ExecuteReader())
+            {
+                if (lector.Read())
+                {
+                    horas = lector.IsDBNull(0) ? 0 : lector.GetDouble(0);
+                    cbs = lector.IsDBNull(1) ? 0 : lector.GetInt32(1);
+                }
+            }
+
+            var guardar = connection.CreateCommand();
+            guardar.CommandText = @"
+                INSERT INTO HorasMes (Usuario, Mes, Horas, CBs)
+                VALUES ($u, $m, $h, $c)
+                ON CONFLICT (Usuario, Mes)
+                DO UPDATE SET Horas = excluded.Horas,
+                              CBs = excluded.CBs;";
+            guardar.Parameters.AddWithValue("$u", usuario ?? "");
+            guardar.Parameters.AddWithValue("$m", mes ?? "");
+            guardar.Parameters.AddWithValue("$h", horas);
+            guardar.Parameters.AddWithValue("$c", cbs);
+            guardar.ExecuteNonQuery();
         }
 
 

@@ -509,21 +509,27 @@ namespace SCCosmos
                         ? "SC"
                         : "Esposa";
 
-                string mes =
-                    DateTime.Today.ToString("yyyy-MM");
-
-                DatabaseHelper.SumarPredicacionMes(
+                DatabaseHelper.GuardarPredicacionDia(
                     usuario,
-                    mes,
+                    ventana.Fecha,
                     horas,
                     cbs);
 
+                DateTime diaGuardado =
+                    DateTime.TryParseExact(
+                        ventana.Fecha,
+                        "yyyy-MM-dd",
+                        CultureInfo.InvariantCulture,
+                        DateTimeStyles.None,
+                        out DateTime fechaParseada)
+                        ? fechaParseada
+                        : DateTime.Today;
+
                 DatabaseHelper.AnotarActividad(
                     "Predicación",
-                    $"Añadió al mes: "
-                    + (horas > 0 ? $"{horas:0.#} h" : "")
-                    + (horas > 0 && cbs > 0 ? " y " : "")
-                    + (cbs > 0 ? $"{cbs} CB" + (cbs == 1 ? "" : "s") : "")
+                    $"Guardó el {diaGuardado:dd/MM/yyyy}: "
+                    + (horas > 0 ? $"{horas:0.#} h" : "0 h")
+                    + (cbs > 0 ? $" y {cbs} CB" + (cbs == 1 ? "" : "s") : "")
                     + $" ({usuario})");
 
                 CargarHorasMes();

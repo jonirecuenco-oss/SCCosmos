@@ -41,6 +41,20 @@
                          Padding="8,6"
                          Margin="0,0,0,12"/>
 
+                <TextBlock Text="Categoría"
+                           Foreground="#9EA4AE"
+                           Margin="0,0,0,4"/>
+                <ComboBox x:Name="PckCategoria"
+                          Background="#20232A"
+                          Foreground="White"
+                          BorderBrush="#333842"
+                          Padding="8,6"
+                          Margin="0,0,0,12">
+                    <ComboBoxItem Content="Personal"/>
+                    <ComboBoxItem Content="Calendario"/>
+                    <ComboBoxItem Content="Asambleas"/>
+                </ComboBox>
+
                 <TextBlock Text="Descripción"
                            Foreground="#9EA4AE"
                            Margin="0,0,0,4"/>

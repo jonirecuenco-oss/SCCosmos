@@ -21,6 +21,16 @@ public static partial class DatabaseHelper
             PRIMARY KEY (Usuario, Mes)
         );";
 
+    // Horas y CBs de cada día; el total del mes se recalcula con ellos.
+    private const string SqlTablaHorasDia = @"
+        CREATE TABLE IF NOT EXISTS HorasDia (
+            Usuario TEXT DEFAULT '',
+            Fecha TEXT DEFAULT '',
+            Horas REAL DEFAULT 0,
+            CBs INTEGER DEFAULT 0,
+            PRIMARY KEY (Usuario, Fecha)
+        );";
+
 
     public static void AsegurarTablaHorasMesMobile()
     {
@@ -44,6 +54,39 @@ public static partial class DatabaseHelper
                 SqlTablaHorasMes;
 
             cmd.ExecuteNonQuery();
+        }
+
+        using (var cmdDia =
+               connection.CreateCommand())
+        {
+            cmdDia.CommandText =
+                SqlTablaHorasDia;
+
+            cmdDia.ExecuteNonQuery();
+        }
+
+        // Los totales mensuales antiguos pasan a ser el día 1.
+        try
+        {
+            using var migrar =
+                connection.CreateCommand();
+
+            migrar.CommandText =
+                """
+                INSERT INTO HorasDia (Usuario, Fecha, Horas, CBs)
+                SELECT m.Usuario, m.Mes || '-01', m.Horas, m.CBs
+                FROM HorasMes m
+                WHERE (COALESCE(m.Horas, 0) <> 0 OR COALESCE(m.CBs, 0) <> 0)
+                  AND NOT EXISTS (
+                      SELECT 1 FROM HorasDia d
+                      WHERE d.Usuario = m.Usuario
+                        AND substr(d.Fecha, 1, 7) = m.Mes);
+                """;
+
+            migrar.ExecuteNonQuery();
+        }
+        catch
+        {
         }
 
         // Migración: bases creadas antes de los CBs.
@@ -236,5 +279,148 @@ public static partial class DatabaseHelper
             mes,
             horas,
             0);
+    }
+
+
+    /// <summary>Horas y CBs guardados en un día concreto.</summary>
+    public static (double Horas, int Cbs) ObtenerPredicacionDiaMobile(
+        string usuario,
+        string fecha)
+    {
+        try
+        {
+            using var connection =
+                new SqliteConnection(ConnectionString);
+
+            connection.Open();
+
+            AsegurarHorasMesEnConexion(connection);
+
+            using var cmd =
+                connection.CreateCommand();
+
+            cmd.CommandText =
+                "SELECT COALESCE(Horas, 0), COALESCE(CBs, 0) " +
+                "FROM HorasDia WHERE Usuario = $u AND Fecha = $f;";
+
+            cmd.Parameters.AddWithValue("$u", usuario ?? "");
+            cmd.Parameters.AddWithValue("$f", fecha ?? "");
+
+            using var lector =
+                cmd.ExecuteReader();
+
+            if (lector.Read())
+            {
+                return (
+                    lector.IsDBNull(0) ? 0 : lector.GetDouble(0),
+                    lector.IsDBNull(1) ? 0 : lector.GetInt32(1));
+            }
+        }
+        catch
+        {
+        }
+
+        return (0, 0);
+    }
+
+
+    /// <summary>
+    /// Guarda las horas y CBs de un día y recalcula el total del mes.
+    /// </summary>
+    public static void GuardarPredicacionDiaMobile(
+        string usuario,
+        string fecha,
+        double horas,
+        int cbs)
+    {
+        try
+        {
+            using var connection =
+                new SqliteConnection(ConnectionString);
+
+            connection.Open();
+
+            AsegurarHorasMesEnConexion(connection);
+
+            string dia =
+                (fecha ?? "").Trim();
+
+            string mes =
+                dia.Length >= 7 ? dia.Substring(0, 7) : "";
+
+            using (var cmd =
+                   connection.CreateCommand())
+            {
+                cmd.CommandText =
+                    """
+                    INSERT INTO HorasDia (Usuario, Fecha, Horas, CBs)
+                    VALUES ($u, $f, $h, $c)
+                    ON CONFLICT (Usuario, Fecha)
+                    DO UPDATE SET Horas = excluded.Horas,
+                                  CBs = excluded.CBs;
+                    """;
+
+                cmd.Parameters.AddWithValue("$u", usuario ?? "");
+                cmd.Parameters.AddWithValue("$f", dia);
+                cmd.Parameters.AddWithValue("$h", horas);
+                cmd.Parameters.AddWithValue("$c", cbs);
+
+                cmd.ExecuteNonQuery();
+            }
+
+            if (mes.Length == 0)
+            {
+                return;
+            }
+
+            double totalHoras = 0;
+            int totalCbs = 0;
+
+            using (var suma =
+                   connection.CreateCommand())
+            {
+                suma.CommandText =
+                    """
+                    SELECT COALESCE(SUM(Horas), 0), COALESCE(SUM(CBs), 0)
+                    FROM HorasDia
+                    WHERE Usuario = $u AND substr(Fecha, 1, 7) = $m;
+                    """;
+
+                suma.Parameters.AddWithValue("$u", usuario ?? "");
+                suma.Parameters.AddWithValue("$m", mes);
+
+                using var lector =
+                    suma.ExecuteReader();
+
+                if (lector.Read())
+                {
+                    totalHoras = lector.IsDBNull(0) ? 0 : lector.GetDouble(0);
+                    totalCbs = lector.IsDBNull(1) ? 0 : lector.GetInt32(1);
+                }
+            }
+
+            using (var guardar =
+                   connection.CreateCommand())
+            {
+                guardar.CommandText =
+                    """
+                    INSERT INTO HorasMes (Usuario, Mes, Horas, CBs)
+                    VALUES ($u, $m, $h, $c)
+                    ON CONFLICT (Usuario, Mes)
+                    DO UPDATE SET Horas = excluded.Horas,
+                                  CBs = excluded.CBs;
+                    """;
+
+                guardar.Parameters.AddWithValue("$u", usuario ?? "");
+                guardar.Parameters.AddWithValue("$m", mes);
+                guardar.Parameters.AddWithValue("$h", totalHoras);
+                guardar.Parameters.AddWithValue("$c", totalCbs);
+
+                guardar.ExecuteNonQuery();
+            }
+        }
+        catch
+        {
+        }
     }
 }

@@ -341,38 +341,22 @@ public class SccosmosWidgetFactory
                     if (!string.IsNullOrWhiteSpace(
                             fila.ConsultaMapa))
                     {
-                        PendingIntent? mapa =
-                            SccosmosWidgetProvider
-                                .CrearAbrirMapa(
-                                    _contexto,
-                                    4860 + position,
-                                    fila.ConsultaMapa);
+                        SccosmosWidgetProvider.PonerClicItem(
+                            vistas,
+                            Resource.Id.fila_programa_mapa,
+                            "mapa",
+                            consulta: fila.ConsultaMapa);
 
-                        if (mapa is not null)
-                        {
-                            vistas.SetOnClickPendingIntent(
-                                Resource.Id.fila_programa_mapa,
-                                mapa);
-
-                            vistas.SetViewVisibility(
-                                Resource.Id.fila_programa_mapa,
-                                ViewStates.Visible);
-                        }
+                        vistas.SetViewVisibility(
+                            Resource.Id.fila_programa_mapa,
+                            ViewStates.Visible);
                     }
 
-                    PendingIntent? tocar =
-                        SccosmosWidgetProvider
-                            .CrearActividad(
-                                _contexto,
-                                4810 + position,
-                                "visita");
-
-                    if (tocar is not null)
-                    {
-                        vistas.SetOnClickPendingIntent(
-                            Resource.Id.fila_programa_raiz,
-                            tocar);
-                    }
+                    SccosmosWidgetProvider.PonerClicItem(
+                        vistas,
+                        Resource.Id.fila_programa_raiz,
+                        "abrir",
+                        destino: "visita");
 
                     return vistas;
                 }
@@ -397,38 +381,22 @@ public class SccosmosWidgetFactory
 
                     if (fila.TareaId > 0)
                     {
-                        PendingIntent? completar =
-                            SccosmosWidgetProvider
-                                .CrearAccionTarea(
-                                    _contexto,
-                                    4840 + position,
-                                    fila.TareaId);
+                        SccosmosWidgetProvider.PonerClicItem(
+                            vistas,
+                            Resource.Id.fila_tarea_ok,
+                            "tarea",
+                            tarea: fila.TareaId);
 
-                        if (completar is not null)
-                        {
-                            vistas.SetOnClickPendingIntent(
-                                Resource.Id.fila_tarea_ok,
-                                completar);
-
-                            vistas.SetViewVisibility(
-                                Resource.Id.fila_tarea_ok,
-                                ViewStates.Visible);
-                        }
+                        vistas.SetViewVisibility(
+                            Resource.Id.fila_tarea_ok,
+                            ViewStates.Visible);
                     }
 
-                    PendingIntent? tocar =
-                        SccosmosWidgetProvider
-                            .CrearActividad(
-                                _contexto,
-                                4820 + position,
-                                "tareas");
-
-                    if (tocar is not null)
-                    {
-                        vistas.SetOnClickPendingIntent(
-                            Resource.Id.fila_tarea_raiz,
-                            tocar);
-                    }
+                    SccosmosWidgetProvider.PonerClicItem(
+                        vistas,
+                        Resource.Id.fila_tarea_raiz,
+                        "abrir",
+                        destino: "tareas");
 
                     return vistas;
                 }
@@ -447,38 +415,22 @@ public class SccosmosWidgetFactory
                     if (!string.IsNullOrWhiteSpace(
                             fila.Firma))
                     {
-                        PendingIntent? leida =
-                            SccosmosWidgetProvider
-                                .CrearAccionAlertaLeida(
-                                    _contexto,
-                                    4850 + position,
-                                    fila.Firma);
+                        SccosmosWidgetProvider.PonerClicItem(
+                            vistas,
+                            Resource.Id.fila_alerta_ok,
+                            "alerta",
+                            alerta: fila.Firma);
 
-                        if (leida is not null)
-                        {
-                            vistas.SetOnClickPendingIntent(
-                                Resource.Id.fila_alerta_ok,
-                                leida);
-
-                            vistas.SetViewVisibility(
-                                Resource.Id.fila_alerta_ok,
-                                ViewStates.Visible);
-                        }
+                        vistas.SetViewVisibility(
+                            Resource.Id.fila_alerta_ok,
+                            ViewStates.Visible);
                     }
 
-                    PendingIntent? tocar =
-                        SccosmosWidgetProvider
-                            .CrearActividad(
-                                _contexto,
-                                4830 + position,
-                                "alertas");
-
-                    if (tocar is not null)
-                    {
-                        vistas.SetOnClickPendingIntent(
-                            Resource.Id.fila_alerta_raiz,
-                            tocar);
-                    }
+                    SccosmosWidgetProvider.PonerClicItem(
+                        vistas,
+                        Resource.Id.fila_alerta_raiz,
+                        "abrir",
+                        destino: "alertas");
 
                     return vistas;
                 }
@@ -494,38 +446,14 @@ public class SccosmosWidgetFactory
                         Resource.Id.fila_predicacion_texto,
                         fila.Texto);
 
-                    try
-                    {
-                        var intencion =
-                            new Intent(
-                                _contexto,
-                                typeof(HorasDialogActivity));
+                    SccosmosWidgetProvider.PonerClicItem(
+                        vistas,
+                        Resource.Id.fila_predicacion_mas,
+                        "horas");
 
-                        intencion.AddFlags(
-                            ActivityFlags.NewTask);
-
-                        PendingIntent? sumar =
-                            PendingIntent.GetActivity(
-                                _contexto,
-                                4870,
-                                intencion,
-                                PendingIntentFlags.Immutable
-                                | PendingIntentFlags.UpdateCurrent);
-
-                        if (sumar is not null)
-                        {
-                            vistas.SetOnClickPendingIntent(
-                                Resource.Id.fila_predicacion_mas,
-                                sumar);
-
-                            vistas.SetViewVisibility(
-                                Resource.Id.fila_predicacion_mas,
-                                ViewStates.Visible);
-                        }
-                    }
-                    catch
-                    {
-                    }
+                    vistas.SetViewVisibility(
+                        Resource.Id.fila_predicacion_mas,
+                        ViewStates.Visible);
 
                     return vistas;
                 }
