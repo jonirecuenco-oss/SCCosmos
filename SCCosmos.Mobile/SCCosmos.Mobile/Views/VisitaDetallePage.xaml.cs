@@ -888,13 +888,9 @@ public partial class VisitaDetallePage
             texto = "#8F969F";
         }
 
-        // El indicador inferior se reserva para "PA".
-        // La existencia de una nota se muestra con un botón "*" real
-        // para que sea pulsable de forma fiable en Android.
-        indicador =
-            act.PrecursorAuxiliar
-                ? "PA"
-                : "";
+        // El indicador «PA» ya no se muestra en la tarjeta (no aporta
+        // nada y ensuciaba la etiqueta del mes).
+        indicador = "";
 
         string etiqueta =
             act.Mes == default
@@ -914,7 +910,7 @@ public partial class VisitaDetallePage
                 !string.IsNullOrWhiteSpace(act.Notas),
             ValorFontSize =
                 valor is "✓" or "✕"
-                    ? 20
+                    ? 16
                     : 14,
             Fondo = Color.FromArgb(fondo),
             TextoColor = Color.FromArgb(texto)

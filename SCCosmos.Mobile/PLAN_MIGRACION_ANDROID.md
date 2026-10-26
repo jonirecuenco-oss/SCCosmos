@@ -2160,3 +2160,12 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   (4) el separador de inactivos es una banda a todo el ancho, sin recuadro ni subtítulo, solo
   «PUBLICADORES INACTIVOS (n)». Verificado en el móvil: cabecera sin «VISITA», «Sept 2026»,
   tarjetas con A/PR y SM/PR y banda de inactivos a ancho completo.
+- **Ajustes finos de Visitas (Android 2.0.11)**: (1) el hueco bajo el nombre con chips se debía a
+  que los `Border` de las abreviaturas se estiraban a la altura de la fila; ahora la fila tiene
+  `RowDefinitions="Auto"`, el `HorizontalStackLayout` mide 22 y cada chip 18 con
+  `VerticalTextAlignment="Center"`, y el espaciado nombre→meses baja a 2; (2) el indicador «PA»
+  ya no se asigna (`indicador = ""`) ni se muestra en la etiqueta del mes; (3) las casillas de
+  los meses usan `Padding="3,1,3,0"` (sin relleno inferior) y los ✓/✕ bajan de 20 a **16**;
+  (4) la banda de inactivos es realmente de borde a borde: `ListaPersonas` con margen −16, las
+  tarjetas con margen 16 y la banda sin margen (comprobado por píxeles: el color #2A2117 llega
+  de x=0 al ancho completo).
