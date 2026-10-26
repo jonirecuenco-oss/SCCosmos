@@ -1667,10 +1667,12 @@ public static partial class DatabaseHelper
         cmd.CommandText =
             """
             SELECT
+                Id,
                 Hermano,
                 Tipo,
                 RecomendadoComo,
-                Congregacion
+                Congregacion,
+                UrlDetalle
             FROM RecomendacionesNombramientos
             ORDER BY Tipo, Hermano;
             """;
@@ -1681,7 +1683,7 @@ public static partial class DatabaseHelper
         while (reader.Read())
         {
             string congregacionHub =
-                LeerTexto(reader, 3);
+                LeerTexto(reader, 4);
 
             if (!EsRecomendacionDeCongregacionMobile(
                     congregacionHub,
@@ -1694,9 +1696,13 @@ public static partial class DatabaseHelper
             resultado.Add(
                 new RecomendacionS2Mobile
                 {
-                    Hermano = LeerTexto(reader, 0),
-                    Tipo = LeerTexto(reader, 1),
-                    RecomendadoComo = LeerTexto(reader, 2)
+                    Id = reader.IsDBNull(0)
+                        ? 0
+                        : reader.GetInt32(0),
+                    Hermano = LeerTexto(reader, 1),
+                    Tipo = LeerTexto(reader, 2),
+                    RecomendadoComo = LeerTexto(reader, 3),
+                    UrlDetalle = LeerTexto(reader, 5)
                 });
         }
 
@@ -2153,9 +2159,12 @@ public sealed class DocumentoVisitaMobile
 
 public sealed class RecomendacionS2Mobile
 {
+    public int Id { get; set; }
+
     public string Hermano { get; set; } = "";
     public string Tipo { get; set; } = "";
     public string RecomendadoComo { get; set; } = "";
+    public string UrlDetalle { get; set; } = "";
 }
 
 

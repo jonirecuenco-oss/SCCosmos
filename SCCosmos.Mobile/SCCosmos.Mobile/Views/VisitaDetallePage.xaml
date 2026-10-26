@@ -9,49 +9,59 @@
 
     <Grid RowDefinitions="Auto,Auto,*">
 
-        <!-- CABECERA: flecha atrás, título y botón Datos -->
+        <!-- CABECERA: flecha atrás, título centrado y botón Datos -->
         <Grid Grid.Row="0"
-              ColumnDefinitions="Auto,*,Auto"
-              Padding="10,12,16,8"
-              ColumnSpacing="6">
+              Padding="10,12,16,8">
 
-            <Button Grid.Column="0"
-                    Text="←"
-                    Clicked="BtnVolver_Clicked"
-                    BackgroundColor="#1A1D22"
-                    TextColor="White"
-                    FontSize="20"
-                    Padding="0"
-                    WidthRequest="42"
-                    HeightRequest="40"
-                    CornerRadius="10"
-                    VerticalOptions="Center" />
-
-            <VerticalStackLayout Grid.Column="1"
-                                 Spacing="2">
+            <VerticalStackLayout HorizontalOptions="Center"
+                                 VerticalOptions="Center"
+                                 Spacing="2"
+                                 Margin="58,0">
                 <Label x:Name="LblTitulo"
                        Text="VISITA"
-                       Style="{StaticResource Antetitulo}" />
+                       Style="{StaticResource Antetitulo}"
+                       HorizontalTextAlignment="Center" />
 
                 <Label x:Name="LblCongregacion"
                        FontSize="19"
                        FontAttributes="Bold"
                        TextColor="{StaticResource TextoPrincipal}"
-                       LineBreakMode="TailTruncation" />
+                       LineBreakMode="TailTruncation"
+                       HorizontalTextAlignment="Center" />
 
                 <Label x:Name="LblPeriodo"
                        FontSize="12"
-                       TextColor="{StaticResource TextoSecundario}" />
+                       TextColor="{StaticResource TextoSecundario}"
+                       HorizontalTextAlignment="Center" />
             </VerticalStackLayout>
 
-            <Button Grid.Column="2"
+            <Border HorizontalOptions="Start"
+                    VerticalOptions="Center"
+                    WidthRequest="42"
+                    HeightRequest="42"
+                    BackgroundColor="#1A1D22"
+                    StrokeThickness="0">
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="10" />
+                </Border.StrokeShape>
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="Volver_Tapped" />
+                </Border.GestureRecognizers>
+                <Label Text="←"
+                       TextColor="White"
+                       FontSize="22"
+                       HorizontalTextAlignment="Center"
+                       VerticalTextAlignment="Center" />
+            </Border>
+
+            <Button HorizontalOptions="End"
+                    VerticalOptions="Center"
                     Text="Datos"
                     Clicked="BtnDatos_Clicked"
                     Style="{StaticResource BotonSecundario}"
                     HeightRequest="38"
                     Padding="11,6"
-                    FontSize="12.5"
-                    VerticalOptions="Center" />
+                    FontSize="12.5" />
         </Grid>
 
         <!-- PESTAÑAS -->
@@ -424,45 +434,46 @@
                                      Spacing="12">
 
                 <Grid ColumnDefinitions="*,Auto"
-                      Margin="0,6,0,0">
-                    <Label Text="Ministerio"
-                           TextColor="White"
-                           FontAttributes="Bold"
-                           FontSize="17"
-                           VerticalOptions="Center" />
+                      ColumnSpacing="10"
+                      Margin="0,2,0,0">
 
                     <Picker x:Name="PickerGrupo"
-                            Grid.Column="1"
-                            WidthRequest="135"
+                            Grid.Column="0"
                             SelectedIndexChanged="PickerGrupo_SelectedIndexChanged"
                             BackgroundColor="#1A1D22"
                             TextColor="White"
+                            HorizontalOptions="Start"
+                            WidthRequest="150"
                             Title="Grupo" />
-                </Grid>
 
-                <Grid x:Name="CintaMesMinisterio"
-                      ColumnDefinitions="Auto,*,Auto"
-                      ColumnSpacing="8"
-                      Margin="0,0,0,2">
-                    <Button Text="‹"
-                            Clicked="BtnMesAntMinisterio_Clicked"
-                            BackgroundColor="#242830"
-                            TextColor="White"
-                            WidthRequest="46" />
+                    <HorizontalStackLayout x:Name="CintaMesMinisterio"
+                                           Grid.Column="1"
+                                           Spacing="2"
+                                           VerticalOptions="Center">
+                        <Button Text="‹"
+                                Clicked="BtnMesAntMinisterio_Clicked"
+                                BackgroundColor="#242830"
+                                TextColor="White"
+                                WidthRequest="34"
+                                HeightRequest="34"
+                                Padding="0" />
 
-                    <Label x:Name="LblMesMinisterio"
-                           Grid.Column="1"
-                           TextColor="White"
-                           FontAttributes="Bold"
-                           HorizontalTextAlignment="Center"
-                           VerticalTextAlignment="Center" />
+                        <Label x:Name="LblMesMinisterio"
+                               TextColor="White"
+                               FontAttributes="Bold"
+                               FontSize="13"
+                               WidthRequest="104"
+                               HorizontalTextAlignment="Center"
+                               VerticalTextAlignment="Center" />
 
-                    <Button Grid.Column="2"
-                            Text="›"
-                            Clicked="BtnMesSigMinisterio_Clicked"
-                            BackgroundColor="#242830"
-                            TextColor="White"
-                            WidthRequest="46" />
+                        <Button Text="›"
+                                Clicked="BtnMesSigMinisterio_Clicked"
+                                BackgroundColor="#242830"
+                                TextColor="White"
+                                WidthRequest="34"
+                                HeightRequest="34"
+                                Padding="0" />
+                    </HorizontalStackLayout>
                 </Grid>
 
                 <CollectionView x:Name="ListaPersonas"
@@ -765,30 +776,108 @@
                             <DataTemplate>
                                 <Border BackgroundColor="{StaticResource Superficie}"
                                         Stroke="{StaticResource Borde}"
-                                        Padding="10"
-                                        Margin="0,0,0,7">
+                                        StrokeThickness="1"
+                                        Padding="12"
+                                        Margin="0,0,0,8">
                                     <Border.StrokeShape>
-                                        <RoundRectangle CornerRadius="10" />
+                                        <RoundRectangle CornerRadius="12" />
                                     </Border.StrokeShape>
 
-                                    <Grid ColumnDefinitions="58,*,Auto"
-                                          RowDefinitions="Auto,Auto,Auto,Auto"
-                                          ColumnSpacing="7">
+                                    <Grid ColumnDefinitions="62,*,Auto"
+                                          RowDefinitions="Auto,Auto,Auto,Auto,Auto"
+                                          ColumnSpacing="8"
+                                          RowSpacing="2">
 
-                                        <Label Text="{Binding Hora}"
-                                               TextColor="#80C4FF"
+                                        <!-- Hora, como en Inicio -->
+                                        <Label Grid.RowSpan="5"
+                                               Text="{Binding Original.Hora}"
+                                               TextColor="#4BA3E3"
+                                               FontSize="15"
                                                FontAttributes="Bold"
-                                               FontSize="14"
-                                               VerticalOptions="Center" />
+                                               VerticalOptions="Start" />
 
+                                        <!-- Tipo de actividad y día/turno -->
                                         <Label Grid.Column="1"
-                                               Text="{Binding Titulo}"
+                                               Text="{Binding Original.TipoActividad}"
                                                TextColor="White"
-                                               FontAttributes="Bold"
-                                               FontSize="13" />
+                                               FontSize="15"
+                                               FontAttributes="Bold" />
 
-                                        <HorizontalStackLayout Grid.Column="2"
-                                                               Spacing="3">
+                                        <Label Grid.Row="1"
+                                               Grid.Column="1"
+                                               Text="{Binding DiaTurno}"
+                                               TextColor="#9EA4AE"
+                                               FontSize="12" />
+
+                                        <!-- Responsable (chip), como en Inicio -->
+                                        <Border Grid.Row="0"
+                                                Grid.RowSpan="2"
+                                                Grid.Column="2"
+                                                BackgroundColor="#242A33"
+                                                Padding="8,3"
+                                                StrokeThickness="0"
+                                                VerticalOptions="Start"
+                                                IsVisible="{Binding MostrarResponsable}">
+                                            <Border.StrokeShape>
+                                                <RoundRectangle CornerRadius="6" />
+                                            </Border.StrokeShape>
+                                            <Label Text="{Binding Responsable}"
+                                                   TextColor="#EBCB8B"
+                                                   FontSize="11.5"
+                                                   FontAttributes="Bold" />
+                                        </Border>
+
+                                        <!-- Compañero -->
+                                        <Label Grid.Row="2"
+                                               Grid.Column="1"
+                                               Grid.ColumnSpan="2"
+                                               Text="{Binding CompaneroVisual}"
+                                               TextColor="#9299A3"
+                                               FontSize="12.5"
+                                               IsVisible="{Binding MostrarCompanero}" />
+
+                                        <!-- Ubicación con botón de mapa -->
+                                        <Grid Grid.Row="3"
+                                              Grid.Column="1"
+                                              Grid.ColumnSpan="2"
+                                              ColumnDefinitions="*,Auto"
+                                              ColumnSpacing="6"
+                                              IsVisible="{Binding MostrarUbicacion}">
+                                            <Label Text="{Binding Original.Ubicacion}"
+                                                   TextColor="#80C4FF"
+                                                   FontSize="11.5"
+                                                   LineBreakMode="WordWrap"
+                                                   VerticalTextAlignment="Center" />
+
+                                            <Button Grid.Column="1"
+                                                    Text="📍"
+                                                    CommandParameter="{Binding .}"
+                                                    Clicked="BtnMapaPrograma_Clicked"
+                                                    BackgroundColor="#242830"
+                                                    TextColor="#8BC9E8"
+                                                    FontSize="14"
+                                                    Padding="8,2"
+                                                    CornerRadius="8"
+                                                    IsVisible="{Binding MostrarMapa}" />
+                                        </Grid>
+
+                                        <!-- Notas -->
+                                        <Label Grid.Row="4"
+                                               Grid.Column="1"
+                                               Grid.ColumnSpan="2"
+                                               Text="{Binding Notas}"
+                                               TextColor="#8A919B"
+                                               FontSize="12"
+                                               LineBreakMode="WordWrap"
+                                               IsVisible="{Binding MostrarNotas}" />
+
+                                        <!-- Editar / borrar -->
+                                        <HorizontalStackLayout Grid.RowSpan="5"
+                                                               Grid.Column="2"
+                                                               Spacing="4"
+                                                               VerticalOptions="End"
+                                                               HorizontalOptions="End"
+                                                               Margin="0,40,0,0">
                                             <Button Text="✏️"
                                                     CommandParameter="{Binding .}"
                                                     Clicked="BtnEditarActividad_Clicked"
@@ -805,30 +894,6 @@
                                                     Padding="6,2"
                                                     CornerRadius="7" />
                                         </HorizontalStackLayout>
-
-                                        <Label Grid.Row="1"
-                                               Grid.Column="1"
-                                               Grid.ColumnSpan="2"
-                                               Text="{Binding Subtitulo}"
-                                               TextColor="#B6BBC2"
-                                               FontSize="11" />
-
-                                        <Label Grid.Row="2"
-                                               Grid.Column="1"
-                                               Grid.ColumnSpan="2"
-                                               Text="{Binding UbicacionVisual}"
-                                               TextColor="#80C4FF"
-                                               FontSize="10"
-                                               LineBreakMode="WordWrap"
-                                               IsVisible="{Binding MostrarUbicacion}" />
-
-                                        <Label Grid.Row="3"
-                                               Grid.Column="1"
-                                               Grid.ColumnSpan="2"
-                                               Text="{Binding Notas}"
-                                               TextColor="#8F969F"
-                                               FontSize="10"
-                                               IsVisible="{Binding MostrarNotas}" />
                                     </Grid>
                                 </Border>
                             </DataTemplate>
@@ -1235,7 +1300,7 @@
         </ScrollView>
 
         <Grid x:Name="OverlayCargando"
-              Grid.RowSpan="2"
+              Grid.RowSpan="3"
               BackgroundColor="#C0101216"
               IsVisible="False">
             <VerticalStackLayout HorizontalOptions="Center"

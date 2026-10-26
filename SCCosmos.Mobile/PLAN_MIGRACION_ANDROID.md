@@ -2137,3 +2137,17 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   (Mapa, Notas, Contabilidad, S-303) se cargan **al abrir su pestaña** (`_mapaPreparado`,
   `_contabilidadPreparada`, `_s303Preparado`). El perfil limitado oculta sus pestañas y sigue en
   Ministerio (sin horas). Medido en el móvil: **VisitaDetalle 410 ms** (Vista 328, Pintar 64).
+- **Retoques de Visitas (Android 2.0.9)**: (1) la flecha de volver va dentro de un `Border` con
+  `Label` centrado (horizontal y vertical) en vez de un `Button`; (2) en Ministerio se quita el
+  letrero y quedan el selector de grupos a la izquierda y el de mes a la derecha, con
+  **Septiembre 2026** por defecto (último mes con actividad) — `_mesMinisterio` se ajusta tras
+  cargar la vista; (3) el título «VISITA / congregación / periodo» va centrado (overlay con
+  márgenes de 58 para no chocar con los botones); (4) la tarjeta «Cargando» cubre las 3 filas
+  (`Grid.RowSpan="3"`); (5) **Programa** usa tarjetas como Inicio: hora azul, tipo, día/turno,
+  chip del responsable, acompañante, ubicación con 📍 (mapa) y notas, con ✏️ y 🗑️; (6) el **S-2**
+  cambia el check por un `Picker` **Sí/No** (por defecto «No», como Windows). `RecomendacionS2Mobile`
+  gana `Id` y `UrlDetalle`; al preparar el correo se confirma (aprobar/cancelar), se procesa cada
+  recomendación con `JwHubAccionesAndroid.ProcesarRecomendacionAsync` y se borra la fila local;
+  la carta se genera **antes** de tocar Hub y solo con los «Sí». Si Hub o la carta fallan, no se
+  prepara el correo. Verificado en el móvil: cabecera centrada, Ministerio con Septiembre 2026,
+  Programa estilo Inicio y selector Sí/No en Mess, Joshue.

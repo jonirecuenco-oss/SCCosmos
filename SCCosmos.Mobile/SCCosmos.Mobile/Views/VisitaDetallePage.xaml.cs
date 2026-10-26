@@ -11,6 +11,10 @@ using SCCosmos.Mobile.Data;
 using SCCosmos.Mobile.Models;
 using SCCosmos.Mobile.Services;
 
+#if ANDROID
+using SCCosmos.Mobile.Platforms.Android;
+#endif
+
 namespace SCCosmos.Mobile.Views;
 
 
@@ -361,6 +365,14 @@ public partial class VisitaDetallePage
 
             var relojPintar =
                 System.Diagnostics.Stopwatch.StartNew();
+
+            // Por defecto, el mes de Ministerio es el último con
+            // actividad (no el mes de la visita si aún no hay datos).
+            if (_maxMesActividad.HasValue
+                && _mesMinisterio > _maxMesActividad.Value)
+            {
+                _mesMinisterio = _maxMesActividad.Value;
+            }
 
             PintarGrupos();
             PintarMesMinisterio();
@@ -1183,6 +1195,56 @@ public partial class VisitaDetallePage
         EventArgs e)
     {
         await AbrirEditorActividadAsync(null);
+    }
+
+
+    private async void BtnMapaPrograma_Clicked(
+        object sender,
+        EventArgs e)
+    {
+        if (sender is not Button boton
+            || boton.CommandParameter is not ProgramaVisitaUi fila)
+        {
+            return;
+        }
+
+        string consulta = "";
+
+        if (fila.Original.Latitud != 0
+            || fila.Original.Longitud != 0)
+        {
+            consulta =
+                fila.Original.Latitud.ToString(
+                    System.Globalization.CultureInfo.InvariantCulture)
+                + ","
+                + fila.Original.Longitud.ToString(
+                    System.Globalization.CultureInfo.InvariantCulture);
+        }
+        else if (!string.IsNullOrWhiteSpace(
+                     fila.Original.Ubicacion))
+        {
+            consulta =
+                fila.Original.Ubicacion.Trim();
+        }
+
+        if (consulta.Length == 0)
+        {
+            return;
+        }
+
+        try
+        {
+            await Launcher.Default.OpenAsync(
+                "https://www.google.com/maps/search/?api=1&query=" +
+                Uri.EscapeDataString(consulta));
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert(
+                "Mapa",
+                "No se pudo abrir el mapa:\n\n" + ex.Message,
+                "Aceptar");
+        }
     }
 
 
@@ -2902,15 +2964,45 @@ public partial class VisitaDetallePage
 
         foreach (RecomendacionS2Ui item in _s2Ui)
         {
-            var check =
-                new CheckBox
+            // Selector Sí/No, igual que Windows: Sí = aprobar en JW Hub;
+            // No = cancelar en JW Hub al enviar.
+            var seleccion =
+                new Picker
                 {
-                    IsChecked = item.Incluir
+                    ItemsSource =
+                        new List<string> { "Sí", "No" },
+                    SelectedItem = item.Decision,
+                    WidthRequest = 78,
+                    FontSize = 12,
+                    BackgroundColor = Color.FromArgb("#242830"),
+                    TextColor = Colors.White
                 };
 
-            check.CheckedChanged +=
-                (_, args) =>
-                    item.Incluir = args.Value;
+            seleccion.SelectedIndexChanged +=
+                (_, _) =>
+                {
+                    if (seleccion.SelectedItem is string decision)
+                    {
+                        item.Decision = decision;
+                    }
+                };
+
+            var selector =
+                new VerticalStackLayout
+                {
+                    Spacing = 1,
+                    VerticalOptions = LayoutOptions.Center,
+                    Children =
+                    {
+                        new Label
+                        {
+                            Text = "¿Aprobar?",
+                            TextColor = Color.FromArgb("#9EA4AE"),
+                            FontSize = 9
+                        },
+                        seleccion
+                    }
+                };
 
             var texto =
                 new VerticalStackLayout
@@ -2952,7 +3044,7 @@ public partial class VisitaDetallePage
                     ColumnSpacing = 8
                 };
 
-            grid.Add(check, 0, 0);
+            grid.Add(selector, 0, 0);
             grid.Add(texto, 1, 0);
 
             PanelS2.Children.Add(
@@ -3248,6 +3340,104 @@ public partial class VisitaDetallePage
             return;
         }
 
+        List<RecomendacionS2Ui> aprobadas =
+            _s2Ui.Where(x => x.Aprobar).ToList();
+
+        List<RecomendacionS2Ui> canceladas =
+            _s2Ui.Where(x => !x.Aprobar).ToList();
+
+        if (_s2Ui.Count > 0)
+        {
+            bool continuar =
+                await DisplayAlert(
+                    "Confirmar recomendaciones y bajas",
+                    $"Se van a procesar {_s2Ui.Count} recomendaciones de " +
+                    $"{_vista.CongregacionNombre}:\n\n" +
+                    $"  APROBAR: {aprobadas.Count}\n" +
+                    $"  CANCELAR: {canceladas.Count}\n\n" +
+                    "Las marcadas como «No» se cancelarán en JW Hub. " +
+                    "Estos cambios pueden tener consecuencias reales.\n\n" +
+                    "¿Confirmas las decisiones y el envío posterior del correo S-303?",
+                    "Sí, continuar",
+                    "Cancelar");
+
+            if (!continuar)
+            {
+                return;
+            }
+        }
+
+        string? rutaCarta = null;
+
+        // La carta se prepara ANTES de tocar JW Hub: si fallara, no se
+        // cambia ninguna recomendación ni se envía una carta incompleta.
+        if (aprobadas.Count > 0)
+        {
+            try
+            {
+                rutaCarta =
+                    await GenerarCartaNombramientosAsync(aprobadas);
+            }
+            catch (Exception exCarta)
+            {
+                await DisplayAlert(
+                    "Carta de nombramientos",
+                    "No se pudo preparar la carta en PDF. No se ha " +
+                    "modificado JW Hub ni preparado el correo.\n\n" +
+                    exCarta.Message,
+                    "Aceptar");
+                return;
+            }
+        }
+
+        if (_s2Ui.Count > 0)
+        {
+#if ANDROID
+            foreach (RecomendacionS2Ui item in _s2Ui)
+            {
+                if (string.IsNullOrWhiteSpace(item.Original.UrlDetalle))
+                {
+                    await DisplayAlert(
+                        "JW Hub",
+                        $"No se pudo abrir la recomendación de {item.Original.Hermano}.\n\n" +
+                        "Sincroniza de nuevo con JW Hub y vuelve a intentarlo.",
+                        "Aceptar");
+                    return;
+                }
+
+                JwHubAccionesAndroid.ResultadoAccionHub resultado =
+                    await JwHubAccionesAndroid.ProcesarRecomendacionAsync(
+                        item.Original.UrlDetalle,
+                        item.Aprobar,
+                        DateTime.Today);
+
+                if (!resultado.Correcto)
+                {
+                    await DisplayAlert(
+                        "JW Hub",
+                        $"No se pudo {(item.Aprobar ? "aprobar" : "cancelar")} a " +
+                        $"{item.Original.Hermano}:\n\n{resultado.Mensaje}\n\n" +
+                        "No se ha preparado el correo.",
+                        "Aceptar");
+                    return;
+                }
+
+                if (item.Original.Id > 0)
+                {
+                    int id = item.Original.Id;
+                    await Task.Run(() =>
+                        DatabaseHelper.EliminarRecomendacionNombramientoMobile(id));
+                }
+            }
+#else
+            await DisplayAlert(
+                "JW Hub",
+                "Aprobar o cancelar recomendaciones solo está disponible en Android.",
+                "Aceptar");
+            return;
+#endif
+        }
+
         try
         {
             string ruta =
@@ -3259,18 +3449,13 @@ public partial class VisitaDetallePage
                 TextoPlanoAHtml(
                     TxtCuerpoS303.Text ?? "");
 
-            List<RecomendacionS2Ui> seleccionadas =
-                _s2Ui
-                    .Where(x => x.Incluir)
-                    .ToList();
-
-            if (seleccionadas.Count > 0)
+            if (aprobadas.Count > 0)
             {
                 cuerpo +=
-                    "<br><br><b>S-2 seleccionados:</b><br>" +
+                    "<br><br><b>S-2 aprobados:</b><br>" +
                     string.Join(
                         "<br>",
-                        seleccionadas.Select(x =>
+                        aprobadas.Select(x =>
                             "• " +
                             WebUtility.HtmlEncode(x.Original.Hermano) +
                             " — " +
@@ -3313,88 +3498,12 @@ public partial class VisitaDetallePage
                 new EmailAttachment(ruta));
 
             // Carta de nombramientos en PDF (solo si hay aprobaciones),
-            // generada con iText: no requiere Word.
-            if (seleccionadas.Count > 0)
+            // ya generada antes de tocar JW Hub.
+            if (rutaCarta is not null)
             {
-                try
-                {
-                    string datosCarta =
-                        await Task.Run(
-                            () =>
-                            {
-                                string n =
-                                    DatabaseHelper
-                                        .ObtenerConfiguracionVisitaMobile(
-                                            "NombreSC",
-                                            "");
-
-                                string a =
-                                    DatabaseHelper
-                                        .ObtenerConfiguracionVisitaMobile(
-                                            "ApellidoSC",
-                                            "");
-
-                                if (string.IsNullOrWhiteSpace(
-                                        a))
-                                {
-                                    a = DatabaseHelper
-                                        .ObtenerConfiguracionVisitaMobile(
-                                            "ApellidosSC",
-                                            "");
-                                }
-
-                                string c =
-                                    DatabaseHelper
-                                        .ObtenerConfiguracionVisitaMobile(
-                                            "NumeroCircuito",
-                                            "");
-
-                                return (n + " " + a).Trim() +
-                                       "\u0001" +
-                                       c;
-                            });
-
-                    string[] partesCarta =
-                        datosCarta.Split('\u0001');
-
-                    byte[] carta =
-                        await Task.Run(
-                            () =>
-                                CartaNombramientosPdfService
-                                    .Generar(
-                                        _vista.CongregacionNombre,
-                                        _vista.CongregacionCodigo,
-                                        partesCarta[0],
-                                        partesCarta.Length > 1
-                                            ? partesCarta[1]
-                                            : "",
-                                        DateTime.Today,
-                                        seleccionadas.Select(
-                                            x => x.Original)));
-
-                    string rutaCarta =
-                        Path.Combine(
-                            FileSystem.CacheDirectory,
-                            "Carta_nombramientos_" +
-                            _vista.CongregacionCodigo +
-                            ".pdf");
-
-                    await File.WriteAllBytesAsync(
-                        rutaCarta,
-                        carta);
-
-                    mensaje.Attachments.Add(
-                        new EmailAttachment(
-                            rutaCarta));
-                }
-                catch (Exception exCarta)
-                {
-                    await DisplayAlert(
-                        "Carta de nombramientos",
-                        "No se pudo generar la carta en PDF; el S-303 " +
-                        "se enviará sin ella.\n\n" + exCarta.Message,
-                        "Aceptar");
-                }
+                mensaje.Attachments.Add(
+                    new EmailAttachment(
+                        rutaCarta));
             }
 
             await Email.Default.ComposeAsync(mensaje);
@@ -3413,6 +3522,88 @@ public partial class VisitaDetallePage
                 "No se pudo preparar el correo:\n\n" + ex.Message,
                 "Aceptar");
         }
+    }
+
+
+    /// <summary>
+    /// Genera la carta de nombramientos (PDF) con las recomendaciones
+    /// marcadas como «Sí», antes de aprobar/cancelar en JW Hub.
+    /// </summary>
+    private async Task<string> GenerarCartaNombramientosAsync(
+        List<RecomendacionS2Ui> seleccionadas)
+    {
+        if (_vista is null)
+        {
+            throw new InvalidOperationException(
+                "No hay datos de la visita.");
+        }
+
+        string datosCarta =
+            await Task.Run(
+                () =>
+                {
+                    string n =
+                        DatabaseHelper
+                            .ObtenerConfiguracionVisitaMobile(
+                                "NombreSC",
+                                "");
+
+                    string a =
+                        DatabaseHelper
+                            .ObtenerConfiguracionVisitaMobile(
+                                "ApellidoSC",
+                                "");
+
+                    if (string.IsNullOrWhiteSpace(
+                            a))
+                    {
+                        a = DatabaseHelper
+                            .ObtenerConfiguracionVisitaMobile(
+                                "ApellidosSC",
+                                "");
+                    }
+
+                    string c =
+                        DatabaseHelper
+                            .ObtenerConfiguracionVisitaMobile(
+                                "NumeroCircuito",
+                                "");
+
+                    return (n + " " + a).Trim() +
+                           "\u0001" +
+                           c;
+                });
+
+        string[] partesCarta =
+            datosCarta.Split('\u0001');
+
+        byte[] carta =
+            await Task.Run(
+                () =>
+                    CartaNombramientosPdfService
+                        .Generar(
+                            _vista.CongregacionNombre,
+                            _vista.CongregacionCodigo,
+                            partesCarta[0],
+                            partesCarta.Length > 1
+                                ? partesCarta[1]
+                                : "",
+                            DateTime.Today,
+                            seleccionadas.Select(
+                                x => x.Original)));
+
+        string ruta =
+            Path.Combine(
+                FileSystem.CacheDirectory,
+                "Carta_nombramientos_" +
+                _vista.CongregacionCodigo +
+                ".pdf");
+
+        await File.WriteAllBytesAsync(
+            ruta,
+            carta);
+
+        return ruta;
     }
 
 
@@ -3634,9 +3825,9 @@ public partial class VisitaDetallePage
     }
 
 
-    private async void BtnVolver_Clicked(
+    private async void Volver_Tapped(
         object sender,
-        EventArgs e)
+        TappedEventArgs e)
     {
         await Navigation.PopAsync();
     }
@@ -3719,6 +3910,35 @@ public sealed class ProgramaVisitaUi
     public bool MostrarUbicacion =>
         !string.IsNullOrWhiteSpace(Ubicacion);
 
+    public bool MostrarResponsable =>
+        !string.IsNullOrWhiteSpace(Original.Responsable);
+
+    public string Responsable =>
+        Original.Responsable;
+
+    public string DiaTurno =>
+        string.Join(
+            " · ",
+            new[]
+            {
+                Original.Dia,
+                Original.Turno
+            }
+            .Where(x => !string.IsNullOrWhiteSpace(x)));
+
+    public string CompaneroVisual =>
+        string.IsNullOrWhiteSpace(Original.Companero)
+            ? ""
+            : "con " + Original.Companero;
+
+    public bool MostrarCompanero =>
+        !string.IsNullOrWhiteSpace(Original.Companero);
+
+    public bool MostrarMapa =>
+        Original.Latitud != 0
+        || Original.Longitud != 0
+        || !string.IsNullOrWhiteSpace(Original.Ubicacion);
+
     public string UbicacionVisual =>
         MostrarUbicacion
             ? "📍 " + Ubicacion
@@ -3743,5 +3963,16 @@ public sealed class TerritorioUi
 public sealed class RecomendacionS2Ui
 {
     public RecomendacionS2Mobile Original { get; set; } = new();
-    public bool Incluir { get; set; }
+
+    /// <summary>
+    /// «Sí» = aprobar en JW Hub; «No» = cancelar en JW Hub al enviar.
+    /// Por defecto «No», igual que en Windows.
+    /// </summary>
+    public string Decision { get; set; } = "No";
+
+    public bool Aprobar =>
+        string.Equals(
+            Decision,
+            "Sí",
+            StringComparison.Ordinal);
 }
