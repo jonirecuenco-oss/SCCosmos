@@ -30,7 +30,11 @@ public partial class DonacionesPage : ContentPage, IActualizableMobile
     {
         base.OnAppearing();
 
+        var reloj = System.Diagnostics.Stopwatch.StartNew();
         await CargarAsync();
+        Services.Perf.Registrar(
+            "Rendimientos",
+            reloj.ElapsedMilliseconds);
     }
 
     public void DatosActualizados()

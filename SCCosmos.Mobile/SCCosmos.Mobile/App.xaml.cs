@@ -18,6 +18,8 @@ namespace SCCosmos.Mobile
 
         protected override Window CreateWindow(IActivationState? activationState)
         {
+            var arranque = System.Diagnostics.Stopwatch.StartNew();
+
             // La tabla de tareas debe existir antes de crear los
             // disparadores de fusión (que detectan las tablas nuevas).
             DatabaseHelper.AsegurarTablaTareasMobile();
@@ -37,38 +39,90 @@ namespace SCCosmos.Mobile
             // Reuniones para el Servicio del Campo (RSC).
             DatabaseHelper.AsegurarTablasRscMobile();
 
+            Perf.Registrar("Arranque.Tablas", arranque.ElapsedMilliseconds);
+
             // Sincronización automática de la base de datos:
             // 1) intenta importar si el PC cambió la BD y no hay
             //    cambios locales pendientes;
             // 2) arranca el vigilante que exporta los cambios locales.
-            _ = SincronizarAlArrancarAsync();
+            // La sincronización (registro de cambios, disparadores y
+            // motor) tarda ~1,4 s: se hace en segundo plano para que la
+            // app abra de inmediato.
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(800);
 
-            AutoSyncService.Iniciar();
+                var relojSync =
+                    System.Diagnostics.Stopwatch.StartNew();
 
-            // Motor nuevo: sincronización directa entre dispositivos
-            // (sin Syncthing para la base de datos).
-            SincronizacionMobile.Iniciar();
+                try
+                {
+                    await SincronizarAlArrancarAsync();
+                }
+                catch
+                {
+                }
+
+                try
+                {
+                    AutoSyncService.Iniciar();
+                }
+                catch
+                {
+                }
+
+                try
+                {
+                    SincronizacionMobile.Iniciar();
+                }
+                catch
+                {
+                }
+
+                Perf.Registrar(
+                    "Arranque.SyncDiferido",
+                    relojSync.ElapsedMilliseconds);
+            });
 
             // Notificaciones del sistema: revisión automática diaria y
             // actualización inmediata del contador de alertas.
             AlertasNotificacionService
                 .ProgramarRevisionDiaria();
+            Perf.Registrar("Arranque.Alertas", arranque.ElapsedMilliseconds);
 
             // Avisos de tareas: alarma para el siguiente aviso (empezar el
             // día, la hora de la tarea o su aviso previo).
             TareasAvisoService
                 .ProgramarSiguiente();
+            Perf.Registrar("Arranque.Tareas", arranque.ElapsedMilliseconds);
 
             _ = AlertasNotificacionService
                 .ActualizarAsync();
 
             _ = TareasAvisoService
                 .VerificarAsync();
+            Perf.Registrar("Arranque.FinServicios", arranque.ElapsedMilliseconds);
+
+            Perf.Registrar("Arranque.Servicios", arranque.ElapsedMilliseconds);
 
             // Widget del escritorio: programación de hoy y próximas tareas.
-            SCCosmos.Mobile.Platforms.Android
-                .SccosmosWidgetProvider
-                .ActualizarTodos();
+            // Se actualiza en segundo plano para no retrasar el arranque.
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(1500);
+
+                try
+                {
+                    SCCosmos.Mobile.Platforms.Android
+                        .SccosmosWidgetProvider
+                        .ActualizarTodos();
+
+                    Perf.Registrar("Arranque.Widget", arranque.ElapsedMilliseconds);
+                }
+                catch
+                {
+                }
+            });
 
             var shell =
                 new AppShell();
@@ -77,6 +131,8 @@ namespace SCCosmos.Mobile
             // cambios de otro dispositivo.
             ActualizacionPaginasMobile.Iniciar(
                 shell);
+
+            Perf.Registrar("Arranque.Shell", arranque.ElapsedMilliseconds);
 
             // Selección de perfil en el primer arranque.
             _ = SolicitarPerfilAsync(shell);

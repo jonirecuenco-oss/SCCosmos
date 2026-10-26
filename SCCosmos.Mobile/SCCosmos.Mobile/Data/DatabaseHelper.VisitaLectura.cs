@@ -67,10 +67,39 @@ public static partial class DatabaseHelper
                 vista.CongregacionCodigo,
                 mesReferencia);
 
+        // Los cuadros terminan en el último mes con actividad real (como
+        // en Windows). Así la pestaña Ministerio puede reutilizar esta
+        // misma carga en vez de repetirla.
+        DateTime fechaActividad =
+            fechaVisita;
+
+        try
+        {
+            DateTime? maxActividad =
+                ObtenerMaximoMesActividadMobile(
+                    vista.CongregacionCodigo);
+
+            DateTime mesVisita =
+                new(
+                    fechaVisita.Year,
+                    fechaVisita.Month,
+                    1);
+
+            if (maxActividad.HasValue
+                && maxActividad.Value < mesVisita)
+            {
+                fechaActividad =
+                    maxActividad.Value;
+            }
+        }
+        catch
+        {
+        }
+
         CargarActividadSeisMesesMobile(
             connection,
             vista.Personas,
-            fechaVisita);
+            fechaActividad);
 
         // Mismo cálculo de requisito / meta prorrateada que Windows.
         CalcularHorasPrecursoresMobile(

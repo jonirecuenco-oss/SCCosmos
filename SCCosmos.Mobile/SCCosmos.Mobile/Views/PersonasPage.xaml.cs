@@ -95,7 +95,9 @@ public partial class PersonasPage
         ActualizarEstadoSintonizador();
 
 
+        var reloj = System.Diagnostics.Stopwatch.StartNew();
         await CargarPersonasAsync();
+        Services.Perf.Registrar("Personas", reloj.ElapsedMilliseconds);
     }
 
 

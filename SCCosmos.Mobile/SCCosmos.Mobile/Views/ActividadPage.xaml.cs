@@ -15,8 +15,10 @@ public partial class ActividadPage : ContentPage
     {
         base.OnAppearing();
 
+        var reloj = System.Diagnostics.Stopwatch.StartNew();
         CargarCategorias();
         Cargar();
+        Services.Perf.Registrar("Actividad", reloj.ElapsedMilliseconds);
     }
 
     private void CargarCategorias()

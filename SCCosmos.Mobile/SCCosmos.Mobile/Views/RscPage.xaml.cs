@@ -27,7 +27,9 @@ public partial class RscPage : ContentPage, IActualizableMobile
         _cargado =
             true;
 
+        var reloj = System.Diagnostics.Stopwatch.StartNew();
         await CargarAsync();
+        Services.Perf.Registrar("RSC", reloj.ElapsedMilliseconds);
     }
 
     public void DatosActualizados()

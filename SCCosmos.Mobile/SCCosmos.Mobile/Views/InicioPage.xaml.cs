@@ -33,7 +33,9 @@ public partial class InicioPage : ContentPage, IActualizableMobile
     {
         base.OnAppearing();
 
+        var reloj = System.Diagnostics.Stopwatch.StartNew();
         await CargarPaginaAsync();
+        Perf.Registrar("Inicio", reloj.ElapsedMilliseconds);
 
         // Mantiene al día las notificaciones del sistema y el contador
         // del icono de la app.
@@ -161,6 +163,9 @@ public partial class InicioPage : ContentPage, IActualizableMobile
             // no hay ninguna, dorada con el número si las hay.
             try
             {
+                var relojAlertas =
+                    System.Diagnostics.Stopwatch.StartNew();
+
                 int pendientes =
                     (await Task.Run(
                         () => AlertasMobileService.Calcular()))
@@ -168,6 +173,10 @@ public partial class InicioPage : ContentPage, IActualizableMobile
 
                 ActualizarCampana(
                     pendientes);
+
+                Services.Perf.Registrar(
+                    "Inicio.Alertas",
+                    relojAlertas.ElapsedMilliseconds);
             }
             catch
             {
@@ -203,9 +212,29 @@ public partial class InicioPage : ContentPage, IActualizableMobile
                     ? "¡Hola!"
                     : $"¡Hola, {nombre}!";
 
+            var relojSemana =
+                System.Diagnostics.Stopwatch.StartNew();
+
+            Task semanaTask =
+                CargarSemanaActualAsync();
+
+            var relojEstadisticas =
+                System.Diagnostics.Stopwatch.StartNew();
+
+            Task estadisticasTask =
+                CargarEstadisticasAsync();
+
             await Task.WhenAll(
-                CargarSemanaActualAsync(),
-                CargarEstadisticasAsync());
+                semanaTask,
+                estadisticasTask);
+
+            Services.Perf.Registrar(
+                "Inicio.Semana",
+                relojSemana.ElapsedMilliseconds);
+
+            Services.Perf.Registrar(
+                "Inicio.Estadisticas",
+                relojEstadisticas.ElapsedMilliseconds);
         }
         catch (Exception ex)
         {
@@ -1217,13 +1246,10 @@ public partial class InicioPage : ContentPage, IActualizableMobile
         var stats =
             await Task.Run(() =>
             {
-                List<Persona> personasActivas =
-                    DatabaseHelper
-                        .ObtenerPersonas()
-                        .Where(p =>
-                            string.IsNullOrWhiteSpace(
-                                p.FechaEliminacion))
-                        .ToList();
+                List<DatabaseHelper.PersonaEstadisticaMobile>
+                    personasActivas =
+                        DatabaseHelper
+                            .ObtenerPersonasParaEstadisticasMobile();
 
                 int precRegulares =
                     personasActivas.Count(p =>

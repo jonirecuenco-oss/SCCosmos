@@ -48,7 +48,11 @@ public partial class AsambleasPage : ContentPage, IActualizableMobile
     {
         base.OnAppearing();
 
+        var reloj = System.Diagnostics.Stopwatch.StartNew();
         await CargarAsync();
+        Services.Perf.Registrar(
+            "Asambleas",
+            reloj.ElapsedMilliseconds);
     }
 
     public void DatosActualizados()

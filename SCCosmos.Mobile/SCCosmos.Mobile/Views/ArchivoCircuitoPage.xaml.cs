@@ -64,7 +64,11 @@ public partial class ArchivoCircuitoPage : ContentPage
     {
         base.OnAppearing();
 
+        var reloj = System.Diagnostics.Stopwatch.StartNew();
         await CargarAsync();
+        Services.Perf.Registrar(
+            "Archivo",
+            reloj.ElapsedMilliseconds);
     }
 
     // ==================================================================
@@ -100,17 +104,33 @@ public partial class ArchivoCircuitoPage : ContentPage
                         "")
                     .Trim();
 
-            _secciones =
-                await LeerJsonAsync<SeccionVfsMobile>(
+            // Los tres archivos se leen a la vez: antes se esperaba uno
+            // tras otro y la lectura de la carpeta era lo más lento.
+            Task<List<SeccionVfsMobile>> tareaSecciones =
+                LeerJsonAsync<SeccionVfsMobile>(
                     JsonSecciones);
 
-            _carpetas =
-                await LeerJsonAsync<CarpetaVfsMobile>(
+            Task<List<CarpetaVfsMobile>> tareaCarpetas =
+                LeerJsonAsync<CarpetaVfsMobile>(
                     JsonCarpetas);
 
-            _archivos =
-                await LeerJsonAsync<ArchivoVfsMobile>(
+            Task<List<ArchivoVfsMobile>> tareaArchivos =
+                LeerJsonAsync<ArchivoVfsMobile>(
                     JsonArchivos);
+
+            await Task.WhenAll(
+                tareaSecciones,
+                tareaCarpetas,
+                tareaArchivos);
+
+            _secciones =
+                tareaSecciones.Result;
+
+            _carpetas =
+                tareaCarpetas.Result;
+
+            _archivos =
+                tareaArchivos.Result;
 
             // Igual que WPF: si no hay secciones, crear las de por defecto.
             if (_secciones.Count == 0)

@@ -63,6 +63,8 @@ public partial class CalendarioPage : ContentPage, IActualizableMobile
     {
         base.OnAppearing();
 
+        var reloj = System.Diagnostics.Stopwatch.StartNew();
+
         if (_primeraCarga)
         {
             _primeraCarga = false;
@@ -84,6 +86,8 @@ public partial class CalendarioPage : ContentPage, IActualizableMobile
         }
 
         await ResaltarSemanaPendienteAsync();
+
+        Services.Perf.Registrar("Calendario", reloj.ElapsedMilliseconds);
     }
 
 
@@ -247,11 +251,15 @@ public partial class CalendarioPage : ContentPage, IActualizableMobile
         DateTime martesActual =
             ObtenerMartesActual();
 
+        // Rango inicial: el año alrededor de hoy, ampliado solo hasta los
+        // datos que existan (sin un año extra por cada lado, que hacía
+        // ~200 semanas y multiplicaba el tiempo de maquetación). Al
+        // desplazarse, ExtenderRangoAsync añade más semanas.
         DateTime inicio =
-            martesActual.AddDays(-52 * 7);
+            martesActual.AddDays(-26 * 7);
 
         DateTime fin =
-            martesActual.AddDays(52 * 7);
+            martesActual.AddDays(26 * 7);
 
         try
         {
@@ -262,17 +270,17 @@ public partial class CalendarioPage : ContentPage, IActualizableMobile
                 DatabaseHelper.ObtenerFechaMaximaSemana();
 
             if (minimo.HasValue
-                && minimo.Value.AddDays(-52 * 7) < inicio)
+                && minimo.Value < inicio)
             {
                 inicio =
-                    minimo.Value.AddDays(-52 * 7);
+                    minimo.Value;
             }
 
             if (maximo.HasValue
-                && maximo.Value.AddDays(52 * 7) > fin)
+                && maximo.Value > fin)
             {
                 fin =
-                    maximo.Value.AddDays(52 * 7);
+                    maximo.Value;
             }
         }
         catch
@@ -324,13 +332,27 @@ public partial class CalendarioPage : ContentPage, IActualizableMobile
 
         try
         {
+            var relojDb =
+                System.Diagnostics.Stopwatch.StartNew();
+
             List<CalendarioItem> elementos =
                 await Task.Run(
                     CargarElementosDesdeBase);
 
+            Services.Perf.Registrar(
+                "Calendario.DB",
+                relojDb.ElapsedMilliseconds);
+
+            var relojUi =
+                System.Diagnostics.Stopwatch.StartNew();
+
             List<CalendarioGrupoMes> grupos =
                 CrearGrupos(
                     elementos);
+
+            Services.Perf.Registrar(
+                "Calendario.Agrupar",
+                relojUi.ElapsedMilliseconds);
 
             _grupos.Clear();
 
@@ -340,23 +362,59 @@ public partial class CalendarioPage : ContentPage, IActualizableMobile
                     grupo);
             }
 
-            await Task.Delay(100);
+            Services.Perf.Registrar(
+                "Calendario.Coleccion",
+                relojUi.ElapsedMilliseconds);
+
+            // Solo un instante para que la lista se pinte antes de
+            // desplazarse a la semana actual (antes 100 ms fijos).
+            await Task.Delay(10);
 
             if (_vistaCalendario)
             {
                 PintarMesCalendario();
+
+                Services.Perf.Registrar(
+                    "Calendario.Mes",
+                    relojUi.ElapsedMilliseconds);
             }
 
+            // El desplazamiento a la semana actual cuesta ~250 ms de
+            // maquetación. Se hace después de mostrar la lista, para que
+            // la página aparezca de inmediato.
             if (centrarEnActual)
             {
-                ScrollASemanaActual();
+                DateTime destino =
+                    ObtenerMartesActual();
+
+                Dispatcher.Dispatch(() =>
+                {
+                    var relojScroll =
+                        System.Diagnostics.Stopwatch.StartNew();
+
+                    ScrollAFecha(
+                        destino,
+                        ScrollToPosition.Center);
+
+                    Services.Perf.Registrar(
+                        "Calendario.Scroll",
+                        relojScroll.ElapsedMilliseconds);
+                });
             }
             else if (ancla.HasValue)
             {
-                ScrollAFecha(
-                    ancla.Value,
-                    ScrollToPosition.Start);
+                DateTime destino =
+                    ancla.Value;
+
+                Dispatcher.Dispatch(
+                    () => ScrollAFecha(
+                        destino,
+                        ScrollToPosition.Start));
             }
+
+            Services.Perf.Registrar(
+                "Calendario.UI",
+                relojUi.ElapsedMilliseconds);
         }
         catch (Exception ex)
         {

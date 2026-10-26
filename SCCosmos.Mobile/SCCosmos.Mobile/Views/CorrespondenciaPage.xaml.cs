@@ -254,7 +254,11 @@ public partial class CorrespondenciaPage : ContentPage, IActualizableMobile
     {
         base.OnAppearing();
 
+        var reloj = System.Diagnostics.Stopwatch.StartNew();
         await CargarCategoriasAsync();
+        Services.Perf.Registrar(
+            "Correspondencia",
+            reloj.ElapsedMilliseconds);
     }
 
     public void DatosActualizados()

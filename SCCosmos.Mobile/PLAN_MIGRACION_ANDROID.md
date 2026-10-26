@@ -2042,3 +2042,14 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   anterior). (6) Diálogo de predicación: título «Predicación - <Mes Año>», sin repetir mes ni estado,
   etiquetas «Horas»/«Cursos bíblicos», `TaskAffinity` vacío y `SingleInstance` para no traer la app al
   frente. (8) Botón de añadir horas de Inicio a 54×44, igual que «ver visita».
+- **Revisión de rendimiento medida en el móvil (2.0.0)**: se añadió `Services/Perf.cs` (logcat
+  «SCCosmosPerf») y se midió en el Galaxy Z Fold7 (Android 16). Arranque en frío **2009 → 511 ms**
+  (la sincronización —registro de cambios y disparadores— pasó a segundo plano tras 800 ms, y el
+  widget se actualiza 1,5 s después). Inicio **908 → 341 ms** (consulta ligera
+  `ObtenerPersonasParaEstadisticasMobile` sin fotos ni el resto de columnas: estadísticas 266 → 107 ms).
+  VisitaDetalle **888 → 379 ms** (los cuadros terminan en el último mes con datos y la pestaña
+  Ministerio reutiliza la carga de la vista; MaxMes 24 ms). Calendario ~310 ms (fuera el `Delay(100)`
+  y el desplazamiento a la semana actual en segundo plano; rango inicial sin el año extra por cada
+  lado: ~200 → ~100 semanas). Archivo 251 ms (los tres JSON se leen en paralelo). Resto medido:
+  Personas 181, Correspondencia 198, Asambleas 151, Escuelas 138, Rendimientos 76, RSC 27, Tareas 25,
+  Circuito 18, Actividad 14 ms.

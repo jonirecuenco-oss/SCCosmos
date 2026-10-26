@@ -48,7 +48,11 @@ public partial class TareasPage : ContentPage, IActualizableMobile
     {
         base.OnAppearing();
 
+        var reloj = System.Diagnostics.Stopwatch.StartNew();
         await CargarAsync();
+        SCCosmos.Mobile.Services.Perf.Registrar(
+            "Tareas",
+            reloj.ElapsedMilliseconds);
     }
 
 

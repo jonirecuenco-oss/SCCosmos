@@ -102,7 +102,11 @@ public partial class VisitaDetallePage
         if (!_cargado)
         {
             _cargado = true;
+
+            var reloj = System.Diagnostics.Stopwatch.StartNew();
             await CargarAsync();
+            Services.Perf.Registrar(
+                "VisitaDetalle", reloj.ElapsedMilliseconds);
 
             return;
         }
@@ -122,11 +126,18 @@ public partial class VisitaDetallePage
 
         try
         {
+            var relojDb =
+                System.Diagnostics.Stopwatch.StartNew();
+
             _vista =
                 await Task.Run(() =>
                     DatabaseHelper.ObtenerVistaVisitaMobile(
                         _semana.Congregacion ?? "",
                         _semana.FechaMartes));
+
+            Services.Perf.Registrar(
+                "Visita.Vista",
+                relojDb.ElapsedMilliseconds);
 
             if (string.IsNullOrWhiteSpace(
                     _vista.CongregacionCodigo))
@@ -142,6 +153,9 @@ public partial class VisitaDetallePage
             PintarCabecera();
             PintarResumen();
 
+            var relojMax =
+                System.Diagnostics.Stopwatch.StartNew();
+
             _maxMesActividad =
                 await Task.Run(
                     () =>
@@ -149,14 +163,66 @@ public partial class VisitaDetallePage
                             .ObtenerMaximoMesActividadMobile(
                                 _vista.CongregacionCodigo));
 
+            Services.Perf.Registrar(
+                "Visita.MaxMes",
+                relojMax.ElapsedMilliseconds);
+
+            var relojPersonas =
+                System.Diagnostics.Stopwatch.StartNew();
+
+            // Si el mes de Ministerio coincide con el de la visita, la
+            // lista ya se cargó con la vista: se reutiliza (ahorra una
+            // segunda carga completa de personas y actividad).
+            DateTime mesVisita =
+                new(
+                    _semana.FechaMartes.Year,
+                    _semana.FechaMartes.Month,
+                    1);
+
+            DateTime mesActual =
+                new(
+                    DateTime.Today.Year,
+                    DateTime.Today.Month,
+                    1);
+
+            DateTime finVista =
+                mesVisita > mesActual
+                    ? mesActual
+                    : mesVisita;
+
+            // La vista termina los cuadros en el último mes con datos.
+            if (_maxMesActividad.HasValue
+                && _maxMesActividad.Value < finVista)
+            {
+                finVista = _maxMesActividad.Value;
+            }
+
+            DateTime finCuadros =
+                MesFinCuadrosMinisterio();
+
+            bool mismaVentana =
+                _mesMinisterio.Year == mesVisita.Year
+                && _mesMinisterio.Month == mesVisita.Month
+                && finCuadros.Year == finVista.Year
+                && finCuadros.Month == finVista.Month;
+
             _personasMinisterio =
-                await Task.Run(
-                    () =>
-                        DatabaseHelper
-                            .ObtenerPersonasMinisterioVisitaMobile(
-                                _vista.CongregacionCodigo,
-                                _mesMinisterio,
-                                MesFinCuadrosMinisterio()));
+                mismaVentana
+                    ? _vista.Personas
+                    : await Task.Run(
+                        () =>
+                            DatabaseHelper
+                                .ObtenerPersonasMinisterioVisitaMobile(
+                                    _vista.CongregacionCodigo,
+                                    _mesMinisterio,
+                                    finCuadros));
+
+            Services.Perf.Registrar(
+                "Visita.Personas",
+                relojPersonas.ElapsedMilliseconds);
+
+            var relojPintar =
+                System.Diagnostics.Stopwatch.StartNew();
 
             PintarGrupos();
             PintarMesMinisterio();
@@ -178,6 +244,10 @@ public partial class VisitaDetallePage
 
             BtnS303.Text =
                 "S-303 y S-2";
+
+            Services.Perf.Registrar(
+                "Visita.Pintar",
+                relojPintar.ElapsedMilliseconds);
         }
         catch (Exception ex)
         {

@@ -22,7 +22,11 @@ public partial class CircuitoPage : ContentPage, IActualizableMobile
     {
         base.OnAppearing();
 
+        var reloj = System.Diagnostics.Stopwatch.StartNew();
         await CargarAsync();
+        Services.Perf.Registrar(
+            "Circuito",
+            reloj.ElapsedMilliseconds);
     }
 
     public void DatosActualizados()

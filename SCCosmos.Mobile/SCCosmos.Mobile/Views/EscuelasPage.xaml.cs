@@ -32,7 +32,9 @@ public partial class EscuelasPage : ContentPage, IActualizableMobile
 
         // Las clases se refrescan siempre al volver (por si se creó,
         // editó o eliminó alguna al entrar en su detalle).
+        var reloj = System.Diagnostics.Stopwatch.StartNew();
         await CargarClasesAsync();
+        Services.Perf.Registrar("Escuelas", reloj.ElapsedMilliseconds);
     }
 
     private static string ClaveDescartados()
