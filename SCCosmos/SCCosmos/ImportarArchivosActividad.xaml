@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-        Title="Importar Archivos" Height="560" Width="550" 
+        Title="Importar actividad" Height="660" Width="620"
         WindowStartupLocation="CenterOwner" WindowBackdropType="Mica" ExtendsContentIntoTitleBar="True">
 
     <Grid Margin="25,45,25,25">
@@ -16,64 +16,115 @@
         <TextBlock Text="INSERTAR ACTIVIDAD" FontSize="20" FontWeight="SemiBold" Foreground="White"/>
         <TextBlock x:Name="TxtSubtitulo" Grid.Row="1" Foreground="#AAAAAA" FontSize="14" Margin="0,5,0,15"/>
 
-        <StackPanel Grid.Row="2">
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
 
-            <!-- AVISO DE DUPLICIDAD (Solo se muestra si la BD dice que ya se importaron antes) -->
-            <Border x:Name="PanelAviso" Background="#4A1515" BorderBrush="#D13438" BorderThickness="1" Padding="15" Margin="0,0,0,15" Visibility="Collapsed" CornerRadius="4">
-                <TextBlock Text="⚠️ ATENCIÓN: Esta congregación ya tiene datos importados para esta semana. Si vuelves a importar, los datos de actividad y territorios se actualizarán (no se borrarán publicadores)." Foreground="#FFB0B0" TextWrapping="Wrap" FontWeight="SemiBold"/>
-            </Border>
+                <!-- AVISO DE DUPLICIDAD -->
+                <Border x:Name="PanelAviso" Background="#4A1515" BorderBrush="#D13438" BorderThickness="1" Padding="15" Margin="0,0,0,15" Visibility="Collapsed" CornerRadius="4">
+                    <TextBlock Text="⚠️ ATENCIÓN: Esta congregación ya tiene datos importados para esta semana. Si vuelves a importar, los datos de actividad y territorios se actualizarán (no se borrarán publicadores)." Foreground="#FFB0B0" TextWrapping="Wrap" FontWeight="SemiBold"/>
+                </Border>
 
-            <!-- Bloque S-21 -->
-            <Border Background="#10FFFFFF" BorderBrush="#20FFFFFF" BorderThickness="1" CornerRadius="8" Padding="15" Margin="0,0,0,15">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
+                <!-- ================================================ -->
+                <!-- 1 · ACTIVIDAD DE PUBLICADORES (S-21)             -->
+                <!-- ================================================ -->
+                <Border Background="#10FFFFFF" BorderBrush="#28FFFFFF" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,0,0,14">
                     <StackPanel>
-                        <TextBlock Text="S-21 (JSON)" FontWeight="SemiBold" FontSize="14" Foreground="White"/>
-                        <TextBlock x:Name="TxtS21" Text="Ningún archivo seleccionado" Foreground="#888888" Margin="0,4,0,0" FontStyle="Italic"/>
-                    </StackPanel>
-                    <ui:Button Grid.Column="1" Content="Examinar" Icon="{ui:SymbolIcon ArrowUp24}" Cursor="Hand" Click="BtnS21_Click" VerticalAlignment="Center"/>
-                </Grid>
-            </Border>
 
-            <!-- Bloque S-21 (PDF) -->
-            <Border Background="#10FFFFFF" BorderBrush="#20FFFFFF" BorderThickness="1" CornerRadius="8" Padding="15" Margin="0,0,0,15">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel>
-                        <TextBlock Text="S-21 (PDF) - Convertir tarjetas" FontWeight="SemiBold" FontSize="14" Foreground="White"/>
-                        <TextBlock x:Name="TxtPdfS21" Text="Elige la carpeta con las tarjetas S-21 en PDF y se generará el JSON." Foreground="#888888" Margin="0,4,0,0" FontStyle="Italic" TextWrapping="Wrap"/>
-                    </StackPanel>
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                        <ui:Button x:Name="BtnVerJsonS21" Content="Ver JSON" Icon="{ui:SymbolIcon Document24}" Cursor="Hand" Appearance="Secondary" Margin="0,0,8,0" Visibility="Collapsed" Click="BtnVerJsonS21_Click"/>
-                        <ui:Button Content="Convertir…" Icon="{ui:SymbolIcon DocumentPdf24}" Cursor="Hand" Click="BtnConvertirPdf_Click"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <Border Background="#1E4A6E" CornerRadius="10" Width="22" Height="22" VerticalAlignment="Center" Margin="0,0,9,0">
+                                <TextBlock Text="1" Foreground="White" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="ACTIVIDAD DE PUBLICADORES" FontWeight="SemiBold" FontSize="15" Foreground="White" VerticalAlignment="Center"/>
+                            <TextBlock Text="(S-21)" Foreground="#7E8794" FontSize="13" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                        </StackPanel>
 
-            <!-- Bloque Territorios -->
-            <Border Background="#10FFFFFF" BorderBrush="#20FFFFFF" BorderThickness="1" CornerRadius="8" Padding="15">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel>
-                        <TextBlock Text="S-13 (JSON) - Opcional" FontWeight="SemiBold" FontSize="14" Foreground="White"/>
-                        <TextBlock x:Name="TxtTerritorios" Text="Opcional. Ningún archivo seleccionado." Foreground="#888888" Margin="0,4,0,0" FontStyle="Italic"/>
+                        <TextBlock Text="Obligatorio. Una tarjeta por publicador y año de servicio."
+                                   Foreground="#7E8794" FontSize="12" Margin="31,0,0,12" TextWrapping="Wrap"/>
+
+                        <!-- JSON ya convertido -->
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Archivo ya convertido (JSON)" Foreground="#C3C7CD" FontSize="12.5"/>
+                                <TextBlock x:Name="TxtS21" Text="Ningún archivo seleccionado" Foreground="#888888" Margin="0,3,0,0" FontStyle="Italic" FontSize="12.5" TextWrapping="Wrap"/>
+                            </StackPanel>
+                            <ui:Button Grid.Column="1" Content="Examinar" Icon="{ui:SymbolIcon ArrowUp24}" Cursor="Hand" VerticalAlignment="Center" Click="BtnS21_Click"/>
+                        </Grid>
+
+                        <!-- Convertir desde PDF -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="O convertir desde PDF" Foreground="#C3C7CD" FontSize="12.5"/>
+                                <TextBlock x:Name="TxtPdfS21" Text="Elige la carpeta con las tarjetas S-21 en PDF." Foreground="#888888" Margin="0,3,0,0" FontStyle="Italic" FontSize="12.5" TextWrapping="Wrap"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <ui:Button x:Name="BtnVerJsonS21" Content="Ver JSON" Icon="{ui:SymbolIcon Document24}" Cursor="Hand" Appearance="Secondary" Margin="0,0,8,0" Visibility="Collapsed" Click="BtnVerJsonS21_Click"/>
+                                <ui:Button Content="Convertir…" Icon="{ui:SymbolIcon DocumentPdf24}" Cursor="Hand" Click="BtnConvertirPdf_Click"/>
+                            </StackPanel>
+                        </Grid>
                     </StackPanel>
-                    <ui:Button Grid.Column="1" Content="Examinar" Icon="{ui:SymbolIcon Map24}" Cursor="Hand" Click="BtnTerritorios_Click" VerticalAlignment="Center"/>
-                </Grid>
-            </Border>
-        </StackPanel>
+                </Border>
+
+                <!-- ================================================ -->
+                <!-- 2 · TERRITORIOS (S-13)                           -->
+                <!-- ================================================ -->
+                <Border Background="#10FFFFFF" BorderBrush="#28FFFFFF" BorderThickness="1" CornerRadius="10" Padding="16">
+                    <StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <Border Background="#3E5C3A" CornerRadius="10" Width="22" Height="22" VerticalAlignment="Center" Margin="0,0,9,0">
+                                <TextBlock Text="2" Foreground="White" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="TERRITORIOS" FontWeight="SemiBold" FontSize="15" Foreground="White" VerticalAlignment="Center"/>
+                            <TextBlock Text="(S-13) · opcional" Foreground="#7E8794" FontSize="13" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                        </StackPanel>
+
+                        <TextBlock Text="Acepta el registro oficial S-13 en PDF (cualquier reparto de columnas), registros con un territorio por página y hojas de cálculo Excel."
+                                   Foreground="#7E8794" FontSize="12" Margin="31,0,0,12" TextWrapping="Wrap"/>
+
+                        <!-- JSON ya convertido -->
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Archivo ya convertido (JSON)" Foreground="#C3C7CD" FontSize="12.5"/>
+                                <TextBlock x:Name="TxtTerritorios" Text="Opcional. Ningún archivo seleccionado." Foreground="#888888" Margin="0,3,0,0" FontStyle="Italic" FontSize="12.5" TextWrapping="Wrap"/>
+                            </StackPanel>
+                            <ui:Button Grid.Column="1" Content="Examinar" Icon="{ui:SymbolIcon Map24}" Cursor="Hand" VerticalAlignment="Center" Click="BtnTerritorios_Click"/>
+                        </Grid>
+
+                        <!-- Convertir desde PDF/Excel -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="O convertir desde PDF o Excel" Foreground="#C3C7CD" FontSize="12.5"/>
+                                <TextBlock x:Name="TxtPdfS13" Text="Elige la carpeta (o el archivo) del registro de territorios." Foreground="#888888" Margin="0,3,0,0" FontStyle="Italic" FontSize="12.5" TextWrapping="Wrap"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <ui:Button x:Name="BtnVerJsonS13" Content="Ver JSON" Icon="{ui:SymbolIcon Document24}" Cursor="Hand" Appearance="Secondary" Margin="0,0,8,0" Visibility="Collapsed" Click="BtnVerJsonS13_Click"/>
+                                <ui:Button Content="Convertir…" Icon="{ui:SymbolIcon Map24}" Cursor="Hand" Click="BtnConvertirS13_Click"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
 
         <!-- Botones de Acción -->
-        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
             <ui:Button Content="Cancelar" Cursor="Hand" Appearance="Secondary" Margin="0,0,10,0" Click="BtnCancelar_Click"/>
             <ui:Button Content="Importar" Cursor="Hand" Appearance="Primary" Icon="{ui:SymbolIcon Checkmark24}" Click="BtnProcesar_Click"/>
         </StackPanel>

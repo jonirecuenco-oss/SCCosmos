@@ -147,6 +147,107 @@ namespace SCCosmos
             }
         }
 
+
+        // =========================================================
+        // S-13 · TERRITORIOS DESDE PDF O EXCEL
+        // =========================================================
+
+        private string _rutaJsonTerritorios;
+
+        private async void BtnConvertirS13_Click(object sender, RoutedEventArgs e)
+        {
+            var dialogo = new OpenFolderDialog
+            {
+                Title = "Carpeta con el registro de territorios (PDF o Excel)"
+            };
+
+            if (dialogo.ShowDialog(this) != true)
+            {
+                return;
+            }
+
+            string carpeta = dialogo.FolderName;
+
+            TxtPdfS13.Text = "Leyendo territorios…";
+            TxtPdfS13.Foreground = System.Windows.Media.Brushes.LightYellow;
+            BtnVerJsonS13.Visibility = Visibility.Collapsed;
+
+            SCCosmos.Sincro.ResultadoConversionS13 resultado = null;
+            string rutaJson = null;
+            string error = null;
+
+            await System.Threading.Tasks.Task.Run(() =>
+            {
+                try
+                {
+                    resultado = SCCosmos.Sincro.ConvertidorS13
+                        .ConvertirCarpeta(carpeta);
+
+                    if (resultado.Territorios.Count > 0)
+                    {
+                        rutaJson = SCCosmos.Sincro.ConvertidorS13
+                            .GuardarJson(resultado.Territorios, carpeta);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    error = ex.Message;
+                }
+            });
+
+            if (error != null)
+            {
+                TxtPdfS13.Text = "No se pudo convertir: " + error;
+                TxtPdfS13.Foreground = System.Windows.Media.Brushes.Salmon;
+                return;
+            }
+
+            if (resultado == null || resultado.Territorios.Count == 0)
+            {
+                TxtPdfS13.Text = "No se reconocieron territorios en esa carpeta.";
+                TxtPdfS13.Foreground = System.Windows.Media.Brushes.Salmon;
+                return;
+            }
+
+            _rutaJsonTerritorios = rutaJson;
+            _rutaTerritorios = rutaJson;
+
+            TxtTerritorios.Text = System.IO.Path.GetFileName(rutaJson)
+                + " (" + resultado.Territorios.Count
+                + " territorios, generado)";
+            TxtTerritorios.Foreground = System.Windows.Media.Brushes.LightBlue;
+            TxtTerritorios.FontStyle = FontStyles.Normal;
+
+            string detalle = resultado.Territorios.Count + " territorios de "
+                + resultado.Archivos.Count + " archivo(s).";
+
+            if (resultado.Omitidos.Count > 0)
+            {
+                detalle += " No se pudieron leer: "
+                    + string.Join(", ", resultado.Omitidos
+                        .Take(3)
+                        .Select(o => o.Archivo));
+            }
+
+            TxtPdfS13.Text = detalle;
+            TxtPdfS13.Foreground = System.Windows.Media.Brushes.LightGreen;
+            BtnVerJsonS13.Visibility = Visibility.Visible;
+        }
+
+
+        private void BtnVerJsonS13_Click(object sender, RoutedEventArgs e)
+        {
+            if (!string.IsNullOrEmpty(_rutaJsonTerritorios)
+                && System.IO.File.Exists(_rutaJsonTerritorios))
+            {
+                System.Diagnostics.Process.Start(
+                    new System.Diagnostics.ProcessStartInfo(_rutaJsonTerritorios)
+                    {
+                        UseShellExecute = true
+                    });
+            }
+        }
+
         private void BtnProcesar_Click(object sender, RoutedEventArgs e)
         {
             if (string.IsNullOrEmpty(_rutaS21))

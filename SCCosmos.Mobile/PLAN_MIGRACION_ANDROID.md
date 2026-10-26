@@ -1974,3 +1974,11 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   guarda de TODOS los años (`FinalizarImportacionJson` recorre `PersonasJson`), y
   `GuardarVersionHistoricaJSON` evita clonar dos veces la instantánea histórica. Mérida Centro:
   147 → 279 registros (INFANTE, Jose Manuel: 2026 = 50 h y 2027 = 40 h).
+- **Territorios S-13 (1.9.0)**: nuevo `ConvertidorS13` (SincroCompartido) y herramienta
+  `Herramientas\convertir_s13.py` (+ .bat). Detecta las columnas del formulario oficial
+  «Registro de asignación de territorio» por geometría (bloques «Asignado a», filas por número más
+  cercano, zona/localidad cuando la numeración se repite), admite códigos de 1-4 cifras o con letras
+  (MON01) y fechas en varios formatos («27 sept 2025», «11/24»), lee registros con un territorio por
+  página y tableros de Excel (ZIP+XML, sin dependencias). Genera `datos_s13.json` con nombre, última
+  fecha completada, asignado a, fecha asignada y fecha completada (la ÚLTIMA asignación). Ventana de
+  importación rediseñada en dos bloques numerados (1 · S-21, 2 · S-13) en Windows y Android.
