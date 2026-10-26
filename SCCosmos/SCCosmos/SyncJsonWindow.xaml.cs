@@ -40,12 +40,19 @@ namespace SCCosmos
             AnalizarDatos();
         }
 
+        // Fichas que ya existían antes de esta importación. Son las únicas
+        // que se ofrecen para vincular: las que se van añadiendo desde el
+        // JSON en esta misma sesión no deben aparecer como candidatas.
+        private List<Persona> _personasExistentes = new List<Persona>();
+
         private void AnalizarDatos()
         {
             // 1. Obtenemos todos los publicadores ACTIVOS de la BD (Solo las Raíces actuales, no los históricos)
             var personasDB = DatabaseHelper.ObtenerPersonasPorCongregacion(_congreCodigo)
                 .Where(p => string.IsNullOrEmpty(p.FechaEliminacion) || ParsearFechaSegura(p.FechaEliminacion) > DateTime.Now)
                 .ToList();
+
+            _personasExistentes = personasDB.ToList();
 
             var procesadosDB = new HashSet<int>();
 
@@ -188,7 +195,7 @@ namespace SCCosmos
                 // Resolver un conflicto S-21 no es una fusión con un registro ficticio.
                 // Abrimos la persona real y cargamos los valores del JSON como opciones
                 // amarillas para escoger campo por campo.
-                var ventana = new FormularioPersonaWindow(item.PersonaDB);
+                var ventana = new FormularioPersonaWindow(item.PersonaDB, _personasExistentes);
                 ventana.Owner = Window.GetWindow(this);
                 ventana.CargarConflictosDesdeJson(item.PersonaFakeJSON);
 
@@ -216,7 +223,7 @@ namespace SCCosmos
                 int nuevoId = DatabaseHelper.InsertarPersonaNueva(item.PersonaFakeJSON);
                 item.PersonaFakeJSON.Id = nuevoId;
 
-                var ventana = new FormularioPersonaWindow(item.PersonaFakeJSON);
+                var ventana = new FormularioPersonaWindow(item.PersonaFakeJSON, _personasExistentes);
                 ventana.Owner = Window.GetWindow(this);
                 ventana.ConfigurarOrigenSincronizacion("S21");
 

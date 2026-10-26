@@ -1987,3 +1987,9 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   el título y el distintivo «(C)», y emparejando cada línea de fechas con el nombre acumulado encima.
   El lector de Excel detecta la columna de etiquetas («Publicador»), que en algunas hojas está en B
   en vez de A. Castuera: 3 → 94 territorios (18 zonas); Cáceres: 154 con nombres (antes 0).
+- **Vincular duplicados al insertar actividad (1.9.2)**: (1) el selector `CmbVincular` tenía activada
+  la búsqueda automática de WPF y seleccionaba una persona a cada letra — `IsTextSearchEnabled=False`
+  y se conserva la posición del cursor al filtrar; (2) `SyncJsonWindow` guarda la lista de personas que
+  YA existían al analizar (`_personasExistentes`) y la pasa como candidatos, así no aparecen las
+  añadidas desde el JSON en la misma sesión; (3) al vincular, si la fecha de nacimiento o bautismo del
+  JSON viene vacía se conserva la que ya tenía la ficha (aunque sea de JW Hub).

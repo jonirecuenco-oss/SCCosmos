@@ -430,7 +430,18 @@ namespace SCCosmos
                         .Where(p => (p.NombreMostrarTabla ?? "").IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0)
                         .ToList();
 
+                // Se conserva la posición del cursor: al reemplazar la
+                // lista el cuadro de texto se reconstruye y, si no, el
+                // cursor saltaría siempre al final.
+                int posicionCursor = tb.CaretIndex;
+
                 CmbVincular.Text = texto;
+
+                if (posicionCursor >= 0 && posicionCursor <= tb.Text.Length)
+                {
+                    tb.CaretIndex = posicionCursor;
+                }
+
                 if (tb.IsFocused) CmbVincular.IsDropDownOpen = true;
             }
             finally
@@ -1214,6 +1225,22 @@ namespace SCCosmos
                 // el Nombre completo del S-21 es el que debe sobrevivir a la fusión.
                 if (pFusion.TieneOrigenS21 && !string.IsNullOrWhiteSpace(pFusion.Nombre))
                     TxtNombre.Text = pFusion.Nombre;
+            }
+
+            // Si la ficha que estamos editando no aporta la fecha (el JSON
+            // viene sin ella), se conserva la que ya tenía la persona
+            // vinculada, aunque proceda de JW Hub: una fecha vacía no
+            // aporta nada y no debe borrar la existente.
+            if (string.IsNullOrWhiteSpace(TxtFechaNac.Text)
+                && !string.IsNullOrWhiteSpace(pFusion.FechaNacimiento))
+            {
+                TxtFechaNac.Text = pFusion.FechaNacimiento;
+            }
+
+            if (string.IsNullOrWhiteSpace(TxtFechaBaut.Text)
+                && !string.IsNullOrWhiteSpace(pFusion.FechaBautismo))
+            {
+                TxtFechaBaut.Text = pFusion.FechaBautismo;
             }
 
             var conflictos = EvaluarConflictos(pFusion, soloCamposS21: false, esVinculacion: true);

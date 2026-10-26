@@ -64,6 +64,8 @@
                                   HorizontalAlignment="Left"
                                   IsEditable="True"
                                   StaysOpenOnEdit="True"
+                                  IsTextSearchEnabled="False"
+                                  IsTextSearchCaseSensitive="False"
                                   TextSearch.TextPath="NombreMostrarTabla"
                                   TextBoxBase.TextChanged="CmbVincular_TextChanged"
                                   SelectionChanged="CmbVincular_SelectionChanged" />
