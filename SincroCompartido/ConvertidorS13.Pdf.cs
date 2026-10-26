@@ -311,11 +311,31 @@ public static partial class ConvertidorS13
                 continue;
             }
 
-            var dePagina = LeerPagina(palabras, pagina.GetPageSize().GetWidth(), ref centros);
+            // El formulario oficial tiene una sola columna «Núm. de
+            // terr.»; si se repite, es un registro por zonas.
+            int cabeceras = palabras.Count(p =>
+                Plano(p.Texto).Trim('.').Equals(
+                    "num",
+                    StringComparison.OrdinalIgnoreCase));
 
-            if (dePagina.Count == 0)
+            List<TerritorioS13> dePagina;
+
+            if (cabeceras >= 2)
             {
-                dePagina = LeerPaginaSimple(palabras) ?? new List<TerritorioS13>();
+                dePagina = LeerPaginaColumnas(palabras);
+            }
+            else
+            {
+                dePagina = LeerPagina(
+                    palabras,
+                    pagina.GetPageSize().GetWidth(),
+                    ref centros);
+
+                if (dePagina.Count == 0)
+                {
+                    dePagina = LeerPaginaSimple(palabras)
+                        ?? new List<TerritorioS13>();
+                }
             }
 
             foreach (var territorio in dePagina)
@@ -727,6 +747,245 @@ public static partial class ConvertidorS13
         }
 
         return (fechas, restantes);
+    }
+
+
+    /// <summary>
+    /// Registros con varias zonas en la misma página: cada columna lleva
+    /// su «Núm. de terr. &lt;zona&gt; &lt;número&gt;» y, debajo, las
+    /// asignaciones (nombre y una o dos fechas).
+    /// </summary>
+    private static List<TerritorioS13> LeerPaginaColumnas(List<PalabraPdf> palabras)
+    {
+        var resultado = new List<TerritorioS13>();
+
+        var cabeceras = palabras
+            .Where(p => Plano(p.Texto).Trim('.').Equals(
+                "num",
+                StringComparison.OrdinalIgnoreCase))
+            .OrderBy(p => p.X0)
+            .ToList();
+
+        if (cabeceras.Count == 0)
+        {
+            return resultado;
+        }
+
+        float yCabecera = cabeceras.Min(p => p.Y0);
+        float ancho = palabras.Max(p => p.X1) + 20f;
+
+        var limites = new List<(float X0, float X1)>();
+
+        for (int i = 0; i < cabeceras.Count; i++)
+        {
+            float x0 = cabeceras[i].X0 - 4f;
+            float x1 = i + 1 < cabeceras.Count
+                ? cabeceras[i + 1].X0 - 4f
+                : ancho;
+
+            limites.Add((x0, x1));
+        }
+
+        foreach (var limite in limites)
+        {
+            var enColumna = palabras
+                .Where(p => p.CentroX >= limite.X0 && p.CentroX < limite.X1)
+                .OrderBy(p => p.CentroY)
+                .ThenBy(p => p.X0)
+                .ToList();
+
+            if (enColumna.Count == 0)
+            {
+                continue;
+            }
+
+            var lineas = AgruparLineas(enColumna, 4f);
+
+            int inicio = 0;
+
+            for (int i = 0; i < lineas.Count; i++)
+            {
+                if (lineas[i].Palabras.Any(p => Plano(p.Texto).Trim('.').Equals(
+                        "num",
+                        StringComparison.OrdinalIgnoreCase)))
+                {
+                    inicio = i;
+                    break;
+                }
+            }
+
+            // La cabecera acaba en la línea que cierra el número.
+            int indiceDatos = 0;
+            string acumulado = "";
+
+            for (int i = inicio; i < lineas.Count; i++)
+            {
+                string textoLinea = string.Join(" ",
+                    lineas[i].Palabras.OrderBy(p => p.X0).Select(p => p.Texto));
+
+                acumulado += " " + textoLinea;
+
+                if (Plano(acumulado).Contains("terr")
+                    && Regex.IsMatch(textoLinea.Trim(), @"\d{1,4}[A-Za-z]?\s*$"))
+                {
+                    indiceDatos = i + 1;
+                    break;
+                }
+            }
+
+            if (indiceDatos == 0)
+            {
+                continue;
+            }
+
+            string textoCabecera = string.Join(" ",
+                lineas.Skip(inicio)
+                    .Take(indiceDatos - inicio)
+                    .SelectMany(l => l.Palabras.OrderBy(p => p.X0).Select(p => p.Texto)));
+
+            textoCabecera = Regex.Replace(
+                textoCabecera, @"(?i)\bde\s+terr\.?\b", " ");
+            textoCabecera = Regex.Replace(
+                textoCabecera, @"(?i)\b(n[uú]m|terr)\.?", " ");
+            textoCabecera = string.Join(" ",
+                textoCabecera.Split(
+                    ' ',
+                    StringSplitOptions.RemoveEmptyEntries));
+
+            var m = Regex.Match(textoCabecera, @"(\d{1,4}[A-Za-z]?)\s*$");
+
+            if (!m.Success)
+            {
+                continue;
+            }
+
+            string numero = m.Groups[1].Value;
+            string zona = textoCabecera
+                .Substring(0, m.Index)
+                .Trim(' ', '.', '-', '·');
+
+            var resto = lineas
+                .Skip(indiceDatos)
+                .SelectMany(l => l.Palabras)
+                .ToList();
+
+            if (resto.Count == 0)
+            {
+                continue;
+            }
+
+            // Emparejado nombre → fechas.
+            var asignaciones = new List<(string Nombre, List<string> Fechas)>();
+            var nombreActual = new List<string>();
+
+            foreach (var linea in AgruparLineas(resto, 4f))
+            {
+                var textos = linea.Palabras
+                    .Where(p => Plano(p.Texto).Trim('(', ')', '.').Length > 0
+                                && !Plano(p.Texto).Trim('(', ')', '.').Equals(
+                                    "c",
+                                    StringComparison.OrdinalIgnoreCase))
+                    .Select(p => p.Texto)
+                    .ToList();
+
+                var (fechas, _) = SepararFechas(
+                    linea.Palabras.OrderBy(p => p.X0).ToList());
+
+                if (fechas.Count > 0)
+                {
+                    string nombre = string.Join(" ",
+                        textos.Where(EsNombre));
+
+                    if (nombre.Trim().Length == 0)
+                    {
+                        nombre = string.Join(" ", nombreActual);
+                    }
+
+                    asignaciones.Add((
+                        string.Join(" ", nombre.Split(
+                            ' ',
+                            StringSplitOptions.RemoveEmptyEntries)),
+                        fechas));
+
+                    nombreActual.Clear();
+                }
+                else
+                {
+                    nombreActual.AddRange(textos.Where(EsNombre));
+                }
+            }
+
+            if (asignaciones.Count == 0)
+            {
+                continue;
+            }
+
+            string nombreFinal = "";
+            string fechaAsignado = "";
+            string fechaCompletado = "";
+            string ultima = "";
+
+            foreach (var (nombre, fechas) in asignaciones)
+            {
+                if (nombre.Length > 0)
+                {
+                    nombreFinal = nombre;
+                }
+
+                if (fechas.Count >= 2)
+                {
+                    fechaAsignado = NormalizarFecha(fechas[0]);
+                    fechaCompletado = NormalizarFecha(fechas[1]);
+
+                    if (ClaveFecha(fechaCompletado) > ClaveFecha(ultima))
+                    {
+                        ultima = fechaCompletado;
+                    }
+                }
+                else
+                {
+                    fechaAsignado = NormalizarFecha(fechas[0]);
+                    fechaCompletado = "";
+                }
+            }
+
+            resultado.Add(new TerritorioS13
+            {
+                Nombre = numero,
+                Area = zona,
+                UltimaFechaCompletado = ultima,
+                AsignadoA = nombreFinal,
+                FechaAsignado = fechaAsignado,
+                FechaCompletado = fechaCompletado,
+            });
+        }
+
+        return resultado;
+    }
+
+
+    private static List<(float Y, List<PalabraPdf> Palabras)> AgruparLineas(
+        List<PalabraPdf> palabras,
+        float tolerancia)
+    {
+        var lineas = new List<(float Y, List<PalabraPdf> Palabras)>();
+
+        foreach (var palabra in palabras
+            .OrderBy(p => p.CentroY)
+            .ThenBy(p => p.X0))
+        {
+            if (lineas.Count > 0
+                && Math.Abs(lineas[^1].Y - palabra.CentroY) <= tolerancia)
+            {
+                lineas[^1].Palabras.Add(palabra);
+            }
+            else
+            {
+                lineas.Add((palabra.CentroY, new List<PalabraPdf> { palabra }));
+            }
+        }
+
+        return lineas;
     }
 
 

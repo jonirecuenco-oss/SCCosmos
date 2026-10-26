@@ -56,6 +56,19 @@ public static partial class ConvertidorS13
             return new List<TerritorioS13>();
         }
 
+        // Columna de etiquetas («Publicador», «Entregado/Devuelto»): no
+        // siempre es la primera (hay hojas que empiezan en la B).
+        int columnaEtiqueta = 1;
+
+        foreach (var celda in celdas)
+        {
+            if (celda.Value.Contains("publicador", StringComparison.OrdinalIgnoreCase))
+            {
+                columnaEtiqueta = celda.Key.Columna;
+                break;
+            }
+        }
+
         var numeros = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
         for (int c = 1; c <= columnas; c++)
@@ -87,7 +100,8 @@ public static partial class ConvertidorS13
             {
                 string columna1 = Obtener(celdas, f, par.Value);
                 string columna2 = Obtener(celdas, f, par.Value + 1);
-                string etiqueta = Obtener(celdas, f, 1).ToLowerInvariant();
+                string etiqueta = Obtener(celdas, f, columnaEtiqueta)
+                    .ToLowerInvariant();
 
                 bool esPublicador = etiqueta.Contains("publicador");
                 bool esEntrega = etiqueta.Contains("entrega")

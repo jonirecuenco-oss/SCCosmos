@@ -1982,3 +1982,8 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   página y tableros de Excel (ZIP+XML, sin dependencias). Genera `datos_s13.json` con nombre, última
   fecha completada, asignado a, fecha asignada y fecha completada (la ÚLTIMA asignación). Ventana de
   importación rediseñada en dos bloques numerados (1 · S-21, 2 · S-13) en Windows y Android.
+- **S-13: Castuera y Excel desplazado (1.9.1)**: `LeerPaginaColumnas` cubre los registros con varias
+  zonas en la misma página (varios «Núm. de terr.»), tomando zona y número de la cabecera, saltando
+  el título y el distintivo «(C)», y emparejando cada línea de fechas con el nombre acumulado encima.
+  El lector de Excel detecta la columna de etiquetas («Publicador»), que en algunas hojas está en B
+  en vez de A. Castuera: 3 → 94 territorios (18 zonas); Cáceres: 154 con nombres (antes 0).
