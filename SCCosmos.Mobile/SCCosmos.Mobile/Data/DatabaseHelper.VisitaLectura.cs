@@ -892,6 +892,19 @@ public static partial class DatabaseHelper
                 fechaVisita.Month,
                 1);
 
+        // Si la visita es de un mes futuro (aún sin datos), se muestran
+        // los 6 meses anteriores a hoy, que sí suelen tener actividad.
+        DateTime mesActual =
+            new(
+                DateTime.Today.Year,
+                DateTime.Today.Month,
+                1);
+
+        if (mesFin > mesActual)
+        {
+            mesFin = mesActual;
+        }
+
         var meses =
             new List<(DateTime Fecha, string Mes, string Anio)>();
 
@@ -1121,6 +1134,43 @@ public static partial class DatabaseHelper
                         7);
             }
         }
+
+        // Se marca quién no ha informado nada en estos 6 meses.
+        foreach (VistaPersonaVisitaMobile persona
+                 in personas)
+        {
+            bool tieneHistorial =
+                persona.Actividad.Any(a => a.ExisteRegistro);
+
+            bool reporto =
+                persona.Actividad.Any(a =>
+                    a.ExisteRegistro
+                    && (a.Participacion
+                        || TieneHorasActividad(a.Horas)));
+
+            persona.EsInactivo =
+                tieneHistorial && !reporto;
+        }
+    }
+
+
+    private static bool TieneHorasActividad(string? horas)
+    {
+        string limpio =
+            (horas ?? "")
+                .Replace(" ", "")
+                .Replace(",", ".")
+                .Trim();
+
+        return limpio.Length > 0
+            && limpio != "0"
+            && limpio != "0.0"
+            && double.TryParse(
+                limpio,
+                System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out double valor)
+            && valor > 0;
     }
 
 
@@ -1910,7 +1960,8 @@ public static partial class DatabaseHelper
                 vista.Personas
                     .Where(
                         p =>
-                            p.Grupo > 0)
+                            p.Grupo > 0
+                            && !p.EsInactivo)
                     .ToList();
 
         vista.TotalPersonas =
@@ -2452,6 +2503,12 @@ public sealed class VistaPersonaVisitaMobile
     public List<VistaActividadMesMobile>
         Actividad
     { get; set; } = new();
+
+    /// <summary>
+    /// Sin actividad informada en los últimos 6 meses (con historial
+    /// previo). No cuenta en estadísticas ni en el número de publicadores.
+    /// </summary>
+    public bool EsInactivo { get; set; }
 }
 
 

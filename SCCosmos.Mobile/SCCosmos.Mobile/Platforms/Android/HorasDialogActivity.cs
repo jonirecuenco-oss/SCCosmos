@@ -17,7 +17,9 @@ namespace SCCosmos.Mobile.Platforms.Android;
     Theme = "@android:style/Theme.Material.Dialog.Alert",
     ExcludeFromRecents = true,
     NoHistory = true,
-    Label = "Predicación este mes")]
+    TaskAffinity = "",
+    LaunchMode = global::Android.Content.PM.LaunchMode.SingleInstance,
+    Label = "Predicación")]
 public class HorasDialogActivity : global::Android.App.Activity
 {
     /// <summary>Avisa a las pantallas abiertas de que se guardó.</summary>
@@ -32,7 +34,7 @@ public class HorasDialogActivity : global::Android.App.Activity
 
     private global::Android.Widget.EditText? _cbsTexto;
 
-    private global::Android.Widget.TextView? _estadoDia;
+    private global::Android.Widget.TextView? _titulo;
 
     private string _usuario = "SC";
 
@@ -65,9 +67,9 @@ public class HorasDialogActivity : global::Android.App.Activity
                 FindViewById<global::Android.Widget.EditText>(
                     Resource.Id.dialog_horas_cbs);
 
-            _estadoDia =
+            _titulo =
                 FindViewById<global::Android.Widget.TextView>(
-                    Resource.Id.dialog_horas_estado_dia);
+                    Resource.Id.dialog_horas_titulo);
 
             var cancelar =
                 FindViewById<global::Android.Widget.Button>(
@@ -146,16 +148,17 @@ public class HorasDialogActivity : global::Android.App.Activity
                         new System.Globalization.CultureInfo("es-ES"));
             }
 
-            var mesVista =
-                FindViewById<global::Android.Widget.TextView>(
-                    Resource.Id.dialog_horas_mes);
-
-            if (mesVista != null)
+            if (_titulo != null)
             {
-                mesVista.Text =
+                string mes =
                     _fecha.ToString(
                         "MMMM yyyy",
                         new System.Globalization.CultureInfo("es-ES"));
+
+                _titulo.Text =
+                    "Predicación - "
+                    + char.ToUpper(mes[0], new System.Globalization.CultureInfo("es-ES"))
+                    + mes.Substring(1);
             }
 
             var (horas, cbs) =
@@ -176,13 +179,6 @@ public class HorasDialogActivity : global::Android.App.Activity
             if (_cbsTexto != null)
             {
                 _cbsTexto.Text = cbs.ToString();
-            }
-
-            if (_estadoDia != null)
-            {
-                _estadoDia.Text = (horas > 0 || cbs > 0)
-                    ? "Ya hay datos guardados ese día."
-                    : "Ese día aún no tiene horas guardadas.";
             }
         }
         catch

@@ -6,19 +6,12 @@
     android:padding="20dp">
 
     <TextView
+        android:id="@+id/dialog_horas_titulo"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Predicación este mes"
+        android:text="Predicación"
         android:textSize="18sp"
         android:textStyle="bold" />
-
-    <TextView
-        android:id="@+id/dialog_horas_mes"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:text=""
-        android:textSize="13sp" />
 
     <Button
         android:id="@+id/dialog_horas_fecha"
@@ -30,18 +23,10 @@
         android:textAllCaps="false" />
 
     <TextView
-        android:id="@+id/dialog_horas_estado_dia"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:text=""
-        android:textSize="11sp" />
-
-    <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
-        android:text="Horas de ese día"
+        android:text="Horas"
         android:textSize="13sp" />
 
     <EditText
@@ -55,7 +40,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
-        android:text="Cursos bíblicos de ese día"
+        android:text="Cursos bíblicos"
         android:textSize="13sp" />
 
     <EditText

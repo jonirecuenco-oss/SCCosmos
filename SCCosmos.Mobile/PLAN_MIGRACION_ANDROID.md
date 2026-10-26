@@ -2032,3 +2032,13 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   `InitializeComponent` y `Cargar()` usaba controles aún sin crear. Se ignora el evento si `!IsLoaded`
   y `Cargar()` sale si faltan `ListaTareas`/`TxtResumen`. Verificado abriendo la página: carga las
   tres pestañas y las tareas sin error.
+- **Mejoras Android 1.9.9**: (1) `VistaPersonaVisitaMobile.EsInactivo` (6 meses sin horas ni
+  participación, con historial previo) y `CalcularResumenVistaMobile` excluye a los inactivos de todas
+  las estadísticas; se ordenan al final y muestran «INACTIVO». (2) La ventana de 6 meses se recorta al
+  mes actual si la visita es futura, para que se vean los datos de predicación. (3) Panel «Datos»:
+  fuera nombre/código y dirección; se muestran «Email:» y «Email de AV:»
+  (`ObtenerDatosExtraCongregacionMobile`). (4) Caché de tiempos de viaje a 25 min (el widget se
+  refresca cada 30). (5) `GetViewAt` limpia mapa/descripción/✓ antes de pintar (restos del día
+  anterior). (6) Diálogo de predicación: título «Predicación - <Mes Año>», sin repetir mes ni estado,
+  etiquetas «Horas»/«Cursos bíblicos», `TaskAffinity` vacío y `SingleInstance` para no traer la app al
+  frente. (8) Botón de añadir horas de Inicio a 54×44, igual que «ver visita».

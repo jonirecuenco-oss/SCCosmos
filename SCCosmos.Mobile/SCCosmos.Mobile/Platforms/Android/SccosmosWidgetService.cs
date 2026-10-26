@@ -313,6 +313,21 @@ public class SccosmosWidgetFactory
                         Resource.Id.fila_programa_texto,
                         fila.Texto);
 
+                    // Se limpian los restos de vistas reutilizadas por la
+                    // lista (antes quedaban el 📍 y la descripción del día
+                    // anterior).
+                    vistas.SetViewVisibility(
+                        Resource.Id.fila_programa_mapa,
+                        ViewStates.Gone);
+
+                    vistas.SetTextViewText(
+                        Resource.Id.fila_programa_secundaria,
+                        "");
+
+                    vistas.SetViewVisibility(
+                        Resource.Id.fila_programa_secundaria,
+                        ViewStates.Gone);
+
                     // Línea secundaria: descripción y tiempo en coche.
                     string secundaria =
                         fila.Secundaria;
@@ -379,6 +394,10 @@ public class SccosmosWidgetFactory
                                 SccosmosWidgetProvider.ColorTareaVencida)
                             : global::Android.Graphics.Color.ParseColor("#E6E8EB"));
 
+                    vistas.SetViewVisibility(
+                        Resource.Id.fila_tarea_ok,
+                        ViewStates.Gone);
+
                     if (fila.TareaId > 0)
                     {
                         SccosmosWidgetProvider.PonerClicItem(
@@ -411,6 +430,10 @@ public class SccosmosWidgetFactory
                     vistas.SetTextViewText(
                         Resource.Id.fila_alerta_texto,
                         fila.Texto);
+
+                    vistas.SetViewVisibility(
+                        Resource.Id.fila_alerta_ok,
+                        ViewStates.Gone);
 
                     if (!string.IsNullOrWhiteSpace(
                             fila.Firma))

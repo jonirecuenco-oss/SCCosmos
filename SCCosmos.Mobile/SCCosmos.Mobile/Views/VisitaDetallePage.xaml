@@ -70,22 +70,17 @@
                                FontSize="11"
                                FontAttributes="Bold" />
 
-                        <Label x:Name="LblCodigo"
-                               TextColor="White"
-                               FontAttributes="Bold"
-                               FontSize="14" />
-
-                        <Label x:Name="LblDireccion"
-                               TextColor="#B6BBC2"
-                               FontSize="12"
-                               IsVisible="False" />
-
                         <Label x:Name="LblReuniones"
                                TextColor="#B6BBC2"
                                FontSize="12"
                                IsVisible="False" />
 
                         <Label x:Name="LblEmail"
+                               TextColor="#B6BBC2"
+                               FontSize="12"
+                               IsVisible="False" />
+
+                        <Label x:Name="LblEmailAV"
                                TextColor="#B6BBC2"
                                FontSize="12"
                                IsVisible="False" />

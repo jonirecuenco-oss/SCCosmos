@@ -208,17 +208,6 @@ public partial class VisitaDetallePage
         LblCongregacion.Text =
             _vista.CongregacionNombre;
 
-        LblCodigo.Text =
-            string.IsNullOrWhiteSpace(_vista.CongregacionCodigo)
-                ? _vista.CongregacionNombre
-                : _vista.CongregacionNombre +
-                  " · " +
-                  _vista.CongregacionCodigo;
-
-        LblDireccion.Text = _vista.DireccionSalon;
-        LblDireccion.IsVisible =
-            !string.IsNullOrWhiteSpace(LblDireccion.Text);
-
         string reuniones =
             string.Join(
                 "\n",
@@ -238,9 +227,31 @@ public partial class VisitaDetallePage
         LblReuniones.IsVisible =
             !string.IsNullOrWhiteSpace(reuniones);
 
-        LblEmail.Text = _vista.EmailCongregacion;
+        LblEmail.Text = string.IsNullOrWhiteSpace(_vista.EmailCongregacion)
+            ? ""
+            : "Email: " + _vista.EmailCongregacion;
+
         LblEmail.IsVisible =
             !string.IsNullOrWhiteSpace(LblEmail.Text);
+
+        try
+        {
+            var datosZoom =
+                DatabaseHelper.ObtenerDatosExtraCongregacionMobile(
+                    _vista.CongregacionCodigo);
+
+            LblEmailAV.Text =
+                string.IsNullOrWhiteSpace(datosZoom.EmailAV)
+                    ? ""
+                    : "Email de AV: " + datosZoom.EmailAV;
+
+            LblEmailAV.IsVisible =
+                !string.IsNullOrWhiteSpace(LblEmailAV.Text);
+        }
+        catch
+        {
+            LblEmailAV.IsVisible = false;
+        }
     }
 
 
@@ -316,9 +327,11 @@ public partial class VisitaDetallePage
             return;
         }
 
+        // Los inactivos van al final de la lista.
         _personasUi =
             _personasMinisterio
-                .OrderBy(p => p.Grupo)
+                .OrderBy(p => p.EsInactivo)
+                .ThenBy(p => p.Grupo)
                 .ThenBy(p => p.NombreVisual)
                 .Select(CrearPersonaUi)
                 .ToList();
@@ -521,6 +534,11 @@ public partial class VisitaDetallePage
         if (EsPrecursor(p.Servicio))
         {
             datosMinisterio.Add(p.Servicio.Trim());
+        }
+
+        if (p.EsInactivo)
+        {
+            datosMinisterio.Add("INACTIVO");
         }
 
         var ui =

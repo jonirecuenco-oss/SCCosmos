@@ -19,7 +19,10 @@ public static class TiempoViajeService
     private const string ClaveLongitud = "TiempoViajeLng";
     private const string ClaveUbicacionFecha = "TiempoViajeFecha";
 
-    private const int MinutosCacheTiempos = 15;
+    // El widget se actualiza como mínimo cada 30 minutos (límite de
+    // Android): con 25 minutos de caché, cada refresco recalcula el
+    // tiempo del próximo evento sin pasarse del límite de TomTom.
+    private const int MinutosCacheTiempos = 25;
     private const int MinutosMaximosUbicacion = 360;
 
     private static readonly HttpClient Cliente = CrearCliente();
