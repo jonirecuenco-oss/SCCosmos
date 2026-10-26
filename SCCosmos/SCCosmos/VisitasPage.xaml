@@ -141,9 +141,7 @@
 
                                 <!-- ACCIONES DE MINISTERIO -->
                                 <Button Content="➕" ToolTip="Añadir publicador" FontSize="16" FontWeight="SemiBold" Width="46" Height="38" Padding="0" Background="#10893E" Foreground="White" BorderThickness="0" Cursor="Hand" Click="BtnNuevaPersona_Click" VerticalAlignment="Top" Margin="4,0,0,6"/>
-                                <Button x:Name="BtnGenerarS21" ToolTip="Generar todas las tarjetas S-21" Width="46" Height="38" Padding="0" Background="#2D5F8B" Foreground="White" BorderThickness="0" Cursor="Hand" Click="BtnGenerarTarjetasS21_Click" VerticalAlignment="Top" Margin="4,0,0,6">
-                                    <ui:SymbolIcon Symbol="ArrowExport24" FontSize="16" Foreground="White"/>
-                                </Button>
+                                <Button x:Name="BtnGenerarS21" Content="⬇" ToolTip="Generar todas las tarjetas S-21" FontSize="16" FontWeight="SemiBold" Width="46" Height="38" Padding="0" Background="#2D5F8B" Foreground="White" BorderThickness="0" Cursor="Hand" Click="BtnGenerarTarjetasS21_Click" VerticalAlignment="Top" Margin="4,0,0,6"/>
 
                                 <Border Background="#252526" BorderBrush="#3A3A3D" BorderThickness="1" CornerRadius="6" Margin="12,0,0,6" Padding="10,4" Height="38" VerticalAlignment="Top">
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -183,6 +181,42 @@
                                     </Style.Triggers>
                                 </Style>
                             </DataGrid.RowStyle>
+
+                            <!-- Apartado «PUBLICADORES INACTIVOS» al final de la tabla -->
+                            <DataGrid.GroupStyle>
+                                <GroupStyle>
+                                    <GroupStyle.ContainerStyle>
+                                        <Style TargetType="{x:Type GroupItem}">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="{x:Type GroupItem}">
+                                                        <StackPanel>
+                                                            <Border x:Name="CabeceraApartado"
+                                                                    Background="#1A4BA3E3"
+                                                                    BorderBrush="#334BA3E3"
+                                                                    BorderThickness="0,0,0,1"
+                                                                    Padding="10,7"
+                                                                    Margin="0,12,0,2"
+                                                                    CornerRadius="4">
+                                                                <TextBlock Text="{Binding Name}"
+                                                                           Foreground="#7CC0F0"
+                                                                           FontSize="12.5"
+                                                                           FontWeight="SemiBold"/>
+                                                            </Border>
+                                                            <ItemsPresenter/>
+                                                        </StackPanel>
+                                                        <ControlTemplate.Triggers>
+                                                            <DataTrigger Binding="{Binding Name}" Value="Activos">
+                                                                <Setter TargetName="CabeceraApartado" Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </GroupStyle.ContainerStyle>
+                                </GroupStyle>
+                            </DataGrid.GroupStyle>
 
                             <DataGrid.Columns>
                                 <DataGridTemplateColumn Header="Nombre" Width="16*" MinWidth="200" SortMemberPath="NombreComun">
@@ -790,14 +824,25 @@
                         <!-- IMPORTAR S-13 Y SELECTOR DE AÑO DE SERVICIO -->
                         <Grid Margin="0,0,0,15">
 
-                            <ui:Button HorizontalAlignment="Left"
-                                       Content="Importar JSON (S-13)"
-                                       Icon="{ui:SymbolIcon ArrowImport24}"
-                                       Appearance="Secondary"
-                                       Cursor="Hand"
-                                       VerticalAlignment="Center"
-                                       ToolTip="Cargar los territorios desde un archivo S-13 (JSON)"
-                                       Click="BtnImportarTerritoriosJson_Click"/>
+                            <StackPanel Orientation="Horizontal"
+                                        HorizontalAlignment="Left">
+                                <ui:Button Content="Importar PDF / Excel (S-13)"
+                                           Icon="{ui:SymbolIcon DocumentPdf24}"
+                                           Appearance="Primary"
+                                           Cursor="Hand"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,8,0"
+                                           ToolTip="Lee el registro de territorios desde el PDF oficial o desde el Excel y lo importa"
+                                           Click="BtnImportarTerritoriosPdf_Click"/>
+
+                                <ui:Button Content="Importar JSON (S-13)"
+                                           Icon="{ui:SymbolIcon ArrowImport24}"
+                                           Appearance="Secondary"
+                                           Cursor="Hand"
+                                           VerticalAlignment="Center"
+                                           ToolTip="Cargar los territorios desde un archivo S-13 (JSON)"
+                                           Click="BtnImportarTerritoriosJson_Click"/>
+                            </StackPanel>
 
                             <StackPanel Orientation="Horizontal"
                                         HorizontalAlignment="Right">

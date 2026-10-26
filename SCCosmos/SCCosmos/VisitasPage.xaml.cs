@@ -482,6 +482,117 @@ namespace SCCosmos
                     return;
                 }
 
+                ImportarTerritoriosDesdeLista(lista);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "No se pudo importar el JSON:\n\n" +
+                    ex.Message,
+                    "Territorios",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+        }
+
+
+        /// <summary>
+        /// Importa el registro de territorios directamente desde el PDF
+        /// o el Excel del S-13 (sin pasar por el JSON).
+        /// </summary>
+        private async void BtnImportarTerritoriosPdf_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(_congreCodigo))
+            {
+                MessageBox.Show(
+                    "No se ha podido identificar la congregación.",
+                    "Territorios",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                return;
+            }
+
+            var dialogo = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = "Registro de territorios (*.pdf;*.xlsx)|*.pdf;*.xlsx|Todos los archivos (*.*)|*.*",
+                Title = "Seleccionar el registro de territorios (S-13)"
+            };
+
+            if (dialogo.ShowDialog() != true)
+            {
+                return;
+            }
+
+            List<SCCosmos.Sincro.TerritorioS13> convertidos = null;
+            string error = null;
+
+            await Task.Run(() =>
+            {
+                try
+                {
+                    convertidos = SCCosmos.Sincro.ConvertidorS13
+                        .ConvertirArchivo(dialogo.FileName);
+                }
+                catch (Exception ex)
+                {
+                    error = ex.Message;
+                }
+            });
+
+            if (error != null)
+            {
+                MessageBox.Show(
+                    "No se pudo leer el archivo:\n\n" + error,
+                    "Territorios",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+
+                return;
+            }
+
+            if (convertidos == null || convertidos.Count == 0)
+            {
+                MessageBox.Show(
+                    "No se reconocieron territorios en ese archivo.",
+                    "Territorios",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+
+                return;
+            }
+
+            // Se guarda el JSON junto al archivo (útil para revisarlo).
+            try
+            {
+                string carpeta = System.IO.Path.GetDirectoryName(dialogo.FileName);
+                SCCosmos.Sincro.ConvertidorS13.GuardarJson(convertidos, carpeta);
+            }
+            catch
+            {
+            }
+
+            var lista = convertidos
+                .Select(t => new TerritorioJSON
+                {
+                    Nombre = t.Nombre,
+                    UltimaFechaCompletado = t.UltimaFechaCompletado,
+                    AsignadoA = t.AsignadoA,
+                    FechaAsignado = t.FechaAsignado,
+                    FechaCompletado = t.FechaCompletado
+                })
+                .ToList();
+
+            ImportarTerritoriosDesdeLista(lista);
+        }
+
+
+        private void ImportarTerritoriosDesdeLista(List<TerritorioJSON> lista)
+        {
+            try
+            {
                 int existentes = DatabaseHelper
                     .ObtenerTerritoriosPorCongregacion(
                         _congreCodigo)
@@ -2399,17 +2510,8 @@ namespace SCCosmos
                 .ThenBy(g => g.Nombre)
                 .ToList();
 
-            int totalInactivos = _filasVisitasGlobal.Count(f => f.EsInactivo);
-
-            if (totalInactivos > 0)
-            {
-                gruposUnicos.Add(new GrupoVisitaUI
-                {
-                    Nombre = "PUBLICADORES INACTIVOS",
-                    Cantidad = totalInactivos,
-                    EsInactivos = true
-                });
-            }
+            // Los inactivos van dentro de su grupo (y de «SIN ASIGNAR»),
+            // al final de la tabla y bajo su propio apartado.
             TabGrupos.SelectionChanged -= TabGrupos_SelectionChanged;
             TabGrupos.ItemsSource = gruposUnicos;
             TabGrupos.SelectionChanged += TabGrupos_SelectionChanged;
@@ -2493,22 +2595,35 @@ namespace SCCosmos
             }
             else if (TabGrupos?.SelectedItem is GrupoVisitaUI grupoSeleccionado)
             {
-                if (grupoSeleccionado.EsInactivos)
-                {
-                    consulta = consulta.Where(f => f.EsInactivo);
-                }
-                else
-                {
-                    consulta = consulta.Where(f =>
-                        !f.EsInactivo &&
-                        string.Equals(
-                            f.GrupoPredicacion,
-                            grupoSeleccionado.Nombre,
-                            StringComparison.OrdinalIgnoreCase));
-                }
+                // Los inactivos del grupo se muestran también, pero en un
+                // apartado aparte al final de la tabla.
+                consulta = consulta.Where(f =>
+                    string.Equals(
+                        f.GrupoPredicacion,
+                        grupoSeleccionado.Nombre,
+                        StringComparison.OrdinalIgnoreCase));
             }
 
-            TablaVisitas.ItemsSource = consulta.ToList();
+            // Activos primero y, debajo, los inactivos bajo su cabecera.
+            var lista = consulta
+                .OrderBy(f => f.EsInactivo)
+                .ThenBy(f => f.NombreComun ?? "", StringComparer.CurrentCultureIgnoreCase)
+                .ThenBy(f => f.FechaNacimientoReal)
+                .ToList();
+
+            var vista = System.Windows.Data.CollectionViewSource
+                .GetDefaultView(lista);
+
+            vista.GroupDescriptions.Clear();
+
+            if (lista.Any(f => f.EsInactivo)
+                && string.IsNullOrWhiteSpace(busqueda))
+            {
+                vista.GroupDescriptions.Add(
+                    new System.Windows.Data.PropertyGroupDescription("SeccionTabla"));
+            }
+
+            TablaVisitas.ItemsSource = vista;
 
             Dispatcher.BeginInvoke(new Action(() =>
             {
@@ -6046,6 +6161,11 @@ namespace SCCosmos
 
             // Sin actividad informada en los últimos 6 meses.
             public bool EsInactivo { get; set; }
+
+            // Nombre del apartado en el que se agrupa la fila dentro de la
+            // tabla: los inactivos van bajo su propia cabecera al final.
+            public string SeccionTabla =>
+                EsInactivo ? "PUBLICADORES INACTIVOS" : "Activos";
         }
 
         public class FilaTablaTerritorio

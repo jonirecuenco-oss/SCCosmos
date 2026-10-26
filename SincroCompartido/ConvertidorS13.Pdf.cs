@@ -306,6 +306,10 @@ public static partial class ConvertidorS13
                 })
                 .ToList();
 
+            // La nota al pie («*Cuando comience una nueva página…») no es
+            // un territorio: se descarta antes de analizar la página.
+            palabras = QuitarPieDePagina(palabras);
+
             if (palabras.Count == 0)
             {
                 continue;
@@ -677,9 +681,38 @@ public static partial class ConvertidorS13
 
         foreach (var linea in lineas)
         {
-            var textos = linea.Palabras.Select(p => p.Texto.Trim())
-                .Where(t => t.Length > 0)
-                .ToList();
+            bool tieneServicio = linea.Palabras.Any(
+                p => Plano(p.Texto).Contains("servicio"));
+
+            var textos = new List<string>();
+
+            foreach (var palabra in linea.Palabras)
+            {
+                string t = palabra.Texto.Trim();
+
+                if (t.Length == 0)
+                {
+                    continue;
+                }
+
+                string planoToken = Plano(t).Trim(':');
+
+                // Etiquetas del año de servicio: se ignoran, pero el
+                // resto de la línea puede ser la zona («BARCARROTA»).
+                if (planoToken == "ano" || planoToken == "de"
+                    || planoToken.Contains("servicio"))
+                {
+                    continue;
+                }
+
+                if (tieneServicio
+                    && Regex.IsMatch(t, @"^20\d{2}([/-]\d{2,4})?$"))
+                {
+                    continue;
+                }
+
+                textos.Add(t);
+            }
 
             if (textos.Count == 0 || textos.Count > 6)
             {
@@ -958,6 +991,43 @@ public static partial class ConvertidorS13
                 FechaAsignado = fechaAsignado,
                 FechaCompletado = fechaCompletado,
             });
+        }
+
+        return resultado;
+    }
+
+
+    /// <summary>
+    /// Elimina las líneas de la nota al pie del formulario S-13 (y
+    /// cualquier texto suelto con la misma advertencia).
+    /// </summary>
+    private static List<PalabraPdf> QuitarPieDePagina(List<PalabraPdf> palabras)
+    {
+        if (palabras.Count == 0)
+        {
+            return palabras;
+        }
+
+        var lineas = AgruparLineas(palabras, 5f);
+
+        var resultado = new List<PalabraPdf>();
+
+        foreach (var linea in lineas)
+        {
+            string texto = Plano(string.Join(" ",
+                linea.Palabras.OrderBy(p => p.X0).Select(p => p.Texto)));
+
+            bool esPie =
+                texto.Contains("cuando comience")
+                || texto.Contains("anote en esta columna")
+                || texto.Contains("territorios se completaron");
+
+            if (esPie)
+            {
+                continue;
+            }
+
+            resultado.AddRange(linea.Palabras);
         }
 
         return resultado;

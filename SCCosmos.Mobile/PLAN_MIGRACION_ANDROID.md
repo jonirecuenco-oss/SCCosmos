@@ -2010,3 +2010,10 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   Ahora un mes solo cuenta si lo informó al menos el 10 % de los publicadores activos (mínimo 2); si
   ningún mes llega, se usa el último con cualquier dato. Además sustituye N consultas por dos
   (`ObtenerConteoActividadPorMes` + `ObtenerNumeroPublicadoresActivos`), lo que acelera la carga.
+- **Ajustes Visitas + S-13 (1.9.6)**: los inactivos vuelven a aparecer dentro de su grupo (o «SIN
+  ASIGNAR») y se agrupan en el DataGrid bajo la cabecera «PUBLICADORES INACTIVOS» al final
+  (`GroupStyle` con `SeccionTabla`); el botón S-21 usa el glifo «⬇» (46×38) porque el icono anterior
+  no se veía bien; el conversor S-13 descarta la nota al pie («*Cuando comience una nueva página…»),
+  nombra los territorios como «1 Barcarrota» (número + zona/localidad normalizada) y genera el JSON
+  con las claves de `TerritorioJSON` (`Nombre`, `UltimaFechaCompletado`, `AsignadoA`,
+  `FechaAsignado`, `FechaCompletado`); la pestaña Territorios tiene «Importar PDF / Excel (S-13)».

@@ -32,19 +32,21 @@ namespace SCCosmos.Sincro;
 
 public sealed class TerritorioS13
 {
-    [JsonPropertyName("nombre")]
+    // Los nombres del JSON coinciden con los de la clase TerritorioJSON
+    // que importa la aplicación.
+    [JsonPropertyName("Nombre")]
     public string Nombre { get; set; } = "";
 
-    [JsonPropertyName("ultima_fecha_completado")]
+    [JsonPropertyName("UltimaFechaCompletado")]
     public string UltimaFechaCompletado { get; set; } = "";
 
-    [JsonPropertyName("asignado_a")]
+    [JsonPropertyName("AsignadoA")]
     public string AsignadoA { get; set; } = "";
 
-    [JsonPropertyName("fecha_asignado")]
+    [JsonPropertyName("FechaAsignado")]
     public string FechaAsignado { get; set; } = "";
 
-    [JsonPropertyName("fecha_completado")]
+    [JsonPropertyName("FechaCompletado")]
     public string FechaCompletado { get; set; } = "";
 
     [JsonIgnore]
@@ -422,44 +424,78 @@ public static partial class ConvertidorS13
         Dictionary<string, TerritorioS13> territorios,
         List<string> orden)
     {
-        var areas = new HashSet<string>(
-            territorios.Values
-                .Select(t => (t.Area ?? "").Trim())
-                .Where(a => a.Length > 0),
-            StringComparer.OrdinalIgnoreCase);
-
-        var localidades = new HashSet<string>(
-            territorios.Values
-                .Select(t => (t.Localidad ?? "").Trim())
-                .Where(l => l.Length > 0),
-            StringComparer.OrdinalIgnoreCase);
-
         var resultado = new List<TerritorioS13>();
 
         foreach (string clave in orden)
         {
             var t = territorios[clave];
-            string numero = t.Nombre;
 
-            var partes = new List<string>();
+            // Formato: «1 Barcarrota» (número y, si la hay, la zona o la
+            // localidad).
+            string sufijo = (t.Area ?? "").Trim();
 
-            if (t.Localidad.Length > 0 && localidades.Count > 1)
+            if (sufijo.Length == 0)
             {
-                partes.Add(t.Localidad);
+                sufijo = (t.Localidad ?? "").Trim();
             }
 
-            if (t.Area.Length > 0 && areas.Count > 1)
-            {
-                partes.Add(t.Area);
-            }
+            t.Nombre = sufijo.Length > 0
+                ? t.Nombre + " " + NormalizarZona(sufijo)
+                : t.Nombre;
 
-            partes.Add(numero);
-
-            t.Nombre = string.Join(" · ", partes);
             resultado.Add(t);
         }
 
         return resultado;
+    }
+
+
+    /// <summary>
+    /// Pone en minúsculas las partículas y capitaliza las zonas escritas
+    /// en mayúsculas («BARCARROTA» → «Barcarrota»).
+    /// </summary>
+    internal static string NormalizarZona(string texto)
+    {
+        string limpio = string.Join(" ",
+            (texto ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries));
+
+        if (limpio.Length == 0)
+        {
+            return "";
+        }
+
+        bool todoMayusculas = limpio == limpio.ToUpperInvariant();
+
+        if (!todoMayusculas)
+        {
+            return limpio;
+        }
+
+        var cultura = CultureInfo.GetCultureInfo("es-ES");
+
+        var particulas = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "de", "del", "la", "las", "los", "y", "el",
+        };
+
+        var palabras = limpio.ToLower(cultura)
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        for (int i = 0; i < palabras.Length; i++)
+        {
+            if (i > 0 && particulas.Contains(palabras[i]))
+            {
+                continue;
+            }
+
+            if (palabras[i].Length > 0)
+            {
+                palabras[i] = char.ToUpper(palabras[i][0], cultura)
+                    + palabras[i].Substring(1);
+            }
+        }
+
+        return string.Join(" ", palabras);
     }
 
 
