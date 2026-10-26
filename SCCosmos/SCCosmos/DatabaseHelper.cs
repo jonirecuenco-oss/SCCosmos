@@ -1847,6 +1847,97 @@ namespace SCCosmos
             return lista;
         }
 
+        /// <summary>
+        /// Cuántas personas de la congregación informaron actividad real
+        /// (horas o participación) en cada mes. Clave: «yyyy-MM-01».
+        /// Una sola consulta, para no recorrer persona a persona.
+        /// </summary>
+        public static Dictionary<DateTime, int> ObtenerConteoActividadPorMes(string congreCodigo)
+        {
+            var conteo = new Dictionary<DateTime, int>();
+
+            string[] nombresMeses =
+            {
+                "enero", "febrero", "marzo", "abril", "mayo", "junio",
+                "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+            };
+
+            try
+            {
+                using (var connection = new SqliteConnection(ConnectionString))
+                {
+                    connection.Open();
+                    var command = connection.CreateCommand();
+                    command.CommandText = @"
+                        SELECT a.AnioServicio, a.Mes, COUNT(DISTINCT a.PersonaId)
+                        FROM ActividadPersonas a
+                        JOIN Personas p ON p.Id = a.PersonaId
+                        WHERE p.CongregacionCodigo = $codigo
+                          AND p.MesHistorico IS NULL
+                          AND (TRIM(COALESCE(a.Horas, '')) NOT IN ('', '0', '0.0', '0,0')
+                               OR a.Participacion = 1)
+                        GROUP BY a.AnioServicio, a.Mes;";
+                    command.Parameters.AddWithValue("$codigo", congreCodigo);
+
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            string anioServicio = reader.IsDBNull(0) ? "" : reader.GetString(0);
+                            string mes = (reader.IsDBNull(1) ? "" : reader.GetString(1)).ToLowerInvariant();
+                            int personas = reader.GetInt32(2);
+
+                            int indice = Array.IndexOf(nombresMeses, mes);
+                            if (indice < 0 || !int.TryParse(anioServicio, out int anio))
+                            {
+                                continue;
+                            }
+
+                            // Septiembre-diciembre pertenecen al año anterior
+                            // al del año de servicio.
+                            int anioReal = indice >= 8 ? anio - 1 : anio;
+                            var fecha = new DateTime(anioReal, indice + 1, 1);
+
+                            conteo[fecha] = conteo.TryGetValue(fecha, out int previo)
+                                ? previo + personas
+                                : personas;
+                        }
+                    }
+                }
+            }
+            catch
+            {
+            }
+
+            return conteo;
+        }
+
+        /// <summary>Publicadores activos (con grupo) de la congregación.</summary>
+        public static int ObtenerNumeroPublicadoresActivos(string congreCodigo)
+        {
+            try
+            {
+                using (var connection = new SqliteConnection(ConnectionString))
+                {
+                    connection.Open();
+                    var command = connection.CreateCommand();
+                    command.CommandText = @"
+                        SELECT COUNT(*) FROM Personas
+                        WHERE CongregacionCodigo = $codigo
+                          AND MesHistorico IS NULL
+                          AND Grupo > 0
+                          AND (FechaEliminacion IS NULL OR FechaEliminacion = '');";
+                    command.Parameters.AddWithValue("$codigo", congreCodigo);
+
+                    return Convert.ToInt32(command.ExecuteScalar());
+                }
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
         public static void GuardarActividadMensualEditada(int personaId, string mes, string anioServicio, string horas, bool participacion, string cursos, bool precAux, string notas)
         {
             AnotarActividad(

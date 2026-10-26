@@ -192,36 +192,58 @@ namespace SCCosmos
             }
         }
 
+        /// <summary>
+        /// Último mes que se considera «informado» por la congregación.
+        ///
+        /// No basta con que UNA persona tenga actividad: un mes solo cuenta
+        /// si lo informó una parte significativa de los publicadores (al
+        /// menos el 10 %, con un mínimo de 2). Así una fila suelta o mal
+        /// importada no hace aparecer un mes vacío al final de la tabla.
+        /// </summary>
         private DateTime CalcularMaximoMesActividad()
         {
-            DateTime maxFecha = DateTime.MinValue;
-            string[] nombresMesesJson = { "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre" };
-            var listadoHermanos = DatabaseHelper.ObtenerPersonasPorCongregacion(_congreCodigo);
+            var conteo = DatabaseHelper.ObtenerConteoActividadPorMes(_congreCodigo);
 
-            foreach (var h in listadoHermanos)
+            if (conteo.Count == 0)
             {
-                var historico = DatabaseHelper.ObtenerActividadPersona(h.Id);
-                foreach (var act in historico)
-                {
-                    bool horasMayorQueCero = false;
-                    if (double.TryParse(act.Horas?.Replace(",", "."), NumberStyles.Any, CultureInfo.InvariantCulture, out double hMes))
-                    {
-                        if (hMes > 0) horasMayorQueCero = true;
-                    }
+                return DateTime.MinValue;
+            }
 
-                    if (act.Participacion || horasMayorQueCero)
+            int activos = DatabaseHelper.ObtenerNumeroPublicadoresActivos(_congreCodigo);
+            int minimo = Math.Max(2, (int)Math.Ceiling(activos * 0.10));
+
+            DateTime maximo = DateTime.MinValue;
+            bool algunoValido = false;
+
+            foreach (var par in conteo)
+            {
+                if (par.Value < minimo)
+                {
+                    continue;
+                }
+
+                algunoValido = true;
+
+                if (par.Key > maximo)
+                {
+                    maximo = par.Key;
+                }
+            }
+
+            // Si ningún mes llega al umbral (congregaciones muy pequeñas o
+            // datos incompletos), se usa el último mes con cualquier dato.
+            if (!algunoValido)
+            {
+                foreach (var par in conteo)
+                {
+                    if (par.Key > maximo)
                     {
-                        int mIndex = Array.IndexOf(nombresMesesJson, act.Mes?.ToLower());
-                        if (mIndex >= 0 && int.TryParse(act.AnioServicio, out int anioServ))
-                        {
-                            int y = (mIndex >= 8) ? anioServ - 1 : anioServ;
-                            DateTime d = new DateTime(y, mIndex + 1, 1);
-                            if (d > maxFecha) maxFecha = d;
-                        }
+                        maximo = par.Key;
                     }
                 }
             }
-            return maxFecha;
+
+            return maximo;
         }
 
         // ==========================================

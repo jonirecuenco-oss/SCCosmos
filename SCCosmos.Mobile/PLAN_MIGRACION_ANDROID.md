@@ -2005,3 +2005,8 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   `CargarGruposPredicacion`. Los grupos cuentan solo activos y aparece un bloque final
   «PUBLICADORES INACTIVOS (n)» que muestra solo a esos. No se marca a quien no tiene ningún registro
   histórico (datos desconocidos) ni a fichas creadas dentro de esos 6 meses.
+- **Último mes real (1.9.5)**: `CalcularMaximoMesActividad` usaba cualquier fila con horas o
+  participación, así que UNA persona con datos en octubre hacía que la tabla terminara en octubre.
+  Ahora un mes solo cuenta si lo informó al menos el 10 % de los publicadores activos (mínimo 2); si
+  ningún mes llega, se usa el último con cualquier dato. Además sustituye N consultas por dos
+  (`ObtenerConteoActividadPorMes` + `ObtenerNumeroPublicadoresActivos`), lo que acelera la carga.
