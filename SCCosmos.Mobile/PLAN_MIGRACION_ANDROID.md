@@ -2169,6 +2169,13 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   reinicio en septiembre) y se pinta con `ActividadMesUi.Acumulado`; en Windows lo hace
   `CrearAcumuladoMes` y las columnas de mes pasan a `DataGridTemplateColumn` con dos `TextBlock`.
   Se elimina el icono ⚠️ del nombre (Android y Windows): el atraso lo indica el acumulado rojo.
+- **Diferencia de horas (2.1.1)**: en lugar del total acumulado, bajo cada mes se muestra la
+  **diferencia con el ritmo** (`acumulado − requisito/12 × meses`): «+15» en azul si va
+  adelantado, «-50» en rojo si va atrasado y «0» en gris. Los precursores regulares cuentan desde
+  su `FechaInicioPrec` (antes de esa fecha no se muestra la línea); Android añade
+  `p.FechaInicioPrec` a `CargarPersonasVistaMobile` y `VistaPersonaVisitaMobile`, y Windows cambia
+  `AcumuladoM*`/`ColorAcumuladoM*` por `DiferenciaM*`/`ColorDiferenciaM*` con
+  `CrearDiferenciaMes` devolviendo el texto firmado y el color.
 - **Ajustes finos de Visitas (Android 2.0.11)**: (1) el hueco bajo el nombre con chips se debía a
   que los `Border` de las abreviaturas se estiraban a la altura de la fila; ahora la fila tiene
   `RowDefinitions="Auto"`, el `HorizontalStackLayout` mide 22 y cada chip 18 con

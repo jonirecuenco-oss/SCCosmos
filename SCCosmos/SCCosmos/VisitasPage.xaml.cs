@@ -2007,18 +2007,18 @@ namespace SCCosmos
                 estiloCeldaConTooltip.Triggers.Add(triggerNull);
                 estiloCeldaConTooltip.Triggers.Add(triggerVacio);
 
-                // Cada celda: horas del mes y, debajo, el acumulado del
-                // año de servicio (en gris o rojo si va por debajo).
+                // Cada celda: horas del mes y, debajo, la diferencia con
+                // el ritmo (azul si va adelantado, rojo si atrasado).
                 string plantillaXaml =
                     "<DataTemplate xmlns=\"http://schemas.microsoft.com/winfx/2006/xaml/presentation\">" +
                         "<StackPanel VerticalAlignment=\"Center\">" +
                             "<TextBlock Text=\"{Binding ActividadM" + (i + 1) + "}\" Foreground=\"{Binding ColorM" + (i + 1) + "}\" VerticalAlignment=\"Center\" />" +
-                            "<TextBlock Text=\"{Binding AcumuladoM" + (i + 1) + "}\" Foreground=\"{Binding ColorAcumuladoM" + (i + 1) + "}\" FontSize=\"9.5\" Margin=\"0,-2,0,0\">" +
+                            "<TextBlock Text=\"{Binding DiferenciaM" + (i + 1) + "}\" Foreground=\"{Binding ColorDiferenciaM" + (i + 1) + "}\" FontSize=\"9.5\" Margin=\"0,-2,0,0\">" +
                                 "<TextBlock.Style>" +
                                     "<Style TargetType=\"TextBlock\">" +
                                         "<Setter Property=\"Visibility\" Value=\"Visible\" />" +
                                         "<Style.Triggers>" +
-                                            "<DataTrigger Binding=\"{Binding AcumuladoM" + (i + 1) + "}\" Value=\"\">" +
+                                            "<DataTrigger Binding=\"{Binding DiferenciaM" + (i + 1) + "}\" Value=\"\">" +
                                                 "<Setter Property=\"Visibility\" Value=\"Collapsed\" />" +
                                             "</DataTrigger>" +
                                         "</Style.Triggers>" +
@@ -2459,12 +2459,12 @@ namespace SCCosmos
                 DateTime? inicioPrecursor =
                     ParsearFecha(h.FechaInicioPrec);
 
-                var acum1 = CrearAcumuladoMes(informesHistoricos, meses[0], metaMensual, esPrecursorRegular, inicioPrecursor);
-                var acum2 = CrearAcumuladoMes(informesHistoricos, meses[1], metaMensual, esPrecursorRegular, inicioPrecursor);
-                var acum3 = CrearAcumuladoMes(informesHistoricos, meses[2], metaMensual, esPrecursorRegular, inicioPrecursor);
-                var acum4 = CrearAcumuladoMes(informesHistoricos, meses[3], metaMensual, esPrecursorRegular, inicioPrecursor);
-                var acum5 = CrearAcumuladoMes(informesHistoricos, meses[4], metaMensual, esPrecursorRegular, inicioPrecursor);
-                var acum6 = CrearAcumuladoMes(informesHistoricos, meses[5], metaMensual, esPrecursorRegular, inicioPrecursor);
+                var acum1 = CrearDiferenciaMes(informesHistoricos, meses[0], metaMensual, esPrecursorRegular, inicioPrecursor);
+                var acum2 = CrearDiferenciaMes(informesHistoricos, meses[1], metaMensual, esPrecursorRegular, inicioPrecursor);
+                var acum3 = CrearDiferenciaMes(informesHistoricos, meses[2], metaMensual, esPrecursorRegular, inicioPrecursor);
+                var acum4 = CrearDiferenciaMes(informesHistoricos, meses[3], metaMensual, esPrecursorRegular, inicioPrecursor);
+                var acum5 = CrearDiferenciaMes(informesHistoricos, meses[4], metaMensual, esPrecursorRegular, inicioPrecursor);
+                var acum6 = CrearDiferenciaMes(informesHistoricos, meses[5], metaMensual, esPrecursorRegular, inicioPrecursor);
 
                 var nuevaFila = new FilaVisitaPublisher
                 {
@@ -2505,18 +2505,18 @@ namespace SCCosmos
                     NotasM6 = act6.Notas,
                     ColorM6 = act6.ColorValor,
 
-                    AcumuladoM1 = acum1.Texto,
-                    ColorAcumuladoM1 = acum1.Color,
-                    AcumuladoM2 = acum2.Texto,
-                    ColorAcumuladoM2 = acum2.Color,
-                    AcumuladoM3 = acum3.Texto,
-                    ColorAcumuladoM3 = acum3.Color,
-                    AcumuladoM4 = acum4.Texto,
-                    ColorAcumuladoM4 = acum4.Color,
-                    AcumuladoM5 = acum5.Texto,
-                    ColorAcumuladoM5 = acum5.Color,
-                    AcumuladoM6 = acum6.Texto,
-                    ColorAcumuladoM6 = acum6.Color,
+                    DiferenciaM1 = acum1.Texto,
+                    ColorDiferenciaM1 = acum1.Color,
+                    DiferenciaM2 = acum2.Texto,
+                    ColorDiferenciaM2 = acum2.Color,
+                    DiferenciaM3 = acum3.Texto,
+                    ColorDiferenciaM3 = acum3.Color,
+                    DiferenciaM4 = acum4.Texto,
+                    ColorDiferenciaM4 = acum4.Color,
+                    DiferenciaM5 = acum5.Texto,
+                    ColorDiferenciaM5 = acum5.Color,
+                    DiferenciaM6 = acum6.Texto,
+                    ColorDiferenciaM6 = acum6.Color,
 
                     CursosUltimoMes = string.IsNullOrWhiteSpace(act6.Cursos) || act6.Cursos.Trim() == "0" ? "-" : act6.Cursos.Trim(),
                     TerritoriosTrabajados = conteoDevueltos.ToString()
@@ -5087,7 +5087,7 @@ namespace SCCosmos
         /// (50 h/mes los regulares; cuota mensual especiales/misioneros).
         /// Devuelve texto vacío si la persona no tiene requisito anual.
         /// </summary>
-        private static (string Texto, Brush Color) CrearAcumuladoMes(
+        private static (string Texto, Brush Color) CrearDiferenciaMes(
             List<ActividadMensual> informes,
             DateTime mes,
             double metaMensual,
@@ -5165,37 +5165,45 @@ namespace SCCosmos
 
                 if (mesActual < inicioMes)
                 {
-                    meta = 0;
+                    // Antes de empezar como precursor no hay diferencia
+                    // que mostrar.
+                    return ("", Brushes.Transparent);
                 }
-                else
-                {
-                    DateTime inicioAnio =
-                        mes.Month >= 9
-                            ? new DateTime(mes.Year, 9, 1)
-                            : new DateTime(mes.Year - 1, 9, 1);
 
-                    DateTime desde =
-                        inicioMes > inicioAnio ? inicioMes : inicioAnio;
+                DateTime inicioAnio =
+                    mes.Month >= 9
+                        ? new DateTime(mes.Year, 9, 1)
+                        : new DateTime(mes.Year - 1, 9, 1);
 
-                    int meses =
-                        ((mesActual.Year - desde.Year) * 12)
-                        + mesActual.Month
-                        - desde.Month
-                        + 1;
+                DateTime desde =
+                    inicioMes > inicioAnio ? inicioMes : inicioAnio;
 
-                    meta =
-                        metaMensual * Math.Max(0, Math.Min(orden, meses));
-                }
+                int meses =
+                    ((mesActual.Year - desde.Year) * 12)
+                    + mesActual.Month
+                    - desde.Month
+                    + 1;
+
+                meta =
+                    metaMensual * Math.Max(0, Math.Min(orden, meses));
             }
 
+            double diferencia =
+                Math.Round(acumulado - meta, 1);
+
             string texto =
-                Math.Round(acumulado, 1)
-                    .ToString("0.#", CultureInfo.CurrentCulture);
+                diferencia > 0
+                    ? "+" + diferencia.ToString("0.#", CultureInfo.CurrentCulture)
+                    : diferencia < 0
+                        ? diferencia.ToString("0.#", CultureInfo.CurrentCulture)
+                        : "0";
 
             Brush color =
-                acumulado < meta
-                    ? new SolidColorBrush(Color.FromRgb(0xFF, 0x9A, 0xA3))
-                    : new SolidColorBrush(Color.FromRgb(0x9E, 0xA4, 0xAE));
+                diferencia > 0
+                    ? new SolidColorBrush(Color.FromRgb(0x4B, 0xA3, 0xE3))
+                    : diferencia < 0
+                        ? new SolidColorBrush(Color.FromRgb(0xFF, 0x9A, 0xA3))
+                        : new SolidColorBrush(Color.FromRgb(0x9E, 0xA4, 0xAE));
 
             return (texto, color);
         }
@@ -6340,21 +6348,21 @@ namespace SCCosmos
             public Brush ColorM5 { get; set; }
             public Brush ColorM6 { get; set; }
 
-            // Horas acumuladas del año de servicio hasta cada mes
-            // (solo precursores con requisito anual).
-            public string AcumuladoM1 { get; set; } = "";
-            public string AcumuladoM2 { get; set; } = "";
-            public string AcumuladoM3 { get; set; } = "";
-            public string AcumuladoM4 { get; set; } = "";
-            public string AcumuladoM5 { get; set; } = "";
-            public string AcumuladoM6 { get; set; } = "";
+            // Diferencia con el ritmo del año de servicio hasta cada mes
+            // («+15» adelanto, «-50» atraso); solo precursores.
+            public string DiferenciaM1 { get; set; } = "";
+            public string DiferenciaM2 { get; set; } = "";
+            public string DiferenciaM3 { get; set; } = "";
+            public string DiferenciaM4 { get; set; } = "";
+            public string DiferenciaM5 { get; set; } = "";
+            public string DiferenciaM6 { get; set; } = "";
 
-            public Brush ColorAcumuladoM1 { get; set; } = Brushes.Gray;
-            public Brush ColorAcumuladoM2 { get; set; } = Brushes.Gray;
-            public Brush ColorAcumuladoM3 { get; set; } = Brushes.Gray;
-            public Brush ColorAcumuladoM4 { get; set; } = Brushes.Gray;
-            public Brush ColorAcumuladoM5 { get; set; } = Brushes.Gray;
-            public Brush ColorAcumuladoM6 { get; set; } = Brushes.Gray;
+            public Brush ColorDiferenciaM1 { get; set; } = Brushes.Gray;
+            public Brush ColorDiferenciaM2 { get; set; } = Brushes.Gray;
+            public Brush ColorDiferenciaM3 { get; set; } = Brushes.Gray;
+            public Brush ColorDiferenciaM4 { get; set; } = Brushes.Gray;
+            public Brush ColorDiferenciaM5 { get; set; } = Brushes.Gray;
+            public Brush ColorDiferenciaM6 { get; set; } = Brushes.Gray;
 
             public string CursosUltimoMes { get; set; }
             public string TerritoriosTrabajados { get; set; }

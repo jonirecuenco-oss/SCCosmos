@@ -665,7 +665,8 @@ public static partial class DatabaseHelper
                             ELSE p.Id
                         END
                     LIMIT 1
-                ) AS FechaEliminacionRaiz
+                ) AS FechaEliminacionRaiz,
+                p.FechaInicioPrec
             FROM Personas p
             WHERE p.Id IN
             (
@@ -913,7 +914,12 @@ public static partial class DatabaseHelper
                             ? 0
                             : Convert.ToDouble(
                                 reader.GetValue(18),
-                                CultureInfo.InvariantCulture)
+                                CultureInfo.InvariantCulture),
+
+                    FechaInicioPrec =
+                        LeerTexto(
+                            reader,
+                            21)
                 };
 
             persona.NombreVisual =
@@ -1665,6 +1671,18 @@ public static partial class DatabaseHelper
             string anioPersona =
                 "";
 
+            string servicio =
+                (persona.Servicio ?? "")
+                    .Trim()
+                    .ToLowerInvariant();
+
+            bool esRegular =
+                servicio.Contains("precursor regular");
+
+            DateTime? inicioPrecursor =
+                ParseFechaFlexible(
+                    persona.FechaInicioPrec);
+
             for (int i = 0; i < persona.Actividad.Count; i++)
             {
                 VistaActividadMesMobile mes =
@@ -1703,14 +1721,71 @@ public static partial class DatabaseHelper
                     }
                 }
 
-                mes.AcumuladoTexto =
-                    Math.Round(acumulado, 1)
-                        .ToString(
-                            "0.#",
-                            CultureInfo.CurrentCulture);
+                double meta =
+                    (requisito / 12d) * orden;
 
-                mes.AcumuladoEnRojo =
-                    acumulado < (requisito / 12d) * orden;
+                // Los regulares solo cuentan desde que empezaron como
+                // precursores; antes de esa fecha no se muestra nada.
+                if (esRegular && inicioPrecursor.HasValue)
+                {
+                    DateTime inicioMes =
+                        new(
+                            inicioPrecursor.Value.Year,
+                            inicioPrecursor.Value.Month,
+                            1);
+
+                    DateTime mesActual =
+                        new(
+                            mes.Mes.Year,
+                            mes.Mes.Month,
+                            1);
+
+                    if (mesActual < inicioMes)
+                    {
+                        mes.AcumuladoTexto = "";
+                        mes.AcumuladoColor = "#9EA4AE";
+                        continue;
+                    }
+
+                    DateTime inicioAnio =
+                        mes.Mes.Month >= 9
+                            ? new DateTime(mes.Mes.Year, 9, 1)
+                            : new DateTime(mes.Mes.Year - 1, 9, 1);
+
+                    DateTime desde =
+                        inicioMes > inicioAnio
+                            ? inicioMes
+                            : inicioAnio;
+
+                    int mesesDesdeInicio =
+                        ((mesActual.Year - desde.Year) * 12)
+                        + mesActual.Month
+                        - desde.Month
+                        + 1;
+
+                    meta =
+                        (requisito / 12d)
+                        * Math.Max(0, Math.Min(orden, mesesDesdeInicio));
+                }
+
+                double diferencia =
+                    Math.Round(
+                        acumulado - meta,
+                        1);
+
+                mes.AcumuladoTexto =
+                    diferencia > 0
+                        ? "+" + diferencia.ToString("0.#", CultureInfo.CurrentCulture)
+                        : diferencia < 0
+                            ? diferencia.ToString("0.#", CultureInfo.CurrentCulture)
+                            : "0";
+
+                mes.AcumuladoColor =
+                    diferencia > 0
+                        ? "#4BA3E3"
+                        : diferencia < 0
+                            ? "#FF9AA3"
+                            : "#9EA4AE";
             }
         }
     }
@@ -2790,6 +2865,9 @@ public sealed class VistaPersonaVisitaMobile
     public string FechaBautismo
     { get; set; } = "";
 
+    public string FechaInicioPrec
+    { get; set; } = "";
+
     public string Sexo
     { get; set; } = "";
 
@@ -2875,14 +2953,15 @@ public sealed class VistaActividadMesMobile
     { get; set; } = "";
 
     /// <summary>
-    /// Horas acumuladas en el año de servicio hasta este mes (solo
-    /// precursores con requisito anual). Vacío si no aplica.
+    /// Diferencia con el ritmo del año de servicio hasta este mes
+    /// («+15» adelanto, «-50» atraso). Vacío si no aplica.
     /// </summary>
     public string AcumuladoTexto
     { get; set; } = "";
 
-    public bool AcumuladoEnRojo
-    { get; set; }
+    /// <summary>Color de la diferencia: azul, rojo o gris.</summary>
+    public string AcumuladoColor
+    { get; set; } = "#9EA4AE";
 }
 
 

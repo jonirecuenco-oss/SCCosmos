@@ -915,9 +915,9 @@ public partial class VisitaDetallePage
             Acumulado = act.AcumuladoTexto,
             AcumuladoColor =
                 Color.FromArgb(
-                    act.AcumuladoEnRojo
-                        ? "#FF9AA3"
-                        : "#9EA4AE"),
+                    string.IsNullOrWhiteSpace(act.AcumuladoColor)
+                        ? "#9EA4AE"
+                        : act.AcumuladoColor),
             Fondo = Color.FromArgb(fondo),
             TextoColor = Color.FromArgb(texto)
         };
