@@ -2160,6 +2160,15 @@ página abierta se refresca sola cuando llegan cambios de otro dispositivo.
   (4) el separador de inactivos es una banda a todo el ancho, sin recuadro ni subtítulo, solo
   «PUBLICADORES INACTIVOS (n)». Verificado en el móvil: cabecera sin «VISITA», «Sept 2026»,
   tarjetas con A/PR y SM/PR y banda de inactivos a ancho completo.
+- **Horas acumuladas del año de servicio (2.1.0, Android y Windows)**: debajo de las horas de cada
+  mes (Android) y en una segunda línea de cada celda de mes (Windows) aparece el total acumulado
+  del **año de servicio** hasta ese mes; en gris si va al día y en **rojo** si va por debajo del
+  ritmo (`requisitoAnual / 12 × meses transcurridos`; regulares = 50 h/mes). Solo se muestra a
+  quien tiene requisito anual (precursores/misioneros). En Android se calcula en
+  `CalcularAcumuladosAnioServicioMobile` (una consulta por los años de servicio de los 6 meses,
+  reinicio en septiembre) y se pinta con `ActividadMesUi.Acumulado`; en Windows lo hace
+  `CrearAcumuladoMes` y las columnas de mes pasan a `DataGridTemplateColumn` con dos `TextBlock`.
+  Se elimina el icono ⚠️ del nombre (Android y Windows): el atraso lo indica el acumulado rojo.
 - **Ajustes finos de Visitas (Android 2.0.11)**: (1) el hueco bajo el nombre con chips se debía a
   que los `Border` de las abreviaturas se estiraban a la altura de la fila; ahora la fila tiene
   `RowDefinitions="Auto"`, el `HorizontalStackLayout` mide 22 y cada chip 18 con

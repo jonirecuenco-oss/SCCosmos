@@ -912,6 +912,12 @@ public partial class VisitaDetallePage
                 valor is "✓" or "✕"
                     ? 16
                     : 14,
+            Acumulado = act.AcumuladoTexto,
+            AcumuladoColor =
+                Color.FromArgb(
+                    act.AcumuladoEnRojo
+                        ? "#FF9AA3"
+                        : "#9EA4AE"),
             Fondo = Color.FromArgb(fondo),
             TextoColor = Color.FromArgb(texto)
         };
@@ -3940,6 +3946,15 @@ public sealed class ActividadMesUi
     public string Notas { get; set; } = "";
     public bool TieneNotas { get; set; }
     public double ValorFontSize { get; set; } = 14;
+
+    /// <summary>Horas acumuladas del año de servicio hasta este mes.</summary>
+    public string Acumulado { get; set; } = "";
+
+    public bool MostrarAcumulado =>
+        !string.IsNullOrWhiteSpace(Acumulado);
+
+    public Color AcumuladoColor { get; set; } =
+        Color.FromArgb("#9EA4AE");
 
     public Color Fondo { get; set; } = Color.FromArgb("#242830");
     public Color TextoColor { get; set; } = Color.FromArgb("#8F969F");

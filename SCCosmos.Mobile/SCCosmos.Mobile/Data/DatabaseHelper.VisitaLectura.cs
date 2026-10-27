@@ -1508,6 +1508,220 @@ public static partial class DatabaseHelper
                         1);
             }
         }
+
+        CalcularAcumuladosAnioServicioMobile(
+            connection,
+            precursores);
+    }
+
+
+    /// <summary>
+    /// Rellena, en cada uno de los 6 meses mostrados, las horas
+    /// acumuladas del año de servicio hasta ese mes (los precursores
+    /// regulares tienen 50 h/mes; especiales y misioneros, su
+    /// requisito anual entre 12). En rojo si va por debajo del ritmo.
+    /// </summary>
+    private static void CalcularAcumuladosAnioServicioMobile(
+        SqliteConnection connection,
+        List<VistaPersonaVisitaMobile> precursores)
+    {
+        var meses =
+            precursores
+                .FirstOrDefault()
+                ?.Actividad
+                .Select(a => a.Mes)
+                .Where(m => m != default)
+                .ToList()
+            ?? new List<DateTime>();
+
+        if (meses.Count == 0)
+        {
+            return;
+        }
+
+        var anios =
+            meses
+                .Select(AnioServicioDeMesMobile)
+                .Distinct()
+                .ToList();
+
+        var ids =
+            precursores
+                .Select(p => p.PersonaActividadId)
+                .Where(id => id > 0)
+                .Distinct()
+                .ToList();
+
+        // (persona, año de servicio) -> horas por orden de mes.
+        var horas =
+            new Dictionary<(int, string), Dictionary<int, double>>();
+
+        if (ids.Count > 0 && anios.Count > 0)
+        {
+            using SqliteCommand cmd =
+                connection.CreateCommand();
+
+            var parametrosId =
+                new List<string>();
+
+            for (int i = 0; i < ids.Count; i++)
+            {
+                string nombre = "$ac" + i;
+                parametrosId.Add(nombre);
+                cmd.Parameters.AddWithValue(nombre, ids[i]);
+            }
+
+            var parametrosAnio =
+                new List<string>();
+
+            for (int i = 0; i < anios.Count; i++)
+            {
+                string nombre = "$ay" + i;
+                parametrosAnio.Add(nombre);
+                cmd.Parameters.AddWithValue(nombre, anios[i]);
+            }
+
+            cmd.CommandText =
+                $"""
+                SELECT
+                    PersonaId,
+                    lower(COALESCE(Mes, '')),
+                    AnioServicio,
+                    COALESCE(Horas, '')
+                FROM ActividadPersonas
+                WHERE PersonaId IN ({string.Join(", ", parametrosId)})
+                  AND AnioServicio IN ({string.Join(", ", parametrosAnio)});
+                """;
+
+            using SqliteDataReader reader =
+                cmd.ExecuteReader();
+
+            while (reader.Read())
+            {
+                int personaId = reader.GetInt32(0);
+
+                string mesNombre =
+                    LeerTexto(reader, 1)
+                        .Trim()
+                        .ToLowerInvariant();
+
+                string anio =
+                    LeerTexto(reader, 2)
+                        .Trim();
+
+                int numeroMes = NumeroMesDbMobile(mesNombre);
+
+                if (numeroMes <= 0 || anio.Length == 0)
+                {
+                    continue;
+                }
+
+                string horasTexto =
+                    LeerTexto(reader, 3)
+                        .Replace(" ", "")
+                        .Trim();
+
+                if (!double.TryParse(
+                        horasTexto.Replace(",", "."),
+                        NumberStyles.Any,
+                        CultureInfo.InvariantCulture,
+                        out double valorHoras)
+                    || valorHoras <= 0)
+                {
+                    continue;
+                }
+
+                int orden =
+                    numeroMes >= 9
+                        ? numeroMes - 8
+                        : numeroMes + 4;
+
+                var clave = (personaId, anio);
+
+                if (!horas.TryGetValue(
+                        clave,
+                        out Dictionary<int, double>? porMes))
+                {
+                    porMes = new Dictionary<int, double>();
+                    horas[clave] = porMes;
+                }
+
+                porMes[orden] =
+                    porMes.TryGetValue(orden, out double acumuladoMes)
+                        ? acumuladoMes + valorHoras
+                        : valorHoras;
+            }
+        }
+
+        foreach (VistaPersonaVisitaMobile persona in precursores)
+        {
+            int requisito = persona.RequisitoHorasCalculado;
+
+            if (requisito <= 0)
+            {
+                continue;
+            }
+
+            string anioPersona =
+                "";
+
+            for (int i = 0; i < persona.Actividad.Count; i++)
+            {
+                VistaActividadMesMobile mes =
+                    persona.Actividad[i];
+
+                if (mes.Mes == default)
+                {
+                    continue;
+                }
+
+                string anio =
+                    AnioServicioDeMesMobile(mes.Mes);
+
+                if (anio != anioPersona)
+                {
+                    anioPersona = anio;
+                }
+
+                int orden =
+                    mes.Mes.Month >= 9
+                        ? mes.Mes.Month - 8
+                        : mes.Mes.Month + 4;
+
+                double acumulado = 0;
+
+                if (horas.TryGetValue(
+                        (persona.PersonaActividadId, anio),
+                        out Dictionary<int, double>? porMes))
+                {
+                    foreach (KeyValuePair<int, double> par in porMes)
+                    {
+                        if (par.Key <= orden)
+                        {
+                            acumulado += par.Value;
+                        }
+                    }
+                }
+
+                mes.AcumuladoTexto =
+                    Math.Round(acumulado, 1)
+                        .ToString(
+                            "0.#",
+                            CultureInfo.CurrentCulture);
+
+                mes.AcumuladoEnRojo =
+                    acumulado < (requisito / 12d) * orden;
+            }
+        }
+    }
+
+
+    private static string AnioServicioDeMesMobile(DateTime mes)
+    {
+        return (mes.Month >= 9
+                ? mes.Year + 1
+                : mes.Year)
+            .ToString(CultureInfo.InvariantCulture);
     }
 
 
@@ -2659,6 +2873,16 @@ public sealed class VistaActividadMesMobile
 
     public string Notas
     { get; set; } = "";
+
+    /// <summary>
+    /// Horas acumuladas en el año de servicio hasta este mes (solo
+    /// precursores con requisito anual). Vacío si no aplica.
+    /// </summary>
+    public string AcumuladoTexto
+    { get; set; } = "";
+
+    public bool AcumuladoEnRojo
+    { get; set; }
 }
 
 

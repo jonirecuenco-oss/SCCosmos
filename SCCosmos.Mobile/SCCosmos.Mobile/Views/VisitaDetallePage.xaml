@@ -574,17 +574,6 @@
                                                            VerticalTextAlignment="Center" />
                                                 </Border>
 
-                                                <Button Text="⚠"
-                                                        IsVisible="{Binding MostrarAlertaHoras}"
-                                                        CommandParameter="{Binding .}"
-                                                        Clicked="AdvertenciaHoras_Clicked"
-                                                        BackgroundColor="Transparent"
-                                                        TextColor="#FFD38A"
-                                                        FontSize="15"
-                                                        Padding="0"
-                                                        WidthRequest="24"
-                                                        HeightRequest="20"
-                                                        VerticalOptions="Center" />
                                             </HorizontalStackLayout>
                                         </Grid>
 
@@ -602,7 +591,7 @@
                                                 <RoundRectangle CornerRadius="7" />
                                             </Border.StrokeShape>
                                             <Grid>
-                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><HorizontalStackLayout Spacing="2" HorizontalOptions="Center"><Label Text="{Binding Actividad1.Mes}" TextColor="#9EA4AE" FontSize="9" VerticalTextAlignment="Center"/></HorizontalStackLayout><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad1.Valor}" TextColor="{Binding Actividad1.TextoColor}" FontSize="{Binding Actividad1.ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad1.TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout></VerticalStackLayout>
+                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><HorizontalStackLayout Spacing="2" HorizontalOptions="Center"><Label Text="{Binding Actividad1.Mes}" TextColor="#9EA4AE" FontSize="9" VerticalTextAlignment="Center"/></HorizontalStackLayout><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad1.Valor}" TextColor="{Binding Actividad1.TextoColor}" FontSize="{Binding Actividad1.ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad1.TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad1.Acumulado}" IsVisible="{Binding Actividad1.MostrarAcumulado}" TextColor="{Binding Actividad1.AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
                                         
                                             <Button Text=""
                                                     CommandParameter="{Binding Actividad1}"
@@ -623,7 +612,7 @@
                                                 Padding="3,1,3,0">
                                             <Border.StrokeShape><RoundRectangle CornerRadius="7" /></Border.StrokeShape>
                                             <Grid>
-                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><HorizontalStackLayout Spacing="2" HorizontalOptions="Center"><Label Text="{Binding Actividad2.Mes}" TextColor="#9EA4AE" FontSize="9" VerticalTextAlignment="Center"/></HorizontalStackLayout><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad2.Valor}" TextColor="{Binding Actividad2.TextoColor}" FontSize="{Binding Actividad2.ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad2.TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout></VerticalStackLayout>
+                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><HorizontalStackLayout Spacing="2" HorizontalOptions="Center"><Label Text="{Binding Actividad2.Mes}" TextColor="#9EA4AE" FontSize="9" VerticalTextAlignment="Center"/></HorizontalStackLayout><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad2.Valor}" TextColor="{Binding Actividad2.TextoColor}" FontSize="{Binding Actividad2.ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad2.TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad2.Acumulado}" IsVisible="{Binding Actividad2.MostrarAcumulado}" TextColor="{Binding Actividad2.AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
                                         
                                             <Button Text=""
                                                     CommandParameter="{Binding Actividad2}"
@@ -644,7 +633,7 @@
                                                 Padding="3,1,3,0">
                                             <Border.StrokeShape><RoundRectangle CornerRadius="7" /></Border.StrokeShape>
                                             <Grid>
-                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><HorizontalStackLayout Spacing="2" HorizontalOptions="Center"><Label Text="{Binding Actividad3.Mes}" TextColor="#9EA4AE" FontSize="9" VerticalTextAlignment="Center"/></HorizontalStackLayout><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad3.Valor}" TextColor="{Binding Actividad3.TextoColor}" FontSize="{Binding Actividad3.ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad3.TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout></VerticalStackLayout>
+                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><HorizontalStackLayout Spacing="2" HorizontalOptions="Center"><Label Text="{Binding Actividad3.Mes}" TextColor="#9EA4AE" FontSize="9" VerticalTextAlignment="Center"/></HorizontalStackLayout><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad3.Valor}" TextColor="{Binding Actividad3.TextoColor}" FontSize="{Binding Actividad3.ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad3.TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad3.Acumulado}" IsVisible="{Binding Actividad3.MostrarAcumulado}" TextColor="{Binding Actividad3.AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
                                         
                                             <Button Text=""
                                                     CommandParameter="{Binding Actividad3}"
@@ -665,7 +654,7 @@
                                                 Padding="3,1,3,0">
                                             <Border.StrokeShape><RoundRectangle CornerRadius="7" /></Border.StrokeShape>
                                             <Grid>
-                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><HorizontalStackLayout Spacing="2" HorizontalOptions="Center"><Label Text="{Binding Actividad4.Mes}" TextColor="#9EA4AE" FontSize="9" VerticalTextAlignment="Center"/></HorizontalStackLayout><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad4.Valor}" TextColor="{Binding Actividad4.TextoColor}" FontSize="{Binding Actividad4.ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad4.TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout></VerticalStackLayout>
+                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><HorizontalStackLayout Spacing="2" HorizontalOptions="Center"><Label Text="{Binding Actividad4.Mes}" TextColor="#9EA4AE" FontSize="9" VerticalTextAlignment="Center"/></HorizontalStackLayout><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad4.Valor}" TextColor="{Binding Actividad4.TextoColor}" FontSize="{Binding Actividad4.ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad4.TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad4.Acumulado}" IsVisible="{Binding Actividad4.MostrarAcumulado}" TextColor="{Binding Actividad4.AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
                                         
                                             <Button Text=""
                                                     CommandParameter="{Binding Actividad4}"
@@ -686,7 +675,7 @@
                                                 Padding="3,1,3,0">
                                             <Border.StrokeShape><RoundRectangle CornerRadius="7" /></Border.StrokeShape>
                                             <Grid>
-                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><HorizontalStackLayout Spacing="2" HorizontalOptions="Center"><Label Text="{Binding Actividad5.Mes}" TextColor="#9EA4AE" FontSize="9" VerticalTextAlignment="Center"/></HorizontalStackLayout><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad5.Valor}" TextColor="{Binding Actividad5.TextoColor}" FontSize="{Binding Actividad5.ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad5.TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout></VerticalStackLayout>
+                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><HorizontalStackLayout Spacing="2" HorizontalOptions="Center"><Label Text="{Binding Actividad5.Mes}" TextColor="#9EA4AE" FontSize="9" VerticalTextAlignment="Center"/></HorizontalStackLayout><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad5.Valor}" TextColor="{Binding Actividad5.TextoColor}" FontSize="{Binding Actividad5.ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad5.TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad5.Acumulado}" IsVisible="{Binding Actividad5.MostrarAcumulado}" TextColor="{Binding Actividad5.AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
                                         
                                             <Button Text=""
                                                     CommandParameter="{Binding Actividad5}"
@@ -707,7 +696,7 @@
                                                 Padding="3,1,3,0">
                                             <Border.StrokeShape><RoundRectangle CornerRadius="7" /></Border.StrokeShape>
                                             <Grid>
-                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><HorizontalStackLayout Spacing="2" HorizontalOptions="Center"><Label Text="{Binding Actividad6.Mes}" TextColor="#9EA4AE" FontSize="9" VerticalTextAlignment="Center"/></HorizontalStackLayout><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad6.Valor}" TextColor="{Binding Actividad6.TextoColor}" FontSize="{Binding Actividad6.ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad6.TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout></VerticalStackLayout>
+                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><HorizontalStackLayout Spacing="2" HorizontalOptions="Center"><Label Text="{Binding Actividad6.Mes}" TextColor="#9EA4AE" FontSize="9" VerticalTextAlignment="Center"/></HorizontalStackLayout><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad6.Valor}" TextColor="{Binding Actividad6.TextoColor}" FontSize="{Binding Actividad6.ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad6.TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad6.Acumulado}" IsVisible="{Binding Actividad6.MostrarAcumulado}" TextColor="{Binding Actividad6.AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
                                         
                                             <Button Text=""
                                                     CommandParameter="{Binding Actividad6}"

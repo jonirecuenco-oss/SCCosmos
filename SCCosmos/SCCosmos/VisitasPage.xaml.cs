@@ -2007,15 +2007,35 @@ namespace SCCosmos
                 estiloCeldaConTooltip.Triggers.Add(triggerNull);
                 estiloCeldaConTooltip.Triggers.Add(triggerVacio);
 
-                var estiloTextoColorDinamico = new Style(typeof(TextBlock), estiloIzquierda);
-                estiloTextoColorDinamico.Setters.Add(new Setter(TextBlock.ForegroundProperty, new Binding($"ColorM{i + 1}")));
+                // Cada celda: horas del mes y, debajo, el acumulado del
+                // año de servicio (en gris o rojo si va por debajo).
+                string plantillaXaml =
+                    "<DataTemplate xmlns=\"http://schemas.microsoft.com/winfx/2006/xaml/presentation\">" +
+                        "<StackPanel VerticalAlignment=\"Center\">" +
+                            "<TextBlock Text=\"{Binding ActividadM" + (i + 1) + "}\" Foreground=\"{Binding ColorM" + (i + 1) + "}\" VerticalAlignment=\"Center\" />" +
+                            "<TextBlock Text=\"{Binding AcumuladoM" + (i + 1) + "}\" Foreground=\"{Binding ColorAcumuladoM" + (i + 1) + "}\" FontSize=\"9.5\" Margin=\"0,-2,0,0\">" +
+                                "<TextBlock.Style>" +
+                                    "<Style TargetType=\"TextBlock\">" +
+                                        "<Setter Property=\"Visibility\" Value=\"Visible\" />" +
+                                        "<Style.Triggers>" +
+                                            "<DataTrigger Binding=\"{Binding AcumuladoM" + (i + 1) + "}\" Value=\"\">" +
+                                                "<Setter Property=\"Visibility\" Value=\"Collapsed\" />" +
+                                            "</DataTrigger>" +
+                                        "</Style.Triggers>" +
+                                    "</Style>" +
+                                "</TextBlock.Style>" +
+                            "</TextBlock>" +
+                        "</StackPanel>" +
+                    "</DataTemplate>";
 
-                TablaVisitas.Columns.Add(new DataGridTextColumn
+                var plantillaMes =
+                    (DataTemplate)System.Windows.Markup.XamlReader.Parse(plantillaXaml);
+
+                TablaVisitas.Columns.Add(new DataGridTemplateColumn
                 {
                     Header = $"{shortMonths[meses[i].Month - 1]} {meses[i].ToString("yy")}",
-                    Binding = new Binding($"ActividadM{i + 1}"),
+                    CellTemplate = plantillaMes,
                     Width = new DataGridLength(6, DataGridLengthUnitType.Star),
-                    ElementStyle = estiloTextoColorDinamico,
                     CellStyle = estiloCeldaConTooltip
                 });
             }
@@ -2415,17 +2435,8 @@ namespace SCCosmos
                         }
                     }
 
-                    if (horasTotales < metaProrrateada)
-                    {
-                        nombreMostrar += "  ⚠️";
-                        double deficit = Math.Round(metaProrrateada - horasTotales, 1);
-                        tooltipAlerta =
-                            $"ATENCIÓN: Atraso de Horas\n\n" +
-                            $"Meta hasta {mesReferenciaGrid.ToString("MMMM")}: {Math.Round(metaProrrateada, 1)}h\n" +
-                            $"Horas logradas: {horasTotales}h\n\n" +
-                            $"Déficit actual: -{deficit}h\n" +
-                            $"Meta del año de servicio: {requisitoAnual}h";
-                    }
+                    // Ya no se marca el nombre con ⚠️: el atraso se ve
+                    // en el acumulado del año en rojo, bajo cada mes.
                 }
 
                 var act1 = LocalizarActividadMes(informesHistoricos, meses[0]);
@@ -2434,6 +2445,26 @@ namespace SCCosmos
                 var act4 = LocalizarActividadMes(informesHistoricos, meses[3]);
                 var act5 = LocalizarActividadMes(informesHistoricos, meses[4]);
                 var act6 = LocalizarActividadMes(informesHistoricos, meses[5]);
+
+                // Acumulado del año de servicio hasta cada mes (solo
+                // precursores con requisito anual). Los regulares suman
+                // 50 h/mes; especiales y misioneros, su cuota mensual.
+                double metaMensual =
+                    esPrecursorRegular
+                        ? 50
+                        : (srv.Contains("especial") || srv.Contains("misionero"))
+                            ? requisitoAnual / 12.0
+                            : 0;
+
+                DateTime? inicioPrecursor =
+                    ParsearFecha(h.FechaInicioPrec);
+
+                var acum1 = CrearAcumuladoMes(informesHistoricos, meses[0], metaMensual, esPrecursorRegular, inicioPrecursor);
+                var acum2 = CrearAcumuladoMes(informesHistoricos, meses[1], metaMensual, esPrecursorRegular, inicioPrecursor);
+                var acum3 = CrearAcumuladoMes(informesHistoricos, meses[2], metaMensual, esPrecursorRegular, inicioPrecursor);
+                var acum4 = CrearAcumuladoMes(informesHistoricos, meses[3], metaMensual, esPrecursorRegular, inicioPrecursor);
+                var acum5 = CrearAcumuladoMes(informesHistoricos, meses[4], metaMensual, esPrecursorRegular, inicioPrecursor);
+                var acum6 = CrearAcumuladoMes(informesHistoricos, meses[5], metaMensual, esPrecursorRegular, inicioPrecursor);
 
                 var nuevaFila = new FilaVisitaPublisher
                 {
@@ -2473,6 +2504,19 @@ namespace SCCosmos
                     ActividadM6 = act6.Valor,
                     NotasM6 = act6.Notas,
                     ColorM6 = act6.ColorValor,
+
+                    AcumuladoM1 = acum1.Texto,
+                    ColorAcumuladoM1 = acum1.Color,
+                    AcumuladoM2 = acum2.Texto,
+                    ColorAcumuladoM2 = acum2.Color,
+                    AcumuladoM3 = acum3.Texto,
+                    ColorAcumuladoM3 = acum3.Color,
+                    AcumuladoM4 = acum4.Texto,
+                    ColorAcumuladoM4 = acum4.Color,
+                    AcumuladoM5 = acum5.Texto,
+                    ColorAcumuladoM5 = acum5.Color,
+                    AcumuladoM6 = acum6.Texto,
+                    ColorAcumuladoM6 = acum6.Color,
 
                     CursosUltimoMes = string.IsNullOrWhiteSpace(act6.Cursos) || act6.Cursos.Trim() == "0" ? "-" : act6.Cursos.Trim(),
                     TerritoriosTrabajados = conteoDevueltos.ToString()
@@ -5037,6 +5081,126 @@ namespace SCCosmos
             return (valorVisual, notasDelMes, colorFinal, cursosMes);
         }
 
+        /// <summary>
+        /// Horas acumuladas del año de servicio hasta <paramref name="mes"/>
+        /// y color: rojo si van por debajo del ritmo del requisito
+        /// (50 h/mes los regulares; cuota mensual especiales/misioneros).
+        /// Devuelve texto vacío si la persona no tiene requisito anual.
+        /// </summary>
+        private static (string Texto, Brush Color) CrearAcumuladoMes(
+            List<ActividadMensual> informes,
+            DateTime mes,
+            double metaMensual,
+            bool esPrecursorRegular,
+            DateTime? inicioPrecursor)
+        {
+            if (metaMensual <= 0)
+            {
+                return ("", Brushes.Transparent);
+            }
+
+            string[] nombres =
+            {
+                "enero", "febrero", "marzo", "abril", "mayo", "junio",
+                "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+            };
+
+            string anio =
+                (mes.Month >= 9 ? mes.Year + 1 : mes.Year).ToString();
+
+            int orden =
+                mes.Month >= 9 ? mes.Month - 8 : mes.Month + 4;
+
+            double acumulado = 0;
+
+            foreach (ActividadMensual act in informes)
+            {
+                if (!string.Equals(act.AnioServicio, anio, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                int numero =
+                    Array.IndexOf(
+                        nombres,
+                        (act.Mes ?? "").Trim().ToLowerInvariant()) + 1;
+
+                if (numero <= 0)
+                {
+                    continue;
+                }
+
+                int ordenAct =
+                    numero >= 9 ? numero - 8 : numero + 4;
+
+                if (ordenAct > orden)
+                {
+                    continue;
+                }
+
+                string horas =
+                    (act.Horas ?? "").Replace(" ", "").Replace(",", ".");
+
+                if (double.TryParse(
+                        horas,
+                        System.Globalization.NumberStyles.Any,
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        out double valor)
+                    && valor > 0)
+                {
+                    acumulado += valor;
+                }
+            }
+
+            double meta =
+                metaMensual * orden;
+
+            if (esPrecursorRegular && inicioPrecursor.HasValue)
+            {
+                DateTime inicioMes =
+                    new(inicioPrecursor.Value.Year, inicioPrecursor.Value.Month, 1);
+
+                DateTime mesActual =
+                    new(mes.Year, mes.Month, 1);
+
+                if (mesActual < inicioMes)
+                {
+                    meta = 0;
+                }
+                else
+                {
+                    DateTime inicioAnio =
+                        mes.Month >= 9
+                            ? new DateTime(mes.Year, 9, 1)
+                            : new DateTime(mes.Year - 1, 9, 1);
+
+                    DateTime desde =
+                        inicioMes > inicioAnio ? inicioMes : inicioAnio;
+
+                    int meses =
+                        ((mesActual.Year - desde.Year) * 12)
+                        + mesActual.Month
+                        - desde.Month
+                        + 1;
+
+                    meta =
+                        metaMensual * Math.Max(0, Math.Min(orden, meses));
+                }
+            }
+
+            string texto =
+                Math.Round(acumulado, 1)
+                    .ToString("0.#", CultureInfo.CurrentCulture);
+
+            Brush color =
+                acumulado < meta
+                    ? new SolidColorBrush(Color.FromRgb(0xFF, 0x9A, 0xA3))
+                    : new SolidColorBrush(Color.FromRgb(0x9E, 0xA4, 0xAE));
+
+            return (texto, color);
+        }
+
+
         private bool EsFechaEnRango(string fechaStr, DateTime inicio, DateTime fin)
         {
             if (string.IsNullOrWhiteSpace(fechaStr)) return false;
@@ -6175,6 +6339,22 @@ namespace SCCosmos
             public Brush ColorM4 { get; set; }
             public Brush ColorM5 { get; set; }
             public Brush ColorM6 { get; set; }
+
+            // Horas acumuladas del año de servicio hasta cada mes
+            // (solo precursores con requisito anual).
+            public string AcumuladoM1 { get; set; } = "";
+            public string AcumuladoM2 { get; set; } = "";
+            public string AcumuladoM3 { get; set; } = "";
+            public string AcumuladoM4 { get; set; } = "";
+            public string AcumuladoM5 { get; set; } = "";
+            public string AcumuladoM6 { get; set; } = "";
+
+            public Brush ColorAcumuladoM1 { get; set; } = Brushes.Gray;
+            public Brush ColorAcumuladoM2 { get; set; } = Brushes.Gray;
+            public Brush ColorAcumuladoM3 { get; set; } = Brushes.Gray;
+            public Brush ColorAcumuladoM4 { get; set; } = Brushes.Gray;
+            public Brush ColorAcumuladoM5 { get; set; } = Brushes.Gray;
+            public Brush ColorAcumuladoM6 { get; set; } = Brushes.Gray;
 
             public string CursosUltimoMes { get; set; }
             public string TerritoriosTrabajados { get; set; }
