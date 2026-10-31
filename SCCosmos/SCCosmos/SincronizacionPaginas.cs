@@ -143,12 +143,14 @@ namespace SCCosmos
 
                 // Páginas sencillas del menú: volver a abrirlas es
                 // equivalente a lo que hacía el usuario a mano.
+                // En lugar de recargarla por sorpresa (tirones y se pierde
+                // el sitio mientras se trabaja), se avisa y el usuario
+                // decide cuándo actualizar.
                 if (EsPaginaSencilla(
                         pagina))
                 {
                     _ventana?
-                        .MenuPrincipal
-                        .Navigate(
+                        .MostrarAvisoCambios(
                             pagina.GetType());
                 }
             }

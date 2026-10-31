@@ -187,6 +187,30 @@
                     </Style>
                 </Thumb.Style>
             </Thumb>
+
+            <!-- Aviso de cambios llegados de otro dispositivo: en lugar de
+                 recargar la página por sorpresa, se ofrece actualizarla. -->
+            <Border x:Name="AvisoCambios"
+                    Visibility="Collapsed"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Bottom"
+                    Margin="0,0,0,24"
+                    Padding="16,8"
+                    CornerRadius="8"
+                    Background="#F01E2B3A"
+                    BorderBrush="#4BA3E3"
+                    BorderThickness="1"
+                    Panel.ZIndex="1000">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Hay cambios de otro dispositivo"
+                               Foreground="White"
+                               VerticalAlignment="Center"
+                               Margin="0,0,14,0"/>
+                    <ui:Button Content="Actualizar"
+                               Appearance="Primary"
+                               Click="BtnActualizarCambios_Click"/>
+                </StackPanel>
+            </Border>
         </Grid>
     </Grid>
 </ui:FluentWindow>

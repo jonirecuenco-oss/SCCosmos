@@ -183,6 +183,35 @@ namespace SCCosmos
             await Task.Delay(esperaMs);
         }
 
+        private Type? _paginaConCambios;
+
+        /// <summary>
+        /// Llegaron cambios de otro dispositivo mientras se ve una página que
+        /// no sabe refrescarse sola: en lugar de recargarla por sorpresa se
+        /// ofrece actualizarla (aviso abajo, en el centro).
+        /// </summary>
+        public void MostrarAvisoCambios(
+            Type tipoPagina)
+        {
+            _paginaConCambios = tipoPagina;
+            AvisoCambios.Visibility = Visibility.Visible;
+        }
+
+        private void BtnActualizarCambios_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            Type? tipo = _paginaConCambios;
+
+            AvisoCambios.Visibility = Visibility.Collapsed;
+            _paginaConCambios = null;
+
+            if (tipo != null)
+            {
+                MenuPrincipal.Navigate(tipo);
+            }
+        }
+
         public MainWindow()
         {
             var relojArranque =
@@ -194,12 +223,27 @@ namespace SCCosmos
             InitializeComponent();
 
             MenuPrincipal.Navigated += (s, e) =>
+            {
                 Perf.Contexto = e.Page?.GetType().Name ?? "";
+
+                // Al abrir una página sus datos ya son los últimos: el
+                // aviso de cambios deja de tener sentido.
+                AvisoCambios.Visibility = Visibility.Collapsed;
+                _paginaConCambios = null;
+            };
 
             if (Environment.GetEnvironmentVariable("SCCOSMOS_PERF") == "1")
             {
                 ContentRendered += async (s, e) =>
                     await RecorridoMedicionAsync();
+            }
+
+            // Prueba del registro de errores (solo con SCCOSMOS_PRUEBA_ERROR=1).
+            if (Environment.GetEnvironmentVariable("SCCOSMOS_PRUEBA_ERROR") == "1")
+            {
+                ContentRendered += (s, e) =>
+                    Dispatcher.BeginInvoke(new Action(() =>
+                        throw new InvalidOperationException("Prueba del registro de errores")));
             }
             DatabaseHelper.InicializarDatabase();
             DatabaseHelper.AsegurarAlertasLeidas();

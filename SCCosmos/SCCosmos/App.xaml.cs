@@ -15,6 +15,10 @@ namespace SCCosmos
             // Cada arranque empieza con el registro de tiempos limpio.
             Perf.Limpiar();
 
+            // Errores no capturados: se anotan y, si son de la interfaz, la
+            // aplicación sigue funcionando en lugar de cerrarse.
+            RegistroErrores.Iniciar(this);
+
             base.OnStartup(e);
         }
     }

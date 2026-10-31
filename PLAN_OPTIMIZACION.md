@@ -48,8 +48,8 @@ Herramientas: adb en `C:\Program Files (x86)\Android\android-sdk\platform-tools\
 | S2 | Android Visitas: listas dentro de `ScrollView` (sin virtualización) | ✔️ abrir 653 → 264 ms | 2 |
 | S2b | Android Visitas: tarjeta de persona pesada; el primer desplazamiento rápido tiene más tirones (p99 113 ms) | ✅ | 2 |
 | S3 | Windows Visitas: al abrir se cargaban todas las pestañas; Territorios costaba 300–380 ms. (La tabla no era el problema: solo muestra el grupo elegido, ~18 filas.) | ✔️ bloqueo 484 ms → ninguno en 4 de 6 aperturas | 2 |
-| S4 | Windows: Visitas, Asambleas y Correspondencia se recrean al llegar cambios de otro equipo | 🔎 (decidir con el usuario) | 2 |
-| S5 | Sincro: cada 1 s por par, SCAN + ordenación de `SCCosmos_Cambios` (sin índice en `Seq`, sin pooling) | 🔎 | 3 |
+| S4 | Windows: Visitas, Asambleas y Correspondencia se recreaban al llegar cambios de otro equipo | ✔️ ahora aviso «Hay cambios de otro dispositivo · Actualizar» (sin probar con cambios reales) | 2 |
+| S5 | Sincro: cada 1 s por par (y cada 6 s en la carpeta) se recorría `SCCosmos_Cambios` aunque no hubiera cambios | ✔️ marca barata (fecha de escritura de la BD y su WAL) + consulta forzada cada 30 s; sin cambio de esquema. CPU en reposo del PC sin mejora medible (1,1 % → 1,3 %, pendiente de analizar); en el móvil, por medir | 3 |
 | S6 | Guardados borrar + reinsertar (D 8.497 / I 5.678 / U 684); borrados nunca podados | ✅ | 3 |
 | S7 | `InicializarDatabase()` completo (~100 ms) en cada `ObtenerCongregaciones` | ✔️ Personas 450 → 220 ms | 1 |
 | S8 | `PersonasPage` no se daba de baja de `ProgresoCambiado` | ✔️ | 1 |
@@ -59,10 +59,10 @@ Herramientas: adb en `C:\Program Files (x86)\Android\android-sdk\platform-tools\
 | S12 | Fotos sin `DecodePixelWidth` / `Freeze` / caché | 🔎 | 5 |
 | S13 | Windows Calendario sin virtualizar: se creaban las 210 semanas | ✔️ 1.404 → 231 ms | 2 |
 | S13b | Calendario: aún crea 88 filas (caché de una página) con ~9 `ui:Button` por fila | ✅ | 2 |
-| S14 | Sincro al salir: el vaciado dura siempre ~4 s (lee los archivos de los demás aunque no haya nada que enviar) | ✅ | 3 |
+| S14 | Sincro al vaciar: leía los archivos de los demás (~4 s en el móvil) | ✔️ solo publica lo propio; cierre de Windows 746 → 578 ms; Android por medir | 3 |
 | S15 | Windows arranque: los 117 disparadores se rehacían con ~240 commits | ✔️ parcial: 131 → 57 ms; bloqueo al arrancar 625 → 548 ms (el resto es WPF/JIT: S10) | 2 |
 
-Otros riesgos: 504 `catch {}` vacíos, 383 `async void` y ningún manejador global de excepciones; posibles `Id` duplicados entre dispositivos (❓); sincronización heredada (AutoSync y fusión) aún en Android; seguridad: APK firmado con la clave de depuración, `allowBackup=true`, clave de sincronización de 8 dígitos.
+Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay manejador global: `RegistroErrores` en ambas apps); posibles `Id` duplicados entre dispositivos (❓); sincronización heredada (AutoSync y fusión) aún en Android; seguridad: APK firmado con la clave de depuración, `allowBackup=true`, clave de sincronización de 8 dígitos.
 
 ## Plan por bloques
 
@@ -70,9 +70,9 @@ Otros riesgos: 504 `catch {}` vacíos, 383 `async void` y ningún manejador glob
 |---|---|---|
 | 0 | Medición: vigilante de bloqueos, recorrido de medición y línea base | hecho (31/10) |
 | 1 | Lag rápido: S1, S7, S8 | hecho (31/10) |
-| 2 | Pantallas pesadas: S13, S2, S3 y S15 hechos (31/10, v2.1.2); pendientes S2b, S13b, S9 y S4 | en curso |
-| 3 | Sincronización y BD: S5, S6, S14, poda de borrados, `Id` duplicados, índices solo si se justifican (con copia) | pendiente |
-| 4 | Estabilidad: manejadores globales + registro de errores, `catch {}` críticos, reglas comunes en SincroCompartido con pruebas, retirar la sincro heredada | pendiente |
+| 2 | Pantallas pesadas: S13, S2, S3, S15 (v2.1.2) y S4 (v2.1.3) hechos; pendientes S2b, S13b y S9 | en curso |
+| 3 | Sincronización y BD: S14 y S5 hechos (v2.1.3); pendientes S6, poda de borrados, `Id` duplicados e índices solo si se justifican (con copia) | en curso |
+| 4 | Estabilidad: manejador global de errores hecho (v2.1.3); pendientes `catch {}` críticos, reglas comunes en SincroCompartido con pruebas y retirar la sincro heredada | en curso |
 | 5 | CPU y memoria: S10 (ReadyToRun), S11, S12 | pendiente |
 | 6 | Visual: estilos comunes, componentes, accesibilidad y escalado; pantalla a pantalla | pendiente |
 | 7 | Pruebas: banco de consola versionado para reglas y sincro sobre una copia de la BD | pendiente |
@@ -116,3 +116,17 @@ Otros riesgos: 504 `catch {}` vacíos, 383 `async void` y ningún manejador glob
 - 31/10/2026 · S15: `SincroAlmacen.Asegurar` rehace los disparadores en una sola transacción; `SincronizacionRed` anota `Error.Sincro.Iniciar`.
 - 31/10/2026 · `ScrollExteriorPagina`: el Calendario desactiva y restaura el scroll exterior de WPF-UI sin pisar a otras páginas.
 - 31/10/2026 · Publicada la v2.1.2 (GitHub) e instalada en el PC; móvil pendiente de conectar.
+- 31/10/2026 · S14: `CanalArchivosSincro.PublicarPendientesAsync` (solo escribir) y `ServicioSincro.VaciarPendientesAsync` sin leer a los demás ni reintentar si no hay nada.
+- 31/10/2026 · S5: `SincroAlmacen.MarcaCambios` y marca por conexión y en el canal por carpeta (consulta forzada cada 30 s).
+- 31/10/2026 · Errores: `RegistroErrores` (Windows: `App.OnStartup`; Android: `MainApplication`). Prueba con `SCCOSMOS_PRUEBA_ERROR=1`.
+- 31/10/2026 · S4: `SincronizacionPaginas` muestra el aviso `AvisoCambios` de `MainWindow` en lugar de recargar.
+- 31/10/2026 · Instalación del PC: la carpeta (sincronizada) tenía restos de una instalación autocontenida de junio (`hostfxr.dll`…) que impedían arrancar; 245 archivos movidos a `%LOCALAPPDATA%\SCCosmos\copia_instalacion_20261031`. Si vuelve a fallar con «Failed to load hostfxr.dll», revisar sobrantes .dll en la raíz.
+
+### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
+
+| Medida | Antes | Después |
+|---|---|---|
+| Cierre de la ventana (incluye el vaciado) | 737–755 ms | 568–588 ms |
+| CPU en reposo (60 s) | 1,07–1,15 % | 1,30–1,33 % (sin explicar; a analizar) |
+| Error provocado (`SCCOSMOS_PRUEBA_ERROR=1`) | la app se cerraba | anotado con su pila en `errores.log` y la app sigue |
+

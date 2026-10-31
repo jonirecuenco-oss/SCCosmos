@@ -1,0 +1,118 @@
+using System;
+using System.IO;
+using System.Threading.Tasks;
+using System.Windows;
+
+namespace SCCosmos
+{
+    /// <summary>
+    /// Manejador global de errores: cualquier excepción no capturada queda
+    /// anotada, con su pila, en %LOCALAPPDATA%\SCCosmos\errores.log. Los
+    /// errores de la interfaz ya no cierran la aplicación: se avisa y se
+    /// sigue trabajando.
+    /// </summary>
+    public static class RegistroErrores
+    {
+        private static readonly string Ruta =
+            Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "SCCosmos",
+                "errores.log");
+
+        // El archivo empieza de nuevo al pasar de ~1 MB.
+        private const long TamanoMaximo = 1_000_000;
+
+        private static readonly object _candado = new();
+
+        private static DateTime _ultimoAviso = DateTime.MinValue;
+
+        public static void Iniciar(
+            Application aplicacion)
+        {
+            aplicacion.DispatcherUnhandledException += (s, e) =>
+            {
+                Anotar(e.Exception, "Interfaz");
+
+                e.Handled = true;
+
+                Avisar();
+            };
+
+            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+                Anotar(
+                    e.ExceptionObject as Exception,
+                    e.IsTerminating ? "Fatal" : "Hilo");
+
+            TaskScheduler.UnobservedTaskException += (s, e) =>
+            {
+                Anotar(e.Exception, "Tarea");
+
+                e.SetObserved();
+            };
+        }
+
+        public static void Anotar(
+            Exception? ex,
+            string origen)
+        {
+            if (ex is null)
+            {
+                return;
+            }
+
+            try
+            {
+                lock (_candado)
+                {
+                    Directory.CreateDirectory(
+                        Path.GetDirectoryName(Ruta)!);
+
+                    var info = new FileInfo(Ruta);
+
+                    if (info.Exists
+                        && info.Length > TamanoMaximo)
+                    {
+                        info.Delete();
+                    }
+
+                    File.AppendAllText(
+                        Ruta,
+                        $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} [{origen}] {ex}{Environment.NewLine}{Environment.NewLine}");
+                }
+
+                Perf.Registrar(
+                    $"Error.{origen} {ex.GetType().Name}: {ex.Message}",
+                    0);
+            }
+            catch
+            {
+            }
+        }
+
+        private static void Avisar()
+        {
+            // Como mucho un aviso cada 30 s (un error repetido no debe
+            // llenar la pantalla de ventanas). En las mediciones
+            // automáticas no se muestra.
+            if ((DateTime.UtcNow - _ultimoAviso).TotalSeconds < 30
+                || Environment.GetEnvironmentVariable("SCCOSMOS_PERF") == "1")
+            {
+                return;
+            }
+
+            _ultimoAviso = DateTime.UtcNow;
+
+            try
+            {
+                MessageBox.Show(
+                    "Se ha producido un error inesperado, pero la aplicación sigue funcionando.\n\nQueda anotado en:\n" + Ruta,
+                    "SCCosmos",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+            }
+            catch
+            {
+            }
+        }
+    }
+}

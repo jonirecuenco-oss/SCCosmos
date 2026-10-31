@@ -9,6 +9,9 @@ namespace SCCosmos.Mobile
         public MainApplication(IntPtr handle, JniHandleOwnership ownership)
             : base(handle, ownership)
         {
+            // Errores no capturados: se anotan y, si son del hilo
+            // principal, la app sigue funcionando en lugar de cerrarse.
+            global::SCCosmos.Mobile.Services.RegistroErrores.Iniciar();
         }
 
         protected override MauiApp CreateMauiApp() => MauiProgram.CreateMauiApp();

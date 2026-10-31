@@ -1244,14 +1244,36 @@ public sealed class ServicioSincro
 
         try
         {
+            // Si la base no ha cambiado desde la última consulta sin
+            // pendientes, no hay nada nuevo: se evita recorrer el registro
+            // de cambios (~23.000 filas) cada segundo. Por seguridad se
+            // consulta igualmente cada 30 s.
+            long marca =
+                _almacen.MarcaCambios();
+
+            if (marca == conexion.MarcaSinPendientes
+                && (DateTime.UtcNow - conexion.UltimaConsulta).TotalSeconds < 30)
+            {
+                return;
+            }
+
+            conexion.UltimaConsulta =
+                DateTime.UtcNow;
+
             List<CambioSincro> pendientes =
                 _almacen.ObtenerPendientes(
                     conexion.Enviado);
 
             if (pendientes.Count == 0)
             {
+                conexion.MarcaSinPendientes =
+                    marca;
+
                 return;
             }
+
+            conexion.MarcaSinPendientes =
+                -1;
 
             await conexion.Canal
                 .EnviarAsync(
@@ -1368,19 +1390,32 @@ public sealed class ServicioSincro
                     "ArchivoSeqEscrito")
                 ?? "0";
 
+            bool habiaPendientes =
+                true;
+
             try
             {
                 using var caducidad =
                     new CancellationTokenSource(
                         final - DateTime.UtcNow);
 
-                await _canalArchivos
-                    .EjecutarPaseAsync()
-                    .WaitAsync(
-                        caducidad.Token);
+                // Al vaciar solo se publican los cambios propios: leer los
+                // de los demás no hace falta aquí (ya lo hace el bucle de
+                // la carpeta cada 6 s) y alargaba el vaciado a ~4 s.
+                habiaPendientes =
+                    await _canalArchivos
+                        .PublicarPendientesAsync()
+                        .WaitAsync(
+                            caducidad.Token);
             }
             catch
             {
+            }
+
+            if (!habiaPendientes)
+            {
+                // Nada que publicar.
+                break;
             }
 
             string despues =
@@ -1573,6 +1608,14 @@ public sealed class ServicioSincro
         public long ConfirmadoEnDb;
 
         public long Recibido;
+
+        // Marca de la base en la última consulta sin pendientes (-1: hay
+        // que consultar) y hora de esa consulta.
+        public long MarcaSinPendientes =
+            -1;
+
+        public DateTime UltimaConsulta =
+            DateTime.MinValue;
 
         public DateTime Visto =
             DateTime.UtcNow;

@@ -487,6 +487,40 @@ public sealed class SincroAlmacen
     // ========================================================
 
     /// <summary>
+    /// Marca barata de «la base ha cambiado»: la fecha de escritura del
+    /// archivo y de su diario WAL (dos consultas al sistema de archivos, sin
+    /// abrir la base). Sirve para no recorrer el registro de cambios cada
+    /// pocos segundos cuando no ha cambiado nada.
+    /// </summary>
+    public long MarcaCambios()
+    {
+        try
+        {
+            long marca =
+                System.IO.File.GetLastWriteTimeUtc(_rutaDb).Ticks;
+
+            string wal =
+                _rutaDb + "-wal";
+
+            if (System.IO.File.Exists(wal))
+            {
+                marca =
+                    Math.Max(
+                        marca,
+                        System.IO.File.GetLastWriteTimeUtc(wal).Ticks);
+            }
+
+            return marca;
+        }
+        catch
+        {
+            // Ante la duda, se consulta.
+            return DateTime.UtcNow.Ticks;
+        }
+    }
+
+
+    /// <summary>
     /// Cambios con Seq mayor que <paramref name="desdeSeq"/>,
     /// listos para enviar (con la fila actual o borrado).
     /// </summary>

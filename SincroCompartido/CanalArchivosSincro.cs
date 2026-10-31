@@ -47,6 +47,14 @@ public sealed class CanalArchivosSincro
 
     private readonly SincroAlmacen _almacen;
 
+    // Marca de la base en la última pasada sin nada que publicar (-1: hay
+    // que consultar) y hora de esa consulta.
+    private long _marcaSinPendientes =
+        -1;
+
+    private DateTime _ultimaConsulta =
+        DateTime.MinValue;
+
     private readonly ICanalArchivosSincro _canal;
 
     private readonly byte[] _clave;
@@ -118,12 +126,45 @@ public sealed class CanalArchivosSincro
     }
 
 
+    /// <summary>
+    /// Solo publica los cambios propios pendientes, sin leer los de los
+    /// demás: es lo que hace falta al vaciar antes de cerrar o de pasar a
+    /// segundo plano. Devuelve si había algo que publicar.
+    /// </summary>
+    public async Task<bool> PublicarPendientesAsync()
+    {
+        try
+        {
+            return await EscribirPendientesAsync();
+        }
+        catch
+        {
+            return true;
+        }
+    }
+
+
     // ========================================================
     // ESCRIBIR MIS CAMBIOS PENDIENTES
     // ========================================================
 
-    private async Task EscribirPendientesAsync()
+    private async Task<bool> EscribirPendientesAsync()
     {
+        // Sin cambios en la base desde la última pasada sin nada que
+        // publicar: no se recorre el registro de cambios (cada 6 s y al
+        // vaciar). Por seguridad se consulta igualmente cada 30 s.
+        long marca =
+            _almacen.MarcaCambios();
+
+        if (marca == _marcaSinPendientes
+            && (DateTime.UtcNow - _ultimaConsulta).TotalSeconds < 30)
+        {
+            return false;
+        }
+
+        _ultimaConsulta =
+            DateTime.UtcNow;
+
         long escrito =
             long.TryParse(
                 _almacen.ObtenerEstado(
@@ -138,8 +179,14 @@ public sealed class CanalArchivosSincro
 
         if (pendientes.Count == 0)
         {
-            return;
+            _marcaSinPendientes =
+                marca;
+
+            return false;
         }
+
+        _marcaSinPendientes =
+            -1;
 
         var lineas =
             new List<string>();
@@ -207,7 +254,7 @@ public sealed class CanalArchivosSincro
         if (!agregado)
         {
             // No se pudo escribir: se reintentará en el próximo pase.
-            return;
+            return true;
         }
 
         _almacen.GuardarEstado(
@@ -229,6 +276,8 @@ public sealed class CanalArchivosSincro
         {
             await CompactarAsync();
         }
+
+        return true;
     }
 
 
