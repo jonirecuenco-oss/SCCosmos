@@ -186,45 +186,62 @@ public sealed class SincroAlmacen
             conexion,
             "DROP TABLE IF EXISTS SCCosmos_RegistroCambios;");
 
-        // Disparadores nuevos.
-        foreach (string nombre in
-                 NombresDe(
-                     conexion,
-                     "trigger",
-                     PrefijoDisparador + "%"))
+        // Disparadores nuevos. Se rehacen en una sola transacción: es mucho
+        // más rápido (un único commit en vez de ~240) y nadie llega a ver la
+        // base sin disparadores, así que un cambio hecho justo en ese
+        // momento no se pierde para la sincronización.
+        List<string> anteriores =
+            NombresDe(
+                conexion,
+                "trigger",
+                PrefijoDisparador + "%");
+
+        var tablas =
+            TablasConClave(
+                conexion);
+
+        using (var transaccion =
+               conexion.BeginTransaction())
         {
-            Ejecutar(
-                conexion,
-                $"DROP TRIGGER IF EXISTS \"{nombre}\";");
-        }
+            foreach (string nombre in anteriores)
+            {
+                Ejecutar(
+                    conexion,
+                    $"DROP TRIGGER IF EXISTS \"{nombre}\";",
+                    transaccion);
+            }
 
-        foreach ((string tabla, string claves) in
-                 TablasConClave(
-                     conexion))
-        {
-            CrearDisparador(
-                conexion,
-                tabla,
-                claves,
-                "insert",
-                "I",
-                "NEW");
+            foreach ((string tabla, string claves) in tablas)
+            {
+                CrearDisparador(
+                    conexion,
+                    tabla,
+                    claves,
+                    "insert",
+                    "I",
+                    "NEW",
+                    transaccion);
 
-            CrearDisparador(
-                conexion,
-                tabla,
-                claves,
-                "update",
-                "U",
-                "NEW");
+                CrearDisparador(
+                    conexion,
+                    tabla,
+                    claves,
+                    "update",
+                    "U",
+                    "NEW",
+                    transaccion);
 
-            CrearDisparador(
-                conexion,
-                tabla,
-                claves,
-                "delete",
-                "D",
-                "OLD");
+                CrearDisparador(
+                    conexion,
+                    tabla,
+                    claves,
+                    "delete",
+                    "D",
+                    "OLD",
+                    transaccion);
+            }
+
+            transaccion.Commit();
         }
 
         // El contador nunca puede quedarse por detrás de lo ya enviado o
@@ -413,7 +430,8 @@ public sealed class SincroAlmacen
         string claves,
         string momento,
         string tipo,
-        string lado)
+        string lado,
+        SqliteTransaction? transaccion = null)
     {
         string nombre =
             $"{PrefijoDisparador}{tabla}_{momento}";
@@ -459,7 +477,8 @@ public sealed class SincroAlmacen
                     Origen = excluded.Origen,
                     Seq = excluded.Seq;
             END;
-            """);
+            """,
+            transaccion);
     }
 
 

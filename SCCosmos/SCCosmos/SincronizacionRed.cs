@@ -104,8 +104,13 @@ namespace SCCosmos
                     _servicio.Iniciar();
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                // Antes el error se perdía sin dejar rastro.
+                Perf.Registrar(
+                    "Error.Sincro.Iniciar " + ex.GetType().Name + ": " + ex.Message,
+                    0);
+
                 // Si algo falla, la aplicación sigue funcionando
                 // sin sincronización entre dispositivos.
             }

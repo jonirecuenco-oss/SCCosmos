@@ -99,12 +99,108 @@ namespace SCCosmos
             Close();
         }
 
+        // Visita de referencia del recorrido de medición: siempre la misma,
+        // para poder comparar entre sesiones.
+        private const string VisitaMedicionCodigo = "844";
+        private const string VisitaMedicionNombre = "Mérida - Centro";
+        private const string VisitaMedicionMes = "2026-10";
+
+        /// <summary>
+        /// Recorrido de medición (solo con la variable de entorno
+        /// SCCOSMOS_PERF=1): abre cada página dos veces (la primera incluye
+        /// la compilación JIT) y la visita de referencia, y anota lo que
+        /// tarda cada una en pintarse. Con SCCOSMOS_PERF_SALIR=1 cierra la
+        /// aplicación al terminar.
+        /// </summary>
+        private async Task RecorridoMedicionAsync()
+        {
+            Type[] paginas =
+            {
+                typeof(DocumentacionPage),
+                typeof(CircuitoPage),
+                typeof(CalendarioPage),
+                typeof(PersonasPage),
+                typeof(EscuelasPage),
+                typeof(RscPage),
+                typeof(AsambleasPage),
+                typeof(ArchivoCircuitoPage),
+                typeof(DonacionesPage),
+                typeof(TareasPage),
+                typeof(ActividadPage),
+                typeof(DescargasPage),
+                typeof(ConfiguracionPage),
+                typeof(InicioPage)
+            };
+
+            // Se deja terminar el arranque (sincronización, alertas...).
+            await Task.Delay(4000);
+
+            for (int vuelta = 1; vuelta <= 2; vuelta++)
+            {
+                foreach (Type pagina in paginas)
+                {
+                    await MedirNavegacionAsync(
+                        $"Nav{vuelta}.{pagina.Name}",
+                        pagina,
+                        2000);
+                }
+
+                VisitasPage.CodigoPendiente = VisitaMedicionCodigo;
+                VisitasPage.NombrePendiente = VisitaMedicionNombre;
+                VisitasPage.MesPendiente = VisitaMedicionMes;
+
+                await MedirNavegacionAsync(
+                    $"Nav{vuelta}.VisitasPage",
+                    typeof(VisitasPage),
+                    5000);
+            }
+
+            if (Environment.GetEnvironmentVariable("SCCOSMOS_PERF_SALIR") == "1")
+            {
+                Application.Current.Shutdown();
+            }
+        }
+
+        private async Task MedirNavegacionAsync(
+            string nombre,
+            Type pagina,
+            int esperaMs)
+        {
+            var reloj =
+                System.Diagnostics.Stopwatch.StartNew();
+
+            MenuPrincipal.Navigate(pagina);
+
+            // ContextIdle: la página ya está maquetada y pintada.
+            await Dispatcher.InvokeAsync(
+                () => { },
+                DispatcherPriority.ContextIdle);
+
+            Perf.Registrar(
+                nombre,
+                reloj.ElapsedMilliseconds);
+
+            await Task.Delay(esperaMs);
+        }
+
         public MainWindow()
         {
             var relojArranque =
                 System.Diagnostics.Stopwatch.StartNew();
 
+            // Vigilante de bloqueos de la interfaz (solo mide).
+            Perf.IniciarVigilanteUI(Dispatcher);
+
             InitializeComponent();
+
+            MenuPrincipal.Navigated += (s, e) =>
+                Perf.Contexto = e.Page?.GetType().Name ?? "";
+
+            if (Environment.GetEnvironmentVariable("SCCOSMOS_PERF") == "1")
+            {
+                ContentRendered += async (s, e) =>
+                    await RecorridoMedicionAsync();
+            }
             DatabaseHelper.InicializarDatabase();
             DatabaseHelper.AsegurarAlertasLeidas();
             DatabaseHelper.AsegurarHorasMes();

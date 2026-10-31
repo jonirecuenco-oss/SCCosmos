@@ -7,7 +7,7 @@
     BackgroundColor="#101216"
     Shell.NavBarIsVisible="False" NavigationPage.HasNavigationBar="False">
 
-    <Grid RowDefinitions="Auto,Auto,*">
+    <Grid RowDefinitions="Auto,Auto,Auto,*">
 
         <!-- CABECERA: flecha atrás, título centrado y botón Datos -->
         <Grid Grid.Row="0"
@@ -159,12 +159,11 @@
             </HorizontalStackLayout>
         </ScrollView>
 
-        <ScrollView x:Name="ScrollContenido"
-                    Grid.Row="2">
-            <VerticalStackLayout Padding="16,0,16,28"
-                                 Spacing="12">
-
-                <Border x:Name="PanelDatosCongregacion"
+        <!-- DATOS DE LA CONGREGACIÓN (botón Datos): fuera del contenido
+             desplazable, para que se vea encima de cualquier pestaña. -->
+        <Border x:Name="PanelDatosCongregacion"
+                Grid.Row="2"
+                Margin="16,0,16,10"
                         IsVisible="False"
                         BackgroundColor="{StaticResource Superficie}"
                         Stroke="{StaticResource Borde}"
@@ -205,6 +204,15 @@
                                 Margin="0,6,0,0" />
                     </VerticalStackLayout>
                 </Border>
+
+        <!-- Información y Grupos. Ministerio va aparte (su lista se
+             desplaza sola y así se virtualiza) y el resto de pestañas, en
+             ScrollContenido2. -->
+        <ScrollView x:Name="ScrollContenido"
+                    Grid.Row="3"
+                    IsVisible="False">
+            <VerticalStackLayout Padding="16,0,16,28"
+                                 Spacing="12">
 
                 <VerticalStackLayout x:Name="SeccionInformacion"
                                      IsVisible="False"
@@ -425,8 +433,17 @@
 
                 </VerticalStackLayout>
 
-                <VerticalStackLayout x:Name="SeccionMinisterio"
-                                     Spacing="12">
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- MINISTERIO: fuera de los ScrollView para que la lista de
+             personas se virtualice (antes se creaban todas las tarjetas de
+             golpe al abrir la visita: ~650 ms de bloqueo). -->
+        <Grid x:Name="SeccionMinisterio"
+              Grid.Row="3"
+              RowDefinitions="Auto,*"
+              RowSpacing="12"
+              Padding="16,0,16,0">
 
                 <Grid ColumnDefinitions="*,Auto"
                       ColumnSpacing="10"
@@ -472,6 +489,7 @@
                 </Grid>
 
                 <CollectionView x:Name="ListaPersonas"
+                                Grid.Row="1"
                                 Margin="-16,0,-16,0"
                                 SelectionMode="None">
                     <CollectionView.ItemTemplate>
@@ -732,7 +750,15 @@
                     </CollectionView.ItemTemplate>
                 </CollectionView>
 
-                </VerticalStackLayout>
+        </Grid>
+
+        <!-- Resto de pestañas: Programa, Notas, Territorios, Mapa,
+             Contabilidad y S-303. -->
+        <ScrollView x:Name="ScrollContenido2"
+                    Grid.Row="3"
+                    IsVisible="False">
+            <VerticalStackLayout Padding="16,0,16,28"
+                                 Spacing="12">
 
                 <VerticalStackLayout x:Name="SeccionPrograma"
                                      IsVisible="False"
@@ -1311,7 +1337,7 @@
         </ScrollView>
 
         <Grid x:Name="OverlayCargando"
-              Grid.RowSpan="3"
+              Grid.RowSpan="4"
               BackgroundColor="#C0101216"
               IsVisible="False">
             <VerticalStackLayout HorizontalOptions="Center"

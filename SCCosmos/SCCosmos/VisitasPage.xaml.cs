@@ -327,13 +327,30 @@ namespace SCCosmos
         }
 
         // --- TERRITORIOS / AÑO DE SERVICIO ---
+        // Territorios es la carga más pesada de la visita (~300-380 ms en el
+        // hilo de la interfaz): solo se hace con su pestaña abierta; si no,
+        // queda pendiente para cuando se abra.
+        private bool _territoriosPendientes;
+
         private async void ActualizarUI_MesTerritorios()
         {
+            if (TabsVisita != null
+                && !ReferenceEquals(TabsVisita.SelectedItem, TabTerritorios))
+            {
+                _territoriosPendientes = true;
+                return;
+            }
+
+            _territoriosPendientes = false;
+
             // Territorios no debe depender de la carga de Ministerio.
             // Solo evitamos que se lancen dos cargas de Territorios a la vez.
             if (_cargandoTerritorios) return;
 
             _cargandoTerritorios = true;
+
+
+            var relojTerritorios = System.Diagnostics.Stopwatch.StartNew();
 
             try
             {
@@ -377,6 +394,7 @@ namespace SCCosmos
             }
             finally
             {
+                Perf.Registrar("Visitas.Territorios", relojTerritorios.ElapsedMilliseconds);
                 _cargandoTerritorios = false;
             }
         }
@@ -3696,6 +3714,12 @@ namespace SCCosmos
             // Solo reaccionamos cuando cambia realmente la pestaña principal.
             if (TabsVisita == null || !ReferenceEquals(e.OriginalSource, TabsVisita))
                 return;
+
+            // Territorios se carga al abrir su pestaña (ver ActualizarUI_MesTerritorios).
+            if (_territoriosPendientes && ReferenceEquals(TabsVisita.SelectedItem, TabTerritorios))
+            {
+                ActualizarUI_MesTerritorios();
+            }
 
             if (ReferenceEquals(TabsVisita.SelectedItem, TabNotas))
             {

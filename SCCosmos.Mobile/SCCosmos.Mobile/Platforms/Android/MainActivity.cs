@@ -51,17 +51,31 @@ namespace SCCosmos.Mobile
 
         protected override void OnStop()
         {
-            // Al cerrar o mandar la app a segundo plano, se vacían los
-            // cambios pendientes antes de que el sistema la suspenda.
+            // Al cerrar o mandar la app a segundo plano, se lanzan los
+            // cambios pendientes en segundo plano, sin bloquear la pantalla
+            // (esperarlos aquí congelaba la app 3 s y nunca terminaban a
+            // tiempo). Lo que no llegue a salir queda en el registro de
+            // cambios y se envía en la siguiente conexión.
+            var relojVaciado =
+                System.Diagnostics.Stopwatch.StartNew();
+
             try
             {
-                SincronizacionMobile
+                _ = SincronizacionMobile
                     .VaciarPendientesSiHaceFaltaAsync()
-                    .Wait(TimeSpan.FromSeconds(3));
+                    .ContinueWith(
+                        _ => Perf.Registrar(
+                            "Ciclo.Vaciado",
+                            relojVaciado.ElapsedMilliseconds),
+                        TaskScheduler.Default);
             }
             catch
             {
             }
+
+            Perf.Registrar(
+                "Ciclo.OnStop",
+                relojVaciado.ElapsedMilliseconds);
 
             base.OnStop();
         }

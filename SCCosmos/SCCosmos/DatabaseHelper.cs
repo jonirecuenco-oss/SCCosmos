@@ -124,35 +124,61 @@ namespace SCCosmos
             }
         }
 
+        // El esquema (tablas, columnas y reparaciones) basta con asegurarlo
+        // una vez por ejecución: antes se repetía en cada
+        // ObtenerCongregaciones (12 sitios), con ~50 PRAGMA table_info cada
+        // vez. Los parches de datos sí se siguen aplicando en cada llamada.
+        private static volatile bool _esquemaAsegurado;
+
+        private static readonly object _candadoEsquema = new();
+
         public static void InicializarDatabase()
         {
             using (var connection = new SqliteConnection(ConnectionString))
             {
                 connection.Open();
 
-                // Modo WAL: lecturas y escrituras mucho más rápidas
-                // (sobre todo durante ráfagas de sincronización). Es una
-                // propiedad persistente del archivo; aquí se asegura en
-                // cada arranque. En Windows no hay copias del .db en vivo,
-                // así que es seguro.
-                try
+                if (!_esquemaAsegurado)
                 {
-                    EjecutarQuery(connection, "PRAGMA journal_mode=WAL;");
-                }
-                catch
-                {
+                    lock (_candadoEsquema)
+                    {
+                        if (!_esquemaAsegurado)
+                        {
+                            AsegurarEsquema(connection);
+
+                            _esquemaAsegurado = true;
+                        }
+                    }
                 }
 
-                //BorrarPersonasYActividad();
-                CrearTablasPrincipales(connection);
-                AsegurarTablasAsambleasInterno(connection);
-                AsegurarTablaTareasInterno(connection);
-                AsegurarTablaRegistroActividad(connection);
-                AsegurarTablasEscuelasClasesInterno(connection);
-                AsegurarTablasEscuelasProgramaInterno(connection);
-                AsegurarTablasRscInterno(connection);
-                EjecutarMigracionesYParches(connection);
+                AplicarParchesDeDatos(connection);
             }
+        }
+
+        private static void AsegurarEsquema(SqliteConnection connection)
+        {
+            // Modo WAL: lecturas y escrituras mucho más rápidas
+            // (sobre todo durante ráfagas de sincronización). Es una
+            // propiedad persistente del archivo; aquí se asegura en
+            // cada arranque. En Windows no hay copias del .db en vivo,
+            // así que es seguro.
+            try
+            {
+                EjecutarQuery(connection, "PRAGMA journal_mode=WAL;");
+            }
+            catch
+            {
+            }
+
+            //BorrarPersonasYActividad();
+            CrearTablasPrincipales(connection);
+            AsegurarTablasAsambleasInterno(connection);
+            AsegurarTablaTareasInterno(connection);
+            AsegurarTablaRegistroActividad(connection);
+            AsegurarTablasEscuelasClasesInterno(connection);
+            AsegurarTablasEscuelasProgramaInterno(connection);
+            AsegurarTablasRscInterno(connection);
+            EjecutarMigracionesYParches(connection);
         }
 
         private static void CrearTablasPrincipales(SqliteConnection connection)
@@ -240,14 +266,6 @@ namespace SCCosmos
             AsegurarColumna(connection, "Personas", "TrasladoSiguienteId", "INTEGER DEFAULT 0");
             AsegurarColumna(connection, "Personas", "FechaTraslado", "TEXT");
 
-            // Las bases de datos anteriores no conocían el origen. No intentamos adivinarlo:
-            // se irá completando de forma segura al volver a sincronizar con S-21 o JW Hub.
-            try
-            {
-                EjecutarQuery(connection, "UPDATE Personas SET OrigenRegistro = 'DESCONOCIDO' WHERE OrigenRegistro IS NULL OR trim(OrigenRegistro) = '';");
-            }
-            catch { }
-
             AsegurarColumna(connection, "Semanas", "FechaAsamblea", "TEXT");
             AsegurarColumna(connection, "Semanas", "DatosImportados", "INTEGER DEFAULT 0");
             AsegurarColumna(connection, "Semanas", "TipoAsamblea", "TEXT");
@@ -284,6 +302,21 @@ namespace SCCosmos
 
             AsegurarColumna(connection, "Documentos", "ContenidoArchivo", "BLOB");
             AsegurarColumna(connection, "ContabilidadMes", "SaldoMaximo", "REAL DEFAULT 0");
+        }
+
+        /// <summary>
+        /// Parches de datos baratos que se aplican en cada InicializarDatabase
+        /// (por sincronización pueden llegar fichas nuevas que los necesiten).
+        /// </summary>
+        private static void AplicarParchesDeDatos(SqliteConnection connection)
+        {
+            // Las bases de datos anteriores no conocían el origen. No intentamos adivinarlo:
+            // se irá completando de forma segura al volver a sincronizar con S-21 o JW Hub.
+            try
+            {
+                EjecutarQuery(connection, "UPDATE Personas SET OrigenRegistro = 'DESCONOCIDO' WHERE OrigenRegistro IS NULL OR trim(OrigenRegistro) = '';");
+            }
+            catch { }
 
             try
             {

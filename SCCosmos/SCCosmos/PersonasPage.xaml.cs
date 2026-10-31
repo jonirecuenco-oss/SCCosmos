@@ -71,7 +71,6 @@ namespace SCCosmos
             // Nos suscribimos a los eventos de carga y descarga de la página
             this.Loaded += Page_Loaded;
             this.Unloaded += Page_Unloaded;
-            SincronizadorJWHub.ProgresoCambiado += Sincronizador_ProgresoCambiado;
         }
 
         // =========================================================================================
@@ -81,6 +80,7 @@ namespace SCCosmos
         {
             // 1. Vinculamos el evento de sincronización
             SincronizadorJWHub.SincronizacionCambiada += Sincronizador_EstadoCambiado;
+            SincronizadorJWHub.ProgresoCambiado += Sincronizador_ProgresoCambiado;
             ActualizarUI_Sincronizacion(SincronizadorJWHub.EstaSincronizando);
 
             // Dejar que la página se pinte antes de cargar los datos.
@@ -97,6 +97,7 @@ namespace SCCosmos
         private void Page_Unloaded(object sender, RoutedEventArgs e)
         {
             SincronizadorJWHub.SincronizacionCambiada -= Sincronizador_EstadoCambiado;
+            SincronizadorJWHub.ProgresoCambiado -= Sincronizador_ProgresoCambiado;
         }
 
         private void Sincronizador_EstadoCambiado(bool ejecutando)

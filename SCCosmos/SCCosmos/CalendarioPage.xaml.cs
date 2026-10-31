@@ -31,7 +31,6 @@ namespace SCCosmos
         /// </summary>
         public static string SemanaDestacadaPendiente = "";
 
-        private ScrollViewer _scrollPadreFantasma;
         private bool _cargaIniciada;
         private bool _cancelarCarga;
         private bool _cargandoCalendario;
@@ -368,19 +367,74 @@ namespace SCCosmos
             return null;
         }
 
+        /// <summary>
+        /// Coloca la fila de la semana indicada a una fila (34 px) del borde
+        /// superior de la zona visible, usando su posición real.
+        /// </summary>
+        private void AjustarFilaArriba(ScrollViewer scroll, SemanaCalendario destino, bool reintentar)
+        {
+            try
+            {
+                DataGridRow? fila = BuscarFilaDe(TablaRuta, destino);
+
+                if (fila == null)
+                {
+                    // Lejos de la estimación: se trae a la vista y se ajusta
+                    // una vez más.
+                    if (reintentar)
+                    {
+                        TablaRuta.ScrollIntoView(destino);
+
+                        _ = Dispatcher.InvokeAsync(
+                            () => AjustarFilaArriba(scroll, destino, false),
+                            DispatcherPriority.ContextIdle);
+                    }
+
+                    return;
+                }
+
+                var zona =
+                    scroll.Template?.FindName("PART_ScrollContentPresenter", scroll) as FrameworkElement
+                    ?? scroll;
+
+                double ajuste =
+                    fila.TranslatePoint(new Point(0, 0), zona).Y - 34.0;
+
+                if (Math.Abs(ajuste) > 1)
+                {
+                    scroll.ScrollToVerticalOffset(
+                        Math.Max(0, scroll.VerticalOffset + ajuste));
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        private static DataGridRow? BuscarFilaDe(DependencyObject raiz, object elemento)
+        {
+            if (raiz is DataGridRow fila && ReferenceEquals(fila.Item, elemento))
+            {
+                return fila;
+            }
+
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(raiz); i++)
+            {
+                DataGridRow? encontrada =
+                    BuscarFilaDe(VisualTreeHelper.GetChild(raiz, i), elemento);
+
+                if (encontrada != null)
+                {
+                    return encontrada;
+                }
+            }
+
+            return null;
+        }
+
         private void CalendarioPage_Loaded(object sender, RoutedEventArgs e)
         {
-            DependencyObject parent = System.Windows.Media.VisualTreeHelper.GetParent(this);
-            while (parent != null)
-            {
-                if (parent is ScrollViewer scrollPadre)
-                {
-                    _scrollPadreFantasma = scrollPadre;
-                    _scrollPadreFantasma.VerticalScrollBarVisibility = ScrollBarVisibility.Disabled;
-                    break;
-                }
-                parent = System.Windows.Media.VisualTreeHelper.GetParent(parent);
-            }
+            ScrollExteriorPagina.Desactivar(this);
 
             if (_cargaIniciada)
             {
@@ -504,6 +558,13 @@ namespace SCCosmos
                     filasAntes * 34.0 + gruposAntes * alturaCabecera;
 
                 scroll.ScrollToVerticalOffset(Math.Max(0, desplazamiento - 34.0));
+
+                // Con la tabla virtualizada esa posición es una estimación:
+                // en cuanto la fila de destino existe, se coloca exactamente
+                // a una fila del borde superior (como antes).
+                _ = Dispatcher.InvokeAsync(
+                    () => AjustarFilaArriba(scroll, destino, true),
+                    DispatcherPriority.ContextIdle);
             }
             catch
             {
@@ -1158,10 +1219,7 @@ namespace SCCosmos
         {
             _cancelarCarga = true;
 
-            if (_scrollPadreFantasma != null)
-            {
-                _scrollPadreFantasma.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
-            }
+            ScrollExteriorPagina.Restaurar(this);
         }
 
         /// <summary>

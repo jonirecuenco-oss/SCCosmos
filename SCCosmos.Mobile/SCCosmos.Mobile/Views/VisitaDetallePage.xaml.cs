@@ -136,14 +136,39 @@ public partial class VisitaDetallePage
         SeccionContabilidad.IsVisible = clave == "contabilidad";
         SeccionS303.IsVisible = clave == "s303";
 
+        // Ministerio va fuera de los ScrollView (así su lista se
+        // virtualiza); Información y Grupos van en el primero y el resto
+        // de pestañas en el segundo.
+        ScrollContenido.IsVisible =
+            clave is "informacion" or "grupos";
+
+        ScrollContenido2.IsVisible =
+            clave is not ("ministerio" or "informacion" or "grupos");
+
         PintarPestanaSeleccionada(clave);
 
         try
         {
-            await ScrollContenido.ScrollToAsync(
-                0,
-                0,
-                false);
+            ScrollView? visible =
+                ScrollContenido.IsVisible ? ScrollContenido
+                : ScrollContenido2.IsVisible ? ScrollContenido2
+                : null;
+
+            if (visible is not null)
+            {
+                await visible.ScrollToAsync(
+                    0,
+                    0,
+                    false);
+            }
+            else if (ListaPersonas.ItemsSource is System.Collections.IList { Count: > 0 })
+            {
+                // Como antes: al volver a Ministerio se ve desde arriba.
+                ListaPersonas.ScrollTo(
+                    0,
+                    position: ScrollToPosition.Start,
+                    animate: false);
+            }
         }
         catch
         {

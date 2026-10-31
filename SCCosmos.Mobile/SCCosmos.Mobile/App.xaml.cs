@@ -20,6 +20,9 @@ namespace SCCosmos.Mobile
         {
             var arranque = System.Diagnostics.Stopwatch.StartNew();
 
+            // Vigilante de bloqueos del hilo principal (solo mide).
+            Perf.IniciarVigilanteUI();
+
             // La tabla de tareas debe existir antes de crear los
             // disparadores de fusión (que detectan las tablas nuevas).
             DatabaseHelper.AsegurarTablaTareasMobile();
@@ -169,17 +172,26 @@ namespace SCCosmos.Mobile
         {
             // Al salir a segundo plano (o cerrar), se envían AHORA los
             // cambios pendientes: a los dispositivos vinculados y a la
-            // carpeta compartida. Se espera un momento a que termine
-            // para que no se quede nada sin propagar.
+            // carpeta compartida. El envío sigue en segundo plano sin
+            // bloquear la pantalla (esperarlo aquí congelaba la app 3 s y
+            // nunca terminaba a tiempo); lo que no llegue a salir queda en
+            // el registro de cambios y se envía en la siguiente conexión.
+            var relojVaciado =
+                System.Diagnostics.Stopwatch.StartNew();
+
             try
             {
-                SincronizacionMobile
-                    .VaciarPendientesSiHaceFaltaAsync()
-                    .Wait(TimeSpan.FromSeconds(3));
+                // Si MainActivity.OnStop ya lo lanzó, se reutiliza.
+                _ = SincronizacionMobile
+                    .VaciarPendientesSiHaceFaltaAsync();
             }
             catch
             {
             }
+
+            Perf.Registrar(
+                "Ciclo.OnSleep",
+                relojVaciado.ElapsedMilliseconds);
 
             // Sistema antiguo de carpeta (solo si siguiera activo).
             _ = AutoSyncService.SincronizarSiHayCambiosAsync();
@@ -194,7 +206,21 @@ namespace SCCosmos.Mobile
                 .SccosmosWidgetProvider
                 .ActualizarTodos();
 
+            Perf.Registrar(
+                "Ciclo.OnSleep.Total",
+                relojVaciado.ElapsedMilliseconds);
+
+            // En segundo plano el vigilante de bloqueos descansa.
+            Perf.EstablecerPrimerPlano(false);
+
             base.OnSleep();
+        }
+
+        protected override void OnResume()
+        {
+            Perf.EstablecerPrimerPlano(true);
+
+            base.OnResume();
         }
     }
 }

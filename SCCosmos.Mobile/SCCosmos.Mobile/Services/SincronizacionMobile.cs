@@ -120,8 +120,23 @@ public static class SincronizacionMobile
             return Task.CompletedTask;
         }
 
-        return VaciarPendientesAsync();
+        // Si ya hay uno en marcha (OnStop y OnSleep seguidos), se reutiliza
+        // en vez de lanzar otro a la vez.
+        if (_vaciadoEnCurso is { IsCompleted: false })
+        {
+            return _vaciadoEnCurso;
+        }
+
+        // Fuera del hilo principal, para que nadie tenga que bloquearlo
+        // esperando a que termine.
+        _vaciadoEnCurso =
+            Task.Run(
+                () => VaciarPendientesAsync());
+
+        return _vaciadoEnCurso;
     }
+
+    private static Task? _vaciadoEnCurso;
 
 
     // =========================================================

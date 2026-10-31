@@ -71,7 +71,8 @@
                       AlternatingRowBackground="Transparent"
                       EnableRowVirtualization="True"
                       VirtualizingPanel.IsVirtualizingWhenGrouping="True"
-                      VirtualizingPanel.ScrollUnit="Item"
+                      VirtualizingPanel.ScrollUnit="Pixel"
+                      ScrollViewer.CanContentScroll="True"
                       ScrollViewer.VerticalScrollBarVisibility="Auto"
                       RowHeight="34">
 
