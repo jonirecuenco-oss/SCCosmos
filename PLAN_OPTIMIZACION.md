@@ -50,7 +50,7 @@ Herramientas: adb en `C:\Program Files (x86)\Android\android-sdk\platform-tools\
 | S3 | Windows Visitas: al abrir se cargaban todas las pestañas; Territorios costaba 300–380 ms. (La tabla no era el problema: solo muestra el grupo elegido, ~18 filas.) | ✔️ bloqueo 484 ms → ninguno en 4 de 6 aperturas | 2 |
 | S4 | Windows: Visitas, Asambleas y Correspondencia se recreaban al llegar cambios de otro equipo | ✔️ ahora aviso «Hay cambios de otro dispositivo · Actualizar» (sin probar con cambios reales) | 2 |
 | S5 | Sincro: cada 1 s por par (y cada 6 s en la carpeta) se recorría `SCCosmos_Cambios` aunque no hubiera cambios | ✔️ marca barata (fecha de escritura de la BD y su WAL) + consulta forzada cada 30 s; sin cambio de esquema. CPU en reposo del PC sin mejora medible (1,1 % → 1,3 %, pendiente de analizar); en el móvil, por medir | 3 |
-| S6 | Guardados borrar + reinsertar (D 8.642 / I 5.716 / U 693 en el registro); borrados nunca podados | ✔️ parcial. v2.1.7: `ActividadPersonas` (13.128 de los 23.140 cambios, 57 %), guardada al grabar la ficha de persona, ahora solo toca lo que cambia: guardar sin cambios 48 → 0 cambios; cambiar un mes 48 → 1; mismo resultado final en 10 casos. Pendientes, por volumen: organigrama y partes de asambleas, partes de la reunión de precursores, RSC, territorios y programa de la visita | 3 |
+| S6 | Guardados borrar + reinsertar (D 8.642 / I 5.716 / U 693 en el registro); borrados nunca podados | ✔️ parcial. v2.1.7: `ActividadPersonas` (57 % de los cambios) solo toca lo que cambia: guardar una ficha sin cambios 48 → 0 cambios. v2.1.8: instantánea mensual de `Personas` al guardar desde Visitas o JSON, 2 → 1 cambio (los demás borrados de Personas son legítimos: eliminar, fusionar duplicados, vaciar). Pendientes, en el orden pedido: territorios, programa de la visita, asambleas y RSC | 3 |
 | S7 | `InicializarDatabase()` completo (~100 ms) en cada `ObtenerCongregaciones` | ✔️ Personas 450 → 220 ms | 1 |
 | S8 | `PersonasPage` no se daba de baja de `ProgresoCambiado` | ✔️ | 1 |
 | S9 | Circuito, Asambleas y Correspondencia: primera apertura 200–400 ms | ✅ | 2 |
@@ -75,7 +75,7 @@ Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay ma
 | 0 | Medición: vigilante de bloqueos, recorrido de medición y línea base | hecho (31/10) |
 | 1 | Lag rápido: S1, S7, S8 | hecho (31/10) |
 | 2 | Pantallas pesadas: S13, S2, S3, S15 (v2.1.2) y S4 (v2.1.3) hechos; pendientes S2b, S13b y S9 | en curso |
-| 3 | Sincronización y BD: S5 (v2.1.3), S14 con el atasco de la carpeta (v2.1.3—2.1.4), S16 (v2.1.5) y S17 (v2.1.6) hechos; S6 en curso (actividad de personas en v2.1.7); pendientes el resto de S6, poda de borrados, `Id` duplicados e índices solo si se justifican (con copia) | en curso |
+| 3 | Sincronización y BD: S5 (v2.1.3), S14 con el atasco de la carpeta (v2.1.3—2.1.4), S16 (v2.1.5) y S17 (v2.1.6) hechos; S6 en curso (actividad y personas en v2.1.7—2.1.8); pendientes el resto de S6, poda de borrados, `Id` duplicados e índices solo si se justifican (con copia) | en curso |
 | 4 | Estabilidad: manejador global de errores hecho (v2.1.3); pendientes `catch {}` críticos, reglas comunes en SincroCompartido con pruebas y retirar la sincro heredada | en curso |
 | 5 | CPU y memoria: S10 (ReadyToRun), S11, S12 | pendiente |
 | 6 | Visual: estilos comunes, componentes, accesibilidad y escalado; pantalla a pantalla | pendiente |
@@ -134,6 +134,8 @@ Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay ma
 - 01/11/2026 · Publicada la v2.1.6.
 - 01/11/2026 · S6, 1.ª parte: `DatabaseHelper.ReemplazarActividadPersona` (guardado de la ficha de persona) ya no borra y reinserta toda la actividad: borra solo los meses que ya no están, actualiza los que difieren (compara SQLite con `IS NOT`, con los mismos tipos que al guardar) e inserta los nuevos; un mes repetido sigue fallando por UNIQUE. Prueba de equivalencia con el método antiguo (copiado de git) sobre dos copias de la base, en un proyecto desechable en `%TEMP%\prueba_s6`: mismo resultado final en 10 casos.
 - 01/11/2026 · Publicada la v2.1.7.
+- 01/11/2026 · S6, 2.ª parte (Personas): `ActualizarPersonaDesdeVisitas` ya no borra y reinserta la instantánea del mes; el nuevo `ReemplazarInstantaneaMes` actualiza la que hay (conserva su Id) y reproduce el resto: borra las duplicadas, borra la actividad que colgara de ella (como hacía la cascada) y, sin ficha raíz, borra las del mes sin crear otra. Prueba de equivalencia (bloque antiguo de git contra el nuevo, dos copias de la base, `%TEMP%\prueba_s6_personas`): 6 casos y tablas completas iguales.
+- 01/11/2026 · Publicada la v2.1.8.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 
@@ -185,3 +187,14 @@ Móvil (v2.1.3, 31/10/2026): salir a segundo plano 0 ms (sin bloqueo); envío en
 | Mes repetido en la lista | error, sin cambios | error, sin cambios | igual |
 | Vaciar la actividad / volver a ponerla | 24 / 24 | 24 / 24 | igual |
 | Otras 2 personas, guardar sin cambios | 48 | 0 | igual, `Id` conservados |
+
+### v2.1.8 — S6, instantánea mensual de Personas (01/11/2026; copias de la base real)
+
+| Caso | Antes (cambios a sincronizar) | Ahora | Resultado final |
+|---|---|---|---|
+| Guardar desde Visitas (instantánea existente) | 2 (borrado + alta) | 1 (actualización, mismo Id) | igual |
+| Instantáneas duplicadas del mes | 3 | 2 | igual (queda 1) |
+| Mes sin instantánea | 1 alta | 1 alta | igual |
+| Actividad colgada de la instantánea | 2 + 1 | 1 + 1 | igual |
+| Ficha raíz borrada | 1 borrado | 1 borrado | igual |
+| Tablas `Personas` y `ActividadPersonas` completas | — | — | iguales |
