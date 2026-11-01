@@ -72,6 +72,9 @@
                       EnableRowVirtualization="True"
                       VirtualizingPanel.IsVirtualizingWhenGrouping="True"
                       VirtualizingPanel.ScrollUnit="Pixel"
+                  VirtualizingPanel.VirtualizationMode="Recycling"
+                  VirtualizingPanel.CacheLengthUnit="Item"
+                  VirtualizingPanel.CacheLength="6,6"
                       ScrollViewer.CanContentScroll="True"
                       ScrollViewer.VerticalScrollBarVisibility="Auto"
                       RowHeight="34">

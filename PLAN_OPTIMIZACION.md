@@ -58,7 +58,7 @@ Herramientas: adb en `C:\Program Files (x86)\Android\android-sdk\platform-tools\
 | S11 | `Thread.Sleep` fijos en Selenium (6–51 s; en segundo plano) | 🔎 | 5 |
 | S12 | Fotos sin `DecodePixelWidth` / `Freeze` / caché | 🔎 | 5 |
 | S13 | Windows Calendario sin virtualizar: se creaban las 210 semanas | ✔️ 1.404 → 231 ms | 2 |
-| S13b | Calendario: aún crea 88 filas (caché de una página) con ~9 `ui:Button` por fila | ✅ | 2 |
+| S13b | Calendario: creaba 88 filas (caché de una página por arriba y por abajo) con ~9 `ui:Button` por fila, sin reciclar | ✔️ v2.1.16: `VirtualizationMode=Recycling` y caché de 6 filas por lado. Bloqueo al dibujar 204—247 ms → ninguno por encima de 200 ms; segunda navegación 488—516 → 316—322 ms. Comprobado con capturas: misma vista y misma posición de la semana actual, sin filas en blanco al desplazarse | 2 |
 | S14 | Sincro por carpeta: vaciado al salir o cerrar y atasco del canal | ✔️ resuelto. v2.1.3: al vaciar ya no se leen los archivos de los demás. v2.1.4, causa real: al compactar, la posición publicada retrocedía hasta el dispositivo más atrasado (uno abandonado la dejaba en 0) y la carpeta republicaba lo mismo sin llegar nunca a lo reciente; ahora conserva los últimos 2.000 cambios y no retrocede. PC 16.192 → 55.097 de 55.097 en 40 s; envío del móvil al salir 3,7 s → 5 ms; en reposo la carpeta queda quieta | 3 |
 | S15 | Windows arranque: los 117 disparadores se rehacían con ~240 commits | ✔️ parcial: 131 → 57 ms; bloqueo al arrancar 625 → 548 ms (el resto es WPF/JIT: S10) | 2 |
 | S16 | Sincro por carpeta: el lector solo notaba que otro dispositivo había compactado su archivo si tenía menos líneas de las ya leídas; si volvía a crecer antes de leerlo, se saltaban líneas (cambios) | ✔️ v2.1.5: guarda también la huella (SHA-256 abreviado) de la última línea leída (`ArchivoHuella::`, estado local) y, si no coincide, relee desde el principio. Probado alterando la huella: releyó una vez (12 confirmaciones), contador sin cambios, huella restaurada y sin bucle | 3 |
@@ -76,7 +76,7 @@ Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay ma
 |---|---|---|
 | 0 | Medición: vigilante de bloqueos, recorrido de medición y línea base | hecho (31/10) |
 | 1 | Lag rápido: S1, S7, S8 | hecho (31/10) |
-| 2 | Pantallas pesadas: S13, S2, S3, S15 (v2.1.2) y S4 (v2.1.3) hechos; pendientes S2b, S13b y S9 | en curso |
+| 2 | Pantallas pesadas: S13, S2, S3, S15 (v2.1.2), S4 (v2.1.3) y S13b (v2.1.16) hechos; pendientes S9 (Circuito, Asambleas, Correspondencia) y S2b (Android) | en curso |
 | 3 | Sincronización y BD: S5 (v2.1.3), S14 con el atasco de la carpeta (v2.1.3—2.1.4), S16 (v2.1.5) y S17 (v2.1.6) hechos; S6 en curso (actividad, personas, territorios, programa de la visita y asambleas en v2.1.7—2.1.11; falta RSC); pendientes poda de borrados, `Id` duplicados e índices solo si se justifican (con copia) | en curso |
 | 4 | Estabilidad: manejador global de errores (v2.1.3); errores del motor de sincronización (v2.1.12) y de guardados de Windows y sincronización de Android (v2.1.13) anotados; pérdida de actividad al fusionar duplicados corregida (S21, v2.1.14); pendientes reglas comunes en SincroCompartido con pruebas y retirar la sincro heredada | en curso |
 | 5 | Compilación: ReadyToRun en Windows hecho (S10, v2.1.15) | hecho |
@@ -153,6 +153,8 @@ Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay ma
 - 01/11/2026 · Publicada la v2.1.14.
 - 01/11/2026 · Bloque 5 (S10): `publicar_version.ps1` publica Windows en limpio con `-r win-x64 --self-contained false -p:PublishReadyToRun=true -o` (misma carpeta de salida). Medido con el recorrido de medición, 3 rondas alternas: arranque —12 %, bloqueos —18 %, primera apertura —3 %; ZIP —30 % (sin las piezas de otros sistemas). Las librerías nativas (SQLite, SkiaSharp, WebView2) y `selenium-manager.exe` pasan a la raíz; Selenium 4.45 lo encuentra ahí (prueba con su propia búsqueda). En las instalaciones existentes queda la carpeta `runtimes` antigua, sin efecto.
 - 01/11/2026 · Publicada la v2.1.15.
+- 01/11/2026 · S13b: `CalendarioPage.xaml` (TablaRuta) recicla filas (`VirtualizingPanel.VirtualizationMode=Recycling`) y solo reserva 6 filas fuera de la vista por cada lado (`CacheLengthUnit=Item`, `CacheLength=6,6`). La lógica de ir a la semana calcula la posición con los datos y ajusta con la fila real visible (compatible con filas recicladas). Medido con el recorrido (ReadyToRun, 2 rondas) y comprobado con capturas y automatización de Windows.
+- 01/11/2026 · Publicada la v2.1.16.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 
@@ -283,3 +285,12 @@ Móvil (v2.1.3, 31/10/2026): salir a segundo plano 0 ms (sin bloqueo); envío en
 | Bloqueos de la interfaz (suma) | 1.698 ms | 1.396 ms |
 | Primera / segunda apertura de páginas (suma) | 2.633 / 2.461 ms | 2.564 / 2.296 ms |
 | ZIP de la versión | 87,1 MB | 60,5 MB |
+
+### v2.1.16 — S13b, Calendario (01/11/2026; recorrido de medición, ReadyToRun, 2 rondas)
+
+| Medida | Antes | Después |
+|---|---|---|
+| Bloqueo de la interfaz al dibujar la tabla | 204—247 ms (cada vez) | ninguno por encima de 200 ms |
+| Segunda navegación al Calendario | 488—516 ms | 316—322 ms |
+| Relleno de datos | 24—49 ms | 25—48 ms |
+| Posición al abrir (semana actual) | 58,6 % | 58,3 % (misma vista) |
