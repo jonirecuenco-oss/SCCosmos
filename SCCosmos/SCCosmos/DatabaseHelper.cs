@@ -309,8 +309,44 @@ namespace SCCosmos
         /// Parches de datos baratos que se aplican en cada InicializarDatabase
         /// (por sincronización pueden llegar fichas nuevas que los necesiten).
         /// </summary>
+        /// <summary>
+        /// Indica, con una sola lectura (sin bloqueo de escritura), si alguno de los
+        /// parches de AplicarParchesDeDatos tiene algo que corregir. Ante cualquier
+        /// error devuelve true para que se apliquen como siempre.
+        /// </summary>
+        private static bool HayParchesPendientes(SqliteConnection connection)
+        {
+            try
+            {
+                using (var cmd = connection.CreateCommand())
+                {
+                    cmd.CommandText = @"
+                        SELECT EXISTS (SELECT 1 FROM Personas
+                                       WHERE OrigenRegistro IS NULL OR trim(OrigenRegistro) = ''
+                                          OR ((NombreComun IS NULL OR trim(NombreComun) = '')
+                                              AND NombreJWHub IS NOT NULL AND trim(NombreJWHub) != ''))
+                            OR EXISTS (SELECT 1 FROM RecomendacionesNombramientos
+                                       GROUP BY Hermano, Congregacion, Tipo
+                                       HAVING COUNT(*) > 1);";
+                    return Convert.ToInt64(cmd.ExecuteScalar()) != 0;
+                }
+            }
+            catch (Exception errorDatos)
+            {
+                RegistroErrores.AnotarSilencioso(errorDatos, "Datos.Parches#0");
+                return true;
+            }
+        }
+
         private static void AplicarParchesDeDatos(SqliteConnection connection)
         {
+            // Se ejecuta en cada InicializarDatabase (también al pedir las congregaciones).
+            // Cada UPDATE/DELETE toma el bloqueo de escritura aunque no corrija nada, y
+            // esperaría si la sincronización está escribiendo: solo se lanzan cuando la
+            // lectura previa encuentra algo que corregir.
+            if (!HayParchesPendientes(connection))
+                return;
+
             // Las bases de datos anteriores no conocían el origen. No intentamos adivinarlo:
             // se irá completando de forma segura al volver a sincronizar con S-21 o JW Hub.
             try

@@ -53,7 +53,7 @@ Herramientas: adb en `C:\Program Files (x86)\Android\android-sdk\platform-tools\
 | S6 | Guardados borrar + reinsertar (D 8.642 / I 5.716 / U 693 en el registro); borrados nunca podados | ✔️ parcial. v2.1.7: `ActividadPersonas` (57 % de los cambios), guardar una ficha sin cambios 48 → 0. v2.1.8: instantánea mensual de `Personas`, 2 → 1. v2.1.9: importación de territorios en Windows, reimportar igual 1.940 → 0. v2.1.10: programa de la visita en Windows, reimportar igual 56 → 0. v2.1.11: asambleas (partes y organigrama, 94 → 0 al guardar sin cambios) y reunión de precursores (sesiones y partes, 28 → 0). RSC, analizado: sus 4 tablas están vacías y sin cambios desde el 19/10; los guardados `GuardarAsistentesRsc` y `GuardarGruposRsc` (Windows) y `GuardarGruposRscEnConexion` (Android) tienen el mismo patrón pero hoy no generan tráfico: se deja sin tocar hasta que se use. También pendientes, sin tráfico registrado: las importaciones de Android de territorios y programa | 3 |
 | S7 | `InicializarDatabase()` completo (~100 ms) en cada `ObtenerCongregaciones` | ✔️ Personas 450 → 220 ms | 1 |
 | S8 | `PersonasPage` no se daba de baja de `ProgresoCambiado` | ✔️ | 1 |
-| S9 | Circuito, Asambleas y Correspondencia: primera apertura 200–400 ms | ✅ | 2 |
+| S9 | Circuito, Asambleas y Correspondencia: primera apertura 200—400 ms | ✔️ Analizado (01/11): los datos tardan menos de 10 ms; el tiempo es construir y dibujar la página (Circuito 450 ms solo la primera vez, por ser la primera tabla de la sesión). Sin cambios: mantener páginas en memoria alteraría el refresco y el aviso de cambios (S4), y aligerar el XAML tiene riesgo visual | 2 |
 | S10 | Windows sin ReadyToRun: el código de la app se compilaba al usarse por primera vez | ✔️ v2.1.15: publicación win-x64 precompilada (solo en el script de publicación, no en el proyecto). Arranque hasta la ventana 177 → 156 ms, bloqueo del arranque ~550 → ~500 ms, bloqueos totales —18 %, primera apertura de páginas —3 %; ZIP 87,1 → 60,5 MB. Selenium (Firefox) encuentra `selenium-manager.exe` en la raíz: comprobado | 5 |
 | S11 | `Thread.Sleep` fijos en Selenium (6–51 s; en segundo plano) | 🔎 | 5 |
 | S12 | Fotos sin `DecodePixelWidth` / `Freeze` / caché | 🔎 | 5 |
@@ -67,6 +67,7 @@ Herramientas: adb en `C:\Program Files (x86)\Android\android-sdk\platform-tools\
 | S19 | Android, instalación nueva sin base importada: Configuración muestra «no such table: Configuracion» | pendiente (visto en el emulador) | 4 |
 | S20 | Windows: cada importación de territorios deja en blanco `NombreVinculado` en toda la congregación (764 vínculos hoy); Android los conserva por nombre | pendiente de confirmar con el usuario si es intencionado (no se ha cambiado) | — |
 | S21 | Fusión de duplicados (Windows, `FusionarYBorrarDefinitivo`): la actividad de la persona de origen se traspasaba con un único UPDATE; si las dos tenían actividad del mismo mes, la restricción UNIQUE lo hacía fallar entero (error oculto) y, al borrar la persona de origen, toda su actividad se perdía en cascada | ✔️ v2.1.14: se traspasan solo los meses que no tiene la persona que se conserva (comparando sin mayúsculas ni espacios); en los repetidos queda el suyo. Prueba con el bloque real en 5 casos: con 2 repetidos + 2 propios, antes se perdían los 2 propios y ahora pasan | 4 |
+| S22 | Parches de datos (2 UPDATE + 1 DELETE) en cada `InicializarDatabase`, que también se llama al pedir las congregaciones (20 sitios en Windows): toman el bloqueo de escritura aunque no corrijan nada y esperan si la sincronización está escribiendo | ✔️ v2.1.17: lectura previa (`HayParchesPendientes`) y solo se escribe si hace falta. 6,3 → 3,2 ms por llamada; con otra conexión escribiendo, 3,3 s y 3 errores → 4 ms y ninguno (prueba con espera de 1 s por sentencia; la app espera hasta 30 s) | 3 |
 
 Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay manejador global: `RegistroErrores` en ambas apps); posibles `Id` duplicados entre dispositivos (❓); sincronización heredada (AutoSync y fusión) aún en Android; seguridad: APK firmado con la clave de depuración, `allowBackup=true`, clave de sincronización de 8 dígitos.
 
@@ -76,8 +77,8 @@ Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay ma
 |---|---|---|
 | 0 | Medición: vigilante de bloqueos, recorrido de medición y línea base | hecho (31/10) |
 | 1 | Lag rápido: S1, S7, S8 | hecho (31/10) |
-| 2 | Pantallas pesadas: S13, S2, S3, S15 (v2.1.2), S4 (v2.1.3) y S13b (v2.1.16) hechos; pendientes S9 (Circuito, Asambleas, Correspondencia) y S2b (Android) | en curso |
-| 3 | Sincronización y BD: S5 (v2.1.3), S14 con el atasco de la carpeta (v2.1.3—2.1.4), S16 (v2.1.5) y S17 (v2.1.6) hechos; S6 en curso (actividad, personas, territorios, programa de la visita y asambleas en v2.1.7—2.1.11; falta RSC); pendientes poda de borrados, `Id` duplicados e índices solo si se justifican (con copia) | en curso |
+| 2 | Pantallas pesadas: S13, S2, S3, S15 (v2.1.2), S4 (v2.1.3) y S13b (v2.1.16) hechos; S9 analizado sin cambios; pendiente S2b (Android: medir con el móvil conectado) | en curso |
+| 3 | Sincronización y BD: S22 (v2.1.17), S5 (v2.1.3), S14 con el atasco de la carpeta (v2.1.3—2.1.4), S16 (v2.1.5) y S17 (v2.1.6) hechos; S6 en curso (actividad, personas, territorios, programa de la visita y asambleas en v2.1.7—2.1.11; falta RSC); pendientes poda de borrados, `Id` duplicados e índices solo si se justifican (con copia) | en curso |
 | 4 | Estabilidad: manejador global de errores (v2.1.3); errores del motor de sincronización (v2.1.12) y de guardados de Windows y sincronización de Android (v2.1.13) anotados; pérdida de actividad al fusionar duplicados corregida (S21, v2.1.14); pendientes reglas comunes en SincroCompartido con pruebas y retirar la sincro heredada | en curso |
 | 5 | Compilación: ReadyToRun en Windows hecho (S10, v2.1.15) | hecho |
 | 6 | Visual: estilos comunes, componentes, accesibilidad y escalado; pantalla a pantalla | pendiente |
@@ -155,6 +156,9 @@ Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay ma
 - 01/11/2026 · Publicada la v2.1.15.
 - 01/11/2026 · S13b: `CalendarioPage.xaml` (TablaRuta) recicla filas (`VirtualizingPanel.VirtualizationMode=Recycling`) y solo reserva 6 filas fuera de la vista por cada lado (`CacheLengthUnit=Item`, `CacheLength=6,6`). La lógica de ir a la semana calcula la posición con los datos y ajusta con la fila real visible (compatible con filas recicladas). Medido con el recorrido (ReadyToRun, 2 rondas) y comprobado con capturas y automatización de Windows.
 - 01/11/2026 · Publicada la v2.1.16.
+- 01/11/2026 · S9 analizado con marcas temporales (retiradas después): en Circuito, Asambleas y Correspondencia los datos tardan menos de 10 ms; el coste es construir y dibujar la página. Sin cambios.
+- 01/11/2026 · S22: `DatabaseHelper.AplicarParchesDeDatos` comprueba antes con una sola lectura (`HayParchesPendientes`: un recorrido de Personas y los duplicados de recomendaciones) y solo lanza los UPDATE/DELETE si hay algo que corregir; si la lectura falla, se aplican como antes. Se descartó espaciarlos cada 5 minutos porque retrasaría la limpieza de recomendaciones duplicadas. Probado con un banco de consola (`%TEMP%\prueba_parches`) sobre copias de la BD con el texto exacto de las dos versiones, y con el recorrido completo sobre la base real (30 pantallas, sin errores).
+- 01/11/2026 · Publicada la v2.1.17.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 
@@ -294,3 +298,12 @@ Móvil (v2.1.3, 31/10/2026): salir a segundo plano 0 ms (sin bloqueo); envío en
 | Segunda navegación al Calendario | 488—516 ms | 316—322 ms |
 | Relleno de datos | 24—49 ms | 25—48 ms |
 | Posición al abrir (semana actual) | 58,6 % | 58,3 % (misma vista) |
+
+### v2.1.17 — S22, parches de datos (01/11/2026; banco de consola sobre copias de la BD, texto exacto de las dos versiones)
+
+| Medida | Antes | Después |
+|---|---|---|
+| Coste por llamada sin nada que corregir (abrir conexión + parches; 300 llamadas x 3 rondas) | 6,24—6,51 ms | 3,22—3,26 ms |
+| Con otra conexión escribiendo (espera de 1 s por sentencia) | 3.274—3.291 ms y 3 errores | 4 ms y ninguno |
+| Comprobación previa (limpia, origen, nombre, duplicado, inocuo) | — | 5 de 5 aciertos |
+| Resultado con datos que corregir (Personas y recomendaciones) | referencia | 0 filas distintas |
