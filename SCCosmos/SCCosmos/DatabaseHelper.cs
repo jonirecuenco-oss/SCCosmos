@@ -105,8 +105,9 @@ namespace SCCosmos
                             }
                         }
                     }
-                    catch
+                    catch (Exception errorDatos)
                     {
+                        RegistroErrores.AnotarSilencioso(errorDatos, "Datos.CopiaInicialBase");
                     }
                 }
 
@@ -316,13 +317,19 @@ namespace SCCosmos
             {
                 EjecutarQuery(connection, "UPDATE Personas SET OrigenRegistro = 'DESCONOCIDO' WHERE OrigenRegistro IS NULL OR trim(OrigenRegistro) = '';");
             }
-            catch { }
+            catch (Exception errorDatos)
+            {
+                RegistroErrores.AnotarSilencioso(errorDatos, "Datos.Parches#1");
+            }
 
             try
             {
                 EjecutarQuery(connection, "UPDATE Personas SET NombreComun = NombreJWHub WHERE (NombreComun IS NULL OR trim(NombreComun) = '') AND NombreJWHub IS NOT NULL AND trim(NombreJWHub) != '';");
             }
-            catch { }
+            catch (Exception errorDatos)
+            {
+                RegistroErrores.AnotarSilencioso(errorDatos, "Datos.Parches#2");
+            }
 
             // --- LIMPIEZA AUTOMÁTICA DE RECOMENDACIONES DUPLICADAS ---
             try
@@ -335,7 +342,10 @@ namespace SCCosmos
                         GROUP BY Hermano, Congregacion, Tipo
                     );");
             }
-            catch { }
+            catch (Exception errorDatos)
+            {
+                RegistroErrores.AnotarSilencioso(errorDatos, "Datos.Parches#3");
+            }
         }
 
         private static void AsegurarColumna(SqliteConnection connection, string tabla, string columna, string definicion)
@@ -1700,7 +1710,10 @@ namespace SCCosmos
                             cmdAct.Parameters.AddWithValue("$idOrigen", idOrigen);
                             cmdAct.ExecuteNonQuery();
                         }
-                        catch { }
+                        catch (Exception errorDatos)
+                        {
+                            RegistroErrores.AnotarSilencioso(errorDatos, "Datos.Fusion#1");
+                        }
 
                         try
                         {
@@ -1737,7 +1750,10 @@ namespace SCCosmos
                                 cmdTerr.ExecuteNonQuery();
                             }
                         }
-                        catch { }
+                        catch (Exception errorDatos)
+                        {
+                            RegistroErrores.AnotarSilencioso(errorDatos, "Datos.Fusion#2");
+                        }
 
                         // Si la persona origen tenía cónyuge, la ficha del cónyuge puede
                         // seguir apuntando al Id que vamos a borrar. Redirigimos esa referencia
@@ -1751,7 +1767,10 @@ namespace SCCosmos
                             cmdConyuge.Parameters.AddWithValue("$idOrigen", idOrigen);
                             cmdConyuge.ExecuteNonQuery();
                         }
-                        catch { }
+                        catch (Exception errorDatos)
+                        {
+                            RegistroErrores.AnotarSilencioso(errorDatos, "Datos.Fusion#3");
+                        }
 
                         // Si una de las dos fichas forma parte de una cadena de traslados,
                         // trasladamos esos enlaces al Id que sobrevivirá a la fusión. Esto es
@@ -1811,7 +1830,10 @@ namespace SCCosmos
                             cmdRedirectLinks.Parameters.AddWithValue("$origen", idOrigen);
                             cmdRedirectLinks.ExecuteNonQuery();
                         }
-                        catch { }
+                        catch (Exception errorDatos)
+                        {
+                            RegistroErrores.AnotarSilencioso(errorDatos, "Datos.Fusion#4");
+                        }
 
                         // Conservamos la procedencia de ambos registros al fusionarlos.
                         try
@@ -1824,7 +1846,10 @@ namespace SCCosmos
                             if (origenObj != null && origenObj != DBNull.Value)
                                 personaDestino.OrigenRegistro = CombinarOrigenes(personaDestino.OrigenRegistro, origenObj.ToString());
                         }
-                        catch { }
+                        catch (Exception errorDatos)
+                        {
+                            RegistroErrores.AnotarSilencioso(errorDatos, "Datos.Fusion#5");
+                        }
 
                         var cmdDelete = connection.CreateCommand();
                         cmdDelete.Transaction = transaction;
@@ -2371,8 +2396,9 @@ namespace SCCosmos
                     borrar.ExecuteNonQuery();
                 }
             }
-            catch
+            catch (Exception errorDatos)
             {
+                RegistroErrores.AnotarSilencioso(errorDatos, "Datos.ProgramaPdf");
             }
 
             return total;
@@ -2564,8 +2590,9 @@ namespace SCCosmos
                 cmd.Parameters.AddWithValue("@Codigo", codigo ?? "");
                 cmd.ExecuteNonQuery();
             }
-            catch
+            catch (Exception errorDatos)
             {
+                RegistroErrores.AnotarSilencioso(errorDatos, "Datos.DatosExtraCongregacion");
             }
         }
 
@@ -4326,7 +4353,10 @@ namespace SCCosmos
                         cmdClean.Parameters.AddWithValue("@seccion", seccion); cmdClean.ExecuteNonQuery();
                     }
                 }
-                catch { }
+                catch (Exception errorDatos)
+                {
+                    RegistroErrores.AnotarSilencioso(errorDatos, "Datos.AsambleaSemanas");
+                }
             }
         }
 

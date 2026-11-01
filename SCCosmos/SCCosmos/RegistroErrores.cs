@@ -89,6 +89,36 @@ namespace SCCosmos
             }
         }
 
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, DateTime> _ultimosPorSitio = new();
+
+        /// <summary>
+        /// Para los catch que antes se tragaban el error en silencio: lo anota
+        /// sin avisar al usuario (el funcionamiento no cambia) y, como mucho,
+        /// una vez cada 10 minutos por sitio, por si el fallo se repite.
+        /// </summary>
+        public static void AnotarSilencioso(
+            Exception? ex,
+            string sitio)
+        {
+            if (ex is null
+                || ex is OperationCanceledException)
+            {
+                return;
+            }
+
+            DateTime ahora = DateTime.UtcNow;
+
+            if (_ultimosPorSitio.TryGetValue(sitio, out DateTime ultimo)
+                && ahora - ultimo < TimeSpan.FromMinutes(10))
+            {
+                return;
+            }
+
+            _ultimosPorSitio[sitio] = ahora;
+
+            Anotar(ex, sitio);
+        }
+
         private static void Avisar()
         {
             // Como mucho un aviso cada 30 s (un error repetido no debe

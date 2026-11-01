@@ -66,6 +66,7 @@ Herramientas: adb en `C:\Program Files (x86)\Android\android-sdk\platform-tools\
 | S18 | Android: no hay selector de la carpeta compartida en Configuración (quitado el 19/10, commit `6125493`) | intencionado: el usuario no quiere elegir la carpeta a mano; no se cambia | — |
 | S19 | Android, instalación nueva sin base importada: Configuración muestra «no such table: Configuracion» | pendiente (visto en el emulador) | 4 |
 | S20 | Windows: cada importación de territorios deja en blanco `NombreVinculado` en toda la congregación (764 vínculos hoy); Android los conserva por nombre | pendiente de confirmar con el usuario si es intencionado (no se ha cambiado) | — |
+| S21 | Fusión de duplicados (Windows, `FusionarYBorrarDefinitivo`): la actividad de la persona de origen se traspasa con un único UPDATE dentro de un `catch`; si las dos personas tienen actividad del mismo mes, la restricción UNIQUE lo hace fallar entero y, al borrar después la persona de origen, toda su actividad se borra en cascada (las claves ajenas están activas en las conexiones de la app). Hoy no hay actividad huérfana | pendiente de autorización (cambia el comportamiento); desde la v2.1.13 queda anotado como `Datos.Fusion#1` | 4 |
 
 Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay manejador global: `RegistroErrores` en ambas apps); posibles `Id` duplicados entre dispositivos (❓); sincronización heredada (AutoSync y fusión) aún en Android; seguridad: APK firmado con la clave de depuración, `allowBackup=true`, clave de sincronización de 8 dígitos.
 
@@ -77,7 +78,7 @@ Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay ma
 | 1 | Lag rápido: S1, S7, S8 | hecho (31/10) |
 | 2 | Pantallas pesadas: S13, S2, S3, S15 (v2.1.2) y S4 (v2.1.3) hechos; pendientes S2b, S13b y S9 | en curso |
 | 3 | Sincronización y BD: S5 (v2.1.3), S14 con el atasco de la carpeta (v2.1.3—2.1.4), S16 (v2.1.5) y S17 (v2.1.6) hechos; S6 en curso (actividad, personas, territorios, programa de la visita y asambleas en v2.1.7—2.1.11; falta RSC); pendientes poda de borrados, `Id` duplicados e índices solo si se justifican (con copia) | en curso |
-| 4 | Estabilidad: manejador global de errores (v2.1.3) y errores del motor de sincronización anotados (v2.1.12: 21 `catch` vacíos, sin cambiar el comportamiento); pendientes los `catch {}` de guardados (`DatabaseHelper` de Windows: 35; `SincronizacionMobile`: 15), reglas comunes en SincroCompartido con pruebas y retirar la sincro heredada | en curso |
+| 4 | Estabilidad: manejador global de errores (v2.1.3); errores del motor de sincronización (v2.1.12, 21 `catch`) y de guardados de Windows y sincronización de Android (v2.1.13, 23 `catch`) anotados sin cambiar el comportamiento; pendientes S21 (fusión de duplicados), reglas comunes en SincroCompartido con pruebas y retirar la sincro heredada | en curso |
 | 5 | CPU y memoria: S10 (ReadyToRun), S11, S12 | pendiente |
 | 6 | Visual: estilos comunes, componentes, accesibilidad y escalado; pantalla a pantalla | pendiente |
 | 7 | Pruebas: banco de consola versionado para reglas y sincro sobre una copia de la BD | pendiente |
@@ -146,6 +147,8 @@ Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay ma
 - 01/11/2026 · S6, RSC: analizado y sin cambios (tablas vacías y sin tráfico desde el 19/10).
 - 01/11/2026 · Bloque 4, 1.ª parte: nuevo `SincroDiagnostico` (SincroCompartido), enganchado al registro de errores de cada app (`App.OnStartup` y `MainApplication`). 21 `catch` vacíos del motor ahora anotan los errores inesperados sin cambiar el comportamiento: `ServicioSincro` 11 (red, carpeta y vaciado), `SincroAlmacen` 5 (incluido `AplicarLote`, lo recibido de otros dispositivos), `SincroConfiguracion.Cargar` 1 (configuración dañada) y `CanalArchivosSincro` 4. Filtra cortes de red y cancelaciones y anota como mucho 1 vez cada 10 min por sitio. Sin tocar: los de cierre (`Detener`, `Desconectar`, `Dispose`), uno que ya captura solo cancelaciones y los de los conversores de PDF. Prueba del filtro (`%TEMP%\prueba_diag`): 12 casos; PC 60 s y emulador 40 s sin errores ocultos.
 - 01/11/2026 · Publicada la v2.1.12.
+- 01/11/2026 · Bloque 4, 2.ª parte: `RegistroErrores.AnotarSilencioso` (Windows; 1 apunte cada 10 min por sitio). 12 `catch` de `DatabaseHelper` (copia inicial de la base, 3 parches de datos, 5 de la fusión de duplicados, programa PDF, datos extra de congregación y semanas de asamblea) y 11 de `SincronizacionMobile` (inicio, creación del servicio y del canal por carpeta, migración, aplicar, guardar configuración, reiniciar y vaciado) anotan sin cambiar el comportamiento. Se dejan los de lecturas, migraciones de esquema que fallan a propósito y limpieza. Nota: `RepararActividadPersonas` ejecuta `PRAGMA foreign_keys=OFF` dentro de una transacción, donde SQLite lo ignora; las conexiones de la app mantienen las claves ajenas activas.
+- 01/11/2026 · Publicada la v2.1.13.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 
@@ -249,3 +252,10 @@ Móvil (v2.1.3, 31/10/2026): salir a segundo plano 0 ms (sin bloqueo); envío en
 | PC, 60 s con la sincronización activa | 0 errores ocultos anotados |
 | Emulador, 40 s con la carpeta de prueba | 0 errores, sin caídas |
 | Filtro de `SincroDiagnostico` (12 casos) | anota lo inesperado, ignora cortes de red y cancelaciones, 1 apunte cada 10 min por sitio, no falla aunque falle el registro |
+
+### v2.1.13 — Bloque 4, guardados de Windows y sincronización de Android (01/11/2026)
+
+| Prueba | Resultado |
+|---|---|
+| PC, 30 s (incluye los parches de datos al arrancar) | 0 errores ocultos anotados |
+| Emulador, 25 s (inicio de la sincronización y canal por carpeta) | 0 errores, sin caídas |

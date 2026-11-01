@@ -102,8 +102,9 @@ public static class SincronizacionMobile
             _ultimoVaciado =
                 DateTime.UtcNow;
         }
-        catch
+        catch (Exception errorSincro)
         {
+            global::SCCosmos.Sincro.SincroDiagnostico.ErrorRed(errorSincro, "Mobile.Vaciar");
         }
     }
 
@@ -305,9 +306,10 @@ public static class SincronizacionMobile
                 _servicio.Iniciar();
             }
         }
-        catch
+        catch (Exception errorSincro)
         {
             // La aplicación sigue funcionando sin sincronización.
+            global::SCCosmos.Sincro.SincroDiagnostico.Error(errorSincro, "Mobile.Inicio");
         }
     }
 
@@ -329,8 +331,9 @@ public static class SincronizacionMobile
                     .ImportarAsync();
             }
         }
-        catch
+        catch (Exception errorSincro)
         {
+            global::SCCosmos.Sincro.SincroDiagnostico.Error(errorSincro, "Mobile.Migracion#1");
         }
 
         try
@@ -360,14 +363,16 @@ public static class SincronizacionMobile
 
                         cmd.ExecuteNonQuery();
                     }
-                    catch
+                    catch (Exception errorSincro)
                     {
+                        global::SCCosmos.Sincro.SincroDiagnostico.Error(errorSincro, "Mobile.Migracion#2");
                     }
                 }
             }
         }
-        catch
+        catch (Exception errorSincro)
         {
+            global::SCCosmos.Sincro.SincroDiagnostico.Error(errorSincro, "Mobile.Migracion#3");
         }
 
         // Los disparadores deben llevar el Id de ESTE dispositivo
@@ -379,8 +384,9 @@ public static class SincronizacionMobile
                     _config!.IdDispositivo)
                 .Asegurar();
         }
-        catch
+        catch (Exception errorSincro)
         {
+            global::SCCosmos.Sincro.SincroDiagnostico.Error(errorSincro, "Mobile.Migracion#4");
         }
 
         Preferences.Default.Set(
@@ -435,8 +441,9 @@ public static class SincronizacionMobile
                 }
             }
         }
-        catch
+        catch (Exception errorSincro)
         {
+            global::SCCosmos.Sincro.SincroDiagnostico.Error(errorSincro, "Mobile.Aplicar");
         }
     }
 
@@ -569,8 +576,9 @@ public static class SincronizacionMobile
             _config.Guardar(
                 RutaConfig);
         }
-        catch
+        catch (Exception errorSincro)
         {
+            global::SCCosmos.Sincro.SincroDiagnostico.Error(errorSincro, "Mobile.GuardarConfig");
         }
     }
 
@@ -592,8 +600,9 @@ public static class SincronizacionMobile
                     new CanalArchivosMobile();
             }
         }
-        catch
+        catch (Exception errorSincro)
         {
+            global::SCCosmos.Sincro.SincroDiagnostico.Error(errorSincro, "Mobile.CrearServicio#1");
         }
 
         var servicio =
@@ -618,8 +627,9 @@ public static class SincronizacionMobile
                     DatosRecibidos?.Invoke(n);
                 };
         }
-        catch
+        catch (Exception errorSincro)
         {
+            global::SCCosmos.Sincro.SincroDiagnostico.Error(errorSincro, "Mobile.CrearServicio#2");
         }
 
         return servicio;
@@ -655,8 +665,9 @@ public static class SincronizacionMobile
 
             Aplicar();
         }
-        catch
+        catch (Exception errorSincro)
         {
+            global::SCCosmos.Sincro.SincroDiagnostico.Error(errorSincro, "Mobile.Reiniciar");
         }
     }
 
