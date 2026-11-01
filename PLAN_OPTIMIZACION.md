@@ -54,7 +54,7 @@ Herramientas: adb en `C:\Program Files (x86)\Android\android-sdk\platform-tools\
 | S7 | `InicializarDatabase()` completo (~100 ms) en cada `ObtenerCongregaciones` | ✔️ Personas 450 → 220 ms | 1 |
 | S8 | `PersonasPage` no se daba de baja de `ProgresoCambiado` | ✔️ | 1 |
 | S9 | Circuito, Asambleas y Correspondencia: primera apertura 200–400 ms | ✅ | 2 |
-| S10 | Windows sin ReadyToRun: JIT en la primera apertura y en el arranque (requiere cambiar la ruta de publicación del script) | ✅ indicio | 5 |
+| S10 | Windows sin ReadyToRun: el código de la app se compilaba al usarse por primera vez | ✔️ v2.1.15: publicación win-x64 precompilada (solo en el script de publicación, no en el proyecto). Arranque hasta la ventana 177 → 156 ms, bloqueo del arranque ~550 → ~500 ms, bloqueos totales —18 %, primera apertura de páginas —3 %; ZIP 87,1 → 60,5 MB. Selenium (Firefox) encuentra `selenium-manager.exe` en la raíz: comprobado | 5 |
 | S11 | `Thread.Sleep` fijos en Selenium (6–51 s; en segundo plano) | 🔎 | 5 |
 | S12 | Fotos sin `DecodePixelWidth` / `Freeze` / caché | 🔎 | 5 |
 | S13 | Windows Calendario sin virtualizar: se creaban las 210 semanas | ✔️ 1.404 → 231 ms | 2 |
@@ -79,7 +79,7 @@ Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay ma
 | 2 | Pantallas pesadas: S13, S2, S3, S15 (v2.1.2) y S4 (v2.1.3) hechos; pendientes S2b, S13b y S9 | en curso |
 | 3 | Sincronización y BD: S5 (v2.1.3), S14 con el atasco de la carpeta (v2.1.3—2.1.4), S16 (v2.1.5) y S17 (v2.1.6) hechos; S6 en curso (actividad, personas, territorios, programa de la visita y asambleas en v2.1.7—2.1.11; falta RSC); pendientes poda de borrados, `Id` duplicados e índices solo si se justifican (con copia) | en curso |
 | 4 | Estabilidad: manejador global de errores (v2.1.3); errores del motor de sincronización (v2.1.12) y de guardados de Windows y sincronización de Android (v2.1.13) anotados; pérdida de actividad al fusionar duplicados corregida (S21, v2.1.14); pendientes reglas comunes en SincroCompartido con pruebas y retirar la sincro heredada | en curso |
-| 5 | CPU y memoria: S10 (ReadyToRun), S11, S12 | pendiente |
+| 5 | Compilación: ReadyToRun en Windows hecho (S10, v2.1.15) | hecho |
 | 6 | Visual: estilos comunes, componentes, accesibilidad y escalado; pantalla a pantalla | pendiente |
 | 7 | Pruebas: banco de consola versionado para reglas y sincro sobre una copia de la BD | pendiente |
 
@@ -151,6 +151,8 @@ Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay ma
 - 01/11/2026 · Publicada la v2.1.13.
 - 01/11/2026 · S21 (autorizado): en `FusionarYBorrarDefinitivo` el traspaso de actividad solo mueve los meses que no tiene la persona que se conserva (`NOT EXISTS` con `lower(trim(Mes))` y `trim(AnioServicio)`); en los repetidos se queda el suyo. Prueba (`%TEMP%\prueba_s21`): bloque antiguo de git contra el nuevo, con el mismo borrado en cascada de la fusión, en 5 casos; sin actividad huérfana.
 - 01/11/2026 · Publicada la v2.1.14.
+- 01/11/2026 · Bloque 5 (S10): `publicar_version.ps1` publica Windows en limpio con `-r win-x64 --self-contained false -p:PublishReadyToRun=true -o` (misma carpeta de salida). Medido con el recorrido de medición, 3 rondas alternas: arranque —12 %, bloqueos —18 %, primera apertura —3 %; ZIP —30 % (sin las piezas de otros sistemas). Las librerías nativas (SQLite, SkiaSharp, WebView2) y `selenium-manager.exe` pasan a la raíz; Selenium 4.45 lo encuentra ahí (prueba con su propia búsqueda). En las instalaciones existentes queda la carpeta `runtimes` antigua, sin efecto.
+- 01/11/2026 · Publicada la v2.1.15.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 
@@ -271,3 +273,13 @@ Móvil (v2.1.3, 31/10/2026): salir a segundo plano 0 ms (sin bloqueo); envío en
 | Todos repetidos | pasan 0 (error oculto) | pasan 0, sin error |
 | Repetido con otra mayúscula + 1 propio | pasan 2 (mes duplicado) | pasa 1 |
 | Sin actividad | 0 | 0 |
+
+### v2.1.15 — Bloque 5, ReadyToRun en Windows (01/11/2026; recorrido de medición, medianas de 3 rondas alternas)
+
+| Medida | Antes (JIT) | Después (ReadyToRun) |
+|---|---|---|
+| Arranque hasta la ventana | 177 ms | 156 ms |
+| Bloqueo del arranque (Inicio) | 545—555 ms | 491—519 ms |
+| Bloqueos de la interfaz (suma) | 1.698 ms | 1.396 ms |
+| Primera / segunda apertura de páginas (suma) | 2.633 / 2.461 ms | 2.564 / 2.296 ms |
+| ZIP de la versión | 87,1 MB | 60,5 MB |
