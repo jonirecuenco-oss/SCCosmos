@@ -50,7 +50,7 @@ Herramientas: adb en `C:\Program Files (x86)\Android\android-sdk\platform-tools\
 | S3 | Windows Visitas: al abrir se cargaban todas las pestañas; Territorios costaba 300–380 ms. (La tabla no era el problema: solo muestra el grupo elegido, ~18 filas.) | ✔️ bloqueo 484 ms → ninguno en 4 de 6 aperturas | 2 |
 | S4 | Windows: Visitas, Asambleas y Correspondencia se recreaban al llegar cambios de otro equipo | ✔️ ahora aviso «Hay cambios de otro dispositivo · Actualizar» (sin probar con cambios reales) | 2 |
 | S5 | Sincro: cada 1 s por par (y cada 6 s en la carpeta) se recorría `SCCosmos_Cambios` aunque no hubiera cambios | ✔️ marca barata (fecha de escritura de la BD y su WAL) + consulta forzada cada 30 s; sin cambio de esquema. CPU en reposo del PC sin mejora medible (1,1 % → 1,3 %, pendiente de analizar); en el móvil, por medir | 3 |
-| S6 | Guardados borrar + reinsertar (D 8.642 / I 5.716 / U 693 en el registro); borrados nunca podados | ✔️ parcial. v2.1.7: `ActividadPersonas` (57 % de los cambios) solo toca lo que cambia: guardar una ficha sin cambios 48 → 0 cambios. v2.1.8: instantánea mensual de `Personas` al guardar desde Visitas o JSON, 2 → 1 cambio (los demás borrados de Personas son legítimos: eliminar, fusionar duplicados, vaciar). Pendientes, en el orden pedido: territorios, programa de la visita, asambleas y RSC | 3 |
+| S6 | Guardados borrar + reinsertar (D 8.642 / I 5.716 / U 693 en el registro); borrados nunca podados | ✔️ parcial. v2.1.7: `ActividadPersonas` (57 % de los cambios), guardar una ficha sin cambios 48 → 0. v2.1.8: instantánea mensual de `Personas`, 2 → 1 (el resto de borrados de Personas son legítimos). v2.1.9: importación de territorios en Windows, reimportar igual 1.940 → 0 y cambiar un dato 1.940 → 1, en el mismo orden. Pendientes, en el orden pedido: programa de la visita, asambleas y RSC; y la importación de territorios de Android (`GuardarTerritoriosJson`, mismo patrón, sin cambios registrados) | 3 |
 | S7 | `InicializarDatabase()` completo (~100 ms) en cada `ObtenerCongregaciones` | ✔️ Personas 450 → 220 ms | 1 |
 | S8 | `PersonasPage` no se daba de baja de `ProgresoCambiado` | ✔️ | 1 |
 | S9 | Circuito, Asambleas y Correspondencia: primera apertura 200–400 ms | ✅ | 2 |
@@ -65,6 +65,7 @@ Herramientas: adb en `C:\Program Files (x86)\Android\android-sdk\platform-tools\
 | S17 | Sincro por carpeta: en cada pasada (cada 6 s con la app abierta) se leía entero el archivo de cada dispositivo aunque no hubiera cambiado | ✔️ v2.1.6: el listado trae tamaño y fecha de cada archivo (Windows: `DirectoryInfo`; Android: la misma consulta SAF) y solo se lee si cambia; relectura de seguridad cada 2 min. PC: cada pasada leía 1.277 KB, asignaba 6,4 MB y provocaba una recolección completa; CPU en reposo 1,15 % → 0,65 %. Emulador: 2.904 KB y 151-278 ms por pasada → 0 lecturas sin cambios | 3 |
 | S18 | Android: no hay selector de la carpeta compartida en Configuración (quitado el 19/10, commit `6125493`) | intencionado: el usuario no quiere elegir la carpeta a mano; no se cambia | — |
 | S19 | Android, instalación nueva sin base importada: Configuración muestra «no such table: Configuracion» | pendiente (visto en el emulador) | 4 |
+| S20 | Windows: cada importación de territorios deja en blanco `NombreVinculado` en toda la congregación (764 vínculos hoy); Android los conserva por nombre | pendiente de confirmar con el usuario si es intencionado (no se ha cambiado) | — |
 
 Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay manejador global: `RegistroErrores` en ambas apps); posibles `Id` duplicados entre dispositivos (❓); sincronización heredada (AutoSync y fusión) aún en Android; seguridad: APK firmado con la clave de depuración, `allowBackup=true`, clave de sincronización de 8 dígitos.
 
@@ -75,7 +76,7 @@ Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay ma
 | 0 | Medición: vigilante de bloqueos, recorrido de medición y línea base | hecho (31/10) |
 | 1 | Lag rápido: S1, S7, S8 | hecho (31/10) |
 | 2 | Pantallas pesadas: S13, S2, S3, S15 (v2.1.2) y S4 (v2.1.3) hechos; pendientes S2b, S13b y S9 | en curso |
-| 3 | Sincronización y BD: S5 (v2.1.3), S14 con el atasco de la carpeta (v2.1.3—2.1.4), S16 (v2.1.5) y S17 (v2.1.6) hechos; S6 en curso (actividad y personas en v2.1.7—2.1.8); pendientes el resto de S6, poda de borrados, `Id` duplicados e índices solo si se justifican (con copia) | en curso |
+| 3 | Sincronización y BD: S5 (v2.1.3), S14 con el atasco de la carpeta (v2.1.3—2.1.4), S16 (v2.1.5) y S17 (v2.1.6) hechos; S6 en curso (actividad, personas y territorios en v2.1.7—2.1.9); pendientes el resto de S6, poda de borrados, `Id` duplicados e índices solo si se justifican (con copia) | en curso |
 | 4 | Estabilidad: manejador global de errores hecho (v2.1.3); pendientes `catch {}` críticos, reglas comunes en SincroCompartido con pruebas y retirar la sincro heredada | en curso |
 | 5 | CPU y memoria: S10 (ReadyToRun), S11, S12 | pendiente |
 | 6 | Visual: estilos comunes, componentes, accesibilidad y escalado; pantalla a pantalla | pendiente |
@@ -136,6 +137,8 @@ Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay ma
 - 01/11/2026 · Publicada la v2.1.7.
 - 01/11/2026 · S6, 2.ª parte (Personas): `ActualizarPersonaDesdeVisitas` ya no borra y reinserta la instantánea del mes; el nuevo `ReemplazarInstantaneaMes` actualiza la que hay (conserva su Id) y reproduce el resto: borra las duplicadas, borra la actividad que colgara de ella (como hacía la cascada) y, sin ficha raíz, borra las del mes sin crear otra. Prueba de equivalencia (bloque antiguo de git contra el nuevo, dos copias de la base, `%TEMP%\prueba_s6_personas`): 6 casos y tablas completas iguales.
 - 01/11/2026 · Publicada la v2.1.8.
+- 01/11/2026 · S6, 3.ª parte (Territorios, Windows): `GuardarTerritoriosImportados` reutiliza los registros de la congregación en orden de Id (el i-ésimo importado ocupa el i-ésimo existente; los que sobran se borran y los que faltan se añaden al final) y solo actualiza lo que difiere; se conserva el resto del comportamiento (fecha de creación por nombre, `NombreVinculado` en blanco, `FechaEliminacion` nula). Prueba de equivalencia sobre dos copias (`%TEMP%\prueba_s6_territorios`): 10 casos y tabla completa iguales y en el mismo orden.
+- 01/11/2026 · Publicada la v2.1.9.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 
@@ -198,3 +201,14 @@ Móvil (v2.1.3, 31/10/2026): salir a segundo plano 0 ms (sin bloqueo); envío en
 | Actividad colgada de la instantánea | 2 + 1 | 1 + 1 | igual |
 | Ficha raíz borrada | 1 borrado | 1 borrado | igual |
 | Tablas `Personas` y `ActividadPersonas` completas | — | — | iguales |
+
+### v2.1.9 — S6, importación de territorios en Windows (01/11/2026; congregación de 970 registros, copias de la base real)
+
+| Caso | Antes (cambios a sincronizar) | Ahora | Resultado final |
+|---|---|---|---|
+| Reimportar la misma lista (1.ª vez; se vacían 397 vínculos) | 1.940 | 397 | igual y en el mismo orden |
+| Reimportar la misma lista otra vez | 1.940 | 0 | igual |
+| Cambiar un dato | 1.940 | 1 | igual |
+| Registro nuevo a mitad de lista / al final | 1.941 | 486 / 1 | igual |
+| Quitar un registro de en medio | 1.941 | 648 | igual |
+| Lista vacía / volver a la original | 971 / 970 | 971 / 970 | igual |
