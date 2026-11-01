@@ -4177,6 +4177,43 @@ namespace SCCosmos
             return asignaciones;
         }
 
+        /// <summary>
+        /// Ids de las filas que devuelve la consulta (con @id), en orden: son
+        /// los huecos que se reutilizan al guardar una lista sin borrarla
+        /// entera (programa de asambleas y reunión de precursores).
+        /// </summary>
+        private static List<long> IdsEnOrden(SqliteConnection connection, string consulta, long id)
+        {
+            var ids = new List<long>();
+            var cmd = connection.CreateCommand();
+            cmd.CommandText = consulta;
+            cmd.Parameters.AddWithValue("@id", id);
+            using (var lector = cmd.ExecuteReader())
+            {
+                while (lector.Read())
+                {
+                    ids.Add(lector.GetInt64(0));
+                }
+            }
+
+            return ids;
+        }
+
+        /// <summary>
+        /// Borra de la tabla las filas cuyos Id quedan en los huecos a partir
+        /// de la posición indicada (la lista nueva trae menos filas).
+        /// </summary>
+        private static void BorrarFilasSobrantes(SqliteConnection connection, string tabla, List<long> huecos, int desde)
+        {
+            for (int i = desde; i < huecos.Count; i++)
+            {
+                var cmd = connection.CreateCommand();
+                cmd.CommandText = "DELETE FROM " + tabla + " WHERE Id = @fila;";
+                cmd.Parameters.AddWithValue("@fila", huecos[i]);
+                cmd.ExecuteNonQuery();
+            }
+        }
+
         public static void GuardarProgramaAsamblea(string anio, string tipo, string seccion, string titulo, string texto, string lugar, DateTime? fecha, System.Collections.Generic.IEnumerable<PartePrograma> partes, System.Collections.Generic.IEnumerable<AsignacionOrganigramaBD> organigrama)
         {
             using (var connection = new SqliteConnection(ConnectionString))
@@ -4208,37 +4245,56 @@ namespace SCCosmos
                     asambleaId = (long)insertCmd.ExecuteScalar();
                 }
 
+                // Antes se borraban todas las partes y el organigrama de la
+                // asamblea y se volvían a insertar en cada guardado: cada fila
+                // cambiaba de Id y viajaba a los demás dispositivos como un
+                // borrado y un alta. Ahora se reutilizan las filas en orden de Id
+                // (la i-ésima de la lista ocupa la i-ésima existente, así se
+                // conserva el orden) y solo se escribe lo que cambia. El
+                // resultado es el mismo.
                 if (partes != null)
                 {
-                    var deleteCmd = connection.CreateCommand(); deleteCmd.CommandText = "DELETE FROM ProgramaAsambleasPartes WHERE AsambleaId = @id";
-                    deleteCmd.Parameters.AddWithValue("@id", asambleaId); deleteCmd.ExecuteNonQuery();
+                    var huecos = IdsEnOrden(connection, "SELECT Id FROM ProgramaAsambleasPartes WHERE AsambleaId = @id ORDER BY Id;", asambleaId);
+                    int usados = 0;
 
                     foreach (var parte in partes)
                     {
                         var insertParte = connection.CreateCommand();
-                        insertParte.CommandText = "INSERT INTO ProgramaAsambleasPartes (AsambleaId, Turno, Hora, Titulo, AsignadoId, Participantes, RutaArchivo, Tipo, Enviado) VALUES (@id, @turno, @hora, @titulo, @asignado, @part, @ruta, @tipoParte, @enviado);";
+                        insertParte.CommandText = usados < huecos.Count
+                            ? "UPDATE ProgramaAsambleasPartes SET Turno = @turno, Hora = @hora, Titulo = @titulo, AsignadoId = @asignado, Participantes = @part, RutaArchivo = @ruta, Tipo = @tipoParte, Enviado = @enviado WHERE Id = @fila AND (Turno IS NOT @turno OR Hora IS NOT @hora OR Titulo IS NOT @titulo OR AsignadoId IS NOT @asignado OR Participantes IS NOT @part OR RutaArchivo IS NOT @ruta OR Tipo IS NOT @tipoParte OR Enviado IS NOT @enviado);"
+                            : "INSERT INTO ProgramaAsambleasPartes (AsambleaId, Turno, Hora, Titulo, AsignadoId, Participantes, RutaArchivo, Tipo, Enviado) VALUES (@id, @turno, @hora, @titulo, @asignado, @part, @ruta, @tipoParte, @enviado);";
                         insertParte.Parameters.AddWithValue("@id", asambleaId); insertParte.Parameters.AddWithValue("@turno", parte.Turno);
                         insertParte.Parameters.AddWithValue("@hora", parte.Hora ?? ""); insertParte.Parameters.AddWithValue("@titulo", parte.Titulo ?? "");
                         insertParte.Parameters.AddWithValue("@asignado", parte.AsignadoId); insertParte.Parameters.AddWithValue("@part", parte.Participantes ?? "");
                         insertParte.Parameters.AddWithValue("@ruta", parte.RutaArchivo ?? ""); insertParte.Parameters.AddWithValue("@tipoParte", parte.Tipo ?? "");
                         insertParte.Parameters.AddWithValue("@enviado", parte.Enviado ? 1 : 0);
+                        if (usados < huecos.Count) insertParte.Parameters.AddWithValue("@fila", huecos[usados]);
+                        usados++;
                         insertParte.ExecuteNonQuery();
                     }
+
+                    BorrarFilasSobrantes(connection, "ProgramaAsambleasPartes", huecos, usados);
                 }
 
                 if (organigrama != null)
                 {
-                    var delOrgCmd = connection.CreateCommand(); delOrgCmd.CommandText = "DELETE FROM ProgramaAsambleasOrganigrama WHERE AsambleaId = @id";
-                    delOrgCmd.Parameters.AddWithValue("@id", asambleaId); delOrgCmd.ExecuteNonQuery();
+                    var huecosOrg = IdsEnOrden(connection, "SELECT Id FROM ProgramaAsambleasOrganigrama WHERE AsambleaId = @id ORDER BY Id;", asambleaId);
+                    int usadosOrg = 0;
 
                     foreach (var asignacion in organigrama)
                     {
                         var insOrg = connection.CreateCommand();
-                        insOrg.CommandText = "INSERT INTO ProgramaAsambleasOrganigrama (AsambleaId, Departamento, AsignadoId, Rol) VALUES (@id, @dep, @asignado, @rol);";
+                        insOrg.CommandText = usadosOrg < huecosOrg.Count
+                            ? "UPDATE ProgramaAsambleasOrganigrama SET Departamento = @dep, AsignadoId = @asignado, Rol = @rol WHERE Id = @fila AND (Departamento IS NOT @dep OR AsignadoId IS NOT @asignado OR Rol IS NOT @rol);"
+                            : "INSERT INTO ProgramaAsambleasOrganigrama (AsambleaId, Departamento, AsignadoId, Rol) VALUES (@id, @dep, @asignado, @rol);";
                         insOrg.Parameters.AddWithValue("@id", asambleaId); insOrg.Parameters.AddWithValue("@dep", asignacion.Departamento ?? "");
                         insOrg.Parameters.AddWithValue("@asignado", asignacion.AsignadoId); insOrg.Parameters.AddWithValue("@rol", asignacion.Rol ?? "");
+                        if (usadosOrg < huecosOrg.Count) insOrg.Parameters.AddWithValue("@fila", huecosOrg[usadosOrg]);
+                        usadosOrg++;
                         insOrg.ExecuteNonQuery();
                     }
+
+                    BorrarFilasSobrantes(connection, "ProgramaAsambleasOrganigrama", huecosOrg, usadosOrg);
                 }
 
                 try
@@ -4386,34 +4442,70 @@ namespace SCCosmos
                     insertCmd.Parameters.AddWithValue("@texto", texto ?? ""); reunionId = (long)insertCmd.ExecuteScalar();
                 }
 
-                var delPartes = connection.CreateCommand(); delPartes.CommandText = "DELETE FROM ReunionPrecursoresPartes WHERE SesionId IN (SELECT Id FROM ReunionPrecursoresSesiones WHERE ReunionId = @id)";
-                delPartes.Parameters.AddWithValue("@id", reunionId); delPartes.ExecuteNonQuery();
-
-                var delSesiones = connection.CreateCommand(); delSesiones.CommandText = "DELETE FROM ReunionPrecursoresSesiones WHERE ReunionId = @id";
-                delSesiones.Parameters.AddWithValue("@id", reunionId); delSesiones.ExecuteNonQuery();
+                // Antes se borraban todas las sesiones y sus partes y se volvían
+                // a insertar en cada guardado (cada fila con Id nuevo para los
+                // demás dispositivos). Ahora se reutilizan en orden de Id las
+                // sesiones de la reunión y, dentro de cada una, sus partes, y
+                // solo se escribe lo que cambia. El resultado es el mismo (las
+                // partes reutilizadas quedan, como las insertadas, sin ReunionId).
+                var huecosSesion = IdsEnOrden(connection, "SELECT Id FROM ReunionPrecursoresSesiones WHERE ReunionId = @id ORDER BY Id;", reunionId);
+                int usadasSesion = 0;
 
                 foreach (var sesion in sesiones)
                 {
+                    bool reutilizada = usadasSesion < huecosSesion.Count;
                     var insSesion = connection.CreateCommand();
-                    insSesion.CommandText = "INSERT INTO ReunionPrecursoresSesiones (ReunionId, Numero, Fecha, Hora, Congregaciones, Lugar) VALUES (@id, @num, @fecha, @hora, @congre, @lugar); SELECT last_insert_rowid();";
+                    insSesion.CommandText = reutilizada
+                        ? "UPDATE ReunionPrecursoresSesiones SET Numero = @num, Fecha = @fecha, Hora = @hora, Congregaciones = @congre, Lugar = @lugar WHERE Id = @fila AND (Numero IS NOT @num OR Fecha IS NOT @fecha OR Hora IS NOT @hora OR Congregaciones IS NOT @congre OR Lugar IS NOT @lugar);"
+                        : "INSERT INTO ReunionPrecursoresSesiones (ReunionId, Numero, Fecha, Hora, Congregaciones, Lugar) VALUES (@id, @num, @fecha, @hora, @congre, @lugar); SELECT last_insert_rowid();";
                     insSesion.Parameters.AddWithValue("@id", reunionId); insSesion.Parameters.AddWithValue("@num", sesion.Numero);
                     insSesion.Parameters.AddWithValue("@fecha", sesion.Fecha.HasValue ? sesion.Fecha.Value.ToString("yyyy-MM-dd") : (object)DBNull.Value);
                     insSesion.Parameters.AddWithValue("@hora", sesion.Hora ?? ""); insSesion.Parameters.AddWithValue("@congre", sesion.Congregaciones ?? "");
                     insSesion.Parameters.AddWithValue("@lugar", sesion.Lugar ?? "");
-                    long newSesionId = (long)insSesion.ExecuteScalar();
+
+                    long newSesionId;
+                    if (reutilizada)
+                    {
+                        newSesionId = huecosSesion[usadasSesion];
+                        insSesion.Parameters.AddWithValue("@fila", newSesionId);
+                        insSesion.ExecuteNonQuery();
+                    }
+                    else
+                    {
+                        newSesionId = (long)insSesion.ExecuteScalar();
+                    }
+                    usadasSesion++;
+
+                    var huecosParte = IdsEnOrden(connection, "SELECT Id FROM ReunionPrecursoresPartes WHERE SesionId = @id ORDER BY Id;", newSesionId);
+                    int usadasParte = 0;
 
                     foreach (var parte in sesion.Partes)
                     {
                         var insParte = connection.CreateCommand();
-                        insParte.CommandText = "INSERT INTO ReunionPrecursoresPartes (SesionId, Hora, Titulo, AsignadoId, Participantes, RutaArchivo, Tipo, Enviado) VALUES (@sesionId, @hora, @titulo, @asignado, @part, @ruta, @tipoParte, @enviado);";
+                        insParte.CommandText = usadasParte < huecosParte.Count
+                            ? "UPDATE ReunionPrecursoresPartes SET ReunionId = NULL, Hora = @hora, Titulo = @titulo, AsignadoId = @asignado, Participantes = @part, RutaArchivo = @ruta, Tipo = @tipoParte, Enviado = @enviado WHERE Id = @fila AND (ReunionId IS NOT NULL OR Hora IS NOT @hora OR Titulo IS NOT @titulo OR AsignadoId IS NOT @asignado OR Participantes IS NOT @part OR RutaArchivo IS NOT @ruta OR Tipo IS NOT @tipoParte OR Enviado IS NOT @enviado);"
+                            : "INSERT INTO ReunionPrecursoresPartes (SesionId, Hora, Titulo, AsignadoId, Participantes, RutaArchivo, Tipo, Enviado) VALUES (@sesionId, @hora, @titulo, @asignado, @part, @ruta, @tipoParte, @enviado);";
                         insParte.Parameters.AddWithValue("@sesionId", newSesionId); insParte.Parameters.AddWithValue("@hora", parte.Hora ?? "");
                         insParte.Parameters.AddWithValue("@titulo", parte.Titulo ?? ""); insParte.Parameters.AddWithValue("@asignado", parte.AsignadoId);
                         insParte.Parameters.AddWithValue("@part", parte.Participantes ?? ""); insParte.Parameters.AddWithValue("@ruta", parte.RutaArchivo ?? "");
                         insParte.Parameters.AddWithValue("@tipoParte", parte.Tipo ?? "");
                         insParte.Parameters.AddWithValue("@enviado", parte.Enviado ? 1 : 0);
+                        if (usadasParte < huecosParte.Count) insParte.Parameters.AddWithValue("@fila", huecosParte[usadasParte]);
+                        usadasParte++;
                         insParte.ExecuteNonQuery();
                     }
+
+                    BorrarFilasSobrantes(connection, "ReunionPrecursoresPartes", huecosParte, usadasParte);
                 }
+
+                // Las sesiones que sobran, con sus partes.
+                for (int i = usadasSesion; i < huecosSesion.Count; i++)
+                {
+                    var delPartes = connection.CreateCommand(); delPartes.CommandText = "DELETE FROM ReunionPrecursoresPartes WHERE SesionId = @id";
+                    delPartes.Parameters.AddWithValue("@id", huecosSesion[i]); delPartes.ExecuteNonQuery();
+                }
+
+                BorrarFilasSobrantes(connection, "ReunionPrecursoresSesiones", huecosSesion, usadasSesion);
             }
         }
 
