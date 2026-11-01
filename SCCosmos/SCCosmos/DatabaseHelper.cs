@@ -2293,22 +2293,49 @@ namespace SCCosmos
 
             try
             {
+                // La lista se lee entera antes de tocar la base: si fallara al
+                // leer los eventos, el mes queda como estaba.
+                var lista = eventos.ToList();
+
                 using var connection = new SqliteConnection(ConnectionString);
                 connection.Open();
 
-                using (var borrar = connection.CreateCommand())
+                // Antes se borraba el mes y se volvían a insertar todos los
+                // eventos: cada uno cambiaba de Id y viajaba a los demás
+                // dispositivos como un borrado y un alta. Ahora se reutilizan las
+                // filas del mes en orden de Id (el i-ésimo evento ocupa la
+                // i-ésima fila, así el programa conserva el orden importado) y
+                // solo se escribe lo que cambia. El resultado es el mismo.
+                var huecos = new List<long>();
+                using (var leer = connection.CreateCommand())
                 {
-                    borrar.CommandText =
-                        "DELETE FROM ProgramaVisitaV2 WHERE CongreCodigo = @Codigo AND MesReferencia = @Mes;";
-                    borrar.Parameters.AddWithValue("@Codigo", congreCodigo ?? "");
-                    borrar.Parameters.AddWithValue("@Mes", mesReferencia ?? "");
-                    borrar.ExecuteNonQuery();
+                    leer.CommandText =
+                        "SELECT Id FROM ProgramaVisitaV2 WHERE CongreCodigo = @Codigo AND MesReferencia = @Mes ORDER BY Id;";
+                    leer.Parameters.AddWithValue("@Codigo", congreCodigo ?? "");
+                    leer.Parameters.AddWithValue("@Mes", mesReferencia ?? "");
+                    using var lector = leer.ExecuteReader();
+                    while (lector.Read())
+                    {
+                        huecos.Add(lector.GetInt64(0));
+                    }
                 }
 
-                foreach (var evento in eventos)
+                foreach (var evento in lista)
                 {
                     using var cmd = connection.CreateCommand();
-                    cmd.CommandText = @"
+                    cmd.CommandText = total < huecos.Count
+                        ? @"
+                        UPDATE ProgramaVisitaV2
+                        SET DiaSemana = @Dia, Turno = @Turno, Responsable = @Responsable,
+                            TipoActividad = @Tipo, Hora = @Hora, NotasLibro = @Notas,
+                            CompaneroId = 0, Direccion = @Direccion, Latitud = 0, Longitud = 0,
+                            Ubicacion = NULL
+                        WHERE Id = @Id
+                          AND (DiaSemana IS NOT @Dia OR Turno IS NOT @Turno OR Responsable IS NOT @Responsable
+                               OR TipoActividad IS NOT @Tipo OR Hora IS NOT @Hora OR NotasLibro IS NOT @Notas
+                               OR CompaneroId IS NOT 0 OR Direccion IS NOT @Direccion
+                               OR Latitud IS NOT 0 OR Longitud IS NOT 0 OR Ubicacion IS NOT NULL);"
+                        : @"
                         INSERT INTO ProgramaVisitaV2
                             (CongreCodigo, MesReferencia, DiaSemana, Turno,
                              Responsable, TipoActividad, Hora, NotasLibro,
@@ -2326,9 +2353,22 @@ namespace SCCosmos
                     cmd.Parameters.AddWithValue("@Hora", evento.Hora ?? "");
                     cmd.Parameters.AddWithValue("@Notas", evento.Notas ?? "");
                     cmd.Parameters.AddWithValue("@Direccion", evento.Ubicacion ?? "");
+                    if (total < huecos.Count)
+                    {
+                        cmd.Parameters.AddWithValue("@Id", huecos[total]);
+                    }
                     cmd.ExecuteNonQuery();
 
                     total++;
+                }
+
+                // Las filas que sobran (el programa nuevo trae menos eventos).
+                for (int i = total; i < huecos.Count; i++)
+                {
+                    using var borrar = connection.CreateCommand();
+                    borrar.CommandText = "DELETE FROM ProgramaVisitaV2 WHERE Id = @Id;";
+                    borrar.Parameters.AddWithValue("@Id", huecos[i]);
+                    borrar.ExecuteNonQuery();
                 }
             }
             catch
@@ -3613,24 +3653,54 @@ namespace SCCosmos
                 {
                     try
                     {
+                        // Al reemplazar, antes se borraba el mes y se volvía a
+                        // insertar todo: cada actividad cambiaba de Id y viajaba a
+                        // los demás dispositivos como un borrado y un alta. Ahora
+                        // se reutilizan las filas del mes en orden de Id (la
+                        // i-ésima actividad ocupa la i-ésima fila, así se conserva
+                        // el orden importado) y solo se escribe lo que cambia. El
+                        // resultado es el mismo.
+                        var huecos = new List<long>();
                         if (reemplazarExistente)
                         {
-                            var borrar = connection.CreateCommand();
-                            borrar.Transaction = transaction;
-                            borrar.CommandText = @"
-                                DELETE FROM ProgramaVisitaV2
+                            var leer = connection.CreateCommand();
+                            leer.Transaction = transaction;
+                            leer.CommandText = @"
+                                SELECT Id FROM ProgramaVisitaV2
                                 WHERE CongreCodigo = $codigo
-                                  AND MesReferencia = $mes;";
-                            borrar.Parameters.AddWithValue("$codigo", congreCodigo ?? "");
-                            borrar.Parameters.AddWithValue("$mes", mesReferenciaStr ?? "");
-                            borrar.ExecuteNonQuery();
+                                  AND MesReferencia = $mes
+                                ORDER BY Id;";
+                            leer.Parameters.AddWithValue("$codigo", congreCodigo ?? "");
+                            leer.Parameters.AddWithValue("$mes", mesReferenciaStr ?? "");
+                            using (var lector = leer.ExecuteReader())
+                            {
+                                while (lector.Read())
+                                {
+                                    huecos.Add(lector.GetInt64(0));
+                                }
+                            }
                         }
 
+                        int usados = 0;
                         foreach (var actividad in actividades ?? Enumerable.Empty<ActividadPrograma>())
                         {
                             var cmd = connection.CreateCommand();
                             cmd.Transaction = transaction;
-                            cmd.CommandText = @"
+                            cmd.CommandText = usados < huecos.Count
+                                ? @"
+                                UPDATE ProgramaVisitaV2
+                                SET DiaSemana = $dia, Turno = 'General', Responsable = $responsable,
+                                    TipoActividad = $tipo, Hora = $hora, NotasLibro = $notas,
+                                    CompaneroId = $comp, Direccion = $direccion,
+                                    Latitud = $latitud, Longitud = $longitud, Ubicacion = NULL
+                                WHERE Id = $id
+                                  AND (DiaSemana IS NOT $dia OR Turno IS NOT 'General'
+                                       OR Responsable IS NOT $responsable OR TipoActividad IS NOT $tipo
+                                       OR Hora IS NOT $hora OR NotasLibro IS NOT $notas
+                                       OR CompaneroId IS NOT $comp OR Direccion IS NOT $direccion
+                                       OR Latitud IS NOT $latitud OR Longitud IS NOT $longitud
+                                       OR Ubicacion IS NOT NULL);"
+                                : @"
                                 INSERT INTO ProgramaVisitaV2
                                 (
                                     CongreCodigo, MesReferencia, DiaSemana, Turno,
@@ -3655,7 +3725,23 @@ namespace SCCosmos
                             cmd.Parameters.AddWithValue("$direccion", actividad?.Direccion ?? "");
                             cmd.Parameters.AddWithValue("$latitud", actividad?.Latitud ?? 0);
                             cmd.Parameters.AddWithValue("$longitud", actividad?.Longitud ?? 0);
+                            if (usados < huecos.Count)
+                            {
+                                cmd.Parameters.AddWithValue("$id", huecos[usados]);
+                            }
+
+                            usados++;
                             cmd.ExecuteNonQuery();
+                        }
+
+                        // Las filas que sobran (se importan menos actividades).
+                        for (int i = usados; i < huecos.Count; i++)
+                        {
+                            var borrar = connection.CreateCommand();
+                            borrar.Transaction = transaction;
+                            borrar.CommandText = "DELETE FROM ProgramaVisitaV2 WHERE Id = $id;";
+                            borrar.Parameters.AddWithValue("$id", huecos[i]);
+                            borrar.ExecuteNonQuery();
                         }
 
                         transaction.Commit();

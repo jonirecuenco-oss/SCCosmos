@@ -50,7 +50,7 @@ Herramientas: adb en `C:\Program Files (x86)\Android\android-sdk\platform-tools\
 | S3 | Windows Visitas: al abrir se cargaban todas las pestañas; Territorios costaba 300–380 ms. (La tabla no era el problema: solo muestra el grupo elegido, ~18 filas.) | ✔️ bloqueo 484 ms → ninguno en 4 de 6 aperturas | 2 |
 | S4 | Windows: Visitas, Asambleas y Correspondencia se recreaban al llegar cambios de otro equipo | ✔️ ahora aviso «Hay cambios de otro dispositivo · Actualizar» (sin probar con cambios reales) | 2 |
 | S5 | Sincro: cada 1 s por par (y cada 6 s en la carpeta) se recorría `SCCosmos_Cambios` aunque no hubiera cambios | ✔️ marca barata (fecha de escritura de la BD y su WAL) + consulta forzada cada 30 s; sin cambio de esquema. CPU en reposo del PC sin mejora medible (1,1 % → 1,3 %, pendiente de analizar); en el móvil, por medir | 3 |
-| S6 | Guardados borrar + reinsertar (D 8.642 / I 5.716 / U 693 en el registro); borrados nunca podados | ✔️ parcial. v2.1.7: `ActividadPersonas` (57 % de los cambios), guardar una ficha sin cambios 48 → 0. v2.1.8: instantánea mensual de `Personas`, 2 → 1 (el resto de borrados de Personas son legítimos). v2.1.9: importación de territorios en Windows, reimportar igual 1.940 → 0 y cambiar un dato 1.940 → 1, en el mismo orden. Pendientes, en el orden pedido: programa de la visita, asambleas y RSC; y la importación de territorios de Android (`GuardarTerritoriosJson`, mismo patrón, sin cambios registrados) | 3 |
+| S6 | Guardados borrar + reinsertar (D 8.642 / I 5.716 / U 693 en el registro); borrados nunca podados | ✔️ parcial. v2.1.7: `ActividadPersonas` (57 % de los cambios), guardar una ficha sin cambios 48 → 0. v2.1.8: instantánea mensual de `Personas`, 2 → 1 (el resto de borrados de Personas son legítimos). v2.1.9: importación de territorios en Windows, reimportar igual 1.940 → 0. v2.1.10: programa de la visita en Windows (PDF e importación), reimportar igual 56 → 0 y cambiar una hora 56 → 1; si falla la lectura del PDF ya no se borra el mes. Pendientes, en el orden pedido: asambleas y RSC; y las importaciones de Android de territorios y programa (mismo patrón, sin cambios registrados) | 3 |
 | S7 | `InicializarDatabase()` completo (~100 ms) en cada `ObtenerCongregaciones` | ✔️ Personas 450 → 220 ms | 1 |
 | S8 | `PersonasPage` no se daba de baja de `ProgresoCambiado` | ✔️ | 1 |
 | S9 | Circuito, Asambleas y Correspondencia: primera apertura 200–400 ms | ✅ | 2 |
@@ -76,7 +76,7 @@ Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay ma
 | 0 | Medición: vigilante de bloqueos, recorrido de medición y línea base | hecho (31/10) |
 | 1 | Lag rápido: S1, S7, S8 | hecho (31/10) |
 | 2 | Pantallas pesadas: S13, S2, S3, S15 (v2.1.2) y S4 (v2.1.3) hechos; pendientes S2b, S13b y S9 | en curso |
-| 3 | Sincronización y BD: S5 (v2.1.3), S14 con el atasco de la carpeta (v2.1.3—2.1.4), S16 (v2.1.5) y S17 (v2.1.6) hechos; S6 en curso (actividad, personas y territorios en v2.1.7—2.1.9); pendientes el resto de S6, poda de borrados, `Id` duplicados e índices solo si se justifican (con copia) | en curso |
+| 3 | Sincronización y BD: S5 (v2.1.3), S14 con el atasco de la carpeta (v2.1.3—2.1.4), S16 (v2.1.5) y S17 (v2.1.6) hechos; S6 en curso (actividad, personas, territorios y programa de la visita en v2.1.7—2.1.10); pendientes el resto de S6, poda de borrados, `Id` duplicados e índices solo si se justifican (con copia) | en curso |
 | 4 | Estabilidad: manejador global de errores hecho (v2.1.3); pendientes `catch {}` críticos, reglas comunes en SincroCompartido con pruebas y retirar la sincro heredada | en curso |
 | 5 | CPU y memoria: S10 (ReadyToRun), S11, S12 | pendiente |
 | 6 | Visual: estilos comunes, componentes, accesibilidad y escalado; pantalla a pantalla | pendiente |
@@ -139,6 +139,8 @@ Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay ma
 - 01/11/2026 · Publicada la v2.1.8.
 - 01/11/2026 · S6, 3.ª parte (Territorios, Windows): `GuardarTerritoriosImportados` reutiliza los registros de la congregación en orden de Id (el i-ésimo importado ocupa el i-ésimo existente; los que sobran se borran y los que faltan se añaden al final) y solo actualiza lo que difiere; se conserva el resto del comportamiento (fecha de creación por nombre, `NombreVinculado` en blanco, `FechaEliminacion` nula). Prueba de equivalencia sobre dos copias (`%TEMP%\prueba_s6_territorios`): 10 casos y tabla completa iguales y en el mismo orden.
 - 01/11/2026 · Publicada la v2.1.9.
+- 01/11/2026 · S6, 4.ª parte (programa de la visita, Windows): `ReemplazarProgramaMesVisita` (PDF) e `ImportarProgramaVisita` (al reemplazar) reutilizan las filas del mes en orden de Id y solo actualizan lo que difiere; se conserva lo demás (sin transacción y mismo total en el PDF; transacción y modo añadir en la importación). Única diferencia, a propósito y solo en errores: el PDF lee la lista de eventos antes de tocar la base, así un fallo al leerla ya no borra el mes. Prueba de equivalencia (`%TEMP%\prueba_s6_programa`): 12 casos y tabla completa iguales y en el mismo orden.
+- 01/11/2026 · Publicada la v2.1.10.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 
@@ -212,3 +214,14 @@ Móvil (v2.1.3, 31/10/2026): salir a segundo plano 0 ms (sin bloqueo); envío en
 | Registro nuevo a mitad de lista / al final | 1.941 | 486 / 1 | igual |
 | Quitar un registro de en medio | 1.941 | 648 | igual |
 | Lista vacía / volver a la original | 971 / 970 | 971 / 970 | igual |
+
+### v2.1.10 — S6, programa de la visita en Windows (01/11/2026; mes de 28 actividades, copias de la base real)
+
+| Caso | Antes (cambios a sincronizar) | Ahora | Resultado final |
+|---|---|---|---|
+| PDF: reimportar el mismo programa | 56 | 0 (la 1.ª vez, 10) | igual y en el mismo orden |
+| PDF: cambiar una hora | 56 | 1 | igual |
+| PDF: actividad nueva a mitad / 3 menos | 57 / 55 | 15 / 3 | igual |
+| Importar reemplazando, mismas actividades | 56 | 0 (la 1.ª vez, 22) | igual |
+| Importar añadiendo | 26 | 26 | igual |
+| PDF con lista nula (error) | borraba el mes | el mes queda intacto | diferencia a propósito |
