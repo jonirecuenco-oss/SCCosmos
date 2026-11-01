@@ -1705,7 +1705,22 @@ namespace SCCosmos
                         {
                             var cmdAct = connection.CreateCommand();
                             cmdAct.Transaction = transaction;
-                            cmdAct.CommandText = "UPDATE ActividadPersonas SET PersonaId = $idDestino WHERE PersonaId = $idOrigen;";
+                            // Solo se pasan los meses que la persona que se
+                            // conserva no tiene: en los repetidos se queda el
+                            // suyo (sin distinguir mayúsculas ni espacios).
+                            // Antes se pasaba todo de una vez y, si coincidía
+                            // algún mes, fallaba entero (restricción UNIQUE) y,
+                            // al borrar la persona de origen, toda su actividad
+                            // se perdía en cascada.
+                            cmdAct.CommandText = @"
+                                UPDATE ActividadPersonas
+                                SET PersonaId = $idDestino
+                                WHERE PersonaId = $idOrigen
+                                  AND NOT EXISTS (
+                                      SELECT 1 FROM ActividadPersonas d
+                                      WHERE d.PersonaId = $idDestino
+                                        AND lower(trim(d.Mes)) = lower(trim(ActividadPersonas.Mes))
+                                        AND trim(d.AnioServicio) = trim(ActividadPersonas.AnioServicio));";
                             cmdAct.Parameters.AddWithValue("$idDestino", personaDestino.Id);
                             cmdAct.Parameters.AddWithValue("$idOrigen", idOrigen);
                             cmdAct.ExecuteNonQuery();

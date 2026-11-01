@@ -66,7 +66,7 @@ Herramientas: adb en `C:\Program Files (x86)\Android\android-sdk\platform-tools\
 | S18 | Android: no hay selector de la carpeta compartida en Configuración (quitado el 19/10, commit `6125493`) | intencionado: el usuario no quiere elegir la carpeta a mano; no se cambia | — |
 | S19 | Android, instalación nueva sin base importada: Configuración muestra «no such table: Configuracion» | pendiente (visto en el emulador) | 4 |
 | S20 | Windows: cada importación de territorios deja en blanco `NombreVinculado` en toda la congregación (764 vínculos hoy); Android los conserva por nombre | pendiente de confirmar con el usuario si es intencionado (no se ha cambiado) | — |
-| S21 | Fusión de duplicados (Windows, `FusionarYBorrarDefinitivo`): la actividad de la persona de origen se traspasa con un único UPDATE dentro de un `catch`; si las dos personas tienen actividad del mismo mes, la restricción UNIQUE lo hace fallar entero y, al borrar después la persona de origen, toda su actividad se borra en cascada (las claves ajenas están activas en las conexiones de la app). Hoy no hay actividad huérfana | pendiente de autorización (cambia el comportamiento); desde la v2.1.13 queda anotado como `Datos.Fusion#1` | 4 |
+| S21 | Fusión de duplicados (Windows, `FusionarYBorrarDefinitivo`): la actividad de la persona de origen se traspasaba con un único UPDATE; si las dos tenían actividad del mismo mes, la restricción UNIQUE lo hacía fallar entero (error oculto) y, al borrar la persona de origen, toda su actividad se perdía en cascada | ✔️ v2.1.14: se traspasan solo los meses que no tiene la persona que se conserva (comparando sin mayúsculas ni espacios); en los repetidos queda el suyo. Prueba con el bloque real en 5 casos: con 2 repetidos + 2 propios, antes se perdían los 2 propios y ahora pasan | 4 |
 
 Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay manejador global: `RegistroErrores` en ambas apps); posibles `Id` duplicados entre dispositivos (❓); sincronización heredada (AutoSync y fusión) aún en Android; seguridad: APK firmado con la clave de depuración, `allowBackup=true`, clave de sincronización de 8 dígitos.
 
@@ -78,7 +78,7 @@ Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay ma
 | 1 | Lag rápido: S1, S7, S8 | hecho (31/10) |
 | 2 | Pantallas pesadas: S13, S2, S3, S15 (v2.1.2) y S4 (v2.1.3) hechos; pendientes S2b, S13b y S9 | en curso |
 | 3 | Sincronización y BD: S5 (v2.1.3), S14 con el atasco de la carpeta (v2.1.3—2.1.4), S16 (v2.1.5) y S17 (v2.1.6) hechos; S6 en curso (actividad, personas, territorios, programa de la visita y asambleas en v2.1.7—2.1.11; falta RSC); pendientes poda de borrados, `Id` duplicados e índices solo si se justifican (con copia) | en curso |
-| 4 | Estabilidad: manejador global de errores (v2.1.3); errores del motor de sincronización (v2.1.12, 21 `catch`) y de guardados de Windows y sincronización de Android (v2.1.13, 23 `catch`) anotados sin cambiar el comportamiento; pendientes S21 (fusión de duplicados), reglas comunes en SincroCompartido con pruebas y retirar la sincro heredada | en curso |
+| 4 | Estabilidad: manejador global de errores (v2.1.3); errores del motor de sincronización (v2.1.12) y de guardados de Windows y sincronización de Android (v2.1.13) anotados; pérdida de actividad al fusionar duplicados corregida (S21, v2.1.14); pendientes reglas comunes en SincroCompartido con pruebas y retirar la sincro heredada | en curso |
 | 5 | CPU y memoria: S10 (ReadyToRun), S11, S12 | pendiente |
 | 6 | Visual: estilos comunes, componentes, accesibilidad y escalado; pantalla a pantalla | pendiente |
 | 7 | Pruebas: banco de consola versionado para reglas y sincro sobre una copia de la BD | pendiente |
@@ -149,6 +149,8 @@ Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay ma
 - 01/11/2026 · Publicada la v2.1.12.
 - 01/11/2026 · Bloque 4, 2.ª parte: `RegistroErrores.AnotarSilencioso` (Windows; 1 apunte cada 10 min por sitio). 12 `catch` de `DatabaseHelper` (copia inicial de la base, 3 parches de datos, 5 de la fusión de duplicados, programa PDF, datos extra de congregación y semanas de asamblea) y 11 de `SincronizacionMobile` (inicio, creación del servicio y del canal por carpeta, migración, aplicar, guardar configuración, reiniciar y vaciado) anotan sin cambiar el comportamiento. Se dejan los de lecturas, migraciones de esquema que fallan a propósito y limpieza. Nota: `RepararActividadPersonas` ejecuta `PRAGMA foreign_keys=OFF` dentro de una transacción, donde SQLite lo ignora; las conexiones de la app mantienen las claves ajenas activas.
 - 01/11/2026 · Publicada la v2.1.13.
+- 01/11/2026 · S21 (autorizado): en `FusionarYBorrarDefinitivo` el traspaso de actividad solo mueve los meses que no tiene la persona que se conserva (`NOT EXISTS` con `lower(trim(Mes))` y `trim(AnioServicio)`); en los repetidos se queda el suyo. Prueba (`%TEMP%\prueba_s21`): bloque antiguo de git contra el nuevo, con el mismo borrado en cascada de la fusión, en 5 casos; sin actividad huérfana.
+- 01/11/2026 · Publicada la v2.1.14.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 
@@ -259,3 +261,13 @@ Móvil (v2.1.3, 31/10/2026): salir a segundo plano 0 ms (sin bloqueo); envío en
 |---|---|
 | PC, 30 s (incluye los parches de datos al arrancar) | 0 errores ocultos anotados |
 | Emulador, 25 s (inicio de la sincronización y canal por carpeta) | 0 errores, sin caídas |
+
+### v2.1.14 — S21, fusión de duplicados (01/11/2026; copias de la base real, persona con 24 meses)
+
+| Caso | Antes | Ahora |
+|---|---|---|
+| Sin meses repetidos (3 propios) | pasan 3 | pasan 3 |
+| 2 repetidos + 2 propios | pasan 0 y se pierden los 2 propios (error oculto UNIQUE) | pasan los 2 propios |
+| Todos repetidos | pasan 0 (error oculto) | pasan 0, sin error |
+| Repetido con otra mayúscula + 1 propio | pasan 2 (mes duplicado) | pasa 1 |
+| Sin actividad | 0 | 0 |
