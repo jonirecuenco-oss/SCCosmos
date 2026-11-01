@@ -521,6 +521,36 @@ public sealed class SincroAlmacen
 
 
     /// <summary>
+    /// Último número de secuencia asignado (el contador del registro).
+    /// </summary>
+    public long ObtenerUltimoSeq()
+    {
+        try
+        {
+            using var conexion =
+                Abrir();
+
+            using var cmd =
+                conexion.CreateCommand();
+
+            cmd.CommandText =
+                $"SELECT Valor FROM {TablaContador} WHERE Id = 1;";
+
+            object? valor =
+                cmd.ExecuteScalar();
+
+            return valor is null or DBNull
+                ? 0
+                : Convert.ToInt64(valor);
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
+
+    /// <summary>
     /// Cambios con Seq mayor que <paramref name="desdeSeq"/>,
     /// listos para enviar (con la fila actual o borrado).
     /// </summary>

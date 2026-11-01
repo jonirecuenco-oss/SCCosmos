@@ -75,6 +75,12 @@ namespace SCCosmos
 
             _sincroFinalRealizada = true;
 
+            // El resto, cuando WPF haya terminado de procesar este cierre
+            // cancelado: llamar a Close() o a Shutdown() dentro del propio
+            // evento Closing lanza InvalidOperationException (pasaba cuando
+            // el vaciado terminaba al instante, sin nada que enviar).
+            await Task.Yield();
+
             if (haySincro)
             {
                 try

@@ -42,6 +42,12 @@ public sealed class CanalArchivosSincro
     private const int MaxCambiosPorPase =
         400;
 
+    // Cambios recientes que conserva el archivo propio. Los más antiguos
+    // ya no caben (el archivo se compacta a ~2 MB): quien los necesite se
+    // pone al día por la red.
+    private const long VentanaCarpeta =
+        2000;
+
 
     private readonly SincroConfiguracion _config;
 
@@ -173,6 +179,18 @@ public sealed class CanalArchivosSincro
                 ? valor
                 : 0;
 
+        // Lo más antiguo que la ventana de la carpeta ya no se publica: no
+        // cabría en el archivo y antes la carpeta se quedaba atascada
+        // republicando cambios viejos.
+        long ultimoSeq =
+            _almacen.ObtenerUltimoSeq();
+
+        if (escrito < ultimoSeq - VentanaCarpeta)
+        {
+            escrito =
+                ultimoSeq - VentanaCarpeta;
+        }
+
         List<CambioSincro> pendientes =
             _almacen.ObtenerPendientes(
                 escrito);
@@ -282,28 +300,48 @@ public sealed class CanalArchivosSincro
 
 
     /// <summary>
-    /// Reescribe el archivo propio dejando solo lo que algún
-    /// dispositivo no haya confirmado todavía.
+    /// Reescribe el archivo propio dejando solo los cambios recientes ya
+    /// publicados que algún dispositivo activo puede necesitar todavía. La
+    /// posición publicada no retrocede nunca.
     /// </summary>
     private async Task CompactarAsync()
     {
+        long escrito =
+            long.TryParse(
+                _almacen.ObtenerEstado(
+                    "ArchivoSeqEscrito"),
+                out long valor)
+                ? valor
+                : 0;
+
         long minimo =
             long.MaxValue;
 
         foreach (ParSincro par in
                  _almacen.ObtenerPares())
         {
+            // Los dispositivos desmarcados no cuentan (tampoco se leen).
+            if (!_config.EstaHabilitado(
+                    par.Dispositivo))
+            {
+                continue;
+            }
+
             minimo =
                 Math.Min(
                     minimo,
                     par.UltimoEnviado);
         }
 
-        if (minimo == long.MaxValue)
-        {
-            minimo =
-                0;
-        }
+        // Antes se rehacía desde el dispositivo más atrasado (uno
+        // abandonado lo dejaba en 0) y la posición publicada retrocedía:
+        // la carpeta volvía a publicar lo mismo una y otra vez y nunca
+        // llegaba a los cambios recientes. Ahora se conservan como mucho
+        // los últimos cambios ya publicados.
+        long desde =
+            Math.Max(
+                minimo == long.MaxValue ? 0 : minimo,
+                escrito - VentanaCarpeta);
 
         var lineas =
             new List<string>
@@ -314,33 +352,52 @@ public sealed class CanalArchivosSincro
                     _clave)
             };
 
-        long ultimo =
-            minimo;
-
         List<CambioSincro> pendientes =
             _almacen.ObtenerPendientes(
-                minimo);
+                desde);
 
-        if (pendientes.Count > 0)
+        while (pendientes.Count > 0)
         {
+            List<CambioSincro> publicados =
+                pendientes
+                    .Where(c => c.Seq <= escrito)
+                    .ToList();
+
+            if (publicados.Count == 0)
+            {
+                break;
+            }
+
             lineas.Add(
                 CanalCifrado.CifrarMensaje(
                     SincroMensajes.Lote(
-                        pendientes),
+                        publicados),
                     _clave));
 
-            ultimo =
-                pendientes[^1].Seq;
+            if (publicados.Count < pendientes.Count)
+            {
+                break;
+            }
+
+            pendientes =
+                _almacen.ObtenerPendientes(
+                    publicados[^1].Seq);
         }
 
-        if (await _canal.EscribirAsync(
-                MiArchivo,
-                lineas))
+        // Si aun así no cabe holgado, se quitan los lotes más antiguos.
+        long total =
+            lineas.Sum(l => (long)l.Length);
+
+        while (lineas.Count > 2
+               && total > LimiteCompactacion / 2)
         {
-            _almacen.GuardarEstado(
-                "ArchivoSeqEscrito",
-                ultimo.ToString());
+            total -= lineas[1].Length;
+            lineas.RemoveAt(1);
         }
+
+        await _canal.EscribirAsync(
+            MiArchivo,
+            lineas);
     }
 
 
