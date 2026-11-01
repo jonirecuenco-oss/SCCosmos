@@ -2093,17 +2093,79 @@ namespace SCCosmos
                 {
                     try
                     {
-                        var cmdDelete = connection.CreateCommand();
-                        cmdDelete.Transaction = transaction;
-                        cmdDelete.CommandText = "DELETE FROM ActividadPersonas WHERE PersonaId = $id;";
-                        cmdDelete.Parameters.AddWithValue("$id", personaId);
-                        cmdDelete.ExecuteNonQuery();
+                        // Antes se borraba toda la actividad de la persona y se
+                        // volvía a insertar en cada guardado de la ficha: cada fila
+                        // cambiaba de Id y viajaba a los demás dispositivos como un
+                        // borrado y un alta aunque no hubiera cambiado nada. Ahora
+                        // solo se toca lo que cambia; el resultado final es el mismo.
+                        var claves = new HashSet<(string Mes, string Anio)>();
+                        foreach (var item in actividad ?? new List<ActividadMensual>())
+                        {
+                            claves.Add(((item.Mes ?? "").Trim().ToLowerInvariant(), (item.AnioServicio ?? "").Trim()));
+                        }
+
+                        // 1) Se borran solo los meses que ya no están.
+                        var sobrantes = new List<long>();
+
+                        var cmdLeer = connection.CreateCommand();
+                        cmdLeer.Transaction = transaction;
+                        cmdLeer.CommandText = "SELECT Id, Mes, AnioServicio FROM ActividadPersonas WHERE PersonaId = $id;";
+                        cmdLeer.Parameters.AddWithValue("$id", personaId);
+
+                        using (var lector = cmdLeer.ExecuteReader())
+                        {
+                            while (lector.Read())
+                            {
+                                var mes = lector.IsDBNull(1) ? null : lector.GetString(1);
+                                var anio = lector.IsDBNull(2) ? null : lector.GetString(2);
+
+                                if (mes == null || anio == null || !claves.Contains((mes, anio)))
+                                {
+                                    sobrantes.Add(lector.GetInt64(0));
+                                }
+                            }
+                        }
+
+                        foreach (long fila in sobrantes)
+                        {
+                            var cmdDelete = connection.CreateCommand();
+                            cmdDelete.Transaction = transaction;
+                            cmdDelete.CommandText = "DELETE FROM ActividadPersonas WHERE Id = $fila;";
+                            cmdDelete.Parameters.AddWithValue("$fila", fila);
+                            cmdDelete.ExecuteNonQuery();
+                        }
+
+                        // 2) Se actualizan los meses con valores distintos (compara
+                        //    SQLite, con los mismos tipos que al guardar) y se
+                        //    insertan los nuevos.
+                        var vistas = new HashSet<(string Mes, string Anio)>();
 
                         foreach (var item in actividad ?? new List<ActividadMensual>())
                         {
                             var cmdInsert = connection.CreateCommand();
                             cmdInsert.Transaction = transaction;
-                            cmdInsert.CommandText = @"
+
+                            // Un mes repetido en la lista falla igual que antes
+                            // (restricción UNIQUE) y se deshace todo.
+                            cmdInsert.CommandText = vistas.Add(((item.Mes ?? "").Trim().ToLowerInvariant(), (item.AnioServicio ?? "").Trim()))
+                                ? @"
+                                UPDATE ActividadPersonas
+                                SET Participacion = $participacion, CursosBiblicos = $cursosNumerico,
+                                    PrecursorAuxiliar = $precAux, Horas = $horas, Notas = $notas, Cursos = $cursos
+                                WHERE PersonaId = $id AND Mes = $mes AND AnioServicio = $anio
+                                  AND (Participacion IS NOT $participacion OR CursosBiblicos IS NOT $cursosNumerico
+                                       OR PrecursorAuxiliar IS NOT $precAux OR Horas IS NOT $horas
+                                       OR Notas IS NOT $notas OR Cursos IS NOT $cursos);
+
+                                INSERT INTO ActividadPersonas
+                                    (PersonaId, Mes, AnioServicio, Participacion, CursosBiblicos,
+                                     PrecursorAuxiliar, Horas, Notas, Cursos)
+                                SELECT $id, $mes, $anio, $participacion, $cursosNumerico,
+                                       $precAux, $horas, $notas, $cursos
+                                WHERE NOT EXISTS (
+                                    SELECT 1 FROM ActividadPersonas
+                                    WHERE PersonaId = $id AND Mes = $mes AND AnioServicio = $anio);"
+                                : @"
                                 INSERT INTO ActividadPersonas
                                     (PersonaId, Mes, AnioServicio, Participacion, CursosBiblicos,
                                      PrecursorAuxiliar, Horas, Notas, Cursos)

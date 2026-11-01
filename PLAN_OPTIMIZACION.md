@@ -50,7 +50,7 @@ Herramientas: adb en `C:\Program Files (x86)\Android\android-sdk\platform-tools\
 | S3 | Windows Visitas: al abrir se cargaban todas las pestañas; Territorios costaba 300–380 ms. (La tabla no era el problema: solo muestra el grupo elegido, ~18 filas.) | ✔️ bloqueo 484 ms → ninguno en 4 de 6 aperturas | 2 |
 | S4 | Windows: Visitas, Asambleas y Correspondencia se recreaban al llegar cambios de otro equipo | ✔️ ahora aviso «Hay cambios de otro dispositivo · Actualizar» (sin probar con cambios reales) | 2 |
 | S5 | Sincro: cada 1 s por par (y cada 6 s en la carpeta) se recorría `SCCosmos_Cambios` aunque no hubiera cambios | ✔️ marca barata (fecha de escritura de la BD y su WAL) + consulta forzada cada 30 s; sin cambio de esquema. CPU en reposo del PC sin mejora medible (1,1 % → 1,3 %, pendiente de analizar); en el móvil, por medir | 3 |
-| S6 | Guardados borrar + reinsertar (D 8.497 / I 5.678 / U 684); borrados nunca podados | ✅ | 3 |
+| S6 | Guardados borrar + reinsertar (D 8.642 / I 5.716 / U 693 en el registro); borrados nunca podados | ✔️ parcial. v2.1.7: `ActividadPersonas` (13.128 de los 23.140 cambios, 57 %), guardada al grabar la ficha de persona, ahora solo toca lo que cambia: guardar sin cambios 48 → 0 cambios; cambiar un mes 48 → 1; mismo resultado final en 10 casos. Pendientes, por volumen: organigrama y partes de asambleas, partes de la reunión de precursores, RSC, territorios y programa de la visita | 3 |
 | S7 | `InicializarDatabase()` completo (~100 ms) en cada `ObtenerCongregaciones` | ✔️ Personas 450 → 220 ms | 1 |
 | S8 | `PersonasPage` no se daba de baja de `ProgresoCambiado` | ✔️ | 1 |
 | S9 | Circuito, Asambleas y Correspondencia: primera apertura 200–400 ms | ✅ | 2 |
@@ -63,7 +63,7 @@ Herramientas: adb en `C:\Program Files (x86)\Android\android-sdk\platform-tools\
 | S15 | Windows arranque: los 117 disparadores se rehacían con ~240 commits | ✔️ parcial: 131 → 57 ms; bloqueo al arrancar 625 → 548 ms (el resto es WPF/JIT: S10) | 2 |
 | S16 | Sincro por carpeta: el lector solo notaba que otro dispositivo había compactado su archivo si tenía menos líneas de las ya leídas; si volvía a crecer antes de leerlo, se saltaban líneas (cambios) | ✔️ v2.1.5: guarda también la huella (SHA-256 abreviado) de la última línea leída (`ArchivoHuella::`, estado local) y, si no coincide, relee desde el principio. Probado alterando la huella: releyó una vez (12 confirmaciones), contador sin cambios, huella restaurada y sin bucle | 3 |
 | S17 | Sincro por carpeta: en cada pasada (cada 6 s con la app abierta) se leía entero el archivo de cada dispositivo aunque no hubiera cambiado | ✔️ v2.1.6: el listado trae tamaño y fecha de cada archivo (Windows: `DirectoryInfo`; Android: la misma consulta SAF) y solo se lee si cambia; relectura de seguridad cada 2 min. PC: cada pasada leía 1.277 KB, asignaba 6,4 MB y provocaba una recolección completa; CPU en reposo 1,15 % → 0,65 %. Emulador: 2.904 KB y 151-278 ms por pasada → 0 lecturas sin cambios | 3 |
-| S18 | Android: desde el 19/10 (commit `6125493`) no hay forma de elegir la carpeta compartida en una instalación nueva (se quitó el selector de Configuración); los móviles que ya la tenían la conservan | pendiente de decidir con el usuario (comprobado en el emulador) | 4 |
+| S18 | Android: no hay selector de la carpeta compartida en Configuración (quitado el 19/10, commit `6125493`) | intencionado: el usuario no quiere elegir la carpeta a mano; no se cambia | — |
 | S19 | Android, instalación nueva sin base importada: Configuración muestra «no such table: Configuracion» | pendiente (visto en el emulador) | 4 |
 
 Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay manejador global: `RegistroErrores` en ambas apps); posibles `Id` duplicados entre dispositivos (❓); sincronización heredada (AutoSync y fusión) aún en Android; seguridad: APK firmado con la clave de depuración, `allowBackup=true`, clave de sincronización de 8 dígitos.
@@ -75,7 +75,7 @@ Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay ma
 | 0 | Medición: vigilante de bloqueos, recorrido de medición y línea base | hecho (31/10) |
 | 1 | Lag rápido: S1, S7, S8 | hecho (31/10) |
 | 2 | Pantallas pesadas: S13, S2, S3, S15 (v2.1.2) y S4 (v2.1.3) hechos; pendientes S2b, S13b y S9 | en curso |
-| 3 | Sincronización y BD: S5 (v2.1.3), S14 con el atasco de la carpeta (v2.1.3—2.1.4), S16 (v2.1.5) y S17 (v2.1.6) hechos; pendientes S6, poda de borrados, `Id` duplicados e índices solo si se justifican (con copia) | en curso |
+| 3 | Sincronización y BD: S5 (v2.1.3), S14 con el atasco de la carpeta (v2.1.3—2.1.4), S16 (v2.1.5) y S17 (v2.1.6) hechos; S6 en curso (actividad de personas en v2.1.7); pendientes el resto de S6, poda de borrados, `Id` duplicados e índices solo si se justifican (con copia) | en curso |
 | 4 | Estabilidad: manejador global de errores hecho (v2.1.3); pendientes `catch {}` críticos, reglas comunes en SincroCompartido con pruebas y retirar la sincro heredada | en curso |
 | 5 | CPU y memoria: S10 (ReadyToRun), S11, S12 | pendiente |
 | 6 | Visual: estilos comunes, componentes, accesibilidad y escalado; pantalla a pantalla | pendiente |
@@ -132,6 +132,8 @@ Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay ma
 - 01/11/2026 · Publicada la v2.1.5.
 - 01/11/2026 · S17: `ICanalArchivosSincro.ListarConFirmasAsync` (tamaño:fecha de cada archivo; `CanalArchivosPc` con `DirectoryInfo`, `CanalArchivosMobile` con `SyncFolderService.ListarConFirmas`, una sola consulta SAF); `LeerParesAsync` no lee los archivos cuya firma no cambió (relectura de seguridad cada 2 min) y anota `Carpeta.Lectura` en Perf solo cuando lee (enganche `CanalArchivosSincro.Medicion`). Probado en el PC y en el emulador `sccosmos_test` (carpeta de prueba `Documents/PruebaSCCosmos`, elegida con un enganche temporal por adb ya retirado).
 - 01/11/2026 · Publicada la v2.1.6.
+- 01/11/2026 · S6, 1.ª parte: `DatabaseHelper.ReemplazarActividadPersona` (guardado de la ficha de persona) ya no borra y reinserta toda la actividad: borra solo los meses que ya no están, actualiza los que difieren (compara SQLite con `IS NOT`, con los mismos tipos que al guardar) e inserta los nuevos; un mes repetido sigue fallando por UNIQUE. Prueba de equivalencia con el método antiguo (copiado de git) sobre dos copias de la base, en un proyecto desechable en `%TEMP%\prueba_s6`: mismo resultado final en 10 casos.
+- 01/11/2026 · Publicada la v2.1.7.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 
@@ -171,3 +173,15 @@ Móvil (v2.1.3, 31/10/2026): salir a segundo plano 0 ms (sin bloqueo); envío en
 | PC: CPU en reposo (60 s) | 688 ms (1,15 %) | 391 ms (0,65 %) |
 | Emulador Android (x86_64, SAF): cada pasada | 2.904 KB leídos, 151-278 ms | 0 lecturas si nada cambia |
 | Cambio en un archivo | — | se lee solo ese archivo en la pasada siguiente (PC y emulador) |
+
+### v2.1.7 — S6, actividad de personas (01/11/2026; copias de la base real, persona con 24 meses)
+
+| Caso | Antes (cambios a sincronizar) | Ahora | Resultado final |
+|---|---|---|---|
+| Guardar la ficha sin cambios | 48 (24 borrados + 24 altas) | 0 | igual, `Id` conservados |
+| Cambiar las horas de un mes | 48 | 1 | igual |
+| Quitar un mes / añadir uno | 47 | 1 | igual |
+| Un mes guardado con mayúscula | 48 | 2 | igual |
+| Mes repetido en la lista | error, sin cambios | error, sin cambios | igual |
+| Vaciar la actividad / volver a ponerla | 24 / 24 | 24 / 24 | igual |
+| Otras 2 personas, guardar sin cambios | 48 | 0 | igual, `Id` conservados |
