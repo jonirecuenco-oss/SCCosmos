@@ -68,6 +68,7 @@ Herramientas: adb en `C:\Program Files (x86)\Android\android-sdk\platform-tools\
 | S20 | Windows: cada importación de territorios deja en blanco `NombreVinculado` en toda la congregación (764 vínculos hoy); Android los conserva por nombre | pendiente de confirmar con el usuario si es intencionado (no se ha cambiado) | — |
 | S21 | Fusión de duplicados (Windows, `FusionarYBorrarDefinitivo`): la actividad de la persona de origen se traspasaba con un único UPDATE; si las dos tenían actividad del mismo mes, la restricción UNIQUE lo hacía fallar entero (error oculto) y, al borrar la persona de origen, toda su actividad se perdía en cascada | ✔️ v2.1.14: se traspasan solo los meses que no tiene la persona que se conserva (comparando sin mayúsculas ni espacios); en los repetidos queda el suyo. Prueba con el bloque real en 5 casos: con 2 repetidos + 2 propios, antes se perdían los 2 propios y ahora pasan | 4 |
 | S22 | Parches de datos (2 UPDATE + 1 DELETE) en cada `InicializarDatabase`, que también se llama al pedir las congregaciones (20 sitios en Windows): toman el bloqueo de escritura aunque no corrijan nada y esperan si la sincronización está escribiendo | ✔️ v2.1.17: lectura previa (`HayParchesPendientes`) y solo se escribe si hace falta. 6,3 → 3,2 ms por llamada; con otra conexión escribiendo, 3,3 s y 3 errores → 4 ms y ninguno (prueba con espera de 1 s por sentencia; la app espera hasta 30 s) | 3 |
+| S23 | Red: un dispositivo nuevo (o reinstalado) recibe el registro entero (23.167 cambios) a 200 por segundo, unos 2 min, porque tras cada lote el bucle de envío espera 1 s aunque queden pendientes | 🔎 Deducido del banco (las pruebas 1—6 fallaban mientras duraba ese intercambio) y del código (`TamanoLote` 200, `Task.Delay(1000)`); medir antes de tocar | 3 |
 
 Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay manejador global: `RegistroErrores` en ambas apps); posibles `Id` duplicados entre dispositivos (❓); sincronización heredada (AutoSync y fusión) aún en Android; seguridad: APK firmado con la clave de depuración, `allowBackup=true`, clave de sincronización de 8 dígitos.
 
@@ -82,7 +83,7 @@ Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay ma
 | 4 | Estabilidad: manejador global de errores (v2.1.3); errores del motor de sincronización (v2.1.12) y de guardados de Windows y sincronización de Android (v2.1.13) anotados; pérdida de actividad al fusionar duplicados corregida (S21, v2.1.14); pendientes reglas comunes en SincroCompartido con pruebas y retirar la sincro heredada | en curso |
 | 5 | Compilación: ReadyToRun en Windows hecho (S10, v2.1.15) | hecho |
 | 6 | Visual: estilos comunes, componentes, accesibilidad y escalado; pantalla a pantalla | pendiente |
-| 7 | Pruebas: banco de consola versionado para reglas y sincro sobre una copia de la BD | pendiente |
+| 7 | Pruebas: banco `SincroPruebas` revivido (02/11): 13 pruebas de extremo a extremo del motor sobre copias de la BD (red A/B/C; carpeta D/E con el `CanalArchivosPc` real; la 12 comprobada: sin la huella de S16 falla); ~2 min, 13/13 estable. Pendiente: decidir si se versiona (el `.gitignore` lo excluye a propósito), una prueba del atasco con compactación real (archivo de más de 2 MB y un dispositivo abandonado) y las reglas de `DatabaseHelper` (necesitan poder elegir la ruta de la base) | en curso |
 
 ## Mediciones
 
@@ -158,7 +159,9 @@ Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay ma
 - 01/11/2026 · Publicada la v2.1.16.
 - 01/11/2026 · S9 analizado con marcas temporales (retiradas después): en Circuito, Asambleas y Correspondencia los datos tardan menos de 10 ms; el coste es construir y dibujar la página. Sin cambios.
 - 01/11/2026 · S22: `DatabaseHelper.AplicarParchesDeDatos` comprueba antes con una sola lectura (`HayParchesPendientes`: un recorrido de Personas y los duplicados de recomendaciones) y solo lanza los UPDATE/DELETE si hay algo que corregir; si la lectura falla, se aplican como antes. Se descartó espaciarlos cada 5 minutos porque retrasaría la limpieza de recomendaciones duplicadas. Probado con un banco de consola (`%TEMP%\prueba_parches`) sobre copias de la BD con el texto exacto de las dos versiones, y con el recorrido completo sobre la base real (30 pantallas, sin errores).
-- 01/11/2026 · Publicada la v2.1.17.
+- 02/11/2026 · Publicada la v2.1.17.
+- 02/11/2026 · Bloque 7: `SincroPruebas` (banco del 16/10, excluido de git) vuelve a compilar y a pasar. Cambios: excluye los conversores (iText); usa el `CanalArchivosPc` real de Windows; copia la base de `%LOCALAPPDATA%` (o la ruta dada) con la API de copia de SQLite; desactiva el descubrimiento UDP de sus dispositivos (antes se anunciaban en la red); da por sincronizados A/B/C al arrancar (si no, el intercambio inicial de 23.167 cambios tapaba las pruebas 1—6); borra sus copias al terminar. Nuevas: 12 (compactación ajena, S16) y 13 (ráfaga de 2.600 cambios; no reproduce el atasco original). Descartado con un experimento que `MarcaCambios` no detecte escrituras de otra conexión (5/5 con y sin pool).
+- 02/11/2026 · Uso: `dotnet run --project SincroPruebas -c Release` (13/13, unos 2 min). Ejecutarlo antes de publicar cualquier cambio en `SincroCompartido`.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 
@@ -307,3 +310,13 @@ Móvil (v2.1.3, 31/10/2026): salir a segundo plano 0 ms (sin bloqueo); envío en
 | Con otra conexión escribiendo (espera de 1 s por sentencia) | 3.274—3.291 ms y 3 errores | 4 ms y ninguno |
 | Comprobación previa (limpia, origen, nombre, duplicado, inocuo) | — | 5 de 5 aciertos |
 | Resultado con datos que corregir (Personas y recomendaciones) | referencia | 0 filas distintas |
+
+### Bloque 7 — banco `SincroPruebas` (02/11/2026)
+
+| Ejecución | Resultado | Duración |
+|---|---|---|
+| Tal cual estaba (16/10) | no compila (46 errores) | — |
+| Revivido, sin dar por sincronizados A/B/C | 5/11 | 151 s |
+| Revivido | 11/11 | 42 s |
+| Con las pruebas 12 y 13 (dos rondas) | 13/13 y 13/13 | 113 y 112 s |
+| Sin la huella de S16 (a propósito, revertido) | 12/13: falla la 12 | 160 s |
