@@ -62,6 +62,37 @@ public sealed class CanalArchivosMobile
     }
 
 
+    public Task<Dictionary<string, string?>> ListarConFirmasAsync(
+        string prefijo)
+    {
+        var firmas =
+            new Dictionary<string, string?>(
+                StringComparer.OrdinalIgnoreCase);
+
+        try
+        {
+            foreach ((string nombre, string? firma) in
+                     SyncFolderService.ListarConFirmas(
+                         Subcarpeta))
+            {
+                if (nombre.StartsWith(
+                        prefijo,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    firmas[nombre] =
+                        firma;
+                }
+            }
+        }
+        catch
+        {
+        }
+
+        return Task.FromResult(
+            firmas);
+    }
+
+
     public async Task<byte[]?> LeerAsync(
         string nombre)
     {

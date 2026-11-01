@@ -357,6 +357,110 @@ public static class SyncFolderService
     // (Archivo del circuito: JSON + carpeta ArchivosGuardados)
     // =========================================================
 
+    /// <summary>
+    /// Archivos de una subcarpeta con su «firma» (tamaño y fecha de
+    /// modificación), todo en una sola consulta: permite saber si un archivo
+    /// ha cambiado sin leerlo. Firma null: el proveedor no la da.
+    /// </summary>
+    public static Dictionary<string, string?> ListarConFirmas(
+        string? subcarpeta)
+    {
+        var resultado =
+            new Dictionary<string, string?>(
+                StringComparer.OrdinalIgnoreCase);
+
+#if ANDROID
+        if (!EstaConfigurada)
+        {
+            return resultado;
+        }
+
+        try
+        {
+            var treeUri =
+                ObtenerTreeUri();
+
+            string treeId =
+                DocumentsContract.GetTreeDocumentId(
+                    treeUri);
+
+            string docId =
+                ConstruirDocumentId(
+                    treeId,
+                    subcarpeta);
+
+            var childrenUri =
+                DocumentsContract
+                    .BuildChildDocumentsUriUsingTree(
+                        treeUri,
+                        docId);
+
+            var resolver =
+                Android.App.Application.Context.ContentResolver;
+
+            string[] projection =
+            {
+                DocumentsContract.Document.ColumnDisplayName,
+                DocumentsContract.Document.ColumnSize,
+                DocumentsContract.Document.ColumnLastModified
+            };
+
+            using var cursor =
+                resolver.Query(
+                    childrenUri,
+                    projection,
+                    null,
+                    null,
+                    null);
+
+            if (cursor == null)
+            {
+                return resultado;
+            }
+
+            int nameCol =
+                cursor.GetColumnIndex(
+                    DocumentsContract.Document.ColumnDisplayName);
+
+            int sizeCol =
+                cursor.GetColumnIndex(
+                    DocumentsContract.Document.ColumnSize);
+
+            int fechaCol =
+                cursor.GetColumnIndex(
+                    DocumentsContract.Document.ColumnLastModified);
+
+            while (cursor.MoveToNext())
+            {
+                string nombre =
+                    cursor.GetString(nameCol) ?? "";
+
+                if (nombre.Length == 0)
+                {
+                    continue;
+                }
+
+                bool hayFirma =
+                    sizeCol >= 0
+                    && fechaCol >= 0
+                    && !cursor.IsNull(sizeCol)
+                    && !cursor.IsNull(fechaCol);
+
+                resultado[nombre] =
+                    hayFirma
+                        ? $"{cursor.GetLong(sizeCol)}:{cursor.GetLong(fechaCol)}"
+                        : null;
+            }
+        }
+        catch
+        {
+        }
+#endif
+
+        return resultado;
+    }
+
+
     public static List<string> ListarNombres(
         string? subcarpeta)
     {

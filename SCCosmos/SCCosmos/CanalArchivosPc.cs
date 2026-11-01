@@ -63,6 +63,38 @@ namespace SCCosmos
         }
 
 
+        public Task<Dictionary<string, string?>> ListarConFirmasAsync(
+            string prefijo)
+        {
+            var firmas =
+                new Dictionary<string, string?>(
+                    StringComparer.OrdinalIgnoreCase);
+
+            try
+            {
+                foreach (FileInfo archivo in
+                         new DirectoryInfo(
+                             _carpeta)
+                             .EnumerateFiles())
+                {
+                    if (archivo.Name.StartsWith(
+                            prefijo,
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        firmas[archivo.Name] =
+                            $"{archivo.Length}:{archivo.LastWriteTimeUtc.Ticks}";
+                    }
+                }
+            }
+            catch
+            {
+            }
+
+            return Task.FromResult(
+                firmas);
+        }
+
+
         public Task<byte[]?> LeerAsync(
             string nombre)
         {

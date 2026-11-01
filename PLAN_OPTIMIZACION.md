@@ -62,7 +62,9 @@ Herramientas: adb en `C:\Program Files (x86)\Android\android-sdk\platform-tools\
 | S14 | Sincro por carpeta: vaciado al salir o cerrar y atasco del canal | ✔️ resuelto. v2.1.3: al vaciar ya no se leen los archivos de los demás. v2.1.4, causa real: al compactar, la posición publicada retrocedía hasta el dispositivo más atrasado (uno abandonado la dejaba en 0) y la carpeta republicaba lo mismo sin llegar nunca a lo reciente; ahora conserva los últimos 2.000 cambios y no retrocede. PC 16.192 → 55.097 de 55.097 en 40 s; envío del móvil al salir 3,7 s → 5 ms; en reposo la carpeta queda quieta | 3 |
 | S15 | Windows arranque: los 117 disparadores se rehacían con ~240 commits | ✔️ parcial: 131 → 57 ms; bloqueo al arrancar 625 → 548 ms (el resto es WPF/JIT: S10) | 2 |
 | S16 | Sincro por carpeta: el lector solo notaba que otro dispositivo había compactado su archivo si tenía menos líneas de las ya leídas; si volvía a crecer antes de leerlo, se saltaban líneas (cambios) | ✔️ v2.1.5: guarda también la huella (SHA-256 abreviado) de la última línea leída (`ArchivoHuella::`, estado local) y, si no coincide, relee desde el principio. Probado alterando la huella: releyó una vez (12 confirmaciones), contador sin cambios, huella restaurada y sin bucle | 3 |
-| S17 | Sincro por carpeta: en cada pasada (cada 6 s con la app abierta) se lee entero el archivo de cada dispositivo aunque no haya cambiado (~2 MB por pasada, con mucha memoria temporal) | sospecha, por medir: posibles tirones en el móvil al limpiar memoria. Arreglo posible: mirar antes tamaño y fecha del archivo (hay que ampliar la interfaz del canal en Windows y Android) | 3 |
+| S17 | Sincro por carpeta: en cada pasada (cada 6 s con la app abierta) se leía entero el archivo de cada dispositivo aunque no hubiera cambiado | ✔️ v2.1.6: el listado trae tamaño y fecha de cada archivo (Windows: `DirectoryInfo`; Android: la misma consulta SAF) y solo se lee si cambia; relectura de seguridad cada 2 min. PC: cada pasada leía 1.277 KB, asignaba 6,4 MB y provocaba una recolección completa; CPU en reposo 1,15 % → 0,65 %. Emulador: 2.904 KB y 151-278 ms por pasada → 0 lecturas sin cambios | 3 |
+| S18 | Android: desde el 19/10 (commit `6125493`) no hay forma de elegir la carpeta compartida en una instalación nueva (se quitó el selector de Configuración); los móviles que ya la tenían la conservan | pendiente de decidir con el usuario (comprobado en el emulador) | 4 |
+| S19 | Android, instalación nueva sin base importada: Configuración muestra «no such table: Configuracion» | pendiente (visto en el emulador) | 4 |
 
 Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay manejador global: `RegistroErrores` en ambas apps); posibles `Id` duplicados entre dispositivos (❓); sincronización heredada (AutoSync y fusión) aún en Android; seguridad: APK firmado con la clave de depuración, `allowBackup=true`, clave de sincronización de 8 dígitos.
 
@@ -73,7 +75,7 @@ Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay ma
 | 0 | Medición: vigilante de bloqueos, recorrido de medición y línea base | hecho (31/10) |
 | 1 | Lag rápido: S1, S7, S8 | hecho (31/10) |
 | 2 | Pantallas pesadas: S13, S2, S3, S15 (v2.1.2) y S4 (v2.1.3) hechos; pendientes S2b, S13b y S9 | en curso |
-| 3 | Sincronización y BD: S5 (v2.1.3), S14 con el atasco de la carpeta (v2.1.3—2.1.4) y S16 (v2.1.5) hechos; pendientes S17, S6, poda de borrados, `Id` duplicados e índices solo si se justifican (con copia) | en curso |
+| 3 | Sincronización y BD: S5 (v2.1.3), S14 con el atasco de la carpeta (v2.1.3—2.1.4), S16 (v2.1.5) y S17 (v2.1.6) hechos; pendientes S6, poda de borrados, `Id` duplicados e índices solo si se justifican (con copia) | en curso |
 | 4 | Estabilidad: manejador global de errores hecho (v2.1.3); pendientes `catch {}` críticos, reglas comunes en SincroCompartido con pruebas y retirar la sincro heredada | en curso |
 | 5 | CPU y memoria: S10 (ReadyToRun), S11, S12 | pendiente |
 | 6 | Visual: estilos comunes, componentes, accesibilidad y escalado; pantalla a pantalla | pendiente |
@@ -128,6 +130,8 @@ Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay ma
 - 01/11/2026 · Publicada la v2.1.4.
 - 01/11/2026 · S16: `CanalArchivosSincro.LeerParesAsync` guarda `ArchivoHuella::<archivo>` (huella de la última línea leída) y relee desde el principio si cambia; la primera vez toma la referencia sin releer. Copia de la BD de la prueba: `%LOCALAPPDATA%\SCCosmos\copia_prueba_S16_20261101`.
 - 01/11/2026 · Publicada la v2.1.5.
+- 01/11/2026 · S17: `ICanalArchivosSincro.ListarConFirmasAsync` (tamaño:fecha de cada archivo; `CanalArchivosPc` con `DirectoryInfo`, `CanalArchivosMobile` con `SyncFolderService.ListarConFirmas`, una sola consulta SAF); `LeerParesAsync` no lee los archivos cuya firma no cambió (relectura de seguridad cada 2 min) y anota `Carpeta.Lectura` en Perf solo cuando lee (enganche `CanalArchivosSincro.Medicion`). Probado en el PC y en el emulador `sccosmos_test` (carpeta de prueba `Documents/PruebaSCCosmos`, elegida con un enganche temporal por adb ya retirado).
+- 01/11/2026 · Publicada la v2.1.6.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 
@@ -157,3 +161,13 @@ Móvil (v2.1.3, 31/10/2026): salir a segundo plano 0 ms (sin bloqueo); envío en
 | Huella del móvil alterada a propósito | relee una vez: +12 confirmaciones (26 → 38 líneas), contador 55.133 sin cambios, huella restaurada (707126BC···) |
 | 30 s después | 38 líneas: sin bucle |
 | Errores (PC y móvil) | ninguno |
+
+### v2.1.6 — S17 (01/11/2026)
+
+| Medida | Antes | Después |
+|---|---|---|
+| PC: lecturas de la carpeta en reposo | 1 cada 6 s (1.277 KB, 6,4 MB de memoria temporal, 12 ms) | 1 al arrancar + 1 de seguridad cada 2 min |
+| PC: recolecciones completas de memoria | 1 por pasada (13 en 72 s) | 3 en 2 min |
+| PC: CPU en reposo (60 s) | 688 ms (1,15 %) | 391 ms (0,65 %) |
+| Emulador Android (x86_64, SAF): cada pasada | 2.904 KB leídos, 151-278 ms | 0 lecturas si nada cambia |
+| Cambio en un archivo | — | se lee solo ese archivo en la pasada siguiente (PC y emulador) |

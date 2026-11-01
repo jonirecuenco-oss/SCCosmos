@@ -19,6 +19,10 @@ namespace SCCosmos
             // aplicación sigue funcionando en lugar de cerrarse.
             RegistroErrores.Iniciar(this);
 
+            // Mediciones del canal por carpeta, en el registro de Perf.
+            global::SCCosmos.Sincro.CanalArchivosSincro.Medicion =
+                Perf.Registrar;
+
             base.OnStartup(e);
         }
     }

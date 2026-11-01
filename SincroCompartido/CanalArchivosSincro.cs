@@ -21,6 +21,14 @@ public interface ICanalArchivosSincro
     Task<List<string>> ListarAsync(
         string prefijo);
 
+    /// <summary>
+    /// Como ListarAsync, pero con la «firma» de cada archivo (tamaño y
+    /// fecha de modificación) para saber si ha cambiado sin leerlo.
+    /// Firma null: no se sabe (el archivo se leerá siempre).
+    /// </summary>
+    Task<Dictionary<string, string?>> ListarConFirmasAsync(
+        string prefijo);
+
     Task<byte[]?> LeerAsync(
         string nombre);
 
@@ -47,6 +55,21 @@ public sealed class CanalArchivosSincro
     // pone al día por la red.
     private const long VentanaCarpeta =
         2000;
+
+    /// <summary>
+    /// Enganche opcional para anotar mediciones en el registro de la app
+    /// (Perf). Si nadie se engancha, no se anota nada.
+    /// </summary>
+    public static Action<string, long>? Medicion;
+
+    // Firma (tamaño y fecha) de cada archivo ajeno en su última lectura,
+    // para no volver a leerlo si no ha cambiado.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, (string Firma, DateTime Hora)> _firmasLeidas =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    // Aunque la firma no cambie, cada archivo se relee cada 2 minutos.
+    private static readonly TimeSpan RelecturaSegura =
+        TimeSpan.FromMinutes(2);
 
 
     private readonly SincroConfiguracion _config;
@@ -407,12 +430,21 @@ public sealed class CanalArchivosSincro
 
     private async Task LeerParesAsync()
     {
-        List<string> nombres =
-            await _canal.ListarAsync(
+        var reloj =
+            System.Diagnostics.Stopwatch.StartNew();
+
+        long bytesLeidos =
+            0;
+
+        int archivosLeidos =
+            0;
+
+        Dictionary<string, string?> archivos =
+            await _canal.ListarConFirmasAsync(
                 "cambios-");
 
-        foreach (string nombre in
-                 nombres)
+        foreach ((string nombre, string? firma) in
+                 archivos)
         {
             try
             {
@@ -428,6 +460,20 @@ public sealed class CanalArchivosSincro
                     continue;
                 }
 
+                // Si el archivo no ha cambiado (mismo tamaño y fecha) desde
+                // la última lectura, no se vuelve a leer: antes se leían
+                // enteros todos en cada pasada (~6 MB de memoria temporal
+                // cada 6 s). Por seguridad se relee igualmente cada 2 min.
+                if (firma is not null
+                    && _firmasLeidas.TryGetValue(
+                        nombre,
+                        out var leida)
+                    && leida.Firma == firma
+                    && DateTime.UtcNow - leida.Hora < RelecturaSegura)
+                {
+                    continue;
+                }
+
                 byte[]? bytes =
                     await _canal.LeerAsync(
                         nombre);
@@ -437,6 +483,19 @@ public sealed class CanalArchivosSincro
                     bytes.Length == 0)
                 {
                     continue;
+                }
+
+                bytesLeidos +=
+                    bytes.Length;
+
+                archivosLeidos++;
+
+                // Si algo falla al procesarlo, se olvida (en el catch) y
+                // se vuelve a leer en el próximo pase.
+                if (firma is not null)
+                {
+                    _firmasLeidas[nombre] =
+                        (firma, DateTime.UtcNow);
                 }
 
                 string texto =
@@ -646,7 +705,20 @@ public sealed class CanalArchivosSincro
             catch
             {
                 // Se reintentará en el próximo pase.
+                _firmasLeidas.TryRemove(
+                    nombre,
+                    out _);
             }
+        }
+
+        // Solo se anota cuando se lee algún archivo: al arrancar, cuando
+        // otro dispositivo cambia el suyo y en la relectura de seguridad.
+        if (archivosLeidos > 0)
+        {
+            Medicion?.Invoke(
+                $"Carpeta.Lectura {archivosLeidos} archivos, " +
+                $"{bytesLeidos / 1024} KB leídos",
+                reloj.ElapsedMilliseconds);
         }
     }
 
