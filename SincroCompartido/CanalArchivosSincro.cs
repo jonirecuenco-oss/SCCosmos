@@ -141,16 +141,18 @@ public sealed class CanalArchivosSincro
         {
             await EscribirPendientesAsync();
         }
-        catch
+        catch (Exception errorSincro)
         {
+            SincroDiagnostico.Error(errorSincro, "EjecutarPaseAsync#1");
         }
 
         try
         {
             await LeerParesAsync();
         }
-        catch
+        catch (Exception errorSincro)
         {
+            SincroDiagnostico.Error(errorSincro, "EjecutarPaseAsync#2");
         }
     }
 
@@ -166,8 +168,9 @@ public sealed class CanalArchivosSincro
         {
             return await EscribirPendientesAsync();
         }
-        catch
+        catch (Exception errorSincro)
         {
+            SincroDiagnostico.Error(errorSincro, "PublicarPendientesAsync");
             return true;
         }
     }
@@ -702,9 +705,10 @@ public sealed class CanalArchivosSincro
                         acks);
                 }
             }
-            catch
+            catch (Exception errorSincro)
             {
                 // Se reintentará en el próximo pase.
+                SincroDiagnostico.Error(errorSincro, "LeerParesAsync");
                 _firmasLeidas.TryRemove(
                     nombre,
                     out _);

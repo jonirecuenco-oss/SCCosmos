@@ -50,7 +50,7 @@ Herramientas: adb en `C:\Program Files (x86)\Android\android-sdk\platform-tools\
 | S3 | Windows Visitas: al abrir se cargaban todas las pestañas; Territorios costaba 300–380 ms. (La tabla no era el problema: solo muestra el grupo elegido, ~18 filas.) | ✔️ bloqueo 484 ms → ninguno en 4 de 6 aperturas | 2 |
 | S4 | Windows: Visitas, Asambleas y Correspondencia se recreaban al llegar cambios de otro equipo | ✔️ ahora aviso «Hay cambios de otro dispositivo · Actualizar» (sin probar con cambios reales) | 2 |
 | S5 | Sincro: cada 1 s por par (y cada 6 s en la carpeta) se recorría `SCCosmos_Cambios` aunque no hubiera cambios | ✔️ marca barata (fecha de escritura de la BD y su WAL) + consulta forzada cada 30 s; sin cambio de esquema. CPU en reposo del PC sin mejora medible (1,1 % → 1,3 %, pendiente de analizar); en el móvil, por medir | 3 |
-| S6 | Guardados borrar + reinsertar (D 8.642 / I 5.716 / U 693 en el registro); borrados nunca podados | ✔️ parcial. v2.1.7: `ActividadPersonas` (57 % de los cambios), guardar una ficha sin cambios 48 → 0. v2.1.8: instantánea mensual de `Personas`, 2 → 1. v2.1.9: importación de territorios en Windows, reimportar igual 1.940 → 0. v2.1.10: programa de la visita en Windows, reimportar igual 56 → 0. v2.1.11: asambleas (partes y organigrama, 94 → 0 al guardar sin cambios) y reunión de precursores (sesiones y partes, 28 → 0). Pendientes, en el orden pedido: RSC; y las importaciones de Android de territorios y programa (mismo patrón, sin cambios registrados) | 3 |
+| S6 | Guardados borrar + reinsertar (D 8.642 / I 5.716 / U 693 en el registro); borrados nunca podados | ✔️ parcial. v2.1.7: `ActividadPersonas` (57 % de los cambios), guardar una ficha sin cambios 48 → 0. v2.1.8: instantánea mensual de `Personas`, 2 → 1. v2.1.9: importación de territorios en Windows, reimportar igual 1.940 → 0. v2.1.10: programa de la visita en Windows, reimportar igual 56 → 0. v2.1.11: asambleas (partes y organigrama, 94 → 0 al guardar sin cambios) y reunión de precursores (sesiones y partes, 28 → 0). RSC, analizado: sus 4 tablas están vacías y sin cambios desde el 19/10; los guardados `GuardarAsistentesRsc` y `GuardarGruposRsc` (Windows) y `GuardarGruposRscEnConexion` (Android) tienen el mismo patrón pero hoy no generan tráfico: se deja sin tocar hasta que se use. También pendientes, sin tráfico registrado: las importaciones de Android de territorios y programa | 3 |
 | S7 | `InicializarDatabase()` completo (~100 ms) en cada `ObtenerCongregaciones` | ✔️ Personas 450 → 220 ms | 1 |
 | S8 | `PersonasPage` no se daba de baja de `ProgresoCambiado` | ✔️ | 1 |
 | S9 | Circuito, Asambleas y Correspondencia: primera apertura 200–400 ms | ✅ | 2 |
@@ -77,7 +77,7 @@ Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay ma
 | 1 | Lag rápido: S1, S7, S8 | hecho (31/10) |
 | 2 | Pantallas pesadas: S13, S2, S3, S15 (v2.1.2) y S4 (v2.1.3) hechos; pendientes S2b, S13b y S9 | en curso |
 | 3 | Sincronización y BD: S5 (v2.1.3), S14 con el atasco de la carpeta (v2.1.3—2.1.4), S16 (v2.1.5) y S17 (v2.1.6) hechos; S6 en curso (actividad, personas, territorios, programa de la visita y asambleas en v2.1.7—2.1.11; falta RSC); pendientes poda de borrados, `Id` duplicados e índices solo si se justifican (con copia) | en curso |
-| 4 | Estabilidad: manejador global de errores hecho (v2.1.3); pendientes `catch {}` críticos, reglas comunes en SincroCompartido con pruebas y retirar la sincro heredada | en curso |
+| 4 | Estabilidad: manejador global de errores (v2.1.3) y errores del motor de sincronización anotados (v2.1.12: 21 `catch` vacíos, sin cambiar el comportamiento); pendientes los `catch {}` de guardados (`DatabaseHelper` de Windows: 35; `SincronizacionMobile`: 15), reglas comunes en SincroCompartido con pruebas y retirar la sincro heredada | en curso |
 | 5 | CPU y memoria: S10 (ReadyToRun), S11, S12 | pendiente |
 | 6 | Visual: estilos comunes, componentes, accesibilidad y escalado; pantalla a pantalla | pendiente |
 | 7 | Pruebas: banco de consola versionado para reglas y sincro sobre una copia de la BD | pendiente |
@@ -143,6 +143,9 @@ Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay ma
 - 01/11/2026 · Publicada la v2.1.10.
 - 01/11/2026 · S6, 5.ª parte (asambleas, Windows): `GuardarProgramaAsamblea` (partes y organigrama) y `GuardarReunionPrecursores` (sesiones y, dentro de cada una, sus partes) reutilizan las filas en orden de Id con los nuevos ayudantes `IdsEnOrden` y `BorrarFilasSobrantes`; las partes de precursores reutilizadas quedan sin `ReunionId`, como las insertadas. Efecto visible: en Android, la lista de asignaciones de todas las asambleas (ordenada por Id) ya no cambia de orden al guardar una asamblea en el PC. Prueba de equivalencia (`%TEMP%\prueba_s6_asambleas`): 14 casos y tabla de semanas iguales y en el mismo orden.
 - 01/11/2026 · Publicada la v2.1.11.
+- 01/11/2026 · S6, RSC: analizado y sin cambios (tablas vacías y sin tráfico desde el 19/10).
+- 01/11/2026 · Bloque 4, 1.ª parte: nuevo `SincroDiagnostico` (SincroCompartido), enganchado al registro de errores de cada app (`App.OnStartup` y `MainApplication`). 21 `catch` vacíos del motor ahora anotan los errores inesperados sin cambiar el comportamiento: `ServicioSincro` 11 (red, carpeta y vaciado), `SincroAlmacen` 5 (incluido `AplicarLote`, lo recibido de otros dispositivos), `SincroConfiguracion.Cargar` 1 (configuración dañada) y `CanalArchivosSincro` 4. Filtra cortes de red y cancelaciones y anota como mucho 1 vez cada 10 min por sitio. Sin tocar: los de cierre (`Detener`, `Desconectar`, `Dispose`), uno que ya captura solo cancelaciones y los de los conversores de PDF. Prueba del filtro (`%TEMP%\prueba_diag`): 12 casos; PC 60 s y emulador 40 s sin errores ocultos.
+- 01/11/2026 · Publicada la v2.1.12.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 
@@ -238,3 +241,11 @@ Móvil (v2.1.3, 31/10/2026): salir a segundo plano 0 ms (sin bloqueo); envío en
 | Reunión de precursores sin cambios (13 partes) | 28 | 0 | igual |
 | Cambiar o añadir una parte / sesión nueva con una parte | 28—29 / 32 | 1 / 2 | igual |
 | (Aparte, en los dos: la cabecera y las semanas del calendario) | 1—3 | 1—3 | igual |
+
+### v2.1.12 — Bloque 4, errores del motor de sincronización (01/11/2026)
+
+| Prueba | Resultado |
+|---|---|
+| PC, 60 s con la sincronización activa | 0 errores ocultos anotados |
+| Emulador, 40 s con la carpeta de prueba | 0 errores, sin caídas |
+| Filtro de `SincroDiagnostico` (12 casos) | anota lo inesperado, ignora cortes de red y cancelaciones, 1 apunte cada 10 min por sitio, no falla aunque falle el registro |

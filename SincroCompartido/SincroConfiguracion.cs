@@ -264,9 +264,10 @@ public sealed class SincroConfiguracion
                             Opciones);
             }
         }
-        catch
+        catch (Exception errorSincro)
         {
             // Si el archivo estuviera corrupto se empieza de cero.
+            SincroDiagnostico.Error(errorSincro, "Cargar");
         }
 
         config ??=

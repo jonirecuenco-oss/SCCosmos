@@ -89,8 +89,9 @@ public sealed class SincroAlmacen
 
             cmd.ExecuteNonQuery();
         }
-        catch
+        catch (Exception errorSincro)
         {
+            SincroDiagnostico.Error(errorSincro, "Abrir");
         }
 
         return conexion;
@@ -265,8 +266,9 @@ public sealed class SincroAlmacen
 
             contador.ExecuteNonQuery();
         }
-        catch
+        catch (Exception errorSincro)
         {
+            SincroDiagnostico.Error(errorSincro, "Asegurar");
         }
 
         SembrarFilasFaltantes(
@@ -418,8 +420,9 @@ public sealed class SincroAlmacen
                 cmd.ExecuteNonQuery();
             }
         }
-        catch
+        catch (Exception errorSincro)
         {
+            SincroDiagnostico.Error(errorSincro, "SembrarFilasFaltantes");
         }
     }
 
@@ -785,8 +788,9 @@ public sealed class SincroAlmacen
 
                         anotar.ExecuteNonQuery();
                     }
-                    catch
+                    catch (Exception errorSincro)
                     {
+                        SincroDiagnostico.Error(errorSincro, "AplicarLote");
                     }
                 }
             }
@@ -1204,8 +1208,9 @@ public sealed class SincroAlmacen
 
             cmd.ExecuteNonQuery();
         }
-        catch
+        catch (Exception errorSincro)
         {
+            SincroDiagnostico.Error(errorSincro, "GuardarEstado");
         }
     }
 

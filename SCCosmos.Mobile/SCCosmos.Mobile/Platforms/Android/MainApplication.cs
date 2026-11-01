@@ -16,6 +16,10 @@ namespace SCCosmos.Mobile
             // Mediciones del canal por carpeta, en el registro de Perf.
             global::SCCosmos.Sincro.CanalArchivosSincro.Medicion =
                 global::SCCosmos.Mobile.Services.Perf.Registrar;
+
+            // Errores del motor de sincronización que antes se perdían.
+            global::SCCosmos.Sincro.SincroDiagnostico.Anotar =
+                global::SCCosmos.Mobile.Services.RegistroErrores.Anotar;
         }
 
         protected override MauiApp CreateMauiApp() => MauiProgram.CreateMauiApp();

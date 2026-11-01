@@ -23,6 +23,10 @@ namespace SCCosmos
             global::SCCosmos.Sincro.CanalArchivosSincro.Medicion =
                 Perf.Registrar;
 
+            // Errores del motor de sincronización que antes se perdían.
+            global::SCCosmos.Sincro.SincroDiagnostico.Anotar =
+                RegistroErrores.Anotar;
+
             base.OnStartup(e);
         }
     }

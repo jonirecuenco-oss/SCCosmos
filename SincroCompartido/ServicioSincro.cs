@@ -474,9 +474,10 @@ public sealed class ServicioSincro
             {
                 break;
             }
-            catch
+            catch (Exception errorSincro)
             {
                 // Se reintenta.
+                SincroDiagnostico.ErrorRed(errorSincro, "BucleUdpAsync");
             }
         }
     }
@@ -511,8 +512,9 @@ public sealed class ServicioSincro
             {
                 break;
             }
-            catch
+            catch (Exception errorSincro)
             {
+                SincroDiagnostico.ErrorRed(errorSincro, "BucleAnuncioAsync");
             }
 
             try
@@ -915,8 +917,9 @@ public sealed class ServicioSincro
                     {
                         anterior.Canal.Dispose();
                     }
-                    catch
+                    catch (Exception errorSincro)
                     {
+                        SincroDiagnostico.ErrorRed(errorSincro, "SesionAsync#1");
                     }
                 }
 
@@ -949,8 +952,9 @@ public sealed class ServicioSincro
                             conexion,
                             token);
                     }
-                    catch
+                    catch (Exception errorSincro)
                     {
+                        SincroDiagnostico.ErrorRed(errorSincro, "SesionAsync#2");
                     }
                 },
                 CancellationToken.None);
@@ -967,9 +971,10 @@ public sealed class ServicioSincro
                 "Clave de sincronización incorrecta " +
                 "con otro dispositivo.");
         }
-        catch
+        catch (Exception errorSincro)
         {
             // Se reintentará más adelante.
+            SincroDiagnostico.ErrorRed(errorSincro, "SesionAsync#3");
         }
         finally
         {
@@ -1009,8 +1014,9 @@ public sealed class ServicioSincro
             {
                 cliente.Dispose();
             }
-            catch
+            catch (Exception errorSincro)
             {
+                SincroDiagnostico.ErrorRed(errorSincro, "SesionAsync#4");
             }
         }
     }
@@ -1156,8 +1162,9 @@ public sealed class ServicioSincro
             {
                 conexion.Canal.Dispose();
             }
-            catch
+            catch (Exception errorSincro)
             {
+                SincroDiagnostico.ErrorRed(errorSincro, "LeerBucleAsync");
             }
         }
     }
@@ -1214,9 +1221,10 @@ public sealed class ServicioSincro
                             token);
                     }
                 }
-                catch
+                catch (Exception errorSincro)
                 {
                     // La conexión caerá sola.
+                    SincroDiagnostico.ErrorRed(errorSincro, "BucleEmpujeAsync");
                 }
             }
 
@@ -1370,8 +1378,9 @@ public sealed class ServicioSincro
                     conexion,
                     caducidad.Token);
             }
-            catch
+            catch (Exception errorSincro)
             {
+                SincroDiagnostico.ErrorRed(errorSincro, "VaciarPendientesAsync#1");
             }
         }
 
@@ -1408,8 +1417,9 @@ public sealed class ServicioSincro
                         .WaitAsync(
                             caducidad.Token);
             }
-            catch
+            catch (Exception errorSincro)
             {
+                SincroDiagnostico.ErrorRed(errorSincro, "VaciarPendientesAsync#2");
             }
 
             if (!habiaPendientes)
@@ -1497,8 +1507,9 @@ public sealed class ServicioSincro
                         estado);
                 }
             }
-            catch
+            catch (Exception errorSincro)
             {
+                SincroDiagnostico.Error(errorSincro, "BucleArchivosAsync");
             }
 
             try
