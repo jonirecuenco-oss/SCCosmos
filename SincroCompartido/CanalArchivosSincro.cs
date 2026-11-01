@@ -495,6 +495,39 @@ public sealed class CanalArchivosSincro
                         0;
                 }
 
+                // Contar líneas no basta: si el otro compacta y el archivo
+                // vuelve a crecer por encima de lo ya leído antes de que lo
+                // leamos, se saltarían líneas. Por eso se guarda también la
+                // huella de la última línea leída: si ya no coincide, el
+                // archivo se reescribió y se relee desde el principio.
+                string claveHuella =
+                    "ArchivoHuella::" + nombre;
+
+                if (leidas > 0)
+                {
+                    string huellaActual =
+                        Huella(
+                            lineas[leidas - 1]);
+
+                    string? huellaGuardada =
+                        _almacen.ObtenerEstado(
+                            claveHuella);
+
+                    if (huellaGuardada is null)
+                    {
+                        // Primera vez con esta versión: lo que hay ahora
+                        // queda como referencia.
+                        _almacen.GuardarEstado(
+                            claveHuella,
+                            huellaActual);
+                    }
+                    else if (huellaGuardada != huellaActual)
+                    {
+                        leidas =
+                            0;
+                    }
+                }
+
                 if (leidas >= lineas.Length)
                 {
                     continue;
@@ -598,6 +631,11 @@ public sealed class CanalArchivosSincro
                     claveEstado,
                     lineas.Length.ToString());
 
+                _almacen.GuardarEstado(
+                    claveHuella,
+                    Huella(
+                        lineas[^1]));
+
                 if (acks.Count > 0)
                 {
                     await _canal.AgregarAsync(
@@ -610,5 +648,21 @@ public sealed class CanalArchivosSincro
                 // Se reintentará en el próximo pase.
             }
         }
+    }
+
+
+    /// <summary>
+    /// Huella corta de una línea: permite saber si el archivo de otro
+    /// dispositivo se reescribió aunque tenga las mismas o más líneas.
+    /// </summary>
+    private static string Huella(
+        string linea)
+    {
+        return Convert.ToHexString(
+            System.Security.Cryptography.SHA256.HashData(
+                Encoding.UTF8.GetBytes(
+                    linea)),
+            0,
+            8);
     }
 }

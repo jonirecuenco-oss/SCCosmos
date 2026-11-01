@@ -61,7 +61,8 @@ Herramientas: adb en `C:\Program Files (x86)\Android\android-sdk\platform-tools\
 | S13b | Calendario: aún crea 88 filas (caché de una página) con ~9 `ui:Button` por fila | ✅ | 2 |
 | S14 | Sincro por carpeta: vaciado al salir o cerrar y atasco del canal | ✔️ resuelto. v2.1.3: al vaciar ya no se leen los archivos de los demás. v2.1.4, causa real: al compactar, la posición publicada retrocedía hasta el dispositivo más atrasado (uno abandonado la dejaba en 0) y la carpeta republicaba lo mismo sin llegar nunca a lo reciente; ahora conserva los últimos 2.000 cambios y no retrocede. PC 16.192 → 55.097 de 55.097 en 40 s; envío del móvil al salir 3,7 s → 5 ms; en reposo la carpeta queda quieta | 3 |
 | S15 | Windows arranque: los 117 disparadores se rehacían con ~240 commits | ✔️ parcial: 131 → 57 ms; bloqueo al arrancar 625 → 548 ms (el resto es WPF/JIT: S10) | 2 |
-| S16 | Sincro por carpeta: el lector solo nota que otro dispositivo compactó su archivo porque tiene menos líneas de las ya leídas. Si se compacta y vuelve a crecer por encima de esa cifra antes de leerlo, se saltarían líneas (cambios) | pendiente: riesgo bajo y ya existía (la 2.1.4 compacta mucho menos). Posible arreglo: reconocer la reescritura también por la primera línea | 3 |
+| S16 | Sincro por carpeta: el lector solo notaba que otro dispositivo había compactado su archivo si tenía menos líneas de las ya leídas; si volvía a crecer antes de leerlo, se saltaban líneas (cambios) | ✔️ v2.1.5: guarda también la huella (SHA-256 abreviado) de la última línea leída (`ArchivoHuella::`, estado local) y, si no coincide, relee desde el principio. Probado alterando la huella: releyó una vez (12 confirmaciones), contador sin cambios, huella restaurada y sin bucle | 3 |
+| S17 | Sincro por carpeta: en cada pasada (cada 6 s con la app abierta) se lee entero el archivo de cada dispositivo aunque no haya cambiado (~2 MB por pasada, con mucha memoria temporal) | sospecha, por medir: posibles tirones en el móvil al limpiar memoria. Arreglo posible: mirar antes tamaño y fecha del archivo (hay que ampliar la interfaz del canal en Windows y Android) | 3 |
 
 Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay manejador global: `RegistroErrores` en ambas apps); posibles `Id` duplicados entre dispositivos (❓); sincronización heredada (AutoSync y fusión) aún en Android; seguridad: APK firmado con la clave de depuración, `allowBackup=true`, clave de sincronización de 8 dígitos.
 
@@ -72,7 +73,7 @@ Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay ma
 | 0 | Medición: vigilante de bloqueos, recorrido de medición y línea base | hecho (31/10) |
 | 1 | Lag rápido: S1, S7, S8 | hecho (31/10) |
 | 2 | Pantallas pesadas: S13, S2, S3, S15 (v2.1.2) y S4 (v2.1.3) hechos; pendientes S2b, S13b y S9 | en curso |
-| 3 | Sincronización y BD: S5 (v2.1.3) y S14 con el atasco de la carpeta (v2.1.3—2.1.4) hechos; pendientes S16, S6, poda de borrados, `Id` duplicados e índices solo si se justifican (con copia) | en curso |
+| 3 | Sincronización y BD: S5 (v2.1.3), S14 con el atasco de la carpeta (v2.1.3—2.1.4) y S16 (v2.1.5) hechos; pendientes S17, S6, poda de borrados, `Id` duplicados e índices solo si se justifican (con copia) | en curso |
 | 4 | Estabilidad: manejador global de errores hecho (v2.1.3); pendientes `catch {}` críticos, reglas comunes en SincroCompartido con pruebas y retirar la sincro heredada | en curso |
 | 5 | CPU y memoria: S10 (ReadyToRun), S11, S12 | pendiente |
 | 6 | Visual: estilos comunes, componentes, accesibilidad y escalado; pantalla a pantalla | pendiente |
@@ -125,6 +126,8 @@ Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay ma
 - 31/10/2026 · Atasco de la carpeta: `CanalArchivosSincro.CompactarAsync` ya no hace retroceder `ArchivoSeqEscrito`, ignora los dispositivos desmarcados y conserva como mucho `VentanaCarpeta` (2.000) cambios ya publicados (quita lotes antiguos si pasa de 1 MB); `EscribirPendientesAsync` no publica lo anterior a la ventana (`SincroAlmacen.ObtenerUltimoSeq`). Límite: un dispositivo que se quede más de ~2.000 cambios atrás y solo use la carpeta se pone al día por la red (antes tampoco llegaba a lo reciente).
 - 01/11/2026 · Cierre de Windows: `MainWindow_Closing` llamaba a `Close()` dentro del propio evento cuando el vaciado terminaba al instante (InvalidOperationException; desde la 2.1.3 el registro de errores la capturaba, avisaba y la ventana no se cerraba). Arreglo: `await Task.Yield()` antes de seguir.
 - 01/11/2026 · Publicada la v2.1.4.
+- 01/11/2026 · S16: `CanalArchivosSincro.LeerParesAsync` guarda `ArchivoHuella::<archivo>` (huella de la última línea leída) y relee desde el principio si cambia; la primera vez toma la referencia sin releer. Copia de la BD de la prueba: `%LOCALAPPDATA%\SCCosmos\copia_prueba_S16_20261101`.
+- 01/11/2026 · Publicada la v2.1.5.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 
@@ -145,3 +148,12 @@ Móvil (v2.1.3, 31/10/2026): salir a segundo plano 0 ms (sin bloqueo); envío en
 | Reposo 60 s con PC y móvil abiertos: líneas nuevas en la carpeta | PC +6 en 40 s (respondiendo al bucle del móvil) | PC 0; móvil 2 confirmaciones |
 | Cierre de Windows sin nada pendiente | aviso de error y la ventana no se cerraba | 61-73 ms |
 | Errores anotados en el móvil | 0 | 0 |
+
+### v2.1.5 — S16 (01/11/2026, PC con el móvil abierto)
+
+| Prueba | Resultado |
+|---|---|
+| Primera vez con S16 | huellas de referencia de los 3 dispositivos; sin releer (archivo del PC 26 líneas, contador 55.133, sin cambios) |
+| Huella del móvil alterada a propósito | relee una vez: +12 confirmaciones (26 → 38 líneas), contador 55.133 sin cambios, huella restaurada (707126BC···) |
+| 30 s después | 38 líneas: sin bucle |
+| Errores (PC y móvil) | ninguno |
