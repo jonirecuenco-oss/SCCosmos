@@ -46,31 +46,49 @@ public static partial class DatabaseHelper
 
         try
         {
+            // Al reemplazar se reutilizan las filas del mes en orden de Id (la
+            // i-ésima actividad ocupa la i-ésima fila) y solo se escribe lo que
+            // cambia, igual que en Windows: así reimportar lo mismo no viaja a
+            // los demás dispositivos.
+            var huecos =
+                new List<long>();
+
             if (reemplazarExistente)
             {
-                using SqliteCommand borrar =
+                using SqliteCommand leer =
                     connection.CreateCommand();
 
-                borrar.Transaction =
+                leer.Transaction =
                     transaction;
 
-                borrar.CommandText =
+                leer.CommandText =
                     """
-                    DELETE FROM ProgramaVisitaV2
+                    SELECT Id
+                    FROM ProgramaVisitaV2
                     WHERE CongreCodigo = $codigo
-                      AND MesReferencia = $mes;
+                      AND MesReferencia = $mes
+                    ORDER BY Id;
                     """;
 
-                borrar.Parameters.AddWithValue(
+                leer.Parameters.AddWithValue(
                     "$codigo",
                     congreCodigo);
 
-                borrar.Parameters.AddWithValue(
+                leer.Parameters.AddWithValue(
                     "$mes",
                     mesReferencia);
 
-                borrar.ExecuteNonQuery();
+                using SqliteDataReader lector =
+                    leer.ExecuteReader();
+
+                while (lector.Read())
+                {
+                    huecos.Add(
+                        lector.GetInt64(0));
+                }
             }
+
+            int usados = 0;
 
             var existentes =
                 new List<ActividadProgramaMobile>();
@@ -110,20 +128,44 @@ public static partial class DatabaseHelper
                     transaction;
 
                 cmd.CommandText =
-                    """
-                    INSERT INTO ProgramaVisitaV2
-                    (
-                        CongreCodigo, MesReferencia, DiaSemana, Turno,
-                        Responsable, TipoActividad, Hora, NotasLibro,
-                        CompaneroId, Direccion, Latitud, Longitud
-                    )
-                    VALUES
-                    (
-                        $codigo, $mes, $dia, 'General',
-                        $responsable, $tipo, $hora, $notas,
-                        $comp, $direccion, $latitud, $longitud
-                    );
-                    """;
+                    usados < huecos.Count
+                        ? """
+                          UPDATE ProgramaVisitaV2
+                          SET DiaSemana = $dia, Turno = 'General', Responsable = $responsable,
+                              TipoActividad = $tipo, Hora = $hora, NotasLibro = $notas,
+                              CompaneroId = $comp, Direccion = $direccion,
+                              Latitud = $latitud, Longitud = $longitud, Ubicacion = NULL
+                          WHERE Id = $id
+                            AND (DiaSemana IS NOT $dia OR Turno IS NOT 'General'
+                                 OR Responsable IS NOT $responsable OR TipoActividad IS NOT $tipo
+                                 OR Hora IS NOT $hora OR NotasLibro IS NOT $notas
+                                 OR CompaneroId IS NOT $comp OR Direccion IS NOT $direccion
+                                 OR Latitud IS NOT $latitud OR Longitud IS NOT $longitud
+                                 OR Ubicacion IS NOT NULL);
+                          """
+                        : """
+                          INSERT INTO ProgramaVisitaV2
+                          (
+                              CongreCodigo, MesReferencia, DiaSemana, Turno,
+                              Responsable, TipoActividad, Hora, NotasLibro,
+                              CompaneroId, Direccion, Latitud, Longitud
+                          )
+                          VALUES
+                          (
+                              $codigo, $mes, $dia, 'General',
+                              $responsable, $tipo, $hora, $notas,
+                              $comp, $direccion, $latitud, $longitud
+                          );
+                          """;
+
+                if (usados < huecos.Count)
+                {
+                    cmd.Parameters.AddWithValue(
+                        "$id",
+                        huecos[usados]);
+                }
+
+                usados++;
 
                 cmd.Parameters.AddWithValue(
                     "$codigo",
@@ -172,6 +214,25 @@ public static partial class DatabaseHelper
                 cmd.ExecuteNonQuery();
 
                 insertadas++;
+            }
+
+            // Las filas que sobran (el programa nuevo trae menos actividades).
+            for (int i = usados; i < huecos.Count; i++)
+            {
+                using SqliteCommand borrar =
+                    connection.CreateCommand();
+
+                borrar.Transaction =
+                    transaction;
+
+                borrar.CommandText =
+                    "DELETE FROM ProgramaVisitaV2 WHERE Id = $id;";
+
+                borrar.Parameters.AddWithValue(
+                    "$id",
+                    huecos[i]);
+
+                borrar.ExecuteNonQuery();
             }
 
             transaction.Commit();
