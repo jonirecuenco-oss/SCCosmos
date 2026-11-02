@@ -319,6 +319,9 @@ public static class SincronizacionMobile
     /// </summary>
     private static async Task MigrarDesdeCarpetaAsync()
     {
+        bool importada =
+            false;
+
         try
         {
             if (SyncFolderService.EstaConfigurada
@@ -327,11 +330,25 @@ public static class SincronizacionMobile
             {
                 await DatabaseSyncService
                     .ImportarAsync();
+
+                importada =
+                    true;
             }
         }
         catch (Exception errorSincro)
         {
             global::SCCosmos.Sincro.SincroDiagnostico.Error(errorSincro, "Mobile.Migracion#1");
+        }
+
+        // Sin base importada no hay nada que adoptar: es un dispositivo nuevo,
+        // que recibirá todo por sincronización.
+        if (!importada)
+        {
+            Preferences.Default.Set(
+                ClaveMigrado,
+                true);
+
+            return;
         }
 
         try

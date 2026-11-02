@@ -370,6 +370,10 @@ public partial class ConfiguracionPage : ContentPage
     {
         base.OnDisappearing();
 
+        // Quien sale por el menú con el cursor aún en un campo no llega a
+        // perder el foco: sin esto se perdería la clave o la dirección escrita.
+        AplicarSincroAutomatico();
+
         try
         {
             _timerSincro?.Stop();

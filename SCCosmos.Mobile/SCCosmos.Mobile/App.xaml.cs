@@ -23,6 +23,18 @@ namespace SCCosmos.Mobile
             // Vigilante de bloqueos del hilo principal (solo mide).
             Perf.IniciarVigilanteUI();
 
+            // Un dispositivo nuevo se prepara con el esquema completo, antes de
+            // que la app cree sus tablas y de la primera sincronización.
+            try
+            {
+                global::SCCosmos.Sincro.EsquemaBase.CrearSiHaceFalta(
+                    DatabasePaths.RutaLocal);
+            }
+            catch (Exception errorEsquema)
+            {
+                global::SCCosmos.Sincro.SincroDiagnostico.Error(errorEsquema, "EsquemaBase");
+            }
+
             // La tabla de tareas debe existir antes de crear los
             // disparadores de fusión (que detectan las tablas nuevas).
             DatabaseHelper.AsegurarTablaTareasMobile();

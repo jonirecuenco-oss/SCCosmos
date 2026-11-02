@@ -2039,6 +2039,205 @@ internal static class Program
                     correcto);
             });
 
+        await Probar(
+            "27. Red: un dispositivo vacío prepara el esquema, recibe todo y queda igual",
+            async () =>
+            {
+                string dbV =
+                    Path.Combine(
+                        _carpeta,
+                        "V.db");
+
+                bool preparado =
+                    EsquemaBase.CrearSiHaceFalta(
+                        dbV);
+
+                var configV =
+                    new SincroConfiguracion
+                    {
+                        IdDispositivo =
+                            "88888888888888888888888888888888",
+
+                        NombreDispositivo =
+                            "Vacío V",
+
+                        Clave =
+                            "12345678",
+
+                        Puerto =
+                            47406,
+
+                        Descubrimiento =
+                            false
+                    };
+
+                configV.Direcciones.Add(
+                    "127.0.0.1:47401");
+
+                var almacenV =
+                    new SincroAlmacen(
+                        dbV,
+                        configV.IdDispositivo,
+                        saltarIds: true);
+
+                almacenV.Asegurar();
+
+                using var servicioV =
+                    new ServicioSincro(
+                        configV,
+                        almacenV);
+
+                // Es el último cambio del registro de A: cuando llega a V, ya
+                // ha recibido todo lo anterior.
+                Escribir(
+                    _dbA,
+                    $"UPDATE Personas SET NombreComun = 'SINCRO-T27' WHERE Id = {fila1};");
+
+                var reloj =
+                    System.Diagnostics.Stopwatch.StartNew();
+
+                servicioV.Iniciar();
+
+                bool llego =
+                    await EsperarAsync(
+                        () =>
+                            LeerTexto(
+                                dbV,
+                                $"SELECT NombreComun FROM Personas WHERE Id = {fila1};")
+                            == "SINCRO-T27",
+                        300);
+
+                Console.WriteLine(
+                    $"      (puesta al día de un dispositivo vacío: {reloj.Elapsed.TotalSeconds:N0} s)");
+
+                servicioV.Detener();
+
+                var distintas =
+                    new List<string>();
+
+                foreach (string tabla in
+                         LeerTablas(
+                             _dbA))
+                {
+                    long filasDistintas =
+                        FilasDistintas(
+                            _dbA,
+                            dbV,
+                            tabla);
+
+                    if (filasDistintas > 0)
+                    {
+                        distintas.Add(
+                            $"{tabla}={filasDistintas}");
+                    }
+                }
+
+                bool correcto =
+                    preparado
+                    && llego
+                    && distintas.Count == 0;
+
+                if (!correcto)
+                {
+                    Console.WriteLine(
+                        $"      (preparado: {preparado}; llegó: {llego}; distintas: {string.Join(", ", distintas)})");
+                }
+
+                return correcto;
+            });
+
+        await Probar(
+            "28. El esquema de un dispositivo nuevo coincide con el real y no toca una base en uso",
+            () =>
+            {
+                const string firma =
+                    "SELECT group_concat(v, char(10)) FROM (SELECT m.name || '.' || p.name || ' ' || p.type || ' ' || p.\"notnull\" || ' ' || COALESCE(p.dflt_value, '-') || ' ' || p.pk AS v "
+                    + "FROM sqlite_master m JOIN pragma_table_info(m.name) p "
+                    + "WHERE m.type = 'table' AND m.name NOT LIKE 'sqlite_%' AND m.name NOT LIKE 'SCCosmos_%' ORDER BY m.name, p.cid);";
+
+                string dbE =
+                    Path.Combine(
+                        _carpeta,
+                        "Nuevo.db");
+
+                bool creado =
+                    EsquemaBase.CrearSiHaceFalta(
+                        dbE);
+
+                bool otraVez =
+                    EsquemaBase.CrearSiHaceFalta(
+                        dbE);
+
+                bool enUso =
+                    EsquemaBase.CrearSiHaceFalta(
+                        _dbA);
+
+                string[] real =
+                    LeerTexto(
+                        _dbA,
+                        firma).Split('\n');
+
+                string[] incluido =
+                    LeerTexto(
+                        dbE,
+                        firma).Split('\n');
+
+                string[] diferencias =
+                    real.Except(incluido)
+                        .Concat(
+                            incluido.Except(real))
+                        .ToArray();
+
+                // Una base a medias: una tabla con columnas de menos y una fila
+                // que no se debe perder.
+                string dbM =
+                    Path.Combine(
+                        _carpeta,
+                        "M.db");
+
+                Escribir(
+                    dbM,
+                    "CREATE TABLE Tareas (Id INTEGER PRIMARY KEY AUTOINCREMENT, Titulo TEXT); "
+                    + "INSERT INTO Tareas (Titulo) VALUES ('Tarea inventada');");
+
+                bool completada =
+                    EsquemaBase.CrearSiHaceFalta(
+                        dbM);
+
+                long columnas =
+                    LeerEntero(
+                        dbM,
+                        "SELECT COUNT(*) FROM pragma_table_info('Tareas');");
+
+                long columnasReales =
+                    LeerEntero(
+                        _dbA,
+                        "SELECT COUNT(*) FROM pragma_table_info('Tareas');");
+
+                string fila =
+                    LeerTexto(
+                        dbM,
+                        "SELECT Titulo FROM Tareas;");
+
+                bool correcto =
+                    creado
+                    && !otraVez
+                    && !enUso
+                    && diferencias.Length == 0
+                    && completada
+                    && columnas == columnasReales
+                    && fila == "Tarea inventada";
+
+                if (!correcto)
+                {
+                    Console.WriteLine(
+                        $"      (creado: {creado}; otra vez: {otraVez}; en uso: {enUso}; diferencias: {string.Join(" | ", diferencias.Take(6))}; a medias: {completada}, {columnas} de {columnasReales} columnas, fila «{fila}»)");
+                }
+
+                return Task.FromResult(
+                    correcto);
+            });
+
         servicioD.Detener();
         servicioE.Detener();
 
@@ -2085,6 +2284,34 @@ internal static class Program
     // ========================================================
     // UTILIDADES
     // ========================================================
+
+    private static List<string> LeerTablas(
+        string ruta)
+    {
+        var tablas =
+            new List<string>();
+
+        using var conexion =
+            Abrir(
+                ruta);
+
+        using var cmd =
+            conexion.CreateCommand();
+
+        cmd.CommandText =
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'SCCosmos_%' ORDER BY name;";
+
+        using var lector =
+            cmd.ExecuteReader();
+
+        while (lector.Read())
+        {
+            tablas.Add(
+                lector.GetString(0));
+        }
+
+        return tablas;
+    }
 
     /// <summary>
     /// Alta inventada con el Id que reparte SQLite, como las de las apps.
