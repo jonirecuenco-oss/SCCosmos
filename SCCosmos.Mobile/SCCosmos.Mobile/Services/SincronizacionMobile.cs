@@ -35,12 +35,12 @@ public static class SincronizacionMobile
     /// <summary>
     /// El sistema nuevo se ha hecho cargo de la sincronización de la
     /// base: el sistema antiguo de carpeta ya no debe tocar la base.
+    /// Desde el inicio del proceso: el sistema antiguo se consulta al
+    /// arrancar, antes de Iniciar(), y con esto aún sin activar leía las
+    /// copias de la carpeta e intentaba fusionarlas con la base.
     /// </summary>
-    public static bool NuevaSincroActiva
-    {
-        get;
-        private set;
-    }
+    public static bool NuevaSincroActiva =>
+        true;
 
 
     public static bool Activa =>
@@ -256,9 +256,6 @@ public static class SincronizacionMobile
         {
             return;
         }
-
-        NuevaSincroActiva =
-            true;
 
         _ = TareaInicioAsync();
     }

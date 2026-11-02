@@ -71,7 +71,11 @@ public static class AutoSyncService
 
     private static void AsegurarRegistroDeCambios()
     {
-        if (_registroAsegurado
+        // Con el sistema nuevo este registro no se usa y SincroAlmacen lo
+        // borra en cada sesión. Crearlo solo dejaba un riesgo: si la app moría
+        // entre medias, el siguiente arranque lo encontraba y fusionaba.
+        if (SincronizacionMobile.NuevaSincroActiva
+            || _registroAsegurado
             || !File.Exists(
                 DatabasePaths.RutaLocal))
         {

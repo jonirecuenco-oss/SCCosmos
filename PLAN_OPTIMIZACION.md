@@ -70,7 +70,7 @@ Herramientas: adb en `C:\Program Files (x86)\Android\android-sdk\platform-tools\
 | S22 | Parches de datos (2 UPDATE + 1 DELETE) en cada `InicializarDatabase`, que también se llama al pedir las congregaciones (20 sitios en Windows): toman el bloqueo de escritura aunque no corrijan nada y esperan si la sincronización está escribiendo | ✔️ v2.1.17: lectura previa (`HayParchesPendientes`) y solo se escribe si hace falta. 6,3 → 3,2 ms por llamada; con otra conexión escribiendo, 3,3 s y 3 errores → 4 ms y ninguno (prueba con espera de 1 s por sentencia; la app espera hasta 30 s) | 3 |
 | S23 | Red: un dispositivo nuevo (o reinstalado) recibía el registro entero (23.167 cambios) a un lote de 200 por segundo, y lo escrito entretanto iba detrás | ✔️ v2.1.18: el siguiente lote sale cuando el otro confirma haber aplicado el anterior (se comprueba cada 100 ms; si la confirmación no llega, un lote por segundo como antes). 117 → 16—17 s en el PC, con los datos ya presentes en el receptor; protocolo sin cambios. En Android las alertas se recalculan agrupadas (2 s) y no con cada lote. Sin medir en el móvil | 3 |
 | S24 | Android Inicio: bloqueos de 225—417 ms al abrir (7 en dos días de uso real según el registro del móvil; `Inicio` mediana 308 ms, máximo 881 ms). Es la pantalla que más se abre. Hipótesis: coincide con S25, que reserva 114 MB en memoria en cada arranque (pausas del recolector) | ✅ Medido; sin analizar; volver a medir tras S25 | 2 |
-| S25 | Android: el código antiguo de sincronización sigue activo en cada arranque en frío. `App.xaml.cs` llama a `ImportarSiHayCambiosAsync` antes de `SincronizacionMobile.Iniciar`, que es quien activa `NuevaSincroActiva`, así que sus protecciones no actúan. Lee las 4 copias de conflicto (114 MB), llama a la fusión sobre la base real y crea copias de seguridad de 32 MB; 2,3 s en cada arranque (mediana de 51). La fusión solo falla porque falta `SCCosmos_RegistroCambios` en ese instante. Si la app muere entre `AutoSyncService.Iniciar` (la crea) y `SincroAlmacen.Asegurar` (la borra), la siguiente vez se ejecuta: unas 390 filas resucitadas y 190 revertidas por copia, propagadas a los demás. `sccosmos_fusion.db` del 01/11 23:51 indica que ya estuvo cerca. Sin daño: 37 de 39 tablas idénticas al PC | ✅ Medido en el móvil real; ver plan de retirada | 4 |
+| S25 | Android: el código antiguo de sincronización sigue activo en cada arranque en frío. `App.xaml.cs` llama a `ImportarSiHayCambiosAsync` antes de `SincronizacionMobile.Iniciar`, que es quien activa `NuevaSincroActiva`, así que sus protecciones no actúan. Lee las 4 copias de conflicto (114 MB), llama a la fusión sobre la base real y crea copias de seguridad de 32 MB; 2,3 s en cada arranque (mediana de 51). La fusión solo falla porque falta `SCCosmos_RegistroCambios` en ese instante. Si la app muere entre `AutoSyncService.Iniciar` (la crea) y `SincroAlmacen.Asegurar` (la borra), la siguiente vez se ejecuta: unas 390 filas resucitadas y 190 revertidas por copia, propagadas a los demás. `sccosmos_fusion.db` del 01/11 23:51 indica que ya estuvo cerca. Sin daño: 37 de 39 tablas idénticas al PC | ✔️ v2.1.20 (fase 0): puerta cerrada desde el inicio del proceso y sin crear el registro antiguo. `Arranque.SyncDiferido` 2.329 → 210—247 ms; sin copias `antes_de_fusion` nuevas. Fase 0b: `sccosmos.db` y las 4 copias de conflicto fuera de la carpeta | 4 |
 
 Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay manejador global: `RegistroErrores` en ambas apps); posibles `Id` duplicados entre dispositivos (❓); sincronización heredada (AutoSync y fusión) aún en Android; seguridad: APK firmado con la clave de depuración, `allowBackup=true`, clave de sincronización de 8 dígitos.
 
@@ -95,8 +95,8 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
 
 | Fase | Qué | Riesgo | Autorización |
 |---|---|---|---|
-| 0 | Cerrar la puerta: `NuevaSincroActiva` activa desde el arranque y no crear el registro antiguo. Sin cambios para el usuario; comprobar en el móvil `Arranque.SyncDiferido` (2,3 s), que no aparezcan copias `antes_de_fusion`, la sincronización y S24 | Bajo: apaga lo que ya debía estar apagado | Pendiente |
-| 0b | Mover `sccosmos.db` y las 4 copias de conflicto de la carpeta compartida a una copia fuera de Syncthing. Protege también a los móviles aún sin actualizar y libera unos 145 MB en cada dispositivo | Bajo; reversible con la copia | Pendiente |
+| 0 | Cerrar la puerta: `NuevaSincroActiva` activa desde el arranque y no crear el registro antiguo | Bajo | ✔️ Hecha (v2.1.20) |
+| 0b | Sacar `sccosmos.db` y las 4 copias de conflicto de la carpeta compartida. Copia verificada por SHA-256 en `%LOCALAPPDATA%\SCCosmos\copia_base_carpeta_20261102`. Syncthing lo propagó al móvil en 71 s (allí quedan en `.stversions` hasta que se limpien) | Bajo; reversible | ✔️ Hecha (02/11) |
 | 1 | Quitar el código muerto (unas 2.600 líneas). Antes, mover los avisos de tareas (`VerificarAsync`, cada 30 s) a su propio temporizador: hoy viven en el bucle de `AutoSyncService`. Conservar `MigrarDesdeCarpetaAsync` e `ImportarAsync`. Borrar en el móvil `sccosmos_fusion.db` y las copias `antes_de_fusion` (unos 128 MB) | Medio: toca el arranque | Tras una semana con la fase 0 |
 | 2 | Dispositivo nuevo sin copia de la base: incluir el esquema de las 39 tablas en la app (resuelve S19) y recibir todo por red (S23). Añadir al banco una prueba con un dispositivo vacío | Medio | Decisión del usuario |
 
@@ -188,7 +188,9 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
 - 02/11/2026 · S2b: `VisitaDetallePage.xaml` (`ListaPersonas`): cada casilla de mes usa un `TapGestureRecognizer` en su `Border` en vez de un `Button` transparente, sin el `Grid` envoltorio ni el `HorizontalStackLayout` del mes. `MinimumHeightRequest=45` conserva la altura que imponía el botón (44 dp + 1 de margen). Eliminado el `ActividadMes_Tapped` antiguo, sin uso. Probado en el móvil real: cada casilla abre su mes (primera, última y recicladas), al cerrar se sigue en la lista, y foto y nombre abren la persona.
 - 02/11/2026 · Publicada la v2.1.19.
 - 02/11/2026 · Publicada la v2.1.19.
-- 02/11/2026 · S25 hallado con un diagnóstico temporal en el móvil real (no publicado y ya retirado): la fusión se simuló sobre copias, la base real solo se leyó. Comparación móvil-PC con huella de todas las filas: 37 de 39 tablas idénticas y todos los recuentos iguales; difieren `Congregaciones` y `Documentos` (probablemente coordenadas decimales y `RutaLocal`, sin comprobar columna a columna).
+- 02/11/2026 · S25 hallado con un diagnóstico temporal en el móvil real (no publicado y ya retirado): la fusión se simuló sobre copias y la base real solo se leyó. Comparación móvil-PC con huella de todas las filas: 37 de 39 tablas idénticas y todos los recuentos iguales.
+- 02/11/2026 · S25, fases 0 y 0b: `SincronizacionMobile.NuevaSincroActiva` vale `true` desde el inicio del proceso y `AutoSyncService.AsegurarRegistroDeCambios` ya no crea el registro antiguo. Comprobado en el móvil real antes de publicar. Comparación celda a celda de las dos tablas que diferían: 4 celdas de 551, ver S26 y S27.
+- 02/11/2026 · Publicada la v2.1.20.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 
@@ -375,3 +377,11 @@ Móvil (v2.1.3, 31/10/2026): salir a segundo plano 0 ms (sin bloqueo); envío en
 | Segunda pasada: tirones | 7,6 % | 2,6 % |
 | Nodos en pantalla | 490 | 364 |
 | Píxeles distintos (de 2.570.400) | — | 0 |
+
+### v2.1.20 — S25, arranque en frío de Android (02/11/2026; Galaxy Z Fold7)
+
+| Medida | v2.1.19 | v2.1.20 |
+|---|---|---|
+| `Arranque.SyncDiferido` | 2.346 ms (mediana de 51 arranques) | 210—247 ms |
+| Lectura de copias de conflicto por arranque | 114 MB | 0 |
+| Copias de seguridad de 32 MB por arranque | 2 | 0 |
