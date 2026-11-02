@@ -18,10 +18,13 @@ namespace SCCosmos.Mobile.Platforms.Android;
 // SERVICIO FOREGROUND PARA SINCRONIZAR JW HUB
 // =============================================================
 
+// La pasada completa recorre a las personas una a una y tarda horas. Con el
+// tipo dataSync, Android la corta a las 6 horas y se pierde todo lo extraído:
+// specialUse no tiene ese tope (la app no se distribuye por Google Play).
 [Service(
     Exported = false,
     ForegroundServiceType =
-        ForegroundService.TypeDataSync)]
+        ForegroundService.TypeSpecialUse)]
 public sealed class JwHubSyncForegroundService
     : Service
 {
@@ -125,6 +128,18 @@ public sealed class JwHubSyncForegroundService
         _ejecutando;
 
 
+    private bool
+        _canceladaPorUsuario;
+
+
+    /// <summary>
+    /// Tope de una ejecución, para que una que se atasque no
+    /// retenga el móvil indefinidamente. Hoy tarda unas 6 horas.
+    /// </summary>
+    private const long LimiteEjecucionMs =
+        10L * 60L * 60L * 1000L;
+
+
     private PowerManager.WakeLock?
         _wakeLock;
 
@@ -206,8 +221,14 @@ public sealed class JwHubSyncForegroundService
                     true;
 
 
+                _canceladaPorUsuario =
+                    false;
+
+
                 _cts =
-                    new CancellationTokenSource();
+                    new CancellationTokenSource(
+                        TimeSpan.FromMilliseconds(
+                            LimiteEjecucionMs));
             }
         }
 
@@ -307,6 +328,10 @@ public sealed class JwHubSyncForegroundService
             -1;
 
 
+        long inicioEjecucion =
+            System.Diagnostics.Stopwatch.GetTimestamp();
+
+
         try
         {
             token.ThrowIfCancellationRequested();
@@ -344,7 +369,10 @@ public sealed class JwHubSyncForegroundService
 
                 var recomendaciones =
                     await JwHubAccionesAndroid
-                        .SintonizarNombramientosAsync();
+                        .SintonizarNombramientosAsync()
+                        .WaitAsync(
+                            TimeSpan.FromMinutes(15),
+                            token);
 
                 totalNombramientos =
                     recomendaciones.Count;
@@ -609,23 +637,37 @@ public sealed class JwHubSyncForegroundService
                 JwHubSyncState.Actual;
 
 
+            // Si no la ha cancelado el usuario, se ha agotado el tiempo:
+            // se avisa, porque esta vez no se ha comprobado nada.
+            huboError =
+                !_canceladaPorUsuario;
+
+
+            string mensaje =
+                huboError
+                    ? "La sincronización de JW Hub se detuvo antes de terminar."
+                    : "Sincronización de JW Hub cancelada.";
+
+
             JwHubSyncState.Establecer(
                 EstadoJwHubSync.Cancelado,
                 estadoActual.Actual,
                 estadoActual.Total,
-                "Sincronización de JW Hub cancelada.",
+                mensaje,
                 automatico);
 
 
             ActualizarNotificacion(
-                "Sincronización cancelada",
+                huboError
+                    ? "Sincronización detenida"
+                    : "Sincronización cancelada",
                 estadoActual.Actual,
                 estadoActual.Total,
                 automatico);
 
 
             mensajeFinal =
-                "Sincronización de JW Hub cancelada.";
+                mensaje;
         }
 
         // =====================================================
@@ -717,6 +759,13 @@ public sealed class JwHubSyncForegroundService
 
         finally
         {
+            global::SCCosmos.Mobile.Services.Perf.Registrar(
+                $"JwHub.Ejecucion {(automatico ? "automatica" : "manual")}",
+                (long)System.Diagnostics.Stopwatch
+                    .GetElapsedTime(inicioEjecucion)
+                    .TotalMilliseconds);
+
+
             CancellationTokenSource?
                 ctsParaLiberar;
 
@@ -829,6 +878,10 @@ public sealed class JwHubSyncForegroundService
         {
             habiaProceso =
                 _ejecutando;
+
+
+            _canceladaPorUsuario =
+                true;
 
 
             if (_cts is not null)
@@ -989,7 +1042,7 @@ public sealed class JwHubSyncForegroundService
             StartForeground(
                 NotificationId,
                 notificacion,
-                ForegroundService.TypeDataSync);
+                ForegroundService.TypeSpecialUse);
         }
         else
         {
@@ -1350,13 +1403,9 @@ public sealed class JwHubSyncForegroundService
                 false);
 
 
-            // Máximo de seguridad:
-            // seis horas.
+            // Máximo de seguridad: el de la ejecución.
             _wakeLock.Acquire(
-                6L *
-                60L *
-                60L *
-                1000L);
+                LimiteEjecucionMs);
         }
         catch
         {
@@ -1501,6 +1550,41 @@ public sealed class JwHubSyncForegroundService
     // =========================================================
     // ON DESTROY
     // =========================================================
+
+    // =========================================================
+    // LÍMITE DE TIEMPO DE ANDROID
+    //
+    // Si Android agota el tiempo de un servicio en primer plano
+    // avisa aquí y, si no se detiene enseguida, cierra la app
+    // entera con un error.
+    // =========================================================
+
+    public override void OnTimeout(
+        int startId,
+        ForegroundService fgsType)
+    {
+        lock (_bloqueo)
+        {
+            try
+            {
+                _cts?
+                    .Cancel();
+            }
+            catch
+            {
+            }
+        }
+
+
+        LiberarWakeLock();
+
+
+        DetenerPrimerPlano();
+
+
+        StopSelf();
+    }
+
 
     public override void OnDestroy()
     {

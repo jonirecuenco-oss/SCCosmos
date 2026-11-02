@@ -669,7 +669,8 @@ public static class JwHubAccionesAndroid
         string javascript)
     {
         var tcs =
-            new TaskCompletionSource<string>();
+            new TaskCompletionSource<string>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
 
         await MainThread.InvokeOnMainThreadAsync(
             () =>
@@ -689,7 +690,10 @@ public static class JwHubAccionesAndroid
                 }
             });
 
-        return await tcs.Task;
+        // Sin límite, un navegador que no contesta dejaría esperando para
+        // siempre a quien llama (y, en segundo plano, al servicio de JW Hub).
+        return await tcs.Task.WaitAsync(
+            TimeSpan.FromSeconds(30));
     }
 
 

@@ -25,7 +25,7 @@
       android:name="android.permission.FOREGROUND_SERVICE" />
 
   <uses-permission
-      android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+      android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
   <!-- Android 13+:
        necesario para que SCCosmos pueda mostrar notificaciones

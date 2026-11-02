@@ -517,11 +517,21 @@ public static class JwHubExtractorAndroid
             // RECORRER SOLO LAS PERSONAS DE LA PRUEBA
             // =====================================================
 
+            // Cada 50 personas se anota cuánto tardan: una pasada son horas
+            // y hay que saber dónde se va el tiempo.
+            var tiemposPersonas =
+                new List<long>();
+
+
             for (int indice = 0;
                  indice < totalAProcesar;
                  indice++)
             {
                 token.ThrowIfCancellationRequested();
+
+
+                long inicioPersona =
+                    System.Diagnostics.Stopwatch.GetTimestamp();
 
 
                 int numeroPersona =
@@ -621,6 +631,34 @@ public static class JwHubExtractorAndroid
                     numeroPersona,
                     totalAProcesar,
                     EstadoJwHubSync.Sintonizando);
+
+
+                tiemposPersonas.Add(
+                    (long)System.Diagnostics.Stopwatch
+                        .GetElapsedTime(inicioPersona)
+                        .TotalMilliseconds);
+
+
+                if (tiemposPersonas.Count == 50
+                    || numeroPersona == totalAProcesar)
+                {
+                    long totalBloque =
+                        tiemposPersonas.Sum();
+
+
+                    tiemposPersonas.Sort();
+
+
+                    global::SCCosmos.Mobile.Services.Perf.Registrar(
+                        $"JwHub.Personas hasta {numeroPersona}/{totalAProcesar}, " +
+                        $"mediana {tiemposPersonas[tiemposPersonas.Count / 2]} ms, " +
+                        $"maxima {tiemposPersonas[^1]} ms, " +
+                        $"incidencias {resultado.Errores.Count}",
+                        totalBloque);
+
+
+                    tiemposPersonas.Clear();
+                }
             }
 
 
