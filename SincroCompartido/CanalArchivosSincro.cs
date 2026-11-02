@@ -32,6 +32,21 @@ public interface ICanalArchivosSincro
     Task<byte[]?> LeerAsync(
         string nombre);
 
+    /// <summary>
+    /// El archivo desde esa posición (en bytes) hasta el final; vacío si es
+    /// más corto. Null si no se puede leer.
+    /// </summary>
+    Task<byte[]?> LeerDesdeAsync(
+        string nombre,
+        long desde);
+
+    /// <summary>
+    /// Tamaño del archivo en bytes, sin leerlo; -1 si no existe. Si existe y
+    /// no se puede saber cuánto ocupa, 0.
+    /// </summary>
+    Task<long> TamanoAsync(
+        string nombre);
+
     Task<bool> EscribirAsync(
         string nombre,
         IReadOnlyList<string> lineas);
@@ -235,11 +250,11 @@ public sealed class CanalArchivosSincro
         var lineas =
             new List<string>();
 
-        byte[]? actual =
-            await _canal.LeerAsync(
-                MiArchivo);
+        bool existe =
+            await _canal.TamanoAsync(
+                MiArchivo) >= 0;
 
-        if (actual is null)
+        if (!existe)
         {
             lineas.Add(
                 CanalCifrado.CifrarMensaje(
@@ -280,7 +295,7 @@ public sealed class CanalArchivosSincro
 
         bool agregado;
 
-        if (actual is null)
+        if (!existe)
         {
             agregado =
                 await _canal.EscribirAsync(
@@ -310,13 +325,8 @@ public sealed class CanalArchivosSincro
 
         // ---- Compactación si el archivo crece demasiado ----
 
-        actual =
-            await _canal.LeerAsync(
-                MiArchivo);
-
-        if (actual is not null
-            &&
-            actual.LongLength > LimiteCompactacion)
+        if (await _canal.TamanoAsync(
+                MiArchivo) > LimiteCompactacion)
         {
             await CompactarAsync();
         }
@@ -477,39 +487,6 @@ public sealed class CanalArchivosSincro
                     continue;
                 }
 
-                byte[]? bytes =
-                    await _canal.LeerAsync(
-                        nombre);
-
-                if (bytes is null
-                    ||
-                    bytes.Length == 0)
-                {
-                    continue;
-                }
-
-                bytesLeidos +=
-                    bytes.Length;
-
-                archivosLeidos++;
-
-                // Si algo falla al procesarlo, se olvida (en el catch) y
-                // se vuelve a leer en el próximo pase.
-                if (firma is not null)
-                {
-                    _firmasLeidas[nombre] =
-                        (firma, DateTime.UtcNow);
-                }
-
-                string texto =
-                    Encoding.UTF8.GetString(
-                        bytes);
-
-                string[] lineas =
-                    texto.Split(
-                        '\n',
-                        StringSplitOptions.RemoveEmptyEntries);
-
                 string idPar =
                     nombre
                         .Replace(
@@ -538,73 +515,42 @@ public sealed class CanalArchivosSincro
                     continue;
                 }
 
-                string claveEstado =
-                    "ArchivoLineas::" + nombre;
+                // Basta con lo añadido desde la última lectura. Si no se puede
+                // (primera vez, o el otro compactó o recreó su archivo), se lee
+                // entero.
+                LecturaArchivo? lectura =
+                    await LeerLoNuevoAsync(
+                        nombre)
+                    ?? await LeerEnteroAsync(
+                        nombre);
 
-                int leidas =
-                    int.TryParse(
-                        _almacen.ObtenerEstado(
-                            claveEstado),
-                        out int valor)
-                        ? valor
-                        : 0;
-
-                // Si el otro compactó el archivo (o lo recreó), se
-                // relee desde el principio: aplicar es idempotente.
-                if (lineas.Length < leidas)
-                {
-                    leidas =
-                        0;
-                }
-
-                // Contar líneas no basta: si el otro compacta y el archivo
-                // vuelve a crecer por encima de lo ya leído antes de que lo
-                // leamos, se saltarían líneas. Por eso se guarda también la
-                // huella de la última línea leída: si ya no coincide, el
-                // archivo se reescribió y se relee desde el principio.
-                string claveHuella =
-                    "ArchivoHuella::" + nombre;
-
-                if (leidas > 0)
-                {
-                    string huellaActual =
-                        Huella(
-                            lineas[leidas - 1]);
-
-                    string? huellaGuardada =
-                        _almacen.ObtenerEstado(
-                            claveHuella);
-
-                    if (huellaGuardada is null)
-                    {
-                        // Primera vez con esta versión: lo que hay ahora
-                        // queda como referencia.
-                        _almacen.GuardarEstado(
-                            claveHuella,
-                            huellaActual);
-                    }
-                    else if (huellaGuardada != huellaActual)
-                    {
-                        leidas =
-                            0;
-                    }
-                }
-
-                if (leidas >= lineas.Length)
+                if (lectura is null)
                 {
                     continue;
+                }
+
+                bytesLeidos +=
+                    lectura.Bytes;
+
+                archivosLeidos++;
+
+                // Si algo falla al procesarlo, se olvida (en el catch) y
+                // se vuelve a leer en el próximo pase.
+                if (firma is not null)
+                {
+                    _firmasLeidas[nombre] =
+                        (firma, DateTime.UtcNow);
                 }
 
                 var acks =
                     new List<string>();
 
-                for (int i = leidas;
-                     i < lineas.Length;
-                     i++)
+                foreach (string linea in
+                         lectura.Nuevas)
                 {
                     string? json =
                         CanalCifrado.DescifrarMensaje(
-                            lineas[i],
+                            linea,
                             _clave);
 
                     if (json is null)
@@ -689,14 +635,21 @@ public sealed class CanalArchivosSincro
                     }
                 }
 
-                _almacen.GuardarEstado(
-                    claveEstado,
-                    lineas.Length.ToString());
+                if (lectura.CambiaEstado)
+                {
+                    _almacen.GuardarEstado(
+                        "ArchivoLineas::" + nombre,
+                        lectura.TotalLineas.ToString());
 
-                _almacen.GuardarEstado(
-                    claveHuella,
-                    Huella(
-                        lineas[^1]));
+                    _almacen.GuardarEstado(
+                        "ArchivoHuella::" + nombre,
+                        Huella(
+                            lectura.UltimaLinea));
+
+                    _almacen.GuardarEstado(
+                        "ArchivoPosicion::" + nombre,
+                        lectura.PosicionUltima.ToString());
+                }
 
                 if (acks.Count > 0)
                 {
@@ -724,6 +677,184 @@ public sealed class CanalArchivosSincro
                 $"{bytesLeidos / 1024} KB leídos",
                 reloj.ElapsedMilliseconds);
         }
+    }
+
+
+    /// <summary>
+    /// Lo que hay que procesar de un archivo ajeno y dónde queda la lectura.
+    /// </summary>
+    private sealed record LecturaArchivo(
+        IReadOnlyList<string> Nuevas,
+        string UltimaLinea,
+        long PosicionUltima,
+        int TotalLineas,
+        long Bytes,
+        bool CambiaEstado);
+
+
+    /// <summary>
+    /// Lee desde el principio de la última línea leída: si sigue ahí (misma
+    /// huella), lo que viene detrás es lo nuevo. Null si hay que leer el archivo
+    /// entero: no hay posición guardada, o el otro lo compactó o lo recreó.
+    /// </summary>
+    private async Task<LecturaArchivo?> LeerLoNuevoAsync(
+        string nombre)
+    {
+        string? huella =
+            _almacen.ObtenerEstado(
+                "ArchivoHuella::" + nombre);
+
+        if (huella is null
+            || !long.TryParse(
+                _almacen.ObtenerEstado(
+                    "ArchivoPosicion::" + nombre),
+                out long posicion)
+            || !int.TryParse(
+                _almacen.ObtenerEstado(
+                    "ArchivoLineas::" + nombre),
+                out int leidas))
+        {
+            return null;
+        }
+
+        byte[]? cola =
+            await _canal.LeerDesdeAsync(
+                nombre,
+                posicion);
+
+        if (cola is null
+            || cola.Length == 0)
+        {
+            return null;
+        }
+
+        List<(int Inicio, string Texto)> lineas =
+            LineasCompletas(
+                cola);
+
+        if (lineas.Count == 0
+            || Huella(lineas[0].Texto) != huella)
+        {
+            return null;
+        }
+
+        return new LecturaArchivo(
+            lineas.Skip(1)
+                .Select(l => l.Texto)
+                .ToList(),
+            lineas[^1].Texto,
+            posicion + lineas[^1].Inicio,
+            leidas + lineas.Count - 1,
+            cola.Length,
+            lineas.Count > 1);
+    }
+
+
+    private async Task<LecturaArchivo?> LeerEnteroAsync(
+        string nombre)
+    {
+        byte[]? bytes =
+            await _canal.LeerAsync(
+                nombre);
+
+        if (bytes is null
+            || bytes.Length == 0)
+        {
+            return null;
+        }
+
+        List<(int Inicio, string Texto)> lineas =
+            LineasCompletas(
+                bytes);
+
+        if (lineas.Count == 0)
+        {
+            return null;
+        }
+
+        int leidas =
+            int.TryParse(
+                _almacen.ObtenerEstado(
+                    "ArchivoLineas::" + nombre),
+                out int valor)
+                ? valor
+                : 0;
+
+        // Si el otro compactó el archivo (o lo recreó), se
+        // relee desde el principio: aplicar es idempotente.
+        if (lineas.Count < leidas)
+        {
+            leidas =
+                0;
+        }
+
+        // Contar líneas no basta: si el otro compacta y el archivo
+        // vuelve a crecer por encima de lo ya leído antes de que lo
+        // leamos, se saltarían líneas. Por eso se guarda también la
+        // huella de la última línea leída: si ya no coincide, el
+        // archivo se reescribió y se relee desde el principio.
+        if (leidas > 0)
+        {
+            string? huellaGuardada =
+                _almacen.ObtenerEstado(
+                    "ArchivoHuella::" + nombre);
+
+            if (huellaGuardada is not null
+                && huellaGuardada != Huella(lineas[leidas - 1].Texto))
+            {
+                leidas =
+                    0;
+            }
+        }
+
+        return new LecturaArchivo(
+            lineas.Skip(leidas)
+                .Select(l => l.Texto)
+                .ToList(),
+            lineas[^1].Texto,
+            lineas[^1].Inicio,
+            lineas.Count,
+            bytes.Length,
+            true);
+    }
+
+
+    /// <summary>
+    /// Las líneas terminadas y dónde empieza cada una. Lo que venga detrás del
+    /// último salto de línea es una línea a medias de escribir: se leerá
+    /// cuando esté completa.
+    /// </summary>
+    private static List<(int Inicio, string Texto)> LineasCompletas(
+        byte[] bytes)
+    {
+        var lineas =
+            new List<(int Inicio, string Texto)>();
+
+        int inicio =
+            0;
+
+        for (int i = 0; i < bytes.Length; i++)
+        {
+            if (bytes[i] != (byte)'\n')
+            {
+                continue;
+            }
+
+            if (i > inicio)
+            {
+                lineas.Add(
+                    (inicio,
+                     Encoding.UTF8.GetString(
+                         bytes,
+                         inicio,
+                         i - inicio)));
+            }
+
+            inicio =
+                i + 1;
+        }
+
+        return lineas;
     }
 
 

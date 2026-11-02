@@ -115,6 +115,28 @@ public sealed class CanalArchivosMobile
     }
 
 
+    public Task<byte[]?> LeerDesdeAsync(
+        string nombre,
+        long desde)
+    {
+        return SyncFolderService
+            .LeerArchivoDesdeAsync(
+                Subcarpeta,
+                nombre,
+                desde);
+    }
+
+
+    public Task<long> TamanoAsync(
+        string nombre)
+    {
+        return Task.FromResult(
+            SyncFolderService.TamanoArchivo(
+                Subcarpeta,
+                nombre));
+    }
+
+
     public async Task<bool> EscribirAsync(
         string nombre,
         IReadOnlyList<string> lineas)
@@ -145,6 +167,22 @@ public sealed class CanalArchivosMobile
     {
         try
         {
+            // Añadir al final evita leer y reescribir el archivo entero (hasta
+            // 2 MB) por cada línea. Si no se puede, se hace como antes.
+            if (await SyncFolderService
+                    .AgregarBytesAsync(
+                        Subcarpeta,
+                        nombre,
+                        System.Text.Encoding.UTF8
+                            .GetBytes(
+                                string.Join(
+                                    "\n",
+                                    lineas)
+                                + "\n")))
+            {
+                return true;
+            }
+
             byte[] actuales =
                 await SyncFolderService
                     .LeerArchivoAsync(

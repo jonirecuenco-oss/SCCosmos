@@ -803,6 +803,208 @@ public static class SyncFolderService
     }
 
 
+    /// <summary>
+    /// El archivo desde esa posición hasta el final, sin leer lo anterior.
+    /// Vacío si es más corto; null si no se puede leer.
+    /// </summary>
+    public static async Task<byte[]?> LeerArchivoDesdeAsync(
+        string? subcarpeta,
+        string nombre,
+        long desde)
+    {
+#if ANDROID
+        try
+        {
+            var uri =
+                BuscarHijoUri(
+                    subcarpeta,
+                    nombre);
+
+            if (uri == null)
+            {
+                return null;
+            }
+
+            using var entrada =
+                Android.App.Application.Context.ContentResolver
+                    .OpenInputStream(
+                        uri);
+
+            if (entrada == null)
+            {
+                return null;
+            }
+
+            long pendiente =
+                desde;
+
+            // Saltar sin leer. Lo que no se pueda saltar se lee y se descarta.
+            if (entrada is Android.Runtime.InputStreamInvoker invocador)
+            {
+                while (pendiente > 0)
+                {
+                    long saltados =
+                        invocador.BaseInputStream.Skip(
+                            pendiente);
+
+                    if (saltados <= 0)
+                    {
+                        break;
+                    }
+
+                    pendiente -=
+                        saltados;
+                }
+            }
+
+            var descarte =
+                new byte[64 * 1024];
+
+            while (pendiente > 0)
+            {
+                int leidos =
+                    await entrada.ReadAsync(
+                        descarte,
+                        0,
+                        (int)Math.Min(
+                            descarte.Length,
+                            pendiente));
+
+                if (leidos <= 0)
+                {
+                    return Array.Empty<byte>();
+                }
+
+                pendiente -=
+                    leidos;
+            }
+
+            using var memoria =
+                new MemoryStream();
+
+            await entrada.CopyToAsync(
+                memoria);
+
+            return memoria.ToArray();
+        }
+        catch
+        {
+            return null;
+        }
+#else
+        await Task.CompletedTask;
+        return null;
+#endif
+    }
+
+
+    /// <summary>
+    /// Tamaño del archivo en bytes, sin leerlo; -1 si no existe. Si existe y
+    /// no se puede saber cuánto ocupa, 0.
+    /// </summary>
+    public static long TamanoArchivo(
+        string? subcarpeta,
+        string nombre)
+    {
+#if ANDROID
+        Android.Net.Uri? uri;
+
+        try
+        {
+            uri =
+                BuscarHijoUri(
+                    subcarpeta,
+                    nombre);
+        }
+        catch
+        {
+            return 0;
+        }
+
+        if (uri == null)
+        {
+            return -1;
+        }
+
+        try
+        {
+            using var cursor =
+                Android.App.Application.Context.ContentResolver
+                    .Query(
+                        uri,
+                        new[] { DocumentsContract.Document.ColumnSize },
+                        null,
+                        null,
+                        null);
+
+            return cursor != null
+                   && cursor.MoveToFirst()
+                ? cursor.GetLong(0)
+                : 0;
+        }
+        catch
+        {
+            return 0;
+        }
+#else
+        return -1;
+#endif
+    }
+
+
+    /// <summary>
+    /// Añade al final del archivo sin reescribirlo. Falso si no existe o si
+    /// el proveedor de la carpeta no lo permite.
+    /// </summary>
+    public static async Task<bool> AgregarBytesAsync(
+        string? subcarpeta,
+        string nombre,
+        byte[] contenido)
+    {
+#if ANDROID
+        try
+        {
+            var uri =
+                BuscarHijoUri(
+                    subcarpeta,
+                    nombre);
+
+            if (uri == null)
+            {
+                return false;
+            }
+
+            using var salida =
+                Android.App.Application.Context.ContentResolver
+                    .OpenOutputStream(
+                        uri,
+                        "wa");
+
+            if (salida == null)
+            {
+                return false;
+            }
+
+            await salida.WriteAsync(
+                contenido,
+                0,
+                contenido.Length);
+
+            await salida.FlushAsync();
+
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+#else
+        await Task.CompletedTask;
+        return false;
+#endif
+    }
+
+
     public static async Task<bool> EscribirBytesAsync(
         string? subcarpeta,
         string nombre,

@@ -2238,6 +2238,247 @@ internal static class Program
                     correcto);
             });
 
+        await Probar(
+            "29. Canal por carpeta: solo se lee lo nuevo; ni una línea a medias ni un archivo reescrito pierden nada",
+            async () =>
+            {
+                string dbX =
+                    Path.Combine(
+                        _carpeta,
+                        "X.db");
+
+                string dbY =
+                    Path.Combine(
+                        _carpeta,
+                        "Y.db");
+
+                CopiarBase(
+                    origen,
+                    dbX);
+
+                CopiarBase(
+                    origen,
+                    dbY);
+
+                var configX =
+                    new SincroConfiguracion
+                    {
+                        IdDispositivo =
+                            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+
+                        NombreDispositivo =
+                            "X",
+
+                        Clave =
+                            "12345678"
+                    };
+
+                var configY =
+                    new SincroConfiguracion
+                    {
+                        IdDispositivo =
+                            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+
+                        NombreDispositivo =
+                            "Y",
+
+                        Clave =
+                            "12345678"
+                    };
+
+                var almacenX =
+                    new SincroAlmacen(
+                        dbX,
+                        configX.IdDispositivo);
+
+                var almacenY =
+                    new SincroAlmacen(
+                        dbY,
+                        configY.IdDispositivo);
+
+                almacenX.Asegurar();
+                almacenY.Asegurar();
+
+                DarPorSincronizados(
+                    (almacenX, configX.IdDispositivo),
+                    (almacenY, configY.IdDispositivo));
+
+                almacenX.GuardarEstado(
+                    "ArchivoSeqEscrito",
+                    almacenX.ObtenerUltimoSeq().ToString());
+
+                almacenY.GuardarEstado(
+                    "ArchivoSeqEscrito",
+                    almacenY.ObtenerUltimoSeq().ToString());
+
+                var canal =
+                    new CanalEnMemoria();
+
+                var canalX =
+                    new CanalArchivosSincro(
+                        configX,
+                        almacenX,
+                        canal);
+
+                var canalY =
+                    new CanalArchivosSincro(
+                        configY,
+                        almacenY,
+                        canal);
+
+                string archivoX =
+                    $"cambios-{configX.IdDispositivo}.jsonl";
+
+                async Task Publicar(string texto)
+                {
+                    Escribir(
+                        dbX,
+                        $"UPDATE Personas SET NombreComun = '{texto}' WHERE Id = {fila2};");
+
+                    await canalX.EjecutarPaseAsync();
+                }
+
+                string EnY() =>
+                    LeerTexto(
+                        dbY,
+                        $"SELECT NombreComun FROM Personas WHERE Id = {fila2};");
+
+                // La primera vez se lee entero.
+                await Publicar("T29-1");
+                canal.Reiniciar();
+                await canalY.EjecutarPaseAsync();
+
+                bool primera =
+                    EnY() == "T29-1"
+                    && canal.Enteras == 1;
+
+                for (int i = 2; i <= 6; i++)
+                {
+                    await Publicar($"T29-{i}");
+                    await canalY.EjecutarPaseAsync();
+                }
+
+                // Después, solo lo nuevo.
+                await Publicar("T29-7");
+                canal.Reiniciar();
+                await canalY.EjecutarPaseAsync();
+
+                long tamano =
+                    canal.Archivos[archivoX].Length;
+
+                bool soloNuevo =
+                    EnY() == "T29-7"
+                    && canal.Enteras == 0
+                    && canal.Parciales == 1
+                    && canal.BytesLeidos < tamano / 2;
+
+                long bytesNuevo =
+                    canal.BytesLeidos;
+
+                // Sin cambios no se escribe nada ni se aplica nada.
+                canal.Version++;
+                string estadoAntes =
+                    almacenY.ObtenerEstado("ArchivoPosicion::" + archivoX) ?? "";
+                await canalY.EjecutarPaseAsync();
+
+                bool estable =
+                    EnY() == "T29-7"
+                    && estadoAntes.Length > 0
+                    && estadoAntes == almacenY.ObtenerEstado("ArchivoPosicion::" + archivoX);
+
+                // Una línea a medias de escribir no se da por leída. Detrás del
+                // lote puede ir una confirmación: se corta dentro del lote.
+                int antesDelLote =
+                    canal.Archivos[archivoX].Length;
+
+                await Publicar("T29-8");
+
+                byte[] completo =
+                    canal.Archivos[archivoX];
+
+                canal.Archivos[archivoX] =
+                    completo[..(antesDelLote + 40)];
+
+                canal.Version++;
+                await canalY.EjecutarPaseAsync();
+
+                bool aMedias =
+                    EnY() == "T29-7";
+
+                canal.Archivos[archivoX] =
+                    completo;
+
+                canal.Version++;
+                await canalY.EjecutarPaseAsync();
+
+                bool terminada =
+                    EnY() == "T29-8";
+
+                // Archivo reescrito con el mismo tamaño: lo nuevo queda antes de
+                // la posición guardada y aun así tiene que encontrarse.
+                List<string> LineasDeX() =>
+                    System.Text.Encoding.UTF8.GetString(
+                            canal.Archivos[archivoX])
+                        .Split(
+                            '\n',
+                            StringSplitOptions.RemoveEmptyEntries)
+                        .ToList();
+
+                int lineasAntes =
+                    LineasDeX().Count;
+
+                await Publicar("T29-9");
+
+                List<string> lineas =
+                    LineasDeX();
+
+                canal.Archivos[archivoX] =
+                    System.Text.Encoding.UTF8.GetBytes(
+                        string.Join(
+                            "\n",
+                            lineas.Skip(lineasAntes)
+                                .Concat(
+                                    lineas.Take(lineasAntes)))
+                        + "\n");
+
+                canal.Version++;
+                canal.Reiniciar();
+                await canalY.EjecutarPaseAsync();
+
+                bool reescrito =
+                    EnY() == "T29-9"
+                    && canal.Enteras == 1;
+
+                // Y luego vuelve a leer solo lo nuevo.
+                await Publicar("T29-10");
+                canal.Reiniciar();
+                await canalY.EjecutarPaseAsync();
+
+                bool otraVezNuevo =
+                    EnY() == "T29-10"
+                    && canal.Enteras == 0;
+
+                bool correcto =
+                    primera
+                    && soloNuevo
+                    && estable
+                    && aMedias
+                    && terminada
+                    && reescrito
+                    && otraVezNuevo;
+
+                Console.WriteLine(
+                    $"      (archivo de {tamano / 1024} KB: leídos {bytesNuevo / 1024} KB para una línea nueva)");
+
+                if (!correcto)
+                {
+                    Console.WriteLine(
+                        $"      (primera: {primera}; solo lo nuevo: {soloNuevo}; estable: {estable}; a medias: {aMedias}; terminada: {terminada}; reescrito: {reescrito}; otra vez: {otraVezNuevo}; en Y: {EnY()})");
+                }
+
+                return correcto;
+            });
+
         servicioD.Detener();
         servicioE.Detener();
 
@@ -2284,6 +2525,151 @@ internal static class Program
     // ========================================================
     // UTILIDADES
     // ========================================================
+
+    /// <summary>
+    /// Carpeta en memoria: permite ver qué se lee y manipular los archivos.
+    /// </summary>
+    private sealed class CanalEnMemoria
+        : ICanalArchivosSincro
+    {
+        public readonly Dictionary<string, byte[]> Archivos =
+            new(StringComparer.OrdinalIgnoreCase);
+
+        public int Version;
+
+        public int Enteras;
+
+        public int Parciales;
+
+        public long BytesLeidos;
+
+        public void Reiniciar()
+        {
+            Enteras =
+                0;
+
+            Parciales =
+                0;
+
+            BytesLeidos =
+                0;
+        }
+
+        public Task<List<string>> ListarAsync(
+            string prefijo)
+        {
+            return Task.FromResult(
+                Archivos.Keys
+                    .Where(n => n.StartsWith(prefijo, StringComparison.OrdinalIgnoreCase))
+                    .ToList());
+        }
+
+        public Task<Dictionary<string, string?>> ListarConFirmasAsync(
+            string prefijo)
+        {
+            return Task.FromResult(
+                Archivos
+                    .Where(a => a.Key.StartsWith(prefijo, StringComparison.OrdinalIgnoreCase))
+                    .ToDictionary(
+                        a => a.Key,
+                        a => (string?)$"{a.Value.Length}:{Version}",
+                        StringComparer.OrdinalIgnoreCase));
+        }
+
+        public Task<byte[]?> LeerAsync(
+            string nombre)
+        {
+            Enteras++;
+
+            byte[]? bytes =
+                Archivos.GetValueOrDefault(
+                    nombre);
+
+            BytesLeidos +=
+                bytes?.Length ?? 0;
+
+            return Task.FromResult(
+                bytes);
+        }
+
+        public Task<byte[]?> LeerDesdeAsync(
+            string nombre,
+            long desde)
+        {
+            Parciales++;
+
+            if (!Archivos.TryGetValue(
+                    nombre,
+                    out byte[]? bytes))
+            {
+                return Task.FromResult<byte[]?>(
+                    null);
+            }
+
+            byte[] cola =
+                desde >= bytes.Length
+                    ? Array.Empty<byte>()
+                    : bytes[(int)desde..];
+
+            BytesLeidos +=
+                cola.Length;
+
+            return Task.FromResult<byte[]?>(
+                cola);
+        }
+
+        public Task<long> TamanoAsync(
+            string nombre)
+        {
+            return Task.FromResult(
+                Archivos.TryGetValue(
+                    nombre,
+                    out byte[]? bytes)
+                    ? (long)bytes.Length
+                    : -1L);
+        }
+
+        public Task<bool> EscribirAsync(
+            string nombre,
+            IReadOnlyList<string> lineas)
+        {
+            Archivos[nombre] =
+                System.Text.Encoding.UTF8.GetBytes(
+                    string.Join(
+                        "\n",
+                        lineas)
+                    + "\n");
+
+            Version++;
+
+            return Task.FromResult(
+                true);
+        }
+
+        public Task<bool> AgregarAsync(
+            string nombre,
+            IReadOnlyList<string> lineas)
+        {
+            byte[] nuevo =
+                System.Text.Encoding.UTF8.GetBytes(
+                    string.Join(
+                        "\n",
+                        lineas)
+                    + "\n");
+
+            Archivos[nombre] =
+                Archivos.TryGetValue(
+                    nombre,
+                    out byte[]? actual)
+                    ? actual.Concat(nuevo).ToArray()
+                    : nuevo;
+
+            Version++;
+
+            return Task.FromResult(
+                true);
+        }
+    }
 
     private static List<string> LeerTablas(
         string ruta)

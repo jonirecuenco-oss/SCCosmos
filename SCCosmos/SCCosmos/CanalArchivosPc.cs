@@ -120,6 +120,82 @@ namespace SCCosmos
         }
 
 
+        public Task<byte[]?> LeerDesdeAsync(
+            string nombre,
+            long desde)
+        {
+            try
+            {
+                string ruta =
+                    Path.Combine(
+                        _carpeta,
+                        nombre);
+
+                if (!File.Exists(
+                        ruta))
+                {
+                    return Task.FromResult<byte[]?>(
+                        null);
+                }
+
+                using var archivo =
+                    new FileStream(
+                        ruta,
+                        FileMode.Open,
+                        FileAccess.Read,
+                        FileShare.ReadWrite | FileShare.Delete);
+
+                if (desde >= archivo.Length)
+                {
+                    return Task.FromResult<byte[]?>(
+                        Array.Empty<byte>());
+                }
+
+                archivo.Seek(
+                    desde,
+                    SeekOrigin.Begin);
+
+                var bytes =
+                    new byte[archivo.Length - desde];
+
+                archivo.ReadExactly(
+                    bytes);
+
+                return Task.FromResult<byte[]?>(
+                    bytes);
+            }
+            catch
+            {
+                return Task.FromResult<byte[]?>(
+                    null);
+            }
+        }
+
+
+        public Task<long> TamanoAsync(
+            string nombre)
+        {
+            try
+            {
+                var archivo =
+                    new FileInfo(
+                        Path.Combine(
+                            _carpeta,
+                            nombre));
+
+                return Task.FromResult(
+                    archivo.Exists
+                        ? archivo.Length
+                        : -1L);
+            }
+            catch
+            {
+                return Task.FromResult(
+                    0L);
+            }
+        }
+
+
         public async Task<bool> EscribirAsync(
             string nombre,
             IReadOnlyList<string> lineas)
