@@ -68,7 +68,7 @@ Herramientas: adb en `C:\Program Files (x86)\Android\android-sdk\platform-tools\
 | S20 | Windows: cada importación de territorios deja en blanco `NombreVinculado` en toda la congregación (764 vínculos hoy); Android los conserva por nombre | pendiente de confirmar con el usuario si es intencionado (no se ha cambiado) | — |
 | S21 | Fusión de duplicados (Windows, `FusionarYBorrarDefinitivo`): la actividad de la persona de origen se traspasaba con un único UPDATE; si las dos tenían actividad del mismo mes, la restricción UNIQUE lo hacía fallar entero (error oculto) y, al borrar la persona de origen, toda su actividad se perdía en cascada | ✔️ v2.1.14: se traspasan solo los meses que no tiene la persona que se conserva (comparando sin mayúsculas ni espacios); en los repetidos queda el suyo. Prueba con el bloque real en 5 casos: con 2 repetidos + 2 propios, antes se perdían los 2 propios y ahora pasan | 4 |
 | S22 | Parches de datos (2 UPDATE + 1 DELETE) en cada `InicializarDatabase`, que también se llama al pedir las congregaciones (20 sitios en Windows): toman el bloqueo de escritura aunque no corrijan nada y esperan si la sincronización está escribiendo | ✔️ v2.1.17: lectura previa (`HayParchesPendientes`) y solo se escribe si hace falta. 6,3 → 3,2 ms por llamada; con otra conexión escribiendo, 3,3 s y 3 errores → 4 ms y ninguno (prueba con espera de 1 s por sentencia; la app espera hasta 30 s) | 3 |
-| S23 | Red: un dispositivo nuevo (o reinstalado) recibe el registro entero (23.167 cambios) a 200 por segundo, unos 2 min, porque tras cada lote el bucle de envío espera 1 s aunque queden pendientes | 🔎 Deducido del banco (las pruebas 1—6 fallaban mientras duraba ese intercambio) y del código (`TamanoLote` 200, `Task.Delay(1000)`); medir antes de tocar | 3 |
+| S23 | Red: un dispositivo nuevo (o reinstalado) recibía el registro entero (23.167 cambios) a un lote de 200 por segundo, y lo escrito entretanto iba detrás | ✔️ v2.1.18: el siguiente lote sale cuando el otro confirma haber aplicado el anterior (se comprueba cada 100 ms; si la confirmación no llega, un lote por segundo como antes). 117 → 16—17 s en el PC, con los datos ya presentes en el receptor; protocolo sin cambios. En Android las alertas se recalculan agrupadas (2 s) y no con cada lote. Sin medir en el móvil | 3 |
 
 Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay manejador global: `RegistroErrores` en ambas apps); posibles `Id` duplicados entre dispositivos (❓); sincronización heredada (AutoSync y fusión) aún en Android; seguridad: APK firmado con la clave de depuración, `allowBackup=true`, clave de sincronización de 8 dígitos.
 
@@ -79,11 +79,11 @@ Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay ma
 | 0 | Medición: vigilante de bloqueos, recorrido de medición y línea base | hecho (31/10) |
 | 1 | Lag rápido: S1, S7, S8 | hecho (31/10) |
 | 2 | Pantallas pesadas: S13, S2, S3, S15 (v2.1.2), S4 (v2.1.3) y S13b (v2.1.16) hechos; S9 analizado sin cambios; pendiente S2b (Android: medir con el móvil conectado) | en curso |
-| 3 | Sincronización y BD: S22 (v2.1.17), S5 (v2.1.3), S14 con el atasco de la carpeta (v2.1.3—2.1.4), S16 (v2.1.5) y S17 (v2.1.6) hechos; S6 en curso (actividad, personas, territorios, programa de la visita y asambleas en v2.1.7—2.1.11; falta RSC); pendientes poda de borrados, `Id` duplicados e índices solo si se justifican (con copia) | en curso |
+| 3 | Sincronización y BD: S23 (v2.1.18), S22 (v2.1.17), S5 (v2.1.3), S14 con el atasco de la carpeta (v2.1.3—2.1.4), S16 (v2.1.5) y S17 (v2.1.6) hechos; S6 en curso (actividad, personas, territorios, programa de la visita y asambleas en v2.1.7—2.1.11; falta RSC); pendientes poda de borrados, `Id` duplicados e índices solo si se justifican (con copia) | en curso |
 | 4 | Estabilidad: manejador global de errores (v2.1.3); errores del motor de sincronización (v2.1.12) y de guardados de Windows y sincronización de Android (v2.1.13) anotados; pérdida de actividad al fusionar duplicados corregida (S21, v2.1.14); pendientes reglas comunes en SincroCompartido con pruebas y retirar la sincro heredada | en curso |
 | 5 | Compilación: ReadyToRun en Windows hecho (S10, v2.1.15) | hecho |
 | 6 | Visual: estilos comunes, componentes, accesibilidad y escalado; pantalla a pantalla | pendiente |
-| 7 | Pruebas: banco `SincroPruebas` en el repositorio (02/11): 13 pruebas de extremo a extremo del motor sobre copias de la BD (red A/B/C; carpeta D/E con el `CanalArchivosPc` real; la 12 comprobada: sin la huella de S16 falla); ~2 min, 13/13 estable. `publicar_version.ps1` lo ejecuta antes de publicar si cambió el código de la sincronización y no publica si falla (`Herramientas\probar_sincro.ps1`; escape `-SinPruebas`). Pendiente: una prueba del atasco con compactación real (archivo de más de 2 MB y un dispositivo abandonado) y las reglas de `DatabaseHelper` (necesitan poder elegir la ruta de la base) | en curso |
+| 7 | Pruebas: banco `SincroPruebas` en el repositorio (02/11): 15 pruebas de extremo a extremo del motor sobre copias de la BD (red A/B/C y un dispositivo nuevo; carpeta D/E con el `CanalArchivosPc` real). Comprobado que detecta los fallos que protege: sin la huella de S16 falla la 12 y con el atasco original falla la 14. Unos 2,5 min, 20 rondas seguidas estables. `publicar_version.ps1` lo ejecuta antes de publicar si cambió el código de la sincronización y no publica si falla (`Herramientas\probar_sincro.ps1`; escape `-SinPruebas`). Pendiente: las reglas de `DatabaseHelper` (necesitan poder elegir la ruta de la base) | en curso |
 
 ## Mediciones
 
@@ -164,6 +164,10 @@ Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay ma
 - 02/11/2026 · Uso: `dotnet run --project SincroPruebas -c Release` (13/13, unos 2 min). Ejecutarlo antes de publicar cualquier cambio en `SincroCompartido`.
 - 02/11/2026 · Bloque 7: el banco pasa al repositorio (autorizado; se quita `SincroPruebas/` del `.gitignore`, sin datos personales). `Herramientas\probar_sincro.ps1` lo ejecuta si cambió el código de la sincronización desde la última vez que pasó (huella SHA-256 de lo que compila, sin conversores ni el número de versión) y `publicar_version.ps1` no publica si falla, antes de tocar nada (`-SinPruebas` para emergencias). `Herramientas/` sigue fuera del repositorio.
 - 02/11/2026 · `publicar_version.ps1` guardado con BOM: sin él, PowerShell 5.1 leía mal sus acentos y los mensajes de commit (`Versión`) y el pie de las notas de cada release salían con caracteres raros. Corregido para las próximas versiones; los anteriores se quedan como están.
+- 02/11/2026 · Banco: prueba 14 (atasco real: archivo de más de 2 MB y un dispositivo abandonado; la posición publicada no retrocede y lo posterior llega) y 15 (dispositivo nuevo por red, con datos idénticos a A al terminar). Con el atasco original reproducido a propósito, la 14 falla.
+- 02/11/2026 · Banco: corregida una inestabilidad de la prueba 12 (fallaba 2 de cada 11 rondas). Daba un cambio por publicado cuando el archivo crecía, pero D también añade líneas con sus confirmaciones, y a veces se le detenía antes de publicar; no era un fallo del motor. Ahora espera a `ArchivoSeqEscrito`: 20 rondas seguidas sin fallos y sin la huella de S16 sigue fallando. `SINCRO_SOLO=10,11,12` ejecuta solo esas pruebas.
+- 02/11/2026 · S23: `ServicioSincro.EmpujarAsync` devuelve si quedan más lotes y espera a la confirmación del anterior; `BucleEmpujeAsync` vuelve a los 100 ms (`PausaPuestaAlDiaMs`) mientras un dispositivo se pone al día. Android: `ActualizacionPaginasMobile.ProgramarAlertas` agrupa el recálculo de alertas.
+- 02/11/2026 · Publicada la v2.1.18.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 
@@ -332,3 +336,10 @@ Móvil (v2.1.3, 31/10/2026): salir a segundo plano 0 ms (sin bloqueo); envío en
 | S16 desactivado a propósito | 12/13: no publica (código 1) y la marca no se mueve |
 | Código restaurado | se salta y continúa |
 | `-SinPruebas` | avisa y continúa |
+
+### v2.1.18 — S23, puesta al día de un dispositivo nuevo por red (02/11/2026; banco, prueba 15, en el PC)
+
+| Medida | Antes | Después |
+|---|---|---|
+| Recibir el registro entero (23.167 cambios) | 117 s | 16—17 s |
+| Filas distintas entre A y el dispositivo nuevo al terminar | 0 | 0 |

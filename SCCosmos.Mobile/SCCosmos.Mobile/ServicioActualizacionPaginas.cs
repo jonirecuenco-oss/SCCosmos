@@ -26,6 +26,9 @@ public static class ActualizacionPaginasMobile
     private static System.Threading.Timer?
         _temporizador;
 
+    private static System.Threading.Timer?
+        _temporizadorAlertas;
+
 
     public static void Iniciar(
         Shell shell)
@@ -46,8 +49,10 @@ public static class ActualizacionPaginasMobile
                     Programar();
 
                     // El estado de alertas leídas puede haber cambiado en
-                    // otro dispositivo: se refresca la notificación.
-                    _ = AlertasNotificacionService.ActualizarAsync();
+                    // otro dispositivo: se refresca la notificación. Agrupado,
+                    // como las páginas: en una puesta al día llegan muchos
+                    // lotes seguidos y recalcularlas con cada uno no aporta.
+                    ProgramarAlertas();
                 };
         }
         catch
@@ -89,6 +94,27 @@ public static class ActualizacionPaginasMobile
                     Timeout.Infinite);
 
             _temporizador.Change(
+                2000,
+                Timeout.Infinite);
+        }
+        catch
+        {
+        }
+    }
+
+
+    private static void ProgramarAlertas()
+    {
+        try
+        {
+            _temporizadorAlertas ??=
+                new System.Threading.Timer(
+                    estado => _ = AlertasNotificacionService.ActualizarAsync(),
+                    null,
+                    Timeout.Infinite,
+                    Timeout.Infinite);
+
+            _temporizadorAlertas.Change(
                 2000,
                 Timeout.Infinite);
         }

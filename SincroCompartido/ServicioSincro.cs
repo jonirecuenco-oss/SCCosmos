@@ -1174,6 +1174,13 @@ public sealed class ServicioSincro
     // EMPUJAR CAMBIOS NUEVOS
     // ========================================================
 
+    // Pausa entre comprobaciones mientras un dispositivo se pone al día. A un
+    // lote por segundo, los ~23.000 cambios de un dispositivo nuevo tardaban
+    // 2 minutos y lo que se escribía entretanto iba detrás.
+    private const int PausaPuestaAlDiaMs =
+        100;
+
+
     private async Task BucleEmpujeAsync(
         CancellationToken token)
     {
@@ -1189,6 +1196,9 @@ public sealed class ServicioSincro
                         .ToList();
             }
 
+            bool poniendoAlDia =
+                false;
+
             foreach (ConexionPar conexion in
                      conexiones)
             {
@@ -1203,9 +1213,13 @@ public sealed class ServicioSincro
 
                 try
                 {
-                    await EmpujarAsync(
-                        conexion,
-                        token);
+                    if (await EmpujarAsync(
+                            conexion,
+                            token))
+                    {
+                        poniendoAlDia =
+                            true;
+                    }
 
                     // Latido para mantener viva la conexión
                     // (importante en redes móviles).
@@ -1231,7 +1245,9 @@ public sealed class ServicioSincro
             try
             {
                 await Task.Delay(
-                    1000,
+                    poniendoAlDia
+                        ? PausaPuestaAlDiaMs
+                        : 1000,
                     token);
             }
             catch (OperationCanceledException)
@@ -1242,7 +1258,12 @@ public sealed class ServicioSincro
     }
 
 
-    private async Task EmpujarAsync(
+    /// <summary>
+    /// Envía a un dispositivo el siguiente lote de cambios pendientes.
+    /// Devuelve true si se está poniendo al día: quedan más lotes y conviene
+    /// volver antes del segundo habitual.
+    /// </summary>
+    private async Task<bool> EmpujarAsync(
         ConexionPar conexion,
         CancellationToken token)
     {
@@ -1252,6 +1273,16 @@ public sealed class ServicioSincro
 
         try
         {
+            // El siguiente lote sale cuando el otro ha aplicado el anterior:
+            // un dispositivo lento marca el ritmo y le quedan huecos para sus
+            // propias escrituras. Si la confirmación no llega, se sigue al
+            // ritmo normal de un lote por segundo.
+            if (conexion.ConfirmadoEnDb < conexion.Enviado
+                && (DateTime.UtcNow - conexion.UltimoLote).TotalSeconds < 1)
+            {
+                return true;
+            }
+
             // Si la base no ha cambiado desde la última consulta sin
             // pendientes, no hay nada nuevo: se evita recorrer el registro
             // de cambios (~23.000 filas) cada segundo. Por seguridad se
@@ -1262,7 +1293,7 @@ public sealed class ServicioSincro
             if (marca == conexion.MarcaSinPendientes
                 && (DateTime.UtcNow - conexion.UltimaConsulta).TotalSeconds < 30)
             {
-                return;
+                return false;
             }
 
             conexion.UltimaConsulta =
@@ -1277,7 +1308,7 @@ public sealed class ServicioSincro
                 conexion.MarcaSinPendientes =
                     marca;
 
-                return;
+                return false;
             }
 
             conexion.MarcaSinPendientes =
@@ -1292,11 +1323,17 @@ public sealed class ServicioSincro
             conexion.Enviado =
                 pendientes[^1].Seq;
 
+            conexion.UltimoLote =
+                DateTime.UtcNow;
+
             CambiosEnviados +=
                 pendientes.Count;
 
             UltimaActividad =
                 DateTime.Now;
+
+            return pendientes.Count
+                   >= SincroAlmacen.TamanoLote;
         }
         finally
         {
@@ -1617,6 +1654,11 @@ public sealed class ServicioSincro
         public long Enviado;
 
         public long ConfirmadoEnDb;
+
+        // Hora del último lote enviado: si su confirmación tarda, el
+        // siguiente no se retrasa más allá del ritmo normal.
+        public DateTime UltimoLote =
+            DateTime.MinValue;
 
         public long Recibido;
 

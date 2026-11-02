@@ -20,7 +20,7 @@ namespace SCCosmos.Pruebas;
 // Aislamiento: la base de origen solo se lee (copias con la API de
 // SQLite en %TEMP%\sccosmos_pruebas_sincro, que se borra al
 // terminar). Los dispositivos de prueba tienen su propia clave, se
-// conectan entre sí por 127.0.0.1 (puertos 47401-47404 y
+// conectan entre sí por 127.0.0.1 (puertos 47401-47405 y
 // 47411-47412) y no hacen anuncios UDP: los dispositivos reales ni
 // los ven ni podrían emparejarse con ellos.
 // ============================================================
@@ -743,6 +743,23 @@ internal static class Program
                         carpetaCanal,
                         nombreD);
 
+                string Estado()
+                {
+                    string firma =
+                        new DirectoryInfo(
+                                carpetaCanal)
+                            .EnumerateFiles(
+                                nombreD)
+                            .Select(a => $"{a.Length}:{a.LastWriteTimeUtc:HH:mm:ss.fff}")
+                            .FirstOrDefault()
+                        ?? "sin archivo";
+
+                    return $"archivo de D: {ContarLineas(archivoD)} líneas, firma {firma}; "
+                           + $"E leyó {almacenE.ObtenerEstado("ArchivoLineas::" + nombreD)}; "
+                           + $"D publicó {almacenD.ObtenerEstado("ArchivoSeqEscrito")} de {almacenD.ObtenerUltimoSeq()}; "
+                           + $"ahora {DateTime.UtcNow:HH:mm:ss.fff}";
+                }
+
                 // Primero D publica tres cambios de uno en uno y E los lee:
                 // así E tiene leídas varias líneas que la compactación puede
                 // quitar.
@@ -763,6 +780,9 @@ internal static class Program
                                 == previo,
                             50))
                     {
+                        Console.WriteLine(
+                            $"      (E no recibió {previo}: {Estado()})");
+
                         return false;
                     }
                 }
@@ -776,22 +796,27 @@ internal static class Program
 
                 foreach (var (fila, texto) in new[] { (fila4, "SINCRO-T12A"), (fila5, "SINCRO-T12B") })
                 {
-                    int antes =
-                        ContarLineas(
-                            archivoD);
-
                     Escribir(
                         dbD,
                         $"UPDATE Personas SET NombreComun = '{texto}' WHERE Id = {fila};");
 
-                    if (antes < 0
-                        || !await EsperarAsync(
+                    // Se espera a que esté publicado, no a que el archivo
+                    // crezca: D también añade líneas con sus confirmaciones.
+                    long seq =
+                        almacenD.ObtenerUltimoSeq();
+
+                    if (!await EsperarAsync(
                             () =>
-                                ContarLineas(
-                                    archivoD)
-                                > antes,
-                            30))
+                                long.TryParse(
+                                    almacenD.ObtenerEstado(
+                                        "ArchivoSeqEscrito"),
+                                    out long publicado)
+                                && publicado >= seq,
+                            45))
                     {
+                        Console.WriteLine(
+                            $"      (D no publicó {texto} en 45 s: {Estado()})");
+
                         servicioE.Iniciar();
 
                         return false;
@@ -861,6 +886,12 @@ internal static class Program
                             == "SINCRO-T12B",
                         50);
 
+                if (!llegaron)
+                {
+                    Console.WriteLine(
+                        $"      (tras compactar, E leía {leidasE} de {lineas.Length} y se quitaron {sobran}; {Estado()})");
+                }
+
                 servicioD.Iniciar();
 
                 return llegaron;
@@ -890,6 +921,246 @@ internal static class Program
                         ==
                         "SINCRO-T13",
                     90);
+            });
+
+        await Probar(
+            "14. Canal por carpeta: compactar con un dispositivo abandonado no atasca la carpeta",
+            async () =>
+            {
+                string archivoD =
+                    Path.Combine(
+                        carpetaCanal,
+                        $"cambios-{configD.IdDispositivo}.jsonl");
+
+                // Límite de compactación de CanalArchivosSincro.
+                const long limite =
+                    2 * 1024 * 1024;
+
+                long PosicionPublicada() =>
+                    long.TryParse(
+                        almacenD.ObtenerEstado(
+                            "ArchivoSeqEscrito"),
+                        out long valor)
+                        ? valor
+                        : 0;
+
+                // Un dispositivo abandonado, que se quedó en 0 y no volverá.
+                // Antes, la compactación rehacía el archivo desde el más
+                // atrasado y la posición publicada retrocedía: la carpeta
+                // republicaba lo mismo una y otra vez y nunca llegaba a lo
+                // reciente.
+                almacenD.GuardarUltimoEnviado(
+                    "ffffffffffffffffffffffffffffffff",
+                    0);
+
+                servicioD.Detener();
+
+                await Task.Delay(
+                    1500);
+
+                // El archivo de D se lleva por encima del límite repitiendo
+                // sus líneas (leerlas otra vez no cambia nada): con el
+                // siguiente cambio, D lo compactará.
+                string bloque =
+                    string.Join(
+                        "\n",
+                        File.ReadAllText(
+                                archivoD)
+                            .Split(
+                                '\n',
+                                StringSplitOptions.RemoveEmptyEntries)
+                            .Skip(1))
+                    + "\n";
+
+                if (bloque.Length < 1000)
+                {
+                    Console.WriteLine(
+                        $"      (archivo de D demasiado pequeño: {bloque.Length} caracteres)");
+
+                    servicioD.Iniciar();
+
+                    return false;
+                }
+
+                File.AppendAllText(
+                    archivoD,
+                    string.Concat(
+                        Enumerable.Repeat(
+                            bloque,
+                            (int)(limite / bloque.Length) + 1)));
+
+                long posicionAntes =
+                    PosicionPublicada();
+
+                bool retrocedio =
+                    false;
+
+                bool Vigilando(
+                    Func<bool> condicion)
+                {
+                    if (PosicionPublicada() < posicionAntes)
+                    {
+                        retrocedio =
+                            true;
+                    }
+
+                    return condicion();
+                }
+
+                servicioD.Iniciar();
+
+                Escribir(
+                    dbD,
+                    $"UPDATE Personas SET NombreComun = 'SINCRO-T14A' WHERE Id = {fila1};");
+
+                bool compacto =
+                    await EsperarAsync(
+                        () =>
+                            Vigilando(
+                                () =>
+                                    TamanoArchivo(
+                                        archivoD)
+                                    <= limite),
+                        50);
+
+                bool llegoA =
+                    await EsperarAsync(
+                        () =>
+                            Vigilando(
+                                () =>
+                                    LeerTexto(
+                                        dbE,
+                                        $"SELECT NombreComun FROM Personas WHERE Id = {fila1};")
+                                    == "SINCRO-T14A"),
+                        50);
+
+                // Lo que se escribe después de compactar también tiene que
+                // llegar.
+                Escribir(
+                    dbD,
+                    $"UPDATE Personas SET NombreComun = 'SINCRO-T14B' WHERE Id = {fila2};");
+
+                bool llegoB =
+                    await EsperarAsync(
+                        () =>
+                            Vigilando(
+                                () =>
+                                    LeerTexto(
+                                        dbE,
+                                        $"SELECT NombreComun FROM Personas WHERE Id = {fila2};")
+                                    == "SINCRO-T14B"),
+                        50);
+
+                bool correcto =
+                    compacto
+                    && llegoA
+                    && llegoB
+                    && !retrocedio;
+
+                if (!correcto)
+                {
+                    Console.WriteLine(
+                        $"      (compactó: {compacto}; llegó A: {llegoA}; llegó B: {llegoB}; retrocedió: {retrocedio})");
+                }
+
+                return correcto;
+            });
+
+        await Probar(
+            "15. Red: un dispositivo nuevo recibe todo el historial y queda igual",
+            async () =>
+            {
+                string dbG =
+                    Path.Combine(
+                        _carpeta,
+                        "G.db");
+
+                CopiarBase(
+                    origen,
+                    dbG);
+
+                var configG =
+                    new SincroConfiguracion
+                    {
+                        IdDispositivo =
+                            "33333333333333333333333333333333",
+
+                        NombreDispositivo =
+                            "Nuevo G",
+
+                        Clave =
+                            "12345678",
+
+                        Puerto =
+                            47405,
+
+                        // Sin anuncios UDP: el banco no se deja ver en la red.
+                        Descubrimiento =
+                            false
+                    };
+
+                configG.Direcciones.Add(
+                    "127.0.0.1:47401");
+
+                var almacenG =
+                    new SincroAlmacen(
+                        dbG,
+                        configG.IdDispositivo);
+
+                almacenG.Asegurar();
+
+                using var servicioG =
+                    new ServicioSincro(
+                        configG,
+                        almacenG);
+
+                // Es el último cambio del registro de A: cuando llega a G, ya
+                // ha recibido todo lo anterior.
+                Escribir(
+                    _dbA,
+                    $"UPDATE Personas SET NombreComun = 'SINCRO-T15' WHERE Id = {fila1};");
+
+                var reloj =
+                    System.Diagnostics.Stopwatch.StartNew();
+
+                servicioG.Iniciar();
+
+                bool llego =
+                    await EsperarAsync(
+                        () =>
+                            LeerTexto(
+                                dbG,
+                                $"SELECT NombreComun FROM Personas WHERE Id = {fila1};")
+                            == "SINCRO-T15",
+                        180);
+
+                Console.WriteLine(
+                    $"      (puesta al día de un dispositivo nuevo: {reloj.Elapsed.TotalSeconds:N0} s)");
+
+                servicioG.Detener();
+
+                if (!llego)
+                {
+                    return false;
+                }
+
+                long distintas =
+                    FilasDistintas(
+                        _dbA,
+                        dbG,
+                        "Personas")
+                    + FilasDistintas(
+                        _dbA,
+                        dbG,
+                        "ActividadPersonas");
+
+                if (distintas > 0)
+                {
+                    Console.WriteLine(
+                        $"      (filas distintas entre A y G: {distintas})");
+                }
+
+                return distintas == 0;
             });
 
         servicioD.Detener();
@@ -938,6 +1209,56 @@ internal static class Program
     // ========================================================
     // UTILIDADES
     // ========================================================
+
+    /// <summary>
+    /// Filas de una tabla que no coinciden entre dos bases (en cualquiera de
+    /// los dos sentidos).
+    /// </summary>
+    private static long FilasDistintas(
+        string dbUna,
+        string dbOtra,
+        string tabla)
+    {
+        using var conexion =
+            Abrir(
+                dbUna);
+
+        using var cmd =
+            conexion.CreateCommand();
+
+        cmd.CommandText =
+            $"""
+            ATTACH DATABASE $otra AS otra;
+            SELECT (SELECT COUNT(*) FROM (SELECT * FROM main.{tabla} EXCEPT SELECT * FROM otra.{tabla}))
+                 + (SELECT COUNT(*) FROM (SELECT * FROM otra.{tabla} EXCEPT SELECT * FROM main.{tabla}));
+            """;
+
+        cmd.Parameters.AddWithValue(
+            "$otra",
+            dbOtra);
+
+        return Convert.ToInt64(
+            cmd.ExecuteScalar());
+    }
+
+    /// <summary>
+    /// Tamaño de un archivo; si en ese momento no se puede consultar (su dueño
+    /// lo está reescribiendo), el mayor posible.
+    /// </summary>
+    private static long TamanoArchivo(
+        string ruta)
+    {
+        try
+        {
+            return new FileInfo(
+                    ruta)
+                .Length;
+        }
+        catch (IOException)
+        {
+            return long.MaxValue;
+        }
+    }
 
     /// <summary>
     /// Líneas de un archivo del canal por carpeta, aunque su dueño lo esté
@@ -1032,6 +1353,23 @@ internal static class Program
         string nombre,
         Func<Task<bool>> prueba)
     {
+        // Para depurar: SINCRO_SOLO=10,11,12 ejecuta solo esas pruebas.
+        string? solo =
+            Environment.GetEnvironmentVariable(
+                "SINCRO_SOLO");
+
+        if (!string.IsNullOrWhiteSpace(
+                solo)
+            && !solo
+                .Split(
+                    ',')
+                .Contains(
+                    nombre.Split(
+                        '.')[0]))
+        {
+            return;
+        }
+
         _total++;
 
         bool correcto;
