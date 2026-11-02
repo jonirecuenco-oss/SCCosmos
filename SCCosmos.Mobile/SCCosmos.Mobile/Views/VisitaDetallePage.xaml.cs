@@ -949,43 +949,11 @@ public partial class VisitaDetallePage
     }
 
 
-    private async void ActividadMes_Clicked(
-        object sender,
-        EventArgs e)
-    {
-        if (sender is not Button boton
-            ||
-            boton.CommandParameter
-                is not ActividadMesUi actividad)
-        {
-            return;
-        }
-
-        await MostrarNotaActividadAsync(
-            actividad);
-    }
-
-
     private async void ActividadMes_Tapped(
         object sender,
         TappedEventArgs e)
     {
-        // En Android el parámetro fiable del gesto está en TappedEventArgs.
-        // Dejamos también el fallback al recognizer por compatibilidad.
-        ActividadMesUi? actividad =
-            e.Parameter as ActividadMesUi;
-
-        if (actividad is null
-            &&
-            sender is TapGestureRecognizer gesto)
-        {
-            actividad =
-                gesto.CommandParameter as ActividadMesUi;
-        }
-
-        if (actividad is null
-            ||
-            !actividad.TieneNotas)
+        if (e.Parameter is not ActividadMesUi actividad)
         {
             return;
         }

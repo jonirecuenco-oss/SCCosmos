@@ -46,7 +46,7 @@ Herramientas: adb en `C:\Program Files (x86)\Android\android-sdk\platform-tools\
 |---|---|---|---|
 | S1 | Android: `.Wait(3 s)` en `OnStop`/`OnSleep` al salir a segundo plano | ✔️ 6,1 s → 0 ms | 1 |
 | S2 | Android Visitas: listas dentro de `ScrollView` (sin virtualización) | ✔️ abrir 653 → 264 ms | 2 |
-| S2b | Android Visitas: tarjeta de persona pesada; el primer desplazamiento rápido tiene más tirones (p99 113 ms) | ✅ | 2 |
+| S2b | Android Visitas: tarjeta de persona pesada (unas 80 vistas), con un `Button` transparente en cada uno de sus 6 meses | ✔️ v2.1.19: toque directo en la casilla, sin botón ni envoltorios (18 vistas menos por tarjeta; 490 → 364 nodos en pantalla). Con 6 rondas por versión alternando en el móvil: primera pasada p99 75 → 57 ms; segunda, tirones 7,6 → 2,6 % y p99 59 → 43 ms. 0 píxeles distintos; cada casilla abre su mes, también en tarjetas recicladas | 2 |
 | S3 | Windows Visitas: al abrir se cargaban todas las pestañas; Territorios costaba 300–380 ms. (La tabla no era el problema: solo muestra el grupo elegido, ~18 filas.) | ✔️ bloqueo 484 ms → ninguno en 4 de 6 aperturas | 2 |
 | S4 | Windows: Visitas, Asambleas y Correspondencia se recreaban al llegar cambios de otro equipo | ✔️ ahora aviso «Hay cambios de otro dispositivo · Actualizar» (sin probar con cambios reales) | 2 |
 | S5 | Sincro: cada 1 s por par (y cada 6 s en la carpeta) se recorría `SCCosmos_Cambios` aunque no hubiera cambios | ✔️ marca barata (fecha de escritura de la BD y su WAL) + consulta forzada cada 30 s; sin cambio de esquema. CPU en reposo del PC sin mejora medible (1,1 % → 1,3 %, pendiente de analizar); en el móvil, por medir | 3 |
@@ -69,6 +69,7 @@ Herramientas: adb en `C:\Program Files (x86)\Android\android-sdk\platform-tools\
 | S21 | Fusión de duplicados (Windows, `FusionarYBorrarDefinitivo`): la actividad de la persona de origen se traspasaba con un único UPDATE; si las dos tenían actividad del mismo mes, la restricción UNIQUE lo hacía fallar entero (error oculto) y, al borrar la persona de origen, toda su actividad se perdía en cascada | ✔️ v2.1.14: se traspasan solo los meses que no tiene la persona que se conserva (comparando sin mayúsculas ni espacios); en los repetidos queda el suyo. Prueba con el bloque real en 5 casos: con 2 repetidos + 2 propios, antes se perdían los 2 propios y ahora pasan | 4 |
 | S22 | Parches de datos (2 UPDATE + 1 DELETE) en cada `InicializarDatabase`, que también se llama al pedir las congregaciones (20 sitios en Windows): toman el bloqueo de escritura aunque no corrijan nada y esperan si la sincronización está escribiendo | ✔️ v2.1.17: lectura previa (`HayParchesPendientes`) y solo se escribe si hace falta. 6,3 → 3,2 ms por llamada; con otra conexión escribiendo, 3,3 s y 3 errores → 4 ms y ninguno (prueba con espera de 1 s por sentencia; la app espera hasta 30 s) | 3 |
 | S23 | Red: un dispositivo nuevo (o reinstalado) recibía el registro entero (23.167 cambios) a un lote de 200 por segundo, y lo escrito entretanto iba detrás | ✔️ v2.1.18: el siguiente lote sale cuando el otro confirma haber aplicado el anterior (se comprueba cada 100 ms; si la confirmación no llega, un lote por segundo como antes). 117 → 16—17 s en el PC, con los datos ya presentes en el receptor; protocolo sin cambios. En Android las alertas se recalculan agrupadas (2 s) y no con cada lote. Sin medir en el móvil | 3 |
+| S24 | Android Inicio: bloqueos de 225—417 ms al abrir (7 en dos días de uso real según el registro del móvil; `Inicio` mediana 308 ms, máximo 881 ms). Es la pantalla que más se abre | ✅ Medido; sin analizar | 2 |
 
 Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay manejador global: `RegistroErrores` en ambas apps); posibles `Id` duplicados entre dispositivos (❓); sincronización heredada (AutoSync y fusión) aún en Android; seguridad: APK firmado con la clave de depuración, `allowBackup=true`, clave de sincronización de 8 dígitos.
 
@@ -78,7 +79,7 @@ Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay ma
 |---|---|---|
 | 0 | Medición: vigilante de bloqueos, recorrido de medición y línea base | hecho (31/10) |
 | 1 | Lag rápido: S1, S7, S8 | hecho (31/10) |
-| 2 | Pantallas pesadas: S13, S2, S3, S15 (v2.1.2), S4 (v2.1.3) y S13b (v2.1.16) hechos; S9 analizado sin cambios; pendiente S2b (Android: medir con el móvil conectado) | en curso |
+| 2 | Pantallas pesadas: S13, S2, S3, S15 (v2.1.2), S4 (v2.1.3), S13b (v2.1.16) y S2b (v2.1.19) hechos; S9 analizado sin cambios; pendiente S24 (Inicio de Android) | en curso |
 | 3 | Sincronización y BD: S23 (v2.1.18), S22 (v2.1.17), S5 (v2.1.3), S14 con el atasco de la carpeta (v2.1.3—2.1.4), S16 (v2.1.5) y S17 (v2.1.6) hechos; S6 en curso (actividad, personas, territorios, programa de la visita y asambleas en v2.1.7—2.1.11; falta RSC); pendientes poda de borrados, `Id` duplicados e índices solo si se justifican (con copia) | en curso |
 | 4 | Estabilidad: manejador global de errores (v2.1.3); errores del motor de sincronización (v2.1.12) y de guardados de Windows y sincronización de Android (v2.1.13) anotados; pérdida de actividad al fusionar duplicados corregida (S21, v2.1.14); pendientes reglas comunes en SincroCompartido con pruebas y retirar la sincro heredada | en curso |
 | 5 | Compilación: ReadyToRun en Windows hecho (S10, v2.1.15) | hecho |
@@ -168,6 +169,9 @@ Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay ma
 - 02/11/2026 · Banco: corregida una inestabilidad de la prueba 12 (fallaba 2 de cada 11 rondas). Daba un cambio por publicado cuando el archivo crecía, pero D también añade líneas con sus confirmaciones, y a veces se le detenía antes de publicar; no era un fallo del motor. Ahora espera a `ArchivoSeqEscrito`: 20 rondas seguidas sin fallos y sin la huella de S16 sigue fallando. `SINCRO_SOLO=10,11,12` ejecuta solo esas pruebas.
 - 02/11/2026 · S23: `ServicioSincro.EmpujarAsync` devuelve si quedan más lotes y espera a la confirmación del anterior; `BucleEmpujeAsync` vuelve a los 100 ms (`PausaPuestaAlDiaMs`) mientras un dispositivo se pone al día. Android: `ActualizacionPaginasMobile.ProgramarAlertas` agrupa el recálculo de alertas.
 - 02/11/2026 · Publicada la v2.1.18.
+- 02/11/2026 · Publicada la v2.1.18. Instalada también en el móvil real: arranca sin errores y no existe `sccosmos_errores.log` (ningún error registrado desde que hay manejador global).
+- 02/11/2026 · S2b: `VisitaDetallePage.xaml` (`ListaPersonas`): cada casilla de mes usa un `TapGestureRecognizer` en su `Border` en vez de un `Button` transparente, sin el `Grid` envoltorio ni el `HorizontalStackLayout` del mes. `MinimumHeightRequest=45` conserva la altura que imponía el botón (44 dp + 1 de margen). Eliminado el `ActividadMes_Tapped` antiguo, sin uso. Probado en el móvil real: cada casilla abre su mes (primera, última y recicladas), al cerrar se sigue en la lista, y foto y nombre abren la persona.
+- 02/11/2026 · Publicada la v2.1.19.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 
@@ -343,3 +347,14 @@ Móvil (v2.1.3, 31/10/2026): salir a segundo plano 0 ms (sin bloqueo); envío en
 |---|---|---|
 | Recibir el registro entero (23.167 cambios) | 117 s | 16—17 s |
 | Filas distintas entre A y el dispositivo nuevo al terminar | 0 | 0 |
+
+### v2.1.19 — S2b, tarjeta de persona en Android (02/11/2026; Galaxy Z Fold7, pantalla exterior, Release arm64; 6 rondas por versión alternando, desde arranque en frío; 8 desplazamientos rápidos por pasada)
+
+| Medida (mediana) | v2.1.18 | v2.1.19 |
+|---|---|---|
+| Primera pasada, creando tarjetas: p90 / p99 | 14,5 / 75 ms | 13,5 / 57 ms |
+| Primera pasada: tirones | 6,2 % | 8,2 % (ruido: oscila entre 4 y 16 %) |
+| Segunda pasada, ya creadas: p90 / p99 | 13,5 / 59 ms | 12 / 43 ms |
+| Segunda pasada: tirones | 7,6 % | 2,6 % |
+| Nodos en pantalla | 490 | 364 |
+| Píxeles distintos (de 2.570.400) | — | 0 |
