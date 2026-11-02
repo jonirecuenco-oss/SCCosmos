@@ -291,7 +291,8 @@ public static class SincronizacionMobile
             _almacen =
                 new SincroAlmacen(
                     DatabasePaths.RutaLocal,
-                    _config.IdDispositivo);
+                    _config.IdDispositivo,
+                    saltarIds: true);
 
             _almacen.Asegurar();
 
@@ -378,7 +379,8 @@ public static class SincronizacionMobile
         {
             new SincroAlmacen(
                     DatabasePaths.RutaLocal,
-                    _config!.IdDispositivo)
+                    _config!.IdDispositivo,
+                    saltarIds: true)
                 .Asegurar();
         }
         catch (Exception errorSincro)
@@ -420,7 +422,8 @@ public static class SincronizacionMobile
                 _almacen =
                     new SincroAlmacen(
                         DatabasePaths.RutaLocal,
-                        _config.IdDispositivo);
+                        _config.IdDispositivo,
+                        saltarIds: true);
 
                 _almacen.Asegurar();
             }
@@ -653,7 +656,8 @@ public static class SincronizacionMobile
                 _almacen =
                     new SincroAlmacen(
                         DatabasePaths.RutaLocal,
-                        _config.IdDispositivo);
+                        _config.IdDispositivo,
+                        saltarIds: true);
 
                 _almacen.Asegurar();
             }

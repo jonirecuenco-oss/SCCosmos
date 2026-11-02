@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Text;
 
 using Microsoft.Data.Sqlite;
@@ -45,16 +46,29 @@ public sealed class SincroAlmacen
 
     private readonly string _idDispositivo;
 
+    /// <summary>
+    /// Hueco que deja este dispositivo antes de su siguiente alta; 0 si
+    /// numera sin huecos (ver SaltarIds).
+    /// </summary>
+    private readonly long _saltoIds;
+
 
     public SincroAlmacen(
         string rutaDb,
-        string idDispositivo)
+        string idDispositivo,
+        bool saltarIds = false)
     {
         _rutaDb =
             rutaDb;
 
         _idDispositivo =
             idDispositivo ?? "";
+
+        _saltoIds =
+            saltarIds
+                ? CalcularSaltoIds(
+                    _idDispositivo)
+                : 0;
     }
 
 
@@ -253,6 +267,24 @@ public sealed class SincroAlmacen
         catch (Exception errorSincro)
         {
             SincroDiagnostico.Error(errorSincro, "RepararBinarios");
+        }
+
+        try
+        {
+            // Diferida: casi siempre no hay nada que escribir.
+            using var transaccion =
+                conexion.BeginTransaction(
+                    deferred: true);
+
+            SaltarIds(
+                conexion,
+                transaccion);
+
+            transaccion.Commit();
+        }
+        catch (Exception errorSincro)
+        {
+            SincroDiagnostico.Error(errorSincro, "SaltarIds");
         }
 
         // El contador nunca puede quedarse por detrás de lo ya enviado o
@@ -682,6 +714,24 @@ public sealed class SincroAlmacen
                 fila;
         }
 
+        // Antes de que salgan: lo que se envía deja de ser solo de este
+        // dispositivo, y otro puede seguir numerando a partir de ahí.
+        if (resultado.Count > 0)
+        {
+            try
+            {
+                SaltarIds(
+                    conexion,
+                    null,
+                    resultado.Select(
+                        cambio => cambio.Tabla));
+            }
+            catch (Exception errorSincro)
+            {
+                SincroDiagnostico.Error(errorSincro, "SaltarIds");
+            }
+        }
+
         return resultado;
     }
 
@@ -810,6 +860,22 @@ public sealed class SincroAlmacen
                 $"DELETE FROM {TablaSilencio};",
                 transaccion);
 
+            if (resultado.Aplicados > 0)
+            {
+                try
+                {
+                    SaltarIds(
+                        conexion,
+                        transaccion,
+                        cambios.Select(
+                            cambio => cambio.Tabla));
+                }
+                catch (Exception errorSincro)
+                {
+                    SincroDiagnostico.Error(errorSincro, "SaltarIds");
+                }
+            }
+
             transaccion.Commit();
         }
         catch
@@ -820,6 +886,167 @@ public sealed class SincroAlmacen
         }
 
         return resultado;
+    }
+
+
+    // ========================================================
+    // ALTAS SIN CHOCAR ENTRE DISPOSITIVOS
+    //
+    // SQLite da a cada alta el mayor Id que conoce más uno, así que
+    // dos dispositivos que dan de alta sin verse eligen el mismo, y al
+    // sincronizarse la fila más reciente sustituye a la otra, que se
+    // pierde sin aviso.
+    //
+    // Los móviles dejan un hueco antes de su siguiente alta, distinto en
+    // cada uno: lo amplían al arrancar, al recibir cambios y antes de
+    // enviar los suyos, de modo que los demás no lleguen a ese Id por su
+    // cuenta. sqlite_sequence no se sincroniza, así que no se anota como
+    // cambio. El PC sigue numerando como siempre.
+    // ========================================================
+
+    private const long SaltoIdsMinimo =
+        100_000;
+
+    private const long SaltoIdsPaso =
+        100;
+
+    private const uint SaltoIdsVariantes =
+        1_000;
+
+    /// <summary>
+    /// Las apps leen los Id como int: no se salta más allá de este límite.
+    /// </summary>
+    private const long IdsLimite =
+        1_500_000_000;
+
+
+    private static long CalcularSaltoIds(
+        string idDispositivo)
+    {
+        byte[] huella =
+            SHA256.HashData(
+                Encoding.UTF8.GetBytes(
+                    idDispositivo));
+
+        return SaltoIdsMinimo
+               + BitConverter.ToUInt32(huella, 0) % SaltoIdsVariantes
+               * SaltoIdsPaso;
+    }
+
+
+    private void SaltarIds(
+        SqliteConnection conexion,
+        SqliteTransaction? transaccion,
+        IEnumerable<string>? soloTablas = null)
+    {
+        if (_saltoIds == 0)
+        {
+            return;
+        }
+
+        HashSet<string>? filtro =
+            soloTablas is null
+                ? null
+                : new HashSet<string>(
+                    soloTablas,
+                    StringComparer.OrdinalIgnoreCase);
+
+        var tablas =
+            new List<string>();
+
+        using (var cmd =
+               conexion.CreateCommand())
+        {
+            cmd.Transaction =
+                transaccion;
+
+            cmd.CommandText =
+                "SELECT name FROM sqlite_master " +
+                "WHERE type = 'table' AND sql LIKE '%AUTOINCREMENT%' AND name NOT LIKE 'SCCosmos_%';";
+
+            using var lector =
+                cmd.ExecuteReader();
+
+            while (lector.Read())
+            {
+                string tabla =
+                    lector.GetString(0);
+
+                if (filtro is null
+                    || filtro.Contains(tabla))
+                {
+                    tablas.Add(
+                        tabla);
+                }
+            }
+        }
+
+        foreach (string tabla in tablas)
+        {
+            long mayor;
+
+            long? secuencia;
+
+            using (var cmd =
+                   conexion.CreateCommand())
+            {
+                cmd.Transaction =
+                    transaccion;
+
+                cmd.CommandText =
+                    $"""
+                    SELECT COALESCE((SELECT MAX(rowid) FROM "{tabla}"), 0),
+                           (SELECT seq FROM sqlite_sequence WHERE name = $tabla);
+                    """;
+
+                cmd.Parameters.AddWithValue(
+                    "$tabla",
+                    tabla);
+
+                using var lector =
+                    cmd.ExecuteReader();
+
+                lector.Read();
+
+                mayor =
+                    lector.GetInt64(0);
+
+                secuencia =
+                    lector.IsDBNull(1)
+                        ? null
+                        : lector.GetInt64(1);
+            }
+
+            long objetivo =
+                mayor + _saltoIds;
+
+            if (objetivo > IdsLimite
+                || secuencia >= objetivo)
+            {
+                continue;
+            }
+
+            using var escribir =
+                conexion.CreateCommand();
+
+            escribir.Transaction =
+                transaccion;
+
+            escribir.CommandText =
+                secuencia is null
+                    ? "INSERT INTO sqlite_sequence (name, seq) VALUES ($tabla, $seq);"
+                    : "UPDATE sqlite_sequence SET seq = $seq WHERE name = $tabla;";
+
+            escribir.Parameters.AddWithValue(
+                "$tabla",
+                tabla);
+
+            escribir.Parameters.AddWithValue(
+                "$seq",
+                objetivo);
+
+            escribir.ExecuteNonQuery();
+        }
     }
 
 

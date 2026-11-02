@@ -204,15 +204,18 @@ internal static class Program
                 _dbA,
                 configA.IdDispositivo);
 
+        // A hace de PC; B y C, de móviles.
         var almacenB =
             new SincroAlmacen(
                 _dbB,
-                configB.IdDispositivo);
+                configB.IdDispositivo,
+                saltarIds: true);
 
         var almacenC =
             new SincroAlmacen(
                 _dbC,
-                configC.IdDispositivo);
+                configC.IdDispositivo,
+                saltarIds: true);
 
         almacenA.Asegurar();
         almacenB.Asegurar();
@@ -1797,6 +1800,245 @@ internal static class Program
                 return correcto;
             });
 
+        await Probar(
+            "23. Altas sin verse: el PC y un móvil dan de alta a la vez y no se pierde ninguna",
+            async () =>
+            {
+                _servicioC!.Detener();
+
+                await Task.Delay(
+                    1500);
+
+                InsertarDonacion(
+                    _dbA,
+                    "ALTA-T23-PC");
+
+                InsertarDonacion(
+                    _dbC,
+                    "ALTA-T23-MOVIL");
+
+                _servicioC.Iniciar();
+
+                return await EsperarAltasAsync(
+                    "ALTA-T23-%",
+                    2);
+            });
+
+        await Probar(
+            "24. Altas sin verse: dos móviles dan de alta a la vez y no se pierde ninguna",
+            async () =>
+            {
+                _servicioB!.Detener();
+                _servicioC!.Detener();
+
+                await Task.Delay(
+                    1500);
+
+                InsertarDonacion(
+                    _dbB,
+                    "ALTA-T24-MOVIL1");
+
+                InsertarDonacion(
+                    _dbC,
+                    "ALTA-T24-MOVIL2");
+
+                _servicioB.Iniciar();
+                _servicioC.Iniciar();
+
+                return await EsperarAltasAsync(
+                    "ALTA-T24-%",
+                    2);
+            });
+
+        await Probar(
+            "25. Altas sin verse tras sincronizar lo propio y lo ajeno: tampoco se pierde ninguna",
+            async () =>
+            {
+                // El alta del móvil ya ha llegado al PC, que seguiría por el
+                // Id siguiente: el móvil no debe seguir por el mismo.
+                InsertarDonacion(
+                    _dbC,
+                    "ALTA-T25-1");
+
+                bool propia =
+                    await EsperarAltasAsync(
+                        "ALTA-T25-%",
+                        1);
+
+                _servicioC!.Detener();
+
+                await Task.Delay(
+                    1500);
+
+                InsertarDonacion(
+                    _dbA,
+                    "ALTA-T25-2");
+
+                InsertarDonacion(
+                    _dbC,
+                    "ALTA-T25-3");
+
+                _servicioC.Iniciar();
+
+                bool trasPropia =
+                    await EsperarAltasAsync(
+                        "ALTA-T25-%",
+                        3);
+
+                // Lo mismo con un alta que el móvil solo ha recibido.
+                InsertarDonacion(
+                    _dbA,
+                    "ALTA-T25-4");
+
+                bool ajena =
+                    await EsperarAltasAsync(
+                        "ALTA-T25-%",
+                        4);
+
+                _servicioC.Detener();
+
+                await Task.Delay(
+                    1500);
+
+                InsertarDonacion(
+                    _dbA,
+                    "ALTA-T25-5");
+
+                InsertarDonacion(
+                    _dbC,
+                    "ALTA-T25-6");
+
+                _servicioC.Iniciar();
+
+                bool trasAjena =
+                    await EsperarAltasAsync(
+                        "ALTA-T25-%",
+                        6);
+
+                if (!propia
+                    || !trasPropia
+                    || !ajena
+                    || !trasAjena)
+                {
+                    Console.WriteLine(
+                        $"      (propia: {propia}; tras la propia: {trasPropia}; ajena: {ajena}; tras la ajena: {trasAjena})");
+                }
+
+                return propia
+                       && trasPropia
+                       && ajena
+                       && trasAjena;
+            });
+
+        await Probar(
+            "26. Los huecos de Id no se anotan como cambio ni se reescriben, y el PC no los deja",
+            () =>
+            {
+                string dbS =
+                    Path.Combine(
+                        _carpeta,
+                        "S.db");
+
+                CopiarBase(
+                    origen,
+                    dbS);
+
+                const string idDispositivo =
+                    "77777777777777777777777777777777";
+
+                const string secuencias =
+                    "SELECT group_concat(name || '=' || seq, ';') FROM (SELECT name, seq FROM sqlite_sequence ORDER BY name);";
+
+                const string registro =
+                    "SELECT MAX(Seq) || '/' || COUNT(*) FROM SCCosmos_Cambios;";
+
+                new SincroAlmacen(
+                        dbS,
+                        idDispositivo)
+                    .Asegurar();
+
+                string comoPc =
+                    LeerTexto(
+                        dbS,
+                        secuencias);
+
+                string registroAntes =
+                    LeerTexto(
+                        dbS,
+                        registro);
+
+                long mayor =
+                    LeerEntero(
+                        dbS,
+                        "SELECT MAX(Id) FROM Donaciones;");
+
+                var movil =
+                    new SincroAlmacen(
+                        dbS,
+                        idDispositivo,
+                        saltarIds: true);
+
+                movil.Asegurar();
+
+                string comoMovil =
+                    LeerTexto(
+                        dbS,
+                        secuencias);
+
+                movil.Asegurar();
+
+                string otraVez =
+                    LeerTexto(
+                        dbS,
+                        secuencias);
+
+                string registroDespues =
+                    LeerTexto(
+                        dbS,
+                        registro);
+
+                InsertarDonacion(
+                    dbS,
+                    "ALTA-T26-MOVIL");
+
+                long altaMovil =
+                    LeerEntero(
+                        dbS,
+                        "SELECT Id FROM Donaciones WHERE Notas = 'ALTA-T26-MOVIL';");
+
+                // El PC sigue por el siguiente, sin huecos.
+                new SincroAlmacen(
+                        dbS,
+                        idDispositivo)
+                    .Asegurar();
+
+                InsertarDonacion(
+                    dbS,
+                    "ALTA-T26-PC");
+
+                long altaPc =
+                    LeerEntero(
+                        dbS,
+                        "SELECT Id FROM Donaciones WHERE Notas = 'ALTA-T26-PC';");
+
+                bool correcto =
+                    comoPc != comoMovil
+                    && comoMovil == otraVez
+                    && registroAntes == registroDespues
+                    && altaMovil > mayor + 100_000
+                    && altaMovil <= mayor + 200_001
+                    && altaPc == altaMovil + 1;
+
+                if (!correcto)
+                {
+                    Console.WriteLine(
+                        $"      (secuencias cambian: {comoPc != comoMovil}; estables: {comoMovil == otraVez}; registro: {registroAntes} -> {registroDespues}; mayor: {mayor}; alta del móvil: {altaMovil}; alta del PC: {altaPc})");
+                }
+
+                return Task.FromResult(
+                    correcto);
+            });
+
         servicioD.Detener();
         servicioE.Detener();
 
@@ -1843,6 +2085,48 @@ internal static class Program
     // ========================================================
     // UTILIDADES
     // ========================================================
+
+    /// <summary>
+    /// Alta inventada con el Id que reparte SQLite, como las de las apps.
+    /// </summary>
+    private static void InsertarDonacion(
+        string ruta,
+        string notas)
+    {
+        Escribir(
+            ruta,
+            $"INSERT INTO Donaciones (Fecha, NombrePersona, Cantidad, Notas) VALUES ('2030-01-01', 'Persona inventada', 1, '{notas}');");
+    }
+
+    /// <summary>
+    /// Espera a que los tres dispositivos tengan esas altas. Si no, dice cuántas
+    /// tiene cada uno y con qué Id.
+    /// </summary>
+    private static async Task<bool> EsperarAltasAsync(
+        string patron,
+        int cuantas)
+    {
+        string consulta =
+            $"SELECT COUNT(*) FROM Donaciones WHERE Notas LIKE '{patron}';";
+
+        bool correcto =
+            await EsperarAsync(
+                () => LeerEntero(_dbA, consulta) == cuantas
+                      && LeerEntero(_dbB, consulta) == cuantas
+                      && LeerEntero(_dbC, consulta) == cuantas,
+                30);
+
+        if (!correcto)
+        {
+            string detalle =
+                $"SELECT group_concat(Id || '=' || Notas, ' ') FROM Donaciones WHERE Notas LIKE '{patron}';";
+
+            Console.WriteLine(
+                $"      (se esperaban {cuantas}. A: {LeerTexto(_dbA, detalle)} | B: {LeerTexto(_dbB, detalle)} | C: {LeerTexto(_dbC, detalle)})");
+        }
+
+        return correcto;
+    }
 
     private static List<RscAsistenteAGuardar> AsistentesRsc()
     {
