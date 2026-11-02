@@ -1163,6 +1163,145 @@ internal static class Program
                 return distintas == 0;
             });
 
+        await Probar(
+            "16. Red: un documento binario llega como binario y con el mismo contenido",
+            async () =>
+            {
+                long documento =
+                    LeerEntero(
+                        _dbA,
+                        "SELECT Id FROM Documentos ORDER BY Id LIMIT 1;");
+
+                // Con bytes que no son texto válido: ceros incluidos.
+                const string contenido =
+                    "00FF10FE7F80C3280061626300DEADBEEF";
+
+                Escribir(
+                    _dbA,
+                    $"UPDATE Documentos SET ContenidoArchivo = x'{contenido}' WHERE Id = {documento};");
+
+                bool llego =
+                    await EsperarAsync(
+                        () =>
+                            LeerTexto(
+                                _dbB,
+                                $"SELECT hex(ContenidoArchivo) FROM Documentos WHERE Id = {documento};")
+                            == contenido
+                            || LeerTexto(
+                                _dbB,
+                                $"SELECT ContenidoArchivo FROM Documentos WHERE Id = {documento} AND typeof(ContenidoArchivo) = 'text';")
+                            == Convert.ToBase64String(
+                                Convert.FromHexString(
+                                    contenido)));
+
+                string tipo =
+                    LeerTexto(
+                        _dbB,
+                        $"SELECT typeof(ContenidoArchivo) FROM Documentos WHERE Id = {documento};");
+
+                if (!llego
+                    || tipo != "blob")
+                {
+                    Console.WriteLine(
+                        $"      (llegó: {llego}; tipo en B: {tipo})");
+
+                    return false;
+                }
+
+                return true;
+            });
+
+        await Probar(
+            "17. Un documento que quedó como texto se repara al arrancar, sin registrarse como cambio",
+            () =>
+            {
+                string dbH =
+                    Path.Combine(
+                        _carpeta,
+                        "H.db");
+
+                CopiarBase(
+                    origen,
+                    dbH);
+
+                var almacenH =
+                    new SincroAlmacen(
+                        dbH,
+                        "44444444444444444444444444444444");
+
+                almacenH.Asegurar();
+
+                long documento =
+                    LeerEntero(
+                        dbH,
+                        "SELECT Id FROM Documentos ORDER BY Id LIMIT 1;");
+
+                const string contenido =
+                    "00FF10FE7F80C3280061626300DEADBEEF";
+
+                // Como quedaban en los dispositivos: base64 guardado como
+                // texto, sin pasar por el registro de cambios.
+                Escribir(
+                    dbH,
+                    $"INSERT OR IGNORE INTO SCCosmos_Silencio (Id) VALUES (1); "
+                    + $"UPDATE Documentos SET ContenidoArchivo = '{Convert.ToBase64String(Convert.FromHexString(contenido))}' WHERE Id = {documento}; "
+                    + "DELETE FROM SCCosmos_Silencio;");
+
+                // Un texto que no es base64 no se toca.
+                long otro =
+                    LeerEntero(
+                        dbH,
+                        $"SELECT Id FROM Documentos WHERE Id <> {documento} ORDER BY Id LIMIT 1;");
+
+                Escribir(
+                    dbH,
+                    $"INSERT OR IGNORE INTO SCCosmos_Silencio (Id) VALUES (1); "
+                    + $"UPDATE Documentos SET ContenidoArchivo = 'esto no es base64!' WHERE Id = {otro}; "
+                    + "DELETE FROM SCCosmos_Silencio;");
+
+                string registroAntes =
+                    LeerTexto(
+                        dbH,
+                        "SELECT MAX(Seq) || '/' || COUNT(*) FROM SCCosmos_Cambios;");
+
+                almacenH.Asegurar();
+
+                string tipo =
+                    LeerTexto(
+                        dbH,
+                        $"SELECT typeof(ContenidoArchivo) FROM Documentos WHERE Id = {documento};");
+
+                string bytes =
+                    LeerTexto(
+                        dbH,
+                        $"SELECT hex(ContenidoArchivo) FROM Documentos WHERE Id = {documento};");
+
+                string tipoOtro =
+                    LeerTexto(
+                        dbH,
+                        $"SELECT typeof(ContenidoArchivo) FROM Documentos WHERE Id = {otro};");
+
+                string registroDespues =
+                    LeerTexto(
+                        dbH,
+                        "SELECT MAX(Seq) || '/' || COUNT(*) FROM SCCosmos_Cambios;");
+
+                bool correcto =
+                    tipo == "blob"
+                    && bytes == contenido
+                    && tipoOtro == "text"
+                    && registroAntes == registroDespues;
+
+                if (!correcto)
+                {
+                    Console.WriteLine(
+                        $"      (tipo: {tipo}; contenido correcto: {bytes == contenido}; texto no base64: {tipoOtro}; registro: {registroAntes} -> {registroDespues})");
+                }
+
+                return Task.FromResult(
+                    correcto);
+            });
+
         servicioD.Detener();
         servicioE.Detener();
 

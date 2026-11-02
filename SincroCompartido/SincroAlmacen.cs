@@ -245,6 +245,16 @@ public sealed class SincroAlmacen
             transaccion.Commit();
         }
 
+        try
+        {
+            RepararBinarios(
+                conexion);
+        }
+        catch (Exception errorSincro)
+        {
+            SincroDiagnostico.Error(errorSincro, "RepararBinarios");
+        }
+
         // El contador nunca puede quedarse por detrás de lo ya enviado o
         // recibido: si una fusión restaura una copia antigua, los cambios
         // nuevos recibirían números de secuencia viejos y los demás
@@ -1519,7 +1529,7 @@ public sealed class SincroAlmacen
         Dictionary<string, object?> fila)
     {
         // Solo columnas que existen en la tabla local.
-        HashSet<string> columnas =
+        Dictionary<string, string> columnas =
             ColumnasDe(
                 conexion,
                 tabla);
@@ -1539,8 +1549,9 @@ public sealed class SincroAlmacen
         foreach (KeyValuePair<string, object?> campo in
                  fila)
         {
-            if (!columnas.Contains(
-                    campo.Key))
+            if (!columnas.TryGetValue(
+                    campo.Key,
+                    out string? tipo))
             {
                 continue;
             }
@@ -1552,8 +1563,10 @@ public sealed class SincroAlmacen
                 $"$v{indice}");
 
             valores.Add(
-                Normalizar(
-                    campo.Value));
+                RestaurarBinario(
+                    Normalizar(
+                        campo.Value),
+                    tipo));
 
             indice++;
         }
@@ -1646,12 +1659,15 @@ public sealed class SincroAlmacen
     }
 
 
-    private static HashSet<string> ColumnasDe(
+    /// <summary>
+    /// Columnas de una tabla con su tipo declarado.
+    /// </summary>
+    private static Dictionary<string, string> ColumnasDe(
         SqliteConnection conexion,
         string tabla)
     {
         var columnas =
-            new HashSet<string>(
+            new Dictionary<string, string>(
                 StringComparer.OrdinalIgnoreCase);
 
         using var cmd =
@@ -1665,11 +1681,146 @@ public sealed class SincroAlmacen
 
         while (lector.Read())
         {
-            columnas.Add(
-                lector.GetString(1));
+            columnas[lector.GetString(1)] =
+                lector.IsDBNull(2)
+                    ? ""
+                    : lector.GetString(2);
         }
 
         return columnas;
+    }
+
+
+    /// <summary>
+    /// Los binarios viajan en base64 (SincroMensajes): en las columnas BLOB se
+    /// devuelven a binario. Un texto que no sea base64 se deja como llegó.
+    /// </summary>
+    private static object? RestaurarBinario(
+        object? valor,
+        string tipoColumna)
+    {
+        return valor is string texto
+               && EsTipoBinario(tipoColumna)
+               && DesdeBase64(texto) is byte[] bytes
+            ? bytes
+            : valor;
+    }
+
+
+    private static bool EsTipoBinario(
+        string tipoColumna)
+    {
+        return string.Equals(
+            tipoColumna,
+            "BLOB",
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+
+    private static byte[]? DesdeBase64(
+        string texto)
+    {
+        var bytes =
+            new byte[(texto.Length / 4 + 1) * 3];
+
+        return Convert.TryFromBase64String(
+            texto,
+            bytes,
+            out int escritos)
+            ? bytes[..escritos]
+            : null;
+    }
+
+
+    /// <summary>
+    /// Los binarios recibidos antes de RestaurarBinario quedaron como texto
+    /// base64 en las columnas BLOB: se corrigen sin anotarlos como cambios,
+    /// porque el contenido es el mismo y no hay nada que reenviar.
+    /// </summary>
+    private static void RepararBinarios(
+        SqliteConnection conexion)
+    {
+        foreach ((string tabla, string _) in
+                 TablasConClave(
+                     conexion))
+        {
+            foreach ((string columna, string tipo) in
+                     ColumnasDe(
+                         conexion,
+                         tabla))
+            {
+                if (!EsTipoBinario(
+                        tipo))
+                {
+                    continue;
+                }
+
+                var reparar =
+                    new List<(long Fila, byte[] Bytes)>();
+
+                using (var cmd =
+                       conexion.CreateCommand())
+                {
+                    cmd.CommandText =
+                        $"SELECT rowid, \"{columna}\" FROM \"{tabla}\" WHERE typeof(\"{columna}\") = 'text';";
+
+                    using var lector =
+                        cmd.ExecuteReader();
+
+                    while (lector.Read())
+                    {
+                        if (DesdeBase64(
+                                lector.GetString(1)) is byte[] bytes)
+                        {
+                            reparar.Add(
+                                (lector.GetInt64(0), bytes));
+                        }
+                    }
+                }
+
+                if (reparar.Count == 0)
+                {
+                    continue;
+                }
+
+                using var transaccion =
+                    conexion.BeginTransaction();
+
+                Ejecutar(
+                    conexion,
+                    $"INSERT OR IGNORE INTO {TablaSilencio} (Id) VALUES (1);",
+                    transaccion);
+
+                foreach ((long fila, byte[] bytes) in reparar)
+                {
+                    using var cmd =
+                        conexion.CreateCommand();
+
+                    cmd.Transaction =
+                        transaccion;
+
+                    cmd.CommandText =
+                        $"UPDATE \"{tabla}\" SET \"{columna}\" = $bytes WHERE rowid = $fila;";
+
+                    cmd.Parameters.AddWithValue(
+                        "$bytes",
+                        bytes);
+
+                    cmd.Parameters.AddWithValue(
+                        "$fila",
+                        fila);
+
+                    cmd.ExecuteNonQuery();
+                }
+
+                Ejecutar(
+                    conexion,
+                    $"DELETE FROM {TablaSilencio};",
+                    transaccion);
+
+                transaccion.Commit();
+            }
+        }
     }
 
 
