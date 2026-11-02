@@ -119,10 +119,15 @@ public static partial class DatabaseHelper
         using var cmd =
             connection.CreateCommand();
 
+        // Si el valor no cambia no se escribe, y así no viaja a los demás
+        // dispositivos como un cambio.
         cmd.CommandText = @"
-            INSERT OR REPLACE INTO Configuracion
+            INSERT INTO Configuracion
             (Clave, Valor)
-            VALUES ($clave, $valor);";
+            VALUES ($clave, $valor)
+            ON CONFLICT(Clave) DO UPDATE
+            SET Valor = excluded.Valor
+            WHERE Valor IS NOT excluded.Valor;";
 
         cmd.Parameters.AddWithValue(
             "$clave",
