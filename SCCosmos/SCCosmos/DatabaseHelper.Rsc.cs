@@ -367,7 +367,11 @@ namespace SCCosmos
                             Fecha = $fecha,
                             Turno = $turno,
                             Notas = $notas
-                        WHERE Id = $id;";
+                        WHERE Id = $id
+                          AND (CongregacionCodigo IS NOT $codigo
+                               OR Fecha IS NOT $fecha
+                               OR Turno IS NOT $turno
+                               OR Notas IS NOT $notas);";
 
                     actualizar.Parameters.AddWithValue(
                         "$codigo", reunion.CongregacionCodigo ?? "");
@@ -520,75 +524,27 @@ namespace SCCosmos
 
         private static void GuardarAsistentesRsc(
             SqliteConnection connection,
+            SqliteTransaction transaccion,
             string reunionId,
             IEnumerable<RscPersona> personas)
         {
-            var borrar = connection.CreateCommand();
-
-            borrar.CommandText =
-                "DELETE FROM RSC_Asistentes WHERE RscReunionId = $id;";
-
-            borrar.Parameters.AddWithValue("$id", reunionId);
-
-            borrar.ExecuteNonQuery();
-
-            foreach (var persona in
-                     personas ?? Enumerable.Empty<RscPersona>())
-            {
-                if (persona == null)
-                {
-                    continue;
-                }
-
-                var cmd = connection.CreateCommand();
-
-                cmd.CommandText = @"
-                    INSERT INTO RSC_Asistentes
-                        (Id, RscReunionId, PersonaId, Nombre,
-                         Asiste, SaleAPredicar, AceptaGrupo,
-                         ArregloConPersonaIds, Sexo, Notas)
-                    VALUES
-                        ($id, $reunion, $persona, $nombre,
-                         $asiste, $sale, $acepta,
-                         $arreglos, $sexo, $notas);";
-
-                cmd.Parameters.AddWithValue(
-                    "$id",
-                    Guid.NewGuid().ToString("N"));
-
-                cmd.Parameters.AddWithValue("$reunion", reunionId);
-                cmd.Parameters.AddWithValue("$persona", persona.PersonaId);
-
-                cmd.Parameters.AddWithValue(
-                    "$nombre",
-                    persona.Nombre ?? "");
-
-                cmd.Parameters.AddWithValue(
-                    "$asiste",
-                    persona.Asiste ? 1 : 0);
-
-                cmd.Parameters.AddWithValue(
-                    "$sale",
-                    persona.SaleAPredicar ? 1 : 0);
-
-                cmd.Parameters.AddWithValue(
-                    "$acepta",
-                    persona.AceptaGrupo ? 1 : 0);
-
-                cmd.Parameters.AddWithValue(
-                    "$arreglos",
-                    SerializarIdsRsc(persona.ArregloConPersonaIds));
-
-                cmd.Parameters.AddWithValue(
-                    "$sexo",
-                    persona.Sexo ?? "");
-
-                cmd.Parameters.AddWithValue(
-                    "$notas",
-                    persona.Notas ?? "");
-
-                cmd.ExecuteNonQuery();
-            }
+            SCCosmos.Sincro.RscGuardado.GuardarAsistentes(
+                connection,
+                transaccion,
+                reunionId,
+                (personas ?? Enumerable.Empty<RscPersona>())
+                    .Where(p => p != null)
+                    .Select(p => new SCCosmos.Sincro.RscAsistenteAGuardar
+                    {
+                        PersonaId = p.PersonaId,
+                        Nombre = p.Nombre,
+                        Asiste = p.Asiste,
+                        SaleAPredicar = p.SaleAPredicar,
+                        AceptaGrupo = p.AceptaGrupo,
+                        ArregloConPersonaIds = SerializarIdsRsc(p.ArregloConPersonaIds),
+                        Sexo = p.Sexo,
+                        Notas = p.Notas
+                    }));
         }
 
 
@@ -708,116 +664,30 @@ namespace SCCosmos
 
         private static void GuardarGruposRsc(
             SqliteConnection connection,
+            SqliteTransaction transaccion,
             string reunionId,
             IEnumerable<RscGrupo> grupos)
         {
-            foreach (string sql in new[]
-                     {
-                         "DELETE FROM RSC_Miembros WHERE RscReunionId = $id;",
-                         "DELETE FROM RSC_Grupos WHERE RscReunionId = $id;"
-                     })
-            {
-                var borrar = connection.CreateCommand();
-
-                borrar.CommandText = sql;
-                borrar.Parameters.AddWithValue("$id", reunionId);
-
-                borrar.ExecuteNonQuery();
-            }
-
-            int ordenGrupo = 0;
-
-            foreach (var grupo in
-                     grupos ?? Enumerable.Empty<RscGrupo>())
-            {
-                if (grupo == null || grupo.Miembros.Count == 0)
-                {
-                    continue;
-                }
-
-                string grupoId = Guid.NewGuid().ToString("N");
-
-                var insertarGrupo = connection.CreateCommand();
-
-                insertarGrupo.CommandText = @"
-                    INSERT INTO RSC_Grupos
-                        (Id, RscReunionId, Numero, Notas,
-                         Territorio, Orden)
-                    VALUES
-                        ($id, $reunion, $numero, $notas,
-                         $territorio, $orden);";
-
-                insertarGrupo.Parameters.AddWithValue("$id", grupoId);
-                insertarGrupo.Parameters.AddWithValue("$reunion", reunionId);
-
-                insertarGrupo.Parameters.AddWithValue(
-                    "$numero",
-                    grupo.Numero);
-
-                insertarGrupo.Parameters.AddWithValue(
-                    "$notas",
-                    grupo.Notas ?? "");
-
-                insertarGrupo.Parameters.AddWithValue(
-                    "$territorio",
-                    grupo.Territorio ?? "");
-
-                insertarGrupo.Parameters.AddWithValue(
-                    "$orden",
-                    ordenGrupo);
-
-                insertarGrupo.ExecuteNonQuery();
-
-                ordenGrupo++;
-
-                int ordenMiembro = 0;
-
-                foreach (var miembro in grupo.Miembros)
-                {
-                    if (miembro == null)
+            SCCosmos.Sincro.RscGuardado.GuardarGrupos(
+                connection,
+                transaccion,
+                reunionId,
+                (grupos ?? Enumerable.Empty<RscGrupo>())
+                    .Where(g => g != null)
+                    .Select(g => new SCCosmos.Sincro.RscGrupoAGuardar
                     {
-                        continue;
-                    }
-
-                    var insertarMiembro = connection.CreateCommand();
-
-                    insertarMiembro.CommandText = @"
-                        INSERT INTO RSC_Miembros
-                            (Id, RscGrupoId, RscReunionId, PersonaId,
-                             Nombre, Orden)
-                        VALUES
-                            ($id, $grupo, $reunion, $persona,
-                             $nombre, $orden);";
-
-                    insertarMiembro.Parameters.AddWithValue(
-                        "$id",
-                        Guid.NewGuid().ToString("N"));
-
-                    insertarMiembro.Parameters.AddWithValue(
-                        "$grupo",
-                        grupoId);
-
-                    insertarMiembro.Parameters.AddWithValue(
-                        "$reunion",
-                        reunionId);
-
-                    insertarMiembro.Parameters.AddWithValue(
-                        "$persona",
-                        miembro.PersonaId);
-
-                    insertarMiembro.Parameters.AddWithValue(
-                        "$nombre",
-                        miembro.Nombre ?? "");
-
-                    insertarMiembro.Parameters.AddWithValue(
-                        "$orden",
-                        ordenMiembro);
-
-                    insertarMiembro.ExecuteNonQuery();
-
-                    ordenMiembro++;
-                }
-            }
+                        Numero = g.Numero,
+                        Notas = g.Notas,
+                        Territorio = g.Territorio,
+                        Miembros = g.Miembros
+                            .Where(m => m != null)
+                            .Select(m => new SCCosmos.Sincro.RscMiembroAGuardar
+                            {
+                                PersonaId = m.PersonaId,
+                                Nombre = m.Nombre
+                            })
+                            .ToList()
+                    }));
         }
 
 
@@ -855,11 +725,13 @@ namespace SCCosmos
 
                 GuardarAsistentesRsc(
                     connection,
+                    transaccion,
                     reunionId,
                     personas);
 
                 GuardarGruposRsc(
                     connection,
+                    transaccion,
                     reunionId,
                     grupos);
 

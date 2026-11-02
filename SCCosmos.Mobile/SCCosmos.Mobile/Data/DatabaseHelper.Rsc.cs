@@ -1290,139 +1290,28 @@ public static partial class DatabaseHelper
         using var transaccion =
             connection.BeginTransaction();
 
-        foreach (string sql in new[]
-                 {
-                     "DELETE FROM RSC_Miembros WHERE RscReunionId = $id;",
-                     "DELETE FROM RSC_Grupos WHERE RscReunionId = $id;"
-                 })
-        {
-            using var borrar =
-                connection.CreateCommand();
-
-            borrar.Transaction =
-                transaccion;
-
-            borrar.CommandText =
-                sql;
-
-            borrar.Parameters.AddWithValue(
-                "$id",
-                reunionId);
-
-            borrar.ExecuteNonQuery();
-        }
-
-        int ordenGrupo = 0;
-
-        foreach (var grupo in
-                 grupos ?? Enumerable.Empty<RscGrupoMobile>())
-        {
-            if (grupo == null
-                || grupo.Miembros.Count == 0)
-            {
-                continue;
-            }
-
-            string grupoId =
-                Guid.NewGuid()
-                    .ToString("N");
-
-            using (var insertar =
-                   connection.CreateCommand())
-            {
-                insertar.Transaction =
-                    transaccion;
-
-                insertar.CommandText = @"
-                    INSERT INTO RSC_Grupos
-                        (Id, RscReunionId, Numero, Notas,
-                         Territorio, Orden)
-                    VALUES
-                        ($id, $reunion, $numero, $notas,
-                         $territorio, $orden);";
-
-                insertar.Parameters.AddWithValue(
-                    "$id",
-                    grupoId);
-
-                insertar.Parameters.AddWithValue(
-                    "$reunion",
-                    reunionId);
-
-                insertar.Parameters.AddWithValue(
-                    "$numero",
-                    grupo.Numero);
-
-                insertar.Parameters.AddWithValue(
-                    "$notas",
-                    grupo.Notas ?? "");
-
-                insertar.Parameters.AddWithValue(
-                    "$territorio",
-                    grupo.Territorio ?? "");
-
-                insertar.Parameters.AddWithValue(
-                    "$orden",
-                    ordenGrupo);
-
-                insertar.ExecuteNonQuery();
-            }
-
-            ordenGrupo++;
-
-            int ordenMiembro = 0;
-
-            foreach (var miembro in grupo.Miembros)
-            {
-                if (miembro == null)
-                {
-                    continue;
-                }
-
-                using var insertar =
-                    connection.CreateCommand();
-
-                insertar.Transaction =
-                    transaccion;
-
-                insertar.CommandText = @"
-                    INSERT INTO RSC_Miembros
-                        (Id, RscGrupoId, RscReunionId, PersonaId,
-                         Nombre, Orden)
-                    VALUES
-                        ($id, $grupo, $reunion, $persona,
-                         $nombre, $orden);";
-
-                insertar.Parameters.AddWithValue(
-                    "$id",
-                    Guid.NewGuid()
-                        .ToString("N"));
-
-                insertar.Parameters.AddWithValue(
-                    "$grupo",
-                    grupoId);
-
-                insertar.Parameters.AddWithValue(
-                    "$reunion",
-                    reunionId);
-
-                insertar.Parameters.AddWithValue(
-                    "$persona",
-                    miembro.PersonaId);
-
-                insertar.Parameters.AddWithValue(
-                    "$nombre",
-                    miembro.Nombre ?? "");
-
-                insertar.Parameters.AddWithValue(
-                    "$orden",
-                    ordenMiembro);
-
-                insertar.ExecuteNonQuery();
-
-                ordenMiembro++;
-            }
-        }
+        global::SCCosmos.Sincro.RscGuardado.GuardarGrupos(
+            connection,
+            transaccion,
+            reunionId,
+            (grupos ?? Enumerable.Empty<RscGrupoMobile>())
+                .Where(g => g != null)
+                .Select(
+                    g => new global::SCCosmos.Sincro.RscGrupoAGuardar
+                    {
+                        Numero = g.Numero,
+                        Notas = g.Notas,
+                        Territorio = g.Territorio,
+                        Miembros = g.Miembros
+                            .Where(m => m != null)
+                            .Select(
+                                m => new global::SCCosmos.Sincro.RscMiembroAGuardar
+                                {
+                                    PersonaId = m.PersonaId,
+                                    Nombre = m.Nombre
+                                })
+                            .ToList()
+                    }));
 
         transaccion.Commit();
     }

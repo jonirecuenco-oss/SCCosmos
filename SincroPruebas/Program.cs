@@ -1517,6 +1517,286 @@ internal static class Program
                     correcto);
             });
 
+        // Datos inventados: personas y reuniones que no existen.
+        const string reunionRsc =
+            "ZZZPRUEBARSC";
+
+        string dbR =
+            Path.Combine(
+                _carpeta,
+                "R.db");
+
+        await Probar(
+            "20. RSC: guardar lo mismo no genera cambios y cada registro conserva su Id",
+            () =>
+            {
+                CopiarBase(
+                    origen,
+                    dbR);
+
+                new SincroAlmacen(
+                        dbR,
+                        "66666666666666666666666666666666")
+                    .Asegurar();
+
+                GuardarRsc(
+                    dbR,
+                    reunionRsc,
+                    AsistentesRsc(),
+                    GruposRsc());
+
+                string filasAntes =
+                    LeerTexto(
+                        dbR,
+                        ConsultaFilasRsc(reunionRsc));
+
+                long seqAntes =
+                    LeerEntero(
+                        dbR,
+                        "SELECT MAX(Seq) FROM SCCosmos_Cambios;");
+
+                GuardarRsc(
+                    dbR,
+                    reunionRsc,
+                    AsistentesRsc(),
+                    GruposRsc());
+
+                long seqDespues =
+                    LeerEntero(
+                        dbR,
+                        "SELECT MAX(Seq) FROM SCCosmos_Cambios;");
+
+                bool correcto =
+                    filasAntes.Length > 0
+                    && filasAntes
+                    == LeerTexto(
+                        dbR,
+                        ConsultaFilasRsc(reunionRsc))
+                    && seqAntes == seqDespues;
+
+                if (!correcto)
+                {
+                    Console.WriteLine(
+                        $"      (cambios al guardar lo mismo: {seqDespues - seqAntes})");
+                }
+
+                return Task.FromResult(
+                    correcto);
+            });
+
+        await Probar(
+            "21. RSC: mover, quitar y añadir personas escribe solo lo necesario, sin dejar restos",
+            () =>
+            {
+                string IdDe(string tabla, string condicion) =>
+                    LeerTexto(
+                        dbR,
+                        $"SELECT Id FROM {tabla} WHERE RscReunionId = '{reunionRsc}' AND {condicion};");
+
+                string miembroLuis =
+                    IdDe("RSC_Miembros", "PersonaId = 900002");
+
+                string grupoUno =
+                    IdDe("RSC_Grupos", "Numero = 1");
+
+                string grupoDos =
+                    IdDe("RSC_Grupos", "Numero = 2");
+
+                string asistenteAna =
+                    IdDe("RSC_Asistentes", "PersonaId = 900001");
+
+                long seqAntes =
+                    LeerEntero(
+                        dbR,
+                        "SELECT MAX(Seq) FROM SCCosmos_Cambios;");
+
+                // Luis pasa al grupo 2 detrás de Mara, Pepe se va, llega Noa
+                // en un grupo nuevo y cambian las notas de Ana.
+                List<RscAsistenteAGuardar> asistentes =
+                    AsistentesRsc();
+
+                asistentes.RemoveAll(
+                    a => a.PersonaId == 900004);
+
+                asistentes[0].Notas =
+                    "Nota nueva";
+
+                asistentes.Add(
+                    new RscAsistenteAGuardar
+                    {
+                        PersonaId = 900005,
+                        Nombre = "Noa Inventada",
+                        Asiste = true,
+                        AceptaGrupo = true
+                    });
+
+                var grupos =
+                    new List<RscGrupoAGuardar>
+                    {
+                        GrupoRsc(1, "T-1", (900001, "Ana Inventada")),
+                        GrupoRsc(2, "T-2", (900003, "Mara Inventada"), (900002, "Luis Inventado")),
+                        GrupoRsc(3, "", (900005, "Noa Inventada")),
+                        GrupoRsc(4, "T-4")
+                    };
+
+                GuardarRsc(
+                    dbR,
+                    reunionRsc,
+                    asistentes,
+                    grupos);
+
+                long escrituras =
+                    LeerEntero(
+                        dbR,
+                        "SELECT MAX(Seq) FROM SCCosmos_Cambios;")
+                    - seqAntes;
+
+                string resultado =
+                    LeerTexto(
+                        dbR,
+                        ConsultaGruposRsc(reunionRsc));
+
+                const string esperado =
+                    "1[T-1]900001#0;2[T-2]900003#0;2[T-2]900002#1;3[]900005#0";
+
+                string asistentesFinales =
+                    LeerTexto(
+                        dbR,
+                        $"SELECT group_concat(PersonaId) FROM (SELECT PersonaId FROM RSC_Asistentes WHERE RscReunionId = '{reunionRsc}' ORDER BY PersonaId);");
+
+                bool idsConservados =
+                    IdDe("RSC_Miembros", "PersonaId = 900002") == miembroLuis
+                    && IdDe("RSC_Grupos", "Numero = 1") == grupoUno
+                    && IdDe("RSC_Grupos", "Numero = 2") == grupoDos
+                    && IdDe("RSC_Asistentes", "PersonaId = 900001") == asistenteAna;
+
+                // Asistentes: notas de Ana, Noa y Pepe. Grupos: el 3. Miembros:
+                // Luis, Noa y Pepe.
+                bool primeraParte =
+                    resultado == esperado
+                    && asistentesFinales == "900001,900002,900003,900005"
+                    && idsConservados
+                    && escrituras == 7;
+
+                // Se quita el grupo 3 con su miembro: no queda ningún resto.
+                grupos.RemoveAt(
+                    2);
+
+                asistentes.RemoveAll(
+                    a => a.PersonaId == 900005);
+
+                GuardarRsc(
+                    dbR,
+                    reunionRsc,
+                    asistentes,
+                    grupos);
+
+                string trasQuitar =
+                    LeerTexto(
+                        dbR,
+                        ConsultaGruposRsc(reunionRsc));
+
+                long grupos2 =
+                    LeerEntero(
+                        dbR,
+                        $"SELECT COUNT(*) FROM RSC_Grupos WHERE RscReunionId = '{reunionRsc}';");
+
+                long huerfanos =
+                    LeerEntero(
+                        dbR,
+                        $"SELECT COUNT(*) FROM RSC_Miembros WHERE RscReunionId = '{reunionRsc}' AND RscGrupoId NOT IN (SELECT Id FROM RSC_Grupos);");
+
+                bool correcto =
+                    primeraParte
+                    && trasQuitar == "1[T-1]900001#0;2[T-2]900003#0;2[T-2]900002#1"
+                    && grupos2 == 2
+                    && huerfanos == 0;
+
+                if (!correcto)
+                {
+                    Console.WriteLine(
+                        $"      (resultado: {resultado}; asistentes: {asistentesFinales}; Id conservados: {idsConservados}; escrituras: {escrituras}; tras quitar: {trasQuitar}; grupos: {grupos2}; huérfanos: {huerfanos})");
+                }
+
+                return Task.FromResult(
+                    correcto);
+            });
+
+        await Probar(
+            "22. Red: dos dispositivos que guardan a la vez la misma RSC no duplican a nadie",
+            async () =>
+            {
+                string Contar(string db) =>
+                    LeerTexto(
+                        db,
+                        $"SELECT (SELECT COUNT(*) FROM RSC_Asistentes WHERE RscReunionId = '{reunionRsc}') || '/' || (SELECT COUNT(*) FROM RSC_Grupos WHERE RscReunionId = '{reunionRsc}') || '/' || (SELECT COUNT(*) FROM RSC_Miembros WHERE RscReunionId = '{reunionRsc}');");
+
+                GuardarRsc(
+                    _dbA,
+                    reunionRsc,
+                    AsistentesRsc(),
+                    GruposRsc());
+
+                bool llego =
+                    await EsperarAsync(
+                        () => Contar(_dbB) == "4/2/4",
+                        30);
+
+                // Cada uno cambia algo distinto en el mismo momento.
+                List<RscGrupoAGuardar> gruposA =
+                    GruposRsc();
+
+                gruposA[0].Territorio =
+                    "Desde A";
+
+                List<RscGrupoAGuardar> gruposB =
+                    GruposRsc();
+
+                gruposB[1].Territorio =
+                    "Desde B";
+
+                await Task.WhenAll(
+                    Task.Run(
+                        () => GuardarRsc(
+                            _dbA,
+                            reunionRsc,
+                            AsistentesRsc(),
+                            gruposA)),
+                    Task.Run(
+                        () => GuardarRsc(
+                            _dbB,
+                            reunionRsc,
+                            AsistentesRsc(),
+                            gruposB)));
+
+                bool iguales =
+                    await EsperarAsync(
+                        () => FilasDistintas(_dbA, _dbB, "RSC_Asistentes") == 0
+                              && FilasDistintas(_dbA, _dbB, "RSC_Grupos") == 0
+                              && FilasDistintas(_dbA, _dbB, "RSC_Miembros") == 0,
+                        30);
+
+                string enA =
+                    Contar(_dbA);
+
+                string enB =
+                    Contar(_dbB);
+
+                bool correcto =
+                    llego
+                    && iguales
+                    && enA == "4/2/4"
+                    && enB == "4/2/4";
+
+                if (!correcto)
+                {
+                    Console.WriteLine(
+                        $"      (llegó: {llego}; iguales: {iguales}; asistentes/grupos/miembros en A: {enA}, en B: {enB})");
+                }
+
+                return correcto;
+            });
+
         servicioD.Detener();
         servicioE.Detener();
 
@@ -1563,6 +1843,109 @@ internal static class Program
     // ========================================================
     // UTILIDADES
     // ========================================================
+
+    private static List<RscAsistenteAGuardar> AsistentesRsc()
+    {
+        static RscAsistenteAGuardar Asistente(int persona, string nombre, string arreglos, string sexo) =>
+            new()
+            {
+                PersonaId = persona,
+                Nombre = nombre,
+                Asiste = true,
+                SaleAPredicar = true,
+                AceptaGrupo = true,
+                ArregloConPersonaIds = arreglos,
+                Sexo = sexo
+            };
+
+        return new List<RscAsistenteAGuardar>
+        {
+            Asistente(900001, "Ana Inventada", "900002", "M"),
+            Asistente(900002, "Luis Inventado", "", "H"),
+            Asistente(900003, "Mara Inventada", "", "M"),
+            Asistente(900004, "Pepe Inventado", "", "H")
+        };
+    }
+
+    private static List<RscGrupoAGuardar> GruposRsc()
+    {
+        return new List<RscGrupoAGuardar>
+        {
+            GrupoRsc(1, "T-1", (900001, "Ana Inventada"), (900002, "Luis Inventado")),
+            GrupoRsc(2, "T-2", (900003, "Mara Inventada"), (900004, "Pepe Inventado"))
+        };
+    }
+
+    private static RscGrupoAGuardar GrupoRsc(
+        int numero,
+        string territorio,
+        params (int Persona, string Nombre)[] miembros)
+    {
+        return new RscGrupoAGuardar
+        {
+            Numero = numero,
+            Territorio = territorio,
+            Miembros = miembros
+                .Select(
+                    m => new RscMiembroAGuardar
+                    {
+                        PersonaId = m.Persona,
+                        Nombre = m.Nombre
+                    })
+                .ToList()
+        };
+    }
+
+    private static void GuardarRsc(
+        string ruta,
+        string reunion,
+        List<RscAsistenteAGuardar> asistentes,
+        List<RscGrupoAGuardar> grupos)
+    {
+        using var conexion =
+            Abrir(
+                ruta);
+
+        using var transaccion =
+            conexion.BeginTransaction();
+
+        RscGuardado.GuardarAsistentes(
+            conexion,
+            transaccion,
+            reunion,
+            asistentes);
+
+        RscGuardado.GuardarGrupos(
+            conexion,
+            transaccion,
+            reunion,
+            grupos);
+
+        transaccion.Commit();
+    }
+
+    private static string ConsultaFilasRsc(
+        string reunion)
+    {
+        return $"""
+            SELECT (SELECT group_concat(v, ';') FROM (SELECT Id || ':' || PersonaId || ':' || Nombre || ':' || Asiste || ':' || SaleAPredicar || ':' || AceptaGrupo || ':' || ArregloConPersonaIds || ':' || Sexo || ':' || Notas AS v FROM RSC_Asistentes WHERE RscReunionId = '{reunion}' ORDER BY Id))
+                || '|' || (SELECT group_concat(v, ';') FROM (SELECT Id || ':' || Numero || ':' || Notas || ':' || Territorio || ':' || Orden AS v FROM RSC_Grupos WHERE RscReunionId = '{reunion}' ORDER BY Id))
+                || '|' || (SELECT group_concat(v, ';') FROM (SELECT Id || ':' || RscGrupoId || ':' || PersonaId || ':' || Nombre || ':' || Orden AS v FROM RSC_Miembros WHERE RscReunionId = '{reunion}' ORDER BY Id));
+            """;
+    }
+
+    private static string ConsultaGruposRsc(
+        string reunion)
+    {
+        return $"""
+            SELECT group_concat(v, ';') FROM (
+                SELECT g.Numero || '[' || g.Territorio || ']' || m.PersonaId || '#' || m.Orden AS v
+                FROM RSC_Miembros m
+                JOIN RSC_Grupos g ON g.Id = m.RscGrupoId
+                WHERE m.RscReunionId = '{reunion}'
+                ORDER BY g.Orden, m.Orden);
+            """;
+    }
 
     private static Dictionary<long, string> LeerVinculos(
         string ruta,
