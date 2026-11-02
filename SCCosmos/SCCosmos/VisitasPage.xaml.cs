@@ -5284,6 +5284,10 @@ namespace SCCosmos
             else if (cacheFuzzy.ContainsKey(asig.AsignadoA))
             {
                 celda.NombreS21 = cacheFuzzy[asig.AsignadoA];
+
+                GuardarVinculoAutomatico(
+                    asig,
+                    celda.NombreS21);
             }
             else
             {
@@ -5333,8 +5337,9 @@ namespace SCCosmos
                 {
                     celda.NombreS21 = mejorMatch;
                     cacheFuzzy[asig.AsignadoA] = mejorMatch;
-                    DatabaseHelper.ActualizarVinculacionTerritorio(
-                        asig.Id,
+
+                    GuardarVinculoAutomatico(
+                        asig,
                         mejorMatch);
                 }
                 else
@@ -5344,6 +5349,27 @@ namespace SCCosmos
             }
 
             return celda;
+        }
+
+        /// <summary>
+        /// Guarda el vínculo calculado solo si el registro no tiene ninguno.
+        /// Antes podía sustituir uno puesto a mano cuando esa persona no estaba
+        /// en la lista del mes que se miraba, y las demás filas de un mismo
+        /// nombre se mostraban sin guardarse (y no contaban como devueltos).
+        /// </summary>
+        private static void GuardarVinculoAutomatico(
+            TerritorioJSON asig,
+            string nombreS21)
+        {
+            if (string.IsNullOrWhiteSpace(nombreS21)
+                || !string.IsNullOrWhiteSpace(asig.NombreVinculado))
+            {
+                return;
+            }
+
+            DatabaseHelper.ActualizarVinculacionTerritorio(
+                asig.Id,
+                nombreS21);
         }
 
         private DateTime? ParsearFecha(string fechaStr)

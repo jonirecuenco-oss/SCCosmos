@@ -654,95 +654,19 @@ public static partial class DatabaseHelper
         string congregacionCodigo,
         List<TerritorioJsonMobile> territorios)
     {
-        var existentes = new Dictionary<
-            string,
-            (string Vinculo, string FechaCreacion)>(
-                StringComparer.OrdinalIgnoreCase);
-
-        using (SqliteCommand cmdExistentes = connection.CreateCommand())
-        {
-            cmdExistentes.Transaction = tx;
-            cmdExistentes.CommandText =
-                """
-                SELECT Nombre, NombreVinculado, FechaCreacion
-                FROM TerritoriosVisitaV3
-                WHERE CongregacionCodigo = $codigo;
-                """;
-            cmdExistentes.Parameters.AddWithValue("$codigo", congregacionCodigo);
-
-            using SqliteDataReader reader = cmdExistentes.ExecuteReader();
-            while (reader.Read())
-            {
-                string nombre = reader.IsDBNull(0) ? "" : reader.GetString(0);
-                if (string.IsNullOrWhiteSpace(nombre))
-                    continue;
-
-                existentes[nombre] =
-                (
-                    reader.IsDBNull(1) ? "" : reader.GetString(1),
-                    reader.IsDBNull(2) ? "" : reader.GetString(2)
-                );
-            }
-        }
-
-        using (SqliteCommand cmdDelete = connection.CreateCommand())
-        {
-            cmdDelete.Transaction = tx;
-            cmdDelete.CommandText =
-                "DELETE FROM TerritoriosVisitaV3 WHERE CongregacionCodigo = $codigo;";
-            cmdDelete.Parameters.AddWithValue("$codigo", congregacionCodigo);
-            cmdDelete.ExecuteNonQuery();
-        }
-
-        foreach (TerritorioJsonMobile territorio in territorios)
-        {
-            string nombre = territorio.Nombre ?? "";
-            existentes.TryGetValue(nombre, out var anterior);
-
-            string fechaCreacion = string.IsNullOrWhiteSpace(anterior.FechaCreacion)
-                ? DateTime.Today.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)
-                : anterior.FechaCreacion;
-
-            using SqliteCommand cmdInsert = connection.CreateCommand();
-            cmdInsert.Transaction = tx;
-            cmdInsert.CommandText =
-                """
-                INSERT INTO TerritoriosVisitaV3
-                (
-                    CongregacionCodigo,
-                    Nombre,
-                    UltimaFechaCompletado,
-                    AsignadoA,
-                    FechaAsignado,
-                    FechaCompletado,
-                    NombreVinculado,
-                    FechaCreacion,
-                    FechaEliminacion
-                )
-                VALUES
-                (
-                    $codigo,
-                    $nombre,
-                    $ultima,
-                    $asignado,
-                    $fechaAsig,
-                    $fechaComp,
-                    $vinculo,
-                    $creacion,
-                    ''
-                );
-                """;
-
-            cmdInsert.Parameters.AddWithValue("$codigo", congregacionCodigo);
-            cmdInsert.Parameters.AddWithValue("$nombre", nombre);
-            cmdInsert.Parameters.AddWithValue("$ultima", territorio.UltimaFechaCompletado ?? "");
-            cmdInsert.Parameters.AddWithValue("$asignado", territorio.AsignadoA ?? "");
-            cmdInsert.Parameters.AddWithValue("$fechaAsig", territorio.FechaAsignado ?? "");
-            cmdInsert.Parameters.AddWithValue("$fechaComp", territorio.FechaCompletado ?? "");
-            cmdInsert.Parameters.AddWithValue("$vinculo", anterior.Vinculo ?? "");
-            cmdInsert.Parameters.AddWithValue("$creacion", fechaCreacion);
-            cmdInsert.ExecuteNonQuery();
-        }
+        global::SCCosmos.Sincro.TerritoriosImportados.Guardar(
+            connection,
+            tx,
+            congregacionCodigo,
+            territorios.Select(
+                t => new global::SCCosmos.Sincro.TerritorioImportado
+                {
+                    Nombre = t.Nombre,
+                    UltimaFechaCompletado = t.UltimaFechaCompletado,
+                    AsignadoA = t.AsignadoA,
+                    FechaAsignado = t.FechaAsignado,
+                    FechaCompletado = t.FechaCompletado
+                }));
     }
 
 

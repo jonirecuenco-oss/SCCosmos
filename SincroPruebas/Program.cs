@@ -1302,6 +1302,221 @@ internal static class Program
                     correcto);
             });
 
+        await Probar(
+            "18. Importar territorios: reimportar lo mismo conserva los vínculos y no genera cambios",
+            () =>
+            {
+                string dbT =
+                    Path.Combine(
+                        _carpeta,
+                        "T.db");
+
+                CopiarBase(
+                    origen,
+                    dbT);
+
+                new SincroAlmacen(
+                        dbT,
+                        "55555555555555555555555555555555")
+                    .Asegurar();
+
+                string congregacion =
+                    LeerTexto(
+                        dbT,
+                        "SELECT CongregacionCodigo FROM TerritoriosVisitaV3 GROUP BY CongregacionCodigo ORDER BY COUNT(*) DESC LIMIT 1;");
+
+                var lista =
+                    new List<TerritorioImportado>();
+
+                using (var conexion =
+                       Abrir(
+                           dbT))
+                using (var cmd =
+                       conexion.CreateCommand())
+                {
+                    cmd.CommandText =
+                        "SELECT Nombre, UltimaFechaCompletado, AsignadoA, FechaAsignado, FechaCompletado FROM TerritoriosVisitaV3 WHERE CongregacionCodigo = $c ORDER BY Id;";
+
+                    cmd.Parameters.AddWithValue(
+                        "$c",
+                        congregacion);
+
+                    using var lector =
+                        cmd.ExecuteReader();
+
+                    while (lector.Read())
+                    {
+                        lista.Add(
+                            new TerritorioImportado
+                            {
+                                Nombre = lector.IsDBNull(0) ? "" : lector.GetString(0),
+                                UltimaFechaCompletado = lector.IsDBNull(1) ? "" : lector.GetString(1),
+                                AsignadoA = lector.IsDBNull(2) ? "" : lector.GetString(2),
+                                FechaAsignado = lector.IsDBNull(3) ? "" : lector.GetString(3),
+                                FechaCompletado = lector.IsDBNull(4) ? "" : lector.GetString(4)
+                            });
+                    }
+                }
+
+                Dictionary<long, string> vinculosAntes =
+                    LeerVinculos(
+                        dbT,
+                        congregacion);
+
+                ImportarTerritorios(
+                    dbT,
+                    congregacion,
+                    lista);
+
+                Dictionary<long, string> vinculosDespues =
+                    LeerVinculos(
+                        dbT,
+                        congregacion);
+
+                // Un vínculo que ya había nunca cambia; uno que faltaba puede
+                // completarse si esa persona lo tiene sin duda.
+                int conservados =
+                    vinculosAntes.Count(
+                        v => v.Value.Length > 0
+                             && vinculosDespues[v.Key] == v.Value);
+
+                int cambiados =
+                    vinculosAntes.Count(
+                        v => v.Value.Length > 0
+                             && vinculosDespues[v.Key] != v.Value);
+
+                int completados =
+                    vinculosAntes.Count(
+                        v => v.Value.Length == 0
+                             && vinculosDespues[v.Key].Length > 0);
+
+                Console.WriteLine(
+                    $"      (de {lista.Count} filas: {conservados} vínculos conservados, {cambiados} cambiados, {completados} completados)");
+
+                // La primera vez puede limpiar FechaEliminacion; la segunda no
+                // tiene nada que escribir.
+                string registroAntes =
+                    LeerTexto(
+                        dbT,
+                        "SELECT MAX(Seq) || '/' || COUNT(*) FROM SCCosmos_Cambios;");
+
+                ImportarTerritorios(
+                    dbT,
+                    congregacion,
+                    lista);
+
+                string registroDespues =
+                    LeerTexto(
+                        dbT,
+                        "SELECT MAX(Seq) || '/' || COUNT(*) FROM SCCosmos_Cambios;");
+
+                bool correcto =
+                    lista.Count > 0
+                    && vinculosAntes.Count == vinculosDespues.Count
+                    && cambiados == 0
+                    && registroAntes == registroDespues;
+
+                if (!correcto)
+                {
+                    Console.WriteLine(
+                        $"      (filas: {vinculosAntes.Count} -> {vinculosDespues.Count}; registro: {registroAntes} -> {registroDespues})");
+                }
+
+                return Task.FromResult(
+                    correcto);
+            });
+
+        await Probar(
+            "19. Importar territorios: cada asignación conserva su vínculo, sin mezclarlos",
+            () =>
+            {
+                string dbT =
+                    Path.Combine(
+                        _carpeta,
+                        "T.db");
+
+                // Datos inventados, en una congregación que no existe.
+                const string congregacion =
+                    "ZZZ-PRUEBA";
+
+                Escribir(
+                    dbT,
+                    "INSERT INTO TerritoriosVisitaV3 (CongregacionCodigo, Nombre, AsignadoA, FechaAsignado, NombreVinculado, FechaCreacion) VALUES "
+                    + $"('{congregacion}', 'T1', 'Ana Prueba', '01/01/2026', 'Ana S21', '01/02/2020'), "
+                    + $"('{congregacion}', 'T2', 'Ana Prueba', '02/02/2026', 'Ana S21', '01/02/2020'), "
+                    + $"('{congregacion}', 'T1', 'Luis Prueba', '03/03/2026', 'Luis S21', '01/02/2020'), "
+                    + $"('{congregacion}', 'T3', 'Mario Prueba', '04/04/2026', 'Mario Uno', '01/02/2020'), "
+                    + $"('{congregacion}', 'T4', 'Mario Prueba', '05/05/2026', 'Mario Dos', '01/02/2020'), "
+                    + $"('{congregacion}', 'T5', 'Sin Vinculo', '06/06/2026', '', '01/02/2020');");
+
+                static TerritorioImportado Fila(string nombre, string asignado, string fecha) =>
+                    new()
+                    {
+                        Nombre = nombre,
+                        AsignadoA = asignado,
+                        FechaAsignado = fecha
+                    };
+
+                ImportarTerritorios(
+                    dbT,
+                    congregacion,
+                    new List<TerritorioImportado>
+                    {
+                        Fila("T1", "Ana Prueba", "01/01/2026"),
+                        Fila("T1", "Luis Prueba", "03/03/2026"),
+                        Fila("T3", "Mario Prueba", "04/04/2026"),
+                        Fila("T4", "Mario Prueba", "05/05/2026"),
+                        Fila("T6", "Ana Prueba", "07/07/2026"),
+                        Fila("T7", "Mario Prueba", "08/08/2026"),
+                        Fila("T8", "Persona Nueva", "09/09/2026")
+                    });
+
+                string consulta =
+                    "SELECT group_concat(v, ';') FROM (SELECT Nombre || '=' || NombreVinculado AS v "
+                    + $"FROM TerritoriosVisitaV3 WHERE CongregacionCodigo = '{congregacion}' ORDER BY Id);";
+
+                string resultado =
+                    LeerTexto(
+                        dbT,
+                        consulta);
+
+                const string esperado =
+                    "T1=Ana S21;T1=Luis S21;T3=Mario Uno;T4=Mario Dos;T6=Ana S21;T7=;T8=";
+
+                string creacionConocido =
+                    LeerTexto(
+                        dbT,
+                        $"SELECT FechaCreacion FROM TerritoriosVisitaV3 WHERE CongregacionCodigo = '{congregacion}' AND Nombre = 'T3';");
+
+                ImportarTerritorios(
+                    dbT,
+                    congregacion,
+                    new List<TerritorioImportado>
+                    {
+                        Fila("T1", "Ana Prueba", "01/01/2026"),
+                        Fila("T1", "Luis Prueba", "03/03/2026")
+                    });
+
+                string trasRecortar =
+                    LeerTexto(
+                        dbT,
+                        consulta);
+
+                bool correcto =
+                    resultado == esperado
+                    && creacionConocido == "01/02/2020"
+                    && trasRecortar == "T1=Ana S21;T1=Luis S21";
+
+                if (!correcto)
+                {
+                    Console.WriteLine(
+                        $"      (resultado: {resultado}; creación: {creacionConocido}; tras recortar: {trasRecortar})");
+                }
+
+                return Task.FromResult(
+                    correcto);
+            });
+
         servicioD.Detener();
         servicioE.Detener();
 
@@ -1348,6 +1563,62 @@ internal static class Program
     // ========================================================
     // UTILIDADES
     // ========================================================
+
+    private static Dictionary<long, string> LeerVinculos(
+        string ruta,
+        string congregacion)
+    {
+        var vinculos =
+            new Dictionary<long, string>();
+
+        using var conexion =
+            Abrir(
+                ruta);
+
+        using var cmd =
+            conexion.CreateCommand();
+
+        cmd.CommandText =
+            "SELECT Id, NombreVinculado FROM TerritoriosVisitaV3 WHERE CongregacionCodigo = $c;";
+
+        cmd.Parameters.AddWithValue(
+            "$c",
+            congregacion);
+
+        using var lector =
+            cmd.ExecuteReader();
+
+        while (lector.Read())
+        {
+            vinculos[lector.GetInt64(0)] =
+                lector.IsDBNull(1)
+                    ? ""
+                    : lector.GetString(1).Trim();
+        }
+
+        return vinculos;
+    }
+
+    private static void ImportarTerritorios(
+        string ruta,
+        string congregacion,
+        List<TerritorioImportado> territorios)
+    {
+        using var conexion =
+            Abrir(
+                ruta);
+
+        using var transaccion =
+            conexion.BeginTransaction();
+
+        TerritoriosImportados.Guardar(
+            conexion,
+            transaccion,
+            congregacion,
+            territorios);
+
+        transaccion.Commit();
+    }
 
     /// <summary>
     /// Filas de una tabla que no coinciden entre dos bases (en cualquiera de

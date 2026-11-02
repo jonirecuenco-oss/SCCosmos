@@ -4606,94 +4606,19 @@ namespace SCCosmos
                 connection.Open();
                 using (var transaction = connection.BeginTransaction())
                 {
-                    var dictCreacion = new Dictionary<string, string>();
-                    var cmdSelect = connection.CreateCommand();
-                    cmdSelect.Transaction = transaction;
-                    cmdSelect.CommandText = "SELECT Nombre, FechaCreacion FROM TerritoriosVisitaV3 WHERE CongregacionCodigo = $codigo AND FechaCreacion IS NOT NULL;";
-                    cmdSelect.Parameters.AddWithValue("$codigo", congreCodigo);
-                    using (var reader = cmdSelect.ExecuteReader())
-                    {
-                        while (reader.Read())
+                    SCCosmos.Sincro.TerritoriosImportados.Guardar(
+                        connection,
+                        transaction,
+                        congreCodigo,
+                        territorios.Select(t => new SCCosmos.Sincro.TerritorioImportado
                         {
-                            string nombre = reader.IsDBNull(0) ? "" : reader.GetString(0);
-                            if (!string.IsNullOrWhiteSpace(nombre))
-                            {
-                                dictCreacion[nombre] = reader.IsDBNull(1) ? "" : reader.GetString(1);
-                            }
-                        }
-                    }
+                            Nombre = t.Nombre,
+                            UltimaFechaCompletado = t.UltimaFechaCompletado,
+                            AsignadoA = t.AsignadoA,
+                            FechaAsignado = t.FechaAsignado,
+                            FechaCompletado = t.FechaCompletado
+                        }));
 
-                    // Antes se borraban todos los territorios de la congregación y
-                    // se volvían a insertar en cada importación: cada registro
-                    // cambiaba de Id y viajaba a los demás dispositivos como un
-                    // borrado y un alta aunque no hubiera cambiado. Ahora se
-                    // reutilizan los registros que ya hay, en orden (el i-ésimo de
-                    // la importación ocupa el i-ésimo existente, así la lista, que
-                    // se muestra por Id, conserva el orden importado), y solo se
-                    // escribe lo que cambia. El resultado final es el mismo.
-                    var huecos = new List<long>();
-                    var cmdHuecos = connection.CreateCommand();
-                    cmdHuecos.Transaction = transaction;
-                    cmdHuecos.CommandText = "SELECT Id FROM TerritoriosVisitaV3 WHERE CongregacionCodigo = $codigo ORDER BY Id;";
-                    cmdHuecos.Parameters.AddWithValue("$codigo", congreCodigo);
-                    using (var reader = cmdHuecos.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            huecos.Add(reader.GetInt64(0));
-                        }
-                    }
-
-                    const string actualizar = @"
-                        UPDATE TerritoriosVisitaV3
-                        SET Nombre = $nombre, UltimaFechaCompletado = $ultima, AsignadoA = $asignado,
-                            FechaAsignado = $fechaAsig, FechaCompletado = $fechaComp,
-                            NombreVinculado = '', FechaCreacion = $creacion, FechaEliminacion = NULL
-                        WHERE Id = $id
-                          AND (Nombre IS NOT $nombre OR UltimaFechaCompletado IS NOT $ultima
-                               OR AsignadoA IS NOT $asignado OR FechaAsignado IS NOT $fechaAsig
-                               OR FechaCompletado IS NOT $fechaComp OR NombreVinculado IS NOT ''
-                               OR FechaCreacion IS NOT $creacion OR FechaEliminacion IS NOT NULL);";
-
-                    const string insertar = "INSERT INTO TerritoriosVisitaV3 (CongregacionCodigo, Nombre, UltimaFechaCompletado, AsignadoA, FechaAsignado, FechaCompletado, NombreVinculado, FechaCreacion) VALUES ($codigo, $nombre, $ultima, $asignado, $fechaAsig, $fechaComp, '', $creacion);";
-
-                    int usados = 0;
-                    var command = connection.CreateCommand();
-                    command.Transaction = transaction;
-
-                    foreach (var t in territorios)
-                    {
-                        command.Parameters.Clear();
-                        command.CommandText = usados < huecos.Count ? actualizar : insertar;
-                        command.Parameters.AddWithValue("$codigo", congreCodigo);
-                        command.Parameters.AddWithValue("$nombre", t.Nombre ?? "");
-                        command.Parameters.AddWithValue("$ultima", t.UltimaFechaCompletado ?? "");
-                        command.Parameters.AddWithValue("$asignado", t.AsignadoA ?? "");
-                        command.Parameters.AddWithValue("$fechaAsig", t.FechaAsignado ?? "");
-                        command.Parameters.AddWithValue("$fechaComp", t.FechaCompletado ?? "");
-
-                        string fechaCrea = dictCreacion.ContainsKey(t.Nombre ?? "") ? dictCreacion[t.Nombre] : DateTime.Today.ToString("dd/MM/yyyy");
-                        if (string.IsNullOrWhiteSpace(fechaCrea)) fechaCrea = DateTime.Today.ToString("dd/MM/yyyy");
-                        command.Parameters.AddWithValue("$creacion", fechaCrea);
-
-                        if (usados < huecos.Count)
-                        {
-                            command.Parameters.AddWithValue("$id", huecos[usados]);
-                        }
-
-                        usados++;
-                        command.ExecuteNonQuery();
-                    }
-
-                    // Los registros que sobran (la importación trae menos).
-                    for (int i = usados; i < huecos.Count; i++)
-                    {
-                        var cmdDelete = connection.CreateCommand();
-                        cmdDelete.Transaction = transaction;
-                        cmdDelete.CommandText = "DELETE FROM TerritoriosVisitaV3 WHERE Id = $id;";
-                        cmdDelete.Parameters.AddWithValue("$id", huecos[i]);
-                        cmdDelete.ExecuteNonQuery();
-                    }
                     transaction.Commit();
                 }
             }
