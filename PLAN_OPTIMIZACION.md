@@ -83,7 +83,7 @@ Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay ma
 | 4 | Estabilidad: manejador global de errores (v2.1.3); errores del motor de sincronización (v2.1.12) y de guardados de Windows y sincronización de Android (v2.1.13) anotados; pérdida de actividad al fusionar duplicados corregida (S21, v2.1.14); pendientes reglas comunes en SincroCompartido con pruebas y retirar la sincro heredada | en curso |
 | 5 | Compilación: ReadyToRun en Windows hecho (S10, v2.1.15) | hecho |
 | 6 | Visual: estilos comunes, componentes, accesibilidad y escalado; pantalla a pantalla | pendiente |
-| 7 | Pruebas: banco `SincroPruebas` revivido (02/11): 13 pruebas de extremo a extremo del motor sobre copias de la BD (red A/B/C; carpeta D/E con el `CanalArchivosPc` real; la 12 comprobada: sin la huella de S16 falla); ~2 min, 13/13 estable. Pendiente: decidir si se versiona (el `.gitignore` lo excluye a propósito), una prueba del atasco con compactación real (archivo de más de 2 MB y un dispositivo abandonado) y las reglas de `DatabaseHelper` (necesitan poder elegir la ruta de la base) | en curso |
+| 7 | Pruebas: banco `SincroPruebas` en el repositorio (02/11): 13 pruebas de extremo a extremo del motor sobre copias de la BD (red A/B/C; carpeta D/E con el `CanalArchivosPc` real; la 12 comprobada: sin la huella de S16 falla); ~2 min, 13/13 estable. `publicar_version.ps1` lo ejecuta antes de publicar si cambió el código de la sincronización y no publica si falla (`Herramientas\probar_sincro.ps1`; escape `-SinPruebas`). Pendiente: una prueba del atasco con compactación real (archivo de más de 2 MB y un dispositivo abandonado) y las reglas de `DatabaseHelper` (necesitan poder elegir la ruta de la base) | en curso |
 
 ## Mediciones
 
@@ -162,6 +162,8 @@ Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay ma
 - 02/11/2026 · Publicada la v2.1.17.
 - 02/11/2026 · Bloque 7: `SincroPruebas` (banco del 16/10, excluido de git) vuelve a compilar y a pasar. Cambios: excluye los conversores (iText); usa el `CanalArchivosPc` real de Windows; copia la base de `%LOCALAPPDATA%` (o la ruta dada) con la API de copia de SQLite; desactiva el descubrimiento UDP de sus dispositivos (antes se anunciaban en la red); da por sincronizados A/B/C al arrancar (si no, el intercambio inicial de 23.167 cambios tapaba las pruebas 1—6); borra sus copias al terminar. Nuevas: 12 (compactación ajena, S16) y 13 (ráfaga de 2.600 cambios; no reproduce el atasco original). Descartado con un experimento que `MarcaCambios` no detecte escrituras de otra conexión (5/5 con y sin pool).
 - 02/11/2026 · Uso: `dotnet run --project SincroPruebas -c Release` (13/13, unos 2 min). Ejecutarlo antes de publicar cualquier cambio en `SincroCompartido`.
+- 02/11/2026 · Bloque 7: el banco pasa al repositorio (autorizado; se quita `SincroPruebas/` del `.gitignore`, sin datos personales). `Herramientas\probar_sincro.ps1` lo ejecuta si cambió el código de la sincronización desde la última vez que pasó (huella SHA-256 de lo que compila, sin conversores ni el número de versión) y `publicar_version.ps1` no publica si falla, antes de tocar nada (`-SinPruebas` para emergencias). `Herramientas/` sigue fuera del repositorio.
+- 02/11/2026 · `publicar_version.ps1` guardado con BOM: sin él, PowerShell 5.1 leía mal sus acentos y los mensajes de commit (`Versión`) y el pie de las notas de cada release salían con caracteres raros. Corregido para las próximas versiones; los anteriores se quedan como están.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 
@@ -320,3 +322,13 @@ Móvil (v2.1.3, 31/10/2026): salir a segundo plano 0 ms (sin bloqueo); envío en
 | Revivido | 11/11 | 42 s |
 | Con las pruebas 12 y 13 (dos rondas) | 13/13 y 13/13 | 113 y 112 s |
 | Sin la huella de S16 (a propósito, revertido) | 12/13: falla la 12 | 160 s |
+
+### Bloque 7 — comprobación antes de publicar (02/11/2026; con una copia recortada del script, sin publicar nada)
+
+| Caso | Resultado |
+|---|---|
+| Primera vez, sin marca | ejecuta el banco: 13/13, 119 s |
+| Sin cambios | se salta, 0 s |
+| S16 desactivado a propósito | 12/13: no publica (código 1) y la marca no se mueve |
+| Código restaurado | se salta y continúa |
+| `-SinPruebas` | avisa y continúa |

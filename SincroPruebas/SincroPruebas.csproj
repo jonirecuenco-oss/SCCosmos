@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>SCCosmos.Pruebas</RootNamespace>
+    <AssemblyName>SincroPruebas</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\SincroCompartido\*.cs" />
+    <!-- Conversores de documentos: usan iText y no forman parte de la sincronización. -->
+    <Compile Remove="..\SincroCompartido\Convertidor*.cs;..\SincroCompartido\Importador*.cs" />
+    <!-- Canal por carpeta real de Windows (solo usa System.IO). -->
+    <Compile Include="..\SCCosmos\SCCosmos\CanalArchivosPc.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.9" />
+  </ItemGroup>
+
+</Project>
