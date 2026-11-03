@@ -68,6 +68,11 @@ namespace SCCosmos
         private static bool _migracionBaseDatosHecha;
 
         /// <summary>
+        /// Solo para pruebas: trabajar sobre una copia de la base. La app no lo usa.
+        /// </summary>
+        public static string RutaParaPruebas { get; set; }
+
+        /// <summary>
         /// La base de datos vive ahora dentro de la aplicación (datos locales
         /// de este equipo). La sincronización entre dispositivos la hace el
         /// motor de cambios, sin copiar el archivo por ninguna carpeta.
@@ -76,6 +81,11 @@ namespace SCCosmos
         {
             get
             {
+                if (RutaParaPruebas != null)
+                {
+                    return RutaParaPruebas;
+                }
+
                 string carpeta = System.IO.Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                     "SCCosmos");
@@ -274,6 +284,9 @@ namespace SCCosmos
             AsegurarColumna(connection, "ActividadPersonas", "Cursos", "TEXT");
             AsegurarColumna(connection, "ActividadPersonas", "PrecursorAuxiliar", "INTEGER DEFAULT 0");
             AsegurarColumna(connection, "ActividadPersonas", "Notas", "TEXT");
+
+            // Requisito fijado, salud delicada y crédito (comunes con Android).
+            SCCosmos.Sincro.EsquemaBase.AsegurarColumnasNuevas(connection);
 
             AsegurarColumna(connection, "NotasVisita", "EsAlerta", "INTEGER DEFAULT 0");
 
@@ -1130,7 +1143,8 @@ namespace SCCosmos
                                     FechaUltimaEscuela, NombreJWHub, FechaCreacion, FechaEliminacion,
                                     NombreComun, Direccion, Latitud, Longitud, ConyugeId, EmailJW,
                                     Notas, OrigenRegistro, AprobadoExhibidores, RequisitoHoras,
-                                    TrasladoAnteriorId, TrasladoSiguienteId, FechaTraslado
+                                    TrasladoAnteriorId, TrasladoSiguienteId, FechaTraslado,
+                                    RequisitoFijado, SaludDelicada
                                 )
                                 VALUES
                                 (
@@ -1140,7 +1154,9 @@ namespace SCCosmos
                                     $escuela, $jw, $fc, '',
                                     $nombreComun, $dir, $lat, $lon, $conyuge, $emailjw,
                                     $notas, $origen, $aprobado, $requisito,
-                                    $anteriorId, 0, $fechaTraslado
+                                    $anteriorId, 0, $fechaTraslado,
+                                    COALESCE((SELECT RequisitoFijado FROM Personas WHERE Id = $anteriorId), 0),
+                                    COALESCE((SELECT SaludDelicada FROM Personas WHERE Id = $anteriorId), 0)
                                 );
                                 SELECT last_insert_rowid();";
 
@@ -1326,17 +1342,73 @@ namespace SCCosmos
             }
         }
 
-        public static void ActualizarRequisitoSilencioso(int personaId, int requisito)
+        /// <summary>
+        /// Requisito fijado a mano y salud delicada de una persona (los guarda su
+        /// registro raíz, como la actividad).
+        /// </summary>
+        public static (int RequisitoFijado, bool SaludDelicada) ObtenerRequisitoPersona(int personaId)
         {
             using (var connection = new SqliteConnection(ConnectionString))
             {
                 connection.Open();
                 var cmd = connection.CreateCommand();
-                cmd.CommandText = "UPDATE Personas SET RequisitoHoras = $req WHERE Id = $id;";
-                cmd.Parameters.AddWithValue("$req", requisito);
+                cmd.CommandText = @"
+                    SELECT COALESCE(RequisitoFijado, 0), COALESCE(SaludDelicada, 0)
+                    FROM Personas
+                    WHERE Id = COALESCE(NULLIF((SELECT PersonaRaizId FROM Personas WHERE Id = $id), 0), $id);";
+                cmd.Parameters.AddWithValue("$id", personaId);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    return reader.Read()
+                        ? (reader.GetInt32(0), reader.GetInt32(1) == 1)
+                        : (0, false);
+                }
+            }
+        }
+
+        public static void GuardarRequisitoPersona(int personaId, int requisitoFijado, bool saludDelicada)
+        {
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                connection.Open();
+                var cmd = connection.CreateCommand();
+                cmd.CommandText = @"
+                    UPDATE Personas
+                    SET RequisitoFijado = $fijado, SaludDelicada = $salud
+                    WHERE Id = COALESCE(NULLIF((SELECT PersonaRaizId FROM Personas WHERE Id = $id), 0), $id)
+                      AND (COALESCE(RequisitoFijado, 0) <> $fijado OR COALESCE(SaludDelicada, 0) <> $salud);";
+                cmd.Parameters.AddWithValue("$fijado", Math.Max(0, requisitoFijado));
+                cmd.Parameters.AddWithValue("$salud", saludDelicada ? 1 : 0);
                 cmd.Parameters.AddWithValue("$id", personaId);
                 cmd.ExecuteNonQuery();
             }
+        }
+
+        /// <summary>
+        /// Solo las personas con algo distinto de lo normal: son muy pocas.
+        /// </summary>
+        public static Dictionary<int, (int RequisitoFijado, bool SaludDelicada)> ObtenerRequisitosPersonales()
+        {
+            var resultado = new Dictionary<int, (int RequisitoFijado, bool SaludDelicada)>();
+
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                connection.Open();
+                var cmd = connection.CreateCommand();
+                cmd.CommandText = @"
+                    SELECT Id, COALESCE(RequisitoFijado, 0), COALESCE(SaludDelicada, 0)
+                    FROM Personas
+                    WHERE RequisitoFijado > 0 OR SaludDelicada = 1;";
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        resultado[reader.GetInt32(0)] = (reader.GetInt32(1), reader.GetInt32(2) == 1);
+                    }
+                }
+            }
+
+            return resultado;
         }
 
         public static bool TienePersonas(string congreCodigo)
@@ -1701,13 +1773,14 @@ namespace SCCosmos
                                 var cmdInf = connection.CreateCommand();
                                 cmdInf.Transaction = transaction;
                                 cmdInf.CommandText = @"
-                                    INSERT INTO ActividadPersonas (PersonaId, Mes, AnioServicio, Participacion, CursosBiblicos, Cursos, PrecursorAuxiliar, Horas, Notas)
-                                    VALUES ($personaId, $mes, $anio, $part, $cursos, $cursosTexto, $prec, $horas, $notas)
+                                    INSERT INTO ActividadPersonas (PersonaId, Mes, AnioServicio, Participacion, CursosBiblicos, Cursos, PrecursorAuxiliar, Horas, Notas, Credito)
+                                    VALUES ($personaId, $mes, $anio, $part, $cursos, $cursosTexto, $prec, $horas, $notas, $credito)
                                     ON CONFLICT(PersonaId, Mes, AnioServicio) DO UPDATE SET
-                                        Participacion = $part, CursosBiblicos = $cursos, Cursos = $cursosTexto, PrecursorAuxiliar = $prec, Horas = $horas, Notas = $notas;";
+                                        Credito = CASE WHEN COALESCE(Notas, '') IS NOT $notas THEN $credito ELSE Credito END, Participacion = $part, CursosBiblicos = $cursos, Cursos = $cursosTexto, PrecursorAuxiliar = $prec, Horas = $horas, Notas = $notas;";
 
                                 long idParaActividad = idObj != null ? (long)idObj : personaActualId;
                                 cmdInf.Parameters.AddWithValue("$personaId", idParaActividad);
+                                    cmdInf.Parameters.AddWithValue("$credito", SCCosmos.Sincro.RequisitoPrecursor.CreditoDeNotas(inf.Notas));
                                 cmdInf.Parameters.AddWithValue("$mes", inf.Mes ?? "");
                                 cmdInf.Parameters.AddWithValue("$anio", p.AnioServicio ?? "");
                                 cmdInf.Parameters.AddWithValue("$part", inf.Participacion ? 1 : 0);
@@ -1980,7 +2053,7 @@ namespace SCCosmos
                 command.CommandText = @"
                     SELECT Mes, AnioServicio, Participacion,
                            COALESCE(NULLIF(Cursos, ''), CAST(CursosBiblicos AS TEXT), ''),
-                           PrecursorAuxiliar, Horas, Notas
+                           PrecursorAuxiliar, Horas, Notas, COALESCE(Credito, 0)
                     FROM ActividadPersonas
                     WHERE PersonaId = $id
                     ORDER BY CAST(AnioServicio AS INTEGER) DESC,
@@ -2002,7 +2075,8 @@ namespace SCCosmos
                             CursosBiblicos = reader.IsDBNull(3) ? "" : reader.GetString(3),
                             PrecursorAuxiliar = reader.GetInt32(4) == 1,
                             Horas = reader.IsDBNull(5) ? "" : reader.GetString(5),
-                            Notas = reader.IsDBNull(6) ? "" : reader.GetString(6)
+                            Notas = reader.IsDBNull(6) ? "" : reader.GetString(6),
+                            Credito = SCCosmos.Sincro.RequisitoPrecursor.TextoCredito(reader.GetDouble(7), reader.IsDBNull(6) ? "" : reader.GetString(6))
                         });
                     }
                 }
@@ -2139,7 +2213,7 @@ namespace SCCosmos
                     command.CommandText = $@"
                         SELECT PersonaId, Mes, AnioServicio, Participacion,
                                COALESCE(NULLIF(Cursos, ''), CAST(CursosBiblicos AS TEXT), ''),
-                               PrecursorAuxiliar, Horas, Notas
+                               PrecursorAuxiliar, Horas, Notas, COALESCE(Credito, 0)
                         FROM ActividadPersonas
                         WHERE PersonaId IN ({string.Join(", ", parametros)});";
 
@@ -2163,7 +2237,8 @@ namespace SCCosmos
                                 CursosBiblicos = reader.IsDBNull(4) ? "" : reader.GetString(4),
                                 PrecursorAuxiliar = !reader.IsDBNull(5) && reader.GetInt32(5) == 1,
                                 Horas = reader.IsDBNull(6) ? "" : reader.GetString(6),
-                                Notas = reader.IsDBNull(7) ? "" : reader.GetString(7)
+                                Notas = reader.IsDBNull(7) ? "" : reader.GetString(7),
+                                Credito = SCCosmos.Sincro.RequisitoPrecursor.TextoCredito(reader.GetDouble(8), reader.IsDBNull(7) ? "" : reader.GetString(7))
                             });
                         }
                     }
@@ -2279,27 +2354,27 @@ namespace SCCosmos
                                 ? @"
                                 UPDATE ActividadPersonas
                                 SET Participacion = $participacion, CursosBiblicos = $cursosNumerico,
-                                    PrecursorAuxiliar = $precAux, Horas = $horas, Notas = $notas, Cursos = $cursos
+                                    PrecursorAuxiliar = $precAux, Horas = $horas, Notas = $notas, Cursos = $cursos, Credito = $credito
                                 WHERE PersonaId = $id AND Mes = $mes AND AnioServicio = $anio
                                   AND (Participacion IS NOT $participacion OR CursosBiblicos IS NOT $cursosNumerico
                                        OR PrecursorAuxiliar IS NOT $precAux OR Horas IS NOT $horas
-                                       OR Notas IS NOT $notas OR Cursos IS NOT $cursos);
+                                       OR Notas IS NOT $notas OR Cursos IS NOT $cursos OR Credito IS NOT $credito);
 
                                 INSERT INTO ActividadPersonas
                                     (PersonaId, Mes, AnioServicio, Participacion, CursosBiblicos,
-                                     PrecursorAuxiliar, Horas, Notas, Cursos)
+                                     PrecursorAuxiliar, Horas, Notas, Cursos, Credito)
                                 SELECT $id, $mes, $anio, $participacion, $cursosNumerico,
-                                       $precAux, $horas, $notas, $cursos
+                                       $precAux, $horas, $notas, $cursos, $credito
                                 WHERE NOT EXISTS (
                                     SELECT 1 FROM ActividadPersonas
                                     WHERE PersonaId = $id AND Mes = $mes AND AnioServicio = $anio);"
                                 : @"
                                 INSERT INTO ActividadPersonas
                                     (PersonaId, Mes, AnioServicio, Participacion, CursosBiblicos,
-                                     PrecursorAuxiliar, Horas, Notas, Cursos)
+                                     PrecursorAuxiliar, Horas, Notas, Cursos, Credito)
                                 VALUES
                                     ($id, $mes, $anio, $participacion, $cursosNumerico,
-                                     $precAux, $horas, $notas, $cursos);";
+                                     $precAux, $horas, $notas, $cursos, $credito);";
 
                             string cursos = item.CursosBiblicos ?? "";
                             int cursosNumerico = 0;
@@ -2314,6 +2389,7 @@ namespace SCCosmos
                             cmdInsert.Parameters.AddWithValue("$horas", item.Horas ?? "");
                             cmdInsert.Parameters.AddWithValue("$notas", item.Notas ?? "");
                             cmdInsert.Parameters.AddWithValue("$cursos", cursos);
+                        cmdInsert.Parameters.AddWithValue("$credito", SCCosmos.Sincro.RequisitoPrecursor.CreditoAGuardar(item.Credito, item.Notas));
                             cmdInsert.ExecuteNonQuery();
                         }
 

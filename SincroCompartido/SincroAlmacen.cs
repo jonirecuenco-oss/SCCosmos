@@ -126,6 +126,16 @@ public sealed class SincroAlmacen
         using var conexion =
             Abrir();
 
+        try
+        {
+            EsquemaBase.AsegurarColumnasNuevas(
+                conexion);
+        }
+        catch (Exception errorSincro)
+        {
+            SincroDiagnostico.Error(errorSincro, "ColumnasNuevas");
+        }
+
         Ejecutar(
             conexion,
             $"""
@@ -1803,6 +1813,22 @@ public sealed class SincroAlmacen
             return;
         }
 
+        // Un dispositivo con una versión anterior no conoce las columnas
+        // nuevas, y REPLACE las dejaría con su valor predeterminado: lo que
+        // haya aquí se conserva.
+        if (columnas.Count > nombres.Count)
+        {
+            ConservarColumnasAusentes(
+                conexion,
+                transaccion,
+                tabla,
+                fila,
+                columnas,
+                nombres,
+                parametros,
+                valores);
+        }
+
         using var cmd =
             conexion.CreateCommand();
 
@@ -1823,6 +1849,90 @@ public sealed class SincroAlmacen
         }
 
         cmd.ExecuteNonQuery();
+    }
+
+
+    private static void ConservarColumnasAusentes(
+        SqliteConnection conexion,
+        SqliteTransaction transaccion,
+        string tabla,
+        Dictionary<string, object?> fila,
+        Dictionary<string, string> columnas,
+        List<string> nombres,
+        List<string> parametros,
+        List<object?> valores)
+    {
+        var recibidas =
+            new HashSet<string>(
+                fila.Keys,
+                StringComparer.OrdinalIgnoreCase);
+
+        List<string> ausentes =
+            columnas.Keys
+                .Where(c => !recibidas.Contains(c))
+                .ToList();
+
+        string[] claves =
+            ClavesDeTabla(
+                    conexion,
+                    tabla)
+                .Split(
+                    ',',
+                    StringSplitOptions.RemoveEmptyEntries |
+                    StringSplitOptions.TrimEntries);
+
+        if (ausentes.Count == 0
+            || claves.Length == 0
+            || !claves.All(recibidas.Contains))
+        {
+            return;
+        }
+
+        using var cmd =
+            conexion.CreateCommand();
+
+        cmd.Transaction =
+            transaccion;
+
+        cmd.CommandText =
+            $"SELECT {string.Join(", ", ausentes.Select(c => $"\"{c}\""))} FROM \"{tabla}\" " +
+            $"WHERE {string.Join(" AND ", claves.Select((c, i) => $"\"{c}\" = $k{i}"))};";
+
+        for (int i = 0; i < claves.Length; i++)
+        {
+            string nombreClave =
+                fila.Keys.First(
+                    k => string.Equals(
+                        k,
+                        claves[i],
+                        StringComparison.OrdinalIgnoreCase));
+
+            cmd.Parameters.AddWithValue(
+                $"$k{i}",
+                Normalizar(fila[nombreClave]) ?? DBNull.Value);
+        }
+
+        using var lector =
+            cmd.ExecuteReader();
+
+        if (!lector.Read())
+        {
+            return;
+        }
+
+        for (int i = 0; i < ausentes.Count; i++)
+        {
+            nombres.Add(
+                $"\"{ausentes[i]}\"");
+
+            parametros.Add(
+                $"$v{valores.Count}");
+
+            valores.Add(
+                lector.IsDBNull(i)
+                    ? null
+                    : lector.GetValue(i));
+        }
     }
 
 

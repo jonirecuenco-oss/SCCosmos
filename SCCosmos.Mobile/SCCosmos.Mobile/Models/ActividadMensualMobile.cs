@@ -20,6 +20,13 @@ public class ActividadMensualMobile
 
     public string Notas { get; set; } = "";
 
+    public string Credito { get; set; } = "";
+
+    /// <summary>
+    /// Adelanto o atraso acumulado en el año de servicio hasta este mes.
+    /// </summary>
+    public string Acumulado { get; set; } = "";
+
     public string Etiqueta =>
         string.IsNullOrWhiteSpace(Mes)
             ? ""
@@ -45,6 +52,17 @@ public class ActividadMensualMobile
             if (!string.IsNullOrWhiteSpace(Horas))
             {
                 partes.Add($"Horas: {Horas}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(Credito)
+                && Credito != "0")
+            {
+                partes.Add($"Crédito: {Credito}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(Acumulado))
+            {
+                partes.Add($"Acumulado: {Acumulado}");
             }
 
             if (!string.IsNullOrWhiteSpace(CursosBiblicos))

@@ -42,6 +42,13 @@
                                Keyboard="Numeric"
                                TextColor="White" />
 
+                        <Label Text="Crédito (otras actividades; vacío: lo que digan las notas)"
+                               TextColor="#9299A3"
+                               FontSize="12" />
+                        <Entry x:Name="TxtCredito"
+                               Keyboard="Numeric"
+                               TextColor="White" />
+
                         <Label Text="Cursos bíblicos"
                                TextColor="#9299A3"
                                FontSize="12" />

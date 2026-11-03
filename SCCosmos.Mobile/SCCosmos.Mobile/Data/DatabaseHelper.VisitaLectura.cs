@@ -1,6 +1,7 @@
 using System.Globalization;
 
 using Microsoft.Data.Sqlite;
+using SCCosmos.Sincro;
 
 namespace SCCosmos.Mobile.Data;
 
@@ -1318,11 +1319,6 @@ public static partial class DatabaseHelper
             .ToString(
                 CultureInfo.InvariantCulture);
 
-        int mesesTranscurridos =
-            mesReferencia.Month >= 9
-                ? mesReferencia.Month - 8
-                : mesReferencia.Month + 4;
-
         List<VistaPersonaVisitaMobile> precursores =
             personas
                 .Where(p =>
@@ -1336,14 +1332,14 @@ public static partial class DatabaseHelper
             return;
         }
 
-        Dictionary<int, double> horasPorPersona =
+        Dictionary<int, List<HorasDeMes>> actividadPorPersona =
             precursores
                 .Select(p => p.PersonaActividadId)
                 .Where(id => id > 0)
                 .Distinct()
-                .ToDictionary(id => id, _ => 0d);
+                .ToDictionary(id => id, _ => new List<HorasDeMes>());
 
-        if (horasPorPersona.Count > 0)
+        if (actividadPorPersona.Count > 0)
         {
             using SqliteCommand cmd =
                 connection.CreateCommand();
@@ -1352,7 +1348,7 @@ public static partial class DatabaseHelper
                 new List<string>();
 
             int i = 0;
-            foreach (int id in horasPorPersona.Keys)
+            foreach (int id in actividadPorPersona.Keys)
             {
                 string p = "$hp" + i++;
                 parametros.Add(p);
@@ -1368,7 +1364,8 @@ public static partial class DatabaseHelper
                 SELECT
                     PersonaId,
                     lower(Mes),
-                    Horas
+                    Horas,
+                    COALESCE(Credito, 0)
                 FROM ActividadPersonas
                 WHERE PersonaId IN ({string.Join(", ", parametros)})
                   AND AnioServicio = $anioServicio;
@@ -1379,115 +1376,62 @@ public static partial class DatabaseHelper
 
             while (reader.Read())
             {
-                int id = reader.GetInt32(0);
-
-                if (!horasPorPersona.ContainsKey(id))
+                if (actividadPorPersona.TryGetValue(
+                        reader.GetInt32(0),
+                        out List<HorasDeMes>? registros))
                 {
-                    continue;
-                }
-
-                string nombreMes =
-                    LeerTexto(reader, 1)
-                        .Trim()
-                        .ToLowerInvariant();
-
-                int numeroMes =
-                    NumeroMesDbMobile(nombreMes);
-
-                if (numeroMes <= 0)
-                {
-                    continue;
-                }
-
-                int ordenMes =
-                    numeroMes >= 9
-                        ? numeroMes - 8
-                        : numeroMes + 4;
-
-                if (ordenMes > mesesTranscurridos)
-                {
-                    continue;
-                }
-
-                string horasTexto =
-                    LeerTexto(reader, 2)
-                        .Replace(" ", "")
-                        .Trim();
-
-                if (double.TryParse(
-                        horasTexto.Replace(",", "."),
-                        NumberStyles.Any,
-                        CultureInfo.InvariantCulture,
-                        out double horas))
-                {
-                    horasPorPersona[id] += horas;
+                    registros.Add(
+                        new HorasDeMes(
+                            LeerTexto(reader, 1),
+                            anioServicio,
+                            RequisitoPrecursor.LeerHoras(
+                                LeerTexto(reader, 2)),
+                            reader.GetDouble(3)));
                 }
             }
         }
 
+        Dictionary<int, (int RequisitoFijado, bool SaludDelicada)> requisitos =
+            LeerRequisitosPersonalesMobile(
+                connection);
+
         foreach (VistaPersonaVisitaMobile persona in precursores)
         {
+            requisitos.TryGetValue(
+                persona.PersonaActividadId,
+                out var requisitoPersonal);
+
             int requisitoAnual =
-                persona.RequisitoHoras;
-
-            if (requisitoAnual == 0)
-            {
-                string servicio =
-                    persona.Servicio
-                        .Trim()
-                        .ToLowerInvariant();
-
-                if (servicio.Contains("precursor regular"))
-                {
-                    requisitoAnual = 600;
-                }
-                else if (servicio.Contains("especial")
-                         ||
-                         servicio.Contains("misionero"))
-                {
-                    requisitoAnual = 1200;
-
-                    if (string.Equals(
-                            persona.Sexo,
-                            "Mujer",
-                            StringComparison.OrdinalIgnoreCase))
-                    {
-                        DateTime? nacimiento =
-                            ParseFechaFlexible(
-                                persona.FechaNacimiento);
-
-                        if (nacimiento.HasValue)
-                        {
-                            int edad =
-                                mesReferencia.Year
-                                -
-                                nacimiento.Value.Year;
-
-                            if (nacimiento.Value.Date
-                                >
-                                mesReferencia.AddYears(-edad))
-                            {
-                                edad--;
-                            }
-
-                            if (edad >= 40)
-                            {
-                                requisitoAnual = 1080;
-                            }
-                        }
-                    }
-                }
-            }
+                RequisitoPrecursor.RequisitoAnual(
+                    persona.Servicio,
+                    persona.Sexo,
+                    ParseFechaFlexible(
+                        persona.FechaNacimiento),
+                    mesReferencia,
+                    requisitoPersonal.RequisitoFijado,
+                    requisitoPersonal.SaludDelicada);
 
             persona.RequisitoHorasCalculado =
                 requisitoAnual;
 
-            if (!horasPorPersona.TryGetValue(
+            bool esRegular =
+                RequisitoPrecursor.EsPrecursorRegular(
+                    persona.Servicio);
+
+            DateTime? inicioPrecursor =
+                ParseFechaFlexible(
+                    persona.FechaInicioPrec);
+
+            double horasAcumuladas =
+                actividadPorPersona.TryGetValue(
                     persona.PersonaActividadId,
-                    out double horasAcumuladas))
-            {
-                horasAcumuladas = 0;
-            }
+                    out List<HorasDeMes>? registrosPersona)
+                    ? RequisitoPrecursor.HorasHasta(
+                        registrosPersona,
+                        mesReferencia,
+                        esRegular,
+                        inicioPrecursor)
+                    : 0;
 
             persona.HorasServicioAcumuladas =
                 Math.Round(horasAcumuladas, 1);
@@ -1500,7 +1444,10 @@ public static partial class DatabaseHelper
             double meta =
                 (requisitoAnual / 12d)
                 *
-                mesesTranscurridos;
+                RequisitoPrecursor.MesesConRequisito(
+                    mesReferencia,
+                    esRegular,
+                    inicioPrecursor);
 
             persona.MetaHorasProrrateada =
                 Math.Round(meta, 1);
@@ -1558,9 +1505,8 @@ public static partial class DatabaseHelper
                 .Distinct()
                 .ToList();
 
-        // (persona, año de servicio) -> horas por orden de mes.
-        var horas =
-            new Dictionary<(int, string), Dictionary<int, double>>();
+        var actividad =
+            new Dictionary<int, List<HorasDeMes>>();
 
         if (ids.Count > 0 && anios.Count > 0)
         {
@@ -1591,9 +1537,10 @@ public static partial class DatabaseHelper
                 $"""
                 SELECT
                     PersonaId,
-                    lower(COALESCE(Mes, '')),
+                    COALESCE(Mes, ''),
                     AnioServicio,
-                    COALESCE(Horas, '')
+                    COALESCE(Horas, ''),
+                    COALESCE(Credito, 0)
                 FROM ActividadPersonas
                 WHERE PersonaId IN ({string.Join(", ", parametrosId)})
                   AND AnioServicio IN ({string.Join(", ", parametrosAnio)});
@@ -1606,56 +1553,21 @@ public static partial class DatabaseHelper
             {
                 int personaId = reader.GetInt32(0);
 
-                string mesNombre =
-                    LeerTexto(reader, 1)
-                        .Trim()
-                        .ToLowerInvariant();
-
-                string anio =
-                    LeerTexto(reader, 2)
-                        .Trim();
-
-                int numeroMes = NumeroMesDbMobile(mesNombre);
-
-                if (numeroMes <= 0 || anio.Length == 0)
+                if (!actividad.TryGetValue(
+                        personaId,
+                        out List<HorasDeMes>? registros))
                 {
-                    continue;
+                    registros = new List<HorasDeMes>();
+                    actividad[personaId] = registros;
                 }
 
-                string horasTexto =
-                    LeerTexto(reader, 3)
-                        .Replace(" ", "")
-                        .Trim();
-
-                if (!double.TryParse(
-                        horasTexto.Replace(",", "."),
-                        NumberStyles.Any,
-                        CultureInfo.InvariantCulture,
-                        out double valorHoras)
-                    || valorHoras <= 0)
-                {
-                    continue;
-                }
-
-                int orden =
-                    numeroMes >= 9
-                        ? numeroMes - 8
-                        : numeroMes + 4;
-
-                var clave = (personaId, anio);
-
-                if (!horas.TryGetValue(
-                        clave,
-                        out Dictionary<int, double>? porMes))
-                {
-                    porMes = new Dictionary<int, double>();
-                    horas[clave] = porMes;
-                }
-
-                porMes[orden] =
-                    porMes.TryGetValue(orden, out double acumuladoMes)
-                        ? acumuladoMes + valorHoras
-                        : valorHoras;
+                registros.Add(
+                    new HorasDeMes(
+                        LeerTexto(reader, 1),
+                        LeerTexto(reader, 2),
+                        RequisitoPrecursor.LeerHoras(
+                            LeerTexto(reader, 3)),
+                        reader.GetDouble(4)));
             }
         }
 
@@ -1668,117 +1580,40 @@ public static partial class DatabaseHelper
                 continue;
             }
 
-            string anioPersona =
-                "";
-
-            string servicio =
-                (persona.Servicio ?? "")
-                    .Trim()
-                    .ToLowerInvariant();
-
             bool esRegular =
-                servicio.Contains("precursor regular");
+                RequisitoPrecursor.EsPrecursorRegular(
+                    persona.Servicio);
 
             DateTime? inicioPrecursor =
                 ParseFechaFlexible(
                     persona.FechaInicioPrec);
 
-            for (int i = 0; i < persona.Actividad.Count; i++)
-            {
-                VistaActividadMesMobile mes =
-                    persona.Actividad[i];
+            List<HorasDeMes> registros =
+                actividad.TryGetValue(
+                    persona.PersonaActividadId,
+                    out List<HorasDeMes>? propios)
+                    ? propios
+                    : new List<HorasDeMes>();
 
+            foreach (VistaActividadMesMobile mes in persona.Actividad)
+            {
                 if (mes.Mes == default)
                 {
                     continue;
                 }
 
-                string anio =
-                    AnioServicioDeMesMobile(mes.Mes);
-
-                if (anio != anioPersona)
-                {
-                    anioPersona = anio;
-                }
-
-                int orden =
-                    mes.Mes.Month >= 9
-                        ? mes.Mes.Month - 8
-                        : mes.Mes.Month + 4;
-
-                double acumulado = 0;
-
-                if (horas.TryGetValue(
-                        (persona.PersonaActividadId, anio),
-                        out Dictionary<int, double>? porMes))
-                {
-                    foreach (KeyValuePair<int, double> par in porMes)
-                    {
-                        if (par.Key <= orden)
-                        {
-                            acumulado += par.Value;
-                        }
-                    }
-                }
-
-                double meta =
-                    (requisito / 12d) * orden;
-
-                // Los regulares solo cuentan desde que empezaron como
-                // precursores; antes de esa fecha no se muestra nada.
-                if (esRegular && inicioPrecursor.HasValue)
-                {
-                    DateTime inicioMes =
-                        new(
-                            inicioPrecursor.Value.Year,
-                            inicioPrecursor.Value.Month,
-                            1);
-
-                    DateTime mesActual =
-                        new(
-                            mes.Mes.Year,
-                            mes.Mes.Month,
-                            1);
-
-                    if (mesActual < inicioMes)
-                    {
-                        mes.AcumuladoTexto = "";
-                        mes.AcumuladoColor = "#9EA4AE";
-                        continue;
-                    }
-
-                    DateTime inicioAnio =
-                        mes.Mes.Month >= 9
-                            ? new DateTime(mes.Mes.Year, 9, 1)
-                            : new DateTime(mes.Mes.Year - 1, 9, 1);
-
-                    DateTime desde =
-                        inicioMes > inicioAnio
-                            ? inicioMes
-                            : inicioAnio;
-
-                    int mesesDesdeInicio =
-                        ((mesActual.Year - desde.Year) * 12)
-                        + mesActual.Month
-                        - desde.Month
-                        + 1;
-
-                    meta =
-                        (requisito / 12d)
-                        * Math.Max(0, Math.Min(orden, mesesDesdeInicio));
-                }
-
-                double diferencia =
-                    Math.Round(
-                        acumulado - meta,
-                        1);
+                double? diferencia =
+                    RequisitoPrecursor.DiferenciaHasta(
+                        registros,
+                        mes.Mes,
+                        requisito,
+                        esRegular,
+                        inicioPrecursor);
 
                 mes.AcumuladoTexto =
-                    diferencia > 0
-                        ? "+" + diferencia.ToString("0.#", CultureInfo.CurrentCulture)
-                        : diferencia < 0
-                            ? diferencia.ToString("0.#", CultureInfo.CurrentCulture)
-                            : "0";
+                    diferencia.HasValue
+                        ? RequisitoPrecursor.TextoDiferencia(diferencia.Value)
+                        : "";
 
                 mes.AcumuladoColor =
                     diferencia > 0
@@ -1788,6 +1623,38 @@ public static partial class DatabaseHelper
                             : "#9EA4AE";
             }
         }
+    }
+
+
+    /// <summary>
+    /// Solo las personas con algo distinto de lo normal: son muy pocas.
+    /// </summary>
+    private static Dictionary<int, (int RequisitoFijado, bool SaludDelicada)> LeerRequisitosPersonalesMobile(
+        SqliteConnection connection)
+    {
+        var resultado =
+            new Dictionary<int, (int RequisitoFijado, bool SaludDelicada)>();
+
+        using SqliteCommand cmd =
+            connection.CreateCommand();
+
+        cmd.CommandText =
+            """
+            SELECT Id, COALESCE(RequisitoFijado, 0), COALESCE(SaludDelicada, 0)
+            FROM Personas
+            WHERE RequisitoFijado > 0 OR SaludDelicada = 1;
+            """;
+
+        using SqliteDataReader reader =
+            cmd.ExecuteReader();
+
+        while (reader.Read())
+        {
+            resultado[reader.GetInt32(0)] =
+                (reader.GetInt32(1), reader.GetInt32(2) == 1);
+        }
+
+        return resultado;
     }
 
 

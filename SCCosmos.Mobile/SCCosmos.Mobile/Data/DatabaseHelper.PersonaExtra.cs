@@ -24,6 +24,8 @@ public static partial class DatabaseHelper
         public string OrigenRegistro { get; set; } = "DESCONOCIDO";
         public bool AprobadoExhibidores { get; set; }
         public int RequisitoHoras { get; set; }
+    public int RequisitoFijado { get; set; }
+    public bool SaludDelicada { get; set; }
         public int TrasladoAnteriorId { get; set; }
         public int TrasladoSiguienteId { get; set; }
         public string FechaTraslado { get; set; } = "";
@@ -60,7 +62,9 @@ public static partial class DatabaseHelper
                 TrasladoSiguienteId,
                 FechaTraslado,
                 FechaEliminacion,
-                PersonaRaizId
+                PersonaRaizId,
+                (SELECT COALESCE(r.RequisitoFijado, 0) FROM Personas r WHERE r.Id = COALESCE(NULLIF(Personas.PersonaRaizId, 0), Personas.Id)),
+                (SELECT COALESCE(r.SaludDelicada, 0) FROM Personas r WHERE r.Id = COALESCE(NULLIF(Personas.PersonaRaizId, 0), Personas.Id))
             FROM Personas
             WHERE Id = $id
             LIMIT 1;
@@ -102,7 +106,13 @@ public static partial class DatabaseHelper
                 Texto(reader, 6, ""),
 
             PersonaRaizId =
-                Entero(reader, 7)
+                Entero(reader, 7),
+
+            RequisitoFijado =
+                Entero(reader, 8),
+
+            SaludDelicada =
+                Entero(reader, 9) == 1
         };
     }
 
@@ -114,7 +124,8 @@ public static partial class DatabaseHelper
     public static void ActualizarCamposExtraPersonaMobile(
         int personaId,
         bool aprobadoExhibidores,
-        int requisitoHoras)
+        int requisitoFijado,
+        bool saludDelicada)
     {
         if (personaId <= 0)
         {
@@ -133,9 +144,14 @@ public static partial class DatabaseHelper
         cmd.CommandText =
             """
             UPDATE Personas
-            SET AprobadoExhibidores = $aprobado,
-                RequisitoHoras = $requisito
+            SET AprobadoExhibidores = $aprobado
             WHERE Id = $id;
+
+            UPDATE Personas
+            SET RequisitoFijado = $requisito,
+                SaludDelicada = $salud
+            WHERE Id = COALESCE(NULLIF((SELECT PersonaRaizId FROM Personas WHERE Id = $id), 0), $id)
+              AND (COALESCE(RequisitoFijado, 0) <> $requisito OR COALESCE(SaludDelicada, 0) <> $salud);
             """;
 
         cmd.Parameters.AddWithValue(
@@ -144,7 +160,11 @@ public static partial class DatabaseHelper
 
         cmd.Parameters.AddWithValue(
             "$requisito",
-            requisitoHoras);
+            Math.Max(0, requisitoFijado));
+
+        cmd.Parameters.AddWithValue(
+            "$salud",
+            saludDelicada ? 1 : 0);
 
         cmd.Parameters.AddWithValue(
             "$id",

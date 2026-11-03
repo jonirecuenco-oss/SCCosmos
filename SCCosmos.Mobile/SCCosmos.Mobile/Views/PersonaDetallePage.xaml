@@ -565,12 +565,27 @@
                                         OnColor="#0B6FC2"/>
                             </Grid>
 
-                            <Label Text="Requisito de horas"
-                                   TextColor="#9299A3"
-                                   FontSize="12"/>
-                            <Entry x:Name="TxtRequisito"
-                                   Keyboard="Numeric"
-                                   TextColor="White"/>
+                            <VerticalStackLayout x:Name="PanelRequisito"
+                                                 Spacing="8">
+
+                                <Label Text="Requisito anual de horas (vacío: según su servicio)"
+                                       TextColor="#9299A3"
+                                       FontSize="12"/>
+                                <Entry x:Name="TxtRequisito"
+                                       Keyboard="Numeric"
+                                       TextColor="White"/>
+
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <Label Grid.Column="0"
+                                           Text="Salud delicada (sin requisito de horas)"
+                                           TextColor="#E7E9EC"
+                                           VerticalOptions="Center"/>
+                                    <Switch x:Name="SwSaludDelicada"
+                                            Grid.Column="1"
+                                            OnColor="#0B6FC2"/>
+                                </Grid>
+
+                            </VerticalStackLayout>
 
                         </VerticalStackLayout>
 

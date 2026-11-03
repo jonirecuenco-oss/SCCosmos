@@ -52,6 +52,13 @@ namespace SCCosmos
                 return;
             }
 
+            // Una copia de la base no sincroniza nunca: publicaría sus cambios
+            // de prueba a los demás dispositivos con la identidad de este PC.
+            if (DatabaseHelper.RutaParaPruebas != null)
+            {
+                return;
+            }
+
             try
             {
                 _config =

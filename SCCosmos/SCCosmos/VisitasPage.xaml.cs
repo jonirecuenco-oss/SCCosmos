@@ -4,6 +4,7 @@ using iText.Kernel.Pdf.Annot;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Firefox;
 using OpenQA.Selenium.Support.UI;
+using SCCosmos.Sincro;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -2117,6 +2118,9 @@ namespace SCCosmos
             var actividadesPorPersona =
                 DatabaseHelper.ObtenerActividadesPorPersonas(idsActividad);
 
+            var requisitosPersonales =
+                DatabaseHelper.ObtenerRequisitosPersonales();
+
             foreach (var h in listadoHermanos)
             {
                 DateTime? fElim = ParsearFecha(h.FechaEliminacion);
@@ -2294,77 +2298,21 @@ namespace SCCosmos
                     }
                 }
 
-                int requisitoAnual = h.RequisitoHoras;
-                string srv = servicioLimpio.ToLower();
-                bool esPrecursorRegular = srv.Contains("precursor regular");
+                bool esPrecursorRegular =
+                    RequisitoPrecursor.EsPrecursorRegular(servicioLimpio);
 
-                DateTime inicioAnioServicioGrid =
-                    new DateTime(int.Parse(anioServicioGrid) - 1, 9, 1);
+                requisitosPersonales.TryGetValue(
+                    (int)idParaActividad,
+                    out var requisitoPersonal);
 
-                DateTime finAnioServicioGrid =
-                    new DateTime(int.Parse(anioServicioGrid), 8, 31);
-
-                DateTime inicioMetaPrecursor = inicioAnioServicioGrid;
-
-                // Para los precursores regulares la meta es de 50 h por cada mes
-                // en el que ya tenían el precursorado dentro del año de servicio.
-                // Ej.: inicio 01/06/2026 => junio, julio y agosto = 150 h.
-                if (esPrecursorRegular)
-                {
-                    DateTime? fechaInicioPrecursor = ParsearFecha(h.FechaInicioPrec);
-
-                    if (fechaInicioPrecursor.HasValue)
-                    {
-                        DateTime primerMesPrecursor =
-                            new DateTime(
-                                fechaInicioPrecursor.Value.Year,
-                                fechaInicioPrecursor.Value.Month,
-                                1);
-
-                        if (primerMesPrecursor > inicioMetaPrecursor)
-                            inicioMetaPrecursor = primerMesPrecursor;
-                    }
-
-                    if (inicioMetaPrecursor > finAnioServicioGrid)
-                    {
-                        requisitoAnual = 0;
-                    }
-                    else
-                    {
-                        int mesesComoPrecursor =
-                            ((finAnioServicioGrid.Year - inicioMetaPrecursor.Year) * 12)
-                            + finAnioServicioGrid.Month
-                            - inicioMetaPrecursor.Month
-                            + 1;
-
-                        requisitoAnual = Math.Max(0, mesesComoPrecursor) * 50;
-                    }
-
-                    if (h.RequisitoHoras != requisitoAnual)
-                    {
-                        h.RequisitoHoras = requisitoAnual;
-                        DatabaseHelper.ActualizarRequisitoSilencioso((int)idParaActividad, requisitoAnual);
-                    }
-                }
-                else if (requisitoAnual == 0 && esPrec)
-                {
-                    if (srv.Contains("especial") || srv.Contains("misionero"))
-                    {
-                        requisitoAnual = 1200;
-                        if (sexoLimpio.ToLower() == "mujer" && fn.HasValue)
-                        {
-                            int edadPrec = mesReferenciaGrid.Year - fn.Value.Year;
-                            if (fn.Value.Date > mesReferenciaGrid.AddYears(-edadPrec)) edadPrec--;
-                            if (edadPrec >= 40) requisitoAnual = 1080;
-                        }
-                    }
-
-                    if (requisitoAnual > 0)
-                    {
-                        h.RequisitoHoras = requisitoAnual;
-                        DatabaseHelper.ActualizarRequisitoSilencioso((int)idParaActividad, requisitoAnual);
-                    }
-                }
+                int requisitoAnual =
+                    RequisitoPrecursor.RequisitoAnual(
+                        servicioLimpio,
+                        sexoLimpio,
+                        fn,
+                        mesReferenciaGrid,
+                        requisitoPersonal.RequisitoFijado,
+                        requisitoPersonal.SaludDelicada);
 
                 // Todos los nombres parten del mismo margen/alineación.
                 // La condición de precursor se representa con negrita en XAML,
@@ -2373,90 +2321,6 @@ namespace SCCosmos
 
                 string tooltipAlerta = null;
 
-                if (requisitoAnual > 0)
-                {
-                    double metaProrrateada;
-
-                    if (esPrecursorRegular)
-                    {
-                        DateTime mesCorteMeta =
-                            new DateTime(
-                                mesReferenciaGrid.Year,
-                                mesReferenciaGrid.Month,
-                                1);
-
-                        DateTime ultimoMesServicio =
-                            new DateTime(
-                                finAnioServicioGrid.Year,
-                                finAnioServicioGrid.Month,
-                                1);
-
-                        if (mesCorteMeta > ultimoMesServicio)
-                            mesCorteMeta = ultimoMesServicio;
-
-                        if (mesCorteMeta < inicioMetaPrecursor)
-                        {
-                            metaProrrateada = 0;
-                        }
-                        else
-                        {
-                            int mesesMetaHastaCorte =
-                                ((mesCorteMeta.Year - inicioMetaPrecursor.Year) * 12)
-                                + mesCorteMeta.Month
-                                - inicioMetaPrecursor.Month
-                                + 1;
-
-                            metaProrrateada = Math.Max(0, mesesMetaHastaCorte) * 50.0;
-                        }
-                    }
-                    else
-                    {
-                        metaProrrateada =
-                            (requisitoAnual / 12.0) * mesesTranscurridos;
-                    }
-
-                    double horasTotales = 0;
-
-                    foreach (var act in informesHistoricos.Where(a => a.AnioServicio == anioServicioGrid))
-                    {
-                        int numMesAct = Array.IndexOf(nombresMesesJson, act.Mes.ToLower()) + 1;
-                        int ordenMesAct = (numMesAct >= 9) ? numMesAct - 8 : numMesAct + 4;
-
-                        bool mesDentroMeta = ordenMesAct <= mesesTranscurridos;
-
-                        if (esPrecursorRegular && numMesAct > 0)
-                        {
-                            int anioMesActividad =
-                                numMesAct >= 9
-                                    ? int.Parse(anioServicioGrid) - 1
-                                    : int.Parse(anioServicioGrid);
-
-                            DateTime fechaMesActividad =
-                                new DateTime(anioMesActividad, numMesAct, 1);
-
-                            mesDentroMeta =
-                                mesDentroMeta
-                                && fechaMesActividad >= inicioMetaPrecursor;
-                        }
-
-                        if (mesDentroMeta)
-                        {
-                            string hrClean = act.Horas?.Replace(" ", "").Trim();
-                            if (double.TryParse(
-                                    hrClean?.Replace(",", "."),
-                                    System.Globalization.NumberStyles.Any,
-                                    System.Globalization.CultureInfo.InvariantCulture,
-                                    out double hMes))
-                            {
-                                horasTotales += hMes;
-                            }
-                        }
-                    }
-
-                    // Ya no se marca el nombre con ⚠️: el atraso se ve
-                    // en el acumulado del año en rojo, bajo cada mes.
-                }
-
                 var act1 = LocalizarActividadMes(informesHistoricos, meses[0]);
                 var act2 = LocalizarActividadMes(informesHistoricos, meses[1]);
                 var act3 = LocalizarActividadMes(informesHistoricos, meses[2]);
@@ -2464,25 +2328,17 @@ namespace SCCosmos
                 var act5 = LocalizarActividadMes(informesHistoricos, meses[4]);
                 var act6 = LocalizarActividadMes(informesHistoricos, meses[5]);
 
-                // Acumulado del año de servicio hasta cada mes (solo
-                // precursores con requisito anual). Los regulares suman
-                // 50 h/mes; especiales y misioneros, su cuota mensual.
-                double metaMensual =
-                    esPrecursorRegular
-                        ? 50
-                        : (srv.Contains("especial") || srv.Contains("misionero"))
-                            ? requisitoAnual / 12.0
-                            : 0;
-
+                // Adelanto o atraso acumulado en el año de servicio hasta cada
+                // mes (solo precursores y misioneros con requisito).
                 DateTime? inicioPrecursor =
                     ParsearFecha(h.FechaInicioPrec);
 
-                var acum1 = CrearDiferenciaMes(informesHistoricos, meses[0], metaMensual, esPrecursorRegular, inicioPrecursor);
-                var acum2 = CrearDiferenciaMes(informesHistoricos, meses[1], metaMensual, esPrecursorRegular, inicioPrecursor);
-                var acum3 = CrearDiferenciaMes(informesHistoricos, meses[2], metaMensual, esPrecursorRegular, inicioPrecursor);
-                var acum4 = CrearDiferenciaMes(informesHistoricos, meses[3], metaMensual, esPrecursorRegular, inicioPrecursor);
-                var acum5 = CrearDiferenciaMes(informesHistoricos, meses[4], metaMensual, esPrecursorRegular, inicioPrecursor);
-                var acum6 = CrearDiferenciaMes(informesHistoricos, meses[5], metaMensual, esPrecursorRegular, inicioPrecursor);
+                var acum1 = CrearDiferenciaMes(informesHistoricos, meses[0], requisitoAnual, esPrecursorRegular, inicioPrecursor);
+                var acum2 = CrearDiferenciaMes(informesHistoricos, meses[1], requisitoAnual, esPrecursorRegular, inicioPrecursor);
+                var acum3 = CrearDiferenciaMes(informesHistoricos, meses[2], requisitoAnual, esPrecursorRegular, inicioPrecursor);
+                var acum4 = CrearDiferenciaMes(informesHistoricos, meses[3], requisitoAnual, esPrecursorRegular, inicioPrecursor);
+                var acum5 = CrearDiferenciaMes(informesHistoricos, meses[4], requisitoAnual, esPrecursorRegular, inicioPrecursor);
+                var acum6 = CrearDiferenciaMes(informesHistoricos, meses[5], requisitoAnual, esPrecursorRegular, inicioPrecursor);
 
                 var nuevaFila = new FilaVisitaPublisher
                 {
@@ -5114,113 +4970,27 @@ namespace SCCosmos
         private static (string Texto, Brush Color) CrearDiferenciaMes(
             List<ActividadMensual> informes,
             DateTime mes,
-            double metaMensual,
+            int requisitoAnual,
             bool esPrecursorRegular,
             DateTime? inicioPrecursor)
         {
-            if (metaMensual <= 0)
+            double? resultado =
+                RequisitoPrecursor.DiferenciaHasta(
+                    informes.Select(
+                        a => new HorasDeMes(
+                            a.Mes,
+                            a.AnioServicio,
+                            RequisitoPrecursor.LeerHoras(a.Horas),
+                            RequisitoPrecursor.CreditoAGuardar(a.Credito, a.Notas))),
+                    mes,
+                    requisitoAnual,
+                    esPrecursorRegular,
+                    inicioPrecursor);
+
+            if (resultado is not double diferencia)
             {
                 return ("", Brushes.Transparent);
             }
-
-            string[] nombres =
-            {
-                "enero", "febrero", "marzo", "abril", "mayo", "junio",
-                "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
-            };
-
-            string anio =
-                (mes.Month >= 9 ? mes.Year + 1 : mes.Year).ToString();
-
-            int orden =
-                mes.Month >= 9 ? mes.Month - 8 : mes.Month + 4;
-
-            double acumulado = 0;
-
-            foreach (ActividadMensual act in informes)
-            {
-                if (!string.Equals(act.AnioServicio, anio, StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                int numero =
-                    Array.IndexOf(
-                        nombres,
-                        (act.Mes ?? "").Trim().ToLowerInvariant()) + 1;
-
-                if (numero <= 0)
-                {
-                    continue;
-                }
-
-                int ordenAct =
-                    numero >= 9 ? numero - 8 : numero + 4;
-
-                if (ordenAct > orden)
-                {
-                    continue;
-                }
-
-                string horas =
-                    (act.Horas ?? "").Replace(" ", "").Replace(",", ".");
-
-                if (double.TryParse(
-                        horas,
-                        System.Globalization.NumberStyles.Any,
-                        System.Globalization.CultureInfo.InvariantCulture,
-                        out double valor)
-                    && valor > 0)
-                {
-                    acumulado += valor;
-                }
-            }
-
-            double meta =
-                metaMensual * orden;
-
-            if (esPrecursorRegular && inicioPrecursor.HasValue)
-            {
-                DateTime inicioMes =
-                    new(inicioPrecursor.Value.Year, inicioPrecursor.Value.Month, 1);
-
-                DateTime mesActual =
-                    new(mes.Year, mes.Month, 1);
-
-                if (mesActual < inicioMes)
-                {
-                    // Antes de empezar como precursor no hay diferencia
-                    // que mostrar.
-                    return ("", Brushes.Transparent);
-                }
-
-                DateTime inicioAnio =
-                    mes.Month >= 9
-                        ? new DateTime(mes.Year, 9, 1)
-                        : new DateTime(mes.Year - 1, 9, 1);
-
-                DateTime desde =
-                    inicioMes > inicioAnio ? inicioMes : inicioAnio;
-
-                int meses =
-                    ((mesActual.Year - desde.Year) * 12)
-                    + mesActual.Month
-                    - desde.Month
-                    + 1;
-
-                meta =
-                    metaMensual * Math.Max(0, Math.Min(orden, meses));
-            }
-
-            double diferencia =
-                Math.Round(acumulado - meta, 1);
-
-            string texto =
-                diferencia > 0
-                    ? "+" + diferencia.ToString("0.#", CultureInfo.CurrentCulture)
-                    : diferencia < 0
-                        ? diferencia.ToString("0.#", CultureInfo.CurrentCulture)
-                        : "0";
 
             Brush color =
                 diferencia > 0
@@ -5229,7 +4999,7 @@ namespace SCCosmos
                         ? new SolidColorBrush(Color.FromRgb(0xFF, 0x9A, 0xA3))
                         : new SolidColorBrush(Color.FromRgb(0x9E, 0xA4, 0xAE));
 
-            return (texto, color);
+            return (RequisitoPrecursor.TextoDiferencia(diferencia), color);
         }
 
 

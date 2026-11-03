@@ -2479,6 +2479,300 @@ internal static class Program
                 return correcto;
             });
 
+        await Probar(
+            "30. Requisito de precursores: crédito con tope de 55, salud delicada, fijado a mano y notas",
+            () =>
+            {
+                var fallos =
+                    new List<string>();
+
+                void Ver(string que, object? obtenido, object? esperado)
+                {
+                    if (!Equals(obtenido, esperado))
+                    {
+                        fallos.Add(
+                            $"{que}: {obtenido} (se esperaba {esperado})");
+                    }
+                }
+
+                // Tope: solo limita lo que aporta el crédito.
+                Ver("40+15", RequisitoPrecursor.HorasComputables(40, 15), 55d);
+                Ver("50+10", RequisitoPrecursor.HorasComputables(50, 10), 55d);
+                Ver("60+10", RequisitoPrecursor.HorasComputables(60, 10), 60d);
+                Ver("30+10", RequisitoPrecursor.HorasComputables(30, 10), 40d);
+                Ver("70+0", RequisitoPrecursor.HorasComputables(70, 0), 70d);
+
+                var hoy =
+                    new DateTime(2026, 11, 1);
+
+                int Requisito(string servicio, string sexo = "Hombre", int? nacido = null, int fijado = 0, bool salud = false) =>
+                    RequisitoPrecursor.RequisitoAnual(
+                        servicio,
+                        sexo,
+                        nacido.HasValue ? new DateTime(nacido.Value, 1, 1) : null,
+                        hoy,
+                        fijado,
+                        salud);
+
+                Ver("regular", Requisito("Precursor regular"), 600);
+                Ver("especial", Requisito("Precursor especial"), 1200);
+                Ver("misionera joven", Requisito("Misionero", "Mujer", 1996), 1200);
+                Ver("especial de 45", Requisito("Precursor especial", "Mujer", 1981), 1080);
+                Ver("fijado", Requisito("Precursor regular", fijado: 420), 420);
+                Ver("salud delicada", Requisito("Precursor regular", fijado: 420, salud: true), 0);
+                Ver("sin servicio", Requisito("", fijado: 420), 0);
+
+                HorasDeMes Mes(string mes, double horas, double credito = 0) =>
+                    new(mes, "2027", horas, credito);
+
+                // Año de servicio 2027: septiembre de 2026 a agosto de 2027.
+                var septiembre = new DateTime(2026, 9, 1);
+                var octubre = new DateTime(2026, 10, 1);
+
+                var meses =
+                    new List<HorasDeMes>
+                    {
+                        Mes("septiembre", 60),
+                        Mes("octubre", 40, 15),
+                        new("noviembre", "2026", 500, 0)
+                    };
+
+                Ver("regular, septiembre", RequisitoPrecursor.DiferenciaHasta(meses, septiembre, 600, true, null), (double?)10);
+                Ver("regular, octubre con crédito", RequisitoPrecursor.DiferenciaHasta(meses, octubre, 600, true, null), (double?)15);
+                Ver("especial, octubre", RequisitoPrecursor.DiferenciaHasta(meses, octubre, 1200, false, null), (double?)-85);
+                Ver("reducido a 300", RequisitoPrecursor.DiferenciaHasta(meses, septiembre, 300, true, null), (double?)35);
+                Ver("sin requisito", RequisitoPrecursor.DiferenciaHasta(meses, octubre, 0, true, null), (double?)null);
+
+                // Empezó en octubre: septiembre no cuenta ni en horas ni en requisito.
+                var inicio = new DateTime(2026, 10, 15);
+
+                Ver("antes de empezar", RequisitoPrecursor.DiferenciaHasta(meses, septiembre, 600, true, inicio), (double?)null);
+                Ver("desde que empezó", RequisitoPrecursor.DiferenciaHasta(meses, octubre, 600, true, inicio), (double?)5);
+                Ver("horas desde que empezó", RequisitoPrecursor.HorasHasta(meses, octubre, true, inicio), 55d);
+                Ver("horas de todo el año", RequisitoPrecursor.HorasHasta(meses, octubre, true, null), 115d);
+                Ver("horas antes de empezar", RequisitoPrecursor.HorasHasta(meses, septiembre, true, inicio), 0d);
+                Ver("meses desde que empezó", RequisitoPrecursor.MesesConRequisito(new DateTime(2026, 12, 1), true, inicio), 3);
+                Ver("meses antes de empezar", RequisitoPrecursor.MesesConRequisito(septiembre, true, inicio), 0);
+                Ver("meses de un especial", RequisitoPrecursor.MesesConRequisito(new DateTime(2026, 12, 1), false, inicio), 4);
+                Ver("meses, empezó años atrás", RequisitoPrecursor.MesesConRequisito(octubre, true, new DateTime(2019, 3, 1)), 2);
+                Ver(
+                    "registro de la ficha",
+                    RequisitoPrecursor.DiferenciaDeRegistro(meses, meses[1], "Precursor regular", "Hombre", null, null, 0, false),
+                    (double?)15);
+                Ver(
+                    "registro con mes desconocido",
+                    RequisitoPrecursor.DiferenciaDeRegistro(meses, new HorasDeMes("foo", "2027", 1, 0), "Precursor regular", "Hombre", null, null, 0, false),
+                    (double?)null);
+
+                // Crédito en las notas.
+                Ver("expreso", RequisitoPrecursor.CreditoDeNotas("[Crédito: 15] 10 horas LDC"), 15d);
+                Ver("expreso sin corchetes", RequisitoPrecursor.CreditoDeNotas("LDC crédito: 7"), 7d);
+                Ver("suma", RequisitoPrecursor.CreditoDeNotas("15h CEH, 10h Betel"), 25d);
+                Ver("sin espacio", RequisitoPrecursor.CreditoDeNotas("8AC 4AR 6GVP 3Mantenim"), 21d);
+                Ver("tras una coma", RequisitoPrecursor.CreditoDeNotas("Credito EAC,30horas, CEH 8 horas"), 38d);
+                Ver("decimales", RequisitoPrecursor.CreditoDeNotas("8,5 Horas CEH"), 8.5d);
+                Ver("horas y minutos", RequisitoPrecursor.CreditoDeNotas("mantenimiento: 9:30h de salón"), 9.5d);
+                Ver("días", RequisitoPrecursor.CreditoDeNotas("6 días libres"), 0d);
+                Ver("cursos", RequisitoPrecursor.CreditoDeNotas("7 H LDC 7 H CEH 3 Cursos AR"), 14d);
+                Ver("predicación", RequisitoPrecursor.CreditoDeNotas("(40h dedicadas a LBD) (20h predicación)"), 40d);
+                Ver("número suelto", RequisitoPrecursor.CreditoDeNotas("31"), 0d);
+                Ver("vacío", RequisitoPrecursor.CreditoDeNotas(""), 0d);
+
+                // La casilla manda; vacía, las notas; un 0 expreso se respeta.
+                Ver("casilla vacía", RequisitoPrecursor.CreditoAGuardar("", "15h CEH"), 15d);
+                Ver("casilla con 0", RequisitoPrecursor.CreditoAGuardar("0", "15h CEH"), 0d);
+                Ver("casilla con valor", RequisitoPrecursor.CreditoAGuardar("12", "15h CEH"), 12d);
+                Ver("muestra el 0", RequisitoPrecursor.TextoCredito(0, "15h CEH"), "0");
+                Ver("muestra vacío", RequisitoPrecursor.TextoCredito(0, "sin nada"), "");
+
+                foreach (string fallo in fallos)
+                {
+                    Console.WriteLine(
+                        $"      ({fallo})");
+                }
+
+                return Task.FromResult(
+                    fallos.Count == 0);
+            });
+
+        await Probar(
+            "31. Columnas nuevas: el crédito sale de las notas sin anotarse, y un dispositivo antiguo no las borra",
+            async () =>
+            {
+                string dbN =
+                    Path.Combine(
+                        _carpeta,
+                        "N.db");
+
+                CopiarBase(
+                    origen,
+                    dbN);
+
+                const string idN =
+                    "cccccccccccccccccccccccccccccccc";
+
+                var almacenN =
+                    new SincroAlmacen(
+                        dbN,
+                        idN);
+
+                almacenN.Asegurar();
+
+                long actividad =
+                    LeerEntero(
+                        dbN,
+                        "SELECT Id FROM ActividadPersonas ORDER BY Id LIMIT 1;");
+
+                // Como una base que aún no tiene la columna, con notas de ejemplo.
+                Escribir(
+                    dbN,
+                    $"INSERT OR IGNORE INTO SCCosmos_Silencio (Id) VALUES (1); "
+                    + $"UPDATE ActividadPersonas SET Notas = '[Crédito: 12] nota inventada' WHERE Id = {actividad}; "
+                    + "ALTER TABLE ActividadPersonas DROP COLUMN Credito; "
+                    + "DELETE FROM SCCosmos_Silencio;");
+
+                string registro =
+                    "SELECT MAX(Seq) || '/' || COUNT(*) FROM SCCosmos_Cambios;";
+
+                string registroAntes =
+                    LeerTexto(
+                        dbN,
+                        registro);
+
+                // Si rellenar falla, la columna no queda creada a medias: en el
+                // siguiente arranque se vuelve a intentar.
+                Escribir(
+                    dbN,
+                    "CREATE TRIGGER T31Falla BEFORE UPDATE ON ActividadPersonas BEGIN SELECT RAISE(ABORT, 'prueba'); END;");
+
+                almacenN.Asegurar();
+
+                bool reintenta =
+                    LeerTexto(
+                        dbN,
+                        "SELECT COUNT(*) FROM pragma_table_info('ActividadPersonas') WHERE name = 'Credito';")
+                    == "0";
+
+                Escribir(
+                    dbN,
+                    "DROP TRIGGER T31Falla;");
+
+                almacenN.Asegurar();
+
+                bool rellenado =
+                    LeerTexto(
+                        dbN,
+                        $"SELECT Credito FROM ActividadPersonas WHERE Id = {actividad};")
+                    is "12" or "12.0"
+                    && registroAntes
+                    == LeerTexto(
+                        dbN,
+                        registro);
+
+                // Una fila sin las columnas nuevas, como la enviaría un dispositivo
+                // con una versión anterior, no debe borrarlas.
+                Escribir(
+                    dbN,
+                    $"UPDATE Personas SET RequisitoFijado = 420, SaludDelicada = 1 WHERE Id = {fila2}; "
+                    + $"UPDATE ActividadPersonas SET Credito = 33 WHERE Id = {actividad};");
+
+                CambioSincro Antiguo(string tabla, long id, string cambiar, string valor)
+                {
+                    using var conexion =
+                        Abrir(
+                            dbN);
+
+                    using var cmd =
+                        conexion.CreateCommand();
+
+                    cmd.CommandText =
+                        $"SELECT * FROM {tabla} WHERE Id = {id};";
+
+                    using var lector =
+                        cmd.ExecuteReader();
+
+                    lector.Read();
+
+                    var fila =
+                        new Dictionary<string, object?>(
+                            StringComparer.OrdinalIgnoreCase);
+
+                    for (int i = 0; i < lector.FieldCount; i++)
+                    {
+                        string columna =
+                            lector.GetName(i);
+
+                        if (columna is not ("RequisitoFijado" or "SaludDelicada" or "Credito"))
+                        {
+                            fila[columna] =
+                                lector.IsDBNull(i)
+                                    ? null
+                                    : lector.GetValue(i);
+                        }
+                    }
+
+                    fila[cambiar] =
+                        valor;
+
+                    return new CambioSincro
+                    {
+                        Tabla = tabla,
+                        Clave = id.ToString(),
+                        Tipo = "U",
+                        Momento = "2099-01-01T00:00:00.000Z",
+                        Origen = "dddddddddddddddddddddddddddddddd",
+                        Seq = 1,
+                        Fila = fila
+                    };
+                }
+
+                almacenN.AplicarLote(
+                    new List<CambioSincro>
+                    {
+                        Antiguo("Personas", fila2, "NombreComun", "SINCRO-T31"),
+                        Antiguo("ActividadPersonas", actividad, "Notas", "SINCRO-T31")
+                    });
+
+                string persona =
+                    LeerTexto(
+                        dbN,
+                        $"SELECT NombreComun || '/' || RequisitoFijado || '/' || SaludDelicada FROM Personas WHERE Id = {fila2};");
+
+                string mes =
+                    LeerTexto(
+                        dbN,
+                        $"SELECT Notas || '/' || CAST(Credito AS INTEGER) FROM ActividadPersonas WHERE Id = {actividad};");
+
+                // Y entre dispositivos actuales, viajan.
+                Escribir(
+                    _dbA,
+                    $"UPDATE Personas SET RequisitoFijado = 300, SaludDelicada = 1 WHERE Id = {fila3};");
+
+                bool viaja =
+                    await EsperarAsync(
+                        () =>
+                            LeerTexto(
+                                _dbB,
+                                $"SELECT RequisitoFijado || '/' || SaludDelicada FROM Personas WHERE Id = {fila3};")
+                            == "300/1",
+                        30);
+
+                bool correcto =
+                    reintenta
+                    && rellenado
+                    && persona == "SINCRO-T31/420/1"
+                    && mes == "SINCRO-T31/33"
+                    && viaja;
+
+                if (!correcto)
+                {
+                    Console.WriteLine(
+                        $"      (reintenta: {reintenta}; rellenado: {rellenado}; persona: {persona}; mes: {mes}; viaja: {viaja})");
+                }
+
+                return correcto;
+            });
+
         servicioD.Detener();
         servicioE.Detener();
 

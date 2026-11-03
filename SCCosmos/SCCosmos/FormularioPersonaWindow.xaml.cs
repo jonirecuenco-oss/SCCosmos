@@ -1,4 +1,6 @@
 using System;
+using System.ComponentModel;
+using SCCosmos.Sincro;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -49,8 +51,27 @@ namespace SCCosmos
         private readonly bool _teniaOrigenS21;
         private readonly bool _teniaOrigenJWHub;
 
-        private sealed class ActividadEditable
+        private sealed class ActividadEditable : INotifyPropertyChanged
         {
+            private string _diferencia = "";
+            private Brush _colorDiferencia = Brushes.Transparent;
+
+            public event PropertyChangedEventHandler PropertyChanged;
+
+            public string Credito { get; set; } = "";
+
+            public string Diferencia
+            {
+                get => _diferencia;
+                set { _diferencia = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Diferencia))); }
+            }
+
+            public Brush ColorDiferencia
+            {
+                get => _colorDiferencia;
+                set { _colorDiferencia = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ColorDiferencia))); }
+            }
+
             public string Mes { get; set; } = "";
             public string AnioServicio { get; set; } = "";
             public bool Participacion { get; set; }
@@ -247,6 +268,15 @@ namespace SCCosmos
 
             TxtPrivilegios.Text = PersonaActualizada.Privilegios;
             ChkAprobadoExhibidores.IsChecked = PersonaActualizada.AprobadoExhibidores;
+
+            if (PersonaActualizada.Id > 0)
+            {
+                var requisito = DatabaseHelper.ObtenerRequisitoPersona(PersonaActualizada.Id);
+                TxtRequisitoAnual.Text = requisito.RequisitoFijado > 0 ? requisito.RequisitoFijado.ToString() : "";
+                ChkSaludDelicada.IsChecked = requisito.SaludDelicada;
+            }
+
+            ActualizarPanelRequisito();
 
             // La actividad se carga desde ActividadPersonas en CargarActividadEnInterfaz().
             // El S-21 es la fuente de estos registros, pero aquí pueden corregirse manualmente.
@@ -1353,6 +1383,118 @@ namespace SCCosmos
             ImgFoto.Source = null;
         }
 
+        // =====================================================
+        // REQUISITO DE HORAS (PRECURSORES Y MISIONEROS)
+        // =====================================================
+
+        private void CmbServicio_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            ActualizarPanelRequisito();
+            RecalcularDiferencias();
+        }
+
+        private void RequisitoCambiado(object sender, RoutedEventArgs e)
+        {
+            RecalcularDiferencias();
+        }
+
+        private void GridActividad_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
+        {
+            // Aún no se ha volcado lo escrito: se calcula justo después.
+            Dispatcher.BeginInvoke(new Action(RecalcularDiferencias), DispatcherPriority.Background);
+        }
+
+        private string ServicioEnPantalla()
+        {
+            return (CmbServicio.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
+        }
+
+        private int RequisitoFijadoEnPantalla()
+        {
+            return int.TryParse((TxtRequisitoAnual.Text ?? "").Trim(), out int fijado) && fijado > 0
+                ? fijado
+                : 0;
+        }
+
+        /// <summary>
+        /// Solo se ve en precursores y misioneros, una vez guardada la persona y
+        /// con acceso completo: dice algo de su salud.
+        /// </summary>
+        private void ActualizarPanelRequisito()
+        {
+            bool tieneRequisito =
+                RequisitoPrecursor.RequisitoAnual(ServicioEnPantalla(), "", null, DateTime.Today, 0, false) > 0;
+
+            PanelRequisito.Visibility =
+                PerfilAcceso.AccesoCompleto && PersonaActualizada?.Id > 0 && tieneRequisito
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+
+            ColCredito.Visibility =
+                tieneRequisito ? Visibility.Visible : Visibility.Collapsed;
+
+            ColAcumulado.Visibility =
+                ColCredito.Visibility;
+        }
+
+        /// <summary>
+        /// Adelanto o atraso de cada mes con lo que hay ahora mismo en pantalla.
+        /// </summary>
+        private void RecalcularDiferencias()
+        {
+            string servicio = ServicioEnPantalla();
+            string sexo = (CmbSexo.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "";
+            DateTime? nacimiento = LeerFechaFicha(TxtFechaNac.Text);
+            DateTime? inicio = LeerFechaFicha(TxtInicioPrec.Text);
+            int fijado = RequisitoFijadoEnPantalla();
+            bool salud = ChkSaludDelicada.IsChecked == true;
+
+            HorasDeMes Horas(ActividadEditable a) =>
+                new HorasDeMes(
+                    a.Mes,
+                    a.AnioServicio,
+                    RequisitoPrecursor.LeerHoras(a.Horas),
+                    RequisitoPrecursor.CreditoAGuardar(a.Credito, a.Notas));
+
+            var horas = _actividadEditada
+                .Select(Horas)
+                .ToList();
+
+            foreach (var item in _actividadEditada)
+            {
+                double? diferencia = RequisitoPrecursor.DiferenciaDeRegistro(
+                    horas,
+                    Horas(item),
+                    servicio,
+                    sexo,
+                    nacimiento,
+                    inicio,
+                    fijado,
+                    salud);
+
+                item.Diferencia = diferencia.HasValue
+                    ? RequisitoPrecursor.TextoDiferencia(diferencia.Value)
+                    : "";
+
+                item.ColorDiferencia = diferencia > 0
+                    ? new SolidColorBrush(Color.FromRgb(0x4B, 0xA3, 0xE3))
+                    : diferencia < 0
+                        ? new SolidColorBrush(Color.FromRgb(0xFF, 0x9A, 0xA3))
+                        : new SolidColorBrush(Color.FromRgb(0x9E, 0xA4, 0xAE));
+            }
+        }
+
+        private static DateTime? LeerFechaFicha(string texto)
+        {
+            return DateTime.TryParse(
+                (texto ?? "").Trim(),
+                CultureInfo.GetCultureInfo("es-ES"),
+                DateTimeStyles.None,
+                out DateTime fecha)
+                ? fecha
+                : (DateTime?)null;
+        }
+
         private void CargarActividadEnInterfaz()
         {
             _actividadEditada = new ObservableCollection<ActividadEditable>();
@@ -1380,6 +1522,7 @@ namespace SCCosmos
                         PrecursorAuxiliar = item.PrecursorAuxiliar,
                         Horas = item.Horas ?? "",
                         Notas = item.Notas ?? "",
+                        Credito = item.Credito ?? "",
                         MesOriginal = NormalizarMesActividad(item.Mes),
                         AnioServicioOriginal = item.AnioServicio ?? "",
                         EsNuevo = false
@@ -1388,6 +1531,7 @@ namespace SCCosmos
 
                 GridActividad.ItemsSource = _actividadEditada;
                 ActualizarEstadoActividad();
+                RecalcularDiferencias();
             }
             catch (Exception ex)
             {
@@ -1427,6 +1571,7 @@ namespace SCCosmos
             };
 
             _actividadEditada.Add(nuevo);
+            RecalcularDiferencias();
             GridActividad.SelectedItem = nuevo;
             GridActividad.ScrollIntoView(nuevo);
             ActualizarEstadoActividad();
@@ -1452,6 +1597,7 @@ namespace SCCosmos
             }
 
             _actividadEditada.Remove(item);
+            RecalcularDiferencias();
             ActualizarEstadoActividad();
         }
 
@@ -1479,12 +1625,18 @@ namespace SCCosmos
                     CursosBiblicos = item.CursosBiblicos ?? "",
                     PrecursorAuxiliar = item.PrecursorAuxiliar,
                     Horas = item.Horas ?? "",
-                    Notas = item.Notas ?? ""
+                    Notas = item.Notas ?? "",
+                    Credito = item.Credito ?? ""
                 }).ToList();
 
                 DatabaseHelper.ReemplazarActividadPersona(
                     PersonaActualizada.Id,
                     registrosGuardar);
+
+                DatabaseHelper.GuardarRequisitoPersona(
+                    PersonaActualizada.Id,
+                    RequisitoFijadoEnPantalla(),
+                    ChkSaludDelicada.IsChecked == true);
 
                 foreach (var item in _actividadEditada)
                 {

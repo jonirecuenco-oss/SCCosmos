@@ -609,7 +609,8 @@ public static partial class DatabaseHelper
                     CursosBiblicos,
                     PrecursorAuxiliar,
                     Horas,
-                    Notas
+                    Notas,
+                    Credito
                 )
                 VALUES
                 (
@@ -620,10 +621,12 @@ public static partial class DatabaseHelper
                     $cursos,
                     $precursor,
                     $horas,
-                    $notas
+                    $notas,
+                    $credito
                 )
                 ON CONFLICT(PersonaId, Mes, AnioServicio)
                 DO UPDATE SET
+                    Credito = CASE WHEN COALESCE(Notas, '') IS NOT excluded.Notas THEN excluded.Credito ELSE Credito END,
                     Participacion = excluded.Participacion,
                     CursosBiblicos = excluded.CursosBiblicos,
                     PrecursorAuxiliar = excluded.PrecursorAuxiliar,
@@ -632,6 +635,7 @@ public static partial class DatabaseHelper
                 """;
 
             cmd.Parameters.AddWithValue("$persona", personaId);
+            cmd.Parameters.AddWithValue("$credito", global::SCCosmos.Sincro.RequisitoPrecursor.CreditoDeNotas(informe.Notas));
             cmd.Parameters.AddWithValue("$mes", mes);
             cmd.Parameters.AddWithValue("$anio", anioServicio);
             cmd.Parameters.AddWithValue("$participacion", informe.ParticipacionBool ? 1 : 0);

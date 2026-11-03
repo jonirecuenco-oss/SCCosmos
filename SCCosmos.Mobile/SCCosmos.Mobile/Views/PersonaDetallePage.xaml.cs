@@ -35,6 +35,10 @@ public partial class PersonaDetallePage : ContentPage
         SeccionActividad.IsVisible =
             PerfilAccesoService.AccesoCompleto;
 
+        // Tampoco el requisito: dice algo de su salud.
+        PanelRequisito.IsVisible =
+            PerfilAccesoService.AccesoCompleto;
+
         _personaId = personaId;
 
         PrepararPickers();
@@ -286,9 +290,13 @@ public partial class PersonaDetallePage : ContentPage
 
             TxtRequisito.Text =
                 _extra is not null
-                && _extra.RequisitoHoras > 0
-                    ? _extra.RequisitoHoras.ToString()
+                && _extra.RequisitoFijado > 0
+                    ? _extra.RequisitoFijado.ToString()
                     : "";
+
+            SwSaludDelicada.IsToggled =
+                _extra?.SaludDelicada
+                ?? false;
         }
         catch
         {
@@ -1181,6 +1189,9 @@ public partial class PersonaDetallePage : ContentPage
                 TxtRequisito.Text?.Trim(),
                 out int requisito);
 
+            bool saludDelicada =
+                SwSaludDelicada.IsToggled;
+
             await Task.Run(() =>
             {
                 DatabaseHelper
@@ -1191,7 +1202,8 @@ public partial class PersonaDetallePage : ContentPage
                     .ActualizarCamposExtraPersonaMobile(
                         _personaId,
                         SwAprobado.IsToggled,
-                        requisito);
+                        requisito,
+                        saludDelicada);
             });
 
             // Los cambios se envían de inmediato (dispositivos y carpeta):

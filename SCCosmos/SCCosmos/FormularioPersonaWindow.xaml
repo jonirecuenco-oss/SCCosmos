@@ -89,6 +89,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
@@ -178,7 +179,7 @@
                 </StackPanel>
                 <StackPanel Grid.Row="4" Grid.Column="3" Margin="5">
                     <TextBlock Text="Servicio" Foreground="#AAAAAA" Margin="0,0,0,3"/>
-                    <ComboBox x:Name="CmbServicio" Background="#252526" Foreground="White">
+                    <ComboBox x:Name="CmbServicio" Background="#252526" Foreground="White" SelectionChanged="CmbServicio_SelectionChanged">
                         <ComboBoxItem Content="(Vacío)"/>
                         <ComboBoxItem Content="Precursor regular"/>
                         <ComboBoxItem Content="Precursor especial"/>
@@ -189,7 +190,7 @@
                 <!-- LÍNEA 6 -->
                 <StackPanel Grid.Row="5" Grid.Column="0" Margin="5">
                     <TextBlock Text="Fecha nac." Foreground="#AAAAAA" Margin="0,0,0,3"/>
-                    <ui:TextBox x:Name="TxtFechaNac" Background="#252526" Foreground="White" BorderBrush="#333"/>
+                    <ui:TextBox x:Name="TxtFechaNac" Background="#252526" Foreground="White" BorderBrush="#333" LostFocus="RequisitoCambiado"/>
                 </StackPanel>
                 <StackPanel Grid.Row="5" Grid.Column="1" Margin="5">
                     <TextBlock Text="Fecha baut." Foreground="#AAAAAA" Margin="0,0,0,3"/>
@@ -197,15 +198,35 @@
                 </StackPanel>
                 <StackPanel Grid.Row="5" Grid.Column="2" Margin="5">
                     <TextBlock Text="Inicio prec." Foreground="#AAAAAA" Margin="0,0,0,3"/>
-                    <ui:TextBox x:Name="TxtInicioPrec" Background="#252526" Foreground="White" BorderBrush="#333"/>
+                    <ui:TextBox x:Name="TxtInicioPrec" Background="#252526" Foreground="White" BorderBrush="#333" LostFocus="RequisitoCambiado"/>
                 </StackPanel>
                 <StackPanel Grid.Row="5" Grid.Column="3" Margin="5">
                     <TextBlock Text="Última escuela" Foreground="#AAAAAA" Margin="0,0,0,3"/>
                     <ui:TextBox x:Name="TxtEscuela" Background="#252526" Foreground="White" BorderBrush="#333"/>
                 </StackPanel>
 
-                <!-- LÍNEA 7: PRIVILEGIOS, EXHIBIDORES Y SOLICITUDES -->
-                <Grid Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="4" Margin="5,15,5,5">
+                        <!-- LÍNEA 6b: REQUISITO DE HORAS (solo precursores y misioneros) -->
+                        <Grid x:Name="PanelRequisito" Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="4" Margin="5" Visibility="Collapsed">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="3*"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                <TextBlock Text="Requisito anual" Foreground="#AAAAAA" Margin="0,0,0,3" ToolTip="Horas al año si no es el normal de su servicio. Vacío: 600 los regulares; 1200 los especiales y misioneros."/>
+                                <ui:TextBox x:Name="TxtRequisitoAnual" PlaceholderText="Según su servicio" Background="#252526" Foreground="White" BorderBrush="#333" LostFocus="RequisitoCambiado"/>
+                            </StackPanel>
+                            <CheckBox x:Name="ChkSaludDelicada"
+                                      Grid.Column="1"
+                                      Content="Salud delicada (sin requisito de horas)"
+                                      Foreground="White"
+                                      VerticalAlignment="Bottom"
+                                      Margin="0,0,0,6"
+                                      Checked="RequisitoCambiado"
+                                      Unchecked="RequisitoCambiado"/>
+                        </Grid>
+
+                        <!-- LÍNEA 7: PRIVILEGIOS, EXHIBIDORES Y SOLICITUDES -->
+                <Grid Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="4" Margin="5,15,5,5">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="3*"/>
                         <ColumnDefinition Width="1*"/>
@@ -261,7 +282,7 @@
                 </Grid>
 
                 <!-- LÍNEA 8: NOTAS PERSONALES (NUEVO) -->
-                <StackPanel Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="4" Margin="5,10,5,5">
+                <StackPanel Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="4" Margin="5,10,5,5">
                     <TextBlock Text="Notas personales" Foreground="#AAAAAA" Margin="0,0,0,3"/>
                     <ui:TextBox x:Name="TxtNotas" AcceptsReturn="True" TextWrapping="Wrap" Height="60" VerticalScrollBarVisibility="Auto" Background="#252526" Foreground="White" BorderBrush="#333"/>
                 </StackPanel>
@@ -303,6 +324,7 @@
                     </Grid>
 
                     <DataGrid x:Name="GridActividad"
+                                  CellEditEnding="GridActividad_CellEditEnding"
                               Grid.Row="1"
                               AutoGenerateColumns="False"
                               CanUserAddRows="False"
@@ -357,6 +379,22 @@
                             <DataGridTextColumn Header="Horas"
                                                 Binding="{Binding Horas, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                 Width="70"/>
+                            <DataGridTextColumn x:Name="ColCredito" Binding="{Binding Credito, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                Width="66">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Text="Crédito" ToolTip="Horas en otras actividades. Vacío: las que digan las notas (15h CEH, [Crédito: 15]...); 0: ninguna."/>
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTemplateColumn x:Name="ColAcumulado" Width="96" IsReadOnly="True">
+                                <DataGridTemplateColumn.Header>
+                                    <TextBlock Text="Acumulado" ToolTip="Horas de adelanto (+) o de atraso (-) respecto al requisito, acumuladas en el año de servicio hasta ese mes."/>
+                                </DataGridTemplateColumn.Header>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Diferencia}" Foreground="{Binding ColorDiferencia}" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                             <DataGridTextColumn Header="Notas"
                                                 Binding="{Binding Notas, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                 Width="*"/>

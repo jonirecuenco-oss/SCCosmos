@@ -70,6 +70,9 @@ public partial class ActividadMensualEdicionPage : ContentPage
             TxtHoras.Text =
                 actividad.Horas;
 
+            TxtCredito.Text =
+                actividad.Credito;
+
             TxtCursos.Text =
                 actividad.CursosBiblicos;
 
@@ -154,7 +157,8 @@ public partial class ActividadMensualEdicionPage : ContentPage
                             SwParticipacion.IsToggled,
                             TxtCursos.Text?.Trim() ?? "",
                             SwPrecAux.IsToggled,
-                            TxtNotas.Text?.Trim() ?? ""));
+                            TxtNotas.Text?.Trim() ?? "",
+                        TxtCredito.Text?.Trim() ?? ""));
 
             _resultado.TrySetResult(
                 true);

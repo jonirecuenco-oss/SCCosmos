@@ -42,6 +42,9 @@ public static class EsquemaBase
                     comprobar.ExecuteScalar())
                 > 0)
             {
+                AsegurarColumnasNuevas(
+                    conexion);
+
                 return false;
             }
         }
@@ -69,7 +72,177 @@ public static class EsquemaBase
 
         transaccion.Commit();
 
+        AsegurarColumnasNuevas(
+            conexion);
+
         return true;
+    }
+
+
+    /// <summary>
+    /// Columnas añadidas después del esquema original. Cada dispositivo las
+    /// crea al arrancar, antes de sincronizar: lo que llegara para una columna
+    /// que no existe se perdería.
+    /// </summary>
+    public static void AsegurarColumnasNuevas(
+        SqliteConnection conexion)
+    {
+        // Requisito anual fijado a mano (0: el de su servicio) y salud delicada.
+        AnadirSiFalta(
+            conexion,
+            "Personas",
+            "RequisitoFijado",
+            "INTEGER DEFAULT 0");
+
+        AnadirSiFalta(
+            conexion,
+            "Personas",
+            "SaludDelicada",
+            "INTEGER DEFAULT 0");
+
+        // Horas en otras actividades que se suman a las de predicación.
+        AnadirSiFalta(
+            conexion,
+            "ActividadPersonas",
+            "Credito",
+            "REAL DEFAULT 0",
+            RellenarCreditoDesdeNotas);
+    }
+
+
+    /// <summary>
+    /// Todo en una transacción: si algo falla, la columna no queda creada y a
+    /// medias, y se vuelve a intentar en el siguiente arranque.
+    /// </summary>
+    private static void AnadirSiFalta(
+        SqliteConnection conexion,
+        string tabla,
+        string columna,
+        string definicion,
+        Action<SqliteConnection, SqliteTransaction>? alCrearla = null)
+    {
+        using var comprobar =
+            conexion.CreateCommand();
+
+        comprobar.CommandText =
+            $"""
+            SELECT (SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = '{tabla}'),
+                   (SELECT COUNT(*) FROM pragma_table_info('{tabla}') WHERE name = '{columna}');
+            """;
+
+        using (var lector =
+               comprobar.ExecuteReader())
+        {
+            lector.Read();
+
+            if (lector.GetInt64(0) == 0
+                || lector.GetInt64(1) > 0)
+            {
+                return;
+            }
+        }
+
+        using var transaccion =
+            conexion.BeginTransaction();
+
+        try
+        {
+            Ejecutar(
+                conexion,
+                transaccion,
+                $"ALTER TABLE \"{tabla}\" ADD COLUMN \"{columna}\" {definicion};");
+        }
+        catch (SqliteException error)
+            when (error.Message.Contains(
+                "duplicate column",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            // Otra conexión la ha añadido entre tanto: ya está hecho.
+            return;
+        }
+
+        alCrearla?.Invoke(
+            conexion,
+            transaccion);
+
+        transaccion.Commit();
+    }
+
+
+    /// <summary>
+    /// Al crear la columna, el crédito sale de las notas ya guardadas. Cada
+    /// dispositivo lo calcula igual con sus propias notas, así que no se anota
+    /// como cambio: si no, se reenviarían cientos de filas sin motivo.
+    /// </summary>
+    private static void RellenarCreditoDesdeNotas(
+        SqliteConnection conexion,
+        SqliteTransaction transaccion)
+    {
+        Ejecutar(
+            conexion,
+            transaccion,
+            "CREATE TABLE IF NOT EXISTS SCCosmos_Silencio (Id INTEGER PRIMARY KEY);");
+
+        Ejecutar(
+            conexion,
+            transaccion,
+            "INSERT OR IGNORE INTO SCCosmos_Silencio (Id) VALUES (1);");
+
+        var creditos =
+            new List<(long Id, double Credito)>();
+
+        using (var cmd =
+               conexion.CreateCommand())
+        {
+            cmd.Transaction =
+                transaccion;
+
+            cmd.CommandText =
+                "SELECT Id, Notas FROM ActividadPersonas WHERE Notas GLOB '*[0-9]*';";
+
+            using var lector =
+                cmd.ExecuteReader();
+
+            while (lector.Read())
+            {
+                double credito =
+                    RequisitoPrecursor.CreditoDeNotas(
+                        lector.GetString(1));
+
+                if (credito > 0)
+                {
+                    creditos.Add(
+                        (lector.GetInt64(0), credito));
+                }
+            }
+        }
+
+        foreach ((long id, double credito) in creditos)
+        {
+            using var cmd =
+                conexion.CreateCommand();
+
+            cmd.Transaction =
+                transaccion;
+
+            cmd.CommandText =
+                "UPDATE ActividadPersonas SET Credito = $credito WHERE Id = $id;";
+
+            cmd.Parameters.AddWithValue(
+                "$credito",
+                credito);
+
+            cmd.Parameters.AddWithValue(
+                "$id",
+                id);
+
+            cmd.ExecuteNonQuery();
+        }
+
+        Ejecutar(
+            conexion,
+            transaccion,
+            "DELETE FROM SCCosmos_Silencio;");
     }
 
 

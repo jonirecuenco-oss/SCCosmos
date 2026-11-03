@@ -49,7 +49,8 @@ public static partial class DatabaseHelper
                 COALESCE(NULLIF(Cursos, ''), CAST(CursosBiblicos AS TEXT), ''),
                 PrecursorAuxiliar,
                 Horas,
-                Notas
+                Notas,
+                COALESCE(Credito, 0)
             FROM ActividadPersonas
             WHERE PersonaId = $id
             ORDER BY CAST(AnioServicio AS INTEGER) DESC,
@@ -113,11 +114,123 @@ public static partial class DatabaseHelper
                     Notas =
                         LeerTextoActividad(
                             reader,
-                            6)
+                            6),
+
+                    Credito =
+                        global::SCCosmos.Sincro.RequisitoPrecursor.TextoCredito(
+                            reader.GetDouble(7),
+                            LeerTextoActividad(reader, 6))
                 });
         }
 
+        RellenarAcumuladosActividadMobile(
+            connection,
+            personaId,
+            lista);
+
         return lista;
+    }
+
+
+    /// <summary>
+    /// Adelanto o atraso de cada mes respecto al requisito anual de la persona.
+    /// </summary>
+    private static void RellenarAcumuladosActividadMobile(
+        SqliteConnection connection,
+        int personaId,
+        List<ActividadMensualMobile> lista)
+    {
+        if (lista.Count == 0)
+        {
+            return;
+        }
+
+        using SqliteCommand cmd =
+            connection.CreateCommand();
+
+        cmd.CommandText =
+            """
+            SELECT
+                p.Servicio,
+                p.Sexo,
+                p.FechaNacimiento,
+                p.FechaInicioPrec,
+                COALESCE(r.RequisitoFijado, 0),
+                COALESCE(r.SaludDelicada, 0)
+            FROM Personas p
+            JOIN Personas r ON r.Id = COALESCE(NULLIF(p.PersonaRaizId, 0), p.Id)
+            WHERE p.Id = $id;
+            """;
+
+        cmd.Parameters.AddWithValue(
+            "$id",
+            personaId);
+
+        using SqliteDataReader reader =
+            cmd.ExecuteReader();
+
+        if (!reader.Read())
+        {
+            return;
+        }
+
+        string servicio =
+            LeerTextoActividad(reader, 0);
+
+        string sexo =
+            LeerTextoActividad(reader, 1);
+
+        DateTime? nacimiento =
+            ParseFechaFlexible(
+                LeerTextoActividad(reader, 2));
+
+        DateTime? inicio =
+            ParseFechaFlexible(
+                LeerTextoActividad(reader, 3));
+
+        int fijado =
+            reader.GetInt32(4);
+
+        bool salud =
+            reader.GetInt32(5) == 1;
+
+        static global::SCCosmos.Sincro.HorasDeMes Horas(
+            ActividadMensualMobile a)
+        {
+            return new global::SCCosmos.Sincro.HorasDeMes(
+                a.Mes,
+                a.AnioServicio,
+                global::SCCosmos.Sincro.RequisitoPrecursor.LeerHoras(
+                    a.Horas),
+                global::SCCosmos.Sincro.RequisitoPrecursor.CreditoAGuardar(
+                    a.Credito,
+                    a.Notas));
+        }
+
+        List<global::SCCosmos.Sincro.HorasDeMes> horas =
+            lista
+                .Select(Horas)
+                .ToList();
+
+        foreach (ActividadMensualMobile item in lista)
+        {
+            double? diferencia =
+                global::SCCosmos.Sincro.RequisitoPrecursor.DiferenciaDeRegistro(
+                    horas,
+                    Horas(item),
+                    servicio,
+                    sexo,
+                    nacimiento,
+                    inicio,
+                    fijado,
+                    salud);
+
+            item.Acumulado =
+                diferencia.HasValue
+                    ? global::SCCosmos.Sincro.RequisitoPrecursor.TextoDiferencia(
+                        diferencia.Value)
+                    : "";
+        }
     }
 
 
@@ -133,7 +246,8 @@ public static partial class DatabaseHelper
         bool participacion,
         string cursos,
         bool precAux,
-        string notas)
+        string notas,
+        string credito = "")
     {
         AnotarActividadMobile(
             "Personas",
@@ -169,16 +283,17 @@ public static partial class DatabaseHelper
                 Cursos = $cursos,
                 CursosBiblicos = $cursosNumerico,
                 PrecursorAuxiliar = $precAux,
-                Notas = $notas
+                Notas = $notas,
+                Credito = $credito
             WHERE PersonaId = $id
               AND lower(Mes) = lower($mes)
               AND AnioServicio = $anio;
 
             INSERT INTO ActividadPersonas
                 (PersonaId, Mes, AnioServicio, Horas, Participacion,
-                 Cursos, CursosBiblicos, PrecursorAuxiliar, Notas)
+                 Cursos, CursosBiblicos, PrecursorAuxiliar, Notas, Credito)
             SELECT $id, $mes, $anio, $horas, $participacion,
-                   $cursos, $cursosNumerico, $precAux, $notas
+                   $cursos, $cursosNumerico, $precAux, $notas, $credito
             WHERE (SELECT changes() = 0);
             """;
 
@@ -223,6 +338,10 @@ public static partial class DatabaseHelper
         cmd.Parameters.AddWithValue(
             "$notas",
             notas ?? "");
+
+        cmd.Parameters.AddWithValue(
+            "$credito",
+            global::SCCosmos.Sincro.RequisitoPrecursor.CreditoAGuardar(credito, notas));
 
         cmd.ExecuteNonQuery();
     }

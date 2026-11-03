@@ -9,5 +9,6 @@
         public bool PrecursorAuxiliar { get; set; }
         public string Horas { get; set; }
         public string Notas { get; set; }
+        public string Credito { get; set; } = "";
     }
 }
