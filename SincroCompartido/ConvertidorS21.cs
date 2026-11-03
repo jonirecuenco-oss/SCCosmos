@@ -240,7 +240,7 @@ public static class ConvertidorS21
             new ReaderProperties().SetPassword(Array.Empty<byte>())))
         using (var documento = new PdfDocument(lector))
         {
-            var desdeFormulario = TarjetaDeFormulario(documento);
+            var desdeFormulario = TarjetaDeFormulario(documento, ruta, anioServicio);
 
             if (desdeFormulario != null)
             {
@@ -635,11 +635,22 @@ public static class ConvertidorS21
     // ========================================================
 
     private static TarjetaS21 TarjetaDeFormulario(
-        PdfDocument documento)
+        PdfDocument documento,
+        string ruta,
+        int anioServicio)
     {
         var formulario = PdfAcroForm.GetAcroForm(documento, false);
 
-        var campos = formulario?.GetAllFormFields();
+        IDictionary<string, PdfFormField> campos = formulario?.GetAllFormFields();
+
+        // Hay programas que dejan los campos en la página sin registrarlos
+        // en el formulario del documento: siguen ahí, con su valor.
+        bool camposEnLaPagina = campos == null || campos.Count == 0;
+
+        if (camposEnLaPagina)
+        {
+            campos = CamposDeLaPagina(documento);
+        }
 
         if (campos == null || campos.Count == 0)
         {
@@ -664,24 +675,6 @@ public static class ConvertidorS21
         if (!NombreValido(nombre))
         {
             return null;
-        }
-
-        string anio = Valor(campos, "900_13_Text_C_SanSerif").Trim();
-
-        var rango = Regex.Match(anio, @"^\s*(20\d{2})\s*/\s*(\d{2,4})\s*$");
-
-        string anioJson;
-
-        if (rango.Success)
-        {
-            string final = rango.Groups[2].Value;
-            anioJson = final.Length == 2 ? "20" + final : final;
-        }
-        else
-        {
-            anioJson = anio.Length == 4 && anio.All(char.IsDigit)
-                ? (int.Parse(anio) + 1).ToString(CultureInfo.InvariantCulture)
-                : anio;
         }
 
         var informe = new List<InformeS21>();
@@ -715,9 +708,131 @@ public static class ConvertidorS21
             Servicio = Marcado(campos, "900_10_CheckBox") ? "Precursor regular"
                 : Marcado(campos, "900_11_CheckBox") ? "Precursor especial"
                 : Marcado(campos, "900_12_CheckBox") ? "Misionero" : "",
-            AnioServicio = anioJson,
+            AnioServicio = AnioDeFormulario(
+                Valor(campos, "900_13_Text_C_SanSerif"),
+                informe,
+                ruta,
+                camposEnLaPagina,
+                anioServicio),
             Informe = informe,
         };
+    }
+
+
+    /// <summary>
+    /// El año de servicio se nombra por el año en que acaba (2026 = de septiembre
+    /// de 2025 a agosto de 2026), pero en el formulario cada secretario escribe lo
+    /// que le parece: «2025/26», «25.26», el año en que acaba o el año en que empieza.
+    /// </summary>
+    private static string AnioDeFormulario(
+        string escrito,
+        List<InformeS21> informe,
+        string ruta,
+        bool camposEnLaPagina,
+        int anioServicio)
+    {
+        string anio = (escrito ?? "").Trim();
+
+        // Sin año escrito, el del nombre del archivo o el del ciclo actual.
+        if (anio.Length == 0)
+        {
+            return anioServicio.ToString(CultureInfo.InvariantCulture);
+        }
+
+        // «2025/26», «2025-2026», «25.26»: el que vale es el segundo.
+        var rango = Regex.Match(anio, @"^(?:20)?(\d{2})\s*[/\-.]\s*(?:20)?(\d{2})$");
+
+        if (rango.Success)
+        {
+            return "20" + rango.Groups[2].Value;
+        }
+
+        if (anio.Length == 2 && anio.All(char.IsDigit))
+        {
+            anio = "20" + anio;
+        }
+
+        if (anio.Length != 4 || !anio.All(char.IsDigit))
+        {
+            return anio;
+        }
+
+        // El nombre del archivo lo dice sin dudas: S-21_Nombre_2026.pdf.
+        var enElNombre = Regex.Matches(Path.GetFileName(ruta), @"20\d{2}");
+
+        if (enElNombre.Count > 0)
+        {
+            return enElNombre[enElNombre.Count - 1].Value;
+        }
+
+        // Los programas que dejan los campos en la página escriben el año en que acaba.
+        if (camposEnLaPagina)
+        {
+            return anio;
+        }
+
+        int numero = int.Parse(anio, CultureInfo.InvariantCulture);
+
+        if (numero < 2000 || numero > 2100)
+        {
+            return anio;
+        }
+
+        // Si fuera el año en que empieza, habría datos de meses que aún no habían
+        // llegado cuando se guardó el archivo: entonces es el año en que acaba.
+        int ultimoMes = informe.FindLastIndex(m =>
+            m.Participacion
+            || !(Convert.ToString(m.Horas, CultureInfo.InvariantCulture) ?? "").Trim().TrimStart('0').Equals(""));
+
+        if (ultimoMes >= 0
+            && new DateTime(numero, 9, 1).AddMonths(ultimoMes) > File.GetLastWriteTime(ruta).AddMonths(1))
+        {
+            return anio;
+        }
+
+        // Sin más pistas, el año en que empieza.
+        return (numero + 1).ToString(CultureInfo.InvariantCulture);
+    }
+
+
+    /// <summary>Los campos de una tarjeta de una página, leídos de sus anotaciones.</summary>
+    private static IDictionary<string, PdfFormField> CamposDeLaPagina(
+        PdfDocument documento)
+    {
+        var campos = new Dictionary<string, PdfFormField>();
+
+        try
+        {
+            if (documento.GetNumberOfPages() != 1)
+            {
+                return campos;
+            }
+
+            foreach (var anotacion in documento.GetPage(1).GetAnnotations())
+            {
+                var objeto = anotacion.GetPdfObject();
+
+                string nombre = objeto.GetAsString(PdfName.T)?.ToUnicodeString();
+
+                if (string.IsNullOrEmpty(nombre))
+                {
+                    continue;
+                }
+
+                var campo = PdfFormField.MakeFormField(objeto, documento);
+
+                if (campo != null)
+                {
+                    campos[nombre] = campo;
+                }
+            }
+        }
+        catch
+        {
+            campos.Clear();
+        }
+
+        return campos;
     }
 
 

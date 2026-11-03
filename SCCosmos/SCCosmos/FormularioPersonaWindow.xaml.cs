@@ -217,6 +217,9 @@ namespace SCCosmos
 
         // El S-21 es la fuente preferente del Nombre completo. No propone cambios
         // sobre NombreComun ni sobre NombreJWHub.
+        // Mientras se comparan los datos de una tarjeta del S-21 con la ficha.
+        private bool _conflictosDeTarjeta;
+
         public void CargarConflictosDesdeJson(Persona pJson)
         {
             if (pJson == null) return;
@@ -228,7 +231,9 @@ namespace SCCosmos
                 : (pJson.NombreJWHub ?? "");
 
             LimpiarSelectsDinamicos();
+            _conflictosDeTarjeta = true;
             var camposCambiados = EvaluarConflictos(pJson, soloCamposS21: true);
+            _conflictosDeTarjeta = false;
             RefrescarListaConyugesYVincular();
 
             if (camposCambiados.Count > 0)
@@ -654,6 +659,9 @@ namespace SCCosmos
             string v1 = valActual?.Trim() ?? "";
             string v2 = valDuplicado?.Trim() ?? "";
 
+            // Lo que la tarjeta no trae no se ofrece: no borra lo que tiene la ficha.
+            if (_conflictosDeTarjeta && v2.Length == 0) return null;
+
             // Los conflictos de texto son deliberadamente sensibles a mayúsculas/minúsculas.
             // El parámetro se conserva por compatibilidad con llamadas existentes.
             bool sonDistintos = !string.Equals(v1, v2, StringComparison.Ordinal);
@@ -874,6 +882,9 @@ namespace SCCosmos
             string v1 = valActual?.Trim() ?? "";
             string v2 = valDuplicado?.Trim() ?? "";
 
+            // Lo que la tarjeta no trae no se ofrece: no borra lo que tiene la ficha.
+            if (_conflictosDeTarjeta && v2.Length == 0) return null;
+
             if (!string.Equals(v1, v2, StringComparison.Ordinal))
             {
                 cmbOriginal.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFB900"));
@@ -896,7 +907,13 @@ namespace SCCosmos
                     cmbOriginal.Items.Insert(0, new ComboBoxItem { Content = "(Vacío)" });
                 }
 
-                if (string.IsNullOrEmpty(v2)) AsignarComboBox(cmbOriginal, "(Vacío)");
+                // Con cuenta de JW Hub, su ficha sin nombramiento o servicio es un dato:
+                // la tarjeta se ofrece, pero lo que se propone es dejarla como está.
+                bool conservarVacio = _conflictosDeTarjeta && v1.Length == 0
+                    && (cmbOriginal == CmbNombramiento || cmbOriginal == CmbServicio)
+                    && !string.IsNullOrWhiteSpace(PersonaActualizada?.NombreJWHub);
+
+                if (string.IsNullOrEmpty(v2) || conservarVacio) AsignarComboBox(cmbOriginal, "(Vacío)");
                 else AsignarComboBox(cmbOriginal, v2);
 
                 return nombreCampoVisible;

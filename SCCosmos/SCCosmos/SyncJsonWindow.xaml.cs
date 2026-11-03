@@ -193,6 +193,16 @@ namespace SCCosmos
             if (Difiere(db.Nombramiento, json.Nombramiento)) return true;
             if (Difiere(db.Servicio, json.Servicio)) return true;
 
+            // El nombramiento y el servicio de quien tiene cuenta los da JW Hub: si su
+            // ficha no los tiene, una tarjeta no los añade sin preguntar (puede estar mal).
+            static bool Anade(string enFicha, string enTarjeta) =>
+                string.IsNullOrWhiteSpace(enFicha)
+                && !string.IsNullOrWhiteSpace(enTarjeta)
+                && !string.Equals(enTarjeta.Trim(), "Publicador", StringComparison.OrdinalIgnoreCase);
+
+            if (!string.IsNullOrWhiteSpace(db.NombreJWHub)
+                && (Anade(db.Nombramiento, json.Nombramiento) || Anade(db.Servicio, json.Servicio))) return true;
+
             // Fechas
             // La de JW Hub es una aproximación (01/01/año): la exacta del S-21 la sustituye
             // sin preguntar, si el año encaja.
