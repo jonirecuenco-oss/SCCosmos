@@ -42,7 +42,8 @@
                                Keyboard="Numeric"
                                TextColor="White" />
 
-                        <Label Text="Crédito (otras actividades; vacío: lo que digan las notas)"
+                        <Label x:Name="LblCredito"
+                               Text="Crédito (otras actividades; vacío: lo que digan las notas)"
                                TextColor="#9299A3"
                                FontSize="12" />
                         <Entry x:Name="TxtCredito"

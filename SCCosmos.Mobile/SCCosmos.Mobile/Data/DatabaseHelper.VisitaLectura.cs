@@ -585,45 +585,7 @@ public static partial class DatabaseHelper
             connection.CreateCommand();
 
         cmd.CommandText =
-            """
-            WITH candidatos AS
-            (
-                SELECT
-                    x.Id,
-                    CASE
-                        WHEN x.PersonaRaizId > 0
-                        THEN x.PersonaRaizId
-                        ELSE x.Id
-                    END AS RaizLogica,
-                    x.MesHistorico
-                FROM Personas x
-                WHERE x.CongregacionCodigo = $codigo
-                  AND
-                  (
-                      x.MesHistorico IS NULL
-                      OR x.MesHistorico <= $mes
-                  )
-            ),
-            elegidas AS
-            (
-                SELECT c.Id
-                FROM candidatos c
-                WHERE c.Id =
-                (
-                    SELECT c2.Id
-                    FROM candidatos c2
-                    WHERE c2.RaizLogica = c.RaizLogica
-                    ORDER BY
-                        CASE
-                            WHEN c2.MesHistorico IS NULL
-                            THEN 0
-                            ELSE 1
-                        END DESC,
-                        c2.MesHistorico DESC,
-                        c2.Id DESC
-                    LIMIT 1
-                )
-            )
+            $"""
             SELECT
                 p.Id,
                 p.Nombre,
@@ -671,8 +633,7 @@ public static partial class DatabaseHelper
             FROM Personas p
             WHERE p.Id IN
             (
-                SELECT Id
-                FROM elegidas
+                {InstantaneasVisita.IdsDelMes}
             )
             ORDER BY p.Nombre ASC;
             """;
@@ -1446,7 +1407,6 @@ public static partial class DatabaseHelper
                 *
                 RequisitoPrecursor.MesesConRequisito(
                     mesReferencia,
-                    esRegular,
                     inicioPrecursor);
 
             persona.MetaHorasProrrateada =

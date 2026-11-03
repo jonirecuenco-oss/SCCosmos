@@ -58,6 +58,13 @@ public static partial class DatabaseHelper
 
         try
         {
+            // La que hasta ahora era la última visita queda como se veía.
+            global::SCCosmos.Sincro.InstantaneasVisita.CongelarAnterior(
+                connection,
+                tx,
+                resultado.CongregacionCodigo,
+                resultado.MesReferencia);
+
             // ---------------------------------------------------------------
             // BAJAS CONFIRMADAS
             // ---------------------------------------------------------------

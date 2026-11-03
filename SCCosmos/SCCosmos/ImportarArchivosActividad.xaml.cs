@@ -131,6 +131,22 @@ namespace SCCosmos
                 + resultado.ArchivosPdf + " PDFs ("
                 + resultado.Repetidas + " repetidas). Puedes ver el JSON generado.";
             TxtPdfS21.Foreground = System.Windows.Media.Brushes.LightGreen;
+
+            // Casi todas las personas llevan marcado el sexo en alguna tarjeta: si
+            // falta en muchas, lo normal es que no se hayan podido leer las casillas
+            // (nombramiento y precursor tampoco).
+            var personas = resultado.Tarjetas
+                .GroupBy(t => t.Nombre, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            int sinCasillas = personas.Count(p => p.All(t => string.IsNullOrWhiteSpace(t.Sexo)));
+
+            if (sinCasillas * 3 > personas.Count)
+            {
+                TxtPdfS21.Text += " Atención: en " + sinCasillas + " de " + personas.Count
+                    + " personas no se han leído las casillas (sexo, nombramiento, precursor). Revísalas antes de importar.";
+                TxtPdfS21.Foreground = System.Windows.Media.Brushes.Orange;
+            }
             BtnVerJsonS21.Visibility = Visibility.Visible;
         }
 

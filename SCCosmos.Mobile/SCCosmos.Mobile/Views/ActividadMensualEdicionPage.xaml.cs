@@ -39,6 +39,14 @@ public partial class ActividadMensualEdicionPage : ContentPage
     {
         InitializeComponent();
 
+        // Solo los regulares pueden acreditar horas.
+        LblCredito.IsVisible =
+            DatabaseHelper.EsPrecursorRegularMobile(
+                personaId);
+
+        TxtCredito.IsVisible =
+            LblCredito.IsVisible;
+
         _personaId =
             personaId;
 

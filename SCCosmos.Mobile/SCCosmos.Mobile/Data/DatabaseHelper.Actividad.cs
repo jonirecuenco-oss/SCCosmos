@@ -132,6 +132,30 @@ public static partial class DatabaseHelper
     }
 
 
+    public static bool EsPrecursorRegularMobile(
+        int personaId)
+    {
+        using var connection =
+            new SqliteConnection(
+                ConnectionString);
+
+        connection.Open();
+
+        using SqliteCommand cmd =
+            connection.CreateCommand();
+
+        cmd.CommandText =
+            "SELECT Servicio FROM Personas WHERE Id = $id;";
+
+        cmd.Parameters.AddWithValue(
+            "$id",
+            personaId);
+
+        return global::SCCosmos.Sincro.RequisitoPrecursor.EsPrecursorRegular(
+            cmd.ExecuteScalar() as string);
+    }
+
+
     /// <summary>
     /// Adelanto o atraso de cada mes respecto al requisito anual de la persona.
     /// </summary>
@@ -194,6 +218,10 @@ public static partial class DatabaseHelper
         bool salud =
             reader.GetInt32(5) == 1;
 
+        bool puedeAcreditar =
+            global::SCCosmos.Sincro.RequisitoPrecursor.EsPrecursorRegular(
+                servicio);
+
         static global::SCCosmos.Sincro.HorasDeMes Horas(
             ActividadMensualMobile a)
         {
@@ -214,6 +242,9 @@ public static partial class DatabaseHelper
 
         foreach (ActividadMensualMobile item in lista)
         {
+            item.PuedeAcreditar =
+                puedeAcreditar;
+
             double? diferencia =
                 global::SCCosmos.Sincro.RequisitoPrecursor.DiferenciaDeRegistro(
                     horas,

@@ -2121,6 +2121,11 @@ namespace SCCosmos
             var requisitosPersonales =
                 DatabaseHelper.ObtenerRequisitosPersonales();
 
+            var conInstantanea =
+                DatabaseHelper.ObtenerRaicesConInstantanea(
+                    _congreCodigo,
+                    _mesMinisterio.ToString("yyyy-MM"));
+
             foreach (var h in listadoHermanos)
             {
                 DateTime? fElim = ParsearFecha(h.FechaEliminacion);
@@ -2138,6 +2143,7 @@ namespace SCCosmos
                     && string.IsNullOrWhiteSpace(h.EmailJW);
 
                 if (!personaSinCuentaJW
+                    && !conInstantanea.Contains(h.PersonaRaizId > 0 ? h.PersonaRaizId : h.Id)
                     && fCrea.HasValue
                     && new DateTime(fCrea.Value.Year, fCrea.Value.Month, 1) > mesReferenciaGrid)
                 {
@@ -4276,7 +4282,7 @@ namespace SCCosmos
 
                 if (ventana.ShowDialog() == true)
                 {
-                    if (!ventana.EsUnaFusion()) DatabaseHelper.ActualizarPersonaDesdeVisitas(ventana.PersonaActualizada, fechaActual.ToString("yyyy-MM"));
+                    if (!ventana.EsUnaFusion()) DatabaseHelper.ActualizarPersonaDesdeVisitas(ventana.PersonaActualizada);
 
                     // --- NUEVO: Vaciamos la caché del mapa para obligarlo a recargar y buscar la nueva dirección ---
                     _mapaCargado = false;

@@ -1430,11 +1430,14 @@ namespace SCCosmos
                     ? Visibility.Visible
                     : Visibility.Collapsed;
 
+            // Solo los regulares pueden acreditar horas.
             ColCredito.Visibility =
-                tieneRequisito ? Visibility.Visible : Visibility.Collapsed;
+                RequisitoPrecursor.EsPrecursorRegular(ServicioEnPantalla())
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
 
             ColAcumulado.Visibility =
-                ColCredito.Visibility;
+                tieneRequisito ? Visibility.Visible : Visibility.Collapsed;
         }
 
         /// <summary>

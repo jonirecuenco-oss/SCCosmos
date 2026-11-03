@@ -174,6 +174,7 @@ namespace SCCosmos
                 TxtBuscar.Text = "";
                 LstCongre.SelectedItems.Clear();
                 LstPrivs.SelectedItems.Clear();
+                ChkVerBajas.IsChecked = false;
                 CmbFiltroSexo.SelectedIndex = 0;
                 CmbFiltroEsperanza.SelectedIndex = 0;
 
@@ -658,7 +659,7 @@ namespace SCCosmos
         {
             var sb = new System.Text.StringBuilder();
 
-            var personasConCoords = _todasLasPersonas.Where(p => p.Latitud != 0 && p.Latitud != 999 && p.Longitud != 0 && p.Longitud != 999).ToList();
+            var personasConCoords = _todasLasPersonas.Where(p => string.IsNullOrWhiteSpace(p.FechaEliminacion) && p.Latitud != 0 && p.Latitud != 999 && p.Longitud != 0 && p.Longitud != 999).ToList();
 
             foreach (var p in personasConCoords)
             {
@@ -729,6 +730,7 @@ namespace SCCosmos
             LstServicio.SelectedItems.Clear();
             LstSols.SelectedItems.Clear();
             LstPrivs.SelectedItems.Clear();
+            ChkVerBajas.IsChecked = false;
 
             AplicarFiltroYPaginar();
         }
@@ -782,8 +784,15 @@ namespace SCCosmos
             return p.GetType().GetProperty(propName)?.GetValue(p, null) ?? "";
         }
 
+        private void ChkVerBajas_Changed(object sender, RoutedEventArgs e)
+        {
+            _paginaActual = 1;
+            AplicarFiltroYPaginar();
+        }
+
         private void AplicarFiltroYPaginar()
         {
+            bool verBajas = ChkVerBajas.IsChecked == true;
             string busqueda = TxtBuscar.Text.Trim().ToLower();
             string nombramiento = (CmbFiltroNombramiento.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "";
             string sexo = (CmbFiltroSexo.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "";
@@ -795,6 +804,7 @@ namespace SCCosmos
             var privSels = LstPrivs.SelectedItems.Cast<string>().ToList();
 
             _personasFiltradas = _todasLasPersonas.Where(p =>
+                (verBajas || string.IsNullOrWhiteSpace(p.FechaEliminacion)) &&
                 ((p.Nombre != null && p.Nombre.ToLower().Contains(busqueda)) || (p.NombreComun != null && p.NombreComun.ToLower().Contains(busqueda))) &&
                 (string.IsNullOrEmpty(nombramiento) || p.Nombramiento == nombramiento) &&
                 (string.IsNullOrEmpty(sexo) || p.Sexo == sexo) &&

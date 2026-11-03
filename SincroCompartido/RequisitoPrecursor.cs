@@ -11,11 +11,14 @@ namespace SCCosmos.Sincro;
 //
 // Requisito anual: ninguno con salud delicada; si no, el fijado a
 // mano en la ficha; si no, el de su servicio (regular 600; especial
-// y misionero 1200, o 1080 en mujeres de 40 años o más).
+// y misionero 1200, o 1080 en mujeres de 40 años o más). Se exige
+// desde el mes en que empieza el precursorado: quien empieza en marzo,
+// 50 horas al mes (300) de marzo a agosto.
 //
-// Cada mes cuentan las horas más el crédito (horas en otras
-// actividades) hasta un máximo de 55. El tope solo limita lo que
-// aporta el crédito: quien predica más de 55 horas no pierde ninguna.
+// Solo los regulares pueden acreditar horas: cada mes les cuentan las
+// horas más el crédito (horas en otras actividades) hasta un máximo de
+// 55. El tope solo limita lo que aporta el crédito: quien predica más
+// de 55 horas no pierde ninguna.
 // =============================================================
 
 /// <summary>
@@ -130,8 +133,8 @@ public static class RequisitoPrecursor
     /// <summary>
     /// Horas de adelanto (positivas) o de atraso (negativas) acumuladas en el
     /// año de servicio hasta ese mes. Null si no hay nada que mostrar: sin
-    /// requisito, o un regular que aún no había empezado. Los regulares
-    /// cuentan, en horas y en requisito, desde que empezaron.
+    /// requisito, o alguien que aún no había empezado. Horas y requisito
+    /// cuentan desde que empezó.
     /// </summary>
     public static double? DiferenciaHasta(
         IEnumerable<HorasDeMes> actividad,
@@ -148,7 +151,6 @@ public static class RequisitoPrecursor
         int meses =
             MesesConRequisito(
                 mes,
-                esRegular,
                 inicioPrecursor);
 
         if (meses <= 0)
@@ -168,8 +170,8 @@ public static class RequisitoPrecursor
 
 
     /// <summary>
-    /// Horas que cuentan en el año de servicio hasta ese mes incluido, con su
-    /// crédito. Las de un regular, desde que empezó.
+    /// Horas que cuentan en el año de servicio hasta ese mes incluido, desde
+    /// que empezó; a un regular, con su crédito.
     /// </summary>
     public static double HorasHasta(
         IEnumerable<HorasDeMes> actividad,
@@ -184,7 +186,6 @@ public static class RequisitoPrecursor
             mesActual.AddMonths(
                 1 - MesesConRequisito(
                     mes,
-                    esRegular,
                     inicioPrecursor));
 
         string anio =
@@ -231,10 +232,15 @@ public static class RequisitoPrecursor
                 continue;
             }
 
+            double horas =
+                Math.Max(0, registro.Horas);
+
             acumulado +=
-                HorasComputables(
-                    Math.Max(0, registro.Horas),
-                    registro.Credito);
+                esRegular
+                    ? HorasComputables(
+                        horas,
+                        registro.Credito)
+                    : horas;
         }
 
         return acumulado;
@@ -243,11 +249,10 @@ public static class RequisitoPrecursor
 
     /// <summary>
     /// Meses del año de servicio en los que ya se le exige el requisito, hasta
-    /// ese mes incluido. Los regulares, desde que empezaron; 0 si aún no.
+    /// ese mes incluido, desde que empezó; 0 si aún no.
     /// </summary>
     public static int MesesConRequisito(
         DateTime mes,
-        bool esRegular,
         DateTime? inicioPrecursor)
     {
         DateTime desde =
@@ -255,8 +260,7 @@ public static class RequisitoPrecursor
                 ? new DateTime(mes.Year, 9, 1)
                 : new DateTime(mes.Year - 1, 9, 1);
 
-        if (esRegular
-            && inicioPrecursor.HasValue)
+        if (inicioPrecursor.HasValue)
         {
             DateTime inicioMes =
                 new(inicioPrecursor.Value.Year, inicioPrecursor.Value.Month, 1);

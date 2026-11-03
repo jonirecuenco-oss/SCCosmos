@@ -12,6 +12,10 @@ namespace SCCosmos
         private string _congreCodigo;
         private string _mesReferencia; // Añadido para el control temporal (Viaje en el tiempo)
         private List<PersonaJson> _listaJson;
+
+        // Por el nombre de la tarjeta: la ficha que le corresponde y las que el usuario ya ha decidido.
+        private readonly Dictionary<string, int> _fichaPorTarjeta = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        private readonly HashSet<string> _fichasDecididas = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private List<TerritorioJSON> _listaTerritorios;
 
         private List<SyncItem> _conflictos = new List<SyncItem>();
@@ -86,11 +90,19 @@ namespace SCCosmos
                 var matchDB = personasDB.FirstOrDefault(p =>
                     string.Equals(p.Nombre, jsonItem.Nombre, StringComparison.OrdinalIgnoreCase) ||
                     (!string.IsNullOrWhiteSpace(p.NombreJWHub) &&
-                     string.Equals(p.NombreJWHub, jsonItem.Nombre, StringComparison.OrdinalIgnoreCase)));
+                     string.Equals(p.NombreJWHub, jsonItem.Nombre, StringComparison.OrdinalIgnoreCase)))
+                    // Mismas palabras en otro orden o sin acentos, si solo hay una ficha así y las fechas encajan.
+                    ?? SCCosmos.Sincro.NombresPersona.BuscarUnica(
+                        personasDB.Where(p => !procesadosDB.Contains(p.Id)),
+                        jsonItem.Nombre,
+                        jsonItem.FechaNacimiento,
+                        jsonItem.FechaBautismo,
+                        p => (p.Nombre, p.NombreJWHub, p.FechaNacimiento, p.FechaBautismo));
 
                 if (matchDB != null)
                 {
                     procesadosDB.Add(matchDB.Id);
+                    _fichaPorTarjeta[nombreJson] = matchDB.Id;
 
                     // Comprobamos si hay algún dato distinto (Conflicto) o si son idénticos
                     if (HayConflicto(matchDB, personaDesdeJson))
@@ -165,21 +177,30 @@ namespace SCCosmos
             if (!string.IsNullOrWhiteSpace(json.Nombre))
             {
                 string nombreS21 = json.Nombre.Trim();
-                if (!string.Equals(db.Nombre?.Trim(), nombreS21, StringComparison.Ordinal)) return true;
+                if (!string.Equals(db.Nombre?.Trim(), nombreS21, StringComparison.Ordinal)
+                    && !SCCosmos.Sincro.NombresPersona.Equivalentes(db.Nombre, nombreS21)) return true;
             }
 
-            // Textos: toda diferencia, incluida solo mayúsculas/minúsculas, es conflicto.
-            if (!string.IsNullOrEmpty(json.Sexo) && !string.Equals(db.Sexo, json.Sexo, StringComparison.Ordinal)) return true;
-            if (!string.IsNullOrEmpty(json.Esperanza) && !string.Equals(db.Esperanza, json.Esperanza, StringComparison.Ordinal)) return true;
-            if (!string.IsNullOrEmpty(json.Nombramiento) && !string.Equals(db.Nombramiento, json.Nombramiento, StringComparison.Ordinal)) return true;
-            if (!string.IsNullOrEmpty(json.Servicio) && !string.Equals(db.Servicio, json.Servicio, StringComparison.Ordinal)) return true;
+            // Textos: toda diferencia, incluida solo mayúsculas/minúsculas, es
+            // conflicto. Rellenar lo que la ficha no tiene, no: no hay nada que elegir.
+            static bool Difiere(string enFicha, string enTarjeta) =>
+                !string.IsNullOrEmpty(enTarjeta)
+                && !string.IsNullOrWhiteSpace(enFicha)
+                && !string.Equals(enFicha, enTarjeta, StringComparison.Ordinal);
+
+            if (Difiere(db.Sexo, json.Sexo)) return true;
+            if (Difiere(db.Esperanza, json.Esperanza)) return true;
+            if (Difiere(db.Nombramiento, json.Nombramiento)) return true;
+            if (Difiere(db.Servicio, json.Servicio)) return true;
 
             // Fechas
-            if (!string.IsNullOrEmpty(json.FechaNacimiento) && db.FechaNacimiento != json.FechaNacimiento) return true;
-            if (!string.IsNullOrEmpty(json.FechaBautismo) && db.FechaBautismo != json.FechaBautismo) return true;
+            // La de JW Hub es una aproximación (01/01/año): la exacta del S-21 la sustituye
+            // sin preguntar, si el año encaja.
+            if (SCCosmos.Sincro.NombresPersona.FechaEnConflicto(db.FechaNacimiento, json.FechaNacimiento)) return true;
+            if (SCCosmos.Sincro.NombresPersona.FechaEnConflicto(db.FechaBautismo, json.FechaBautismo)) return true;
 
             // Grupo (Solo salta conflicto si el JSON dice que pertenece a un grupo > 0 y en la BD no coincide)
-            if (json.Grupo > 0 && db.Grupo != json.Grupo) return true;
+            if (json.Grupo > 0 && db.Grupo > 0 && db.Grupo != json.Grupo) return true;
 
             return false;
         }
@@ -187,6 +208,13 @@ namespace SCCosmos
         // ========================================================
         // BOTONES DE ACCIÓN (ABREN EL FORMULARIO MÁGICO)
         // ========================================================
+
+        private void MarcarDecidida(SyncItem item, int personaId)
+        {
+            string nombre = (item.PersonaFakeJSON?.Nombre ?? "").Trim();
+            _fichaPorTarjeta[nombre] = personaId;
+            _fichasDecididas.Add(nombre);
+        }
 
         private void BtnResolverConflicto_Click(object sender, RoutedEventArgs e)
         {
@@ -203,8 +231,9 @@ namespace SCCosmos
                 {
                     // Llama al motor histórico para clonar la persona si es necesario en lugar de sobrescribirla
                     ventana.PersonaActualizada.OrigenRegistro = DatabaseHelper.CombinarOrigenes(ventana.PersonaActualizada.OrigenRegistro, "S21");
-                    DatabaseHelper.ActualizarPersonaDesdeVisitas(ventana.PersonaActualizada, _mesReferencia);
+                    DatabaseHelper.ActualizarPersonaDesdeVisitas(ventana.PersonaActualizada);
                     DatabaseHelper.MarcarOrigenPersona(ventana.PersonaActualizada.Id, "S21");
+                    MarcarDecidida(item, ventana.PersonaActualizada.Id);
 
                     // Si se resuelve, lo quitamos de conflictos y lo pasamos a iguales
                     _conflictos.Remove(item);
@@ -230,8 +259,9 @@ namespace SCCosmos
                 if (ventana.ShowDialog() == true)
                 {
                     ventana.PersonaActualizada.OrigenRegistro = DatabaseHelper.CombinarOrigenes(ventana.PersonaActualizada.OrigenRegistro, "S21");
-                    DatabaseHelper.ActualizarPersonaDesdeVisitas(ventana.PersonaActualizada, _mesReferencia);
+                    DatabaseHelper.ActualizarPersonaDesdeVisitas(ventana.PersonaActualizada);
                     DatabaseHelper.MarcarOrigenPersona(ventana.PersonaActualizada.Id, "S21");
+                    MarcarDecidida(item, ventana.PersonaActualizada.Id);
                     _nuevos.Remove(item);
                     item.Descripcion = "Añadido correctamente.";
                     _iguales.Add(item);
@@ -266,8 +296,9 @@ namespace SCCosmos
                 if (ventana.ShowDialog() == true)
                 {
                     ventana.PersonaActualizada.OrigenRegistro = DatabaseHelper.CombinarOrigenes(ventana.PersonaActualizada.OrigenRegistro, "S21");
-                    DatabaseHelper.ActualizarPersonaDesdeVisitas(ventana.PersonaActualizada, _mesReferencia);
+                    DatabaseHelper.ActualizarPersonaDesdeVisitas(ventana.PersonaActualizada);
                     DatabaseHelper.MarcarOrigenPersona(ventana.PersonaActualizada.Id, "S21");
+                    MarcarDecidida(item, ventana.PersonaActualizada.Id);
                 }
             }
         }
@@ -276,14 +307,22 @@ namespace SCCosmos
         {
             if (_conflictos.Count > 0 || _nuevos.Count > 0)
             {
-                if (MessageBox.Show("Aún tienes Conflictos o Personas Nuevas sin revisar. Si continúas, se ignorarán y no se añadirán a tu base de datos.\n\n¿Deseas finalizar de todos modos?", "Atención", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.No)
+                if (MessageBox.Show("Aún tienes conflictos o personas nuevas sin revisar. Si continúas, las fichas con conflicto conservarán sus datos (su actividad sí se guarda) y las personas nuevas se añadirán tal como vienen en el S-21.\n\n¿Deseas finalizar de todos modos?", "Atención", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.No)
                 {
                     return;
                 }
             }
 
+            // Finalizar no pisa lo que ya se ha decidido en esta ventana ni lo que se ha
+            // dejado sin revisar: esas fichas conservan sus datos y se guarda su actividad.
+            var fichasSinTocar = new HashSet<string>(_fichasDecididas, StringComparer.OrdinalIgnoreCase);
+            foreach (var conflicto in _conflictos)
+            {
+                fichasSinTocar.Add((conflicto.PersonaFakeJSON?.Nombre ?? "").Trim());
+            }
+
             // AHORA USA EL CLONADOR MASIVO PARA GUARDAR EL JSON
-            DatabaseHelper.GuardarVersionHistoricaJSON(_congreCodigo, _mesReferencia, _listaJson);
+            DatabaseHelper.GuardarVersionHistoricaJSON(_congreCodigo, _mesReferencia, _listaJson, _fichaPorTarjeta, fichasSinTocar);
 
             // GUARDA LOS TERRITORIOS SI EXISTEN
             if (_listaTerritorios != null) DatabaseHelper.GuardarTerritoriosImportados(_congreCodigo, _listaTerritorios);

@@ -557,114 +557,12 @@ namespace SCCosmos
             }
         }
 
-        /// <summary>
-        /// Deja una única instantánea de la persona para el mes, con los datos
-        /// actuales de su ficha raíz. Antes se borraba y se volvía a crear en
-        /// cada guardado desde Visitas (un borrado y un alta, con Id nuevo,
-        /// para los demás dispositivos); ahora se actualiza la que ya hay (un
-        /// solo cambio). El resultado es el mismo: se borran las duplicadas que
-        /// dejaron importaciones antiguas y, como hacía el borrado en cascada,
-        /// la actividad que colgara de la instantánea; sin ficha raíz de la que
-        /// copiar, se borran todas las del mes y no se crea ninguna.
-        /// </summary>
-        private static void ReemplazarInstantaneaMes(int personaRaizId, string mes)
-        {
-            using (var connection = new SqliteConnection(ConnectionString))
-            {
-                connection.Open();
-                using (var transaction = connection.BeginTransaction())
-                {
-                    var cmdBuscar = connection.CreateCommand();
-                    cmdBuscar.Transaction = transaction;
-                    cmdBuscar.CommandText = @"
-                        SELECT MIN(Id) FROM Personas
-                        WHERE PersonaRaizId = $raiz
-                          AND MesHistorico = $mes
-                          AND EXISTS (SELECT 1 FROM Personas WHERE Id = $raiz);";
-                    cmdBuscar.Parameters.AddWithValue("$raiz", personaRaizId);
-                    cmdBuscar.Parameters.AddWithValue("$mes", mes);
-                    long instantanea = cmdBuscar.ExecuteScalar() is long id ? id : 0;
-
-                    var cmdDelete = connection.CreateCommand();
-                    cmdDelete.Transaction = transaction;
-                    cmdDelete.CommandText = @"
-                        DELETE FROM Personas
-                        WHERE PersonaRaizId = $raiz
-                          AND MesHistorico = $mes
-                          AND Id <> $instantanea;
-
-                        DELETE FROM ActividadPersonas
-                        WHERE $instantanea > 0
-                          AND PersonaId = $instantanea;";
-                    cmdDelete.Parameters.AddWithValue("$raiz", personaRaizId);
-                    cmdDelete.Parameters.AddWithValue("$mes", mes);
-                    cmdDelete.Parameters.AddWithValue("$instantanea", instantanea);
-                    cmdDelete.ExecuteNonQuery();
-
-                    var cmdGuardar = connection.CreateCommand();
-                    cmdGuardar.Transaction = transaction;
-                    cmdGuardar.CommandText = instantanea > 0
-                        ? @"
-                        UPDATE Personas SET
-                        (Nombre, FechaNacimiento, Sexo, FechaBautismo, Esperanza, Nombramiento, Servicio, CongregacionCodigo, Grupo,
-                         Telefono, Email, FechaInicioPrec, FechaUltimaEscuela, NombreJWHub, Foto, FechaCreacion, FechaEliminacion,
-                         Solicitudes, Privilegios, RequisitoHoras, NombreComun, Direccion, Latitud, Longitud, ConyugeId, EmailJW,
-                         Notas, OrigenRegistro, AprobadoExhibidores, TrasladoAnteriorId, TrasladoSiguienteId, FechaTraslado) =
-                        (SELECT
-                         Nombre, FechaNacimiento, Sexo, FechaBautismo, Esperanza, Nombramiento, Servicio, CongregacionCodigo, Grupo,
-                         Telefono, Email, FechaInicioPrec, FechaUltimaEscuela, NombreJWHub, Foto, FechaCreacion, FechaEliminacion,
-                         Solicitudes, Privilegios, RequisitoHoras, NombreComun, Direccion, Latitud, Longitud, ConyugeId, EmailJW,
-                         Notas, OrigenRegistro, AprobadoExhibidores, TrasladoAnteriorId, TrasladoSiguienteId, FechaTraslado
-                         FROM Personas
-                         WHERE Id = $raiz),
-                        PersonaRaizId = $raiz,
-                        MesHistorico = $mes,
-                        FechaExactaHistorico = $fechaExacta
-                        WHERE Id = $instantanea;"
-                        : @"
-                        INSERT INTO Personas
-                        (Nombre, FechaNacimiento, Sexo, FechaBautismo, Esperanza, Nombramiento, Servicio, CongregacionCodigo, Grupo,
-                         Telefono, Email, FechaInicioPrec, FechaUltimaEscuela, NombreJWHub, Foto, FechaCreacion, FechaEliminacion,
-                         Solicitudes, Privilegios, RequisitoHoras, NombreComun, Direccion, Latitud, Longitud, ConyugeId, EmailJW,
-                         PersonaRaizId, MesHistorico, FechaExactaHistorico, Notas, OrigenRegistro, AprobadoExhibidores,
-                         TrasladoAnteriorId, TrasladoSiguienteId, FechaTraslado)
-                        SELECT
-                         Nombre, FechaNacimiento, Sexo, FechaBautismo, Esperanza, Nombramiento, Servicio, CongregacionCodigo, Grupo,
-                         Telefono, Email, FechaInicioPrec, FechaUltimaEscuela, NombreJWHub, Foto, FechaCreacion, FechaEliminacion,
-                         Solicitudes, Privilegios, RequisitoHoras, NombreComun, Direccion, Latitud, Longitud, ConyugeId, EmailJW,
-                         $raiz, $mes, $fechaExacta, Notas, OrigenRegistro, AprobadoExhibidores,
-                         TrasladoAnteriorId, TrasladoSiguienteId, FechaTraslado
-                        FROM Personas
-                        WHERE Id = $raiz;";
-                    cmdGuardar.Parameters.AddWithValue("$raiz", personaRaizId);
-                    cmdGuardar.Parameters.AddWithValue("$mes", mes);
-                    cmdGuardar.Parameters.AddWithValue("$fechaExacta", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
-                    if (instantanea > 0)
-                    {
-                        cmdGuardar.Parameters.AddWithValue("$instantanea", instantanea);
-                    }
-                    cmdGuardar.ExecuteNonQuery();
-
-                    transaction.Commit();
-                }
-            }
-        }
-
-        public static void ActualizarPersonaDesdeVisitas(Persona p, string mesReferencia)
+        public static void ActualizarPersonaDesdeVisitas(Persona p)
         {
             if (p == null || p.Id <= 0) return;
 
-            string mes = (mesReferencia ?? "").Trim();
-            if (string.IsNullOrWhiteSpace(mes))
-            {
-                ActualizarPersona(p);
-                return;
-            }
-
-            // Desde VISITAS se mantiene el comportamiento esperado de la ficha actual
-            // y, además, se actualiza la instantánea del mes que se está consultando.
-            // PersonasPage sigue llamando a ActualizarPersona(), por lo que nunca toca
-            // snapshots históricos.
+            // Se guarda siempre en la ficha actual: la última visita la muestra tal
+            // cual y las anteriores no se modifican (ver InstantaneasVisita).
             int personaRaizId = p.PersonaRaizId > 0 ? p.PersonaRaizId : p.Id;
 
             // El flujo actual de Visitas abre siempre la ficha raíz. Dejamos esta
@@ -708,8 +606,6 @@ namespace SCCosmos
                     ActualizarPersona(raiz);
                 }
             }
-
-            ReemplazarInstantaneaMes(personaRaizId, mes);
         }
 
 
@@ -791,6 +687,33 @@ namespace SCCosmos
             return lista;
         }
 
+        /// <summary>
+        /// Las personas con alguna instantánea hasta ese mes: ya estaban en la
+        /// congregación, aunque su ficha se creara después (al importar un S-21 antiguo).
+        /// </summary>
+        public static HashSet<int> ObtenerRaicesConInstantanea(string congreCodigo, string mesReferencia)
+        {
+            var raices = new HashSet<int>();
+
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                connection.Open();
+                var command = connection.CreateCommand();
+                command.CommandText = "SELECT DISTINCT PersonaRaizId FROM Personas WHERE CongregacionCodigo = $codigo AND MesHistorico IS NOT NULL AND MesHistorico <= $mes AND PersonaRaizId > 0;";
+                command.Parameters.AddWithValue("$codigo", congreCodigo);
+                command.Parameters.AddWithValue("$mes", mesReferencia);
+
+                using (var reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        raices.Add(reader.GetInt32(0));
+                    }
+                }
+            }
+
+            return raices;
+        }
         public static List<Persona> ObtenerPersonasHistoricasPorMes(string congreCodigo, string mesReferencia)
         {
             var lista = new List<Persona>();
@@ -801,20 +724,15 @@ namespace SCCosmos
 
                 command.CommandText = @"
                     SELECT Id, Nombre, Nombramiento, Servicio, Grupo, FechaNacimiento, Sexo, FechaBautismo, Esperanza,
-                           NombreJWHub, FechaCreacion, FechaEliminacion, NombreComun, Solicitudes, Privilegios,
+                           NombreJWHub, FechaCreacion,
+                           CASE WHEN MesHistorico IS NOT NULL AND MesHistorico <> $mes
+                                THEN (SELECT r.FechaEliminacion FROM Personas r WHERE r.Id = Personas.PersonaRaizId)
+                                ELSE FechaEliminacion END,
+                           NombreComun, Solicitudes, Privilegios,
                            Foto, Email, Telefono, FechaInicioPrec, FechaUltimaEscuela, CongregacionCodigo,
                            Direccion, Latitud, Longitud, ConyugeId, EmailJW, PersonaRaizId, MesHistorico, FechaExactaHistorico, Notas, OrigenRegistro, AprobadoExhibidores, TrasladoAnteriorId, TrasladoSiguienteId, FechaTraslado, RequisitoHoras
                     FROM Personas 
-                    WHERE Id IN (
-                        SELECT MAX(Id)
-                        FROM Personas
-                        WHERE CongregacionCodigo = $codigo 
-                        AND (
-                            MesHistorico = $mes 
-                            OR (MesHistorico IS NULL AND Id NOT IN (SELECT PersonaRaizId FROM Personas WHERE MesHistorico = $mes AND PersonaRaizId > 0))
-                        )
-                        GROUP BY CASE WHEN PersonaRaizId > 0 THEN PersonaRaizId ELSE Id END
-                    )
+                    WHERE Id IN (" + SCCosmos.Sincro.InstantaneasVisita.IdsDelMes + @")
                     ORDER BY Nombre ASC;";
                 command.Parameters.AddWithValue("$codigo", congreCodigo);
                 command.Parameters.AddWithValue("$mes", mesReferencia);
@@ -1664,7 +1582,14 @@ namespace SCCosmos
 
 
         // NUEVO MÉTODO HISTÓRICO: Cuando se importa un JSON, se actualiza el original y se crea un clon estático de ese mes.
-        public static void GuardarVersionHistoricaJSON(string congreCodigo, string mesReferencia, List<PersonaJson> listaPersonas)
+        /// <param name="fichaPorTarjeta">La ficha que ya se identificó para cada tarjeta, por el nombre de la tarjeta.</param>
+        /// <param name="fichasSinTocar">Tarjetas que ya no rellenan su ficha: el usuario decidió sobre ella o dejó el conflicto sin revisar.</param>
+        public static void GuardarVersionHistoricaJSON(
+            string congreCodigo,
+            string mesReferencia,
+            List<PersonaJson> listaPersonas,
+            IReadOnlyDictionary<string, int> fichaPorTarjeta = null,
+            ISet<string> fichasSinTocar = null)
         {
             using (var connection = new SqliteConnection(ConnectionString))
             {
@@ -1673,11 +1598,61 @@ namespace SCCosmos
                 {
                     string fechaExacta = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
+                    // La que hasta ahora era la última visita queda como se veía.
+                    SCCosmos.Sincro.InstantaneasVisita.CongelarAnterior(connection, transaction, congreCodigo, mesReferencia);
+
+                    // Si el nombre no está igual, se busca la ficha con las mismas
+                    // palabras: el S-21 y JW Hub escriben los nombres de distinta
+                    // forma, y sin esto se crearía una ficha duplicada.
+                    var fichas = new List<(long Id, string Nombre, string NombreJWHub, string Nacimiento, string Bautismo)>();
+                    var cmdFichas = connection.CreateCommand();
+                    cmdFichas.Transaction = transaction;
+                    cmdFichas.CommandText = "SELECT Id, Nombre, COALESCE(NombreJWHub, ''), COALESCE(FechaNacimiento, ''), COALESCE(FechaBautismo, '') FROM Personas WHERE CongregacionCodigo = $congreCodigo AND MesHistorico IS NULL AND COALESCE(FechaEliminacion, '') = '';";
+                    cmdFichas.Parameters.AddWithValue("$congreCodigo", congreCodigo);
+                    using (var lectorFichas = cmdFichas.ExecuteReader())
+                    {
+                        while (lectorFichas.Read())
+                        {
+                            fichas.Add((lectorFichas.GetInt64(0), lectorFichas.GetString(1), lectorFichas.GetString(2), lectorFichas.GetString(3), lectorFichas.GetString(4)));
+                        }
+                    }
+
                     // Una persona puede venir en varios años de servicio
                     // (una tarjeta por año): la ficha y la instantánea
                     // histórica se guardan una sola vez por persona; la
                     // actividad se guarda para cada año.
                     var yaProcesadas = new HashSet<long>();
+
+                    // La instantánea de la persona en esta visita. Reimportar el mismo mes
+                    // la sustituye, no añade otra.
+                    void GuardarInstantanea(long raiz, PersonaJson tarjeta)
+                    {
+                        var cmdLimpiar = connection.CreateCommand();
+                        cmdLimpiar.Transaction = transaction;
+                        cmdLimpiar.CommandText = "DELETE FROM Personas WHERE PersonaRaizId = $raiz AND MesHistorico = $mesH;";
+                        cmdLimpiar.Parameters.AddWithValue("$raiz", raiz);
+                        cmdLimpiar.Parameters.AddWithValue("$mesH", mesReferencia);
+                        cmdLimpiar.ExecuteNonQuery();
+
+                        var cmdClone = connection.CreateCommand();
+                        cmdClone.Transaction = transaction;
+
+                        cmdClone.CommandText = @"
+                            INSERT INTO Personas (Nombre, FechaNacimiento, Sexo, FechaBautismo, Esperanza, Nombramiento, Servicio, CongregacionCodigo, Grupo, Telefono, Email, FechaInicioPrec, FechaUltimaEscuela, NombreJWHub, Foto, NombreComun, Direccion, Latitud, Longitud, ConyugeId, EmailJW, Solicitudes, Privilegios, RequisitoHoras, PersonaRaizId, MesHistorico, FechaExactaHistorico, Notas, OrigenRegistro, AprobadoExhibidores)
+                            SELECT Nombre, $fnac, $sexo, $fbaut, $esp, $nomb, $serv, CongregacionCodigo, $grupo, Telefono, Email, FechaInicioPrec, FechaUltimaEscuela, NombreJWHub, Foto, NombreComun, Direccion, Latitud, Longitud, ConyugeId, EmailJW, Solicitudes, Privilegios, RequisitoHoras, $raiz, $mesH, $fechaEx, Notas, OrigenRegistro, AprobadoExhibidores
+                            FROM Personas WHERE Id = $raiz;";
+                        cmdClone.Parameters.AddWithValue("$fnac", tarjeta.FechaNacimiento ?? "");
+                        cmdClone.Parameters.AddWithValue("$sexo", tarjeta.Sexo ?? "");
+                        cmdClone.Parameters.AddWithValue("$fbaut", tarjeta.FechaBautismo ?? "");
+                        cmdClone.Parameters.AddWithValue("$esp", tarjeta.Esperanza ?? "");
+                        cmdClone.Parameters.AddWithValue("$nomb", tarjeta.Nombramiento ?? "");
+                        cmdClone.Parameters.AddWithValue("$serv", tarjeta.Servicio ?? "");
+                        cmdClone.Parameters.AddWithValue("$grupo", tarjeta.Grupo);
+                        cmdClone.Parameters.AddWithValue("$raiz", raiz);
+                        cmdClone.Parameters.AddWithValue("$mesH", mesReferencia);
+                        cmdClone.Parameters.AddWithValue("$fechaEx", fechaExacta);
+                        cmdClone.ExecuteNonQuery();
+                    }
 
                     foreach (var p in listaPersonas)
                     {
@@ -1687,7 +1662,35 @@ namespace SCCosmos
                         cmdCheck.CommandText = "SELECT Id FROM Personas WHERE Nombre = $nombre AND CongregacionCodigo = $congreCodigo AND MesHistorico IS NULL ORDER BY Id DESC LIMIT 1;";
                         cmdCheck.Parameters.AddWithValue("$nombre", p.Nombre);
                         cmdCheck.Parameters.AddWithValue("$congreCodigo", congreCodigo);
-                        var idObj = cmdCheck.ExecuteScalar();
+                        string nombreTarjeta = (p.Nombre ?? "").Trim();
+                        object idObj = null;
+
+                        if (fichaPorTarjeta != null && fichaPorTarjeta.TryGetValue(nombreTarjeta, out int idFicha))
+                        {
+                            var cmdFicha = connection.CreateCommand();
+                            cmdFicha.Transaction = transaction;
+                            cmdFicha.CommandText = "SELECT Id FROM Personas WHERE Id = $id AND MesHistorico IS NULL;";
+                            cmdFicha.Parameters.AddWithValue("$id", idFicha);
+                            idObj = cmdFicha.ExecuteScalar();
+                        }
+
+                        idObj ??= cmdCheck.ExecuteScalar();
+
+                        if (idObj == null)
+                        {
+                            var iguales = fichas
+                                .Where(f => SCCosmos.Sincro.NombresPersona.PuedeSerLaMisma(
+                                    (f.Nombre, f.NombreJWHub, f.Nacimiento, f.Bautismo),
+                                    p.Nombre,
+                                    p.FechaNacimiento,
+                                    p.FechaBautismo))
+                                .ToList();
+
+                            if (iguales.Count == 1)
+                            {
+                                idObj = iguales[0].Id;
+                            }
+                        }
 
                         if (idObj != null)
                         {
@@ -1698,29 +1701,23 @@ namespace SCCosmos
                             // solo se añade su actividad de ese año.
                             if (yaProcesadas.Add(personaActualId))
                             {
-                            var cmdClone = connection.CreateCommand();
-                            cmdClone.Transaction = transaction;
-
-                            cmdClone.CommandText = @"
-                                INSERT INTO Personas (Nombre, FechaNacimiento, Sexo, FechaBautismo, Esperanza, Nombramiento, Servicio, CongregacionCodigo, Grupo, Telefono, Email, FechaInicioPrec, FechaUltimaEscuela, NombreJWHub, Foto, NombreComun, Direccion, Latitud, Longitud, ConyugeId, EmailJW, Solicitudes, Privilegios, RequisitoHoras, PersonaRaizId, MesHistorico, FechaExactaHistorico, Notas, OrigenRegistro, AprobadoExhibidores)
-                                SELECT Nombre, $fnac, $sexo, $fbaut, $esp, $nomb, $serv, CongregacionCodigo, $grupo, Telefono, Email, FechaInicioPrec, FechaUltimaEscuela, NombreJWHub, Foto, NombreComun, Direccion, Latitud, Longitud, ConyugeId, EmailJW, Solicitudes, Privilegios, RequisitoHoras, $raiz, $mesH, $fechaEx, Notas, OrigenRegistro, AprobadoExhibidores
-                                FROM Personas WHERE Id = $raiz;
-                                SELECT last_insert_rowid();";
-                            cmdClone.Parameters.AddWithValue("$fnac", p.FechaNacimiento ?? "");
-                            cmdClone.Parameters.AddWithValue("$sexo", p.Sexo ?? "");
-                            cmdClone.Parameters.AddWithValue("$fbaut", p.FechaBautismo ?? "");
-                            cmdClone.Parameters.AddWithValue("$esp", p.Esperanza ?? "");
-                            cmdClone.Parameters.AddWithValue("$nomb", p.Nombramiento ?? "");
-                            cmdClone.Parameters.AddWithValue("$serv", p.Servicio ?? "");
-                            cmdClone.Parameters.AddWithValue("$grupo", p.Grupo);
-                            cmdClone.Parameters.AddWithValue("$raiz", personaActualId);
-                            cmdClone.Parameters.AddWithValue("$mesH", mesReferencia);
-                            cmdClone.Parameters.AddWithValue("$fechaEx", fechaExacta);
-                            long idClon = (long)cmdClone.ExecuteScalar();
+                            GuardarInstantanea(personaActualId, p);
 
                             var cmdUpd = connection.CreateCommand();
                             cmdUpd.Transaction = transaction;
-                            cmdUpd.CommandText = @"UPDATE Personas SET FechaNacimiento = $fnac, Sexo = $sexo, FechaBautismo = $fbaut, Esperanza = $esp, Nombramiento = $nomb, Servicio = $serv, Grupo = $grupo,
+                            // La tarjeta solo rellena: lo que no trae no borra lo que tiene la ficha (un S-21
+                            // sin marcar no quita un nombramiento de JW Hub). El nombre completo es el del S-21.
+                            cmdUpd.Parameters.AddWithValue("$rellenar", fichasSinTocar != null && fichasSinTocar.Contains(nombreTarjeta) ? 0 : 1);
+                            cmdUpd.Parameters.AddWithValue("$nombre", nombreTarjeta);
+                            cmdUpd.CommandText = @"UPDATE Personas SET
+                                Nombre = CASE WHEN $rellenar = 1 AND $nombre <> '' THEN $nombre ELSE Nombre END,
+                                FechaNacimiento = CASE WHEN $rellenar = 1 AND $fnac <> '' THEN $fnac ELSE FechaNacimiento END,
+                                Sexo = CASE WHEN $rellenar = 1 AND $sexo <> '' THEN $sexo ELSE Sexo END,
+                                FechaBautismo = CASE WHEN $rellenar = 1 AND $fbaut <> '' THEN $fbaut ELSE FechaBautismo END,
+                                Esperanza = CASE WHEN $rellenar = 1 AND $esp <> '' THEN $esp ELSE Esperanza END,
+                                Nombramiento = CASE WHEN $rellenar = 1 AND $nomb <> '' THEN $nomb ELSE Nombramiento END,
+                                Servicio = CASE WHEN $rellenar = 1 AND $serv <> '' THEN $serv ELSE Servicio END,
+                                Grupo = CASE WHEN $rellenar = 1 AND $grupo > 0 THEN $grupo ELSE Grupo END,
                                 OrigenRegistro = CASE
                                     WHEN OrigenRegistro IS NULL OR trim(OrigenRegistro) = '' OR upper(OrigenRegistro) = 'DESCONOCIDO' THEN 'S21'
                                     WHEN instr(lower(OrigenRegistro), 's21') = 0 THEN OrigenRegistro || '+S21'
@@ -1763,6 +1760,7 @@ namespace SCCosmos
                             if (personaActualId > 0)
                             {
                                 yaProcesadas.Add(personaActualId);
+                                GuardarInstantanea(personaActualId, p);
                             }
                         }
 
@@ -1776,7 +1774,8 @@ namespace SCCosmos
                                     INSERT INTO ActividadPersonas (PersonaId, Mes, AnioServicio, Participacion, CursosBiblicos, Cursos, PrecursorAuxiliar, Horas, Notas, Credito)
                                     VALUES ($personaId, $mes, $anio, $part, $cursos, $cursosTexto, $prec, $horas, $notas, $credito)
                                     ON CONFLICT(PersonaId, Mes, AnioServicio) DO UPDATE SET
-                                        Credito = CASE WHEN COALESCE(Notas, '') IS NOT $notas THEN $credito ELSE Credito END, Participacion = $part, CursosBiblicos = $cursos, Cursos = $cursosTexto, PrecursorAuxiliar = $prec, Horas = $horas, Notas = $notas;";
+                                        Credito = CASE WHEN COALESCE(Notas, '') IS NOT $notas THEN $credito ELSE Credito END, Participacion = $part, CursosBiblicos = $cursos, Cursos = $cursosTexto, PrecursorAuxiliar = $prec, Horas = $horas, Notas = $notas
+                                        WHERE Participacion IS NOT $part OR CursosBiblicos IS NOT $cursos OR Cursos IS NOT $cursosTexto OR PrecursorAuxiliar IS NOT $prec OR Horas IS NOT $horas OR COALESCE(Notas, '') IS NOT $notas;";
 
                                 long idParaActividad = idObj != null ? (long)idObj : personaActualId;
                                 cmdInf.Parameters.AddWithValue("$personaId", idParaActividad);
@@ -1896,7 +1895,17 @@ namespace SCCosmos
                             RegistroErrores.AnotarSilencioso(errorDatos, "Datos.Fusion#3");
                         }
 
-                        // Si una de las dos fichas forma parte de una cadena de traslados,
+                        // Programas, escuelas y donaciones que apuntan a la ficha que se borra.
+                    try
+                    {
+                        SCCosmos.Sincro.ReferenciasPersona.Redirigir(connection, transaction, personaDestino.Id, idOrigen);
+                    }
+                    catch (Exception errorDatos)
+                    {
+                        RegistroErrores.AnotarSilencioso(errorDatos, "Datos.Fusion#6");
+                    }
+
+                    // Si una de las dos fichas forma parte de una cadena de traslados,
                         // trasladamos esos enlaces al Id que sobrevivirá a la fusión. Esto es
                         // importante cuando una ficha recién trasladada se vincula después con
                         // un registro S-21 de la misma congregación.

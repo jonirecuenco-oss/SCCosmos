@@ -2480,7 +2480,7 @@ internal static class Program
             });
 
         await Probar(
-            "30. Requisito de precursores: crédito con tope de 55, salud delicada, fijado a mano y notas",
+            "30. Requisito de precursores: crédito solo en regulares con tope de 55, desde el mes de inicio, salud delicada, fijado a mano y notas",
             () =>
             {
                 var fallos =
@@ -2539,7 +2539,9 @@ internal static class Program
 
                 Ver("regular, septiembre", RequisitoPrecursor.DiferenciaHasta(meses, septiembre, 600, true, null), (double?)10);
                 Ver("regular, octubre con crédito", RequisitoPrecursor.DiferenciaHasta(meses, octubre, 600, true, null), (double?)15);
-                Ver("especial, octubre", RequisitoPrecursor.DiferenciaHasta(meses, octubre, 1200, false, null), (double?)-85);
+                // Solo los regulares acreditan horas: al especial no le cuenta el crédito.
+                Ver("especial, octubre", RequisitoPrecursor.DiferenciaHasta(meses, octubre, 1200, false, null), (double?)-100);
+                Ver("horas de un especial", RequisitoPrecursor.HorasHasta(meses, octubre, false, null), 100d);
                 Ver("reducido a 300", RequisitoPrecursor.DiferenciaHasta(meses, septiembre, 300, true, null), (double?)35);
                 Ver("sin requisito", RequisitoPrecursor.DiferenciaHasta(meses, octubre, 0, true, null), (double?)null);
 
@@ -2551,14 +2553,39 @@ internal static class Program
                 Ver("horas desde que empezó", RequisitoPrecursor.HorasHasta(meses, octubre, true, inicio), 55d);
                 Ver("horas de todo el año", RequisitoPrecursor.HorasHasta(meses, octubre, true, null), 115d);
                 Ver("horas antes de empezar", RequisitoPrecursor.HorasHasta(meses, septiembre, true, inicio), 0d);
-                Ver("meses desde que empezó", RequisitoPrecursor.MesesConRequisito(new DateTime(2026, 12, 1), true, inicio), 3);
-                Ver("meses antes de empezar", RequisitoPrecursor.MesesConRequisito(septiembre, true, inicio), 0);
-                Ver("meses de un especial", RequisitoPrecursor.MesesConRequisito(new DateTime(2026, 12, 1), false, inicio), 4);
-                Ver("meses, empezó años atrás", RequisitoPrecursor.MesesConRequisito(octubre, true, new DateTime(2019, 3, 1)), 2);
+                Ver("meses desde que empezó", RequisitoPrecursor.MesesConRequisito(new DateTime(2026, 12, 1), inicio), 3);
+                Ver("meses antes de empezar", RequisitoPrecursor.MesesConRequisito(septiembre, inicio), 0);
+                Ver("meses sin fecha de inicio", RequisitoPrecursor.MesesConRequisito(new DateTime(2026, 12, 1), null), 4);
+                Ver("meses, empezó años atrás", RequisitoPrecursor.MesesConRequisito(octubre, new DateTime(2019, 3, 1)), 2);
+                Ver("especial, desde que empezó", RequisitoPrecursor.DiferenciaHasta(meses, octubre, 1200, false, inicio), (double?)-60);
+
+                // Empieza en marzo: 300 horas de marzo a agosto; lo de antes no cuenta.
+                var marzo = new List<HorasDeMes>();
+
+                foreach (string nombreMes in new[] { "enero", "febrero" })
+                {
+                    marzo.Add(new HorasDeMes(nombreMes, "2027", 30, 0));
+                }
+
+                foreach (string nombreMes in new[] { "marzo", "abril", "mayo", "junio", "julio", "agosto" })
+                {
+                    marzo.Add(new HorasDeMes(nombreMes, "2027", 50, 0));
+                }
+
+                var empiezaMarzo = new DateTime(2027, 3, 10);
+
+                Ver("empieza en marzo: 6 meses", RequisitoPrecursor.MesesConRequisito(new DateTime(2027, 8, 1), empiezaMarzo), 6);
+                Ver("empieza en marzo: 300 horas", RequisitoPrecursor.HorasHasta(marzo, new DateTime(2027, 8, 1), true, empiezaMarzo), 300d);
+                Ver("empieza en marzo: al día", RequisitoPrecursor.DiferenciaHasta(marzo, new DateTime(2027, 8, 1), 600, true, empiezaMarzo), (double?)0);
+                Ver("empieza en marzo: en febrero nada", RequisitoPrecursor.DiferenciaHasta(marzo, new DateTime(2027, 2, 1), 600, true, empiezaMarzo), (double?)null);
                 Ver(
                     "registro de la ficha",
                     RequisitoPrecursor.DiferenciaDeRegistro(meses, meses[1], "Precursor regular", "Hombre", null, null, 0, false),
                     (double?)15);
+                Ver(
+                    "registro de un especial, sin crédito",
+                    RequisitoPrecursor.DiferenciaDeRegistro(meses, meses[1], "Precursor especial", "Hombre", null, null, 0, false),
+                    (double?)-100);
                 Ver(
                     "registro con mes desconocido",
                     RequisitoPrecursor.DiferenciaDeRegistro(meses, new HorasDeMes("foo", "2027", 1, 0), "Precursor regular", "Hombre", null, null, 0, false),
@@ -2771,6 +2798,280 @@ internal static class Program
                 }
 
                 return correcto;
+            });
+
+        await Probar(
+            "32. Visitas: la última muestra la ficha actual; las anteriores quedan congeladas como se veían",
+            () =>
+            {
+                string dbV =
+                    Path.Combine(
+                        _carpeta,
+                        "V.db");
+
+                CopiarBase(
+                    origen,
+                    dbV);
+
+                const string congre =
+                    "T32";
+
+                var fallos =
+                    new List<string>();
+
+                void Ver(string que, object? obtenido, object? esperado)
+                {
+                    if (!Equals(obtenido, esperado))
+                    {
+                        fallos.Add(
+                            $"{que}: {obtenido} (se esperaba {esperado})");
+                    }
+                }
+
+                long Alta(string nombre)
+                {
+                    Escribir(
+                        dbV,
+                        $"INSERT INTO Personas (Nombre, CongregacionCodigo, Servicio) VALUES ('{nombre}', '{congre}', '');");
+
+                    return LeerEntero(
+                        dbV,
+                        $"SELECT MAX(Id) FROM Personas WHERE Nombre = '{nombre}' AND MesHistorico IS NULL;");
+                }
+
+                void Instantanea(long raiz, string mes, string servicio)
+                {
+                    Escribir(
+                        dbV,
+                        $"INSERT INTO Personas (Nombre, CongregacionCodigo, Servicio, PersonaRaizId, MesHistorico) " +
+                        $"SELECT Nombre, '{congre}', '{servicio}', {raiz}, '{mes}' FROM Personas WHERE Id = {raiz};");
+                }
+
+                void Servicio(long raiz, string servicio)
+                {
+                    Escribir(
+                        dbV,
+                        $"UPDATE Personas SET Servicio = '{servicio}' WHERE Id = {raiz};");
+                }
+
+                string Filas(string mes) =>
+                    InstantaneasVisita.IdsDelMes
+                        .Replace("$codigo", $"'{congre}'")
+                        .Replace("$mes", $"'{mes}'");
+
+                string Ve(long raiz, string mes) =>
+                    LeerTexto(
+                        dbV,
+                        $"SELECT COALESCE(Servicio, '') FROM Personas WHERE Id IN ({Filas(mes)}) AND (Id = {raiz} OR PersonaRaizId = {raiz});");
+
+                string Cuantas(string mes) =>
+                    LeerTexto(
+                        dbV,
+                        $"SELECT COUNT(*) FROM Personas WHERE Id IN ({Filas(mes)});");
+
+                void Congelar(string mes)
+                {
+                    using var conexion =
+                        Abrir(
+                            dbV);
+
+                    InstantaneasVisita.CongelarAnterior(
+                        conexion,
+                        null,
+                        congre,
+                        mes);
+                }
+
+                long uno =
+                    Alta("Visita Uno");
+
+                long sinInstantanea =
+                    Alta("Visita Dos");
+
+                long trasladada =
+                    Alta("Visita Tres");
+
+                // Visita de octubre.
+                Instantanea(uno, "2026-10", "");
+                Instantanea(trasladada, "2026-10", "Precursor regular");
+
+                // Después se cambia la ficha, como desde el móvil o JW Hub:
+                // la última visita y lo posterior lo ven.
+                Servicio(uno, "Precursor regular");
+                Ver("última visita, ficha actual", Ve(uno, "2026-10"), "Precursor regular");
+                Ver("mes posterior, ficha actual", Ve(uno, "2026-11"), "Precursor regular");
+                Ver("mes anterior a la visita, ficha actual", Ve(uno, "2026-09"), "Precursor regular");
+                Ver("una fila por persona", Cuantas("2026-10"), "3");
+
+                // Una persona se va a otra congregación antes de la visita siguiente.
+                Escribir(
+                    dbV,
+                    $"UPDATE Personas SET CongregacionCodigo = 'T32B', Servicio = 'Misionero' WHERE Id = {trasladada};");
+
+                Ver("sigue en la visita en la que estuvo", Cuantas("2026-10"), "3");
+                Ver("con lo que tenía entonces", Ve(trasladada, "2026-10"), "Precursor regular");
+                Ver("pero no en los meses siguientes", Cuantas("2026-11"), "2");
+
+                // Importar diciembre congela octubre tal como se veía.
+                Congelar("2026-12");
+                Instantanea(uno, "2026-12", "Precursor especial");
+                Servicio(uno, "Precursor especial");
+
+                Ver("octubre, congelado", Ve(uno, "2026-10"), "Precursor regular");
+                Ver("noviembre, lo último hasta entonces", Ve(uno, "2026-11"), "Precursor regular");
+                Ver("diciembre, ficha actual", Ve(uno, "2026-12"), "Precursor especial");
+                Ver("la trasladada sigue en octubre con lo que tenía", Ve(trasladada, "2026-10"), "Precursor regular");
+                Ver("sin instantánea, siempre la ficha", Ve(sinInstantanea, "2026-10"), "");
+                Ver("octubre: una fila por persona", Cuantas("2026-10"), "3");
+
+                // Lo que cambie después no toca las visitas anteriores.
+                Servicio(uno, "Misionero");
+                Ver("octubre no se modifica", Ve(uno, "2026-10"), "Precursor regular");
+                Ver("la nueva última visita sí lo ve", Ve(uno, "2026-12"), "Misionero");
+
+                // Reimportar diciembre no vuelve a congelar nada.
+                Congelar("2026-12");
+                Ver("reimportar no toca octubre", Ve(uno, "2026-10"), "Precursor regular");
+                Ver(
+                    "reimportar no toca la instantánea de diciembre",
+                    LeerTexto(dbV, $"SELECT Servicio FROM Personas WHERE PersonaRaizId = {uno} AND MesHistorico = '2026-12';"),
+                    "Precursor especial");
+
+                foreach (string fallo in fallos)
+                {
+                    Console.WriteLine(
+                        $"      ({fallo})");
+                }
+
+                return Task.FromResult(
+                    fallos.Count == 0);
+            });
+
+        await Probar(
+            "33. Nombres: las mismas palabras son el mismo nombre, salvo que haya varias fichas así",
+            () =>
+            {
+                var fallos =
+                    new List<string>();
+
+                void Ver(string que, object? obtenido, object? esperado)
+                {
+                    if (!Equals(obtenido, esperado))
+                    {
+                        fallos.Add(
+                            $"{que}: {obtenido} (se esperaba {esperado})");
+                    }
+                }
+
+                Ver("otro orden y sin acentos", NombresPersona.Equivalentes("Pérez García, Juan", "Juan Perez Garcia"), true);
+                Ver("partículas", NombresPersona.Equivalentes("de la Torre Ruiz, Ana María", "Ana Maria Torre Ruiz"), true);
+                Ver("mayúsculas", NombresPersona.Equivalentes("PÉREZ, JUAN", "Juan Pérez"), true);
+                Ver("falta un apellido", NombresPersona.Equivalentes("Juan Pérez", "Juan Pérez García"), false);
+                Ver("otro nombre", NombresPersona.Equivalentes("Juan Pérez", "Ana Pérez"), false);
+                Ver("una sola palabra", NombresPersona.Equivalentes("Juan", "Juan"), false);
+                Ver("vacío", NombresPersona.Equivalentes("", ""), false);
+
+                var fichas =
+                    new[]
+                    {
+                        new { Id = 1, Nombre = "Juan Perez Garcia", Hub = "", Nacimiento = "01/01/1960" },
+                        new { Id = 2, Nombre = "Ana Ruiz", Hub = "Ana María Ruiz Soto", Nacimiento = "" },
+                        new { Id = 3, Nombre = "Luis Gil", Hub = "", Nacimiento = "" },
+                        new { Id = 4, Nombre = "Gil, Luis", Hub = "", Nacimiento = "" }
+                    };
+
+                int? Busca(string nombre, string nacimiento = "") =>
+                    NombresPersona.BuscarUnica(
+                        fichas,
+                        nombre,
+                        nacimiento,
+                        "",
+                        f => (f.Nombre, f.Hub, f.Nacimiento, ""))?.Id;
+
+                Ver("la fecha aproximada encaja", Busca("Pérez García, Juan", "13/09/1961"), (int?)1);
+                Ver("padre e hijo: la fecha no encaja", Busca("Pérez García, Juan", "13/09/1990"), (int?)null);
+
+                Ver("exactas iguales", NombresPersona.FechasCompatibles("13/09/1962", "13/09/1962"), true);
+                Ver("exactas en distinto formato", NombresPersona.FechasCompatibles("1962-09-13", "13/09/1962"), true);
+                Ver("exactas distintas", NombresPersona.FechasCompatibles("13/09/1962", "14/09/1962"), false);
+                Ver("aproximada con margen", NombresPersona.FechasCompatibles("01/01/1963", "13/09/1962"), true);
+                Ver("aproximada sin margen", NombresPersona.FechasCompatibles("01/01/1963", "13/09/1990"), false);
+                Ver("sin fecha", NombresPersona.FechasCompatibles("", "13/09/1990"), true);
+
+                Ver("la exacta sustituye a la aproximada", NombresPersona.FechaEnConflicto("01/01/1963", "13/09/1962"), false);
+                Ver("la aproximada no sustituye a la exacta", NombresPersona.FechaEnConflicto("13/09/1962", "01/01/1963"), true);
+                Ver("aproximada fuera de margen", NombresPersona.FechaEnConflicto("01/01/1963", "13/09/1990"), true);
+                Ver("exactas distintas: se pregunta", NombresPersona.FechaEnConflicto("13/09/1962", "14/09/1962"), true);
+                Ver("misma fecha en otro formato", NombresPersona.FechaEnConflicto("1962-09-13", "13/09/1962"), false);
+                Ver("tarjeta sin fecha", NombresPersona.FechaEnConflicto("13/09/1962", ""), false);
+                Ver("ficha sin fecha", NombresPersona.FechaEnConflicto("", "13/09/1962"), false);
+
+                Ver("una ficha", Busca("Pérez García, Juan"), (int?)1);
+                Ver("por el nombre de JW Hub", Busca("Ruiz Soto, Ana María"), (int?)2);
+                Ver("dos fichas: no se decide", Busca("Luis Gil"), (int?)null);
+                Ver("ninguna", Busca("Eva Sanz"), (int?)null);
+
+                foreach (string fallo in fallos)
+                {
+                    Console.WriteLine(
+                        $"      ({fallo})");
+                }
+
+                return Task.FromResult(
+                    fallos.Count == 0);
+            });
+
+        await Probar(
+            "34. Fusión: lo que apunta a la ficha que se borra pasa a la que se conserva",
+            () =>
+            {
+                string dbF =
+                    Path.Combine(
+                        _carpeta,
+                        "F.db");
+
+                CopiarBase(
+                    origen,
+                    dbF);
+
+                Escribir(
+                    dbF,
+                    """
+                    DROP TABLE IF EXISTS ProgramaAsambleasPartes;
+                    DROP TABLE IF EXISTS EscuelasTalleres;
+                    DROP TABLE IF EXISTS ProgramaVisitaV2;
+                    CREATE TABLE ProgramaAsambleasPartes (Id INTEGER PRIMARY KEY, AsignadoId INTEGER);
+                    CREATE TABLE EscuelasTalleres (Id INTEGER PRIMARY KEY, AsignadoId INTEGER, AcompananteId INTEGER);
+                    INSERT INTO ProgramaAsambleasPartes (AsignadoId) VALUES (900001), (900003);
+                    INSERT INTO EscuelasTalleres (AsignadoId, AcompananteId) VALUES (900001, 900001), (900003, 900001);
+                    """);
+
+                using (var conexion =
+                       Abrir(
+                           dbF))
+                {
+                    // ProgramaVisitaV2 no existe en esta copia: no es un error.
+                    ReferenciasPersona.Redirigir(
+                        conexion,
+                        null,
+                        900002,
+                        900001);
+                }
+
+                string resultado =
+                    LeerTexto(
+                        dbF,
+                        """
+                        SELECT (SELECT group_concat(AsignadoId) FROM ProgramaAsambleasPartes)
+                            || ' ' || (SELECT group_concat(AsignadoId) FROM EscuelasTalleres)
+                            || ' ' || (SELECT group_concat(AcompananteId) FROM EscuelasTalleres);
+                        """);
+
+                Console.WriteLine(
+                    $"      {resultado}");
+
+                return Task.FromResult(
+                    resultado == "900002,900003 900002,900003 900002,900002");
             });
 
         servicioD.Detener();

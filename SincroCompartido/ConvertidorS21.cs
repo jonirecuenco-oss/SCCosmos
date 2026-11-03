@@ -1789,17 +1789,28 @@ public static class ConvertidorS21
                 continue;
             }
 
+            var dentro = diagonales
+                .Where(d =>
+                    Math.Min(d.X0, d.X1) >= x0 - 0.4f
+                    && Math.Max(d.X0, d.X1) <= x1 + 0.4f
+                    && Math.Min(d.Y0, d.Y1) >= y0 - 0.4f
+                    && Math.Max(d.Y0, d.Y1) <= y1 + 0.4f)
+                .ToList();
+
+            bool OcupaLaCasilla(TrazoPdf d) =>
+                Math.Abs(Math.Min(d.X0, d.X1) - x0) <= 0.6f
+                && Math.Abs(Math.Max(d.X0, d.X1) - x1) <= 0.6f
+                && Math.Abs(Math.Min(d.Y0, d.Y1) - y0) <= 0.6f
+                && Math.Abs(Math.Max(d.Y0, d.Y1) - y1) <= 0.6f;
+
             // El propio borde de la casilla (si se dibuja como un
-            // rectángulo) no cuenta como marca.
-            bool marcada = diagonales.Any(d =>
-                !(Math.Abs(Math.Min(d.X0, d.X1) - x0) <= 0.6f
-                  && Math.Abs(Math.Max(d.X0, d.X1) - x1) <= 0.6f
-                  && Math.Abs(Math.Min(d.Y0, d.Y1) - y0) <= 0.6f
-                  && Math.Abs(Math.Max(d.Y0, d.Y1) - y1) <= 0.6f)
-                && Math.Min(d.X0, d.X1) >= x0 - 0.4f
-                && Math.Max(d.X0, d.X1) <= x1 + 0.4f
-                && Math.Min(d.Y0, d.Y1) >= y0 - 0.4f
-                && Math.Max(d.Y0, d.Y1) <= y1 + 0.4f);
+            // rectángulo) no cuenta como marca. Una X de esquina a esquina
+            // sí: también ocupa toda la casilla, pero tiene dos diagonales
+            // que se cruzan.
+            bool marcada =
+                dentro.Any(d => !OcupaLaCasilla(d))
+                || (dentro.Any(d => OcupaLaCasilla(d) && (d.X1 - d.X0) * (d.Y1 - d.Y0) > 0)
+                    && dentro.Any(d => OcupaLaCasilla(d) && (d.X1 - d.X0) * (d.Y1 - d.Y0) < 0));
 
             casillas.Add(new Casilla
             {

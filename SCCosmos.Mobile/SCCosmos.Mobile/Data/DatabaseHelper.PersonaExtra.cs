@@ -1225,6 +1225,22 @@ public static partial class DatabaseHelper
             {
             }
 
+            // Programas, escuelas y donaciones que apuntan a la ficha que se borra.
+            try
+            {
+                global::SCCosmos.Sincro.ReferenciasPersona.Redirigir(
+                    connection,
+                    transaction,
+                    destinoId,
+                    origenId);
+            }
+            catch (Exception ex)
+            {
+                global::SCCosmos.Mobile.Services.RegistroErrores.Anotar(
+                    ex,
+                    "Datos.Fusion");
+            }
+
             // Redirigir enlaces de traslado de otras fichas.
             try
             {

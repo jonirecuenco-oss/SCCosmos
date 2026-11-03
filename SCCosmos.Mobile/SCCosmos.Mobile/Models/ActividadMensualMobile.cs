@@ -23,6 +23,11 @@ public class ActividadMensualMobile
     public string Credito { get; set; } = "";
 
     /// <summary>
+    /// Solo los regulares pueden acreditar horas.
+    /// </summary>
+    public bool PuedeAcreditar { get; set; }
+
+    /// <summary>
     /// Adelanto o atraso acumulado en el año de servicio hasta este mes.
     /// </summary>
     public string Acumulado { get; set; } = "";
@@ -54,7 +59,8 @@ public class ActividadMensualMobile
                 partes.Add($"Horas: {Horas}");
             }
 
-            if (!string.IsNullOrWhiteSpace(Credito)
+            if (PuedeAcreditar
+                && !string.IsNullOrWhiteSpace(Credito)
                 && Credito != "0")
             {
                 partes.Add($"Crédito: {Credito}");

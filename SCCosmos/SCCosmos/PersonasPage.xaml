@@ -50,6 +50,12 @@
                                             <ui:TextBox x:Name="TxtBuscar" PlaceholderText="Buscar texto..." Width="160" TextChanged="TxtBuscar_TextChanged" Background="#1E1E1E" Foreground="White" BorderBrush="#444"/>
                                         </StackPanel>
 
+                                        <!-- Bajas: no se ven salvo que se pidan -->
+                                        <StackPanel Margin="0,5,15,0">
+                                            <TextBlock Text="Bajas" Foreground="#AAAAAA" FontSize="11" Margin="0,0,0,5"/>
+                                            <CheckBox x:Name="ChkVerBajas" Content="Mostrar" Foreground="White" Checked="ChkVerBajas_Changed" Unchecked="ChkVerBajas_Changed"/>
+                                        </StackPanel>
+
                                         <!-- Congregación (Múltiple) -->
                                         <StackPanel Margin="0,5,15,0">
                                             <TextBlock Text="Congregación" Foreground="#AAAAAA" FontSize="11" Margin="0,0,0,5"/>
