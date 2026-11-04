@@ -1623,9 +1623,9 @@ namespace SCCosmos
                     // actividad se guarda para cada año.
                     var yaProcesadas = new HashSet<long>();
 
-                    // La instantánea de la persona en esta visita. Reimportar el mismo mes
-                    // la sustituye, no añade otra.
-                    void GuardarInstantanea(long raiz, PersonaJson tarjeta)
+                    // La instantánea de la persona en esta visita: lo que queda en su ficha.
+                    // Reimportar el mismo mes la sustituye, no añade otra.
+                    void GuardarInstantanea(long raiz)
                     {
                         var cmdLimpiar = connection.CreateCommand();
                         cmdLimpiar.Transaction = transaction;
@@ -1639,15 +1639,8 @@ namespace SCCosmos
 
                         cmdClone.CommandText = @"
                             INSERT INTO Personas (Nombre, FechaNacimiento, Sexo, FechaBautismo, Esperanza, Nombramiento, Servicio, CongregacionCodigo, Grupo, Telefono, Email, FechaInicioPrec, FechaUltimaEscuela, NombreJWHub, Foto, NombreComun, Direccion, Latitud, Longitud, ConyugeId, EmailJW, Solicitudes, Privilegios, RequisitoHoras, PersonaRaizId, MesHistorico, FechaExactaHistorico, Notas, OrigenRegistro, AprobadoExhibidores)
-                            SELECT Nombre, $fnac, $sexo, $fbaut, $esp, $nomb, $serv, CongregacionCodigo, $grupo, Telefono, Email, FechaInicioPrec, FechaUltimaEscuela, NombreJWHub, Foto, NombreComun, Direccion, Latitud, Longitud, ConyugeId, EmailJW, Solicitudes, Privilegios, RequisitoHoras, $raiz, $mesH, $fechaEx, Notas, OrigenRegistro, AprobadoExhibidores
+                            SELECT Nombre, FechaNacimiento, Sexo, FechaBautismo, Esperanza, Nombramiento, Servicio, CongregacionCodigo, Grupo, Telefono, Email, FechaInicioPrec, FechaUltimaEscuela, NombreJWHub, Foto, NombreComun, Direccion, Latitud, Longitud, ConyugeId, EmailJW, Solicitudes, Privilegios, RequisitoHoras, $raiz, $mesH, $fechaEx, Notas, OrigenRegistro, AprobadoExhibidores
                             FROM Personas WHERE Id = $raiz;";
-                        cmdClone.Parameters.AddWithValue("$fnac", tarjeta.FechaNacimiento ?? "");
-                        cmdClone.Parameters.AddWithValue("$sexo", tarjeta.Sexo ?? "");
-                        cmdClone.Parameters.AddWithValue("$fbaut", tarjeta.FechaBautismo ?? "");
-                        cmdClone.Parameters.AddWithValue("$esp", tarjeta.Esperanza ?? "");
-                        cmdClone.Parameters.AddWithValue("$nomb", tarjeta.Nombramiento ?? "");
-                        cmdClone.Parameters.AddWithValue("$serv", tarjeta.Servicio ?? "");
-                        cmdClone.Parameters.AddWithValue("$grupo", tarjeta.Grupo);
                         cmdClone.Parameters.AddWithValue("$raiz", raiz);
                         cmdClone.Parameters.AddWithValue("$mesH", mesReferencia);
                         cmdClone.Parameters.AddWithValue("$fechaEx", fechaExacta);
@@ -1701,8 +1694,6 @@ namespace SCCosmos
                             // solo se añade su actividad de ese año.
                             if (yaProcesadas.Add(personaActualId))
                             {
-                            GuardarInstantanea(personaActualId, p);
-
                             var cmdUpd = connection.CreateCommand();
                             cmdUpd.Transaction = transaction;
                             // La tarjeta solo rellena: lo que no trae no borra lo que tiene la ficha (un S-21
@@ -1732,6 +1723,8 @@ namespace SCCosmos
                             cmdUpd.Parameters.AddWithValue("$grupo", p.Grupo);
                             cmdUpd.Parameters.AddWithValue("$id", personaActualId);
                             cmdUpd.ExecuteNonQuery();
+
+                            GuardarInstantanea(personaActualId);
                             }
                         }
                         else
@@ -1760,7 +1753,7 @@ namespace SCCosmos
                             if (personaActualId > 0)
                             {
                                 yaProcesadas.Add(personaActualId);
-                                GuardarInstantanea(personaActualId, p);
+                                GuardarInstantanea(personaActualId);
                             }
                         }
 
@@ -2365,9 +2358,11 @@ namespace SCCosmos
                                 SET Participacion = $participacion, CursosBiblicos = $cursosNumerico,
                                     PrecursorAuxiliar = $precAux, Horas = $horas, Notas = $notas, Cursos = $cursos, Credito = $credito
                                 WHERE PersonaId = $id AND Mes = $mes AND AnioServicio = $anio
-                                  AND (Participacion IS NOT $participacion OR CursosBiblicos IS NOT $cursosNumerico
-                                       OR PrecursorAuxiliar IS NOT $precAux OR Horas IS NOT $horas
-                                       OR Notas IS NOT $notas OR Cursos IS NOT $cursos OR Credito IS NOT $credito);
+                                  AND (Participacion IS NOT $participacion OR COALESCE(CursosBiblicos, 0) IS NOT $cursosNumerico
+                                       OR PrecursorAuxiliar IS NOT $precAux OR (Horas IS NOT $horas AND NOT (Horas IS NULL AND $horas = ''))
+                                       OR COALESCE(Notas, '') IS NOT $notas
+                                       OR COALESCE(NULLIF(Cursos, ''), CAST(CursosBiblicos AS TEXT), '') IS NOT $cursos
+                                       OR Credito IS NOT $credito);
 
                                 INSERT INTO ActividadPersonas
                                     (PersonaId, Mes, AnioServicio, Participacion, CursosBiblicos,

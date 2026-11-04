@@ -909,7 +909,7 @@ namespace SCCosmos
 
                 // Con cuenta de JW Hub, su ficha sin nombramiento o servicio es un dato:
                 // la tarjeta se ofrece, pero lo que se propone es dejarla como está.
-                bool conservarVacio = _conflictosDeTarjeta && v1.Length == 0
+                bool conservarVacio = _conflictosDeTarjeta && (v1.Length == 0 || v1 == "(Vacío)")
                     && (cmbOriginal == CmbNombramiento || cmbOriginal == CmbServicio)
                     && !string.IsNullOrWhiteSpace(PersonaActualizada?.NombreJWHub);
 

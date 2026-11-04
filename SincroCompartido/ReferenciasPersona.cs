@@ -9,6 +9,9 @@ namespace SCCosmos.Sincro;
 // su Id. Si no se pasan a la ficha que se conserva, al borrar la otra se
 // quedan apuntando a nadie y la asignación desaparece de la pantalla.
 //
+// Las instantáneas de los meses que la ficha que queda no tiene también
+// pasan a ella: si no, esa visita mostraría los datos de hoy.
+//
 // La actividad, los territorios, el cónyuge y los traslados tienen sus
 // propias reglas y cada fusión los trata aparte.
 // =============================================================
@@ -43,6 +46,38 @@ public static class ReferenciasPersona
         long destino,
         long origen)
     {
+        using (var instantaneas =
+               conexion.CreateCommand())
+        {
+            instantaneas.Transaction =
+                transaccion;
+
+            instantaneas.CommandText =
+                """
+                UPDATE Personas
+                SET PersonaRaizId = $destino
+                WHERE PersonaRaizId = $origen
+                  AND MesHistorico IS NOT NULL
+                  AND MesHistorico NOT IN
+                  (
+                      SELECT MesHistorico
+                      FROM Personas
+                      WHERE PersonaRaizId = $destino
+                        AND MesHistorico IS NOT NULL
+                  );
+                """;
+
+            instantaneas.Parameters.AddWithValue(
+                "$destino",
+                destino);
+
+            instantaneas.Parameters.AddWithValue(
+                "$origen",
+                origen);
+
+            instantaneas.ExecuteNonQuery();
+        }
+
         var existentes =
             new HashSet<(string Tabla, string Columna)>();
 
