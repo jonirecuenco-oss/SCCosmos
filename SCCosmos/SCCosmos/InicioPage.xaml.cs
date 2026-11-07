@@ -423,7 +423,10 @@ namespace SCCosmos
                     string.IsNullOrWhiteSpace(ubicacion)
                         ? ""
                         : "📍 " + ubicacion,
-                VerCompanero = Visibility.Visible,
+                VerCompanero =
+                    string.IsNullOrWhiteSpace(nombreAcompanante)
+                        ? Visibility.Collapsed
+                        : Visibility.Visible,
                 VerUbicacion =
                     string.IsNullOrWhiteSpace(ubicacion)
                         ? Visibility.Collapsed

@@ -3,516 +3,295 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       Title="InicioPage"
-      Foreground="White">
+      Foreground="{DynamicResource TextFillColorPrimaryBrush}">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <Grid Margin="40">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
+        <StackPanel Margin="40,32,40,40" HorizontalAlignment="Left">
 
-            <!-- Saludo y Cabecera -->
-            <TextBlock x:Name="TxtSaludo" Grid.Row="0" Text="¡Hola!" FontSize="36" FontWeight="Bold" Margin="0,0,0,5"/>
-            <TextBlock Grid.Row="1" Text="Esto es lo que tienes programado para la semana actual:" FontSize="16" Foreground="#AAAAAA" Margin="0,0,0,30"/>
+            <!-- Saludo -->
+            <TextBlock x:Name="TxtSaludo" Text="¡Hola!" FontSize="32" FontWeight="SemiBold"/>
+            <TextBlock Text="Esto es lo que tienes programado para la semana actual:" Style="{StaticResource TextoSecundario}" Margin="0,4,0,24"/>
 
-            <!-- DOS TARJETAS INDEPENDIENTES: semana + programa del día -->
-            <WrapPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,25">
+            <!-- Semana y predicación -->
+            <WrapPanel Orientation="Horizontal">
 
-                <!-- TARJETA 1: ACTIVIDAD DE LA SEMANA -->
-                <ui:Card Width="520"
-                         MinHeight="190"
-                         VerticalAlignment="Top"
-                         Padding="30"
-                         Background="#0AFFFFFF"
-                         BorderBrush="#1AFFFFFF"
-                         Margin="0,0,20,15">
+                <!-- ACTIVIDAD DE LA SEMANA -->
+                <ui:Card Width="520" MinHeight="176" VerticalAlignment="Stretch" Padding="24" Margin="0,0,16,16">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
-
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <!-- Icono dinámico solo para actividades que no son visita -->
-                        <ui:SymbolIcon x:Name="IconoActividad"
-                                       Grid.Column="0"
-                                       Symbol="Calendar24"
-                                       FontSize="60"
-                                       Foreground="#0078D4"
-                                       Margin="0,0,30,0"
-                                       VerticalAlignment="Center"/>
+                        <!-- Icono solo para actividades que no son visita -->
+                        <ui:SymbolIcon x:Name="IconoActividad" Grid.Column="0" Symbol="Calendar24" FontSize="48"
+                                       Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"
+                                       Margin="0,0,24,0" VerticalAlignment="Center"/>
 
                         <!-- VISITA -->
-                        <StackPanel x:Name="PanelVisita"
-                                    Grid.Column="0"
-                                    Grid.ColumnSpan="2"
-                                    VerticalAlignment="Center"
-                                    Visibility="Collapsed">
-                            <TextBlock Text="VISITA A CONGREGACIÓN"
-                                       FontSize="12"
-                                       FontWeight="Bold"
-                                       Foreground="#0078D4"
-                                       Margin="0,0,0,8"/>
-
+                        <StackPanel x:Name="PanelVisita" Grid.Column="0" Grid.ColumnSpan="2" VerticalAlignment="Center" Visibility="Collapsed">
+                            <TextBlock Text="VISITA A CONGREGACIÓN" Style="{StaticResource Rotulo}"
+                                       Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Margin="0,0,0,6"/>
                             <Grid Margin="0,0,0,8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-
-                                <TextBlock Grid.Column="0"
-                                           Text="{Binding Congregacion}"
-                                           FontSize="28"
-                                           FontWeight="SemiBold"
-                                           TextWrapping="Wrap"
-                                           VerticalAlignment="Center"
-                                           Margin="0,0,12,0"/>
-
-                                <ui:Button x:Name="BtnVerVisita"
-                                           Grid.Column="1"
-                                           Appearance="Success"
-                                           Icon="{ui:SymbolIcon Eye24}"
-                                           ToolTip="Ver datos de la congregación"
-                                           Padding="9"
-                                           Cursor="Hand"
-                                           VerticalAlignment="Center"
-                                           Visibility="Collapsed"
-                                           Click="BtnVerVisita_Click"/>
+                                <TextBlock Grid.Column="0" Text="{Binding Congregacion}" FontSize="26" FontWeight="SemiBold"
+                                           TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <ui:Button x:Name="BtnVerVisita" Grid.Column="1" Appearance="Secondary" Icon="{ui:SymbolIcon Eye24}"
+                                           Content="Ver" ToolTip="Ver datos de la congregación" Cursor="Hand"
+                                           VerticalAlignment="Center" Visibility="Collapsed" Click="BtnVerVisita_Click"/>
                             </Grid>
-
                             <StackPanel Orientation="Horizontal">
-                                <ui:SymbolIcon Symbol="CalendarClock24"
-                                               Foreground="#AAAAAA"
-                                               Margin="0,0,8,0"/>
-                                <TextBlock x:Name="TxtRangoSemanaVisita"
-                                           Foreground="#AAAAAA"
-                                           FontSize="14"/>
+                                <ui:SymbolIcon Symbol="CalendarClock24" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,8,0"/>
+                                <TextBlock x:Name="TxtRangoSemanaVisita" Style="{StaticResource TextoSecundario}"/>
                             </StackPanel>
                         </StackPanel>
 
                         <!-- OTRAS ACTIVIDADES -->
-                        <StackPanel x:Name="PanelOtraActividad"
-                                    Grid.Column="1"
-                                    VerticalAlignment="Center"
-                                    Visibility="Collapsed">
-                            <TextBlock Text="ACTIVIDAD PROGRAMADA"
-                                       FontSize="12"
-                                       FontWeight="Bold"
-                                       Foreground="#AAAAAA"
-                                       Margin="0,0,0,5"/>
-                            <TextBlock Text="{Binding Actividad}"
-                                       FontSize="28"
-                                       FontWeight="SemiBold"
-                                       TextWrapping="Wrap"
-                                       Margin="0,0,0,5"/>
+                        <StackPanel x:Name="PanelOtraActividad" Grid.Column="1" VerticalAlignment="Center" Visibility="Collapsed">
+                            <TextBlock Text="ACTIVIDAD PROGRAMADA" Style="{StaticResource Rotulo}" Margin="0,0,0,6"/>
+                            <TextBlock Text="{Binding Actividad}" FontSize="26" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,8"/>
                             <StackPanel Orientation="Horizontal">
-                                <ui:SymbolIcon Symbol="CalendarClock24"
-                                               Foreground="#AAAAAA"
-                                               Margin="0,0,8,0"/>
-                                <TextBlock x:Name="TxtRangoSemanaOtra"
-                                           Foreground="#AAAAAA"
-                                           FontSize="14"/>
+                                <ui:SymbolIcon Symbol="CalendarClock24" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,8,0"/>
+                                <TextBlock x:Name="TxtRangoSemanaOtra" Style="{StaticResource TextoSecundario}"/>
                             </StackPanel>
                         </StackPanel>
 
-                        <TextBlock x:Name="TxtSinDatos"
-                                   Grid.Column="1"
-                                   Text="No se ha detectado ninguna actividad para la semana actual."
-                                   Foreground="#AAAAAA"
-                                   FontSize="16"
-                                   TextWrapping="Wrap"
-                                   HorizontalAlignment="Left"
-                                   VerticalAlignment="Center"
-                                   Visibility="Collapsed"/>
+                        <TextBlock x:Name="TxtSinDatos" Grid.Column="1" Text="No se ha detectado ninguna actividad para la semana actual."
+                                   Style="{StaticResource TextoSecundario}" FontSize="15" TextWrapping="Wrap"
+                                   HorizontalAlignment="Left" VerticalAlignment="Center" Visibility="Collapsed"/>
 
                         <!-- PRÓXIMA ACTIVIDAD (enlace al calendario) -->
-                        <TextBlock x:Name="TxtProximaActividad"
-                                   Grid.Row="1"
-                                   Grid.ColumnSpan="2"
-                                   Margin="0,16,0,0"
-                                   FontSize="14"
-                                   Foreground="#80C4FF"
-                                   TextDecorations="Underline"
-                                   TextWrapping="Wrap"
-                                   Cursor="Hand"
-                                   Visibility="Collapsed"
+                        <TextBlock x:Name="TxtProximaActividad" Grid.Row="1" Grid.ColumnSpan="2" Margin="0,16,0,0" FontSize="14"
+                                   Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" TextDecorations="Underline"
+                                   TextWrapping="Wrap" Cursor="Hand" Visibility="Collapsed"
                                    MouseLeftButtonUp="TxtProximaActividad_Click"/>
                     </Grid>
                 </ui:Card>
 
-                <!-- TARJETA: HORAS PREDICADAS -->
-                <ui:Card Width="300"
-                         VerticalAlignment="Top"
-                         Padding="24"
-                         Background="#0AFFFFFF"
-                         BorderBrush="#1AFFFFFF"
-                         Margin="0,0,20,15">
-                    <StackPanel>
-                        <TextBlock Text="PREDICACIÓN ESTE MES"
-                                   FontSize="12"
-                                   FontWeight="Bold"
-                                   Foreground="#8A929C"/>
-
-                        <Grid Margin="0,10,0,0">
+                <!-- HORAS PREDICADAS -->
+                <ui:Card Width="308" MinHeight="176" VerticalAlignment="Stretch" Padding="24" Margin="0,0,16,16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="PREDICACIÓN ESTE MES" Style="{StaticResource Rotulo}"/>
+                        <Grid Grid.Row="1" VerticalAlignment="Center">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-
-                            <StackPanel Grid.Column="0"
-                                        VerticalAlignment="Center">
-                                <TextBlock x:Name="TxtHorasMes"
-                                           Text="0"
-                                           FontSize="34"
-                                           FontWeight="SemiBold"
-                                           Foreground="White"/>
-                                <TextBlock x:Name="TxtHorasMesEtiqueta"
-                                           Text=""
-                                           FontSize="12"
-                                           Foreground="#8A929C"/>
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                <TextBlock x:Name="TxtHorasMes" Text="0" FontSize="32" FontWeight="SemiBold"/>
+                                <TextBlock x:Name="TxtHorasMesEtiqueta" Text="" Style="{StaticResource NotaDato}" FontSize="12"/>
                             </StackPanel>
-
-                            <ui:Button x:Name="BtnSumarHoras"
-                                       Grid.Column="1"
-                                       Appearance="Primary"
-                                       Icon="{ui:SymbolIcon Add24}"
-                                       Padding="9"
-                                       Cursor="Hand"
-                                       VerticalAlignment="Center"
-                                       ToolTip="Añadir horas de predicación"
-                                       Click="BtnSumarHoras_Click"/>
+                            <ui:Button x:Name="BtnSumarHoras" Grid.Column="1" Appearance="Primary" Icon="{ui:SymbolIcon Add24}"
+                                       Padding="10" Cursor="Hand" VerticalAlignment="Center"
+                                       ToolTip="Añadir horas de predicación" Click="BtnSumarHoras_Click"/>
                         </Grid>
-                    </StackPanel>
-                </ui:Card>
-
-                <!-- TARJETA 2: PROGRAMA DEL DÍA -->
-                <ui:Card x:Name="PanelProgramaDia"
-                         Width="760"
-                         MinHeight="190"
-                         VerticalAlignment="Top"
-                         Padding="18"
-                         Background="#0AFFFFFF"
-                         BorderBrush="#1AFFFFFF"
-                         Margin="0,0,0,15"
-                         Visibility="Collapsed">
-                    <StackPanel>
-                        <Grid Margin="0,0,0,12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-
-                            <ui:Button x:Name="BtnProgramaDiaAnterior"
-                                       Grid.Column="0"
-                                       Icon="{ui:SymbolIcon ChevronLeft24}"
-                                       Appearance="Transparent"
-                                       Padding="6"
-                                       Cursor="Hand"
-                                       ToolTip="Día anterior"
-                                       Click="BtnProgramaDiaAnterior_Click"/>
-
-                            <TextBlock x:Name="TxtFechaProgramaDia"
-                                       Grid.Column="1"
-                                       Foreground="#FFB900"
-                                       FontSize="14"
-                                       FontWeight="Bold"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"/>
-
-                            <ui:Button x:Name="BtnProgramaDiaSiguiente"
-                                       Grid.Column="2"
-                                       Icon="{ui:SymbolIcon ChevronRight24}"
-                                       Appearance="Transparent"
-                                       Padding="6"
-                                       Cursor="Hand"
-                                       ToolTip="Día siguiente"
-                                       Click="BtnProgramaDiaSiguiente_Click"/>
-                        </Grid>
-
-                        <TextBlock x:Name="TxtSinProgramaDia"
-                                   Text="No hay actividades programadas para este día."
-                                   Foreground="#777777"
-                                   FontSize="13"
-                                   FontStyle="Italic"
-                                   HorizontalAlignment="Center"
-                                   Margin="0,8,0,4"
-                                   Visibility="Collapsed"/>
-
-                        <ItemsControl x:Name="ListaProgramaHoy">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Background="#202023"
-                                            BorderBrush="#333338"
-                                            BorderThickness="1"
-                                            CornerRadius="6"
-                                            Padding="10"
-                                            Margin="0,0,0,8">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="70"/>
-                                                <ColumnDefinition Width="75"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-
-                                            <TextBlock Grid.Column="0"
-                                                       Text="{Binding Hora}"
-                                                       FontWeight="Bold"
-                                                       Foreground="#4BA3E3"
-                                                       FontSize="15"
-                                                       VerticalAlignment="Center"/>
-
-                                            <Border Grid.Column="1"
-                                                    Background="#333338"
-                                                    CornerRadius="4"
-                                                    Padding="6,3"
-                                                    Margin="0,0,10,0"
-                                                    HorizontalAlignment="Left"
-                                                    VerticalAlignment="Center"
-                                                    Visibility="{Binding VerResponsable}">
-                                                <TextBlock Text="{Binding Responsable}"
-                                                           Foreground="#EBCB8B"
-                                                           FontSize="12"
-                                                           FontWeight="SemiBold"/>
-                                            </Border>
-
-                                            <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding TipoActividad}"
-                                                           Foreground="White"
-                                                           FontSize="14"
-                                                           FontWeight="SemiBold"
-                                                           TextWrapping="Wrap"/>
-                                                <TextBlock Text="{Binding CompaneroNombre, StringFormat='Con {0}'}"
-                                                           Foreground="#AAAAAA"
-                                                           FontSize="13"
-                                                           Visibility="{Binding VerCompanero}"/>
-                                                <TextBlock Text="{Binding Ubicacion}"
-                                                           Foreground="#888888"
-                                                           FontSize="12"
-                                                           TextWrapping="Wrap"
-                                                           Visibility="{Binding VerUbicacion}"/>
-                                            </StackPanel>
-
-                                            <Button Grid.Column="3"
-                                                    Content="📍"
-                                                    Visibility="{Binding VerMapa}"
-                                                    ToolTip="Ver en Google Maps"
-                                                    Tag="{Binding}"
-                                                    Click="BtnMapaActividadInicio_Click"
-                                                    Background="Transparent"
-                                                    Foreground="#8BC9E8"
-                                                    BorderThickness="0"
-                                                    Padding="6"
-                                                    FontSize="14"
-                                                    VerticalAlignment="Center"
-                                                    Cursor="Hand"/>
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
+                    </Grid>
                 </ui:Card>
             </WrapPanel>
 
-            <!-- Título Estadísticas -->
-            <TextBlock Grid.Row="3" Text="Resumen del circuito" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,15"/>
+            <!-- PROGRAMA DEL DÍA (la tarjeta solo se estira dentro de su hueco: alineada a la izquierda, con su ancho) -->
+            <Grid HorizontalAlignment="Left">
+            <ui:Card x:Name="PanelProgramaDia" Width="844" MinHeight="176" Padding="20" Margin="0,0,0,16" Visibility="Collapsed">
+                <StackPanel>
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <ui:Button x:Name="BtnProgramaDiaAnterior" Grid.Column="0" Icon="{ui:SymbolIcon ChevronLeft24}" Appearance="Transparent"
+                                   Padding="6" Cursor="Hand" ToolTip="Día anterior" Click="BtnProgramaDiaAnterior_Click"/>
+                        <TextBlock x:Name="TxtFechaProgramaDia" Grid.Column="1" FontSize="15" FontWeight="SemiBold"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <ui:Button x:Name="BtnProgramaDiaSiguiente" Grid.Column="2" Icon="{ui:SymbolIcon ChevronRight24}" Appearance="Transparent"
+                                   Padding="6" Cursor="Hand" ToolTip="Día siguiente" Click="BtnProgramaDiaSiguiente_Click"/>
+                    </Grid>
 
-            <!-- PANEL DE ESTADÍSTICAS (WrapPanel ajusta los cuadros automáticamente si la ventana se encoge) -->
-            <WrapPanel Grid.Row="4" Margin="0,0,0,20">
-                <WrapPanel.Resources>
-                    <!-- Estilo común para todos los cuadritos de estadística -->
-                    <Style TargetType="Border">
-                        <Setter Property="Background" Value="#1A1A1A"/>
-                        <Setter Property="BorderBrush" Value="#333333"/>
-                        <Setter Property="BorderThickness" Value="1"/>
-                        <Setter Property="CornerRadius" Value="8"/>
-                        <Setter Property="Padding" Value="20,15"/>
-                        <Setter Property="Margin" Value="0,0,15,15"/>
-                        <Setter Property="Width" Value="160"/>
-                    </Style>
-                </WrapPanel.Resources>
+                    <TextBlock x:Name="TxtSinProgramaDia" Text="No hay actividades programadas para este día."
+                               Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="13" FontStyle="Italic"
+                               HorizontalAlignment="Center" Margin="0,8,0,4" Visibility="Collapsed"/>
 
-                <!-- NUEVAS TARJETAS GENERALES DEL CIRCUITO -->
-                <Border ToolTip="Personas actuales y activas del circuito (sin históricos ni bajas)" Background="Transparent">
+                    <ItemsControl x:Name="ListaProgramaHoy">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="{DynamicResource ControlFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                                        BorderThickness="1" CornerRadius="6" Padding="12,10" Margin="0,0,0,8">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="64"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="{Binding Hora}" FontWeight="SemiBold" FontSize="15"
+                                                   Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" VerticalAlignment="Center"/>
+                                        <Border Grid.Column="1" Background="#26EBCB8B" CornerRadius="4" Padding="8,3" Margin="0,0,12,0"
+                                                HorizontalAlignment="Left" VerticalAlignment="Center" Visibility="{Binding VerResponsable}">
+                                            <TextBlock Text="{Binding Responsable}" Foreground="#EBCB8B" FontSize="12" FontWeight="SemiBold"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding TipoActividad}" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding CompaneroNombre, StringFormat='Con {0}'}" FontSize="13"
+                                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" Visibility="{Binding VerCompanero}"/>
+                                            <TextBlock Text="{Binding Ubicacion}" FontSize="12" TextWrapping="Wrap"
+                                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}" Visibility="{Binding VerUbicacion}"/>
+                                        </StackPanel>
+                                        <ui:Button Grid.Column="3" Appearance="Transparent" Icon="{ui:SymbolIcon Location24}" Padding="6"
+                                                   Visibility="{Binding VerMapa}" ToolTip="Ver en Google Maps" Tag="{Binding}"
+                                                   Click="BtnMapaActividadInicio_Click" VerticalAlignment="Center" Cursor="Hand"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ui:Card>
+            </Grid>
+
+            <!-- RESUMEN DEL CIRCUITO -->
+            <TextBlock Text="Resumen del circuito" FontSize="20" FontWeight="SemiBold" Margin="0,16,0,2"/>
+
+            <TextBlock Text="Personas" Style="{StaticResource TituloGrupo}"/>
+            <WrapPanel>
+                <Border Style="{StaticResource TarjetaDato}" ToolTip="Personas actuales y activas del circuito (sin históricos ni bajas)">
                     <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <ui:SymbolIcon Symbol="People24" Foreground="#4BA3E3" Margin="0,0,8,0"/>
-                            <TextBlock Text="Personas" Foreground="#AAAAAA" FontSize="13" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <TextBlock x:Name="TxtTotalPersonas" Text="-" FontSize="32" FontWeight="Bold" Foreground="White"/>
+                        <Grid Style="{StaticResource CajaIcono}"><Border Style="{StaticResource FondoIcono}" Background="#60CDFF"/><ui:SymbolIcon Symbol="People24" Foreground="#60CDFF" Style="{StaticResource IconoDato}"/></Grid>
+                        <TextBlock Text="Personas" Style="{StaticResource EtiquetaDato}"/>
+                        <TextBlock x:Name="TxtTotalPersonas" Text="-" Style="{StaticResource CifraDato}"/>
                     </StackPanel>
                 </Border>
-
-                <Border ToolTip="Hombres entre las personas actuales y activas" Background="Transparent">
+                <Border Style="{StaticResource TarjetaDato}" ToolTip="Hombres entre las personas actuales y activas">
                     <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <ui:SymbolIcon Symbol="Person24" Foreground="#5B9BD5" Margin="0,0,8,0"/>
-                            <TextBlock Text="Hombres" Foreground="#AAAAAA" FontSize="13" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <TextBlock x:Name="TxtTotalHombres" Text="-" FontSize="32" FontWeight="Bold" Foreground="White"/>
+                        <Grid Style="{StaticResource CajaIcono}"><Border Style="{StaticResource FondoIcono}" Background="#5B9BD5"/><ui:SymbolIcon Symbol="Person24" Foreground="#5B9BD5" Style="{StaticResource IconoDato}"/></Grid>
+                        <TextBlock Text="Hombres" Style="{StaticResource EtiquetaDato}"/>
+                        <TextBlock x:Name="TxtTotalHombres" Text="-" Style="{StaticResource CifraDato}"/>
                     </StackPanel>
                 </Border>
-
-                <Border ToolTip="Mujeres entre las personas actuales y activas" Background="Transparent">
+                <Border Style="{StaticResource TarjetaDato}" ToolTip="Mujeres entre las personas actuales y activas">
                     <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <ui:SymbolIcon Symbol="Person24" Foreground="#C586C0" Margin="0,0,8,0"/>
-                            <TextBlock Text="Mujeres" Foreground="#AAAAAA" FontSize="13" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <TextBlock x:Name="TxtTotalMujeres" Text="-" FontSize="32" FontWeight="Bold" Foreground="White"/>
+                        <Grid Style="{StaticResource CajaIcono}"><Border Style="{StaticResource FondoIcono}" Background="#C586C0"/><ui:SymbolIcon Symbol="Person24" Foreground="#C586C0" Style="{StaticResource IconoDato}"/></Grid>
+                        <TextBlock Text="Mujeres" Style="{StaticResource EtiquetaDato}"/>
+                        <TextBlock x:Name="TxtTotalMujeres" Text="-" Style="{StaticResource CifraDato}"/>
                     </StackPanel>
                 </Border>
-
-                <Border ToolTip="Publicadores actuales sin fecha de bautismo" Background="Transparent">
+                <Border Style="{StaticResource TarjetaDato}" ToolTip="Publicadores actuales sin fecha de bautismo">
                     <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <ui:SymbolIcon Symbol="Person24" Foreground="#FFB900" Margin="0,0,8,0"/>
-                            <TextBlock Text="Pubs no bautizados" Foreground="#AAAAAA" FontSize="12" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <TextBlock x:Name="TxtNoBautizados" Text="-" FontSize="32" FontWeight="Bold" Foreground="White"/>
+                        <Grid Style="{StaticResource CajaIcono}"><Border Style="{StaticResource FondoIcono}" Background="#FFB900"/><ui:SymbolIcon Symbol="Person24" Foreground="#FFB900" Style="{StaticResource IconoDato}"/></Grid>
+                        <TextBlock Text="Publicadores no bautizados" Style="{StaticResource EtiquetaDato}"/>
+                        <TextBlock x:Name="TxtNoBautizados" Text="-" Style="{StaticResource CifraDato}"/>
                     </StackPanel>
                 </Border>
-
-                <Border x:Name="CardCBs" Background="Transparent">
+                <Border Style="{StaticResource TarjetaDato}" ToolTip="Media de edad de las personas actuales con fecha de nacimiento válida">
                     <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <ui:SymbolIcon Symbol="Document24" Foreground="#00B294" Margin="0,0,8,0"/>
-                            <TextBlock Text="CBs" Foreground="#AAAAAA" FontSize="13" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <TextBlock x:Name="TxtTotalCBs" Text="-" FontSize="32" FontWeight="Bold" Foreground="White"/>
-                        <TextBlock x:Name="TxtMesCBs" Text="último mes con datos" Foreground="#777777" FontSize="10" TextTrimming="CharacterEllipsis"/>
+                        <Grid Style="{StaticResource CajaIcono}"><Border Style="{StaticResource FondoIcono}" Background="#B4A0FF"/><ui:SymbolIcon Symbol="People24" Foreground="#B4A0FF" Style="{StaticResource IconoDato}"/></Grid>
+                        <TextBlock Text="Media de edad" Style="{StaticResource EtiquetaDato}"/>
+                        <TextBlock x:Name="TxtMediaEdad" Text="-" Style="{StaticResource CifraDato}"/>
+                        <TextBlock Text="años" Style="{StaticResource NotaDato}"/>
                     </StackPanel>
                 </Border>
-
-                <Border ToolTip="Media de edad de las personas actuales con fecha de nacimiento válida" Background="Transparent">
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <ui:SymbolIcon Symbol="People24" Foreground="#B4A0FF" Margin="0,0,8,0"/>
-                            <TextBlock Text="Media de edad" Foreground="#AAAAAA" FontSize="13" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <TextBlock x:Name="TxtMediaEdad" Text="-" FontSize="32" FontWeight="Bold" Foreground="White"/>
-                        <TextBlock Text="años" Foreground="#777777" FontSize="10"/>
-                    </StackPanel>
-                </Border>
-
-                <Border x:Name="CardAuxiliaresMedia" Background="Transparent">
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <ui:SymbolIcon Symbol="Star24" Foreground="#FFB900" Margin="0,0,8,0"/>
-                            <TextBlock Text="Auxiliares (media/mes)" Foreground="#AAAAAA" FontSize="11" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <TextBlock x:Name="TxtMediaAuxiliares" Text="-" FontSize="32" FontWeight="Bold" Foreground="White"/>
-                        <TextBlock x:Name="TxtPeriodoAuxiliares" Text="últimos meses con datos" Foreground="#777777" FontSize="10" TextTrimming="CharacterEllipsis"/>
-                    </StackPanel>
-                </Border>
-
-                <Border ToolTip="Personas con el privilegio Asesor de Betel o Voluntario a distancia" Background="Transparent">
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <ui:SymbolIcon Symbol="Star24" Foreground="#EBCB8B" Margin="0,0,8,0"/>
-                            <TextBlock Text="Betel" Foreground="#AAAAAA" FontSize="13" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <TextBlock x:Name="TxtTotalBetel" Text="-" FontSize="32" FontWeight="Bold" Foreground="White"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- Cuadro 1: Precursores Regulares -->
-                <Border Cursor="Hand" MouseLeftButtonUp="CardPrecReg_Click" Background="Transparent">
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <ui:SymbolIcon Symbol="Person24" Foreground="#4BA3E3" Margin="0,0,8,0"/>
-                            <TextBlock Text="P. Regulares" Foreground="#AAAAAA" FontSize="13" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <TextBlock x:Name="TxtTotalPrecReg" Text="-" FontSize="32" FontWeight="Bold" Foreground="White"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- Cuadro 2: Precursores Especiales -->
-                <Border Cursor="Hand" MouseLeftButtonUp="CardPrecEsp_Click" Background="Transparent">
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <ui:SymbolIcon Symbol="Star24" Foreground="#FFB900" Margin="0,0,8,0"/>
-                            <TextBlock Text="P. Especiales" Foreground="#AAAAAA" FontSize="13" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <TextBlock x:Name="TxtTotalPrecEsp" Text="-" FontSize="32" FontWeight="Bold" Foreground="White"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- Cuadro 3: Ancianos -->
-                <Border Cursor="Hand" MouseLeftButtonUp="CardAncianos_Click" Background="Transparent">
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <ui:SymbolIcon Symbol="People24" Foreground="#107C10" Margin="0,0,8,0"/>
-                            <TextBlock Text="Ancianos" Foreground="#AAAAAA" FontSize="13" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <TextBlock x:Name="TxtTotalAncianos" Text="-" FontSize="32" FontWeight="Bold" Foreground="White"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- Cuadro 4: Siervos Ministeriales -->
-                <Border Cursor="Hand" MouseLeftButtonUp="CardSiervos_Click" Background="Transparent">
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <ui:SymbolIcon Symbol="Person24" Foreground="#00B294" Margin="0,0,8,0"/>
-                            <TextBlock Text="Siervos M." Foreground="#AAAAAA" FontSize="13" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <TextBlock x:Name="TxtTotalSM" Text="-" FontSize="32" FontWeight="Bold" Foreground="White"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- Cuadro 5: Solicitudes A-2 -->
-                <Border Cursor="Hand" MouseLeftButtonUp="CardA2_Click" Background="Transparent">
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <ui:SymbolIcon Symbol="Document24" Foreground="#E81123" Margin="0,0,8,0"/>
-                            <TextBlock Text="Sol. A-2" Foreground="#AAAAAA" FontSize="13" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <TextBlock x:Name="TxtTotalA2" Text="-" FontSize="32" FontWeight="Bold" Foreground="White"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- Cuadro 6: Solicitudes A-19 -->
-                <Border Cursor="Hand" MouseLeftButtonUp="CardA19_Click" Background="Transparent">
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <ui:SymbolIcon Symbol="Document24" Foreground="#E81123" Margin="0,0,8,0"/>
-                            <TextBlock Text="Sol. A-19" Foreground="#AAAAAA" FontSize="13" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <TextBlock x:Name="TxtTotalA19" Text="-" FontSize="32" FontWeight="Bold" Foreground="White"/>
-                    </StackPanel>
-                </Border>
-
-                <Border Cursor="Hand" MouseLeftButtonUp="CardA8_Click" Background="Transparent">
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <ui:SymbolIcon Symbol="Document24" Foreground="#E81123" Margin="0,0,8,0"/>
-                            <TextBlock Text="Sol. A-8" Foreground="#AAAAAA" FontSize="13" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <TextBlock x:Name="TxtTotalA8" Text="-" FontSize="32" FontWeight="Bold" Foreground="White"/>
-                    </StackPanel>
-                </Border>
-
-                <Border Cursor="Hand" MouseLeftButtonUp="CardG8_Click" Background="Transparent">
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <ui:SymbolIcon Symbol="Document24" Foreground="#E81123" Margin="0,0,8,0"/>
-                            <TextBlock Text="Sol. G-8" Foreground="#AAAAAA" FontSize="13" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        <TextBlock x:Name="TxtTotalG8" Text="-" FontSize="32" FontWeight="Bold" Foreground="White"/>
-                    </StackPanel>
-                </Border>
-
             </WrapPanel>
-        </Grid>
+
+            <TextBlock Text="Servicio" Style="{StaticResource TituloGrupo}"/>
+            <WrapPanel>
+                <Border Style="{StaticResource TarjetaDatoAccion}" MouseLeftButtonUp="CardPrecReg_Click">
+                    <StackPanel>
+                        <Grid Style="{StaticResource CajaIcono}"><Border Style="{StaticResource FondoIcono}" Background="#60CDFF"/><ui:SymbolIcon Symbol="Person24" Foreground="#60CDFF" Style="{StaticResource IconoDato}"/></Grid>
+                        <TextBlock Text="Precursores regulares" Style="{StaticResource EtiquetaDato}"/>
+                        <TextBlock x:Name="TxtTotalPrecReg" Text="-" Style="{StaticResource CifraDato}"/>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource TarjetaDatoAccion}" MouseLeftButtonUp="CardPrecEsp_Click">
+                    <StackPanel>
+                        <Grid Style="{StaticResource CajaIcono}"><Border Style="{StaticResource FondoIcono}" Background="#FFB900"/><ui:SymbolIcon Symbol="Star24" Foreground="#FFB900" Style="{StaticResource IconoDato}"/></Grid>
+                        <TextBlock Text="Precursores especiales" Style="{StaticResource EtiquetaDato}"/>
+                        <TextBlock x:Name="TxtTotalPrecEsp" Text="-" Style="{StaticResource CifraDato}"/>
+                    </StackPanel>
+                </Border>
+                <Border x:Name="CardAuxiliaresMedia" Style="{StaticResource TarjetaDato}">
+                    <StackPanel>
+                        <Grid Style="{StaticResource CajaIcono}"><Border Style="{StaticResource FondoIcono}" Background="#EBCB8B"/><ui:SymbolIcon Symbol="Star24" Foreground="#EBCB8B" Style="{StaticResource IconoDato}"/></Grid>
+                        <TextBlock Text="Auxiliares (media al mes)" Style="{StaticResource EtiquetaDato}"/>
+                        <TextBlock x:Name="TxtMediaAuxiliares" Text="-" Style="{StaticResource CifraDato}"/>
+                        <TextBlock x:Name="TxtPeriodoAuxiliares" Text="últimos meses con datos" Style="{StaticResource NotaDato}"/>
+                    </StackPanel>
+                </Border>
+                <Border x:Name="CardCBs" Style="{StaticResource TarjetaDato}">
+                    <StackPanel>
+                        <Grid Style="{StaticResource CajaIcono}"><Border Style="{StaticResource FondoIcono}" Background="#00B294"/><ui:SymbolIcon Symbol="Book24" Foreground="#00B294" Style="{StaticResource IconoDato}"/></Grid>
+                        <TextBlock Text="Cursos bíblicos" Style="{StaticResource EtiquetaDato}"/>
+                        <TextBlock x:Name="TxtTotalCBs" Text="-" Style="{StaticResource CifraDato}"/>
+                        <TextBlock x:Name="TxtMesCBs" Text="último mes con datos" Style="{StaticResource NotaDato}"/>
+                    </StackPanel>
+                </Border>
+            </WrapPanel>
+
+            <TextBlock Text="Nombramientos y privilegios" Style="{StaticResource TituloGrupo}"/>
+            <WrapPanel>
+                <Border Style="{StaticResource TarjetaDatoAccion}" MouseLeftButtonUp="CardAncianos_Click">
+                    <StackPanel>
+                        <Grid Style="{StaticResource CajaIcono}"><Border Style="{StaticResource FondoIcono}" Background="#6CCB5F"/><ui:SymbolIcon Symbol="People24" Foreground="#6CCB5F" Style="{StaticResource IconoDato}"/></Grid>
+                        <TextBlock Text="Ancianos" Style="{StaticResource EtiquetaDato}"/>
+                        <TextBlock x:Name="TxtTotalAncianos" Text="-" Style="{StaticResource CifraDato}"/>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource TarjetaDatoAccion}" MouseLeftButtonUp="CardSiervos_Click">
+                    <StackPanel>
+                        <Grid Style="{StaticResource CajaIcono}"><Border Style="{StaticResource FondoIcono}" Background="#00B294"/><ui:SymbolIcon Symbol="Person24" Foreground="#00B294" Style="{StaticResource IconoDato}"/></Grid>
+                        <TextBlock Text="Siervos ministeriales" Style="{StaticResource EtiquetaDato}"/>
+                        <TextBlock x:Name="TxtTotalSM" Text="-" Style="{StaticResource CifraDato}"/>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource TarjetaDato}" ToolTip="Personas con el privilegio Asesor de Betel o Voluntario a distancia">
+                    <StackPanel>
+                        <Grid Style="{StaticResource CajaIcono}"><Border Style="{StaticResource FondoIcono}" Background="#EBCB8B"/><ui:SymbolIcon Symbol="Building24" Foreground="#EBCB8B" Style="{StaticResource IconoDato}"/></Grid>
+                        <TextBlock Text="Betel" Style="{StaticResource EtiquetaDato}"/>
+                        <TextBlock x:Name="TxtTotalBetel" Text="-" Style="{StaticResource CifraDato}"/>
+                    </StackPanel>
+                </Border>
+            </WrapPanel>
+
+            <TextBlock Text="Solicitudes" Style="{StaticResource TituloGrupo}"/>
+            <WrapPanel>
+                <Border Style="{StaticResource TarjetaDatoAccion}" MouseLeftButtonUp="CardA2_Click">
+                    <StackPanel>
+                        <Grid Style="{StaticResource CajaIcono}"><Border Style="{StaticResource FondoIcono}" Background="#FF99A4"/><ui:SymbolIcon Symbol="Document24" Foreground="#FF99A4" Style="{StaticResource IconoDato}"/></Grid>
+                        <TextBlock Text="A-2" Style="{StaticResource EtiquetaDato}"/>
+                        <TextBlock x:Name="TxtTotalA2" Text="-" Style="{StaticResource CifraDato}"/>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource TarjetaDatoAccion}" MouseLeftButtonUp="CardA19_Click">
+                    <StackPanel>
+                        <Grid Style="{StaticResource CajaIcono}"><Border Style="{StaticResource FondoIcono}" Background="#FF99A4"/><ui:SymbolIcon Symbol="Document24" Foreground="#FF99A4" Style="{StaticResource IconoDato}"/></Grid>
+                        <TextBlock Text="A-19" Style="{StaticResource EtiquetaDato}"/>
+                        <TextBlock x:Name="TxtTotalA19" Text="-" Style="{StaticResource CifraDato}"/>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource TarjetaDatoAccion}" MouseLeftButtonUp="CardA8_Click">
+                    <StackPanel>
+                        <Grid Style="{StaticResource CajaIcono}"><Border Style="{StaticResource FondoIcono}" Background="#FF99A4"/><ui:SymbolIcon Symbol="Document24" Foreground="#FF99A4" Style="{StaticResource IconoDato}"/></Grid>
+                        <TextBlock Text="A-8" Style="{StaticResource EtiquetaDato}"/>
+                        <TextBlock x:Name="TxtTotalA8" Text="-" Style="{StaticResource CifraDato}"/>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource TarjetaDatoAccion}" MouseLeftButtonUp="CardG8_Click">
+                    <StackPanel>
+                        <Grid Style="{StaticResource CajaIcono}"><Border Style="{StaticResource FondoIcono}" Background="#FF99A4"/><ui:SymbolIcon Symbol="Document24" Foreground="#FF99A4" Style="{StaticResource IconoDato}"/></Grid>
+                        <TextBlock Text="G-8" Style="{StaticResource EtiquetaDato}"/>
+                        <TextBlock x:Name="TxtTotalG8" Text="-" Style="{StaticResource CifraDato}"/>
+                    </StackPanel>
+                </Border>
+            </WrapPanel>
+        </StackPanel>
     </ScrollViewer>
 </Page>

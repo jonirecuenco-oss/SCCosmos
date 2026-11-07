@@ -103,7 +103,7 @@ Otros riesgos: 504 `catch {}` vacíos y 383 `async void` (desde la v2.1.3 hay ma
 | 3 | Sincronización y BD: S23 (v2.1.18), S22 (v2.1.17), S5 (v2.1.3), S14 con el atasco de la carpeta (v2.1.3—2.1.4), S16 (v2.1.5) y S17 (v2.1.6) hechos; S6 en curso (actividad, personas, territorios, programa de la visita y asambleas en v2.1.7—2.1.11; RSC en v2.1.24); `Id` duplicados entre dispositivos resueltos (S29, v2.1.25); poda de borrados analizada y sin cambios (S6); pendientes índices solo si se justifican (con copia) | en curso |
 | 4 | Estabilidad: manejador global de errores (v2.1.3); errores del motor de sincronización (v2.1.12) y de guardados de Windows y sincronización de Android (v2.1.13) anotados; pérdida de actividad al fusionar duplicados corregida (S21, v2.1.14); pendientes reglas comunes en SincroCompartido con pruebas y retirar la sincro heredada | en curso |
 | 5 | Compilación: ReadyToRun en Windows hecho (S10, v2.1.15) | hecho |
-| 6 | Visual: estilos comunes, componentes, accesibilidad y escalado; pantalla a pantalla | pendiente |
+| 6 | Visual: tema común sobre los colores Fluent de WPF-UI (`Recursos/Tema.xaml`, 07/11); Inicio renovado y aprobado por el usuario (v2.1.35); se sigue pantalla a pantalla enseñando antes y después (capturas con `Herramientas\Capturas`, sobre una copia de la base y sin motor). Medido antes: 222 colores distintos en 1.045 usos, 14 tamaños de letra y 10 radios en los XAML de Windows | en curso |
 | 7 | Pruebas: banco `SincroPruebas` en el repositorio (02/11): 31 pruebas de extremo a extremo del motor sobre copias de la BD (red A/B/C y un dispositivo nuevo; carpeta D/E con el `CanalArchivosPc` real). Comprobado que detecta los fallos que protege: sin la huella de S16 falla la 12 y con el atasco original falla la 14. Unos 2,5 min, 20 rondas seguidas estables. `publicar_version.ps1` lo ejecuta antes de publicar si cambió el código de la sincronización y no publica si falla (`Herramientas\probar_sincro.ps1`; escape `-SinPruebas`). Reglas de Windows: proyecto `PruebasWindows` (04/11), código real de `DatabaseHelper` y de las ventanas sobre una base temporal con datos inventados; `publicar_version.ps1` lo ejecuta siempre (`Herramientas\probar_reglas.ps1`, desde el 07/11); pendiente ampliarlo | en curso |
 
 ## Retirada de la sincronización heredada (plan, 02/11/2026)
@@ -238,6 +238,9 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
 - 03/11/2026 · Publicada la v2.1.32.
 - 04/11/2026 · `PruebasWindows`, S33 y S40.
 - 04/11/2026 · Publicada la v2.1.33. Siguiente: piloto visual del bloque 6 en una pantalla, con antes y después; la fase 1 de la retirada, desde el 09/11.
+- 07/11/2026 · v2.1.34: las pruebas de Windows entran en la publicación (`probar_reglas.ps1`); en un equipo nuevo, los parches de datos ya no fallan por la tabla de recomendaciones; las pruebas escriben su registro de errores junto a su base.
+- 07/11/2026 · Bloque 6: piloto de Inicio aprobado. Los estilos pasan a `Recursos/Tema.xaml` sin cambiar un píxel. Ojo con `ui:Card`: con `HorizontalAlignment`/`VerticalAlignment` distinto de `Stretch` dibuja su fondo al tamaño del contenido e ignora `Width` y `MinHeight`.
+- 07/11/2026 · Publicada la v2.1.35.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

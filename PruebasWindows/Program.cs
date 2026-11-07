@@ -29,6 +29,7 @@ internal static class Programa
             var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
             app.Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ThemesDictionary { Theme = Wpf.Ui.Appearance.ApplicationTheme.Dark });
             app.Resources.MergedDictionaries.Add(new Wpf.Ui.Markup.ControlsDictionary());
+            app.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/SCCosmos;component/Recursos/Tema.xaml") });
             DatabaseHelper.InicializarDatabase();
             new SincroAlmacen(ruta, "pruebas").Asegurar();
             Visitas();
