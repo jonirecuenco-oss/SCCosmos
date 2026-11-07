@@ -6,7 +6,7 @@
       Foreground="{DynamicResource TextFillColorPrimaryBrush}">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="40,32,40,40" HorizontalAlignment="Left">
+        <StackPanel Margin="{StaticResource MargenPagina}" HorizontalAlignment="Left">
 
             <!-- Saludo -->
             <TextBlock x:Name="TxtSaludo" Text="¡Hola!" FontSize="32" FontWeight="SemiBold"/>

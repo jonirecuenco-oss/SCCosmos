@@ -3,7 +3,7 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       xmlns:local="clr-namespace:SCCosmos"
-      Title="PersonasPage" Background="#1E1E1E">
+      Title="PersonasPage" Foreground="{DynamicResource TextFillColorPrimaryBrush}">
 
     <Page.Resources>
         <local:Base64ImageConverter x:Key="Base64Converter"/>
@@ -12,14 +12,14 @@
     <Grid>
         <!-- EL CONTENEDOR PRINCIPAL (Igual que en Asambleas) -->
         <ScrollViewer x:Name="MainScrollViewer" VerticalScrollBarVisibility="Auto">
-            <Grid Margin="30" Background="Transparent">
+            <Grid Margin="{StaticResource MargenPagina}" Background="Transparent">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <Grid Grid.Row="0" Margin="0,0,0,25">
-                    <TextBlock Text="PERSONAS" FontSize="26" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+                <Grid Grid.Row="0" Margin="0,0,0,20">
+                    <TextBlock Text="Personas" Style="{StaticResource TituloPagina}" VerticalAlignment="Center"/>
                     <ui:Button x:Name="BtnSincronizarHub" Content="Sincronizar JW Hub" Icon="{ui:SymbolIcon ArrowSync24}" Appearance="Primary" Click="BtnSincronizarHub_Click" HorizontalAlignment="Right" Visibility="Collapsed"/>
                 </Grid>
 
@@ -27,7 +27,7 @@
                 <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0" SelectionChanged="TabControl_SelectionChanged">
 
                     <!-- PESTAÑA 1: REGISTROS DE PERSONAS -->
-                    <TabItem Header="Registros de personas" FontSize="16" Foreground="White">
+                    <TabItem Header="Registros de personas" FontSize="16">
                         <Grid Margin="0,15,0,0">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -36,30 +36,30 @@
                             </Grid.RowDefinitions>
 
                             <!-- PANEL DE FILTROS AVANZADOS -->
-                            <Border Grid.Row="0" Background="#252528" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="8" Padding="20" Margin="0,0,0,20">
+                            <Border Grid.Row="0" Style="{StaticResource PanelTarjeta}" Margin="0,0,0,16">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
 
-                                    <WrapPanel Grid.Column="0" Orientation="Horizontal" Margin="0,-5,0,0">
+                                    <WrapPanel Grid.Column="0" Orientation="Horizontal" Margin="0,-12,0,0">
                                         <!-- Nombre -->
-                                        <StackPanel Margin="0,5,15,0">
-                                            <TextBlock Text="Nombre" Foreground="#AAAAAA" FontSize="11" Margin="0,0,0,5"/>
-                                            <ui:TextBox x:Name="TxtBuscar" PlaceholderText="Buscar texto..." Width="160" TextChanged="TxtBuscar_TextChanged" Background="#1E1E1E" Foreground="White" BorderBrush="#444"/>
+                                        <StackPanel Margin="0,12,12,0">
+                                            <TextBlock Text="Nombre" Style="{StaticResource EtiquetaCampo}"/>
+                                            <ui:TextBox x:Name="TxtBuscar" PlaceholderText="Buscar texto..." Width="160" TextChanged="TxtBuscar_TextChanged"/>
                                         </StackPanel>
 
                                         <!-- Bajas: no se ven salvo que se pidan -->
-                                        <StackPanel Margin="0,5,15,0">
-                                            <TextBlock Text="Bajas" Foreground="#AAAAAA" FontSize="11" Margin="0,0,0,5"/>
-                                            <CheckBox x:Name="ChkVerBajas" Content="Mostrar" Foreground="White" Checked="ChkVerBajas_Changed" Unchecked="ChkVerBajas_Changed"/>
+                                        <StackPanel Margin="0,12,12,0">
+                                            <TextBlock Text="Bajas" Style="{StaticResource EtiquetaCampo}"/>
+                                            <CheckBox x:Name="ChkVerBajas" Content="Mostrar" MinHeight="36" VerticalContentAlignment="Center" Checked="ChkVerBajas_Changed" Unchecked="ChkVerBajas_Changed"/>
                                         </StackPanel>
 
                                         <!-- Congregación (Múltiple) -->
-                                        <StackPanel Margin="0,5,15,0">
-                                            <TextBlock Text="Congregación" Foreground="#AAAAAA" FontSize="11" Margin="0,0,0,5"/>
-                                            <ui:Button x:Name="BtnFiltroCongre" Content="Todas ▼" Width="130" Click="BtnFiltroCongre_Click" Appearance="Secondary"/>
+                                        <StackPanel Margin="0,12,12,0">
+                                            <TextBlock Text="Congregación" Style="{StaticResource EtiquetaCampo}"/>
+                                            <ui:Button x:Name="BtnFiltroCongre" Content="Todas" Width="130" Height="36" Click="BtnFiltroCongre_Click" Appearance="Secondary" HorizontalContentAlignment="Stretch" ContentTemplate="{StaticResource ContenidoDesplegable}"/>
                                             <Popup x:Name="PopFiltroCongre" StaysOpen="False" PlacementTarget="{Binding ElementName=BtnFiltroCongre}" Placement="Bottom">
                                                 <Border Background="#2D2D30" BorderBrush="#0078D4" BorderThickness="1" CornerRadius="4" Padding="5" MaxHeight="250">
                                                     <ListBox x:Name="LstCongre" SelectionMode="Multiple" SelectionChanged="LstFiltro_SelectionChanged" Background="Transparent" Foreground="White" BorderThickness="0"/>
@@ -68,9 +68,9 @@
                                         </StackPanel>
 
                                         <!-- Nombramiento (Individual) -->
-                                        <StackPanel Margin="0,5,15,0">
-                                            <TextBlock Text="Nombramiento" Foreground="#AAAAAA" FontSize="11" Margin="0,0,0,5"/>
-                                            <ComboBox x:Name="CmbFiltroNombramiento" Width="140" SelectionChanged="FiltroCombo_SelectionChanged" Background="#1E1E1E" Foreground="White" BorderBrush="#444">
+                                        <StackPanel Margin="0,12,12,0">
+                                            <TextBlock Text="Nombramiento" Style="{StaticResource EtiquetaCampo}"/>
+                                            <ComboBox x:Name="CmbFiltroNombramiento" Width="140" Height="36" SelectionChanged="FiltroCombo_SelectionChanged">
                                                 <ComboBoxItem Content="Todos" Tag=""/>
                                                 <ComboBoxItem Content="Anciano" Tag="Anciano"/>
                                                 <ComboBoxItem Content="Siervo ministerial" Tag="Siervo ministerial"/>
@@ -78,9 +78,9 @@
                                         </StackPanel>
 
                                         <!-- Servicio (Múltiple) -->
-                                        <StackPanel Margin="0,5,15,0">
-                                            <TextBlock Text="Servicio" Foreground="#AAAAAA" FontSize="11" Margin="0,0,0,5"/>
-                                            <ui:Button x:Name="BtnFiltroServicio" Content="Todos ▼" Width="130" Click="BtnFiltroServicio_Click" Appearance="Secondary"/>
+                                        <StackPanel Margin="0,12,12,0">
+                                            <TextBlock Text="Servicio" Style="{StaticResource EtiquetaCampo}"/>
+                                            <ui:Button x:Name="BtnFiltroServicio" Content="Todos" Width="130" Height="36" Click="BtnFiltroServicio_Click" Appearance="Secondary" HorizontalContentAlignment="Stretch" ContentTemplate="{StaticResource ContenidoDesplegable}"/>
                                             <Popup x:Name="PopFiltroServicio" StaysOpen="False" PlacementTarget="{Binding ElementName=BtnFiltroServicio}" Placement="Bottom">
                                                 <Border Background="#2D2D30" BorderBrush="#0078D4" BorderThickness="1" CornerRadius="4" Padding="5">
                                                     <ListBox x:Name="LstServicio" SelectionMode="Multiple" SelectionChanged="LstFiltro_SelectionChanged" Background="Transparent" Foreground="White" BorderThickness="0"/>
@@ -89,9 +89,9 @@
                                         </StackPanel>
 
                                         <!-- Solicitudes (Múltiple) -->
-                                        <StackPanel Margin="0,5,15,0">
-                                            <TextBlock Text="Solicitudes" Foreground="#AAAAAA" FontSize="11" Margin="0,0,0,5"/>
-                                            <ui:Button x:Name="BtnFiltroSols" Content="Todas ▼" Width="110" Click="BtnFiltroSols_Click" Appearance="Secondary"/>
+                                        <StackPanel Margin="0,12,12,0">
+                                            <TextBlock Text="Solicitudes" Style="{StaticResource EtiquetaCampo}"/>
+                                            <ui:Button x:Name="BtnFiltroSols" Content="Todas" Width="110" Height="36" Click="BtnFiltroSols_Click" Appearance="Secondary" HorizontalContentAlignment="Stretch" ContentTemplate="{StaticResource ContenidoDesplegable}"/>
                                             <Popup x:Name="PopFiltroSols" StaysOpen="False" PlacementTarget="{Binding ElementName=BtnFiltroSols}" Placement="Bottom">
                                                 <Border Background="#2D2D30" BorderBrush="#0078D4" BorderThickness="1" CornerRadius="4" Padding="5">
                                                     <ListBox x:Name="LstSols" SelectionMode="Multiple" SelectionChanged="LstFiltro_SelectionChanged" Background="Transparent" Foreground="White" BorderThickness="0"/>
@@ -100,9 +100,9 @@
                                         </StackPanel>
 
                                         <!-- Privilegios (Múltiple) -->
-                                        <StackPanel Margin="0,5,15,0">
-                                            <TextBlock Text="Privilegios" Foreground="#AAAAAA" FontSize="11" Margin="0,0,0,5"/>
-                                            <ui:Button x:Name="BtnFiltroPrivs" Content="Todos ▼" Width="130" Click="BtnFiltroPrivs_Click" Appearance="Secondary"/>
+                                        <StackPanel Margin="0,12,12,0">
+                                            <TextBlock Text="Privilegios" Style="{StaticResource EtiquetaCampo}"/>
+                                            <ui:Button x:Name="BtnFiltroPrivs" Content="Todos" Width="130" Height="36" Click="BtnFiltroPrivs_Click" Appearance="Secondary" HorizontalContentAlignment="Stretch" ContentTemplate="{StaticResource ContenidoDesplegable}"/>
                                             <Popup x:Name="PopFiltroPrivs" StaysOpen="False" PlacementTarget="{Binding ElementName=BtnFiltroPrivs}" Placement="Bottom">
                                                 <Border Background="#2D2D30" BorderBrush="#0078D4" BorderThickness="1" CornerRadius="4" Padding="5" MaxHeight="250">
                                                     <ListBox x:Name="LstPrivs" SelectionMode="Multiple" SelectionChanged="LstFiltro_SelectionChanged" Background="Transparent" Foreground="White" BorderThickness="0"/>
@@ -111,9 +111,9 @@
                                         </StackPanel>
 
                                         <!-- Sexo (Individual) -->
-                                        <StackPanel Margin="0,5,15,0">
-                                            <TextBlock Text="Sexo" Foreground="#AAAAAA" FontSize="11" Margin="0,0,0,5"/>
-                                            <ComboBox x:Name="CmbFiltroSexo" Width="100" SelectionChanged="FiltroCombo_SelectionChanged" Background="#1E1E1E" Foreground="White" BorderBrush="#444">
+                                        <StackPanel Margin="0,12,12,0">
+                                            <TextBlock Text="Sexo" Style="{StaticResource EtiquetaCampo}"/>
+                                            <ComboBox x:Name="CmbFiltroSexo" Width="100" Height="36" SelectionChanged="FiltroCombo_SelectionChanged">
                                                 <ComboBoxItem Content="Todos" Tag=""/>
                                                 <ComboBoxItem Content="Hombre" Tag="Hombre"/>
                                                 <ComboBoxItem Content="Mujer" Tag="Mujer"/>
@@ -121,9 +121,9 @@
                                         </StackPanel>
 
                                         <!-- Esperanza (Individual) -->
-                                        <StackPanel Margin="0,5,0,0">
-                                            <TextBlock Text="Esperanza" Foreground="#AAAAAA" FontSize="11" Margin="0,0,0,5"/>
-                                            <ComboBox x:Name="CmbFiltroEsperanza" Width="110" SelectionChanged="FiltroCombo_SelectionChanged" Background="#1E1E1E" Foreground="White" BorderBrush="#444">
+                                        <StackPanel Margin="0,12,0,0">
+                                            <TextBlock Text="Esperanza" Style="{StaticResource EtiquetaCampo}"/>
+                                            <ComboBox x:Name="CmbFiltroEsperanza" Width="110" Height="36" SelectionChanged="FiltroCombo_SelectionChanged">
                                                 <ComboBoxItem Content="Todas" Tag=""/>
                                                 <ComboBoxItem Content="Otras ovejas" Tag="Otras ovejas"/>
                                                 <ComboBoxItem Content="Ungido" Tag="Ungido"/>
@@ -133,8 +133,8 @@
 
                                     <!-- Botones Limpiar y Columnas -->
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom">
-                                        <ui:Button ToolTip="Limpiar Filtros" Icon="{ui:SymbolIcon Dismiss24}" Appearance="Danger" Click="BtnLimpiarFiltros_Click" Margin="0,0,10,0"/>
-                                        <ui:Button x:Name="BtnColumnas" Content="Columnas" Icon="{ui:SymbolIcon List24}" Appearance="Secondary" Click="BtnColumnas_Click"/>
+                                        <ui:Button Content="Limpiar" ToolTip="Limpiar filtros" Icon="{ui:SymbolIcon FilterDismiss24}" Appearance="Secondary" Height="36" Click="BtnLimpiarFiltros_Click" Margin="0,0,8,0"/>
+                                        <ui:Button x:Name="BtnColumnas" Content="Columnas" Icon="{ui:SymbolIcon List24}" Appearance="Secondary" Height="36" Click="BtnColumnas_Click"/>
 
                                         <Popup x:Name="PopupColumnas" StaysOpen="False" PlacementTarget="{Binding ElementName=BtnColumnas}" Placement="Bottom" VerticalOffset="5" AllowsTransparency="True" PopupAnimation="Fade">
                                             <Border Background="#2D2D30" BorderBrush="#0078D4" BorderThickness="1" CornerRadius="8" Padding="15">
@@ -156,16 +156,16 @@
                                 </Grid>
                             </Border>
 
-                            <DataGrid x:Name="TablaPersonas" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" Sorting="TablaPersonas_Sorting" HeadersVisibility="Column" SelectionMode="Single" IsReadOnly="True" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#20FFFFFF" BorderThickness="1" BorderBrush="#3E3E42" Background="Transparent" RowBackground="Transparent" AlternatingRowBackground="Transparent" VirtualizingPanel.IsVirtualizingWhenGrouping="True" VirtualizingPanel.ScrollUnit="Item">
+                            <DataGrid x:Name="TablaPersonas" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" Sorting="TablaPersonas_Sorting" HeadersVisibility="Column" SelectionMode="Single" IsReadOnly="True" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource DividerStrokeColorDefaultBrush}" BorderThickness="1" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" Background="Transparent" RowBackground="Transparent" AlternatingRowBackground="Transparent" VirtualizingPanel.IsVirtualizingWhenGrouping="True" VirtualizingPanel.ScrollUnit="Item">
                                 <DataGrid.RowStyle>
                                     <Style TargetType="DataGridRow">
                                         <Setter Property="Background" Value="Transparent"/>
-                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
                                         <Setter Property="BorderThickness" Value="0"/>
                                         <Setter Property="MinHeight" Value="40"/>
                                         <Style.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Background" Value="#10FFFFFF"/>
+                                                <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}"/>
                                             </Trigger>
                                         </Style.Triggers>
                                     </Style>
@@ -175,9 +175,17 @@
                                     <DataGridTemplateColumn Header="Foto" Width="70" CanUserSort="False">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
-                                                <Border Width="40" Height="40" CornerRadius="20" Background="#2A2A2A" ClipToBounds="True" Margin="0,5">
-                                                    <Image Source="{Binding Foto, Converter={StaticResource Base64Converter}}" Stretch="UniformToFill"/>
-                                                </Border>
+                                                <Grid Width="40" Height="40" Margin="0,5">
+                                                    <!-- Sin foto, el icono de persona; la foto lo tapa, recortada en círculo -->
+                                                    <Ellipse Fill="{DynamicResource ControlFillColorSecondaryBrush}"/>
+                                                    <ui:SymbolIcon Symbol="Person24" FontSize="20" Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    <Ellipse>
+                                                        <Ellipse.Fill>
+                                                            <ImageBrush ImageSource="{Binding Foto, Converter={StaticResource Base64Converter}}" Stretch="UniformToFill"/>
+                                                        </Ellipse.Fill>
+                                                    </Ellipse>
+                                                </Grid>
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
@@ -192,10 +200,10 @@
                                     <DataGridTextColumn x:Name="ColServicio" Header="Servicio" Binding="{Binding Servicio}" Width="140"/>
                                     <DataGridTextColumn x:Name="ColSolicitudes" Header="Solicitudes" Binding="{Binding Solicitudes}" Width="110" Foreground="#FFB900" FontWeight="SemiBold"/>
 
-                                    <DataGridTemplateColumn x:Name="ColPrivilegios" Header="Privilegios" Width="2.5*" SortMemberPath="PrivilegiosLista">
+                                    <DataGridTemplateColumn x:Name="ColPrivilegios" Header="Privilegios" Width="1.5*" SortMemberPath="PrivilegiosLista">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding PrivilegiosLista}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" ToolTip="{Binding PrivilegiosLista}" Foreground="#0078D4" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,5,0,5"/>
+                                                <TextBlock Text="{Binding PrivilegiosLista}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" ToolTip="{Binding PrivilegiosLista}" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,5,0,5"/>
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
@@ -204,8 +212,8 @@
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                    <ui:Button Icon="{ui:SymbolIcon Edit24}" Padding="6" Margin="0,0,6,0" Click="BtnEditarPersona_Click" ToolTip="Editar datos personales"/>
-                                                    <ui:Button Icon="{ui:SymbolIcon Delete24}" Appearance="Danger" Padding="6" Click="BtnEliminarPersona_Click" ToolTip="Eliminar persona"/>
+                                                    <ui:Button Icon="{ui:SymbolIcon Edit24}" Appearance="Transparent" Padding="6" Margin="0,0,4,0" Click="BtnEditarPersona_Click" ToolTip="Editar datos personales"/>
+                                                    <ui:Button Icon="{ui:SymbolIcon Delete24}" Appearance="Transparent" Foreground="{DynamicResource SystemFillColorCriticalBrush}" Padding="6" Click="BtnEliminarPersona_Click" ToolTip="Eliminar persona"/>
                                                 </StackPanel>
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
@@ -215,21 +223,21 @@
 
                             <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,15,0,0">
                                 <ui:Button x:Name="BtnAnterior" Content="Anterior" Icon="{ui:SymbolIcon ChevronLeft24}" Click="BtnAnterior_Click" Margin="0,0,15,0" Cursor="Hand"/>
-                                <TextBlock x:Name="TxtPaginaInfo" Text="Página 1 de 1" Foreground="White" VerticalAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
+                                <TextBlock x:Name="TxtPaginaInfo" Text="Página 1 de 1" VerticalAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
                                 <ui:Button x:Name="BtnSiguiente" Content="Siguiente" Icon="{ui:SymbolIcon ChevronRight24}" Click="BtnSiguiente_Click" Margin="15,0,0,0" Cursor="Hand"/>
                             </StackPanel>
                         </Grid>
                     </TabItem>
 
                     <!-- PESTAÑA 2: MAPA -->
-                    <TabItem Header="Mapa" FontSize="16" Foreground="White">
+                    <TabItem Header="Mapa" FontSize="16">
                         <Border BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="8" Margin="0,15,0,0" ClipToBounds="True">
                             <WebBrowser x:Name="MapaWebBrowser" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
                         </Border>
                     </TabItem>
 
                     <!-- PESTAÑA 3: NOMBRAMIENTOS Y BAJAS -->
-                    <TabItem x:Name="TabNombramientos" Header="Nombramientos y bajas" FontSize="16" Foreground="White">
+                    <TabItem x:Name="TabNombramientos" Header="Nombramientos y bajas" FontSize="16">
                         <Grid Margin="0,15,0,0">
                             <DataGrid x:Name="TablaNombramientos" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column" SelectionMode="Single" IsReadOnly="True" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#20FFFFFF" BorderThickness="1" BorderBrush="#3E3E42" Background="Transparent" RowBackground="Transparent" AlternatingRowBackground="Transparent">
 

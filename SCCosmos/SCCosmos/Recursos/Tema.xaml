@@ -99,4 +99,36 @@
         <Setter Property="Margin" Value="0,0,0,10"/>
     </Style>
 
+    <!-- Márgenes de una pantalla: el título y el contenido empiezan en el mismo sitio en todas -->
+    <Thickness x:Key="MargenPagina">40,32,40,32</Thickness>
+
+    <!-- Panel con fondo de tarjeta: filtros, bloques de una pantalla -->
+    <Style x:Key="PanelTarjeta" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="20"/>
+    </Style>
+
+    <!-- Rótulo encima de un campo o de un filtro -->
+    <Style x:Key="EtiquetaCampo" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
+        <Setter Property="Margin" Value="0,0,0,6"/>
+    </Style>
+
+    <!-- Contenido de un botón que abre una lista, para que parezca un desplegable: el texto
+         a la izquierda y la flecha a la derecha (el botón, con HorizontalContentAlignment="Stretch") -->
+    <DataTemplate x:Key="ContenidoDesplegable">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="{Binding}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+            <ui:SymbolIcon Grid.Column="1" Symbol="ChevronDown24" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+        </Grid>
+    </DataTemplate>
 </ResourceDictionary>

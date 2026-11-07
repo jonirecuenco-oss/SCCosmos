@@ -179,10 +179,10 @@ namespace SCCosmos
                 CmbFiltroEsperanza.SelectedIndex = 0;
 
                 // Actualizamos los textos de los botones desplegables
-                BtnFiltroServicio.Content = LstServicio.SelectedItems.Count > 0 ? $"{LstServicio.SelectedItems.Count} selec." : "Todos ▼";
-                BtnFiltroSols.Content = LstSols.SelectedItems.Count > 0 ? $"{LstSols.SelectedItems.Count} selec." : "Todas ▼";
-                BtnFiltroCongre.Content = "Todas ▼";
-                BtnFiltroPrivs.Content = "Todos ▼";
+                BtnFiltroServicio.Content = LstServicio.SelectedItems.Count > 0 ? $"{LstServicio.SelectedItems.Count} selec." : "Todos";
+                BtnFiltroSols.Content = LstSols.SelectedItems.Count > 0 ? $"{LstSols.SelectedItems.Count} selec." : "Todas";
+                BtnFiltroCongre.Content = "Todas";
+                BtnFiltroPrivs.Content = "Todos";
             }
         }
 
@@ -703,10 +703,10 @@ namespace SCCosmos
         {
             if (!IsLoaded) return;
 
-            BtnFiltroCongre.Content = LstCongre.SelectedItems.Count > 0 ? $"{LstCongre.SelectedItems.Count} selec." : "Todas ▼";
-            BtnFiltroServicio.Content = LstServicio.SelectedItems.Count > 0 ? $"{LstServicio.SelectedItems.Count} selec." : "Todos ▼";
-            BtnFiltroSols.Content = LstSols.SelectedItems.Count > 0 ? $"{LstSols.SelectedItems.Count} selec." : "Todas ▼";
-            BtnFiltroPrivs.Content = LstPrivs.SelectedItems.Count > 0 ? $"{LstPrivs.SelectedItems.Count} selec." : "Todos ▼";
+            BtnFiltroCongre.Content = LstCongre.SelectedItems.Count > 0 ? $"{LstCongre.SelectedItems.Count} selec." : "Todas";
+            BtnFiltroServicio.Content = LstServicio.SelectedItems.Count > 0 ? $"{LstServicio.SelectedItems.Count} selec." : "Todos";
+            BtnFiltroSols.Content = LstSols.SelectedItems.Count > 0 ? $"{LstSols.SelectedItems.Count} selec." : "Todas";
+            BtnFiltroPrivs.Content = LstPrivs.SelectedItems.Count > 0 ? $"{LstPrivs.SelectedItems.Count} selec." : "Todos";
 
             _timerBusqueda.Stop();
             _timerBusqueda.Start();
