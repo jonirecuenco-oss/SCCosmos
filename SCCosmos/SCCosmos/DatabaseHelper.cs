@@ -337,10 +337,16 @@ namespace SCCosmos
                         SELECT EXISTS (SELECT 1 FROM Personas
                                        WHERE OrigenRegistro IS NULL OR trim(OrigenRegistro) = ''
                                           OR ((NombreComun IS NULL OR trim(NombreComun) = '')
-                                              AND NombreJWHub IS NOT NULL AND trim(NombreJWHub) != ''))
+                                              AND NombreJWHub IS NOT NULL AND trim(NombreJWHub) != ''))"
+                        // La tabla de recomendaciones aparece con la primera sincronización
+                        // de JW Hub: en un equipo nuevo todavía no existe.
+                        + (ExisteTabla(connection, "RecomendacionesNombramientos")
+                            ? @"
                             OR EXISTS (SELECT 1 FROM RecomendacionesNombramientos
                                        GROUP BY Hermano, Congregacion, Tipo
-                                       HAVING COUNT(*) > 1);";
+                                       HAVING COUNT(*) > 1)"
+                            : "")
+                        + ";";
                     return Convert.ToInt64(cmd.ExecuteScalar()) != 0;
                 }
             }
@@ -381,6 +387,9 @@ namespace SCCosmos
             }
 
             // --- LIMPIEZA AUTOMÁTICA DE RECOMENDACIONES DUPLICADAS ---
+            if (!ExisteTabla(connection, "RecomendacionesNombramientos"))
+                return;
+
             try
             {
                 EjecutarQuery(connection, @"
@@ -394,6 +403,16 @@ namespace SCCosmos
             catch (Exception errorDatos)
             {
                 RegistroErrores.AnotarSilencioso(errorDatos, "Datos.Parches#3");
+            }
+        }
+
+        private static bool ExisteTabla(SqliteConnection connection, string tabla)
+        {
+            using (var cmd = connection.CreateCommand())
+            {
+                cmd.CommandText = "SELECT EXISTS (SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = $tabla);";
+                cmd.Parameters.AddWithValue("$tabla", tabla);
+                return Convert.ToInt64(cmd.ExecuteScalar()) != 0;
             }
         }
 

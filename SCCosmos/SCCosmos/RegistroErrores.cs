@@ -13,11 +13,14 @@ namespace SCCosmos
     /// </summary>
     public static class RegistroErrores
     {
-        private static readonly string Ruta =
-            Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "SCCosmos",
-                "errores.log");
+        // Con una base de pruebas, junto a ella: no se mezcla con el de la app.
+        private static string Ruta =>
+            DatabaseHelper.RutaParaPruebas is string pruebas
+                ? Path.Combine(Path.GetDirectoryName(pruebas) ?? "", "errores.log")
+                : Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "SCCosmos",
+                    "errores.log");
 
         // El archivo empieza de nuevo al pasar de ~1 MB.
         private const long TamanoMaximo = 1_000_000;

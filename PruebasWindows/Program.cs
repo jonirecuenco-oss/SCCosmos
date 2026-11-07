@@ -38,6 +38,8 @@ internal static class Programa
             Fusion();
             GuardarFicha();
             Ver("sin motor de sincronización", SincronizacionRed.Config is null, true);
+            string log = Path.Combine(carpeta, "errores.log");
+            Ver("sin errores anotados", File.Exists(log) ? File.ReadLines(log).First() : "", "");
         }
         catch (Exception ex) { Console.WriteLine($"[FALLO] {ex}"); _fallos++; }
         finally { SqliteConnection.ClearAllPools(); try { Directory.Delete(carpeta, true); } catch (IOException) { } }
