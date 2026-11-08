@@ -280,13 +280,8 @@
                 <!-- PROGRAMA DE LA VISITA -->
                 <TabItem x:Name="TabPrograma" Header="Programa">
 
-                    <StackPanel Margin="10,15,10,10">
-                        <Border Background="#1C1C1F"
-                                BorderBrush="#303035"
-                                BorderThickness="1"
-                                CornerRadius="8"
-                                Padding="12,9"
-                                Margin="0,0,0,12">
+                    <StackPanel Margin="0,16,0,0">
+                        <Border Style="{StaticResource PanelTarjeta}" Padding="16,12" Margin="0,0,0,12">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -294,13 +289,9 @@
                                 </Grid.ColumnDefinitions>
 
                                 <StackPanel VerticalAlignment="Center">
-                                    <TextBlock Text="Programa semanal"
-                                               Foreground="White"
-                                               FontWeight="SemiBold"
-                                               FontSize="13"/>
+                                    <TextBlock Text="Programa semanal" FontWeight="SemiBold" FontSize="14"/>
                                     <TextBlock Text="Puedes añadir actividades manualmente o importar toda la semana desde un archivo JSON."
-                                               Foreground="#888888"
-                                               FontSize="11"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"
                                                Margin="0,2,12,0"
                                                TextWrapping="Wrap"/>
                                 </StackPanel>
@@ -309,26 +300,9 @@
                                             Orientation="Horizontal"
                                             VerticalAlignment="Center">
 
-                                    <Button Content="Programa PDF"
-                                            Click="BtnImportarProgramaPdf_Click"
-                                            Padding="12,7"
-                                            Background="#5B4A9E"
-                                            Foreground="White"
-                                            BorderThickness="0"
-                                            Cursor="Hand"
-                                            Margin="0,0,8,0"
-                                            VerticalAlignment="Center"
-                                            ToolTip="Importar el programa desde el PDF rellenado («Programa para la visita del SC»)"/>
+                                    <ui:Button Content="Programa PDF" Icon="{ui:SymbolIcon DocumentPdf24}" Appearance="Secondary" Click="BtnImportarProgramaPdf_Click" Margin="0,0,8,0" VerticalAlignment="Center" Cursor="Hand" ToolTip="Importar el programa desde el PDF rellenado («Programa para la visita del SC»)"/>
 
-                                    <Button Content="⇧ Importar JSON"
-                                            Click="BtnImportarProgramaJson_Click"
-                                            Padding="12,7"
-                                            Background="#2D5F8B"
-                                            Foreground="White"
-                                            BorderThickness="0"
-                                            Cursor="Hand"
-                                            VerticalAlignment="Center"
-                                            ToolTip="Importar actividades de miércoles a domingo"/>
+                                    <ui:Button Content="Importar JSON" Icon="{ui:SymbolIcon ArrowImport24}" Appearance="Secondary" Click="BtnImportarProgramaJson_Click" VerticalAlignment="Center" Cursor="Hand" ToolTip="Importar actividades de miércoles a domingo"/>
                                 </StackPanel>
                             </Grid>
                         </Border>
@@ -337,21 +311,14 @@
                                       PreviewMouseWheel="UIElement_PreviewMouseWheel">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Background="#202023"
-                                            BorderBrush="#343438"
-                                            BorderThickness="1"
-                                            CornerRadius="8"
-                                            Margin="0,0,0,12"
-                                            Padding="0">
+                                    <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Margin="0,0,0,12" Padding="0">
                                         <Grid>
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="Auto"/>
                                                 <RowDefinition Height="Auto"/>
                                             </Grid.RowDefinitions>
 
-                                            <Border Background="#29292D"
-                                                    CornerRadius="8,8,0,0"
-                                                    Padding="14,10">
+                                            <Border Background="{DynamicResource SubtleFillColorSecondaryBrush}" CornerRadius="8,8,0,0" Padding="16,10">
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="*"/>
@@ -359,28 +326,18 @@
                                                     </Grid.ColumnDefinitions>
 
                                                     <TextBlock Text="{Binding Dia}"
-                                                               Foreground="White"
                                                                FontSize="15"
                                                                FontWeight="SemiBold"
                                                                VerticalAlignment="Center"/>
 
-                                                    <Button Grid.Column="1"
-                                                            Content="＋ Añadir actividad"
-                                                            Tag="{Binding Dia}"
-                                                            Click="BtnProgramarActividad_Click"
-                                                            Padding="12,6"
-                                                            Background="#0078D4"
-                                                            Foreground="White"
-                                                            BorderThickness="0"
-                                                            Cursor="Hand"/>
+                                                    <ui:Button Grid.Column="1" Content="Añadir actividad" Icon="{ui:SymbolIcon Add24}" Appearance="Secondary" Tag="{Binding Dia}" Click="BtnProgramarActividad_Click" Cursor="Hand"/>
                                                 </Grid>
                                             </Border>
 
                                             <StackPanel Grid.Row="1"
                                                         Margin="12,10,12,12">
 
-                                                <TextBlock Text="Sin actividades programadas"
-                                                           Foreground="#777777"
+                                                <TextBlock Text="Sin actividades programadas" Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                                            FontStyle="Italic"
                                                            FontSize="12"
                                                            Margin="4,6"
@@ -389,32 +346,23 @@
                                                 <ItemsControl ItemsSource="{Binding Actividades}">
                                                     <ItemsControl.ItemTemplate>
                                                         <DataTemplate>
-                                                            <Border Background="#28282C"
-                                                                    BorderBrush="#36363B"
-                                                                    BorderThickness="1"
-                                                                    CornerRadius="6"
-                                                                    Padding="10"
-                                                                    Margin="0,0,0,7">
+                                                            <Border Background="{DynamicResource ControlFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="6" Padding="12,10" Margin="0,0,0,8">
                                                                 <Grid>
                                                                     <Grid.ColumnDefinitions>
-                                                                        <ColumnDefinition Width="70"/>
-                                                                        <ColumnDefinition Width="82"/>
-                                                                        <ColumnDefinition Width="2.2*"/>
+                                                                        <ColumnDefinition Width="64"/>
+                                                                        <ColumnDefinition Width="88"/>
+                                                                        <!-- La actividad suele ser corta y la dirección larga: así la dirección cabe en una línea -->
+                                                                        <ColumnDefinition Width="*"/>
                                                                         <ColumnDefinition Width="2*"/>
                                                                         <ColumnDefinition Width="Auto"/>
                                                                     </Grid.ColumnDefinitions>
 
                                                                     <TextBlock Grid.Column="0"
-                                                                               Text="{Binding Hora}"
-                                                                               Foreground="#4BA3E3"
-                                                                               FontSize="15"
-                                                                               FontWeight="Bold"
+                                                                               Text="{Binding Hora}" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" FontSize="15" FontWeight="SemiBold"
                                                                                VerticalAlignment="Center"/>
 
                                                                     <Border Grid.Column="1"
-                                                                            Background="#333338"
-                                                                            CornerRadius="4"
-                                                                            Padding="7,4"
+                                                                            Background="#26EBCB8B" CornerRadius="4" Padding="8,3"
                                                                             HorizontalAlignment="Left"
                                                                             VerticalAlignment="Center"
                                                                             Visibility="{Binding VerResponsable}">
@@ -427,14 +375,10 @@
                                                                     <StackPanel Grid.Column="2"
                                                                                 Margin="8,0,12,0"
                                                                                 VerticalAlignment="Center">
-                                                                        <TextBlock Text="{Binding TipoActividad}"
-                                                                                   Foreground="White"
-                                                                                   FontSize="13"
+                                                                        <TextBlock Text="{Binding TipoActividad}" FontSize="14"
                                                                                    FontWeight="SemiBold"
                                                                                    TextWrapping="Wrap"/>
-                                                                        <TextBlock Text="{Binding Acompanante}"
-                                                                                   Foreground="#AAAAAA"
-                                                                                   FontSize="12"
+                                                                        <TextBlock Text="{Binding Acompanante}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="13"
                                                                                    Margin="0,3,0,0"
                                                                                    TextWrapping="Wrap"/>
                                                                     </StackPanel>
@@ -442,12 +386,10 @@
                                                                     <StackPanel Grid.Column="3"
                                                                                 Margin="0,0,12,0"
                                                                                 VerticalAlignment="Center">
-                                                                        <TextBlock Text="{Binding Ubicacion}"
-                                                                                   Foreground="#B8B8B8"
+                                                                        <TextBlock Text="{Binding Ubicacion}" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                                                    FontSize="12"
                                                                                    TextWrapping="Wrap"/>
-                                                                        <TextBlock Text="{Binding Notas}"
-                                                                                   Foreground="#777777"
+                                                                        <TextBlock Text="{Binding Notas}" Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                                                                    FontSize="11"
                                                                                    FontStyle="Italic"
                                                                                    Margin="0,3,0,0"
@@ -457,34 +399,9 @@
                                                                     <StackPanel Grid.Column="4"
                                                                                 Orientation="Horizontal"
                                                                                 VerticalAlignment="Center">
-                                                                        <Button Content="📍"
-                                                                                Visibility="{Binding VerMapa}"
-                                                                                ToolTip="Ver en Google Maps"
-                                                                                Tag="{Binding}"
-                                                                                Click="BtnMapaActividad_Click"
-                                                                                Background="Transparent"
-                                                                                Foreground="#8BC9E8"
-                                                                                BorderThickness="0"
-                                                                                Padding="5"
-                                                                                Cursor="Hand"/>
-                                                                        <Button Content="✏️"
-                                                                                ToolTip="Editar"
-                                                                                Tag="{Binding}"
-                                                                                Click="BtnEditarActividad_Click"
-                                                                                Background="Transparent"
-                                                                                Foreground="White"
-                                                                                BorderThickness="0"
-                                                                                Padding="5"
-                                                                                Cursor="Hand"/>
-                                                                        <Button Content="🗑️"
-                                                                                ToolTip="Eliminar"
-                                                                                Tag="{Binding}"
-                                                                                Click="BtnEliminarActividad_Click"
-                                                                                Background="Transparent"
-                                                                                Foreground="#FF6B6B"
-                                                                                BorderThickness="0"
-                                                                                Padding="5"
-                                                                                Cursor="Hand"/>
+                                                                        <ui:Button Icon="{ui:SymbolIcon Location24}" Appearance="Transparent" Visibility="{Binding VerMapa}" ToolTip="Ver en Google Maps" Tag="{Binding}" Click="BtnMapaActividad_Click" Padding="6" Cursor="Hand"/>
+                                                                        <ui:Button Icon="{ui:SymbolIcon Edit24}" Appearance="Transparent" ToolTip="Editar" Tag="{Binding}" Click="BtnEditarActividad_Click" Padding="6" Margin="4,0" Cursor="Hand"/>
+                                                                        <ui:Button Icon="{ui:SymbolIcon Delete24}" Appearance="Transparent" Foreground="{DynamicResource SystemFillColorCriticalBrush}" ToolTip="Eliminar" Tag="{Binding}" Click="BtnEliminarActividad_Click" Padding="6" Cursor="Hand"/>
                                                                     </StackPanel>
                                                                 </Grid>
                                                             </Border>
@@ -502,44 +419,55 @@
 
                 <!-- NOTAS PERSONALES -->
                 <TabItem x:Name="TabNotas" Header="Notas" RequestBringIntoView="TabNotas_RequestBringIntoView">
-                    <Grid x:Name="PanelNotas" Margin="10,15,10,10">
+                    <Grid x:Name="PanelNotas" Margin="0,16,0,0">
                         <Grid.Resources>
                             <Style x:Key="HeaderSeccion" TargetType="Border">
-                                <Setter Property="Background" Value="#1A1A1C"/>
-                                <Setter Property="Padding" Value="15,10"/>
-                                <Setter Property="CornerRadius" Value="6,6,0,0"/>
+                                <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}"/>
+                                <Setter Property="Padding" Value="16,10"/>
+                                <Setter Property="CornerRadius" Value="8,8,0,0"/>
                             </Style>
                             <Style x:Key="TituloSeccion" TargetType="TextBlock">
                                 <Setter Property="FontWeight" Value="SemiBold"/>
-                                <Setter Property="Foreground" Value="#4BA3E3"/>
+                                <Setter Property="Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
                                 <Setter Property="FontSize" Value="14"/>
                             </Style>
                             <Style x:Key="CajaPreguntas" TargetType="TextBlock">
                                 <Setter Property="TextWrapping" Value="Wrap"/>
-                                <Setter Property="Foreground" Value="#CCCCCC"/>
-                                <Setter Property="Padding" Value="15,0,15,0"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                <Setter Property="Padding" Value="16,0,16,0"/>
                                 <Setter Property="FontSize" Value="13"/>
                             </Style>
                             <Style x:Key="CajaRespuestas" TargetType="TextBox">
                                 <Setter Property="AcceptsReturn" Value="True"/>
                                 <Setter Property="TextWrapping" Value="Wrap"/>
                                 <Setter Property="BorderThickness" Value="1"/>
-                                <Setter Property="BorderBrush" Value="#333333"/>
+                                <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}"/>
                                 <Setter Property="Padding" Value="8"/>
                                 <Setter Property="MinHeight" Value="40"/>
-                            </Style>
+                                <Setter Property="Background" Value="{DynamicResource ControlFillColorDefaultBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
+                                <!-- Sin esto, con un fondo semitransparente el cursor de texto sale negro -->
+                                <Setter Property="CaretBrush" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
+                                <Style.Triggers>
+                                    <!-- Respuesta marcada como alerta: fondo rojo oscuro y borde rojo; el texto sigue claro -->
+                                    <DataTrigger Binding="{Binding EsAlerta}" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource SystemFillColorCriticalBackgroundBrush}"/>
+                                        <Setter Property="BorderBrush" Value="{DynamicResource SystemFillColorCriticalBrush}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                                </Style>
                             <Style x:Key="BordeContenedor" TargetType="Border">
-                                <Setter Property="Background" Value="#252528"/>
-                                <Setter Property="CornerRadius" Value="6"/>
-                                <Setter Property="Margin" Value="0,0,0,20"/>
-                                <Setter Property="BorderBrush" Value="#333333"/>
+                                <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}"/>
+                                <Setter Property="CornerRadius" Value="8"/>
+                                <Setter Property="Margin" Value="0,0,0,16"/>
+                                <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}"/>
                                 <Setter Property="BorderThickness" Value="1"/>
                             </Style>
                         </Grid.Resources>
 
                         <StackPanel>
                             <Grid Margin="0,0,0,15">
-                                <TextBlock Text="Los cambios se guardan automáticamente al dejar de escribir." Foreground="#888888" FontSize="12" VerticalAlignment="Center" FontStyle="Italic"/>
+                                <TextBlock Text="Los cambios se guardan automáticamente al dejar de escribir." Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="12" VerticalAlignment="Center" FontStyle="Italic"/>
                             </Grid>
 
                             <ItemsControl ItemsSource="{Binding MisNotasAgrupadas}">
@@ -569,12 +497,25 @@
                                                                 <TextBlock Style="{StaticResource CajaPreguntas}" Grid.Column="0" Text="{Binding Pregunta}" VerticalAlignment="Center"/>
                                                                 <TextBox Style="{StaticResource CajaRespuestas}" Grid.Column="1" 
                                                                          Text="{Binding Respuesta, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                                         Background="{Binding FondoRespuesta}" 
-                                                                         Foreground="{Binding ColorTextoRespuesta}"
                                                                          LostFocus="TxtNotaRespuesta_LostFocus"/>
-                                                                <Button Grid.Column="2" Content="🚩" Background="Transparent" Foreground="#FF5555" BorderThickness="0" 
-                                                                        FontSize="18" Cursor="Hand" Margin="5,0,0,0" ToolTip="Marcar como alerta"
-                                                                        Click="BtnAlertaNota_Click"/>
+                                                                <ui:Button Grid.Column="2" Appearance="Transparent" Padding="6" Margin="6,0,0,0" Cursor="Hand" ToolTip="Marcar como alerta"
+                                                                           Click="BtnAlertaNota_Click">
+                                                                    <ui:Button.Icon>
+                                                                        <!-- Contorno gris sin marcar; rellena y roja cuando la respuesta es una alerta -->
+                                                                        <ui:SymbolIcon Symbol="Flag24" FontSize="18" Filled="{Binding EsAlerta}">
+                                                                            <ui:SymbolIcon.Style>
+                                                                                <Style TargetType="ui:SymbolIcon">
+                                                                                    <Setter Property="Foreground" Value="{DynamicResource TextFillColorTertiaryBrush}"/>
+                                                                                    <Style.Triggers>
+                                                                                        <DataTrigger Binding="{Binding EsAlerta}" Value="True">
+                                                                                            <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}"/>
+                                                                                        </DataTrigger>
+                                                                                    </Style.Triggers>
+                                                                                </Style>
+                                                                            </ui:SymbolIcon.Style>
+                                                                        </ui:SymbolIcon>
+                                                                    </ui:Button.Icon>
+                                                                </ui:Button>
                                                             </Grid>
                                                         </DataTemplate>
                                                     </ItemsControl.ItemTemplate>
