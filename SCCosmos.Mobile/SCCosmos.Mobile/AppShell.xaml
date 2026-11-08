@@ -47,8 +47,8 @@
     <Shell.FlyoutHeader>
 
         <Grid
-            HeightRequest="125"
-            Padding="22,20"
+            HeightRequest="108"
+            Padding="20,16"
             BackgroundColor="{StaticResource SuperficieBaja}">
 
             <HorizontalStackLayout

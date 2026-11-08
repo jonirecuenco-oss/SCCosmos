@@ -3,21 +3,28 @@
     x:Class="SCCosmos.Mobile.Views.VisitaDetallePage"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:servicios="clr-namespace:SCCosmos.Mobile.Services"
     Title="Visita"
     BackgroundColor="{StaticResource FondoPagina}"
-    Shell.NavBarIsVisible="False" NavigationPage.HasNavigationBar="False">
+    >
+
+    <!-- Barra de arriba de la app: flecha atrás de Android, nombre de la
+         congregación (Title, desde el código) y Datos. -->
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Datos" Clicked="BtnDatos_Clicked" />
+    </ContentPage.ToolbarItems>
 
     <Grid RowDefinitions="Auto,Auto,Auto,*">
 
-        <!-- CABECERA: flecha atrás, título centrado y botón Datos -->
+        <!-- CABECERA: periodo de la visita (la congregación va en la barra de arriba) -->
         <Grid Grid.Row="0"
               Padding="10,12,16,8">
 
             <VerticalStackLayout HorizontalOptions="Center"
                                  VerticalOptions="Center"
-                                 Spacing="2"
-                                 Margin="58,0">
+                                 Spacing="2">
                 <Label x:Name="LblCongregacion"
+                       IsVisible="False"
                        FontSize="19"
                        FontAttributes="Bold"
                        TextColor="{StaticResource TextoPrincipal}"
@@ -30,33 +37,7 @@
                        HorizontalTextAlignment="Center" />
             </VerticalStackLayout>
 
-            <Border HorizontalOptions="Start"
-                    VerticalOptions="Center"
-                    WidthRequest="42"
-                    HeightRequest="42"
-                    BackgroundColor="{StaticResource Superficie}"
-                    StrokeThickness="0">
-                <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="10" />
-                </Border.StrokeShape>
-                <Border.GestureRecognizers>
-                    <TapGestureRecognizer Tapped="Volver_Tapped" />
-                </Border.GestureRecognizers>
-                <Label Text="←"
-                       TextColor="{StaticResource TextoPrincipal}"
-                       FontSize="22"
-                       HorizontalTextAlignment="Center"
-                       VerticalTextAlignment="Center" />
-            </Border>
 
-            <Button HorizontalOptions="End"
-                    VerticalOptions="Center"
-                    Text="Datos"
-                    Clicked="BtnDatos_Clicked"
-                    Style="{StaticResource BotonSecundario}"
-                    HeightRequest="38"
-                    Padding="11,6"
-                    FontSize="12.5" />
         </Grid>
 
         <!-- PESTAÑAS -->
@@ -446,7 +427,9 @@
               Padding="16,0,16,0">
 
                 <Grid ColumnDefinitions="*,Auto"
+                      RowDefinitions="Auto,Auto"
                       ColumnSpacing="10"
+                      RowSpacing="8"
                       Margin="0,2,0,0">
 
                     <Picker x:Name="PickerGrupo"
@@ -486,9 +469,22 @@
                                 HeightRequest="34"
                                 Padding="0" />
                     </HorizontalStackLayout>
+
+                    <!-- Buscador: filtra por nombre, nombre común o de JW Hub (sin tildes) -->
+                    <SearchBar x:Name="BuscadorMinisterio"
+                               Grid.Row="1"
+                               Grid.ColumnSpan="2"
+                               Placeholder="Buscar persona…"
+                               TextChanged="BuscadorMinisterio_TextChanged"
+                               BackgroundColor="{StaticResource Superficie}"
+                               TextColor="{StaticResource TextoPrincipal}"
+                               PlaceholderColor="{StaticResource TextoTerciario}"
+                               CancelButtonColor="{StaticResource TextoSecundario}"
+                               HeightRequest="44" />
                 </Grid>
 
                 <CollectionView x:Name="ListaPersonas"
+                                servicios:AdaptadorPantalla.AnchoMinimoTarjeta="380"
                                 Grid.Row="1"
                                 Margin="-16,0,-16,0"
                                 SelectionMode="None">
@@ -529,6 +525,44 @@
                                                    Aspect="AspectFill" />
                                         </Border>
 
+                                        <!-- Abreviaturas (A, SM, PR...) debajo de la foto -->
+                                    <HorizontalStackLayout Spacing="3"
+                                                           HorizontalOptions="Center">
+
+                                        <Border BackgroundColor="#2E2418"
+                                                StrokeThickness="0"
+                                                Padding="5,0"
+                                                HeightRequest="18"
+                                                VerticalOptions="Center"
+                                                IsVisible="{Binding MostrarNombramiento}">
+                                            <Border.StrokeShape>
+                                                <RoundRectangle CornerRadius="4" />
+                                            </Border.StrokeShape>
+                                            <Label Text="{Binding EtiquetaNombramiento}"
+                                                   TextColor="#FFAA75"
+                                                   FontSize="10"
+                                                   FontAttributes="Bold"
+                                                   VerticalTextAlignment="Center" />
+                                        </Border>
+
+                                        <Border BackgroundColor="#1B2A20"
+                                                StrokeThickness="0"
+                                                Padding="5,0"
+                                                HeightRequest="18"
+                                                VerticalOptions="Center"
+                                                IsVisible="{Binding MostrarServicio}">
+                                            <Border.StrokeShape>
+                                                <RoundRectangle CornerRadius="4" />
+                                            </Border.StrokeShape>
+                                            <Label Text="{Binding EtiquetaServicio}"
+                                                   TextColor="#7ED889"
+                                                   FontSize="10"
+                                                   FontAttributes="Bold"
+                                                   VerticalTextAlignment="Center" />
+                                        </Border>
+
+                                    </HorizontalStackLayout>
+
                                     </VerticalStackLayout>
 
                                     <VerticalStackLayout Grid.Row="0"
@@ -555,44 +589,6 @@
                                                    HeightRequest="22"
                                                    VerticalTextAlignment="Center" />
 
-                                            <HorizontalStackLayout Grid.Column="1"
-                                                                   Spacing="4"
-                                                                   HeightRequest="22"
-                                                                   VerticalOptions="Center">
-
-                                                <Border BackgroundColor="#2E2418"
-                                                        StrokeThickness="0"
-                                                        Padding="5,0"
-                                                        HeightRequest="18"
-                                                        VerticalOptions="Center"
-                                                        IsVisible="{Binding MostrarNombramiento}">
-                                                    <Border.StrokeShape>
-                                                        <RoundRectangle CornerRadius="4" />
-                                                    </Border.StrokeShape>
-                                                    <Label Text="{Binding EtiquetaNombramiento}"
-                                                           TextColor="#FFAA75"
-                                                           FontSize="10"
-                                                           FontAttributes="Bold"
-                                                           VerticalTextAlignment="Center" />
-                                                </Border>
-
-                                                <Border BackgroundColor="#1B2A20"
-                                                        StrokeThickness="0"
-                                                        Padding="5,0"
-                                                        HeightRequest="18"
-                                                        VerticalOptions="Center"
-                                                        IsVisible="{Binding MostrarServicio}">
-                                                    <Border.StrokeShape>
-                                                        <RoundRectangle CornerRadius="4" />
-                                                    </Border.StrokeShape>
-                                                    <Label Text="{Binding EtiquetaServicio}"
-                                                           TextColor="#7ED889"
-                                                           FontSize="10"
-                                                           FontAttributes="Bold"
-                                                           VerticalTextAlignment="Center" />
-                                                </Border>
-
-                                            </HorizontalStackLayout>
                                         </Grid>
 
                                         <!-- 6 últimos meses de actividad -->

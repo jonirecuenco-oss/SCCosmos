@@ -1239,9 +1239,9 @@ public partial class CalendarioPage : ContentPage, IActualizableMobile
         object sender,
         EventArgs e)
     {
-        if (sender is not Button boton
+        if (sender is not VisualElement boton
             ||
-            boton.CommandParameter is not
+            ((sender as ImageButton)?.CommandParameter ?? (sender as Button)?.CommandParameter) is not
                 CalendarioItem item
             ||
             !item.EsVisita)

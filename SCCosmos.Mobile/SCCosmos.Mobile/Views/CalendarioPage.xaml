@@ -144,18 +144,17 @@
                                             CornerRadius="7"
                                             IsVisible="{Binding MostrarBotonEditar}" />
 
-                                    <Button Text="👁️"
-                                            Clicked="BtnVerVisita_Clicked"
-                                            CommandParameter="{Binding .}"
-                                            SemanticProperties.Description="Ver visita"
-                                            Padding="0"
-                                            Margin="0"
-                                            FontSize="11"
-                                            WidthRequest="26"
-                                            HeightRequest="24"
-                                            BackgroundColor="#0B6FC2"
-                                            CornerRadius="7"
-                                            IsVisible="{Binding MostrarVerVisita}" />
+                                    <ImageButton Source="icono_ir.png"
+                                                 Clicked="BtnVerVisita_Clicked"
+                                                 CommandParameter="{Binding .}"
+                                                 SemanticProperties.Description="Ver visita"
+                                                 Padding="6,5"
+                                                 Margin="0"
+                                                 WidthRequest="26"
+                                                 HeightRequest="24"
+                                                 BackgroundColor="#0B6FC2"
+                                                 CornerRadius="7"
+                                                 IsVisible="{Binding MostrarVerVisita}" />
 
                                     <!-- El resto de acciones, en un menú: así cada
                                          tarjeta crea 3 botones en vez de 6. -->

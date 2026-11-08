@@ -43,7 +43,7 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Grid.Column="0" Text="{Binding Congregacion}" FontSize="26" FontWeight="SemiBold"
                                            TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                <ui:Button x:Name="BtnVerVisita" Grid.Column="1" Appearance="Secondary" Icon="{ui:SymbolIcon Eye24}"
+                                <ui:Button x:Name="BtnVerVisita" Grid.Column="1" Appearance="Secondary" Icon="{ui:SymbolIcon ArrowRight24}"
                                            Content="Ver" ToolTip="Ver datos de la congregación" Cursor="Hand"
                                            VerticalAlignment="Center" Visibility="Collapsed" Click="BtnVerVisita_Click"/>
                             </Grid>

@@ -16,7 +16,7 @@
             Spacing="3">
 
             <Label
-                Text="ACTIVIDAD"
+                Text="Actividad"
                 TextColor="{StaticResource TextoPrincipal}"
                 FontSize="26"
                 FontAttributes="Bold"/>

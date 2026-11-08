@@ -6,101 +6,106 @@
     Title="Rendimientos"
     BackgroundColor="{StaticResource FondoPagina}">
 
-    <Grid RowDefinitions="Auto,Auto,*,Auto"
+    <Grid RowDefinitions="*,Auto"
           Padding="16,14,16,14"
           RowSpacing="10">
 
-        <!-- CABECERA -->
-        <VerticalStackLayout Grid.Row="0"
-                             Spacing="3">
-            <Label Text="RENDIMIENTOS"
-                   Style="{StaticResource Antetitulo}" />
-            <Label x:Name="LblTotal"
-                   Text=""
-                   Style="{StaticResource SubtituloPagina}" />
-            <Label x:Name="LblDesglose"
-                   Text=""
-                   Style="{StaticResource TextoNota}" />
-        </VerticalStackLayout>
-
-        <!-- FILTROS -->
-        <Border Grid.Row="1"
-                BackgroundColor="{StaticResource Superficie}"
-                Stroke="{StaticResource Borde}"
-                Padding="12">
-            <Border.StrokeShape>
-                <RoundRectangle CornerRadius="12" />
-            </Border.StrokeShape>
-
-            <VerticalStackLayout Spacing="8">
-
-                <Grid ColumnDefinitions="*,*"
-                      ColumnSpacing="8">
-                    <VerticalStackLayout Grid.Column="0"
-                                         Spacing="2">
-                        <Label Text="Año"
-                               Style="{StaticResource TextoNota}" />
-                        <Picker x:Name="PickerAnio"
-                                FontSize="13"
-                                SelectedIndexChanged="Filtro_Changed" />
-                    </VerticalStackLayout>
-
-                    <VerticalStackLayout Grid.Column="1"
-                                         Spacing="2">
-                        <Label Text="Mes"
-                               Style="{StaticResource TextoNota}" />
-                        <Picker x:Name="PickerMes"
-                                FontSize="13"
-                                SelectedIndexChanged="Filtro_Changed" />
-                    </VerticalStackLayout>
-                </Grid>
-
-                <Grid ColumnDefinitions="*,*"
-                      ColumnSpacing="8">
-                    <VerticalStackLayout Grid.Column="0"
-                                         Spacing="2">
-                        <Label Text="Congregación"
-                               Style="{StaticResource TextoNota}" />
-                        <Picker x:Name="PickerCongregacion"
-                                FontSize="13"
-                                ItemDisplayBinding="{Binding Visual}"
-                                SelectedIndexChanged="Filtro_Changed" />
-                    </VerticalStackLayout>
-
-                    <VerticalStackLayout Grid.Column="1"
-                                         Spacing="2">
-                        <Label Text="Medio de pago"
-                               Style="{StaticResource TextoNota}" />
-                        <Picker x:Name="PickerMedio"
-                                FontSize="13"
-                                SelectedIndexChanged="Filtro_Changed" />
-                    </VerticalStackLayout>
-                </Grid>
-
-                <Grid ColumnDefinitions="*,Auto"
-                      ColumnSpacing="8">
-                    <Entry x:Name="TxtPersona"
-                           Grid.Column="0"
-                           Placeholder="Buscar por persona…"
-                           TextColor="{StaticResource TextoPrincipal}"
-                           TextChanged="TxtPersona_TextChanged" />
-
-                    <Button Grid.Column="1"
-                            Text="Limpiar"
-                            Clicked="BtnLimpiar_Clicked"
-                            Style="{StaticResource BotonSecundario}"
-                            HeightRequest="40"
-                            Padding="12,6"
-                            FontSize="12.5" />
-                </Grid>
-
-            </VerticalStackLayout>
-        </Border>
-
         <!-- LISTA -->
         <CollectionView x:Name="Lista"
-                        Grid.Row="2"
+                        Grid.Row="0"
                         SelectionMode="None">
+
+            <!-- Cabecera y filtros dentro de la lista: se desplazan con ella (en
+                 horizontal no cabia todo y el boton tapaba los filtros) -->
+            <CollectionView.Header>
+                <VerticalStackLayout Spacing="10" Padding="0,0,0,10">
+                    <!-- CABECERA -->
+                    <VerticalStackLayout Spacing="3">
+                        <Label Text="RENDIMIENTOS"
+                               Style="{StaticResource Antetitulo}" />
+                        <Label x:Name="LblTotal"
+                               Text=""
+                               Style="{StaticResource SubtituloPagina}" />
+                        <Label x:Name="LblDesglose"
+                               Text=""
+                               Style="{StaticResource TextoNota}" />
+                    </VerticalStackLayout>
+
+                    <!-- FILTROS -->
+                    <Border BackgroundColor="{StaticResource Superficie}"
+                            Stroke="{StaticResource Borde}"
+                            Padding="12">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="12" />
+                        </Border.StrokeShape>
+
+                        <VerticalStackLayout Spacing="8">
+
+                            <Grid ColumnDefinitions="*,*"
+                                  ColumnSpacing="8">
+                                <VerticalStackLayout Grid.Column="0"
+                                                     Spacing="2">
+                                    <Label Text="Año"
+                                           Style="{StaticResource TextoNota}" />
+                                    <Picker x:Name="PickerAnio"
+                                            FontSize="13"
+                                            SelectedIndexChanged="Filtro_Changed" />
+                                </VerticalStackLayout>
+
+                                <VerticalStackLayout Grid.Column="1"
+                                                     Spacing="2">
+                                    <Label Text="Mes"
+                                           Style="{StaticResource TextoNota}" />
+                                    <Picker x:Name="PickerMes"
+                                            FontSize="13"
+                                            SelectedIndexChanged="Filtro_Changed" />
+                                </VerticalStackLayout>
+                            </Grid>
+
+                            <Grid ColumnDefinitions="*,*"
+                                  ColumnSpacing="8">
+                                <VerticalStackLayout Grid.Column="0"
+                                                     Spacing="2">
+                                    <Label Text="Congregación"
+                                           Style="{StaticResource TextoNota}" />
+                                    <Picker x:Name="PickerCongregacion"
+                                            FontSize="13"
+                                            ItemDisplayBinding="{Binding Visual}"
+                                            SelectedIndexChanged="Filtro_Changed" />
+                                </VerticalStackLayout>
+
+                                <VerticalStackLayout Grid.Column="1"
+                                                     Spacing="2">
+                                    <Label Text="Medio de pago"
+                                           Style="{StaticResource TextoNota}" />
+                                    <Picker x:Name="PickerMedio"
+                                            FontSize="13"
+                                            SelectedIndexChanged="Filtro_Changed" />
+                                </VerticalStackLayout>
+                            </Grid>
+
+                            <Grid ColumnDefinitions="*,Auto"
+                                  ColumnSpacing="8">
+                                <Entry x:Name="TxtPersona"
+                                       Grid.Column="0"
+                                       Placeholder="Buscar por persona…"
+                                       TextColor="{StaticResource TextoPrincipal}"
+                                       TextChanged="TxtPersona_TextChanged" />
+
+                                <Button Grid.Column="1"
+                                        Text="Limpiar"
+                                        Clicked="BtnLimpiar_Clicked"
+                                        Style="{StaticResource BotonSecundario}"
+                                        HeightRequest="40"
+                                        Padding="12,6"
+                                        FontSize="12.5" />
+                            </Grid>
+
+                        </VerticalStackLayout>
+                    </Border>
+                </VerticalStackLayout>
+            </CollectionView.Header>
+
             <CollectionView.EmptyView>
                 <VerticalStackLayout Padding="20,40"
                                      HorizontalOptions="Center"
@@ -198,7 +203,7 @@
         </CollectionView>
 
         <!-- ACCIÓN -->
-        <Button Grid.Row="3"
+        <Button Grid.Row="1"
                 Text="＋ Añadir registro"
                 Clicked="BtnNueva_Clicked"
                 Style="{StaticResource BotonPrincipal}" />

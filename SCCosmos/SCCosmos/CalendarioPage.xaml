@@ -228,7 +228,7 @@
 
                                     <!-- BOTÓN DEL OJO -->
                                     <ContentControl Margin="0,0,5,0" Visibility="{Binding VisibilidadVerVisita}">
-                                        <ui:Button Icon="{ui:SymbolIcon Eye24}" Appearance="Success" Padding="6" Cursor="Hand" Click="BtnVerVisita_Click" ToolTip="Ver datos de la congregación"/>
+                                        <ui:Button Icon="{ui:SymbolIcon ArrowRight24}" Appearance="Success" Padding="6" Cursor="Hand" Click="BtnVerVisita_Click" ToolTip="Ver datos de la congregación"/>
                                     </ContentControl>
 
                                     <ContentControl Margin="0,0,5,0" Visibility="{Binding VisibilidadAccionesSoloSC}">

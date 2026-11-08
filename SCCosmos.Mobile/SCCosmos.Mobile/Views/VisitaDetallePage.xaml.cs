@@ -61,6 +61,16 @@ public partial class VisitaDetallePage
     {
         InitializeComponent();
 
+        // El nombre de la congregación va en la barra de arriba, junto a la
+        // flecha atrás de Android (antes había una flecha hecha a mano).
+        LblCongregacion.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == Label.TextProperty.PropertyName)
+            {
+                Title = LblCongregacion.Text;
+            }
+        };
+
         _semana = semana;
 
         LblCongregacion.Text = semana.Congregacion ?? "";
@@ -835,6 +845,7 @@ public partial class VisitaDetallePage
                 MostrarCuadrosHoras = PerfilAccesoService.AccesoCompleto,
                 Grupo = p.Grupo,
                 NombreVisual = p.NombreVisual,
+                TextoBusqueda = TextoParaBuscar(p.Nombre, p.NombreVisual, p.NombreComun, p.NombreJWHub),
                 EtiquetaNombramiento = etiquetaNombramiento,
                 EtiquetaServicio = etiquetaServicio,
                 DatosMinisterio =
@@ -1123,9 +1134,62 @@ public partial class VisitaDetallePage
     /// Pinta las personas con un apartado claro para los inactivos (no
     /// cuentan en los totales ni en los grupos, pero se siguen viendo).
     /// </summary>
+    // Buscador de Ministerio: filtra la lista que se está viendo (con su grupo).
+    private List<PersonaVisitaUi> _listaMinisterioSinBuscar = new();
+    private string _textoBuscarMinisterio = "";
+    private CancellationTokenSource? _esperaBuscarMinisterio;
+
+    private async void BuscadorMinisterio_TextChanged(
+        object sender,
+        TextChangedEventArgs e)
+    {
+        _esperaBuscarMinisterio?.Cancel();
+        var espera = _esperaBuscarMinisterio = new CancellationTokenSource();
+
+        try
+        {
+            // Como en Windows: se filtra cuando deja de escribir.
+            await Task.Delay(250, espera.Token);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+
+        _textoBuscarMinisterio = TextoParaBuscar(e.NewTextValue);
+        MostrarPersonas(_listaMinisterioSinBuscar);
+    }
+
+    /// <summary>Texto en minúsculas y sin tildes, para comparar nombres.</summary>
+    private static string TextoParaBuscar(params string?[] textos)
+    {
+        string unido = string.Join(" ", textos.Where(t => !string.IsNullOrWhiteSpace(t)))
+            .Normalize(System.Text.NormalizationForm.FormD);
+        var resultado = new System.Text.StringBuilder(unido.Length);
+
+        foreach (char c in unido)
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
+            {
+                resultado.Append(char.ToLowerInvariant(c));
+            }
+        }
+
+        return resultado.ToString().Trim();
+    }
     private void MostrarPersonas(
         List<PersonaVisitaUi> personas)
     {
+        _listaMinisterioSinBuscar = personas;
+
+        if (_textoBuscarMinisterio.Length > 0)
+        {
+            string[] palabras = _textoBuscarMinisterio.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            // Se busca en todos los grupos: lo útil es encontrar a la persona, esté donde esté.
+            personas = _personasUi
+                .Where(p => !p.EsSeparador && palabras.All(palabra => p.TextoBusqueda.Contains(palabra, StringComparison.Ordinal)))
+                .ToList();
+        }
         var filas =
             new List<PersonaVisitaUi>();
 
@@ -3906,6 +3970,9 @@ public sealed class PersonaVisitaUi
 
     public int Grupo { get; set; }
     public string NombreVisual { get; set; } = "";
+
+    /// <summary>Nombres en minúsculas y sin tildes, para el buscador.</summary>
+    public string TextoBusqueda { get; set; } = "";
     public string DatosMinisterio { get; set; } = "";
     public bool MostrarDatosMinisterio =>
         !string.IsNullOrWhiteSpace(DatosMinisterio);

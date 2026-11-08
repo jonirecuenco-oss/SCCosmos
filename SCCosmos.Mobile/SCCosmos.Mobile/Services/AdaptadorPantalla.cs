@@ -24,6 +24,24 @@ public static class AdaptadorPantalla
 
     public const double AnchoGrande = 900;
 
+    /// <summary>
+    /// Ancho mínimo (dp) de cada tarjeta de una lista. Si en el ancho disponible
+    /// no caben tantas columnas, se usan menos (la visita, con sus seis cuadros de
+    /// meses, no cabe en tres columnas con el móvil tumbado). 0 = sin mínimo.
+    /// </summary>
+    public static readonly BindableProperty AnchoMinimoTarjetaProperty =
+        BindableProperty.CreateAttached(
+            "AnchoMinimoTarjeta",
+            typeof(double),
+            typeof(AdaptadorPantalla),
+            0d);
+
+    public static double GetAnchoMinimoTarjeta(BindableObject vista) =>
+        (double)vista.GetValue(AnchoMinimoTarjetaProperty);
+
+    public static void SetAnchoMinimoTarjeta(BindableObject vista, double valor) =>
+        vista.SetValue(AnchoMinimoTarjetaProperty, valor);
+
     private static readonly
         ConditionalWeakTable<Layout, object> PaddingsOriginales =
             new();
@@ -98,9 +116,19 @@ public static class AdaptadorPantalla
                 continue;
             }
 
+            int columnasLista = columnas;
+            double minimo = GetAnchoMinimoTarjeta(coleccion);
+
+            if (minimo > 0)
+            {
+                columnasLista = Math.Max(
+                    1,
+                    Math.Min(columnas, (int)(ancho / minimo)));
+            }
+
             AjustarColumnas(
                 coleccion,
-                columnas);
+                columnasLista);
         }
     }
 
@@ -191,22 +219,25 @@ public static class AdaptadorPantalla
             return;
         }
 
-        // Solo se tocan listas verticales sencillas.
-        if (coleccion.ItemsLayout is not null
-            &&
-            (coleccion.ItemsLayout
-                 is not LinearItemsLayout lineal
-             ||
-             lineal.Orientation !=
-                 ItemsLayoutOrientation.Vertical))
-        {
-            return;
-        }
-
+        // Si se adapta o no se decide con la disposición ORIGINAL. Antes se
+        // miraba la actual: al girar a horizontal pasa a ser una cuadrícula y,
+        // al volver a vertical, ya no parecía una lista normal y nunca se
+        // restauraba (la lista se quedaba en dos columnas).
         if (!DisposicionesOriginales.TryGetValue(
                 coleccion,
                 out object? guardado))
         {
+            if (coleccion.ItemsLayout is not null
+                &&
+                (coleccion.ItemsLayout
+                     is not LinearItemsLayout lineal
+                 ||
+                 lineal.Orientation !=
+                     ItemsLayoutOrientation.Vertical))
+            {
+                return;
+            }
+
             DisposicionesOriginales.Add(
                 coleccion,
                 coleccion.ItemsLayout!);
@@ -216,11 +247,21 @@ public static class AdaptadorPantalla
 
         if (columnas <= 1)
         {
-            coleccion.ItemsLayout =
-                (ItemsLayout?)guardado
-                ?? new LinearItemsLayout(
-                    ItemsLayoutOrientation.Vertical);
+            if (!ReferenceEquals(coleccion.ItemsLayout, guardado))
+            {
+                coleccion.ItemsLayout =
+                    (ItemsLayout?)guardado
+                    ?? new LinearItemsLayout(
+                        ItemsLayoutOrientation.Vertical);
+            }
 
+            return;
+        }
+
+        // Ya tiene esas columnas: no se rehace (cada cambio vuelve a pintar la lista).
+        if (coleccion.ItemsLayout is GridItemsLayout cuadricula
+            && cuadricula.Span == columnas)
+        {
             return;
         }
 
