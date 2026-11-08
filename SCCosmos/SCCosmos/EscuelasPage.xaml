@@ -34,14 +34,14 @@
 
     <Grid Background="Transparent">
 
-        <Grid Margin="30">
+        <Grid Margin="{StaticResource MargenPagina}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
         <!-- Cabecera -->
-        <TextBlock Grid.Row="0" Text="ESCUELAS" FontSize="26" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,25"/>
+        <TextBlock Grid.Row="0" Text="Escuelas" Style="{StaticResource TituloPagina}" Margin="0,0,0,20"/>
 
         <!-- Pestañas -->
         <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0">
@@ -136,7 +136,7 @@
                         <ui:SymbolIcon Grid.Column="0" Symbol="Library24" Foreground="#AAAAAA" Margin="0,0,8,0" VerticalAlignment="Center"/>
                         <TextBlock Grid.Column="1" Text="Cada clase es una escuela de una semana, de lunes a sábado. Ábrela para añadir estudiantes, repartir butacas y el programa de limpieza." Foreground="#AAAAAA" FontSize="14" VerticalAlignment="Center" TextWrapping="Wrap"/>
 
-                        <ui:Button x:Name="BtnNuevaEscuela" Grid.Column="2" Content="＋ Nueva escuela" Icon="{ui:SymbolIcon AddCircle24}" Appearance="Primary" Padding="14,8" Cursor="Hand" Click="BtnNuevaEscuela_Click"/>
+                        <ui:Button x:Name="BtnNuevaEscuela" Grid.Column="2" Content="Nueva escuela" Icon="{ui:SymbolIcon AddCircle24}" Appearance="Primary" Padding="14,8" Cursor="Hand" Click="BtnNuevaEscuela_Click"/>
                     </Grid>
 
                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
@@ -219,7 +219,7 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <ui:Button Grid.Column="0" Content="← Volver" Appearance="Secondary" Padding="14,8" Cursor="Hand" AutomationProperties.Name="Volver del detalle" Click="BtnCerrarDetalle_Click" Margin="0,0,16,0"/>
+                        <ui:Button Grid.Column="0" Content="Volver" Icon="{ui:SymbolIcon ArrowLeft24}" Appearance="Secondary" Padding="14,8" Cursor="Hand" AutomationProperties.Name="Volver del detalle" Click="BtnCerrarDetalle_Click" Margin="0,0,16,0"/>
                         <TextBlock Grid.Column="1" x:Name="TituloDetalleEscuela" FontSize="20" FontWeight="SemiBold" Foreground="White" TextWrapping="Wrap" VerticalAlignment="Center"/>
                     </Grid>
 
@@ -306,7 +306,7 @@
                         </Grid.ColumnDefinitions>
 
                         <ui:Button Grid.Column="0"
-                                   Content="← Volver"
+                                   Content="Volver" Icon="{ui:SymbolIcon ArrowLeft24}"
                                    Appearance="Secondary"
                                    Padding="14,8"
                                    Cursor="Hand"
@@ -471,7 +471,7 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
-                        <ui:Button Grid.Column="0" Content="← Volver" Appearance="Secondary" Padding="14,8" Cursor="Hand" AutomationProperties.Name="Volver de asientos" Click="BtnCerrarAsientos_Click" Margin="0,0,16,0"/>
+                        <ui:Button Grid.Column="0" Content="Volver" Icon="{ui:SymbolIcon ArrowLeft24}" Appearance="Secondary" Padding="14,8" Cursor="Hand" AutomationProperties.Name="Volver de asientos" Click="BtnCerrarAsientos_Click" Margin="0,0,16,0"/>
                         <TextBlock Grid.Column="1" x:Name="TituloAsientos" FontSize="20" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
 
                         <StackPanel Grid.Column="2" Orientation="Horizontal">
@@ -551,7 +551,7 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
-                        <ui:Button Grid.Column="0" Content="← Volver" Appearance="Secondary" Padding="14,8" Cursor="Hand" AutomationProperties.Name="Volver de limpieza" Click="BtnCerrarLimpieza_Click" Margin="0,0,16,0"/>
+                        <ui:Button Grid.Column="0" Content="Volver" Icon="{ui:SymbolIcon ArrowLeft24}" Appearance="Secondary" Padding="14,8" Cursor="Hand" AutomationProperties.Name="Volver de limpieza" Click="BtnCerrarLimpieza_Click" Margin="0,0,16,0"/>
 
                         <StackPanel Grid.Column="1">
                             <TextBlock Text="PROGRAMA DE LIMPIEZA" FontSize="20" FontWeight="SemiBold" Foreground="White"/>
@@ -640,7 +640,7 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
-                        <ui:Button Grid.Column="0" Content="← Volver" Appearance="Secondary" Padding="14,8" Cursor="Hand" AutomationProperties.Name="Volver de talleres" Click="BtnCerrarTalleres_Click" Margin="0,0,16,0"/>
+                        <ui:Button Grid.Column="0" Content="Volver" Icon="{ui:SymbolIcon ArrowLeft24}" Appearance="Secondary" Padding="14,8" Cursor="Hand" AutomationProperties.Name="Volver de talleres" Click="BtnCerrarTalleres_Click" Margin="0,0,16,0"/>
 
                         <StackPanel Grid.Column="1">
                             <TextBlock Text="TALLERES" FontSize="20" FontWeight="SemiBold" Foreground="White"/>
@@ -684,7 +684,7 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
-                        <ui:Button Grid.Column="0" Content="← Volver" Appearance="Secondary" Padding="14,8" Cursor="Hand" AutomationProperties.Name="Volver de horario" Click="BtnCerrarHorario_Click" Margin="0,0,16,0"/>
+                        <ui:Button Grid.Column="0" Content="Volver" Icon="{ui:SymbolIcon ArrowLeft24}" Appearance="Secondary" Padding="14,8" Cursor="Hand" AutomationProperties.Name="Volver de horario" Click="BtnCerrarHorario_Click" Margin="0,0,16,0"/>
 
                         <StackPanel Grid.Column="1">
                             <TextBlock Text="HORARIO" FontSize="20" FontWeight="SemiBold" Foreground="White"/>

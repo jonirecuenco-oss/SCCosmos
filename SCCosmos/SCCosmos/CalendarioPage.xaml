@@ -14,7 +14,7 @@
     </Page.Resources>
 
     <Grid>
-        <Grid Margin="20">
+        <Grid Margin="{StaticResource MargenPagina}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -29,7 +29,7 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <TextBlock Text="RUTA" FontSize="26" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+                <TextBlock Text="Ruta" Style="{StaticResource TituloPagina}" VerticalAlignment="Center"/>
 
                 <StackPanel Grid.Column="1"
                             Orientation="Horizontal"

@@ -204,13 +204,13 @@
     <Grid AllowDrop="True" PreviewDragOver="Root_PreviewDragOver">
         <!-- EL CONTENEDOR PRINCIPAL -->
         <ScrollViewer x:Name="MainScrollViewer" VerticalScrollBarVisibility="Auto">
-            <Grid Margin="30" Background="Transparent">
+            <Grid Margin="{StaticResource MargenPagina}" Background="Transparent">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Text="ASAMBLEAS" FontSize="26" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,25"/>
+                <TextBlock Grid.Row="0" Text="Asambleas" Style="{StaticResource TituloPagina}" Margin="0,0,0,20"/>
 
                 <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0">
 
