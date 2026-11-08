@@ -3,9 +3,9 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       Title="Actividad"
-      Foreground="White">
+      Foreground="{DynamicResource TextFillColorPrimaryBrush}">
 
-    <Grid Margin="30">
+    <Grid Margin="{StaticResource MargenPagina}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -13,16 +13,16 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" Margin="0,0,0,16">
-            <TextBlock Text="ACTIVIDAD" FontSize="28" FontWeight="Bold"/>
+            <TextBlock Text="Actividad" Style="{StaticResource TituloPagina}"/>
             <TextBlock Text="Todo lo que se hace en SCCosmos, en lenguaje natural: quién (dispositivo y perfil), cuándo y qué."
-                       Foreground="#AAAAAA" FontSize="14" TextWrapping="Wrap"/>
+                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="14" TextWrapping="Wrap"/>
         </StackPanel>
 
         <StackPanel Grid.Row="1"
                     Orientation="Horizontal"
                     Margin="0,0,0,14">
             <TextBlock Text="Categoría:"
-                       Foreground="#CCC"
+                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                        VerticalAlignment="Center"
                        Margin="0,0,8,0"/>
             <ComboBox x:Name="CmbCategoria"
@@ -33,7 +33,7 @@
                        Margin="14,0,0,0"
                        Click="BtnActualizar_Click"/>
             <TextBlock x:Name="LblResumen"
-                       Foreground="#9299A3"
+                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                        FontSize="13"
                        VerticalAlignment="Center"
                        Margin="16,0,0,0"/>
@@ -47,8 +47,8 @@
 
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <Border Background="#232833"
-                            BorderBrush="#343B45"
+                    <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                             BorderThickness="1"
                             CornerRadius="12"
                             Padding="14,12"
@@ -61,7 +61,7 @@
                                        FontSize="13"
                                        FontWeight="SemiBold"/>
                             <TextBlock Text="{Binding Descripcion}"
-                                       Foreground="White"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                        FontSize="15"
                                        TextWrapping="Wrap"
                                        Margin="0,4,0,0"/>

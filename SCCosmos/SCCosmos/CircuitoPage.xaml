@@ -3,9 +3,9 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       xmlns:local="clr-namespace:SCCosmos"
-      Title="CircuitoPage" Background="#1E1E1E">
+      Title="CircuitoPage" Foreground="{DynamicResource TextFillColorPrimaryBrush}">
 
-    <Grid Margin="30" Background="Transparent">
+    <Grid Margin="{StaticResource MargenPagina}" Background="Transparent">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -13,7 +13,7 @@
 
         <!-- CABECERA Y BOTÓN KMZ FLOTANTE -->
         <Grid Grid.Row="0" Margin="0,0,0,15">
-            <TextBlock Text="CIRCUITO" FontSize="26" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+            <TextBlock Text="Circuito" Style="{StaticResource TituloPagina}" VerticalAlignment="Center"/>
             <ui:Button Content="Subir archivo .KMZ" Icon="{ui:SymbolIcon Map24}" Appearance="Secondary" HorizontalAlignment="Right" VerticalAlignment="Center" Click="BtnSubirKMZ_Click"/>
         </Grid>
 
@@ -21,7 +21,7 @@
         <TabControl Grid.Row="1" SelectionChanged="TabControl_SelectionChanged" Background="Transparent" BorderThickness="0">
 
             <!-- PESTAÑA 1: CONGREGACIONES Y SECCIONES -->
-            <TabItem Header="Congregaciones" FontSize="16" Foreground="White">
+            <TabItem Header="Congregaciones" FontSize="16" Foreground="{DynamicResource TextFillColorPrimaryBrush}">
                 <Grid Margin="0,15,0,0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -29,13 +29,13 @@
                     </Grid.RowDefinitions>
 
                     <!-- BLOQUE SECCIONES -->
-                    <Border Grid.Row="0" Background="#252528" Padding="15" CornerRadius="5" Margin="0,0,0,15">
+                    <Border Grid.Row="0" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" Padding="15" CornerRadius="5" Margin="0,0,0,15">
                         <StackPanel>
-                            <TextBlock Text="SECCIONES DEL CIRCUITO" FontWeight="SemiBold" FontSize="16" Foreground="#4BA3E3" Margin="0,0,0,10"/>
+                            <TextBlock Text="SECCIONES DEL CIRCUITO" FontWeight="SemiBold" FontSize="16" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Margin="0,0,0,10"/>
 
                             <DataGrid x:Name="TablaSecciones" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column" 
-                                      Background="Transparent" RowBackground="Transparent" BorderBrush="#20FFFFFF" BorderThickness="1"
-                                      HorizontalGridLinesBrush="#20FFFFFF" GridLinesVisibility="Horizontal" Margin="0,0,0,15" RowHeight="34">
+                                      Background="Transparent" RowBackground="Transparent" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" BorderThickness="1"
+                                      HorizontalGridLinesBrush="{DynamicResource DividerStrokeColorDefaultBrush}" GridLinesVisibility="Horizontal" Margin="0,0,0,15" RowHeight="34">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Sección" Binding="{Binding Nombre}" Width="80"/>
                                     <DataGridTextColumn Header="Lugar de Asamblea" Binding="{Binding LugarAsamblea}" Width="*"/>
@@ -50,9 +50,9 @@
                             </DataGrid>
 
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Letra:" Foreground="White" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                <TextBlock Text="Letra:" Foreground="{DynamicResource TextFillColorPrimaryBrush}" VerticalAlignment="Center" Margin="0,0,5,0"/>
                                 <TextBox x:Name="TxtLetraSeccion" Width="50" Margin="0,0,15,0" Padding="6" MaxLength="5"/>
-                                <TextBlock Text="Lugar:" Foreground="White" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                <TextBlock Text="Lugar:" Foreground="{DynamicResource TextFillColorPrimaryBrush}" VerticalAlignment="Center" Margin="0,0,5,0"/>
                                 <TextBox x:Name="TxtLugarAsamblea" Width="250" Margin="0,0,15,0" Padding="6"/>
                                 <ui:Button Content="Añadir sección" Appearance="Primary" Cursor="Hand" Click="BtnCrearSeccion_Click"/>
                             </StackPanel>
@@ -60,7 +60,7 @@
                     </Border>
 
                     <!-- BLOQUE CONGREGACIONES -->
-                    <Border Grid.Row="1" Background="#252528" Padding="15" CornerRadius="5">
+                    <Border Grid.Row="1" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" Padding="15" CornerRadius="5">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -68,13 +68,13 @@
                             </Grid.RowDefinitions>
 
                             <Grid Grid.Row="0" Margin="0,0,0,10">
-                                <TextBlock Text="LISTADO DE CONGREGACIONES" FontWeight="SemiBold" FontSize="16" Foreground="#4BA3E3" VerticalAlignment="Center"/>
+                                <TextBlock Text="LISTADO DE CONGREGACIONES" FontWeight="SemiBold" FontSize="16" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" VerticalAlignment="Center"/>
                                 <ui:Button Content="Añadir congregación" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" HorizontalAlignment="Right" Click="BtnAnadirCongregacion_Click"/>
                             </Grid>
 
                             <DataGrid x:Name="TablaCongregaciones" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column" SelectionMode="Single" IsReadOnly="True" 
-                                      GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#30FFFFFF" BorderThickness="1" BorderBrush="#20FFFFFF" 
-                                      Background="Transparent" RowBackground="Transparent" Foreground="White" RowHeight="34">
+                                      GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource DividerStrokeColorDefaultBrush}" BorderThickness="1" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" 
+                                      Background="Transparent" RowBackground="Transparent" Foreground="{DynamicResource TextFillColorPrimaryBrush}" RowHeight="34">
 
                                 <!-- AHORA REACCIONA A UN SOLO CLIC -->
                                 <DataGrid.RowStyle>
@@ -84,7 +84,7 @@
                                         <Setter Property="Background" Value="Transparent"/>
                                         <Style.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Background" Value="#25FFFFFF"/>
+                                                <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}"/>
                                             </Trigger>
                                         </Style.Triggers>
                                     </Style>
@@ -126,7 +126,7 @@
             </TabItem>
 
             <!-- PESTAÑA 2: MAPA -->
-            <TabItem Header="Mapa" FontSize="16" Foreground="White">
+            <TabItem Header="Mapa" FontSize="16" Foreground="{DynamicResource TextFillColorPrimaryBrush}">
                 <Border CornerRadius="5" Margin="0,15,0,0" ClipToBounds="True">
                     <WebBrowser x:Name="MapaWebBrowser"/>
                 </Border>

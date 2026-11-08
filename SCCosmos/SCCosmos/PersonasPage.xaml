@@ -61,8 +61,8 @@
                                             <TextBlock Text="Congregación" Style="{StaticResource EtiquetaCampo}"/>
                                             <ui:Button x:Name="BtnFiltroCongre" Content="Todas" Width="130" Height="36" Click="BtnFiltroCongre_Click" Appearance="Secondary" HorizontalContentAlignment="Stretch" ContentTemplate="{StaticResource ContenidoDesplegable}"/>
                                             <Popup x:Name="PopFiltroCongre" StaysOpen="False" PlacementTarget="{Binding ElementName=BtnFiltroCongre}" Placement="Bottom">
-                                                <Border Background="#2D2D30" BorderBrush="#0078D4" BorderThickness="1" CornerRadius="4" Padding="5" MaxHeight="250">
-                                                    <ListBox x:Name="LstCongre" SelectionMode="Multiple" SelectionChanged="LstFiltro_SelectionChanged" Background="Transparent" Foreground="White" BorderThickness="0"/>
+                                                <Border Background="{DynamicResource FlyoutBackground}" BorderBrush="#0078D4" BorderThickness="1" CornerRadius="4" Padding="5" MaxHeight="250">
+                                                    <ListBox x:Name="LstCongre" SelectionMode="Multiple" SelectionChanged="LstFiltro_SelectionChanged" Background="Transparent" BorderThickness="0"/>
                                                 </Border>
                                             </Popup>
                                         </StackPanel>
@@ -82,8 +82,8 @@
                                             <TextBlock Text="Servicio" Style="{StaticResource EtiquetaCampo}"/>
                                             <ui:Button x:Name="BtnFiltroServicio" Content="Todos" Width="130" Height="36" Click="BtnFiltroServicio_Click" Appearance="Secondary" HorizontalContentAlignment="Stretch" ContentTemplate="{StaticResource ContenidoDesplegable}"/>
                                             <Popup x:Name="PopFiltroServicio" StaysOpen="False" PlacementTarget="{Binding ElementName=BtnFiltroServicio}" Placement="Bottom">
-                                                <Border Background="#2D2D30" BorderBrush="#0078D4" BorderThickness="1" CornerRadius="4" Padding="5">
-                                                    <ListBox x:Name="LstServicio" SelectionMode="Multiple" SelectionChanged="LstFiltro_SelectionChanged" Background="Transparent" Foreground="White" BorderThickness="0"/>
+                                                <Border Background="{DynamicResource FlyoutBackground}" BorderBrush="#0078D4" BorderThickness="1" CornerRadius="4" Padding="5">
+                                                    <ListBox x:Name="LstServicio" SelectionMode="Multiple" SelectionChanged="LstFiltro_SelectionChanged" Background="Transparent" BorderThickness="0"/>
                                                 </Border>
                                             </Popup>
                                         </StackPanel>
@@ -93,8 +93,8 @@
                                             <TextBlock Text="Solicitudes" Style="{StaticResource EtiquetaCampo}"/>
                                             <ui:Button x:Name="BtnFiltroSols" Content="Todas" Width="110" Height="36" Click="BtnFiltroSols_Click" Appearance="Secondary" HorizontalContentAlignment="Stretch" ContentTemplate="{StaticResource ContenidoDesplegable}"/>
                                             <Popup x:Name="PopFiltroSols" StaysOpen="False" PlacementTarget="{Binding ElementName=BtnFiltroSols}" Placement="Bottom">
-                                                <Border Background="#2D2D30" BorderBrush="#0078D4" BorderThickness="1" CornerRadius="4" Padding="5">
-                                                    <ListBox x:Name="LstSols" SelectionMode="Multiple" SelectionChanged="LstFiltro_SelectionChanged" Background="Transparent" Foreground="White" BorderThickness="0"/>
+                                                <Border Background="{DynamicResource FlyoutBackground}" BorderBrush="#0078D4" BorderThickness="1" CornerRadius="4" Padding="5">
+                                                    <ListBox x:Name="LstSols" SelectionMode="Multiple" SelectionChanged="LstFiltro_SelectionChanged" Background="Transparent" BorderThickness="0"/>
                                                 </Border>
                                             </Popup>
                                         </StackPanel>
@@ -104,8 +104,8 @@
                                             <TextBlock Text="Privilegios" Style="{StaticResource EtiquetaCampo}"/>
                                             <ui:Button x:Name="BtnFiltroPrivs" Content="Todos" Width="130" Height="36" Click="BtnFiltroPrivs_Click" Appearance="Secondary" HorizontalContentAlignment="Stretch" ContentTemplate="{StaticResource ContenidoDesplegable}"/>
                                             <Popup x:Name="PopFiltroPrivs" StaysOpen="False" PlacementTarget="{Binding ElementName=BtnFiltroPrivs}" Placement="Bottom">
-                                                <Border Background="#2D2D30" BorderBrush="#0078D4" BorderThickness="1" CornerRadius="4" Padding="5" MaxHeight="250">
-                                                    <ListBox x:Name="LstPrivs" SelectionMode="Multiple" SelectionChanged="LstFiltro_SelectionChanged" Background="Transparent" Foreground="White" BorderThickness="0"/>
+                                                <Border Background="{DynamicResource FlyoutBackground}" BorderBrush="#0078D4" BorderThickness="1" CornerRadius="4" Padding="5" MaxHeight="250">
+                                                    <ListBox x:Name="LstPrivs" SelectionMode="Multiple" SelectionChanged="LstFiltro_SelectionChanged" Background="Transparent" BorderThickness="0"/>
                                                 </Border>
                                             </Popup>
                                         </StackPanel>
@@ -137,9 +137,9 @@
                                         <ui:Button x:Name="BtnColumnas" Content="Columnas" Icon="{ui:SymbolIcon List24}" Appearance="Secondary" Height="36" Click="BtnColumnas_Click"/>
 
                                         <Popup x:Name="PopupColumnas" StaysOpen="False" PlacementTarget="{Binding ElementName=BtnColumnas}" Placement="Bottom" VerticalOffset="5" AllowsTransparency="True" PopupAnimation="Fade">
-                                            <Border Background="#2D2D30" BorderBrush="#0078D4" BorderThickness="1" CornerRadius="8" Padding="15">
+                                            <Border Background="{DynamicResource FlyoutBackground}" BorderBrush="#0078D4" BorderThickness="1" CornerRadius="8" Padding="15">
                                                 <StackPanel x:Name="PanelColumnas">
-                                                    <TextBlock Text="Mostrar u Ocultar" Foreground="#AAAAAA" FontWeight="Bold" Margin="0,0,0,10"/>
+                                                    <TextBlock Text="Mostrar u Ocultar" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontWeight="Bold" Margin="0,0,0,10"/>
                                                     <CheckBox x:Name="ChkColCongregacion" Content="Congregación" Tag="ColCongregacion" Checked="ChkCol_Changed" Unchecked="ChkCol_Changed" Margin="0,0,0,4"/>
                                                     <CheckBox x:Name="ChkColFechaNacimiento" Content="Fecha de Nacimiento" Tag="ColFechaNacimiento" Checked="ChkCol_Changed" Unchecked="ChkCol_Changed" Margin="0,0,0,4"/>
                                                     <CheckBox x:Name="ChkColFechaBautismo" Content="Fecha de Bautismo" Tag="ColFechaBautismo" Checked="ChkCol_Changed" Unchecked="ChkCol_Changed" Margin="0,0,0,4"/>
@@ -231,7 +231,7 @@
 
                     <!-- PESTAÑA 2: MAPA -->
                     <TabItem Header="Mapa" FontSize="16">
-                        <Border BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="8" Margin="0,15,0,0" ClipToBounds="True">
+                        <Border BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Margin="0,15,0,0" ClipToBounds="True">
                             <WebBrowser x:Name="MapaWebBrowser" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
                         </Border>
                     </TabItem>
@@ -239,7 +239,7 @@
                     <!-- PESTAÑA 3: NOMBRAMIENTOS Y BAJAS -->
                     <TabItem x:Name="TabNombramientos" Header="Nombramientos y bajas" FontSize="16">
                         <Grid Margin="0,15,0,0">
-                            <DataGrid x:Name="TablaNombramientos" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column" SelectionMode="Single" IsReadOnly="True" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#20FFFFFF" BorderThickness="1" BorderBrush="#3E3E42" Background="Transparent" RowBackground="Transparent" AlternatingRowBackground="Transparent">
+                            <DataGrid x:Name="TablaNombramientos" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column" SelectionMode="Single" IsReadOnly="True" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource DividerStrokeColorDefaultBrush}" BorderThickness="1" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" Background="Transparent" RowBackground="Transparent" AlternatingRowBackground="Transparent">
 
                                 <DataGrid.GroupStyle>
                                     <GroupStyle>
@@ -249,8 +249,8 @@
                                                     <Setter.Value>
                                                         <ControlTemplate TargetType="{x:Type GroupItem}">
                                                             <StackPanel>
-                                                                <Border Background="#1AFFFFFF" Padding="10,8" Margin="0,15,0,0" CornerRadius="4,4,0,0">
-                                                                    <TextBlock Text="{Binding Name}" FontWeight="Bold" Foreground="#4BA3E3" FontSize="16"/>
+                                                                <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" Padding="10,8" Margin="0,15,0,0" CornerRadius="4,4,0,0">
+                                                                    <TextBlock Text="{Binding Name}" FontWeight="Bold" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" FontSize="16"/>
                                                                 </Border>
                                                                 <ItemsPresenter />
                                                             </StackPanel>
@@ -265,12 +265,12 @@
                                 <DataGrid.RowStyle>
                                     <Style TargetType="DataGridRow">
                                         <Setter Property="Background" Value="Transparent"/>
-                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
                                         <Setter Property="BorderThickness" Value="0"/>
                                         <Setter Property="MinHeight" Value="45"/>
                                         <Style.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Background" Value="#10FFFFFF"/>
+                                                <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}"/>
                                             </Trigger>
                                         </Style.Triggers>
                                     </Style>
@@ -280,7 +280,7 @@
                                     <DataGridTextColumn Header="Hermano" Binding="{Binding Hermano}" Width="4*" FontWeight="Bold" FontSize="15"/>
                                     <DataGridTextColumn Header="Tipo de recomendación" Binding="{Binding Tipo}" Width="2*" Foreground="#EBCB8B"/>
                                     <DataGridTextColumn Header="Recomendado como" Binding="{Binding RecomendadoComo}" Width="2*" Foreground="#55C855" FontWeight="SemiBold"/>
-                                    <DataGridTextColumn Header="Fecha o Próxima Visita" Binding="{Binding Fecha}" Width="2*" Foreground="#AAAAAA"/>
+                                    <DataGridTextColumn Header="Fecha o Próxima Visita" Binding="{Binding Fecha}" Width="2*" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
 
                                     <DataGridTemplateColumn Header="Archivos" Width="2*">
                                         <DataGridTemplateColumn.CellTemplate>
@@ -333,7 +333,7 @@
                                 </DataGrid.Columns>
                             </DataGrid>
 
-                            <TextBlock x:Name="TxtSinNombramientos" Text="No hay recomendaciones de nombramientos descargadas." Foreground="#777" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
+                            <TextBlock x:Name="TxtSinNombramientos" Text="No hay recomendaciones de nombramientos descargadas." Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
                         </Grid>
                     </TabItem>
 

@@ -43,12 +43,12 @@ namespace SCCosmos
             if (ejecutando)
             {
                 btnDescargar.IsEnabled = false;
-                btnDescargar.Content = "DESCARGANDO... POR FAVOR, ESPERE";
+                btnDescargar.Content = "Descargando... Por favor, espere";
             }
             else
             {
                 btnDescargar.IsEnabled = true;
-                btnDescargar.Content = "INICIAR DESCARGAS";
+                btnDescargar.Content = "Iniciar descargas";
             }
         }
 

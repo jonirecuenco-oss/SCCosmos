@@ -7,10 +7,10 @@
       mc:Ignorable="d" 
       d:DesignHeight="600" d:DesignWidth="1000"
       Title="Descargas"
-      Background="Transparent">
+      Background="Transparent" Foreground="{DynamicResource TextFillColorPrimaryBrush}">
 
     <!-- Contenedor principal -->
-    <Grid Margin="30">
+    <Grid Margin="{StaticResource MargenPagina}">
         <Grid.RowDefinitions>
             <!-- Título de la página -->
             <RowDefinition Height="Auto"/>
@@ -18,7 +18,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="DESCARGAS" FontSize="24" FontWeight="Bold" Margin="0,0,0,20" Foreground="White"/>
+        <TextBlock Grid.Row="0" Text="Descargas" Style="{StaticResource TituloPagina}" Margin="0,0,0,20"/>
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
@@ -40,49 +40,49 @@
                 <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel>
                         <!-- PROGRAMAS DE BETEL -->
-                        <Border BorderBrush="#444444" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,20" Background="#2D2D30">
+                        <Border BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,20" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
                             <StackPanel>
                                 <TextBlock Text="PROGRAMAS DE BETEL" FontWeight="Bold" FontSize="16" Foreground="#569CD6" Margin="0,0,0,15"/>
                                 <CheckBox x:Name="chkBetelAdoracion" IsChecked="True" Margin="0,0,0,10">
-                                    <TextBlock Text="Adoración matutina" FontSize="14" Foreground="#EEEEEE" TextWrapping="Wrap"/>
+                                    <TextBlock Text="Adoración matutina" FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}" TextWrapping="Wrap"/>
                                 </CheckBox>
                             </StackPanel>
                         </Border>
 
                         <!-- PROGRAMAS TEOCRÁTICOS -->
-                        <Border BorderBrush="#444444" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,20" Background="#2D2D30">
+                        <Border BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,20" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
                             <StackPanel>
                                 <TextBlock Text="PROGRAMAS TEOCRÁTICOS" FontWeight="Bold" FontSize="16" Foreground="#569CD6" Margin="0,0,0,15"/>
                                 <CheckBox x:Name="chkTeoDiscursos" IsChecked="True" Margin="0,0,0,12">
-                                    <TextBlock Text="Discursos públicos" FontSize="14" Foreground="#EEEEEE" TextWrapping="Wrap"/>
+                                    <TextBlock Text="Discursos públicos" FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}" TextWrapping="Wrap"/>
                                 </CheckBox>
                                 <CheckBox x:Name="chkTeoAsambleaSucursal" IsChecked="True" Margin="0,0,0,12">
-                                    <TextBlock Text="AC-BR" FontSize="14" Foreground="#EEEEEE" TextWrapping="Wrap"/>
+                                    <TextBlock Text="AC-BR" FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}" TextWrapping="Wrap"/>
                                 </CheckBox>
                                 <CheckBox x:Name="chkTeoAsambleaSuper" IsChecked="True" Margin="0,0,0,12">
-                                    <TextBlock Text="AC-CO" FontSize="14" Foreground="#EEEEEE" TextWrapping="Wrap"/>
+                                    <TextBlock Text="AC-CO" FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}" TextWrapping="Wrap"/>
                                 </CheckBox>
                                 <CheckBox x:Name="chkTeoAsambleaRegional" IsChecked="True" Margin="0,0,0,12">
-                                    <TextBlock Text="Asamblea regional" FontSize="14" Foreground="#EEEEEE" TextWrapping="Wrap"/>
+                                    <TextBlock Text="Asamblea regional" FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}" TextWrapping="Wrap"/>
                                 </CheckBox>
                             </StackPanel>
                         </Border>
 
                         <!-- JW.ORG -->
-                        <Border BorderBrush="#444444" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,20" Background="#2D2D30">
+                        <Border BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,20" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
                             <StackPanel>
                                 <TextBlock Text="JW.ORG" FontWeight="Bold" FontSize="16" Foreground="#569CD6" Margin="0,0,0,15"/>
                                 <CheckBox x:Name="chkJwAdoracion" IsChecked="True" Margin="0,0,0,12">
-                                    <TextBlock Text="Adoración matutina" FontSize="14" Foreground="#EEEEEE" TextWrapping="Wrap"/>
+                                    <TextBlock Text="Adoración matutina" FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}" TextWrapping="Wrap"/>
                                 </CheckBox>
                                 <CheckBox x:Name="chkJwDiscursos" IsChecked="True" Margin="0,0,0,12">
-                                    <TextBlock Text="Discursos JW Broadcasting" FontSize="14" Foreground="#EEEEEE" TextWrapping="Wrap"/>
+                                    <TextBlock Text="Discursos JW Broadcasting" FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}" TextWrapping="Wrap"/>
                                 </CheckBox>
                                 <CheckBox x:Name="chkJwGalaad" IsChecked="True" Margin="0,0,0,12">
-                                    <TextBlock Text="Graduación de Galaad" FontSize="14" Foreground="#EEEEEE" TextWrapping="Wrap"/>
+                                    <TextBlock Text="Graduación de Galaad" FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}" TextWrapping="Wrap"/>
                                 </CheckBox>
                                 <CheckBox x:Name="chkJwReunionAnual" IsChecked="True" Margin="0,0,0,12">
-                                    <TextBlock Text="Reunión anual" FontSize="14" Foreground="#EEEEEE" TextWrapping="Wrap"/>
+                                    <TextBlock Text="Reunión anual" FontSize="14" Foreground="{DynamicResource TextFillColorPrimaryBrush}" TextWrapping="Wrap"/>
                                 </CheckBox>
                             </StackPanel>
                         </Border>
@@ -90,22 +90,13 @@
                 </ScrollViewer>
 
                 <!-- BOTÓN DE INICIO DE DESCARGAS -->
-                <Button Grid.Row="1" x:Name="btnDescargar" Content="INICIAR DESCARGAS" 
-                        Height="50" Margin="0,10,0,0" FontSize="16" FontWeight="Bold" 
-                        Background="#0078D7" Foreground="White" BorderThickness="0"
-                        Cursor="Hand" Click="btnDescargar_Click">
-                    <Button.Resources>
-                        <Style TargetType="Border">
-                            <Setter Property="CornerRadius" Value="5"/>
-                        </Style>
-                    </Button.Resources>
-                </Button>
+                <ui:Button Grid.Row="1" x:Name="btnDescargar" Content="Iniciar descargas" Icon="{ui:SymbolIcon ArrowDownload24}" Appearance="Primary" HorizontalAlignment="Stretch" Height="44" Margin="0,10,0,0" FontSize="15" Cursor="Hand" Click="btnDescargar_Click"/>
             </Grid>
 
             <!-- ============================================== -->
             <!-- COLUMNA DERECHA: EXPLORADOR DE ARCHIVOS        -->
             <!-- ============================================== -->
-            <Border Grid.Column="1" Background="#212124" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="6" Padding="15">
+            <Border Grid.Column="1" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="6" Padding="15">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -116,7 +107,7 @@
                         <TextBlock Text="ARCHIVOS DESCARGADOS" FontSize="16" FontWeight="Bold" Foreground="#EBCB8B" VerticalAlignment="Center"/>
 
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                            <ui:Button Icon="{ui:SymbolIcon ArrowClockwise24}" Appearance="Transparent" ToolTip="Actualizar" Click="BtnActualizarExplorador_Click" Padding="4" Margin="0,0,5,0" Cursor="Hand" Foreground="#AAAAAA"/>
+                            <ui:Button Icon="{ui:SymbolIcon ArrowClockwise24}" Appearance="Transparent" ToolTip="Actualizar" Click="BtnActualizarExplorador_Click" Padding="4" Margin="0,0,5,0" Cursor="Hand"/>
                             <ui:Button Icon="{ui:SymbolIcon FolderOpen24}" Content="Abrir carpeta" Appearance="Secondary" Click="BtnAbrirCarpeta_Click" Cursor="Hand"/>
                         </StackPanel>
                     </Grid>
@@ -129,9 +120,9 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <TreeView x:Name="ArbolArchivosCol1" Grid.Column="0" Background="Transparent" BorderThickness="0" Foreground="White" Margin="0,0,5,0" ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
-                        <TreeView x:Name="ArbolArchivosCol2" Grid.Column="1" Background="Transparent" BorderThickness="0" Foreground="White" Margin="5,0,5,0" ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
-                        <TreeView x:Name="ArbolArchivosCol3" Grid.Column="2" Background="Transparent" BorderThickness="0" Foreground="White" Margin="5,0,0,0" ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
+                        <TreeView x:Name="ArbolArchivosCol1" Grid.Column="0" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,5,0" ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
+                        <TreeView x:Name="ArbolArchivosCol2" Grid.Column="1" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="5,0,5,0" ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
+                        <TreeView x:Name="ArbolArchivosCol3" Grid.Column="2" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="5,0,0,0" ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
                     </Grid>
                 </Grid>
             </Border>

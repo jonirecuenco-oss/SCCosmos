@@ -3,14 +3,14 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       xmlns:local="clr-namespace:SCCosmos"
-      Title="RscPage" Background="#1E1E1E">
+      Title="RscPage" Foreground="{DynamicResource TextFillColorPrimaryBrush}">
 
     <Grid Background="Transparent">
 
         <!-- ============================================================ -->
         <!-- VISTA PRINCIPAL: LISTA Y BUSCADOR POR DÍA                    -->
         <!-- ============================================================ -->
-        <Grid Margin="30">
+        <Grid Margin="{StaticResource MargenPagina}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -25,13 +25,13 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel>
-                    <TextBlock Text="RSC" FontSize="26" FontWeight="SemiBold" Foreground="White"/>
+                    <TextBlock Text="RSC" Style="{StaticResource TituloPagina}"/>
                     <TextBlock Text="Reuniones para el Servicio del Campo · asistentes, arreglos y grupos de predicación"
-                               FontSize="13" Foreground="#8A9199" Margin="0,4,0,0"/>
+                               FontSize="13" Foreground="{DynamicResource TextFillColorTertiaryBrush}" Margin="0,4,0,0"/>
                 </StackPanel>
 
-                <ui:Button Grid.Column="1"
-                           Content="＋ Nueva RSC"
+                <ui:Button Icon="{ui:SymbolIcon Add24}" Grid.Column="1"
+                           Content="Nueva RSC"
                            VerticalAlignment="Center"
                            AutomationProperties.Name="Nueva RSC"
                            Click="BtnNuevaRsc_Click"/>
@@ -40,16 +40,13 @@
             <!-- Filtro por día -->
             <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,14">
                 <TextBlock Text="Ver un día:"
-                           Foreground="#AAAAAA"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                            VerticalAlignment="Center"
                            Margin="0,0,10,0"/>
 
                 <DatePicker x:Name="PckFiltroDia"
                             Width="170"
                             Padding="5"
-                            Background="#1E1E1E"
-                            Foreground="White"
-                            BorderBrush="#444"
                             SelectedDateChanged="PckFiltroDia_SelectedDateChanged"/>
 
                 <ui:Button x:Name="BtnVerTodas"
@@ -61,7 +58,7 @@
                            Click="BtnVerTodas_Click"/>
 
                 <TextBlock x:Name="TxtInfoFiltro"
-                           Foreground="#7E858F"
+                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                            FontSize="12"
                            VerticalAlignment="Center"
                            Margin="14,0,0,0"/>
@@ -77,11 +74,11 @@
         <!-- EDITOR (PÁGINA COMPLETA)                                     -->
         <!-- ============================================================ -->
         <Grid x:Name="OverlayEditor"
-              Background="#0F1114"
+              Background="Transparent"
               Visibility="Collapsed">
 
-            <Border Background="#171A20"
-                    BorderBrush="#2A2F38"
+            <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                     BorderThickness="0"
                     CornerRadius="0"
                     Margin="0"
@@ -102,8 +99,8 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
-                        <ui:Button Grid.Column="0"
-                                   Content="← Volver"
+                        <ui:Button Icon="{ui:SymbolIcon ArrowLeft24}" Grid.Column="0"
+                                   Content="Volver"
                                    Appearance="Secondary"
                                    Padding="14,8"
                                    Cursor="Hand"
@@ -115,7 +112,7 @@
                                    x:Name="TxtTituloEditor"
                                    FontSize="20"
                                    FontWeight="SemiBold"
-                                   Foreground="White"
+                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                    VerticalAlignment="Center"
                                    TextWrapping="Wrap"/>
 
@@ -131,7 +128,7 @@
                     <!-- Arreglos ya apuntados en el programa de la visita -->
                     <Border Grid.Row="1"
                             x:Name="BordeArreglos"
-                            Background="#141B24"
+                            Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
                             BorderBrush="#2C4257"
                             BorderThickness="1"
                             CornerRadius="10"
@@ -164,13 +161,13 @@
                                                FontWeight="SemiBold"
                                                Foreground="#8FB8E0"/>
                                     <TextBlock x:Name="TxtContadorAsistentes"
-                                               Foreground="#7E858F"
+                                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                                Margin="12,1,0,0"
                                                FontSize="13"/>
                                 </StackPanel>
 
-                                <ui:Button Grid.Column="1"
-                                           Content="＋ Añadir personas"
+                                <ui:Button Icon="{ui:SymbolIcon Add24}" Grid.Column="1"
+                                           Content="Añadir personas"
                                            Appearance="Secondary"
                                            Padding="12,6"
                                            Cursor="Hand"
@@ -182,7 +179,7 @@
 
                             <TextBlock x:Name="TxtSinAsistentes"
                                        Text="Todavía no hay nadie. Pulsa «＋ Añadir personas» para marcar quién asistió a la RSC."
-                                       Foreground="#7E858F"
+                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                        Margin="0,6,0,0"
                                        TextWrapping="Wrap"/>
 
@@ -199,8 +196,8 @@
                                            Foreground="#8FB8E0"
                                            VerticalAlignment="Center"/>
 
-                                <ui:Button Grid.Column="1"
-                                           Content="⚙ Formar grupos"
+                                <ui:Button Icon="{ui:SymbolIcon PeopleTeam24}" Grid.Column="1"
+                                           Content="Formar grupos"
                                            Padding="14,6"
                                            Cursor="Hand"
                                            AutomationProperties.Name="Formar grupos"
@@ -208,7 +205,7 @@
                             </Grid>
 
                             <TextBlock x:Name="TxtResumenGrupos"
-                                       Foreground="#7E858F"
+                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                        FontSize="13"
                                        Margin="0,0,0,8"/>
 
@@ -223,7 +220,7 @@
 
                             <TextBlock x:Name="TxtSinGrupos"
                                        Text="Los grupos aparecerán aquí. Marca primero quién asiste y sale a predicar, y pulsa «⚙ Formar grupos»."
-                                       Foreground="#7E858F"
+                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                        Margin="0,6,0,0"
                                        TextWrapping="Wrap"/>
                         </StackPanel>
@@ -239,8 +236,8 @@
               Background="#CC090B0E"
               Visibility="Collapsed">
 
-            <Border Background="#171A20"
-                    BorderBrush="#2A2F38"
+            <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1"
                     CornerRadius="14"
                     MaxWidth="520"
@@ -254,39 +251,31 @@
                     <TextBlock Text="Nueva RSC"
                                FontSize="20"
                                FontWeight="SemiBold"
-                               Foreground="White"
+                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                Margin="0,0,0,4"/>
                     <TextBlock Text="Una reunión breve antes de salir a predicar."
-                               Foreground="#8A9199"
+                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                FontSize="12"
                                Margin="0,0,0,16"/>
 
-                    <TextBlock Text="Día" Foreground="#AAAAAA" Margin="0,0,0,6"/>
+                    <TextBlock Text="Día" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,6"/>
                     <DatePicker x:Name="PckFechaNueva"
                                 Padding="5"
-                                Background="#1E1E1E"
-                                Foreground="White"
-                                BorderBrush="#444"
                                 Margin="0,0,0,14"/>
 
-                    <TextBlock Text="Turno" Foreground="#AAAAAA" Margin="0,0,0,6"/>
+                    <TextBlock Text="Turno" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,6"/>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
                         <RadioButton x:Name="RadTurnoManana"
                                      Content="Mañana"
-                                     Foreground="White"
                                      IsChecked="True"
                                      Margin="0,0,20,0"/>
                         <RadioButton x:Name="RadTurnoTarde"
-                                     Content="Tarde"
-                                     Foreground="White"/>
+                                     Content="Tarde"/>
                     </StackPanel>
 
-                    <TextBlock Text="Congregación" Foreground="#AAAAAA" Margin="0,0,0,6"/>
+                    <TextBlock Text="Congregación" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,6"/>
                     <ComboBox x:Name="CmbCongNueva"
                               Padding="8"
-                              Background="#1E1E1E"
-                              Foreground="White"
-                              BorderBrush="#444"
                               Margin="0,0,0,20"/>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
@@ -313,8 +302,8 @@
               Background="#CC090B0E"
               Visibility="Collapsed">
 
-            <Border Background="#171A20"
-                    BorderBrush="#2A2F38"
+            <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1"
                     CornerRadius="14"
                     MaxWidth="620"
@@ -337,9 +326,9 @@
                         <TextBlock Text="Añadir asistentes a la RSC"
                                    FontSize="20"
                                    FontWeight="SemiBold"
-                                   Foreground="White"/>
+                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                         <TextBlock x:Name="TxtSubtituloPicker"
-                                   Foreground="#8A9199"
+                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                    FontSize="12"
                                    Margin="0,3,0,0"/>
                     </StackPanel>
@@ -349,10 +338,7 @@
                     <TextBox Grid.Row="2"
                              x:Name="TxtBuscarPersona"
                              Padding="8"
-                             Background="#1E1E1E"
-                             Foreground="White"
-                             BorderBrush="#444"
-                             CaretBrush="White"
+                             CaretBrush="{DynamicResource TextFillColorPrimaryBrush}"
                              Margin="0,0,0,10"
                              TextChanged="TxtBuscarPersona_TextChanged"/>
 
@@ -387,8 +373,8 @@
               Background="#CC090B0E"
               Visibility="Collapsed">
 
-            <Border Background="#171A20"
-                    BorderBrush="#2A2F38"
+            <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1"
                     CornerRadius="14"
                     MaxWidth="540"
@@ -402,21 +388,21 @@
                     <TextBlock x:Name="TxtArregloPersona"
                                FontSize="19"
                                FontWeight="SemiBold"
-                               Foreground="White"
+                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                Margin="0,0,0,4"/>
                     <TextBlock Text="¿Va a predicar con alguien en concreto ese día? Puede ser con varias personas."
-                               Foreground="#8A9199"
+                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                FontSize="12"
                                Margin="0,0,0,14"/>
 
-                    <TextBlock Text="Va con:" Foreground="#AAAAAA" Margin="0,0,0,6"/>
+                    <TextBlock Text="Va con:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,6"/>
                     <ScrollViewer MaxHeight="220"
                                   VerticalScrollBarVisibility="Auto"
                                   Margin="0,0,0,14">
                         <StackPanel x:Name="PanelArregloCon"/>
                     </ScrollViewer>
 
-                    <Border Background="#12151B"
+                    <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
                             CornerRadius="8"
                             Padding="12,10"
                             Margin="0,0,0,16">
@@ -425,7 +411,7 @@
                                              Content="Puede ir en un grupo más grande"
                                              IsChecked="True"/>
                             <TextBlock Text="Si lo desactivas, ese grupo de arreglo irá aparte, sin juntarse con más hermanos."
-                                       Foreground="#7E858F"
+                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                        FontSize="12"
                                        TextWrapping="Wrap"
                                        Margin="0,8,0,0"/>
@@ -462,8 +448,8 @@
               Background="#CC090B0E"
               Visibility="Collapsed">
 
-            <Border Background="#171A20"
-                    BorderBrush="#2A2F38"
+            <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1"
                     CornerRadius="14"
                     MaxWidth="460"
@@ -477,10 +463,10 @@
                     <TextBlock x:Name="TxtMoverPersona"
                                FontSize="19"
                                FontWeight="SemiBold"
-                               Foreground="White"
+                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                Margin="0,0,0,4"/>
                     <TextBlock Text="¿A qué grupo quieres moverla?"
-                               Foreground="#8A9199"
+                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                FontSize="12"
                                Margin="0,0,0,14"/>
 

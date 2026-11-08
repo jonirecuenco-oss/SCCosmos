@@ -3,8 +3,8 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       xmlns:local="clr-namespace:SCCosmos"
-      Title="Correspondencia" Background="#1E1E1E"
-      PreviewMouseWheel="Page_PreviewMouseWheel">
+      Title="Correspondencia"
+      PreviewMouseWheel="Page_PreviewMouseWheel" Foreground="{DynamicResource TextFillColorPrimaryBrush}">
 
     <Page.Resources>
 
@@ -17,7 +17,7 @@
 
         <!-- NIVEL 1 · PESTAÑAS PRINCIPALES -->
         <Style x:Key="TabPrincipalStyle" TargetType="TabItem">
-            <Setter Property="Foreground" Value="#AEB4BC"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
             <Setter Property="FontSize" Value="16"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Padding" Value="20,11"/>
@@ -28,8 +28,8 @@
                     <ControlTemplate TargetType="TabItem">
                         <Grid>
                             <Border x:Name="Surface"
-                                    Background="#222428"
-                                    BorderBrush="#34373C"
+                                    Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                                     BorderThickness="1"
                                     CornerRadius="9,9,3,3"
                                     Padding="{TemplateBinding Padding}">
@@ -47,14 +47,14 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Surface" Property="Background" Value="#292C31"/>
-                                <Setter TargetName="Surface" Property="BorderBrush" Value="#42474E"/>
-                                <Setter Property="Foreground" Value="#E5E9ED"/>
+                                <Setter TargetName="Surface" Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter TargetName="Surface" Property="Background" Value="#2B3036"/>
                                 <Setter TargetName="Surface" Property="BorderBrush" Value="#496A82"/>
                                 <Setter TargetName="Accent" Property="Background" Value="#4BA3E3"/>
-                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -64,7 +64,7 @@
 
         <!-- NIVEL 2 · TIPO DE MENSAJE -->
         <Style x:Key="TabMensajeStyle" TargetType="TabItem">
-            <Setter Property="Foreground" Value="#9EA5AD"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
             <Setter Property="FontSize" Value="13.5"/>
             <Setter Property="FontWeight" Value="Normal"/>
             <Setter Property="Padding" Value="14,8"/>
@@ -94,13 +94,13 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Surface" Property="Background" Value="#24272B"/>
-                                <Setter Property="Foreground" Value="#D9DDE1"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter TargetName="Surface" Property="Background" Value="#272B30"/>
-                                <Setter TargetName="Surface" Property="BorderBrush" Value="#363C43"/>
+                                <Setter TargetName="Surface" Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}"/>
                                 <Setter TargetName="Accent" Property="Background" Value="#8DB9D8"/>
-                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
                                 <Setter Property="FontWeight" Value="SemiBold"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -111,7 +111,7 @@
 
         <!-- NIVEL 3 · ALOJAMIENTO / ACOMPAÑANTE / SUBTIPO -->
         <Style x:Key="TabDetalleStyle" TargetType="TabItem">
-            <Setter Property="Foreground" Value="#A7ADB4"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
             <Setter Property="FontSize" Value="12.5"/>
             <Setter Property="FontWeight" Value="Normal"/>
             <Setter Property="Padding" Value="10,5"/>
@@ -121,8 +121,8 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="TabItem">
                         <Border x:Name="Pill"
-                                Background="#202226"
-                                BorderBrush="#35383D"
+                                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                                 BorderThickness="1"
                                 CornerRadius="12"
                                 Padding="{TemplateBinding Padding}">
@@ -134,7 +134,7 @@
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Pill" Property="Background" Value="#292D32"/>
                                 <Setter TargetName="Pill" Property="BorderBrush" Value="#46515B"/>
-                                <Setter Property="Foreground" Value="#E2E6EA"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter TargetName="Pill" Property="Background" Value="#263A49"/>
@@ -149,7 +149,7 @@
         </Style>
         <!-- MOLDE PARA LA FILA DE CADA ARCHIVO SUBIDO -->
         <DataTemplate x:Key="ArchivoFilaTemplate">
-            <Border Background="#2D2D30" Margin="0,0,0,8" CornerRadius="6" Padding="12,8" BorderBrush="#3E3E42" BorderThickness="1">
+            <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" Margin="0,0,0,8" CornerRadius="6" Padding="12,8" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -158,8 +158,8 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <ui:SymbolIcon Symbol="Document24" Foreground="#4BA3E3" Margin="0,0,10,0"/>
-                        <TextBlock Text="{Binding NombreArchivo}" Foreground="White" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                        <ui:SymbolIcon Symbol="Document24" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Margin="0,0,10,0"/>
+                        <TextBlock Text="{Binding NombreArchivo}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" VerticalAlignment="Center" TextWrapping="Wrap"/>
                     </StackPanel>
 
                     <ui:Button Grid.Column="1" Icon="{ui:SymbolIcon Open24}" Appearance="Secondary" Margin="10,0,5,0" 
@@ -183,16 +183,16 @@
                 <!-- ================= COLUMNA IZQUIERDA: CONFIGURACIÓN DEL CORREO ================= -->
                 <StackPanel Grid.Column="0">
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                        <ui:SymbolIcon Symbol="Mail24" Foreground="#4BA3E3" Margin="0,0,8,0"/>
-                        <TextBlock Text="CONFIGURACIÓN DEL CORREO / MENSAJE" FontSize="14" FontWeight="SemiBold" Foreground="#4BA3E3" VerticalAlignment="Center"/>
+                        <ui:SymbolIcon Symbol="Mail24" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Margin="0,0,8,0"/>
+                        <TextBlock Text="CONFIGURACIÓN DEL CORREO / MENSAJE" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" VerticalAlignment="Center"/>
                     </StackPanel>
 
-                    <TextBlock Text="Asunto del correo:" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                    <TextBox Text="{Binding AsuntoEmail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Padding="8" Background="#252528" Foreground="White" BorderBrush="#444" Margin="0,0,0,15" FontSize="14"/>
+                    <TextBlock Text="Asunto del correo:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+                    <TextBox Text="{Binding AsuntoEmail, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Padding="8" Margin="0,0,0,15" FontSize="14"/>
 
-                    <TextBlock Text="Cuerpo del mensaje:" Foreground="#AAAAAA" Margin="0,0,0,5"/>
+                    <TextBlock Text="Cuerpo del mensaje:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
 
-                    <Border Background="#252528" BorderBrush="#444" BorderThickness="1" CornerRadius="4" Margin="0,0,0,25" ClipToBounds="True">
+                    <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="4" Margin="0,0,0,25" ClipToBounds="True">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -201,20 +201,20 @@
                             </Grid.RowDefinitions>
 
                             <!-- BARRA DE HERRAMIENTAS -->
-                            <Border Background="#3E3E42" Padding="4">
+                            <Border Background="{DynamicResource ControlFillColorSecondaryBrush}" Padding="4">
                                 <StackPanel Orientation="Horizontal">
-                                    <ui:Button Width="32" Height="32" Margin="0,0,4,0" Click="BtnFormato_Click" Tag="bold" ToolTip="Negrita" Background="Transparent" Foreground="White" BorderThickness="0" Padding="0">
+                                    <ui:Button Width="32" Height="32" Margin="0,0,4,0" Click="BtnFormato_Click" Tag="bold" ToolTip="Negrita" Background="Transparent" BorderThickness="0" Padding="0">
                                         <TextBlock Text="N" FontWeight="Bold"/>
                                     </ui:Button>
-                                    <ui:Button Width="32" Height="32" Margin="0,0,4,0" Click="BtnFormato_Click" Tag="italic" ToolTip="Cursiva" Background="Transparent" Foreground="White" BorderThickness="0" Padding="0">
+                                    <ui:Button Width="32" Height="32" Margin="0,0,4,0" Click="BtnFormato_Click" Tag="italic" ToolTip="Cursiva" Background="Transparent" BorderThickness="0" Padding="0">
                                         <TextBlock Text="K" FontStyle="Italic"/>
                                     </ui:Button>
-                                    <ui:Button Width="32" Height="32" Margin="0,0,10,0" Click="BtnFormato_Click" Tag="underline" ToolTip="Subrayado" Background="Transparent" Foreground="White" BorderThickness="0" Padding="0">
+                                    <ui:Button Width="32" Height="32" Margin="0,0,10,0" Click="BtnFormato_Click" Tag="underline" ToolTip="Subrayado" Background="Transparent" BorderThickness="0" Padding="0">
                                         <TextBlock Text="S" TextDecorations="Underline"/>
                                     </ui:Button>
 
                                     <!-- SELECTOR DE TAMAÑOS POR NÚMERO -->
-                                    <ComboBox Width="65" Height="32" Margin="0,0,10,0" SelectionChanged="CmbTamano_SelectionChanged" Background="#2D2D30" Foreground="White" BorderThickness="0" SelectedIndex="2">
+                                    <ComboBox Width="65" Height="32" Margin="0,0,10,0" SelectionChanged="CmbTamano_SelectionChanged" BorderThickness="0" SelectedIndex="2">
                                         <ComboBoxItem Content="10" Tag="1"/>
                                         <ComboBoxItem Content="13" Tag="2"/>
                                         <ComboBoxItem Content="16" Tag="3"/>
@@ -224,7 +224,7 @@
                                         <ComboBoxItem Content="48" Tag="7"/>
                                     </ComboBox>
 
-                                    <TextBlock Text="💡 Win + . para Emojis" Foreground="#AAAAAA" FontSize="11" VerticalAlignment="Center" FontStyle="Italic"/>
+                                    <TextBlock Text="💡 Win + . para Emojis" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="11" VerticalAlignment="Center" FontStyle="Italic"/>
                                 </StackPanel>
                             </Border>
 
@@ -232,7 +232,7 @@
                             <WebBrowser Grid.Row="1" x:Name="WbEditor" Height="200" local:WbEditorHelper.Html="{Binding PlantillaEmail}" Loaded="WbEditor_Loaded" Unloaded="WbEditor_Unloaded"/>
 
                             <!-- PANEL DE AUTOGUARDADO -->
-                            <Border Grid.Row="2" Background="#1E1E1E" Padding="8" BorderBrush="#333" BorderThickness="0,1,0,0">
+                            <Border Grid.Row="2" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" Padding="8" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="0,1,0,0">
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Height="30">
                                     <TextBlock x:Name="TxtAvisoGuardado" Text="" Foreground="#55C855" VerticalAlignment="Center" Margin="0,0,10,0" FontSize="12" FontWeight="SemiBold"/>
                                 </StackPanel>
@@ -244,11 +244,11 @@
                 <!-- ================= COLUMNA DERECHA: ARCHIVOS Y VARIABLES ================= -->
                 <StackPanel Grid.Column="2">
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                        <ui:SymbolIcon Symbol="Attach24" Foreground="#4BA3E3" Margin="0,0,8,0"/>
-                        <TextBlock Text="ARCHIVOS ADJUNTOS" FontSize="14" FontWeight="SemiBold" Foreground="#4BA3E3" VerticalAlignment="Center"/>
+                        <ui:SymbolIcon Symbol="Attach24" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Margin="0,0,8,0"/>
+                        <TextBlock Text="ARCHIVOS ADJUNTOS" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" VerticalAlignment="Center"/>
                     </StackPanel>
 
-                    <TextBlock Text="{Binding Descripcion}" Foreground="#AAAAAA" Margin="0,0,0,15" TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding Descripcion}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,15" TextWrapping="Wrap"/>
 
                     <!-- VISTA SIMPLE -->
                     <StackPanel Visibility="{Binding VisibilidadSimple}">
@@ -258,11 +258,11 @@
 
                     <!-- VISTA ENVÍO DE S-303: INFORME Y CARTA DE NOMBRAMIENTOS -->
                     <TabControl Visibility="{Binding VisibilidadS303}"
-                                Background="#121416"
-                                BorderBrush="#2C3035"
+                                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                                 BorderThickness="1"
                                 Padding="8,8,8,0"
-                                Foreground="White"
+                                Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                 ItemContainerStyle="{StaticResource TabDetalleStyle}">
 
                         <TabItem>
@@ -286,11 +286,11 @@
 
                     <!-- VISTA COMPLEJA (ETIQUETAS DIFERENCIADAS) -->
                     <TabControl Visibility="{Binding VisibilidadColumnas}"
-                                Background="#121416"
-                                BorderBrush="#2C3035"
+                                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                                 BorderThickness="1"
                                 Padding="8,8,8,0"
-                                Foreground="White"
+                                Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                 ItemContainerStyle="{StaticResource TabDetalleStyle}">
 
                         <TabItem>
@@ -337,11 +337,11 @@
 
                     <!-- VISTA ASIGNACIÓN REUNIÓN PRECURSORES -->
                     <TabControl Visibility="{Binding VisibilidadAsignacionPrec}"
-                                Background="#121416"
-                                BorderBrush="#2C3035"
+                                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                                 BorderThickness="1"
                                 Padding="8,8,8,0"
-                                Foreground="White"
+                                Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                 ItemContainerStyle="{StaticResource TabDetalleStyle}">
                         <TabItem>
                             <TabItem.Header><TextBlock Text="Oración inicial"/></TabItem.Header>
@@ -377,13 +377,13 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <ui:SymbolIcon Symbol="Code24" Foreground="#8AB4D6" Margin="0,0,8,0"/>
-                                <TextBlock Text="Variables disponibles" FontSize="13" FontWeight="SemiBold" Foreground="#D7DADE" VerticalAlignment="Center"/>
+                                <TextBlock Text="Variables disponibles" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
                             </StackPanel>
                             <ui:Button Grid.Column="1" Content="Añadir" Icon="{ui:SymbolIcon Add24}" Appearance="Secondary" Padding="8,4" Cursor="Hand" Tag="{Binding}" Click="BtnAnadirVariable_Click"/>
                         </Grid>
-                        <Border Background="#222428" Padding="10" CornerRadius="7" BorderThickness="1" BorderBrush="#34373D">
+                        <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" Padding="10" CornerRadius="7" BorderThickness="1" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
                             <StackPanel>
-                                <TextBlock Text="Puedes editar el nombre y el código. Los cambios se guardan al salir del campo." Foreground="#858A92" FontSize="11" TextWrapping="Wrap" Margin="2,0,2,8"/>
+                                <TextBlock Text="Puedes editar el nombre y el código. Los cambios se guardan al salir del campo." Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="11" TextWrapping="Wrap" Margin="2,0,2,8"/>
                                 <ItemsControl ItemsSource="{Binding VariablesDisponibles}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
@@ -394,9 +394,9 @@
                                                     <ColumnDefinition Width="Auto"/>
                                                     <ColumnDefinition Width="Auto"/>
                                                 </Grid.ColumnDefinitions>
-                                                <TextBox Grid.Column="0" Text="{Binding Etiqueta, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Tag="{Binding}" LostFocus="Variable_LostFocus" Margin="0,0,6,0" Padding="7,5" Background="#292B30" Foreground="White" BorderBrush="#41444B" ToolTip="Nombre descriptivo"/>
-                                                <TextBox Grid.Column="1" Text="{Binding Token, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Tag="{Binding}" LostFocus="Variable_LostFocus" Margin="0,0,6,0" Padding="7,5" FontFamily="Consolas" Background="#292B30" Foreground="#B9D8EE" BorderBrush="#41444B" ToolTip="Código que se utiliza en la plantilla"/>
-                                                <ui:Button Grid.Column="2" Content="⧉" Appearance="Transparent" Padding="5" Margin="0,0,3,0" Cursor="Hand" Tag="{Binding}" ToolTip="Copiar variable" Click="BtnCopiarVariable_Click"/>
+                                                <TextBox Grid.Column="0" Text="{Binding Etiqueta, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Tag="{Binding}" LostFocus="Variable_LostFocus" Margin="0,0,6,0" Padding="7,5" ToolTip="Nombre descriptivo"/>
+                                                <TextBox Grid.Column="1" Text="{Binding Token, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Tag="{Binding}" LostFocus="Variable_LostFocus" Margin="0,0,6,0" Padding="7,5" FontFamily="Consolas" Foreground="#B9D8EE" ToolTip="Código que se utiliza en la plantilla"/>
+                                                <ui:Button Icon="{ui:SymbolIcon Copy24}" Grid.Column="2" Appearance="Transparent" Padding="5" Margin="0,0,3,0" Cursor="Hand" Tag="{Binding}" ToolTip="Copiar variable" Click="BtnCopiarVariable_Click"/>
                                                 <ui:Button Grid.Column="3" Icon="{ui:SymbolIcon Delete24}" Appearance="Transparent" Foreground="#E06C75" Padding="5" Cursor="Hand" Tag="{Binding}" ToolTip="Eliminar variable" Click="BtnEliminarVariable_Click"/>
                                             </Grid>
                                         </DataTemplate>
@@ -413,15 +413,15 @@
 
     <!-- EL CONTENEDOR PRINCIPAL -->
     <ScrollViewer x:Name="MainScrollViewer" VerticalScrollBarVisibility="Auto">
-        <Grid Margin="30">
+        <Grid Margin="{StaticResource MargenPagina}">
 
             <Grid VerticalAlignment="Top" Margin="0,0,0,15">
-                <TextBlock Text="Correspondencia" FontSize="26" FontWeight="SemiBold" Foreground="White" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                <TextBlock Text="Correspondencia" Style="{StaticResource TituloPagina}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                 <ui:Button Content="Nuevo mensaje" Icon="{ui:SymbolIcon Send24}" Appearance="Primary" HorizontalAlignment="Right" VerticalAlignment="Center" Cursor="Hand" Click="BtnEnviarMensajeGlobal_Click"/>
             </Grid>
 
             <!-- PESTAÑAS MAESTRAS -->
-            <TabControl Margin="0,50,0,0" Background="Transparent" BorderThickness="0" Foreground="White" ItemContainerStyle="{StaticResource TabPrincipalStyle}" SelectedIndex="0">
+            <TabControl Margin="0,50,0,0" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource TextFillColorPrimaryBrush}" ItemContainerStyle="{StaticResource TabPrincipalStyle}" SelectedIndex="0">
 
                 <TabItem Header="Visitas a congregaciones">
                     <TabControl x:Name="TabsCategoriasVisitas"

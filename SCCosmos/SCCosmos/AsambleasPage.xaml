@@ -3,12 +3,12 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       xmlns:local="clr-namespace:SCCosmos"
-      Title="AsambleasPage" Background="#1E1E1E">
+      Title="AsambleasPage" Foreground="{DynamicResource TextFillColorPrimaryBrush}">
 
     <Page.Resources>
         <!-- MOLDE PARA EL PROGRAMA DE ASAMBLEAS -->
         <DataTemplate x:Key="FilaProgramaAsambleaTemplate">
-            <Border Background="#2D2D30" Margin="0,0,0,8" CornerRadius="6" Padding="5,5,10,5" BorderBrush="#3E3E42" BorderThickness="1" AllowDrop="True" Drop="Fila_Drop">
+            <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" Margin="0,0,0,8" CornerRadius="6" Padding="5,5,10,5" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" AllowDrop="True" Drop="Fila_Drop">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="35"/>
@@ -22,23 +22,23 @@
 
                     <!-- Icono de Agarre para arrastrar -->
                     <Border Grid.Column="0" Background="Transparent" Cursor="SizeNS" MouseLeftButtonDown="DragHandle_MouseLeftButtonDown" MouseMove="DragHandle_MouseMove" Margin="0,0,5,0" ToolTip="Pincha y arrastra para mover la fila">
-                        <ui:SymbolIcon Symbol="LineHorizontal320" Foreground="#666666" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="20"/>
+                        <ui:SymbolIcon Symbol="LineHorizontal320" Foreground="{DynamicResource TextFillColorTertiaryBrush}" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="20"/>
                     </Border>
 
-                    <TextBox Grid.Column="1" Text="{Binding Hora, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" HorizontalContentAlignment="Center" VerticalAlignment="Top" MaxLength="5"/>
-                    <ComboBox Grid.Column="2" ItemsSource="{Binding DataContext.TiposParte, RelativeSource={RelativeSource AncestorType=Page}}" SelectedItem="{Binding Tipo, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" Cursor="Hand" VerticalAlignment="Top"/>
-                    <TextBox Grid.Column="3" Text="{Binding Titulo, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" VerticalAlignment="Top"/>
+                    <TextBox Grid.Column="1" Text="{Binding Hora, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" HorizontalContentAlignment="Center" VerticalAlignment="Top" MaxLength="5"/>
+                    <ComboBox Grid.Column="2" ItemsSource="{Binding DataContext.TiposParte, RelativeSource={RelativeSource AncestorType=Page}}" SelectedItem="{Binding Tipo, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" Cursor="Hand" VerticalAlignment="Top"/>
+                    <TextBox Grid.Column="3" Text="{Binding Titulo, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" VerticalAlignment="Top"/>
 
                     <Grid Grid.Column="4" Margin="0,0,10,0" VerticalAlignment="Top">
                         <ComboBox SelectedValue="{Binding AsignadoId, Mode=TwoWay}" 
                                   DisplayMemberPath="NombreMuestra" SelectedValuePath="Id"
                                   IsEditable="True" IsTextSearchEnabled="False" IsSynchronizedWithCurrentItem="False" StaysOpenOnEdit="True"
                                   Tag="Ancianos" Loaded="CmbAsignado_Loaded" TextBoxBase.TextChanged="CmbAsignado_TextChanged"
-                                  Padding="5,5,25,5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" Cursor="Hand"/>
-                        <ui:Button Icon="{ui:SymbolIcon Dismiss12}" Appearance="Transparent" Foreground="#888" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,22,0" Visibility="{Binding VisibilidadEnviar}" Click="BtnLimpiarAsignado_Click" Tag="{Binding}" Padding="2" ToolTip="Borrar asignación" Cursor="Hand"/>
+                                  Padding="5,5,25,5" Cursor="Hand"/>
+                        <ui:Button Icon="{ui:SymbolIcon Dismiss12}" Appearance="Transparent" Foreground="{DynamicResource TextFillColorTertiaryBrush}" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,22,0" Visibility="{Binding VisibilidadEnviar}" Click="BtnLimpiarAsignado_Click" Tag="{Binding}" Padding="2" ToolTip="Borrar asignación" Cursor="Hand"/>
                     </Grid>
 
-                    <TextBox Grid.Column="5" Text="{Binding Participantes, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" MinHeight="33" MaxHeight="100" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" VerticalAlignment="Top"/>
+                    <TextBox Grid.Column="5" Text="{Binding Participantes, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" MinHeight="33" MaxHeight="100" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" VerticalAlignment="Top"/>
 
                     <StackPanel Grid.Column="6" Orientation="Horizontal" VerticalAlignment="Top">
                         <ui:Button Icon="{ui:SymbolIcon Attach24}" Appearance="{Binding ColorBotonArchivo}" ToolTip="{Binding ToolTipArchivo}" Click="BtnAdjuntar_Click" Tag="{Binding}" Padding="6,4" Cursor="Hand" Margin="0"/>
@@ -51,7 +51,7 @@
 
         <!-- MOLDE PARA EL PROGRAMA DE PRECURSORES -->
         <DataTemplate x:Key="FilaProgramaPrecursoresTemplate">
-            <Border Background="#2D2D30" Margin="0,0,0,8" CornerRadius="6" Padding="5,5,10,5" BorderBrush="#3E3E42" BorderThickness="1" AllowDrop="True" Drop="Fila_Drop">
+            <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" Margin="0,0,0,8" CornerRadius="6" Padding="5,5,10,5" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" AllowDrop="True" Drop="Fila_Drop">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="35"/>
@@ -65,23 +65,23 @@
 
                     <!-- Icono de Agarre para arrastrar -->
                     <Border Grid.Column="0" Background="Transparent" Cursor="SizeNS" MouseLeftButtonDown="DragHandle_MouseLeftButtonDown" MouseMove="DragHandle_MouseMove" Margin="0,0,5,0" ToolTip="Pincha y arrastra para mover la fila">
-                        <ui:SymbolIcon Symbol="LineHorizontal320" Foreground="#666666" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="20"/>
+                        <ui:SymbolIcon Symbol="LineHorizontal320" Foreground="{DynamicResource TextFillColorTertiaryBrush}" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="20"/>
                     </Border>
 
-                    <TextBox Grid.Column="1" Text="{Binding Hora, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" HorizontalContentAlignment="Center" VerticalAlignment="Top" MaxLength="5"/>
-                    <ComboBox Grid.Column="2" ItemsSource="{Binding DataContext.TiposParte, RelativeSource={RelativeSource AncestorType=Page}}" SelectedItem="{Binding Tipo, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" Cursor="Hand" VerticalAlignment="Top"/>
-                    <TextBox Grid.Column="3" Text="{Binding Titulo, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" VerticalAlignment="Top"/>
+                    <TextBox Grid.Column="1" Text="{Binding Hora, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" HorizontalContentAlignment="Center" VerticalAlignment="Top" MaxLength="5"/>
+                    <ComboBox Grid.Column="2" ItemsSource="{Binding DataContext.TiposParte, RelativeSource={RelativeSource AncestorType=Page}}" SelectedItem="{Binding Tipo, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" Cursor="Hand" VerticalAlignment="Top"/>
+                    <TextBox Grid.Column="3" Text="{Binding Titulo, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" VerticalAlignment="Top"/>
 
                     <Grid Grid.Column="4" Margin="0,0,10,0" VerticalAlignment="Top">
                         <ComboBox SelectedValue="{Binding AsignadoId, Mode=TwoWay}" 
                                   DisplayMemberPath="NombreMuestra" SelectedValuePath="Id"
                                   IsEditable="True" IsTextSearchEnabled="False" IsSynchronizedWithCurrentItem="False" StaysOpenOnEdit="True"
                                   Tag="Precursores" Loaded="CmbAsignado_Loaded" TextBoxBase.TextChanged="CmbAsignado_TextChanged"
-                                  Padding="5,5,25,5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" Cursor="Hand"/>
-                        <ui:Button Icon="{ui:SymbolIcon Dismiss12}" Appearance="Transparent" Foreground="#888" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,22,0" Visibility="{Binding VisibilidadEnviar}" Click="BtnLimpiarAsignado_Click" Tag="{Binding}" Padding="2" ToolTip="Borrar asignación" Cursor="Hand"/>
+                                  Padding="5,5,25,5" Cursor="Hand"/>
+                        <ui:Button Icon="{ui:SymbolIcon Dismiss12}" Appearance="Transparent" Foreground="{DynamicResource TextFillColorTertiaryBrush}" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,22,0" Visibility="{Binding VisibilidadEnviar}" Click="BtnLimpiarAsignado_Click" Tag="{Binding}" Padding="2" ToolTip="Borrar asignación" Cursor="Hand"/>
                     </Grid>
 
-                    <TextBox Grid.Column="5" Text="{Binding Participantes, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" MinHeight="33" MaxHeight="100" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" VerticalAlignment="Top"/>
+                    <TextBox Grid.Column="5" Text="{Binding Participantes, Mode=TwoWay}" Margin="0,0,10,0" Padding="5" MinHeight="33" MaxHeight="100" AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" VerticalAlignment="Top"/>
 
                     <StackPanel Grid.Column="6" Orientation="Horizontal" VerticalAlignment="Top">
                         <ui:Button Icon="{ui:SymbolIcon Attach24}" Appearance="{Binding ColorBotonArchivo}" ToolTip="{Binding ToolTipArchivo}" Click="BtnAdjuntar_Click" Tag="{Binding}" Padding="6,4" Cursor="Hand" Margin="0"/>
@@ -94,24 +94,23 @@
 
         <!-- MOLDE DE LAS CAJAS DEL ORGANIGRAMA -->
         <DataTemplate x:Key="DepartamentoCajaTemplate">
-            <Border Background="#212124" CornerRadius="6" BorderBrush="{Binding ColorHeader}" BorderThickness="1" Margin="0,0,0,15">
+            <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" CornerRadius="6" BorderBrush="{Binding ColorHeader}" BorderThickness="1" Margin="0,0,0,15">
                 <StackPanel>
                     <Border Background="{Binding ColorHeader}" CornerRadius="5,5,0,0" Padding="10">
                         <TextBlock Text="{Binding Nombre}" FontWeight="Bold" Foreground="#1E1E1E" HorizontalAlignment="Center"/>
                     </Border>
 
                     <StackPanel Margin="15">
-                        <TextBlock Text="Superintendente" Foreground="#AAAAAA" FontSize="11" Margin="0,0,0,5"/>
+                        <TextBlock Text="Superintendente" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="11" Margin="0,0,0,5"/>
                         <Grid Margin="0,0,0,10">
                             <ComboBox SelectedValue="{Binding Superintendente.AsignadoId, Mode=TwoWay}"
                                       DisplayMemberPath="NombreMuestra" SelectedValuePath="Id"
                                       IsEditable="True" IsTextSearchEnabled="False" IsSynchronizedWithCurrentItem="False" StaysOpenOnEdit="True"
-                                      Tag="Ancianos" Loaded="CmbAsignado_Loaded" TextBoxBase.TextChanged="CmbAsignado_TextChanged"
-                                      Background="#1E1E1E" Foreground="White" BorderBrush="#444" Padding="5,5,25,5" Cursor="Hand"/>
-                            <ui:Button Icon="{ui:SymbolIcon Dismiss12}" Appearance="Transparent" Foreground="#888" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,22,0" Visibility="{Binding Superintendente.VisibilidadCruz}" Click="BtnLimpiarAsignacionOrganigrama_Click" Tag="{Binding Superintendente}" Padding="2"/>
+                                      Tag="Ancianos" Loaded="CmbAsignado_Loaded" TextBoxBase.TextChanged="CmbAsignado_TextChanged" Padding="5,5,25,5" Cursor="Hand"/>
+                            <ui:Button Icon="{ui:SymbolIcon Dismiss12}" Appearance="Transparent" Foreground="{DynamicResource TextFillColorTertiaryBrush}" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,22,0" Visibility="{Binding Superintendente.VisibilidadCruz}" Click="BtnLimpiarAsignacionOrganigrama_Click" Tag="{Binding Superintendente}" Padding="2"/>
                         </Grid>
 
-                        <TextBlock Text="Auxiliares" Foreground="#AAAAAA" FontSize="11" Margin="0,0,0,5" Visibility="{Binding MostrarAuxiliares}"/>
+                        <TextBlock Text="Auxiliares" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="11" Margin="0,0,0,5" Visibility="{Binding MostrarAuxiliares}"/>
                         <ItemsControl ItemsSource="{Binding Auxiliares}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
@@ -123,8 +122,7 @@
                                         <ComboBox Grid.Column="0" SelectedValue="{Binding AsignadoId, Mode=TwoWay}"
                                                   DisplayMemberPath="NombreMuestra" SelectedValuePath="Id"
                                                   IsEditable="True" IsTextSearchEnabled="False" IsSynchronizedWithCurrentItem="False" StaysOpenOnEdit="True"
-                                                  Tag="Ancianos" Loaded="CmbAsignado_Loaded" TextBoxBase.TextChanged="CmbAsignado_TextChanged"
-                                                  Background="#1E1E1E" Foreground="White" BorderBrush="#444" Padding="5,5,25,5" Cursor="Hand"/>
+                                                  Tag="Ancianos" Loaded="CmbAsignado_Loaded" TextBoxBase.TextChanged="CmbAsignado_TextChanged" Padding="5,5,25,5" Cursor="Hand"/>
                                         <ui:Button Grid.Column="1" Icon="{ui:SymbolIcon Dismiss24}" Appearance="Danger" Margin="5,0,0,0" Padding="5" Click="BtnEliminarAuxiliar_Click" Tag="{Binding}"/>
                                     </Grid>
                                 </DataTemplate>
@@ -135,16 +133,15 @@
                         <ui:Button Content="Añadir auxiliar" Icon="{ui:SymbolIcon Add24}" Appearance="Transparent" Foreground="#A0D1FF" HorizontalAlignment="Left" Margin="0,5,0,0" Click="BtnAñadirAuxiliar_Click" Tag="{Binding}"/>
 
                         <!-- CAJA DEL AUDITOR AL FINAL (Caja dentro de la caja) -->
-                        <Border Visibility="{Binding VisibilidadAuditor}" Background="#1A1A1C" CornerRadius="6" BorderBrush="#3E3E42" BorderThickness="1" Padding="12" Margin="0,20,0,0">
+                        <Border Visibility="{Binding VisibilidadAuditor}" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" CornerRadius="6" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" Padding="12" Margin="0,20,0,0">
                             <StackPanel>
                                 <TextBlock Text="Auditor" Foreground="#92CDDC" FontWeight="SemiBold" FontSize="12" Margin="0,0,0,8" HorizontalAlignment="Center"/>
                                 <Grid>
                                     <ComboBox SelectedValue="{Binding Auditor.AsignadoId, Mode=TwoWay}"
                                               DisplayMemberPath="NombreMuestra" SelectedValuePath="Id"
                                               IsEditable="True" IsTextSearchEnabled="False" IsSynchronizedWithCurrentItem="False" StaysOpenOnEdit="True"
-                                              Tag="Ancianos" Loaded="CmbAsignado_Loaded" TextBoxBase.TextChanged="CmbAsignado_TextChanged"
-                                              Background="#252528" Foreground="White" BorderBrush="#444" Padding="5,5,25,5" Cursor="Hand"/>
-                                    <ui:Button Icon="{ui:SymbolIcon Dismiss12}" Appearance="Transparent" Foreground="#888" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,22,0" Visibility="{Binding Auditor.VisibilidadCruz}" Click="BtnLimpiarAsignacionOrganigrama_Click" Tag="{Binding Auditor}" Padding="2"/>
+                                              Tag="Ancianos" Loaded="CmbAsignado_Loaded" TextBoxBase.TextChanged="CmbAsignado_TextChanged" Padding="5,5,25,5" Cursor="Hand"/>
+                                    <ui:Button Icon="{ui:SymbolIcon Dismiss12}" Appearance="Transparent" Foreground="{DynamicResource TextFillColorTertiaryBrush}" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,22,0" Visibility="{Binding Auditor.VisibilidadCruz}" Click="BtnLimpiarAsignacionOrganigrama_Click" Tag="{Binding Auditor}" Padding="2"/>
                                 </Grid>
                             </StackPanel>
                         </Border>
@@ -156,7 +153,7 @@
 
         <!-- MOLDE PARA SESIÓN PRECURSORES -->
         <DataTemplate x:Key="FilaSesionTemplate">
-            <Border Background="#252528" Margin="0,0,0,10" CornerRadius="6" Padding="15" BorderBrush="#4C566A" BorderThickness="1">
+            <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" Margin="0,0,0,10" CornerRadius="6" Padding="15" BorderBrush="#4C566A" BorderThickness="1">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -179,20 +176,20 @@
                         </Grid.ColumnDefinitions>
 
                         <StackPanel Grid.Column="0">
-                            <TextBlock Text="Fecha" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                            <DatePicker SelectedDate="{Binding Fecha, Mode=TwoWay}" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444"/>
+                            <TextBlock Text="Fecha" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+                            <DatePicker SelectedDate="{Binding Fecha, Mode=TwoWay}" Padding="5"/>
                         </StackPanel>
                         <StackPanel Grid.Column="2">
-                            <TextBlock Text="Hora" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                            <TextBox Text="{Binding Hora, Mode=TwoWay}" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" HorizontalContentAlignment="Center"/>
+                            <TextBlock Text="Hora" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+                            <TextBox Text="{Binding Hora, Mode=TwoWay}" Padding="5" HorizontalContentAlignment="Center"/>
                         </StackPanel>
                         <StackPanel Grid.Column="4">
-                            <TextBlock Text="Lugar" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                            <TextBox Text="{Binding Lugar, Mode=TwoWay}" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444"/>
+                            <TextBlock Text="Lugar" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+                            <TextBox Text="{Binding Lugar, Mode=TwoWay}" Padding="5"/>
                         </StackPanel>
                         <StackPanel Grid.Column="6">
-                            <TextBlock Text="Congregaciones asistentes" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                            <ComboBox ItemsSource="{Binding DataContext.ListaCongregaciones, RelativeSource={RelativeSource AncestorType=Page}}" Text="{Binding Congregaciones, Mode=TwoWay}" IsEditable="True" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" ToolTip="Escoge una o escribe varias separadas por comas"/>
+                            <TextBlock Text="Congregaciones asistentes" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+                            <ComboBox ItemsSource="{Binding DataContext.ListaCongregaciones, RelativeSource={RelativeSource AncestorType=Page}}" Text="{Binding Congregaciones, Mode=TwoWay}" IsEditable="True" Padding="5" ToolTip="Escoge una o escribe varias separadas por comas"/>
                         </StackPanel>
                         <ui:Button Grid.Column="8" Icon="{ui:SymbolIcon Dismiss24}" Appearance="Danger" VerticalAlignment="Bottom" Cursor="Hand" Click="BtnEliminarSesion_Click" Tag="{Binding}" Padding="6,4" ToolTip="Eliminar sesión completa"/>
                     </Grid>
@@ -215,7 +212,7 @@
                 <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0">
 
                     <!-- PESTAÑA 1: PROGRAMA (ASAMBLEAS) -->
-                    <TabItem Header="Programa" FontSize="16" Foreground="White">
+                    <TabItem Header="Programa" FontSize="16" Foreground="{DynamicResource TextFillColorPrimaryBrush}">
                         <Grid Margin="0,15,0,0">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -224,7 +221,7 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <Border Grid.Row="0" Background="#252528" Padding="20" CornerRadius="8" BorderBrush="#3E3E42" BorderThickness="1" Margin="0,0,0,20">
+                            <Border Grid.Row="0" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" Padding="20" CornerRadius="8" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" Margin="0,0,0,20">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="1*"/>
@@ -235,21 +232,21 @@
                                     </Grid.ColumnDefinitions>
 
                                     <StackPanel Grid.Column="0">
-                                        <TextBlock Text="Año" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                                        <ComboBox ItemsSource="{Binding ListaAños}" SelectedItem="{Binding AñoSeleccionado}" SelectionChanged="FiltrosAsamblea_SelectionChanged" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14" Cursor="Hand"/>
+                                        <TextBlock Text="Año" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+                                        <ComboBox ItemsSource="{Binding ListaAños}" SelectedItem="{Binding AñoSeleccionado}" SelectionChanged="FiltrosAsamblea_SelectionChanged" Padding="8" FontSize="14" Cursor="Hand"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
-                                        <TextBlock Text="Tipo de evento" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                                        <ComboBox ItemsSource="{Binding TiposAsamblea}" SelectedItem="{Binding TipoSeleccionado}" SelectionChanged="FiltrosAsamblea_SelectionChanged" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14" Cursor="Hand"/>
+                                        <TextBlock Text="Tipo de evento" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+                                        <ComboBox ItemsSource="{Binding TiposAsamblea}" SelectedItem="{Binding TipoSeleccionado}" SelectionChanged="FiltrosAsamblea_SelectionChanged" Padding="8" FontSize="14" Cursor="Hand"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="4">
-                                        <TextBlock Text="Sección del circuito" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                                        <ComboBox ItemsSource="{Binding ListaSecciones}" SelectedItem="{Binding SeccionSeleccionada}" DisplayMemberPath="Nombre" SelectionChanged="FiltrosAsamblea_SelectionChanged" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14" Cursor="Hand"/>
+                                        <TextBlock Text="Sección del circuito" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+                                        <ComboBox ItemsSource="{Binding ListaSecciones}" SelectedItem="{Binding SeccionSeleccionada}" DisplayMemberPath="Nombre" SelectionChanged="FiltrosAsamblea_SelectionChanged" Padding="8" FontSize="14" Cursor="Hand"/>
                                     </StackPanel>
                                 </Grid>
                             </Border>
 
-                            <Border Grid.Row="1" Background="#252528" Padding="20" CornerRadius="8" BorderBrush="#3E3E42" BorderThickness="1" Margin="0,0,0,20">
+                            <Border Grid.Row="1" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" Padding="20" CornerRadius="8" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" Margin="0,0,0,20">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="32*"/>
@@ -262,31 +259,31 @@
                                     </Grid.ColumnDefinitions>
 
                                     <StackPanel Grid.Column="0">
-                                        <TextBlock Text="Título" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                                        <TextBox Text="{Binding TituloAsamblea, Mode=TwoWay}" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14"/>
+                                        <TextBlock Text="Título" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+                                        <TextBox Text="{Binding TituloAsamblea, Mode=TwoWay}" Padding="8" FontSize="14"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
-                                        <TextBlock Text="Lugar" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                                        <TextBox Text="{Binding LugarAsamblea, Mode=TwoWay}" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14"/>
+                                        <TextBlock Text="Lugar" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+                                        <TextBox Text="{Binding LugarAsamblea, Mode=TwoWay}" Padding="8" FontSize="14"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="4">
-                                        <TextBlock Text="Fecha" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                                        <DatePicker SelectedDate="{Binding FechaAsamblea, Mode=TwoWay}" Padding="5" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14"/>
+                                        <TextBlock Text="Fecha" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+                                        <DatePicker SelectedDate="{Binding FechaAsamblea, Mode=TwoWay}" Padding="5" FontSize="14"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="6">
-                                        <TextBlock Text="Texto temático" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                                        <TextBox Text="{Binding TextoTematico, Mode=TwoWay}" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14" FontStyle="Italic"/>
+                                        <TextBlock Text="Texto temático" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+                                        <TextBox Text="{Binding TextoTematico, Mode=TwoWay}" Padding="8" FontSize="14" FontStyle="Italic"/>
                                     </StackPanel>
                                 </Grid>
                             </Border>
 
-                            <Border Grid.Row="2" Background="#252528" Padding="20" CornerRadius="8" BorderBrush="#3E3E42" BorderThickness="1">
+                            <Border Grid.Row="2" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" Padding="20" CornerRadius="8" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1">
                                 <StackPanel>
                                     <TextBlock Text="☀️ MAÑANA" FontSize="16" FontWeight="Bold" Foreground="#EBCB8B" Margin="0,0,0,15"/>
                                     <ItemsControl ItemsSource="{Binding PartesManana}" ItemTemplate="{StaticResource FilaProgramaAsambleaTemplate}"/>
                                     <ui:Button Content="Añadir parte a la mañana" Icon="{ui:SymbolIcon Add24}" Appearance="Secondary" HorizontalAlignment="Left" Margin="0,5,0,25" Click="BtnAñadirManana_Click" Cursor="Hand"/>
 
-                                    <Border Height="1" Background="#3E3E42" Margin="0,10,0,20"/>
+                                    <Border Height="1" Background="{DynamicResource ControlFillColorSecondaryBrush}" Margin="0,10,0,20"/>
 
                                     <TextBlock Text="🌙 TARDE" FontSize="16" FontWeight="Bold" Foreground="#81A1C1" Margin="0,0,0,15"/>
                                     <ItemsControl ItemsSource="{Binding PartesTarde}" ItemTemplate="{StaticResource FilaProgramaAsambleaTemplate}"/>
@@ -303,7 +300,7 @@
                     </TabItem>
 
                     <!-- PESTAÑA 2: ORGANIGRAMA -->
-                    <TabItem Header="Organigrama" FontSize="16" Foreground="White">
+                    <TabItem Header="Organigrama" FontSize="16" Foreground="{DynamicResource TextFillColorPrimaryBrush}">
                         <Grid Margin="0,15,0,0">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -311,7 +308,7 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <Border Grid.Row="0" Background="#252528" Padding="20" CornerRadius="8" BorderBrush="#3E3E42" BorderThickness="1" Margin="0,0,0,20">
+                            <Border Grid.Row="0" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" Padding="20" CornerRadius="8" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" Margin="0,0,0,20">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="1*"/>
@@ -321,16 +318,16 @@
                                         <ColumnDefinition Width="2*"/>
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0">
-                                        <TextBlock Text="Año" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                                        <ComboBox ItemsSource="{Binding ListaAños}" SelectedItem="{Binding AñoOrganigramaSeleccionado}" SelectionChanged="FiltrosOrganigrama_SelectionChanged" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14" Cursor="Hand"/>
+                                        <TextBlock Text="Año" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+                                        <ComboBox ItemsSource="{Binding ListaAños}" SelectedItem="{Binding AñoOrganigramaSeleccionado}" SelectionChanged="FiltrosOrganigrama_SelectionChanged" Padding="8" FontSize="14" Cursor="Hand"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
-                                        <TextBlock Text="Tipo de evento" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                                        <ComboBox ItemsSource="{Binding TiposAsamblea}" SelectedItem="{Binding TipoOrganigramaSeleccionado}" SelectionChanged="FiltrosOrganigrama_SelectionChanged" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14" Cursor="Hand"/>
+                                        <TextBlock Text="Tipo de evento" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+                                        <ComboBox ItemsSource="{Binding TiposAsamblea}" SelectedItem="{Binding TipoOrganigramaSeleccionado}" SelectionChanged="FiltrosOrganigrama_SelectionChanged" Padding="8" FontSize="14" Cursor="Hand"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="4">
-                                        <TextBlock Text="Sección del circuito" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                                        <ComboBox ItemsSource="{Binding ListaSecciones}" SelectedItem="{Binding SeccionOrganigramaSeleccionada}" DisplayMemberPath="Nombre" SelectionChanged="FiltrosOrganigrama_SelectionChanged" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14" Cursor="Hand"/>
+                                        <TextBlock Text="Sección del circuito" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+                                        <ComboBox ItemsSource="{Binding ListaSecciones}" SelectedItem="{Binding SeccionOrganigramaSeleccionada}" DisplayMemberPath="Nombre" SelectionChanged="FiltrosOrganigrama_SelectionChanged" Padding="8" FontSize="14" Cursor="Hand"/>
                                     </StackPanel>
                                 </Grid>
                             </Border>
@@ -357,7 +354,7 @@
                                 <StackPanel Grid.Column="2">
                                     <ContentControl Content="{Binding DeptSupAuxAsamblea}" ContentTemplate="{StaticResource DepartamentoCajaTemplate}"/>
 
-                                    <Border Background="#1A1A1C" CornerRadius="8" BorderBrush="#4C566A" BorderThickness="1" Padding="15" Margin="0,0,0,15">
+                                    <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" BorderBrush="#4C566A" BorderThickness="1" Padding="15" Margin="0,0,0,15">
                                         <StackPanel>
                                             <TextBlock Text="DEPARTAMENTO DE AUDIO Y VÍDEO" Foreground="#8FBCBB" FontWeight="Bold" Margin="0,0,0,15" HorizontalAlignment="Center"/>
                                             <ContentControl Content="{Binding DeptAudioVideo}" ContentTemplate="{StaticResource DepartamentoCajaTemplate}"/>
@@ -383,7 +380,7 @@
                     </TabItem>
 
                     <!-- PESTAÑA 3: ORADORES -->
-                    <TabItem Header="Oradores" FontSize="16" Foreground="White">
+                    <TabItem Header="Oradores" FontSize="16" Foreground="{DynamicResource TextFillColorPrimaryBrush}">
                         <Grid Margin="0,15,0,0">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -397,8 +394,8 @@
                                 </Grid.ColumnDefinitions>
 
                                 <StackPanel Grid.Column="0" Orientation="Horizontal">
-                                    <TextBlock Text="Sección del circuito:" Foreground="#AAAAAA" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                    <ComboBox ItemsSource="{Binding ListaSeccionesMatriz}" SelectedItem="{Binding SeccionMatrizSeleccionada}" DisplayMemberPath="Nombre" SelectionChanged="FiltrosMatriz_SelectionChanged" Width="150" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" Cursor="Hand"/>
+                                    <TextBlock Text="Sección del circuito:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                    <ComboBox ItemsSource="{Binding ListaSeccionesMatriz}" SelectedItem="{Binding SeccionMatrizSeleccionada}" DisplayMemberPath="Nombre" SelectionChanged="FiltrosMatriz_SelectionChanged" Width="150" Padding="8" Cursor="Hand"/>
                                 </StackPanel>
 
                                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
@@ -408,20 +405,20 @@
 
                             <DataGrid x:Name="TablaOradores" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False"
                                       HeadersVisibility="Column" SelectionMode="Single" IsReadOnly="False"
-                                      GridLinesVisibility="All" HorizontalGridLinesBrush="#30FFFFFF" VerticalGridLinesBrush="#30FFFFFF"
-                                      BorderThickness="1" BorderBrush="#3E3E42" Background="#1E1E1E"
+                                      GridLinesVisibility="All" HorizontalGridLinesBrush="{DynamicResource DividerStrokeColorDefaultBrush}" VerticalGridLinesBrush="{DynamicResource DividerStrokeColorDefaultBrush}"
+                                      BorderThickness="1" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" Background="Transparent"
                                       RowBackground="Transparent" AlternatingRowBackground="#0AFFFFFF">
 
                                 <DataGrid.Resources>
                                     <!-- ESTILO DE CABECERA A 45px DE ALTURA PARA OCUPAR LAS 2 FILAS VISUALMENTE -->
                                     <Style TargetType="DataGridColumnHeader">
                                         <Setter Property="Background" Value="#2D2D30"/>
-                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
                                         <Setter Property="FontWeight" Value="SemiBold"/>
                                         <Setter Property="HorizontalContentAlignment" Value="Center"/>
                                         <Setter Property="VerticalContentAlignment" Value="Center"/>
                                         <Setter Property="Padding" Value="0"/>
-                                        <Setter Property="BorderBrush" Value="#3E3E42"/>
+                                        <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}"/>
                                         <Setter Property="BorderThickness" Value="0,0,1,1"/>
                                         <Setter Property="Height" Value="45"/>
                                     </Style>
@@ -441,7 +438,7 @@
                                 <DataGrid.RowStyle>
                                     <Style TargetType="DataGridRow">
                                         <Setter Property="Background" Value="Transparent"/>
-                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
                                         <Setter Property="BorderThickness" Value="0"/>
                                         <Style.Triggers>
                                             <!-- Quita el resaltado al hacer clic -->
@@ -449,7 +446,7 @@
                                                 <Setter Property="Background" Value="Transparent"/>
                                             </Trigger>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Background" Value="#10FFFFFF"/>
+                                                <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}"/>
                                             </Trigger>
                                         </Style.Triggers>
                                     </Style>
@@ -460,7 +457,7 @@
                                         <Setter Property="BorderThickness" Value="0"/>
                                         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
                                         <Setter Property="Background" Value="Transparent"/>
-                                        <Setter Property="Foreground" Value="White"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
                                         <Style.Triggers>
                                             <Trigger Property="IsSelected" Value="True">
                                                 <Setter Property="Background" Value="Transparent"/>
@@ -515,7 +512,7 @@
                     </TabItem>
 
                     <!-- PESTAÑA 4: REUNIÓN PRECURSORES -->
-                    <TabItem Header="Reunión precursores" FontSize="16" Foreground="White">
+                    <TabItem Header="Reunión precursores" FontSize="16" Foreground="{DynamicResource TextFillColorPrimaryBrush}">
                         <Grid Margin="0,15,0,0">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -524,7 +521,7 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <Border Grid.Row="0" Background="#252528" Padding="20" CornerRadius="8" BorderBrush="#3E3E42" BorderThickness="1" Margin="0,0,0,20">
+                            <Border Grid.Row="0" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" Padding="20" CornerRadius="8" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" Margin="0,0,0,20">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="150"/>
@@ -535,21 +532,21 @@
                                     </Grid.ColumnDefinitions>
 
                                     <StackPanel Grid.Column="0">
-                                        <TextBlock Text="Año de servicio" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                                        <ComboBox ItemsSource="{Binding ListaAños}" SelectedItem="{Binding AñoPrecursoresSeleccionado}" SelectionChanged="FiltrosPrecursores_SelectionChanged" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14" Cursor="Hand"/>
+                                        <TextBlock Text="Año de servicio" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+                                        <ComboBox ItemsSource="{Binding ListaAños}" SelectedItem="{Binding AñoPrecursoresSeleccionado}" SelectionChanged="FiltrosPrecursores_SelectionChanged" Padding="8" FontSize="14" Cursor="Hand"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
-                                        <TextBlock Text="Título" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                                        <TextBox Text="{Binding TituloPrecursores, Mode=TwoWay}" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14"/>
+                                        <TextBlock Text="Título" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+                                        <TextBox Text="{Binding TituloPrecursores, Mode=TwoWay}" Padding="8" FontSize="14"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="4">
-                                        <TextBlock Text="Texto temático" Foreground="#AAAAAA" Margin="0,0,0,5"/>
-                                        <TextBox Text="{Binding TextoTematicoPrecursores, Mode=TwoWay}" Padding="8" Background="#1E1E1E" Foreground="White" BorderBrush="#444" FontSize="14" FontStyle="Italic"/>
+                                        <TextBlock Text="Texto temático" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+                                        <TextBox Text="{Binding TextoTematicoPrecursores, Mode=TwoWay}" Padding="8" FontSize="14" FontStyle="Italic"/>
                                     </StackPanel>
                                 </Grid>
                             </Border>
 
-                            <Border Grid.Row="1" Background="#2E3440" Padding="20" CornerRadius="8" BorderBrush="#4C566A" BorderThickness="1" Margin="0,0,0,20">
+                            <Border Grid.Row="1" Background="{DynamicResource ControlFillColorSecondaryBrush}" Padding="20" CornerRadius="8" BorderBrush="#4C566A" BorderThickness="1" Margin="0,0,0,20">
                                 <StackPanel>
                                     <TextBlock Text="📅 SESIONES" FontSize="16" FontWeight="Bold" Foreground="#8FBCBB" Margin="0,0,0,15"/>
                                     <ItemsControl ItemsSource="{Binding SesionesPrecursores}" ItemTemplate="{StaticResource FilaSesionTemplate}"/>
@@ -557,14 +554,14 @@
                                 </StackPanel>
                             </Border>
 
-                            <Border Grid.Row="2" Background="#252528" Padding="20" CornerRadius="8" BorderBrush="#3E3E42" BorderThickness="1" Visibility="{Binding VisibilidadSesionActiva}">
+                            <Border Grid.Row="2" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" Padding="20" CornerRadius="8" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" Visibility="{Binding VisibilidadSesionActiva}">
                                 <StackPanel DataContext="{Binding SesionPrecursoresActiva}">
                                     <Grid Margin="0,0,0,15">
                                         <TextBlock Text="📋 PROGRAMA DE LA REUNIÓN" FontSize="16" FontWeight="Bold" Foreground="#EBCB8B" VerticalAlignment="Center"/>
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                            <TextBlock Text="Viendo el programa de:" Foreground="#AAAAAA" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                            <TextBlock Text="Viendo el programa de:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
                                             <ComboBox ItemsSource="{Binding DataContext.SesionesPrecursores, RelativeSource={RelativeSource AncestorType=Page}}" SelectedItem="{Binding DataContext.SesionPrecursoresActiva, Mode=TwoWay, RelativeSource={RelativeSource AncestorType=Page}}" 
-                                                      DisplayMemberPath="TituloSesion" Width="200" Background="#1E1E1E" Foreground="White" BorderBrush="#444" Cursor="Hand"/>
+                                                      DisplayMemberPath="TituloSesion" Width="200" Cursor="Hand"/>
                                         </StackPanel>
                                     </Grid>
 
@@ -589,8 +586,8 @@
         <!-- CAPA DE CARGA (Para Selenium) -->
         <Grid x:Name="OverlayCargando" Background="#80000000" Visibility="Collapsed" Panel.ZIndex="999">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                <ui:ProgressRing IsIndeterminate="True" Width="60" Height="60" Foreground="#4BA3E3"/>
-                <TextBlock Text="Procesando envío de asignación..." Foreground="White" FontSize="16" FontWeight="SemiBold" Margin="0,15,0,0" HorizontalAlignment="Center"/>
+                <ui:ProgressRing IsIndeterminate="True" Width="60" Height="60" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
+                <TextBlock Text="Procesando envío de asignación..." Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontSize="16" FontWeight="SemiBold" Margin="0,15,0,0" HorizontalAlignment="Center"/>
             </StackPanel>
         </Grid>
     </Grid>

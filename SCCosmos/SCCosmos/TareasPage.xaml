@@ -7,13 +7,13 @@
       xmlns:local="clr-namespace:SCCosmos"
       mc:Ignorable="d"
       d:DesignHeight="600" d:DesignWidth="1200"
-      Title="TareasPage">
+      Title="TareasPage" Foreground="{DynamicResource TextFillColorPrimaryBrush}">
 
     <Page.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </Page.Resources>
 
-    <Grid Margin="20">
+    <Grid Margin="{StaticResource MargenPagina}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -28,17 +28,14 @@
             </Grid.ColumnDefinitions>
 
             <StackPanel>
-                <TextBlock Text="TAREAS Y EVENTOS"
-                           FontSize="26"
-                           FontWeight="SemiBold"
-                           Foreground="White"/>
+                <TextBlock Text="Tareas y eventos" Style="{StaticResource TituloPagina}"/>
                 <TextBlock x:Name="TxtResumen"
-                           Foreground="#AAAAAA"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                            Margin="0,4,0,0"/>
             </StackPanel>
 
             <ui:Button Grid.Column="1"
-                       Content="＋ Nueva tarea"
+                       Content="Nueva tarea"
                        Icon="{ui:SymbolIcon AddCircle24}"
                        Appearance="Primary"
                        Padding="14,8"
@@ -58,7 +55,6 @@
                          Tag="Personal"
                          GroupName="CategoriaTareas"
                          IsChecked="True"
-                         Foreground="White"
                          FontSize="14"
                          FontWeight="SemiBold"
                          Margin="0,0,22,0"
@@ -69,7 +65,6 @@
                          Content="Calendario"
                          Tag="Calendario"
                          GroupName="CategoriaTareas"
-                         Foreground="White"
                          FontSize="14"
                          FontWeight="SemiBold"
                          Margin="0,0,22,0"
@@ -80,7 +75,6 @@
                          Content="Asambleas"
                          Tag="Asambleas"
                          GroupName="CategoriaTareas"
-                         Foreground="White"
                          FontSize="14"
                          FontWeight="SemiBold"
                          Cursor="Hand"
@@ -93,8 +87,8 @@
             <ItemsControl x:Name="ListaTareas">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Border Background="#14FFFFFF"
-                                BorderBrush="#22FFFFFF"
+                        <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                                 BorderThickness="1"
                                 CornerRadius="10"
                                 Padding="14"
@@ -120,22 +114,22 @@
                                     <TextBlock Text="{Binding TituloVisual}"
                                                FontSize="16"
                                                FontWeight="SemiBold"
-                                               Foreground="White"
+                                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                                TextWrapping="Wrap"/>
 
                                     <TextBlock Text="{Binding FechasVisual}"
-                                               Foreground="#4BA3E3"
+                                               Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"
                                                Margin="0,3,0,0"/>
 
                                     <TextBlock Text="{Binding Descripcion}"
-                                               Foreground="#B6BBC2"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                TextWrapping="Wrap"
                                                Margin="0,3,0,0"/>
 
                                     <StackPanel Orientation="Horizontal"
                                                 Margin="0,7,0,0">
 
-                                        <Border Background="#222832"
+                                        <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
                                                 CornerRadius="6"
                                                 Padding="8,3"
                                                 Margin="0,0,6,0"
@@ -146,7 +140,7 @@
                                                        FontWeight="SemiBold"/>
                                         </Border>
 
-                                        <Border Background="#222832"
+                                        <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
                                                 CornerRadius="6"
                                                 Padding="8,3"
                                                 Margin="0,0,6,0"
@@ -157,7 +151,7 @@
                                                        FontWeight="SemiBold"/>
                                         </Border>
 
-                                        <Border Background="#1E2C24"
+                                        <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
                                                 CornerRadius="6"
                                                 Padding="8,3"
                                                 Margin="0,0,6,0"
@@ -168,7 +162,7 @@
                                                        FontWeight="SemiBold"/>
                                         </Border>
 
-                                        <Border Background="#1E2C24"
+                                        <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
                                                 CornerRadius="6"
                                                 Padding="8,3"
                                                 Margin="0,0,6,0"

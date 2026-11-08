@@ -3,9 +3,9 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       Title="ConfiguracionPage"
-      Foreground="White">
+      Foreground="{DynamicResource TextFillColorPrimaryBrush}">
 
-    <Grid Margin="30">
+    <Grid Margin="{StaticResource MargenPagina}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -13,8 +13,8 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" Margin="0,0,0,20">
-            <TextBlock Text="CONFIGURACIÓN" FontSize="28" FontWeight="Bold"/>
-            <TextBlock Text="Gestiona las preferencias y vinculaciones del sistema." Foreground="#AAAAAA" FontSize="14"/>
+            <TextBlock Text="Configuración" Style="{StaticResource TituloPagina}"/>
+            <TextBlock Text="Gestiona las preferencias y vinculaciones del sistema." Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="14"/>
         </StackPanel>
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="0,0,15,0">
@@ -27,18 +27,18 @@
 
                 <ui:Card Padding="20" Margin="0,0,0,25">
                     <StackPanel>
-                        <TextBlock Text="¿Quién usa este equipo? Solo el superintendente, con el código correcto, accede a todas las funciones. En caso contrario solo estarán Inicio, Calendario, Personas y Configuración." Foreground="#AAAAAA" FontSize="13" Margin="0,0,0,12" TextWrapping="Wrap"/>
+                        <TextBlock Text="¿Quién usa este equipo? Solo el superintendente, con el código correcto, accede a todas las funciones. En caso contrario solo estarán Inicio, Calendario, Personas y Configuración." Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="13" Margin="0,0,0,12" TextWrapping="Wrap"/>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Perfil:" Foreground="#CCC" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="Perfil:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                             <ComboBox x:Name="CmbPerfilUsuario" Width="150" SelectedIndex="0" SelectionChanged="CmbPerfilUsuario_SelectionChanged">
                                 <ComboBoxItem>Hombre</ComboBoxItem>
                                 <ComboBoxItem>Esposa</ComboBoxItem>
                             </ComboBox>
                             <StackPanel x:Name="PanelCodigoPerfil" Orientation="Horizontal" Visibility="Collapsed">
-                                <TextBlock Text="Código:" Foreground="#CCC" VerticalAlignment="Center" Margin="18,0,8,0"/>
-                                <PasswordBox x:Name="TxtCodigoPerfil" Width="150" Background="#1E1E1E" Foreground="White" BorderBrush="#444" Padding="6"/>
+                                <TextBlock Text="Código:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" Margin="18,0,8,0"/>
+                                <PasswordBox x:Name="TxtCodigoPerfil" Width="150" Padding="6"/>
                             </StackPanel>
-                            <Button Content="Guardar perfil" Click="BtnGuardarPerfil_Click" Margin="18,0,0,0" Padding="14,6" Background="#2478B5" Foreground="White" BorderThickness="0"/>
+                            <ui:Button Content="Guardar perfil" Icon="{ui:SymbolIcon Save24}" Appearance="Primary" Click="BtnGuardarPerfil_Click" Margin="18,0,0,0" Cursor="Hand"/>
                         </StackPanel>
                         <TextBlock x:Name="TxtEstadoPerfil" Foreground="#EAC18B" FontSize="12" Margin="0,10,0,0" TextWrapping="Wrap"/>
                     </StackPanel>
@@ -56,10 +56,10 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <ui:SymbolIcon Grid.Column="0" Symbol="ContactCardGroup24" FontSize="36" Margin="0,0,20,0" VerticalAlignment="Top" Foreground="#4BA3E3"/>
+                        <ui:SymbolIcon Grid.Column="0" Symbol="ContactCardGroup24" FontSize="36" Margin="0,0,20,0" VerticalAlignment="Top" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
                         <StackPanel Grid.Column="1">
                             <TextBlock Text="Datos del circuito" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,5"/>
-                            <TextBlock Text="Estos nombres y el número de circuito aparecerán en los informes y documentos oficiales (S-303, S-318...)." Foreground="#AAAAAA" FontSize="13" Margin="0,0,0,15"/>
+                            <TextBlock Text="Estos nombres y el número de circuito aparecerán en los informes y documentos oficiales (S-303, S-318...)." Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="13" Margin="0,0,0,15"/>
 
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -76,28 +76,28 @@
                                 </Grid.ColumnDefinitions>
 
                                 <StackPanel Grid.Column="0">
-                                    <TextBlock x:Name="LblNumCircuito" Text="Nº de Circuito" Foreground="#CCC" Margin="0,0,0,5"/>
-                                    <ui:TextBox x:Name="TxtNumCircuito" Background="#1E1E1E" Foreground="White" PlaceholderText="ESP-BA-01"/>
+                                    <TextBlock x:Name="LblNumCircuito" Text="Nº de Circuito" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+                                    <ui:TextBox x:Name="TxtNumCircuito" PlaceholderText="ESP-BA-01"/>
                                 </StackPanel>
                                 
                                 <StackPanel Grid.Column="2">
-                                    <TextBlock x:Name="LblNombreSC" Text="Nombre del SC" Foreground="#CCC" Margin="0,0,0,5"/>
-                                    <ui:TextBox x:Name="TxtNombre" Background="#1E1E1E" Foreground="White"/>
+                                    <TextBlock x:Name="LblNombreSC" Text="Nombre del SC" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+                                    <ui:TextBox x:Name="TxtNombre"/>
                                 </StackPanel>
 
                                 <StackPanel Grid.Column="4">
-                                    <TextBlock x:Name="LblApellidoSC" Text="Apellido del SC" Foreground="#CCC" Margin="0,0,0,5"/>
-                                    <ui:TextBox x:Name="TxtApellido" Background="#1E1E1E" Foreground="White"/>
+                                    <TextBlock x:Name="LblApellidoSC" Text="Apellido del SC" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+                                    <ui:TextBox x:Name="TxtApellido"/>
                                 </StackPanel>
 
                                 <StackPanel Grid.Column="6">
-                                    <TextBlock Text="Nombre esposa (opcional)" Foreground="#CCC" Margin="0,0,0,5"/>
-                                    <ui:TextBox x:Name="TxtNombreEsposa" Background="#1E1E1E" Foreground="White"/>
+                                    <TextBlock Text="Nombre esposa (opcional)" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+                                    <ui:TextBox x:Name="TxtNombreEsposa"/>
                                 </StackPanel>
 
                                 <StackPanel Grid.Column="8">
-                                    <TextBlock Text="Apellido esposa (opcional)" Foreground="#CCC" Margin="0,0,0,5"/>
-                                    <ui:TextBox x:Name="TxtApellidoEsposa" Background="#1E1E1E" Foreground="White"/>
+                                    <TextBlock Text="Apellido esposa (opcional)" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+                                    <ui:TextBox x:Name="TxtApellidoEsposa"/>
                                 </StackPanel>
 
                                 
@@ -113,16 +113,16 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <ui:SymbolIcon Grid.Column="0" Symbol="Briefcase24" FontSize="36" Margin="0,0,20,0" VerticalAlignment="Center" Foreground="#4BA3E3"/>
+                        <ui:SymbolIcon Grid.Column="0" Symbol="Briefcase24" FontSize="36" Margin="0,0,20,0" VerticalAlignment="Center" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
                         <StackPanel Grid.Column="1">
                             <TextBlock Text="Archivo del Circuito" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,5"/>
-                            <TextBlock Text="Ruta general donde se guarda el archivo y correspondencia del circuito." Foreground="#AAAAAA" FontSize="13" Margin="0,0,0,10"/>
+                            <TextBlock Text="Ruta general donde se guarda el archivo y correspondencia del circuito." Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="13" Margin="0,0,0,10"/>
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <ui:TextBox x:Name="TxtRutaArchivoCircuito" Grid.Column="0" IsReadOnly="True" Background="#1E1E1E" Foreground="White"/>
+                                <ui:TextBox x:Name="TxtRutaArchivoCircuito" Grid.Column="0" IsReadOnly="True"/>
                                 <ui:Button Grid.Column="1" Content="Examinar" Margin="10,0,0,0" Appearance="Secondary" Icon="{ui:SymbolIcon Folder24}" Click="BtnRutaArchivoCircuito_Click"/>
                             </Grid>
                         </StackPanel>
@@ -147,7 +147,7 @@
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                             <!-- Título en verde grisáceo si no está vinculado -->
                             <TextBlock x:Name="TxtTituloJW" Text="Cuenta de JW (No vinculada)" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="#809C80"/>
-                            <TextBlock x:Name="TxtDescripcion" Text="Crea un perfil dedicado de Firefox para interactuar con las funciones de JW Hub (sincronizar publicadores, descargar discursos...)." Foreground="#AAAAAA" TextWrapping="Wrap" FontSize="13"/>
+                            <TextBlock x:Name="TxtDescripcion" Text="Crea un perfil dedicado de Firefox para interactuar con las funciones de JW Hub (sincronizar publicadores, descargar discursos...)." Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" FontSize="13"/>
                         </StackPanel>
                         <ui:Button Grid.Column="2" x:Name="BtnVincularCorreo" Content="Vincular" Appearance="Primary" Icon="{ui:SymbolIcon PersonSync24}" Padding="15,10" Click="BtnVincularCorreo_Click" VerticalAlignment="Center"/>
                     </Grid>
@@ -164,7 +164,7 @@
                         <ui:SymbolIcon Grid.Column="0" Symbol="ArrowSync24" FontSize="36" Margin="0,0,20,0" VerticalAlignment="Top" Foreground="#4CAF50"/>
                         <StackPanel Grid.Column="1">
                             <TextBlock Text="Sincronización entre dispositivos" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,5"/>
-                            <TextBlock Text="Los cambios viajan solos entre tus dispositivos: en casa por wifi (al instante) y fuera de casa por la carpeta sincronizada que ya usas. No hay que añadir direcciones ni instalar nada; solo comparte la misma clave en todos." Foreground="#AAAAAA" FontSize="13" Margin="0,0,0,15" TextWrapping="Wrap"/>
+                            <TextBlock Text="Los cambios viajan solos entre tus dispositivos: en casa por wifi (al instante) y fuera de casa por la carpeta sincronizada que ya usas. No hay que añadir direcciones ni instalar nada; solo comparte la misma clave en todos." Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="13" Margin="0,0,0,15" TextWrapping="Wrap"/>
 
                             <ui:ToggleSwitch x:Name="ToggleSincroActivo" Content="Sincronización activada" Margin="0,0,0,14"/>
 
@@ -176,28 +176,28 @@
                                 </Grid.ColumnDefinitions>
 
                                 <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Nombre de este equipo" Foreground="#CCC" Margin="0,0,0,5"/>
-                                    <ui:TextBox x:Name="TxtNombreSincro" Background="#1E1E1E" Foreground="White"/>
+                                    <TextBlock Text="Nombre de este equipo" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+                                    <ui:TextBox x:Name="TxtNombreSincro"/>
                                 </StackPanel>
 
                                 <StackPanel Grid.Column="2">
-                                    <TextBlock Text="Clave de sincronización (igual en todos los dispositivos)" Foreground="#CCC" Margin="0,0,0,5"/>
+                                    <TextBlock Text="Clave de sincronización (igual en todos los dispositivos)" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
-                                        <ui:TextBox x:Name="TxtClaveSincro" Grid.Column="0" Background="#1E1E1E" Foreground="White"/>
+                                        <ui:TextBox x:Name="TxtClaveSincro" Grid.Column="0"/>
                                         <ui:Button Grid.Column="1" Content="Copiar" Margin="10,0,0,0" Appearance="Secondary" Click="BtnCopiarClaveSincro_Click"/>
                                     </Grid>
                                 </StackPanel>
                             </Grid>
 
-                            <TextBlock Text="Dirección por internet del otro dispositivo (Tailscale o IP:puerto, opcional)" Foreground="#CCC" Margin="0,14,0,5"/>
-                            <ui:TextBox x:Name="TxtDireccionesSincro" Background="#1E1E1E" Foreground="White" AcceptsReturn="True" TextWrapping="Wrap" Height="54"/>
+                            <TextBlock Text="Dirección por internet del otro dispositivo (Tailscale o IP:puerto, opcional)" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,14,0,5"/>
+                            <ui:TextBox x:Name="TxtDireccionesSincro" AcceptsReturn="True" TextWrapping="Wrap" Height="54"/>
 
-                            <TextBlock Text="Dispositivos (desmarca los que no quieras sincronizar con este equipo)" Foreground="#CCC" Margin="0,14,0,5"/>
-                            <ListBox x:Name="ListaDispositivosSincro" Height="110" Background="#1E1E1E" Foreground="#DDDDDD">
+                            <TextBlock Text="Dispositivos (desmarca los que no quieras sincronizar con este equipo)" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,14,0,5"/>
+                            <ListBox x:Name="ListaDispositivosSincro" Height="110">
                                 <ListBox.ItemContainerStyle>
                                     <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
                                         <Setter Property="Padding" Value="4,1"/>
@@ -219,15 +219,15 @@
                                                       Checked="ChkDispositivo_Changed"
                                                       Unchecked="ChkDispositivo_Changed"/>
                                             <StackPanel Grid.Column="1" Margin="6,0,0,0" VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding Nombre}" Foreground="White"/>
-                                                <TextBlock Text="{Binding Detalle}" Foreground="#9EA4AE" FontSize="11"/>
+                                                <TextBlock Text="{Binding Nombre}" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                                                <TextBlock Text="{Binding Detalle}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="11"/>
                                             </StackPanel>
                                         </Grid>
                                     </DataTemplate>
                                 </ListBox.ItemTemplate>
                             </ListBox>
 
-                            <TextBlock x:Name="LblEstadoSincro" Foreground="#AAAAAA" FontSize="12" Margin="0,12,0,0" TextWrapping="Wrap"/>
+                            <TextBlock x:Name="LblEstadoSincro" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" Margin="0,12,0,0" TextWrapping="Wrap"/>
                         </StackPanel>
                     </Grid>
                 </ui:Card>
@@ -242,18 +242,18 @@
                         <ui:SymbolIcon Grid.Column="0" Symbol="Bot24" FontSize="36" Margin="0,0,20,0" VerticalAlignment="Top" Foreground="#4CAF50"/>
                         <StackPanel Grid.Column="1">
                             <TextBlock Text="Automatizaciones en Segundo Plano" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,5"/>
-                            <TextBlock Text="Tareas que este ordenador realizará de forma invisible." Foreground="#AAAAAA" FontSize="13" Margin="0,0,0,15"/>
+                            <TextBlock Text="Tareas que este ordenador realizará de forma invisible." Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="13" Margin="0,0,0,15"/>
 
                             <ui:ToggleSwitch x:Name="ToggleSincronizacion" Content="Sincronizar personas de JW Hub automáticamente (Lunes)" Margin="0,0,0,10"/>
                             <ui:ToggleSwitch x:Name="ToggleDescargas" Content="Descargar discursos automáticamente (Martes)" Margin="0,0,0,15"/>
 
-                            <TextBlock Text="Carpeta de destino para los discursos:" Foreground="#CCC" Margin="0,0,0,5"/>
+                            <TextBlock Text="Carpeta de destino para los discursos:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <ui:TextBox x:Name="TxtRutaDescargas" Grid.Column="0" IsReadOnly="True" Background="#1E1E1E" Foreground="White"/>
+                                <ui:TextBox x:Name="TxtRutaDescargas" Grid.Column="0" IsReadOnly="True"/>
                                 <ui:Button Grid.Column="1" Content="Examinar" Margin="10,0,0,0" Appearance="Secondary" Icon="{ui:SymbolIcon Folder24}" Click="BtnRutaDescargas_Click"/>
                             </Grid>
                         </StackPanel>
@@ -267,16 +267,16 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <ui:SymbolIcon Grid.Column="0" Symbol="ArrowSync24" FontSize="36" Margin="0,0,20,0" VerticalAlignment="Top" Foreground="#4BA3E3"/>
+                        <ui:SymbolIcon Grid.Column="0" Symbol="ArrowSync24" FontSize="36" Margin="0,0,20,0" VerticalAlignment="Top" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
                         <StackPanel Grid.Column="1">
                             <TextBlock Text="Versión y actualizaciones" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,5"/>
-                            <TextBlock x:Name="TxtVersionInstalada" Text="Versión instalada: 1.0.0" Foreground="#AAAAAA" FontSize="13" Margin="0,0,0,12"/>
+                            <TextBlock x:Name="TxtVersionInstalada" Text="Versión instalada: 1.0.0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="13" Margin="0,0,0,12"/>
 
                             <ui:ToggleSwitch x:Name="ToggleActualizarAuto" Content="Actualizar automáticamente cuando haya una versión nueva (se aplica al cerrar la app)" Margin="0,0,0,12"/>
 
                             <StackPanel Orientation="Horizontal">
                                 <ui:Button x:Name="BtnBuscarActualizacion" Content="Buscar actualizaciones" Icon="{ui:SymbolIcon ArrowSync24}" Appearance="Secondary" Click="BtnBuscarActualizacion_Click"/>
-                                <TextBlock x:Name="TxtEstadoActualizacion" Foreground="#AAAAAA" FontSize="12" VerticalAlignment="Center" Margin="12,0,0,0" TextWrapping="Wrap"/>
+                                <TextBlock x:Name="TxtEstadoActualizacion" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Margin="12,0,0,0" TextWrapping="Wrap"/>
                             </StackPanel>
                         </StackPanel>
                     </Grid>

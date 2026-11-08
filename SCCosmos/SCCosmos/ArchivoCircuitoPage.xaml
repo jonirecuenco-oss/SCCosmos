@@ -8,11 +8,11 @@
       mc:Ignorable="d" 
       d:DesignHeight="700" d:DesignWidth="1100"
       Title="Archivo del Circuito"
-      Background="Transparent">
+      Background="Transparent" Foreground="{DynamicResource TextFillColorPrimaryBrush}">
 
     <Grid>
         <!-- CONTENIDO PRINCIPAL -->
-        <Grid Margin="30">
+        <Grid Margin="{StaticResource MargenPagina}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
@@ -20,8 +20,8 @@
 
             <!-- Cabecera de la página -->
             <Grid Grid.Row="0" Margin="0,0,0,20">
-                <TextBlock Text="ARCHIVO DEL CIRCUITO" FontSize="26" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
-                <TextBlock Text="Almacenamiento interno seguro" Foreground="#888" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,15,0"/>
+                <TextBlock Text="Archivo del circuito" Style="{StaticResource TituloPagina}" VerticalAlignment="Center"/>
+                <TextBlock Text="Almacenamiento interno seguro" Foreground="{DynamicResource TextFillColorTertiaryBrush}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,15,0"/>
             </Grid>
 
             <!-- Contenedor Principal (2 Columnas Globales) -->
@@ -32,7 +32,7 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- MENÚ LATERAL DE CATEGORÍAS (SECCIONES) -->
-                <Border Grid.Column="0" Background="#252528" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,0,20,0">
+                <Border Grid.Column="0" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,0,20,0">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -40,11 +40,11 @@
                         </Grid.RowDefinitions>
 
                         <Grid Grid.Row="0" Margin="0,0,0,10">
-                            <TextBlock Text="SECCIONES" Foreground="#AAA" FontWeight="Bold" VerticalAlignment="Center" Margin="5,0,0,0"/>
+                            <TextBlock Text="SECCIONES" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontWeight="Bold" VerticalAlignment="Center" Margin="5,0,0,0"/>
                             <ui:Button Icon="{ui:SymbolIcon Add24}" Appearance="Transparent" Foreground="#569CD6" HorizontalAlignment="Right" Padding="4" ToolTip="Crear nueva sección" Click="BtnNuevaSeccion_Click" Cursor="Hand"/>
                         </Grid>
 
-                        <ListBox x:Name="ListaCategorias" Grid.Row="1" SelectionChanged="ListaCategorias_SelectionChanged" Background="Transparent" BorderThickness="0" Foreground="#EEE" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox x:Name="ListaCategorias" Grid.Row="1" SelectionChanged="ListaCategorias_SelectionChanged" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                             <ListBox.ItemContainerStyle>
                                 <Style TargetType="ListBoxItem">
                                     <Setter Property="Padding" Value="10,8"/>
@@ -89,7 +89,7 @@
                 </Border>
 
                 <!-- PANEL DERECHO UNIFICADO -->
-                <Border Grid.Column="1" Background="#212124" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="8" Padding="20">
+                <Border Grid.Column="1" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="20">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -102,7 +102,7 @@
                         <Grid Grid.Row="0" Margin="0,0,0,15">
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <ui:SymbolIcon Symbol="Library24" FontSize="24" Foreground="#569CD6" Margin="0,0,10,0"/>
-                                <TextBlock Text="{Binding ElementName=ListaCategorias, Path=SelectedItem.NombreLimpio}" FontSize="20" FontWeight="Bold" Foreground="#FFFFFF" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding ElementName=ListaCategorias, Path=SelectedItem.NombreLimpio}" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" TextWrapping="Wrap" VerticalAlignment="Center"/>
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                 <ui:Button x:Name="BtnGenerarPDF" Content="Generar PDF" Icon="{ui:SymbolIcon DocumentPdf24}" Appearance="Primary" Cursor="Hand" Visibility="Collapsed" Click="BtnGenerarPDF_Click"/>
@@ -113,7 +113,7 @@
                         <StackPanel Grid.Row="1">
                             <!-- PANEL ESPECIAL 10: SCS -->
                             <Grid x:Name="PanelSCS" Visibility="Collapsed" MaxHeight="250" Margin="0,0,0,15">
-                                <DataGrid x:Name="TablaSCS" AutoGenerateColumns="False" IsReadOnly="True" Background="#1E1E1E" Foreground="White" BorderBrush="#3E3E42" BorderThickness="1" HeadersVisibility="Column" GridLinesVisibility="Horizontal">
+                                <DataGrid x:Name="TablaSCS" AutoGenerateColumns="False" IsReadOnly="True" Background="Transparent" Foreground="{DynamicResource TextFillColorPrimaryBrush}" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" BorderThickness="1" HeadersVisibility="Column" GridLinesVisibility="Horizontal">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="NOMBRE DEL HERMANO" Binding="{Binding Nombre}" Width="2*"/>
                                         <DataGridTextColumn Header="CONGREGACIÓN" Binding="{Binding Congregacion}" Width="1.5*"/>
@@ -126,12 +126,12 @@
                             <!-- PANEL ESPECIAL 12: POTENCIAL -->
                             <Grid x:Name="PanelPotencial" Visibility="Collapsed" Margin="0,0,0,15">
                                 <StackPanel>
-                                    <DataGrid x:Name="TablaPotencial" AutoGenerateColumns="False" CanUserAddRows="False" Background="#1E1E1E" Foreground="White" BorderBrush="#3E3E42" BorderThickness="1" HeadersVisibility="Column" GridLinesVisibility="Horizontal" MaxHeight="250" Margin="0,0,0,10">
+                                    <DataGrid x:Name="TablaPotencial" AutoGenerateColumns="False" CanUserAddRows="False" Background="Transparent" Foreground="{DynamicResource TextFillColorPrimaryBrush}" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" BorderThickness="1" HeadersVisibility="Column" GridLinesVisibility="Horizontal" MaxHeight="250" Margin="0,0,0,10">
                                         <DataGrid.Columns>
                                             <DataGridTemplateColumn Header="HERMANO" Width="250">
                                                 <DataGridTemplateColumn.CellTemplate>
                                                     <DataTemplate>
-                                                        <ComboBox ItemsSource="{Binding DataContext.ListaTodosAncianosSiervos, RelativeSource={RelativeSource AncestorType=Page}}" SelectedValue="{Binding PersonaId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" DisplayMemberPath="NombreMuestra" SelectedValuePath="Id" IsEditable="True" Background="Transparent" Foreground="White" BorderThickness="0" Margin="2" SelectionChanged="CmbPotencial_SelectionChanged"/>
+                                                        <ComboBox ItemsSource="{Binding DataContext.ListaTodosAncianosSiervos, RelativeSource={RelativeSource AncestorType=Page}}" SelectedValue="{Binding PersonaId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" DisplayMemberPath="NombreMuestra" SelectedValuePath="Id" IsEditable="True" Background="Transparent" BorderThickness="0" Margin="2" SelectionChanged="CmbPotencial_SelectionChanged"/>
                                                     </DataTemplate>
                                                 </DataGridTemplateColumn.CellTemplate>
                                             </DataGridTemplateColumn>
@@ -152,12 +152,12 @@
                             <!-- PANEL ESPECIAL 14: PROBLEMAS -->
                             <Grid x:Name="PanelProblemas" Visibility="Collapsed" Margin="0,0,0,15">
                                 <StackPanel>
-                                    <DataGrid x:Name="TablaProblemas" AutoGenerateColumns="False" CanUserAddRows="False" Background="#1E1E1E" Foreground="White" BorderBrush="#3E3E42" BorderThickness="1" HeadersVisibility="Column" GridLinesVisibility="Horizontal" MaxHeight="250" Margin="0,0,0,10">
+                                    <DataGrid x:Name="TablaProblemas" AutoGenerateColumns="False" CanUserAddRows="False" Background="Transparent" Foreground="{DynamicResource TextFillColorPrimaryBrush}" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" BorderThickness="1" HeadersVisibility="Column" GridLinesVisibility="Horizontal" MaxHeight="250" Margin="0,0,0,10">
                                         <DataGrid.Columns>
                                             <DataGridTemplateColumn Header="CONGREGACIÓN" Width="200">
                                                 <DataGridTemplateColumn.CellTemplate>
                                                     <DataTemplate>
-                                                        <ComboBox ItemsSource="{Binding DataContext.ListaCongregaciones, RelativeSource={RelativeSource AncestorType=Page}}" SelectedItem="{Binding Congregacion, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEditable="True" Background="Transparent" Foreground="White" BorderThickness="0" Margin="2" SelectionChanged="CmbProblema_SelectionChanged"/>
+                                                        <ComboBox ItemsSource="{Binding DataContext.ListaCongregaciones, RelativeSource={RelativeSource AncestorType=Page}}" SelectedItem="{Binding Congregacion, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEditable="True" Background="Transparent" BorderThickness="0" Margin="2" SelectionChanged="CmbProblema_SelectionChanged"/>
                                                     </DataTemplate>
                                                 </DataGridTemplateColumn.CellTemplate>
                                             </DataGridTemplateColumn>
@@ -177,7 +177,7 @@
                         </StackPanel>
 
                         <!-- 2. LÍNEA DIVISORIA SUTIL -->
-                        <Border Grid.Row="2" Height="1" Background="#333337" Margin="0,5,0,15"/>
+                        <Border Grid.Row="2" Height="1" Background="{DynamicResource ControlFillColorSecondaryBrush}" Margin="0,5,0,15"/>
 
                         <!-- 3. ZONA DE EXPLORADOR Y PREVISUALIZACIÓN -->
                         <Grid Grid.Row="3">
@@ -195,28 +195,28 @@
                                 </Grid.RowDefinitions>
 
                                 <Grid Grid.Row="0" Margin="0,0,0,10">
-                                    <TextBlock Text="ARCHIVOS SUBIDOS" FontSize="14" FontWeight="SemiBold" Foreground="#AAAAAA" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                                    <TextBlock Text="ARCHIVOS SUBIDOS" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" HorizontalAlignment="Left"/>
                                 </Grid>
 
-                                <TreeView x:Name="ArbolArchivos" Grid.Row="1" Background="Transparent" BorderThickness="0" Foreground="White" SelectedItemChanged="ArbolArchivos_SelectedItemChanged" ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
+                                <TreeView x:Name="ArbolArchivos" Grid.Row="1" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource TextFillColorPrimaryBrush}" SelectedItemChanged="ArbolArchivos_SelectedItemChanged" ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
                             </Grid>
 
                             <!-- DIVISOR ARRASTRABLE -->
-                            <GridSplitter Grid.Column="1" Width="3" Background="#3E3E42" HorizontalAlignment="Center" VerticalAlignment="Stretch" Margin="0,0" Cursor="SizeWE"/>
+                            <GridSplitter Grid.Column="1" Width="3" Background="{DynamicResource DividerStrokeColorDefaultBrush}" HorizontalAlignment="Center" VerticalAlignment="Stretch" Margin="0,0" Cursor="SizeWE"/>
 
                             <!-- COLUMNA DERECHA: Área de Previsualización -->
-                            <Border Grid.Column="2" Background="#1A1A1C" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="5" Padding="15">
+                            <Border Grid.Column="2" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="5" Padding="15">
                                 <Grid>
                                     <!-- Mensaje por defecto -->
                                     <StackPanel x:Name="PreviewDefault" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                        <ui:SymbolIcon Symbol="DocumentSearch24" FontSize="40" Foreground="#555" HorizontalAlignment="Center" Margin="0,0,0,10"/>
-                                        <TextBlock Text="Selecciona un archivo o carpeta en el panel izquierdo" Foreground="#777" TextWrapping="Wrap" TextAlignment="Center"/>
+                                        <ui:SymbolIcon Symbol="DocumentSearch24" FontSize="40" Foreground="{DynamicResource TextFillColorTertiaryBrush}" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                                        <TextBlock Text="Selecciona un archivo o carpeta en el panel izquierdo" Foreground="{DynamicResource TextFillColorTertiaryBrush}" TextWrapping="Wrap" TextAlignment="Center"/>
                                     </StackPanel>
 
                                     <!-- Panel interactivo de Carpeta -->
                                     <StackPanel x:Name="PreviewCarpeta" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Collapsed">
                                         <ui:SymbolIcon x:Name="IconoCarpetaPreview" Symbol="FolderOpen24" FontSize="60" Foreground="#EBCB8B" HorizontalAlignment="Center" Margin="0,0,0,15"/>
-                                        <TextBlock x:Name="TxtNombreCarpetaPreview" Text="Carpeta" Foreground="White" FontWeight="Bold" FontSize="18" HorizontalAlignment="Center" Margin="0,0,0,20" TextWrapping="Wrap" TextAlignment="Center"/>
+                                        <TextBlock x:Name="TxtNombreCarpetaPreview" Text="Carpeta" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontWeight="Bold" FontSize="18" HorizontalAlignment="Center" Margin="0,0,0,20" TextWrapping="Wrap" TextAlignment="Center"/>
                                         <ui:Button x:Name="BtnSubirEnCarpeta" Content="Subir archivo aquí" Icon="{ui:SymbolIcon ArrowUpload24}" Appearance="Primary" Click="BtnSubirEnCarpeta_Click" Cursor="Hand" HorizontalAlignment="Center" Margin="0,0,0,10"/>
                                         <ui:Button x:Name="BtnCrearSubcarpeta" Content="Crear subcarpeta" Icon="{ui:SymbolIcon FolderAdd24}" Appearance="Secondary" Click="BtnCrearSubcarpeta_Click" Cursor="Hand" HorizontalAlignment="Center"/>
                                     </StackPanel>
@@ -225,7 +225,7 @@
                                     <Image x:Name="PreviewImage" Stretch="Uniform" Visibility="Collapsed"/>
 
                                     <!-- Previsualización: Textos -->
-                                    <TextBox x:Name="PreviewText" IsReadOnly="True" Background="Transparent" Foreground="#DDD" BorderThickness="0" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Visibility="Collapsed" FontFamily="Consolas"/>
+                                    <TextBox x:Name="PreviewText" IsReadOnly="True" Background="Transparent" BorderThickness="0" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Visibility="Collapsed" FontFamily="Consolas"/>
 
                                     <!-- Previsualización de PDF -->
                                     <wv2:WebView2 x:Name="PreviewPdf" Visibility="Collapsed"/>
@@ -233,15 +233,15 @@
                                     <!-- Panel rápido para Word y Excel -->
                                     <StackPanel x:Name="PreviewOfficeDirecto" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Collapsed">
                                         <ui:SymbolIcon x:Name="IconoOffice" Symbol="DocumentText24" FontSize="60" Margin="0,0,0,15" HorizontalAlignment="Center"/>
-                                        <TextBlock x:Name="TxtNombreOffice" Text="documento.docx" Foreground="White" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center" Margin="0,0,0,20" TextWrapping="Wrap" TextAlignment="Center"/>
+                                        <TextBlock x:Name="TxtNombreOffice" Text="documento.docx" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center" Margin="0,0,0,20" TextWrapping="Wrap" TextAlignment="Center"/>
                                         <ui:Button x:Name="BtnAbrirOffice" Content="Abrir documento" Icon="{ui:SymbolIcon Open24}" Appearance="Primary" Click="BtnAbrirOffice_Click" Cursor="Hand" HorizontalAlignment="Center"/>
                                     </StackPanel>
 
                                     <!-- Mensaje: Archivo no soportado -->
                                     <StackPanel x:Name="PreviewNoSoportado" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Collapsed">
-                                        <ui:SymbolIcon Symbol="Document24" FontSize="40" Foreground="#555" HorizontalAlignment="Center" Margin="0,0,0,10"/>
-                                        <TextBlock x:Name="TxtNombreArchivoPreview" Text="archivo.zip" Foreground="#AAA" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,5" TextWrapping="Wrap" TextAlignment="Center"/>
-                                        <TextBlock Text="Previsualización no disponible." Foreground="#777" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                                        <ui:SymbolIcon Symbol="Document24" FontSize="40" Foreground="{DynamicResource TextFillColorTertiaryBrush}" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                                        <TextBlock x:Name="TxtNombreArchivoPreview" Text="archivo.zip" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,5" TextWrapping="Wrap" TextAlignment="Center"/>
+                                        <TextBlock Text="Previsualización no disponible." Foreground="{DynamicResource TextFillColorTertiaryBrush}" HorizontalAlignment="Center" Margin="0,0,0,10"/>
                                         <TextBlock Text="(Haz doble clic en la lista para abrirlo)" Foreground="#569CD6" HorizontalAlignment="Center" FontSize="12"/>
                                     </StackPanel>
                                 </Grid>
@@ -256,10 +256,10 @@
         <!-- MODAL OVERLAY PARA INTRODUCIR NOMBRES (Carpetas, Secciones, Renombrar) -->
         <!-- ==================================================================== -->
         <Grid x:Name="ModalOverlay" Background="#99000000" Visibility="Collapsed">
-            <Border Background="#252528" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="8" Padding="25" HorizontalAlignment="Center" VerticalAlignment="Center" MinWidth="400">
+            <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="8" Padding="25" HorizontalAlignment="Center" VerticalAlignment="Center" MinWidth="400">
                 <StackPanel>
-                    <TextBlock x:Name="TxtModalTitulo" Text="Introduce el nombre:" Foreground="White" FontWeight="SemiBold" FontSize="18" Margin="0,0,0,15"/>
-                    <TextBox x:Name="TxtModalInput" Background="#1E1E1E" Foreground="White" BorderBrush="#555" Padding="10" Margin="0,0,0,20" FontSize="14"/>
+                    <TextBlock x:Name="TxtModalTitulo" Text="Introduce el nombre:" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontWeight="SemiBold" FontSize="18" Margin="0,0,0,15"/>
+                    <TextBox x:Name="TxtModalInput" Padding="10" Margin="0,0,0,20" FontSize="14"/>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                         <ui:Button Content="Cancelar" Appearance="Secondary" Margin="0,0,10,0" Click="BtnModalCancelar_Click" Cursor="Hand"/>
                         <ui:Button Content="Aceptar" Appearance="Primary" Click="BtnModalAceptar_Click" Cursor="Hand"/>

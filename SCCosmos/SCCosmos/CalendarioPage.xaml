@@ -7,7 +7,7 @@
       xmlns:local="clr-namespace:SCCosmos"
       mc:Ignorable="d" 
       d:DesignHeight="600" d:DesignWidth="1200"
-      Title="CalendarioPage">
+      Title="CalendarioPage" Foreground="{DynamicResource TextFillColorPrimaryBrush}">
 
     <Page.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
@@ -63,9 +63,9 @@
                       SelectionMode="Single"
                       IsReadOnly="True"
                       GridLinesVisibility="Horizontal"
-                      HorizontalGridLinesBrush="#20FFFFFF"
+                      HorizontalGridLinesBrush="{DynamicResource DividerStrokeColorDefaultBrush}"
                       BorderThickness="1"
-                      BorderBrush="#20FFFFFF"
+                      BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
                       Background="Transparent"
                       RowBackground="Transparent"
                       AlternatingRowBackground="Transparent"
@@ -82,7 +82,7 @@
                 <DataGrid.RowStyle>
                     <Style TargetType="DataGridRow">
                         <Setter Property="Background" Value="Transparent"/>
-                        <Setter Property="Foreground" Value="White"/>
+                        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
                         <Setter Property="Opacity" Value="{Binding OpacidadSemana}"/>
                         <Setter Property="Cursor" Value="Hand"/>
 
@@ -103,7 +103,7 @@
 
                             <!-- EFECTO HOVER -->
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#30FFFFFF"/>
+                                <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}"/>
                                 <Setter Property="Opacity" Value="1.0"/>
                             </Trigger>
                         </Style.Triggers>
@@ -118,8 +118,8 @@
                                     <Setter.Value>
                                         <ControlTemplate TargetType="{x:Type GroupItem}">
                                             <StackPanel>
-                                                <Border Background="#25FFFFFF" Padding="15,6" Margin="0" BorderThickness="0,1,0,1" BorderBrush="#35FFFFFF">
-                                                    <TextBlock Text="{Binding Name}" Foreground="White" FontWeight="Bold" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" Padding="15,6" Margin="0" BorderThickness="0,1,0,1" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}">
+                                                    <TextBlock Text="{Binding Name}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontWeight="Bold" FontSize="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                 </Border>
                                                 <ItemsPresenter />
                                             </StackPanel>
@@ -247,7 +247,7 @@
                                         <ui:Button 
                                                    Icon="{ui:SymbolIcon AddCircle24}" 
                                                    Appearance="Transparent" 
-                                                   Foreground="#0078D4"
+                                                   Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"
                                                    Padding="6" 
                                                    Cursor="Hand" 
                                                    Click="BtnSolaparActividad_Click" 
@@ -287,7 +287,7 @@
                                    Grid.Column="1"
                                    FontSize="20"
                                    FontWeight="SemiBold"
-                                   Foreground="White"
+                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center"/>
 
@@ -323,17 +323,17 @@
         </Grid>
 
         <!-- OVERLAY DE CARGA -->
-        <Grid x:Name="OverlayCargando" Background="#FF141418" Visibility="Collapsed" Panel.ZIndex="100" Grid.RowSpan="10">
-            <Border Background="#FF26262C"
+        <Grid x:Name="OverlayCargando" Background="Transparent" Visibility="Collapsed" Panel.ZIndex="100" Grid.RowSpan="10">
+            <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
                     CornerRadius="10"
                     Padding="28,22"
                     BorderThickness="1"
-                    BorderBrush="#33FFFFFF"
+                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center">
                 <StackPanel>
-                    <TextBlock Text="Cargando..." Foreground="White" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,14" HorizontalAlignment="Center"/>
-                    <Border Width="220" Height="6" CornerRadius="3" Background="#22FFFFFF" ClipToBounds="True">
+                    <TextBlock Text="Cargando..." Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,14" HorizontalAlignment="Center"/>
+                    <Border Width="220" Height="6" CornerRadius="3" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" ClipToBounds="True">
                         <Grid>
                             <Rectangle x:Name="BarraCarga" Width="70" Height="6" RadiusX="3" RadiusY="3" HorizontalAlignment="Left">
                                 <Rectangle.Fill>
