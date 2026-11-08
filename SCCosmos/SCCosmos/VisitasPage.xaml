@@ -3,7 +3,7 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
       xmlns:local="clr-namespace:SCCosmos"
-      Title="VisitasPage" Background="#1E1E1E"
+      Title="VisitasPage" Foreground="{DynamicResource TextFillColorPrimaryBrush}"
       SizeChanged="Page_SizeChanged">
 
     <Page.Resources>
@@ -35,13 +35,13 @@
 
         <DataTemplate x:Key="BotonEditarTemplate">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                <Button Content="✏️" ToolTip="Editar" Click="BtnEditarPersona_Click" Background="Transparent" Foreground="White" BorderThickness="0" Cursor="Hand" Margin="2,0,6,0" FontSize="14"/>
-                <Button Content="🗑️" ToolTip="Eliminar" Background="Transparent" Foreground="White" BorderThickness="0" Cursor="Hand" Margin="0,0,2,0" FontSize="14" Click="BtnEliminarPersona_Click"/>
+                <ui:Button Icon="{ui:SymbolIcon Edit24}" Appearance="Transparent" ToolTip="Editar" Click="BtnEditarPersona_Click" Padding="6" Margin="0,0,4,0" Cursor="Hand"/>
+                <ui:Button Icon="{ui:SymbolIcon Delete24}" Appearance="Transparent" Foreground="{DynamicResource SystemFillColorCriticalBrush}" ToolTip="Eliminar" Click="BtnEliminarPersona_Click" Padding="6" Cursor="Hand"/>
             </StackPanel>
         </DataTemplate>
 
         <Style x:Key="EstiloPestanaVisita" TargetType="TabItem">
-            <Setter Property="Foreground" Value="#AEB4BC"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Padding" Value="15,9"/>
@@ -62,13 +62,13 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="BdTabVisita" Property="Background" Value="#25282D"/>
-                                <Setter Property="Foreground" Value="White"/>
+                                <Setter TargetName="BdTabVisita" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="BdTabVisita" Property="Background" Value="#292D33"/>
-                                <Setter TargetName="BdTabVisita" Property="BorderBrush" Value="#4BA3E3"/>
-                                <Setter Property="Foreground" Value="White"/>
+                                <Setter TargetName="BdTabVisita" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}"/>
+                                <Setter TargetName="BdTabVisita" Property="BorderBrush" Value="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -83,20 +83,20 @@
         <TextBlock x:Name="TxtResumenPrograma" Visibility="Collapsed"/>
 
         <ScrollViewer x:Name="MainScrollViewer" VerticalScrollBarVisibility="Auto">
-            <StackPanel Margin="20">
-                <TextBlock x:Name="TxtTitulo" Text="VISITA" FontSize="24" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,20"/>
+            <StackPanel Margin="{StaticResource MargenPagina}">
+                <TextBlock x:Name="TxtTitulo" Text="Visita" Style="{StaticResource TituloPagina}" Margin="0,0,0,20"/>
 
                 <TabControl x:Name="TabsVisita"
                             SelectedIndex="0"
                             SelectionChanged="TabsVisita_SelectionChanged"
                             Background="Transparent"
                             BorderThickness="0"
-                            Foreground="White"
+                            Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                             HorizontalContentAlignment="Stretch"
                             ItemContainerStyle="{StaticResource EstiloPestanaVisita}">
                 <!-- SECCIÓN MINISTERIO -->
                 <TabItem x:Name="TabMinisterio" Header="Ministerio">
-                    <StackPanel Margin="10,15,10,10">
+                    <StackPanel Margin="0,16,0,0">
 
                         <Grid Margin="0,0,0,15">
                             <Grid.ColumnDefinitions>
@@ -117,21 +117,24 @@
                                             <Setter Property="Template">
                                                 <Setter.Value>
                                                     <ControlTemplate TargetType="ListBoxItem">
-                                                        <Border x:Name="BdItem" Background="#2A2A2A" Padding="15,10" Margin="0,0,6,6" CornerRadius="6">
+                                                        <Border x:Name="BdItem" Background="{DynamicResource ControlFillColorDefaultBrush}" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" BorderThickness="1" Padding="14,9" Margin="0,0,6,6" CornerRadius="6">
                                                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                         </Border>
                                                         <ControlTemplate.Triggers>
-                                                            <Trigger Property="IsSelected" Value="True">
-                                                                <Setter TargetName="BdItem" Property="Background" Value="#0078D4"/>
-                                                            </Trigger>
                                                             <Trigger Property="IsMouseOver" Value="True">
-                                                                <Setter TargetName="BdItem" Property="Background" Value="#404040"/>
+                                                                <Setter TargetName="BdItem" Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}"/>
+                                                            </Trigger>
+                                                            <!-- Después del ratón: el grupo elegido conserva su color al pasar por encima -->
+                                                            <Trigger Property="IsSelected" Value="True">
+                                                                <Setter TargetName="BdItem" Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+                                                                <Setter TargetName="BdItem" Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+                                                                <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
                                                             </Trigger>
                                                         </ControlTemplate.Triggers>
                                                     </ControlTemplate>
                                                 </Setter.Value>
                                             </Setter>
-                                            <Setter Property="Foreground" Value="White"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
                                             <Setter Property="FontSize" Value="14"/>
                                             <Setter Property="FontWeight" Value="SemiBold"/>
                                             <Setter Property="Cursor" Value="Hand"/>
@@ -140,23 +143,20 @@
                                 </ListBox>
 
                                 <!-- ACCIONES DE MINISTERIO -->
-                                <Button Content="➕" ToolTip="Añadir publicador" FontSize="16" FontWeight="SemiBold" Width="46" Height="38" Padding="0" Background="#10893E" Foreground="White" BorderThickness="0" Cursor="Hand" Click="BtnNuevaPersona_Click" VerticalAlignment="Top" Margin="4,0,0,6"/>
-                                <Button x:Name="BtnGenerarS21" Content="⬇" ToolTip="Generar todas las tarjetas S-21" FontSize="16" FontWeight="SemiBold" Width="46" Height="38" Padding="0" Background="#2D5F8B" Foreground="White" BorderThickness="0" Cursor="Hand" Click="BtnGenerarTarjetasS21_Click" VerticalAlignment="Top" Margin="4,0,0,6"/>
+                                <ui:Button Icon="{ui:SymbolIcon PersonAdd24}" ToolTip="Añadir publicador" Appearance="Secondary" Width="46" Height="38" Padding="0" Cursor="Hand" Click="BtnNuevaPersona_Click" VerticalAlignment="Top" Margin="4,0,0,6"/>
+                                <ui:Button x:Name="BtnGenerarS21" Icon="{ui:SymbolIcon ArrowDownload24}" ToolTip="Generar todas las tarjetas S-21" Appearance="Secondary" Width="46" Height="38" Padding="0" Cursor="Hand" Click="BtnGenerarTarjetasS21_Click" VerticalAlignment="Top" Margin="4,0,0,6"/>
 
-                                <Border Background="#252526" BorderBrush="#3A3A3D" BorderThickness="1" CornerRadius="6" Margin="12,0,0,6" Padding="10,4" Height="38" VerticalAlignment="Top">
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <TextBlock Text="Buscar:" Foreground="#AAAAAA" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                        <TextBox x:Name="TxtBuscarMinisterio" Width="320" Background="Transparent" Foreground="White" BorderThickness="0" VerticalContentAlignment="Center" FontSize="13.5" Padding="6,0" CaretBrush="White" TextChanged="TxtBuscarMinisterio_TextChanged" ToolTip="Buscar por nombre común, nombre completo o nombre JW Hub"/>
-                                    </StackPanel>
-                                </Border>
+                                <ui:TextBox x:Name="TxtBuscarMinisterio" PlaceholderText="Buscar..." Icon="{ui:SymbolIcon Search24}" Width="320" Height="38" Margin="12,0,0,6"
+                                            VerticalAlignment="Top" VerticalContentAlignment="Center" TextChanged="TxtBuscarMinisterio_TextChanged"
+                                            ToolTip="Buscar por nombre común, nombre completo o nombre JW Hub"/>
                             </WrapPanel>
 
                             <!-- CINTA DE MES INDIVIDUAL -->
                             <StackPanel x:Name="CintaMesMinisterio" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top" Margin="10,0,0,0">
-                                <TextBlock Text="Mes de referencia:" Foreground="Gray" FontSize="14" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBlock Text="Mes de referencia:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="14" VerticalAlignment="Center" Margin="0,0,10,0"/>
                                 <ui:Button Icon="{ui:SymbolIcon ChevronLeft24}" Appearance="Transparent" Padding="4" Margin="0,0,5,0" Cursor="Hand" Click="BtnMesAntMinisterio_Click"/>
-                                <Border Background="#2A2A2A" CornerRadius="4" Padding="15,6" MinWidth="140">
-                                    <TextBlock x:Name="TxtMesMinisterio" Text="Mes" Foreground="White" FontSize="14" FontWeight="SemiBold" TextAlignment="Center" VerticalAlignment="Center"/>
+                                <Border Background="{DynamicResource ControlFillColorDefaultBrush}" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="6" Padding="15,6" MinWidth="140">
+                                    <TextBlock x:Name="TxtMesMinisterio" Text="Mes" FontSize="14" FontWeight="SemiBold" TextAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                                 <ui:Button Icon="{ui:SymbolIcon ChevronRight24}" Appearance="Transparent" Padding="4" Margin="5,0,0,0" Cursor="Hand" Click="BtnMesSigMinisterio_Click"/>
                             </StackPanel>
@@ -164,19 +164,19 @@
 
                         <DataGrid x:Name="TablaVisitas" MouseLeftButtonUp="TablaVisitas_MouseLeftButtonUp" PreviewMouseWheel="UIElement_PreviewMouseWheel" FontWeight="Normal" HorizontalAlignment="Stretch" AutoGenerateColumns="False" CanUserAddRows="False"
                                   HeadersVisibility="Column" SelectionMode="Single" IsReadOnly="True"
-                                  GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#20FFFFFF" ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                  GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource DividerStrokeColorDefaultBrush}" ScrollViewer.HorizontalScrollBarVisibility="Auto"
                                   ScrollViewer.VerticalScrollBarVisibility="Disabled"
-                                  BorderThickness="1" BorderBrush="#20FFFFFF" Background="Transparent" RowBackground="Transparent">
+                                  BorderThickness="1" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" Background="Transparent" RowBackground="Transparent">
                             <DataGrid.RowStyle>
                                 <Style TargetType="DataGridRow">
                                     <Setter Property="Background" Value="Transparent"/>
-                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding EsPrecursor}" Value="True">
                                             <Setter Property="Background" Value="#1A0078D4"/>
                                         </DataTrigger>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="#400078D4"/>
+                                            <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}"/>
                                         </Trigger>
                                     </Style.Triggers>
                                 </Style>
@@ -223,9 +223,17 @@
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,0,0">
-                                                <Border Width="36" Height="36" CornerRadius="18" Background="#2A2A2A" ClipToBounds="True" Margin="0,4,12,4">
-                                                    <Image Source="{Binding Foto, Converter={StaticResource Base64Converter}}" Stretch="UniformToFill"/>
-                                                </Border>
+                                                <Grid Width="36" Height="36" Margin="0,4,12,4">
+                                                    <!-- Sin foto, el icono de persona; la foto lo tapa, recortada en círculo -->
+                                                    <Ellipse Fill="{DynamicResource ControlFillColorSecondaryBrush}"/>
+                                                    <ui:SymbolIcon Symbol="Person24" FontSize="18" Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    <Ellipse>
+                                                        <Ellipse.Fill>
+                                                            <ImageBrush ImageSource="{Binding Foto, Converter={StaticResource Base64Converter}}" Stretch="UniformToFill"/>
+                                                        </Ellipse.Fill>
+                                                    </Ellipse>
+                                                </Grid>
                                                 <TextBlock Text="{Binding NombreVisual}" VerticalAlignment="Center" ToolTip="{Binding AlertaTooltip}">
                                                     <TextBlock.Style>
                                                         <Style TargetType="TextBlock">

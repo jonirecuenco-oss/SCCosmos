@@ -111,7 +111,7 @@ namespace SCCosmos
 
             _congreCodigo = CodigoPendiente;
             _congreNombre = NombrePendiente;
-            TxtTitulo.Text = $"VISITA - {_congreNombre}";
+            TxtTitulo.Text = $"Visita a {_congreNombre}";
 
             InicializarMeses();
             CargarS303yS2();
@@ -2054,7 +2054,7 @@ namespace SCCosmos
                 {
                     Header = $"{shortMonths[meses[i].Month - 1]} {meses[i].ToString("yy")}",
                     CellTemplate = plantillaMes,
-                    Width = new DataGridLength(6, DataGridLengthUnitType.Star),
+                    Width = new DataGridLength(7, DataGridLengthUnitType.Star),
                     CellStyle = estiloCeldaConTooltip
                 });
             }
@@ -2063,14 +2063,14 @@ namespace SCCosmos
             TablaVisitas.Columns.Add(new DataGridTextColumn { Header = "A/SM", Binding = new Binding("Nombramiento"), Width = new DataGridLength(7, DataGridLengthUnitType.Star), ElementStyle = estiloIzquierda });
             TablaVisitas.Columns.Add(new DataGridTextColumn { Header = "Prec", Binding = new Binding("Servicio"), Width = new DataGridLength(7, DataGridLengthUnitType.Star), ElementStyle = estiloIzquierda });
             TablaVisitas.Columns.Add(new DataGridTextColumn { Header = "Edad", Binding = new Binding("Edad"), Width = new DataGridLength(5, DataGridLengthUnitType.Star), ElementStyle = estiloIzquierda });
-            TablaVisitas.Columns.Add(new DataGridTextColumn { Header = "Baut.", Binding = new Binding("AniosBautizado"), Width = new DataGridLength(5, DataGridLengthUnitType.Star), ElementStyle = estiloIzquierda });
-            TablaVisitas.Columns.Add(new DataGridTextColumn { Header = "Sexo", Binding = new Binding("Sexo"), Width = new DataGridLength(6, DataGridLengthUnitType.Star), ElementStyle = estiloIzquierda });
-            TablaVisitas.Columns.Add(new DataGridTextColumn { Header = "Terrs.", Binding = new Binding("TerritoriosTrabajados"), Width = new DataGridLength(11, DataGridLengthUnitType.Star), ElementStyle = estiloIzquierda });
+            TablaVisitas.Columns.Add(new DataGridTextColumn { Header = "Baut.", Binding = new Binding("AniosBautizado"), Width = new DataGridLength(6, DataGridLengthUnitType.Star), ElementStyle = estiloIzquierda });
+            TablaVisitas.Columns.Add(new DataGridTextColumn { Header = "Sexo", Binding = new Binding("Sexo"), Width = new DataGridLength(7, DataGridLengthUnitType.Star), ElementStyle = estiloIzquierda });
+            TablaVisitas.Columns.Add(new DataGridTextColumn { Header = "Terrs.", Binding = new Binding("TerritoriosTrabajados"), Width = new DataGridLength(6, DataGridLengthUnitType.Star), ElementStyle = estiloIzquierda });
 
             var colAcciones = new DataGridTemplateColumn
             {
                 Header = "Acción",
-                Width = new DataGridLength(9, DataGridLengthUnitType.Star),
+                Width = new DataGridLength(7, DataGridLengthUnitType.Star),
                 MinWidth = 92,
                 CellTemplate = (DataTemplate)this.FindResource("BotonEditarTemplate")
             };
@@ -4933,7 +4933,7 @@ namespace SCCosmos
             var colorBlanco = Brushes.White;
             var colorVerde = (Brush)brushConv.ConvertFrom("#55C855");
             var colorRojo = (Brush)brushConv.ConvertFrom("#FF5555");
-            var colorAzulAux = (Brush)brushConv.ConvertFrom("#0078D4");
+            var colorAzulAux = (Brush)brushConv.ConvertFrom("#4BA3E3");
             var colorAmaAux = (Brush)brushConv.ConvertFrom("#FFB900");
 
             var registro = historico.FirstOrDefault(i => i.Mes.ToLower() == mesBuscado && i.AnioServicio == anioServicioBuscado);
