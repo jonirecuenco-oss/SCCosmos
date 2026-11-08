@@ -3,17 +3,17 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         Title="Aprobar Nombramiento" Height="400" Width="450"
-        WindowStartupLocation="CenterOwner" Background="#1E1E1E">
+        WindowStartupLocation="CenterOwner" Background="{DynamicResource ApplicationBackgroundBrush}">
     <Grid Margin="20">
         <StackPanel>
-            <TextBlock Text="Aprobar Recomendación" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,15"/>
+            <TextBlock Text="Aprobar Recomendación" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,15"/>
 
-            <TextBlock Text="Selecciona la fecha efectiva del nombramiento:" Foreground="#AAA" Margin="0,0,0,5"/>
+            <TextBlock Text="Selecciona la fecha efectiva del nombramiento:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
             <DatePicker x:Name="DpFecha" Margin="0,0,0,15" FontSize="14" Height="35"/>
 
-            <TextBlock Text="Se generarán estos documentos (convertidos a PDF):" Foreground="#AAA" Margin="0,0,0,5"/>
-            <Border Background="#252526" BorderBrush="#333" BorderThickness="1" CornerRadius="6" Padding="10" MinHeight="100" Margin="0,0,0,25">
-                <ListBox x:Name="LstArchivos" Background="Transparent" Foreground="White" BorderThickness="0" DisplayMemberPath="NombreArchivo"/>
+            <TextBlock Text="Se generarán estos documentos (convertidos a PDF):" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+            <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="6" Padding="10" MinHeight="100" Margin="0,0,0,25">
+                <ListBox x:Name="LstArchivos" Background="Transparent" BorderThickness="0" DisplayMemberPath="NombreArchivo"/>
             </Border>
 
             <TextBlock x:Name="TxtEstado" Text="" Foreground="#55C855" FontWeight="Bold" Margin="0,0,0,10" HorizontalAlignment="Center"/>

@@ -82,8 +82,8 @@ namespace SCCosmos
 
             TxtCabecera.Text =
                 _esNueva
-                    ? "NUEVA TAREA"
-                    : "EDITAR TAREA";
+                    ? "Nueva tarea"
+                    : "Editar tarea";
 
             BtnEliminar.Visibility =
                 _esNueva

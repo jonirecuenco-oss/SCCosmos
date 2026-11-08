@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         Title="Ciclo de Visitas (6 Ruedas)" Height="700" Width="1200"
-        Background="#1E1E1E" Foreground="White"
+        Background="{DynamicResource ApplicationBackgroundBrush}" Foreground="{DynamicResource TextFillColorPrimaryBrush}"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False">
 
@@ -23,7 +23,7 @@
 
             <StackPanel>
                 <TextBlock Text="Matriz de Visitas (3 Años)" FontSize="22" FontWeight="Bold"/>
-                <TextBlock Text="Marca la casilla ☑ para bloquear una congregación y que no sea reemplazada al autocompletar." Foreground="#AAAAAA" Margin="0,5,0,0"/>
+                <TextBlock Text="Marca la casilla ☑ para bloquear una congregación y que no sea reemplazada al autocompletar." Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,5,0,0"/>
             </StackPanel>
 
             <StackPanel Grid.Column="1" Orientation="Horizontal">
@@ -37,9 +37,9 @@
 
         <!-- TABLA -->
         <DataGrid x:Name="TablaCiclo" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" 
-                  Background="#252526" RowBackground="#252526" AlternatingRowBackground="#2D2D30" 
-                  Foreground="White" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#444444"
-                  HeadersVisibility="Column" RowHeight="40" BorderBrush="#444444" BorderThickness="1">
+                  Background="Transparent" RowBackground="#252526" AlternatingRowBackground="#2D2D30" 
+                  Foreground="{DynamicResource TextFillColorPrimaryBrush}" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource DividerStrokeColorDefaultBrush}"
+                  HeadersVisibility="Column" RowHeight="40" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" BorderThickness="1">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Nº" Binding="{Binding Orden}" IsReadOnly="True" Width="40">
                     <DataGridTextColumn.ElementStyle>
@@ -47,7 +47,7 @@
                             <Setter Property="VerticalAlignment" Value="Center"/>
                             <Setter Property="HorizontalAlignment" Value="Center"/>
                             <Setter Property="FontWeight" Value="Bold"/>
-                            <Setter Property="Foreground" Value="#0078D4"/>
+                            <Setter Property="Foreground" Value="{DynamicResource AccentTextFillColorPrimaryBrush}"/>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
@@ -61,7 +61,7 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <ComboBox ItemsSource="{Binding DataContext.ListaCongregaciones, RelativeSource={RelativeSource AncestorType=Window}}" SelectedItem="{Binding Visita1, UpdateSourceTrigger=PropertyChanged}" Background="Transparent" BorderThickness="0" Foreground="White" VerticalAlignment="Center"/>
+                                <ComboBox ItemsSource="{Binding DataContext.ListaCongregaciones, RelativeSource={RelativeSource AncestorType=Window}}" SelectedItem="{Binding Visita1, UpdateSourceTrigger=PropertyChanged}" Background="Transparent" BorderThickness="0" VerticalAlignment="Center"/>
                                 <CheckBox Grid.Column="1" IsChecked="{Binding L1, UpdateSourceTrigger=PropertyChanged}" ToolTip="Bloquear" VerticalAlignment="Center" Margin="5,0"/>
                             </Grid>
                         </DataTemplate>
@@ -77,7 +77,7 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <ComboBox ItemsSource="{Binding DataContext.ListaCongregaciones, RelativeSource={RelativeSource AncestorType=Window}}" SelectedItem="{Binding Visita2, UpdateSourceTrigger=PropertyChanged}" Background="Transparent" BorderThickness="0" Foreground="White" VerticalAlignment="Center"/>
+                                <ComboBox ItemsSource="{Binding DataContext.ListaCongregaciones, RelativeSource={RelativeSource AncestorType=Window}}" SelectedItem="{Binding Visita2, UpdateSourceTrigger=PropertyChanged}" Background="Transparent" BorderThickness="0" VerticalAlignment="Center"/>
                                 <CheckBox Grid.Column="1" IsChecked="{Binding L2, UpdateSourceTrigger=PropertyChanged}" ToolTip="Bloquear" VerticalAlignment="Center" Margin="5,0"/>
                             </Grid>
                         </DataTemplate>
@@ -93,7 +93,7 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <ComboBox ItemsSource="{Binding DataContext.ListaCongregaciones, RelativeSource={RelativeSource AncestorType=Window}}" SelectedItem="{Binding Visita3, UpdateSourceTrigger=PropertyChanged}" Background="Transparent" BorderThickness="0" Foreground="White" VerticalAlignment="Center"/>
+                                <ComboBox ItemsSource="{Binding DataContext.ListaCongregaciones, RelativeSource={RelativeSource AncestorType=Window}}" SelectedItem="{Binding Visita3, UpdateSourceTrigger=PropertyChanged}" Background="Transparent" BorderThickness="0" VerticalAlignment="Center"/>
                                 <CheckBox Grid.Column="1" IsChecked="{Binding L3, UpdateSourceTrigger=PropertyChanged}" ToolTip="Bloquear" VerticalAlignment="Center" Margin="5,0"/>
                             </Grid>
                         </DataTemplate>
@@ -109,7 +109,7 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <ComboBox ItemsSource="{Binding DataContext.ListaCongregaciones, RelativeSource={RelativeSource AncestorType=Window}}" SelectedItem="{Binding Visita4, UpdateSourceTrigger=PropertyChanged}" Background="Transparent" BorderThickness="0" Foreground="White" VerticalAlignment="Center"/>
+                                <ComboBox ItemsSource="{Binding DataContext.ListaCongregaciones, RelativeSource={RelativeSource AncestorType=Window}}" SelectedItem="{Binding Visita4, UpdateSourceTrigger=PropertyChanged}" Background="Transparent" BorderThickness="0" VerticalAlignment="Center"/>
                                 <CheckBox Grid.Column="1" IsChecked="{Binding L4, UpdateSourceTrigger=PropertyChanged}" ToolTip="Bloquear" VerticalAlignment="Center" Margin="5,0"/>
                             </Grid>
                         </DataTemplate>
@@ -125,7 +125,7 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <ComboBox ItemsSource="{Binding DataContext.ListaCongregaciones, RelativeSource={RelativeSource AncestorType=Window}}" SelectedItem="{Binding Visita5, UpdateSourceTrigger=PropertyChanged}" Background="Transparent" BorderThickness="0" Foreground="White" VerticalAlignment="Center"/>
+                                <ComboBox ItemsSource="{Binding DataContext.ListaCongregaciones, RelativeSource={RelativeSource AncestorType=Window}}" SelectedItem="{Binding Visita5, UpdateSourceTrigger=PropertyChanged}" Background="Transparent" BorderThickness="0" VerticalAlignment="Center"/>
                                 <CheckBox Grid.Column="1" IsChecked="{Binding L5, UpdateSourceTrigger=PropertyChanged}" ToolTip="Bloquear" VerticalAlignment="Center" Margin="5,0"/>
                             </Grid>
                         </DataTemplate>
@@ -141,7 +141,7 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <ComboBox ItemsSource="{Binding DataContext.ListaCongregaciones, RelativeSource={RelativeSource AncestorType=Window}}" SelectedItem="{Binding Visita6, UpdateSourceTrigger=PropertyChanged}" Background="Transparent" BorderThickness="0" Foreground="White" VerticalAlignment="Center"/>
+                                <ComboBox ItemsSource="{Binding DataContext.ListaCongregaciones, RelativeSource={RelativeSource AncestorType=Window}}" SelectedItem="{Binding Visita6, UpdateSourceTrigger=PropertyChanged}" Background="Transparent" BorderThickness="0" VerticalAlignment="Center"/>
                                 <CheckBox Grid.Column="1" IsChecked="{Binding L6, UpdateSourceTrigger=PropertyChanged}" ToolTip="Bloquear" VerticalAlignment="Center" Margin="5,0"/>
                             </Grid>
                         </DataTemplate>

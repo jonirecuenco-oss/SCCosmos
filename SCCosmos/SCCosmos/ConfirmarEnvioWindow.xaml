@@ -4,7 +4,7 @@
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         Title="Confirmar envío" Height="700" Width="650"
         WindowStartupLocation="CenterOwner"
-        Background="#1E1E1E" Foreground="White" ResizeMode="NoResize">
+        Background="{DynamicResource ApplicationBackgroundBrush}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" ResizeMode="NoResize">
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -32,19 +32,19 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <TextBlock Text="Archivos que se van a procesar y enviar:" Foreground="#AAAAAA" Margin="0,0,0,10"/>
+            <TextBlock Text="Archivos que se van a procesar y enviar:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,10"/>
             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                 <ItemsControl x:Name="ListaArchivos">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Border Background="#2D2D30" Padding="10" Margin="0,0,0,5" CornerRadius="4">
+                            <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" Padding="10" Margin="0,0,0,5" CornerRadius="4">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="{Binding NombreArchivo}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0" FontWeight="Medium"/>
-                                    <ui:Button Grid.Column="1" Content="Ver archivo" Icon="{ui:SymbolIcon Eye24}" Click="BtnVerArchivo_Click" Tag="{Binding RutaLocal}" Cursor="Hand" Background="#3E3E42" BorderThickness="0"/>
+                                    <ui:Button Grid.Column="1" Content="Ver archivo" Icon="{ui:SymbolIcon Eye24}" Click="BtnVerArchivo_Click" Tag="{Binding RutaLocal}" Cursor="Hand" BorderThickness="0"/>
                                 </Grid>
                             </Border>
                         </DataTemplate>
@@ -54,23 +54,23 @@
         </Grid>
 
         <!-- NUEVA ZONA DE EDICIÓN DEL CORREO -->
-        <Border Grid.Row="3" Background="#1A1A1C" CornerRadius="6" Padding="15" BorderBrush="#333333" BorderThickness="1" Margin="0,0,0,15">
+        <Border Grid.Row="3" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" CornerRadius="6" Padding="15" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" Margin="0,0,0,15">
             <StackPanel>
-                <TextBlock Text="Asunto del correo:" Foreground="#CCC" Margin="0,0,0,5"/>
-                <ui:TextBox x:Name="TxtAsunto" Background="#1E1E1E" Foreground="White" Margin="0,0,0,15" Padding="5"/>
+                <TextBlock Text="Asunto del correo:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+                <ui:TextBox x:Name="TxtAsunto" Margin="0,0,0,15" Padding="5"/>
 
-                <TextBlock Text="Cuerpo del correo:" Foreground="#CCC" Margin="0,0,0,5"/>
-                <Border BorderThickness="1" BorderBrush="#333333" CornerRadius="4" Background="#252528">
+                <TextBlock Text="Cuerpo del correo:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+                <Border BorderThickness="1" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" CornerRadius="4" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
                     <StackPanel>
                         <!-- BARRA DE HERRAMIENTAS -->
-                        <Border Background="#1E1E1E" Padding="5">
+                        <Border Background="Transparent" Padding="5">
                             <StackPanel Orientation="Horizontal">
-                                <Button Content="N" FontWeight="Bold" Width="30" Height="30" Margin="0,0,5,0" Tag="bold" Click="BtnFormato_Click" Background="Transparent" Foreground="White" BorderThickness="0" Cursor="Hand"/>
-                                <Button Content="K" FontStyle="Italic" Width="30" Height="30" Margin="0,0,5,0" Tag="italic" Click="BtnFormato_Click" Background="Transparent" Foreground="White" BorderThickness="0" Cursor="Hand"/>
+                                <Button Content="N" FontWeight="Bold" Width="30" Height="30" Margin="0,0,5,0" Tag="bold" Click="BtnFormato_Click" Background="Transparent" BorderThickness="0" Cursor="Hand"/>
+                                <Button Content="K" FontStyle="Italic" Width="30" Height="30" Margin="0,0,5,0" Tag="italic" Click="BtnFormato_Click" Background="Transparent" BorderThickness="0" Cursor="Hand"/>
                                 <Button Width="30" Height="30" Margin="0,0,10,0" Tag="underline" Click="BtnFormato_Click" Background="Transparent" BorderThickness="0" Cursor="Hand">
-                                    <TextBlock Text="S" TextDecorations="Underline" Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="S" TextDecorations="Underline" Foreground="{DynamicResource TextFillColorPrimaryBrush}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                                 </Button>
-                                <TextBlock Text="💡 Puedes editar este mensaje antes de que se envíe a la congregación" Foreground="#888888" VerticalAlignment="Center" Margin="15,0,0,0" FontStyle="Italic"/>
+                                <TextBlock Text="💡 Puedes editar este mensaje antes de que se envíe a la congregación" Foreground="{DynamicResource TextFillColorTertiaryBrush}" VerticalAlignment="Center" Margin="15,0,0,0" FontStyle="Italic"/>
                             </StackPanel>
                         </Border>
 
@@ -82,8 +82,7 @@
         </Border>
 
         <!-- CASILLA DE MARCADO MANUAL -->
-        <CheckBox x:Name="ChkEnviado" Grid.Row="4" Content="Marcar esta tarea como completada (útil si enviaste manualmente)" 
-                  Foreground="White" FontSize="14" Margin="0,0,0,20" Cursor="Hand" Click="ChkEnviado_Click"/>
+        <CheckBox x:Name="ChkEnviado" Grid.Row="4" Content="Marcar esta tarea como completada (útil si enviaste manualmente)" FontSize="14" Margin="0,0,0,20" Cursor="Hand" Click="ChkEnviado_Click"/>
 
         <!-- BOTONES INFERIORES -->
         <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right">

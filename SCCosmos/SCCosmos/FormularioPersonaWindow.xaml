@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         Title="Editar Persona" Height="820" Width="1000" 
-        WindowStartupLocation="CenterOwner" Background="#1E1E1E" KeyDown="Window_KeyDown">
+        WindowStartupLocation="CenterOwner" Background="{DynamicResource ApplicationBackgroundBrush}" KeyDown="Window_KeyDown">
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -11,12 +11,12 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Text="Editar persona" FontSize="22" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,15"/>
+        <TextBlock Text="Editar persona" FontSize="22" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,15"/>
 
         <TabControl Grid.Row="1"
                     Background="Transparent"
                     BorderThickness="0"
-                    Foreground="White">
+                    Foreground="{DynamicResource TextFillColorPrimaryBrush}">
             <TabItem Header="Datos personales">
                 <Grid Margin="0,10,0,0">
             <Grid.ColumnDefinitions>
@@ -30,7 +30,7 @@
 
                     <!-- FOTO NORMAL -->
                     <StackPanel x:Name="PanelFotoNormal">
-                        <Border Width="160" Height="160" CornerRadius="8" Background="#2A2A2A" ClipToBounds="True" Margin="0,0,0,10" HorizontalAlignment="Left">
+                        <Border Width="160" Height="160" CornerRadius="8" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" ClipToBounds="True" Margin="0,0,0,10" HorizontalAlignment="Left">
                             <Image x:Name="ImgFoto" Stretch="UniformToFill"/>
                         </Border>
                         <ui:Button Content="Cambiar Foto" Appearance="Secondary" Width="160" Click="BtnCambiarFoto_Click" Margin="0,0,0,5" HorizontalAlignment="Left"/>
@@ -41,25 +41,23 @@
                     <StackPanel x:Name="PanelFotoConflicto" Visibility="Collapsed" Margin="0,0,0,10">
                         <TextBlock Text="Conflicto de Foto" Foreground="#FFB900" FontWeight="Bold" Margin="0,0,0,5"/>
 
-                        <RadioButton x:Name="RdoFotoActual" Content="Conservar actual" Foreground="White" IsChecked="True" Margin="0,0,0,2"/>
-                        <Border Width="160" Height="160" CornerRadius="8" Background="#2A2A2A" BorderBrush="#FFB900" BorderThickness="2" ClipToBounds="True" Margin="0,0,0,10" HorizontalAlignment="Left">
+                        <RadioButton x:Name="RdoFotoActual" Content="Conservar actual" IsChecked="True" Margin="0,0,0,2"/>
+                        <Border Width="160" Height="160" CornerRadius="8" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" BorderBrush="#FFB900" BorderThickness="2" ClipToBounds="True" Margin="0,0,0,10" HorizontalAlignment="Left">
                             <Image x:Name="ImgFotoConflictoActual" Stretch="UniformToFill"/>
                         </Border>
 
-                        <RadioButton x:Name="RdoFotoDuplicada" Content="Usar duplicada" Foreground="White" Margin="0,0,0,2"/>
-                        <Border Width="160" Height="160" CornerRadius="8" Background="#2A2A2A" BorderBrush="#FFB900" BorderThickness="2" ClipToBounds="True" Margin="0,0,0,5" HorizontalAlignment="Left">
+                        <RadioButton x:Name="RdoFotoDuplicada" Content="Usar duplicada" Margin="0,0,0,2"/>
+                        <Border Width="160" Height="160" CornerRadius="8" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" BorderBrush="#FFB900" BorderThickness="2" ClipToBounds="True" Margin="0,0,0,5" HorizontalAlignment="Left">
                             <Image x:Name="ImgFotoConflictoDuplicada" Stretch="UniformToFill"/>
                         </Border>
                     </StackPanel>
 
                     <ui:Button x:Name="BtnToggleVincular" Content="Vincular duplicado" Appearance="Primary" Width="160" Margin="0,20,0,5" Click="BtnToggleVincular_Click" HorizontalAlignment="Left"/>
                     <StackPanel x:Name="PanelVincular" Visibility="Collapsed" Margin="0,5,0,0">
-                        <TextBlock Text="Se eliminará a la persona seleccionada y se volcará su actividad en el perfil actual." TextWrapping="Wrap" FontSize="11" Foreground="#AAAAAA" Margin="0,0,0,10" Width="160" HorizontalAlignment="Left"/>
+                        <TextBlock Text="Se eliminará a la persona seleccionada y se volcará su actividad en el perfil actual." TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,10" Width="160" HorizontalAlignment="Left"/>
                         <ComboBox x:Name="CmbVincular" 
                                   DisplayMemberPath="NombreMostrarVinculacion" 
                                   Margin="0,0,0,10" 
-                                  Background="#252526" 
-                                  Foreground="White" 
                                   Width="190" 
                                   HorizontalAlignment="Left"
                                   IsEditable="True"
@@ -95,91 +93,91 @@
 
                 <!-- LÍNEA 1: NOMBRE Y CONGREGACIÓN -->
                 <StackPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Margin="5">
-                    <TextBlock Text="Nombre completo" Foreground="#AAAAAA" Margin="0,0,0,3"/>
-                    <ui:TextBox x:Name="TxtNombre" Background="#252526" Foreground="White" BorderBrush="#333"/>
+                    <TextBlock Text="Nombre completo" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,3"/>
+                    <ui:TextBox x:Name="TxtNombre"/>
                 </StackPanel>
                 <StackPanel Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="2" Margin="5">
-                    <TextBlock Text="Congregación" Foreground="#AAAAAA" Margin="0,0,0,3"/>
-                    <ComboBox x:Name="CmbCongregacion" DisplayMemberPath="Nombre" SelectedValuePath="Codigo" Background="#252526" Foreground="White" SelectionChanged="CmbCongregacion_SelectionChanged"/>
+                    <TextBlock Text="Congregación" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,3"/>
+                    <ComboBox x:Name="CmbCongregacion" DisplayMemberPath="Nombre" SelectedValuePath="Codigo" SelectionChanged="CmbCongregacion_SelectionChanged"/>
                 </StackPanel>
 
                 <!-- LÍNEA 2 -->
                 <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="5">
-                    <TextBlock Text="Nombre común" Foreground="#AAAAAA" Margin="0,0,0,3"/>
-                    <ui:TextBox x:Name="TxtNombreComun" Background="#252526" Foreground="White" BorderBrush="#333"/>
+                    <TextBlock Text="Nombre común" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,3"/>
+                    <ui:TextBox x:Name="TxtNombreComun"/>
                 </StackPanel>
                 <StackPanel Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2" Margin="5">
-                    <TextBlock Text="Nombre JW Hub" Foreground="#AAAAAA" Margin="0,0,0,3"/>
-                    <ui:TextBox x:Name="TxtNombreJW" Background="#252526" Foreground="White" BorderBrush="#333"/>
+                    <TextBlock Text="Nombre JW Hub" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,3"/>
+                    <ui:TextBox x:Name="TxtNombreJW"/>
                 </StackPanel>
 
                 <!-- LÍNEA 3 -->
                 <StackPanel Grid.Row="2" Grid.Column="0" Margin="5">
-                    <TextBlock Text="Sexo" Foreground="#AAAAAA" Margin="0,0,0,3"/>
-                    <ComboBox x:Name="CmbSexo" Background="#252526" Foreground="White" SelectionChanged="CmbSexo_SelectionChanged">
+                    <TextBlock Text="Sexo" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,3"/>
+                    <ComboBox x:Name="CmbSexo" SelectionChanged="CmbSexo_SelectionChanged">
                         <ComboBoxItem Content="Hombre"/>
                         <ComboBoxItem Content="Mujer"/>
                     </ComboBox>
                 </StackPanel>
                 <StackPanel Grid.Row="2" Grid.Column="1" Margin="5">
-                    <TextBlock Text="Cónyuge" Foreground="#AAAAAA" Margin="0,0,0,3"/>
-                    <ComboBox x:Name="CmbConyuge" DisplayMemberPath="NombreMostrarTabla" SelectedValuePath="Id" Background="#252526" Foreground="White"/>
+                    <TextBlock Text="Cónyuge" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,3"/>
+                    <ComboBox x:Name="CmbConyuge" DisplayMemberPath="NombreMostrarTabla" SelectedValuePath="Id"/>
                 </StackPanel>
                 <StackPanel Grid.Row="2" Grid.Column="2" Margin="5">
-                    <TextBlock Text="Email personal" Foreground="#AAAAAA" Margin="0,0,0,3"/>
-                    <ui:TextBox x:Name="TxtEmail" Background="#252526" Foreground="White" BorderBrush="#333"/>
+                    <TextBlock Text="Email personal" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,3"/>
+                    <ui:TextBox x:Name="TxtEmail"/>
                 </StackPanel>
                 <StackPanel Grid.Row="2" Grid.Column="3" Margin="5">
-                    <TextBlock Text="Email JW" Foreground="#AAAAAA" Margin="0,0,0,3"/>
-                    <ui:TextBox x:Name="TxtEmailJW" Background="#252526" Foreground="White" BorderBrush="#333"/>
+                    <TextBlock Text="Email JW" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,3"/>
+                    <ui:TextBox x:Name="TxtEmailJW"/>
                 </StackPanel>
 
                 <!-- LÍNEA 4 -->
                 <StackPanel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3" Margin="5" VerticalAlignment="Top">
-                    <TextBlock Text="Dirección (Base de datos)" Foreground="#AAAAAA" Margin="0,0,0,3"/>
+                    <TextBlock Text="Dirección (Base de datos)" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,3"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <ui:TextBox x:Name="TxtDireccion" Grid.Column="0" Background="#252526" Foreground="White" BorderBrush="#333" TextChanged="TxtDireccion_TextChanged"/>
+                        <ui:TextBox x:Name="TxtDireccion" Grid.Column="0" TextChanged="TxtDireccion_TextChanged"/>
                         <ui:Button Icon="{ui:SymbolIcon Location24}" Padding="10,10,10,10" x:Name="BtnFijarMapa" Grid.Column="1" Appearance="Secondary" Margin="5,0,0,0" Click="BtnFijarMapa_Click" ToolTip="Fijar coordenadas manualmente"/>
                     </Grid>
 
                     <Popup x:Name="PopupDirecciones" StaysOpen="False" PlacementTarget="{Binding ElementName=TxtDireccion}" Placement="Bottom" Width="{Binding ElementName=TxtDireccion, Path=ActualWidth}" MaxHeight="150" AllowsTransparency="True" PopupAnimation="Fade">
-                        <Border Background="#2D2D30" BorderBrush="#0078D4" BorderThickness="1" CornerRadius="4">
-                            <ListBox x:Name="ListaDirecciones" DisplayMemberPath="display_name" SelectionChanged="ListaDirecciones_SelectionChanged" Background="Transparent" Foreground="White" BorderThickness="0"/>
+                        <Border Background="{DynamicResource FlyoutBackground}" BorderBrush="#0078D4" BorderThickness="1" CornerRadius="4">
+                            <ListBox x:Name="ListaDirecciones" DisplayMemberPath="display_name" SelectionChanged="ListaDirecciones_SelectionChanged" Background="Transparent" BorderThickness="0"/>
                         </Border>
                     </Popup>
                 </StackPanel>
                 <StackPanel Grid.Row="3" Grid.Column="3" Margin="5">
-                    <TextBlock Text="Teléfono" Foreground="#AAAAAA" Margin="0,0,0,3"/>
-                    <ui:TextBox x:Name="TxtTelefono" Background="#252526" Foreground="White" BorderBrush="#333"/>
+                    <TextBlock Text="Teléfono" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,3"/>
+                    <ui:TextBox x:Name="TxtTelefono"/>
                 </StackPanel>
 
                 <!-- LÍNEA 5 -->
                 <StackPanel Grid.Row="4" Grid.Column="0" Margin="5">
-                    <TextBlock Text="Grupo" Foreground="#AAAAAA" Margin="0,0,0,3"/>
-                    <ui:TextBox x:Name="TxtGrupo" Background="#252526" Foreground="White" BorderBrush="#333"/>
+                    <TextBlock Text="Grupo" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,3"/>
+                    <ui:TextBox x:Name="TxtGrupo"/>
                 </StackPanel>
                 <StackPanel Grid.Row="4" Grid.Column="1" Margin="5">
-                    <TextBlock Text="Esperanza" Foreground="#AAAAAA" Margin="0,0,0,3"/>
-                    <ComboBox x:Name="CmbEsperanza" Background="#252526" Foreground="White">
+                    <TextBlock Text="Esperanza" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,3"/>
+                    <ComboBox x:Name="CmbEsperanza">
                         <ComboBoxItem Content="Otras ovejas"/>
                         <ComboBoxItem Content="Ungido"/>
                     </ComboBox>
                 </StackPanel>
                 <StackPanel Grid.Row="4" Grid.Column="2" Margin="5">
-                    <TextBlock Text="Nombramiento" Foreground="#AAAAAA" Margin="0,0,0,3"/>
-                    <ComboBox x:Name="CmbNombramiento" Background="#252526" Foreground="White">
+                    <TextBlock Text="Nombramiento" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,3"/>
+                    <ComboBox x:Name="CmbNombramiento">
                         <ComboBoxItem Content="Publicador"/>
                         <ComboBoxItem Content="Siervo ministerial"/>
                         <ComboBoxItem Content="Anciano"/>
                     </ComboBox>
                 </StackPanel>
                 <StackPanel Grid.Row="4" Grid.Column="3" Margin="5">
-                    <TextBlock Text="Servicio" Foreground="#AAAAAA" Margin="0,0,0,3"/>
-                    <ComboBox x:Name="CmbServicio" Background="#252526" Foreground="White" SelectionChanged="CmbServicio_SelectionChanged">
+                    <TextBlock Text="Servicio" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,3"/>
+                    <ComboBox x:Name="CmbServicio" SelectionChanged="CmbServicio_SelectionChanged">
                         <ComboBoxItem Content="(Vacío)"/>
                         <ComboBoxItem Content="Precursor regular"/>
                         <ComboBoxItem Content="Precursor especial"/>
@@ -189,20 +187,20 @@
 
                 <!-- LÍNEA 6 -->
                 <StackPanel Grid.Row="5" Grid.Column="0" Margin="5">
-                    <TextBlock Text="Fecha nac." Foreground="#AAAAAA" Margin="0,0,0,3"/>
-                    <ui:TextBox x:Name="TxtFechaNac" Background="#252526" Foreground="White" BorderBrush="#333" LostFocus="RequisitoCambiado"/>
+                    <TextBlock Text="Fecha nac." Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,3"/>
+                    <ui:TextBox x:Name="TxtFechaNac" LostFocus="RequisitoCambiado"/>
                 </StackPanel>
                 <StackPanel Grid.Row="5" Grid.Column="1" Margin="5">
-                    <TextBlock Text="Fecha baut." Foreground="#AAAAAA" Margin="0,0,0,3"/>
-                    <ui:TextBox x:Name="TxtFechaBaut" Background="#252526" Foreground="White" BorderBrush="#333"/>
+                    <TextBlock Text="Fecha baut." Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,3"/>
+                    <ui:TextBox x:Name="TxtFechaBaut"/>
                 </StackPanel>
                 <StackPanel Grid.Row="5" Grid.Column="2" Margin="5">
-                    <TextBlock Text="Inicio prec." Foreground="#AAAAAA" Margin="0,0,0,3"/>
-                    <ui:TextBox x:Name="TxtInicioPrec" Background="#252526" Foreground="White" BorderBrush="#333" LostFocus="RequisitoCambiado"/>
+                    <TextBlock Text="Inicio prec." Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,3"/>
+                    <ui:TextBox x:Name="TxtInicioPrec" LostFocus="RequisitoCambiado"/>
                 </StackPanel>
                 <StackPanel Grid.Row="5" Grid.Column="3" Margin="5">
-                    <TextBlock Text="Última escuela" Foreground="#AAAAAA" Margin="0,0,0,3"/>
-                    <ui:TextBox x:Name="TxtEscuela" Background="#252526" Foreground="White" BorderBrush="#333"/>
+                    <TextBlock Text="Última escuela" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,3"/>
+                    <ui:TextBox x:Name="TxtEscuela"/>
                 </StackPanel>
 
                         <!-- LÍNEA 6b: REQUISITO DE HORAS (solo precursores y misioneros) -->
@@ -212,13 +210,12 @@
                                 <ColumnDefinition Width="3*"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                                <TextBlock Text="Requisito anual" Foreground="#AAAAAA" Margin="0,0,0,3" ToolTip="Horas al año si no es el normal de su servicio. Vacío: 600 los regulares; 1200 los especiales y misioneros."/>
-                                <ui:TextBox x:Name="TxtRequisitoAnual" PlaceholderText="Según su servicio" Background="#252526" Foreground="White" BorderBrush="#333" LostFocus="RequisitoCambiado"/>
+                                <TextBlock Text="Requisito anual" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,3" ToolTip="Horas al año si no es el normal de su servicio. Vacío: 600 los regulares; 1200 los especiales y misioneros."/>
+                                <ui:TextBox x:Name="TxtRequisitoAnual" PlaceholderText="Según su servicio" LostFocus="RequisitoCambiado"/>
                             </StackPanel>
                             <CheckBox x:Name="ChkSaludDelicada"
                                       Grid.Column="1"
                                       Content="Salud delicada (sin requisito de horas)"
-                                      Foreground="White"
                                       VerticalAlignment="Bottom"
                                       Margin="0,0,0,6"
                                       Checked="RequisitoCambiado"
@@ -235,7 +232,7 @@
                     <!-- El permiso de exhibidores pertenece visualmente al bloque PRIVILEGIOS
                          y queda al lado del campo de texto, antes de SOLICITUDES. -->
                     <StackPanel Grid.Column="0" Margin="0,0,20,0">
-                        <TextBlock Text="PRIVILEGIOS" FontSize="12" FontWeight="Bold" Foreground="#4BA3E3" Margin="0,0,0,5"/>
+                        <TextBlock Text="PRIVILEGIOS" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Margin="0,0,0,5"/>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="3*"/>
@@ -247,10 +244,7 @@
                                         AcceptsReturn="True"
                                         TextWrapping="Wrap"
                                         Height="70"
-                                        VerticalScrollBarVisibility="Auto"
-                                        Background="#252526"
-                                        Foreground="White"
-                                        BorderBrush="#333"/>
+                                        VerticalScrollBarVisibility="Auto"/>
 
                             <Border Grid.Column="1"
                                     Margin="12,0,0,0"
@@ -261,7 +255,6 @@
                                     CornerRadius="5"
                                     VerticalAlignment="Stretch">
                                 <CheckBox x:Name="ChkAprobadoExhibidores"
-                                          Foreground="White"
                                           VerticalAlignment="Center">
                                     <TextBlock Text="Aprobado para PPOC"
                                                TextWrapping="Wrap"/>
@@ -273,18 +266,18 @@
                     <StackPanel Grid.Column="1">
                         <TextBlock Text="SOLICITUDES" FontSize="12" FontWeight="Bold" Foreground="#EBCB8B" Margin="0,0,0,5"/>
                         <UniformGrid x:Name="PanelSolicitudes" Columns="2" Rows="2">
-                            <CheckBox Content="A-2" Tag="A-2" Margin="0,0,0,5" Foreground="White"/>
-                            <CheckBox Content="A-19" Tag="A-19" Margin="0,0,0,5" Foreground="White"/>
-                            <CheckBox Content="A-8" Tag="A-8" Margin="0,0,0,5" Foreground="White"/>
-                            <CheckBox Content="G-8" Tag="G-8" Margin="0,0,0,5" Foreground="White"/>
+                            <CheckBox Content="A-2" Tag="A-2" Margin="0,0,0,5"/>
+                            <CheckBox Content="A-19" Tag="A-19" Margin="0,0,0,5"/>
+                            <CheckBox Content="A-8" Tag="A-8" Margin="0,0,0,5"/>
+                            <CheckBox Content="G-8" Tag="G-8" Margin="0,0,0,5"/>
                         </UniformGrid>
                     </StackPanel>
                 </Grid>
 
                 <!-- LÍNEA 8: NOTAS PERSONALES (NUEVO) -->
                 <StackPanel Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="4" Margin="5,10,5,5">
-                    <TextBlock Text="Notas personales" Foreground="#AAAAAA" Margin="0,0,0,3"/>
-                    <ui:TextBox x:Name="TxtNotas" AcceptsReturn="True" TextWrapping="Wrap" Height="60" VerticalScrollBarVisibility="Auto" Background="#252526" Foreground="White" BorderBrush="#333"/>
+                    <TextBlock Text="Notas personales" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,3"/>
+                    <ui:TextBox x:Name="TxtNotas" AcceptsReturn="True" TextWrapping="Wrap" Height="60" VerticalScrollBarVisibility="Auto"/>
                 </StackPanel>
             </Grid>
                 </Grid>
@@ -308,10 +301,10 @@
                             <TextBlock Text="Actividad de predicación"
                                        FontSize="18"
                                        FontWeight="SemiBold"
-                                       Foreground="White"/>
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                             <TextBlock Text="Puedes editar también el mes y el año de servicio, añadir registros manuales o eliminarlos. Los cambios se aplican al pulsar Guardar."
                                        Margin="0,4,12,0"
-                                       Foreground="#AAAAAA"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                        TextWrapping="Wrap"/>
                         </StackPanel>
 
@@ -331,12 +324,12 @@
                               CanUserDeleteRows="False"
                               HeadersVisibility="Column"
                               GridLinesVisibility="Horizontal"
-                              HorizontalGridLinesBrush="#30FFFFFF"
-                              BorderBrush="#30FFFFFF"
+                              HorizontalGridLinesBrush="{DynamicResource DividerStrokeColorDefaultBrush}"
+                              BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
                               Background="Transparent"
                               RowBackground="Transparent"
                               AlternatingRowBackground="#08000000"
-                              Foreground="White"
+                              Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                               SelectionMode="Single">
                         <DataGrid.Columns>
                             <DataGridTemplateColumn Header="Mes" Width="115">
@@ -344,9 +337,6 @@
                                     <DataTemplate>
                                         <ComboBox SelectedValue="{Binding Mes, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                   SelectedValuePath="Content"
-                                                  Background="#252526"
-                                                  Foreground="White"
-                                                  BorderBrush="#444"
                                                   Padding="4,2">
                                             <ComboBoxItem Content="enero"/>
                                             <ComboBoxItem Content="febrero"/>
@@ -422,7 +412,7 @@
                     <TextBlock x:Name="TxtEstadoActividad"
                                Grid.Row="2"
                                Margin="0,12,0,0"
-                               Foreground="#AAAAAA"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                Text="Los cambios se guardan con el botón Guardar del formulario."
                                TextWrapping="Wrap"/>
                 </Grid>

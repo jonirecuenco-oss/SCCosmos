@@ -6,16 +6,16 @@
         Width="480"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
-        Background="#17191E">
+        Background="{DynamicResource ApplicationBackgroundBrush}">
     <StackPanel Margin="26" VerticalAlignment="Center">
         <TextBlock Text="¿Quién usará este equipo?"
                    FontSize="22"
                    FontWeight="Bold"
-                   Foreground="White"
+                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                    TextWrapping="Wrap"/>
 
         <TextBlock Text="Esta elección determina las funciones disponibles. Podrás cambiarla en Configuración."
-                   Foreground="#9EA4AE"
+                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                    FontSize="13"
                    Margin="0,8,0,18"
                    TextWrapping="Wrap"/>
@@ -33,14 +33,12 @@
                     Content="👤 Soy su esposa"
                     Click="BtnEsposa_Click"
                     Padding="12"
-                    Background="#30343B"
-                    Foreground="White"
                     BorderThickness="0"/>
         </StackPanel>
 
         <StackPanel x:Name="PanelCodigo" Visibility="Collapsed">
             <TextBlock Text="Introduce el código de acceso"
-                       Foreground="White"
+                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                        FontWeight="SemiBold"
                        Margin="0,0,0,6"/>
             <TextBox x:Name="TxtCodigo"
@@ -56,8 +54,6 @@
                     Click="BtnSinCodigo_Click"
                     Padding="10"
                     Margin="0,8,0,0"
-                    Background="#242830"
-                    Foreground="#D7DBE0"
                     BorderThickness="0"/>
         </StackPanel>
 

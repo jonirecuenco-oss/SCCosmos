@@ -4,12 +4,12 @@
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         Title="Editar Semana" Height="580" Width="650"
         WindowStartupLocation="CenterOwner"
-        Background="#1E1E1E" Foreground="White" ResizeMode="NoResize">
+        Background="{DynamicResource ApplicationBackgroundBrush}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" ResizeMode="NoResize">
 
     <Grid Margin="25">
         <StackPanel>
-            <TextBlock Text="Planificación de la Semana" FontSize="20" FontWeight="SemiBold" Foreground="#4BA3E3" Margin="0,0,0,5"/>
-            <TextBlock x:Name="TxtRango" Text="Rango de fechas" Foreground="#888888" Margin="0,0,0,20" FontSize="13"/>
+            <TextBlock Text="Planificación de la Semana" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Margin="0,0,0,5"/>
+            <TextBlock x:Name="TxtRango" Text="Rango de fechas" Foreground="{DynamicResource TextFillColorTertiaryBrush}" Margin="0,0,0,20" FontSize="13"/>
 
             <!-- 1. FILA: ACTIVIDAD Y CONGREGACIÓN -->
             <Grid Margin="0,0,0,15">
@@ -19,7 +19,7 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                    <TextBlock Text="Actividad de la semana:" Foreground="White" Margin="0,0,0,5" FontWeight="Medium"/>
+                    <TextBlock Text="Actividad de la semana:" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,5" FontWeight="Medium"/>
                     <ComboBox x:Name="ComboActividades" HorizontalAlignment="Stretch" SelectionChanged="ComboActividades_SelectionChanged" Padding="6">
                         <ComboBoxItem Content="Visita"/>
                         <ComboBoxItem Content="Asamblea de circuito"/>
@@ -34,7 +34,7 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Margin="10,0,0,0">
-                    <TextBlock Text="Congregación asignada:" Foreground="White" Margin="0,0,0,5" FontWeight="Medium"/>
+                    <TextBlock Text="Congregación asignada:" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,5" FontWeight="Medium"/>
                     <ComboBox x:Name="ComboCongregaciones" HorizontalAlignment="Stretch" Padding="6"
                               DisplayMemberPath="Nombre" SelectedValuePath="Nombre"/>
                 </StackPanel>
@@ -49,12 +49,12 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                        <TextBlock Text="Sección que asiste a la asamblea:" Foreground="White" Margin="0,0,0,5" FontWeight="Medium"/>
+                        <TextBlock Text="Sección que asiste a la asamblea:" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,5" FontWeight="Medium"/>
                         <ComboBox x:Name="ComboSeccionesAsamblea" DisplayMemberPath="Nombre" SelectedValuePath="Nombre" HorizontalAlignment="Stretch" Padding="6"/>
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" Margin="10,0,0,0">
-                        <TextBlock Text="Día del fin de semana:" Foreground="White" Margin="0,0,0,5" FontWeight="Medium"/>
+                        <TextBlock Text="Día del fin de semana:" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,5" FontWeight="Medium"/>
                         <ComboBox x:Name="ComboDiaAsamblea" HorizontalAlignment="Stretch" Padding="6"/>
                     </StackPanel>
                 </Grid>
@@ -67,7 +67,7 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                        <TextBlock Text="Tipo de asamblea:" Foreground="White" Margin="0,0,0,5" FontWeight="Medium"/>
+                        <TextBlock Text="Tipo de asamblea:" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,5" FontWeight="Medium"/>
                         <ComboBox x:Name="ComboTipoAsamblea" HorizontalAlignment="Stretch" Padding="6" SelectionChanged="ComboTipoAsamblea_SelectionChanged">
                             <ComboBoxItem Content="AC-CO"/>
                             <ComboBoxItem Content="AC-BR"/>
@@ -87,17 +87,17 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,15">
-                        <TextBlock Text="Representante de Betel:" Foreground="White" Margin="0,0,0,5" FontWeight="Medium"/>
+                        <TextBlock Text="Representante de Betel:" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,5" FontWeight="Medium"/>
                         <ui:TextBox x:Name="TxtRepBetelNombre" Padding="6" PlaceholderText="Nombre y Apellidos"/>
                     </StackPanel>
 
                     <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,0">
-                        <TextBlock Text="Teléfono rep. de Betel:" Foreground="White" Margin="0,0,0,5" FontWeight="Medium"/>
+                        <TextBlock Text="Teléfono rep. de Betel:" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,5" FontWeight="Medium"/>
                         <ui:TextBox x:Name="TxtRepBetelTelefono" Padding="6" PlaceholderText="+34 600..."/>
                     </StackPanel>
 
                     <StackPanel Grid.Row="1" Grid.Column="1" Margin="10,0,0,0">
-                        <TextBlock Text="Email rep. de Betel:" Foreground="White" Margin="0,0,0,5" FontWeight="Medium"/>
+                        <TextBlock Text="Email rep. de Betel:" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,5" FontWeight="Medium"/>
                         <ui:TextBox x:Name="TxtRepBetelEmail" Padding="6" PlaceholderText="email@dominio.com"/>
                     </StackPanel>
                 </Grid>
@@ -114,7 +114,7 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                        <TextBlock Text="Tipo de visita:" Foreground="White" Margin="0,0,0,5" FontWeight="Medium"/>
+                        <TextBlock Text="Tipo de visita:" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,5" FontWeight="Medium"/>
                         <ComboBox x:Name="ComboTipo" HorizontalAlignment="Stretch" SelectionChanged="ComboTipo_SelectionChanged" Padding="6">
                             <ComboBoxItem Content="Visita SC"/>
                             <ComboBoxItem Content="Visita de SCS"/>
@@ -124,7 +124,7 @@
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" Margin="10,0,0,0">
-                        <TextBlock Text="Régimen de alojamiento:" Foreground="White" Margin="0,0,0,5" FontWeight="Medium"/>
+                        <TextBlock Text="Régimen de alojamiento:" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,5" FontWeight="Medium"/>
                         <ComboBox x:Name="ComboAlojamiento" HorizontalAlignment="Stretch" Padding="6"/>
                     </StackPanel>
                 </Grid>
@@ -137,12 +137,12 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                        <TextBlock Text="Superintendente Sustituto:" Foreground="White" Margin="0,0,0,5" FontSize="13"/>
+                        <TextBlock Text="Superintendente Sustituto:" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,5" FontSize="13"/>
                         <ComboBox x:Name="ComboSCS" DisplayMemberPath="NombreJWHub" SelectionChanged="ComboSCS_SelectionChanged" Padding="6"/>
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" Margin="10,0,0,0">
-                        <TextBlock Text="Esposa del SCS:" Foreground="White" Margin="0,0,0,5" FontSize="13"/>
+                        <TextBlock Text="Esposa del SCS:" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,5" FontSize="13"/>
                         <ComboBox x:Name="ComboEsposaSCS" DisplayMemberPath="NombreJWHub" Padding="6"/>
                     </StackPanel>
                 </Grid>
@@ -160,17 +160,17 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0" Margin="0,0,5,0">
-                            <TextBlock Text="Nombre (Hno):" Foreground="White" Margin="0,0,0,5" FontSize="13"/>
+                            <TextBlock Text="Nombre (Hno):" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,5" FontSize="13"/>
                             <TextBox x:Name="TxtHermanoPastoreo" Padding="6"/>
                         </StackPanel>
                         <StackPanel Grid.Column="1" Margin="5,0,0,0">
-                            <TextBlock Text="Apellido:" Foreground="White" Margin="0,0,0,5" FontSize="13"/>
+                            <TextBlock Text="Apellido:" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,5" FontSize="13"/>
                             <TextBox x:Name="TxtApellidoPastoreo" Padding="6"/>
                         </StackPanel>
                     </Grid>
 
                     <StackPanel Grid.Column="1" Margin="10,0,0,0">
-                        <TextBlock Text="Esposa (si asiste):" Foreground="White" Margin="0,0,0,5" FontSize="13"/>
+                        <TextBlock Text="Esposa (si asiste):" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,5" FontSize="13"/>
                         <TextBox x:Name="TxtEsposaPastoreo" Padding="6"/>
                     </StackPanel>
                 </Grid>

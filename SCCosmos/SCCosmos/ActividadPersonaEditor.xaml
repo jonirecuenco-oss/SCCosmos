@@ -10,9 +10,9 @@
         </Grid.RowDefinitions>
 
         <StackPanel Margin="0,0,0,12">
-            <TextBlock Text="Actividad de predicación" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
+            <TextBlock Text="Actividad de predicación" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
             <TextBlock Text="Los datos proceden del S-21. Puedes corregir participación, cursos bíblicos, precursor auxiliar, horas y notas."
-                       Margin="0,4,0,0" Foreground="#AAAAAA" TextWrapping="Wrap"/>
+                       Margin="0,4,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"/>
         </StackPanel>
 
         <DataGrid x:Name="GridActividad"
@@ -22,12 +22,12 @@
                   CanUserDeleteRows="False"
                   HeadersVisibility="Column"
                   GridLinesVisibility="Horizontal"
-                  HorizontalGridLinesBrush="#30FFFFFF"
-                  BorderBrush="#30FFFFFF"
+                  HorizontalGridLinesBrush="{DynamicResource DividerStrokeColorDefaultBrush}"
+                  BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
                   Background="Transparent"
                   RowBackground="Transparent"
                   AlternatingRowBackground="#08000000"
-                  Foreground="White"
+                  Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                   SelectionMode="Single">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Mes" Binding="{Binding Mes}" Width="110" IsReadOnly="True"/>
@@ -41,10 +41,10 @@
         </DataGrid>
 
         <DockPanel Grid.Row="2" Margin="0,12,0,0">
-            <TextBlock x:Name="TxtEstado" Foreground="#AAAAAA" VerticalAlignment="Center"/>
+            <TextBlock x:Name="TxtEstado" Foreground="{DynamicResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
             <TextBlock DockPanel.Dock="Right"
                        Text="Los cambios se guardan con el botón Guardar del formulario."
-                       Foreground="#777777"
+                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                        VerticalAlignment="Center"
                        TextWrapping="Wrap"
                        Margin="20,0,0,0"/>

@@ -13,8 +13,8 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Text="INSERTAR ACTIVIDAD" FontSize="20" FontWeight="SemiBold" Foreground="White"/>
-        <TextBlock x:Name="TxtSubtitulo" Grid.Row="1" Foreground="#AAAAAA" FontSize="14" Margin="0,5,0,15"/>
+        <TextBlock Text="Insertar actividad" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+        <TextBlock x:Name="TxtSubtitulo" Grid.Row="1" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="14" Margin="0,5,0,15"/>
 
         <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
             <StackPanel>
@@ -27,14 +27,14 @@
                 <!-- ================================================ -->
                 <!-- 1 · ACTIVIDAD DE PUBLICADORES (S-21)             -->
                 <!-- ================================================ -->
-                <Border Background="#10FFFFFF" BorderBrush="#28FFFFFF" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,0,0,14">
+                <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="10" Padding="16" Margin="0,0,0,14">
                     <StackPanel>
 
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                             <Border Background="#1E4A6E" CornerRadius="10" Width="22" Height="22" VerticalAlignment="Center" Margin="0,0,9,0">
-                                <TextBlock Text="1" Foreground="White" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock Text="1" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="ACTIVIDAD DE PUBLICADORES" FontWeight="SemiBold" FontSize="15" Foreground="White" VerticalAlignment="Center"/>
+                            <TextBlock Text="ACTIVIDAD DE PUBLICADORES" FontWeight="SemiBold" FontSize="15" Foreground="{DynamicResource TextFillColorPrimaryBrush}" VerticalAlignment="Center"/>
                             <TextBlock Text="(S-21)" Foreground="#7E8794" FontSize="13" VerticalAlignment="Center" Margin="6,0,0,0"/>
                         </StackPanel>
 
@@ -48,8 +48,8 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel>
-                                <TextBlock Text="Archivo ya convertido (JSON)" Foreground="#C3C7CD" FontSize="12.5"/>
-                                <TextBlock x:Name="TxtS21" Text="Ningún archivo seleccionado" Foreground="#888888" Margin="0,3,0,0" FontStyle="Italic" FontSize="12.5" TextWrapping="Wrap"/>
+                                <TextBlock Text="Archivo ya convertido (JSON)" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12.5"/>
+                                <TextBlock x:Name="TxtS21" Text="Ningún archivo seleccionado" Foreground="{DynamicResource TextFillColorTertiaryBrush}" Margin="0,3,0,0" FontStyle="Italic" FontSize="12.5" TextWrapping="Wrap"/>
                             </StackPanel>
                             <ui:Button Grid.Column="1" Content="Examinar" Icon="{ui:SymbolIcon ArrowUp24}" Cursor="Hand" VerticalAlignment="Center" Click="BtnS21_Click"/>
                         </Grid>
@@ -61,8 +61,8 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel>
-                                <TextBlock Text="O convertir desde PDF" Foreground="#C3C7CD" FontSize="12.5"/>
-                                <TextBlock x:Name="TxtPdfS21" Text="Elige la carpeta con las tarjetas S-21 en PDF." Foreground="#888888" Margin="0,3,0,0" FontStyle="Italic" FontSize="12.5" TextWrapping="Wrap"/>
+                                <TextBlock Text="O convertir desde PDF" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12.5"/>
+                                <TextBlock x:Name="TxtPdfS21" Text="Elige la carpeta con las tarjetas S-21 en PDF." Foreground="{DynamicResource TextFillColorTertiaryBrush}" Margin="0,3,0,0" FontStyle="Italic" FontSize="12.5" TextWrapping="Wrap"/>
                             </StackPanel>
                             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                                 <ui:Button x:Name="BtnVerJsonS21" Content="Ver JSON" Icon="{ui:SymbolIcon Document24}" Cursor="Hand" Appearance="Secondary" Margin="0,0,8,0" Visibility="Collapsed" Click="BtnVerJsonS21_Click"/>
@@ -75,14 +75,14 @@
                 <!-- ================================================ -->
                 <!-- 2 · TERRITORIOS (S-13)                           -->
                 <!-- ================================================ -->
-                <Border Background="#10FFFFFF" BorderBrush="#28FFFFFF" BorderThickness="1" CornerRadius="10" Padding="16">
+                <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="10" Padding="16">
                     <StackPanel>
 
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                             <Border Background="#3E5C3A" CornerRadius="10" Width="22" Height="22" VerticalAlignment="Center" Margin="0,0,9,0">
-                                <TextBlock Text="2" Foreground="White" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock Text="2" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
-                            <TextBlock Text="TERRITORIOS" FontWeight="SemiBold" FontSize="15" Foreground="White" VerticalAlignment="Center"/>
+                            <TextBlock Text="TERRITORIOS" FontWeight="SemiBold" FontSize="15" Foreground="{DynamicResource TextFillColorPrimaryBrush}" VerticalAlignment="Center"/>
                             <TextBlock Text="(S-13) · opcional" Foreground="#7E8794" FontSize="13" VerticalAlignment="Center" Margin="6,0,0,0"/>
                         </StackPanel>
 
@@ -96,8 +96,8 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel>
-                                <TextBlock Text="Archivo ya convertido (JSON)" Foreground="#C3C7CD" FontSize="12.5"/>
-                                <TextBlock x:Name="TxtTerritorios" Text="Opcional. Ningún archivo seleccionado." Foreground="#888888" Margin="0,3,0,0" FontStyle="Italic" FontSize="12.5" TextWrapping="Wrap"/>
+                                <TextBlock Text="Archivo ya convertido (JSON)" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12.5"/>
+                                <TextBlock x:Name="TxtTerritorios" Text="Opcional. Ningún archivo seleccionado." Foreground="{DynamicResource TextFillColorTertiaryBrush}" Margin="0,3,0,0" FontStyle="Italic" FontSize="12.5" TextWrapping="Wrap"/>
                             </StackPanel>
                             <ui:Button Grid.Column="1" Content="Examinar" Icon="{ui:SymbolIcon Map24}" Cursor="Hand" VerticalAlignment="Center" Click="BtnTerritorios_Click"/>
                         </Grid>
@@ -109,8 +109,8 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel>
-                                <TextBlock Text="O convertir desde PDF o Excel" Foreground="#C3C7CD" FontSize="12.5"/>
-                                <TextBlock x:Name="TxtPdfS13" Text="Elige la carpeta (o el archivo) del registro de territorios." Foreground="#888888" Margin="0,3,0,0" FontStyle="Italic" FontSize="12.5" TextWrapping="Wrap"/>
+                                <TextBlock Text="O convertir desde PDF o Excel" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12.5"/>
+                                <TextBlock x:Name="TxtPdfS13" Text="Elige la carpeta (o el archivo) del registro de territorios." Foreground="{DynamicResource TextFillColorTertiaryBrush}" Margin="0,3,0,0" FontStyle="Italic" FontSize="12.5" TextWrapping="Wrap"/>
                             </StackPanel>
                             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                                 <ui:Button x:Name="BtnVerJsonS13" Content="Ver JSON" Icon="{ui:SymbolIcon Document24}" Cursor="Hand" Appearance="Secondary" Margin="0,0,8,0" Visibility="Collapsed" Click="BtnVerJsonS13_Click"/>

@@ -7,8 +7,8 @@
         MinWidth="640"
         MinHeight="660"
         WindowStartupLocation="CenterOwner"
-        Background="#1E1E1E"
-        Foreground="White">
+        Background="{DynamicResource ApplicationBackgroundBrush}"
+        Foreground="{DynamicResource TextFillColorPrimaryBrush}">
 
     <Grid Margin="24">
         <Grid.RowDefinitions>
@@ -20,14 +20,14 @@
         <!-- CABECERA -->
         <StackPanel Grid.Row="0" Margin="0,0,0,18">
             <TextBlock x:Name="TxtTitulo"
-                       Text="PROGRAMAR ACTIVIDAD"
+                       Text="Programar actividad"
                        FontSize="24"
                        FontWeight="SemiBold"
-                       Foreground="White"/>
+                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
 
             <TextBlock x:Name="TxtContexto"
                        Margin="0,5,0,0"
-                       Foreground="#9A9A9A"
+                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                        FontSize="13"/>
         </StackPanel>
 
@@ -36,8 +36,8 @@
             <StackPanel>
 
                 <!-- PERSONAS -->
-                <Border Background="#252528"
-                        BorderBrush="#3E3E42"
+                <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                         BorderThickness="1"
                         CornerRadius="8"
                         Padding="16"
@@ -56,14 +56,14 @@
                         <TextBlock Grid.Row="0"
                                    Grid.Column="0"
                                    Text="Responsable"
-                                   Foreground="#AAAAAA"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                    FontSize="12"
                                    Margin="0,0,0,6"/>
 
                         <TextBlock Grid.Row="0"
                                    Grid.Column="2"
                                    Text="Acompañante / familia (opcional)"
-                                   Foreground="#AAAAAA"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                    FontSize="12"
                                    Margin="0,0,0,6"/>
 
@@ -71,10 +71,7 @@
                                   Grid.Row="1"
                                   Grid.Column="0"
                                   Height="40"
-                                  Padding="8,4"
-                                  Background="#2A2A2A"
-                                  Foreground="White"
-                                  BorderBrush="#444444">
+                                  Padding="8,4">
                             <ComboBoxItem Content="SC"/>
                             <ComboBoxItem Content="Esposa"/>
                             <ComboBoxItem Content="Ambos"/>
@@ -85,9 +82,6 @@
                                   Grid.Column="2"
                                   Height="40"
                                   Padding="8,4"
-                                  Background="#2A2A2A"
-                                  Foreground="White"
-                                  BorderBrush="#444444"
                                   DisplayMemberPath="Texto"
                                   SelectedValuePath="Id"
                                   SelectionChanged="CmbAcompanante_SelectionChanged"/>
@@ -95,8 +89,8 @@
                 </Border>
 
                 <!-- DATOS DE LA ACTIVIDAD -->
-                <Border Background="#252528"
-                        BorderBrush="#3E3E42"
+                <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                         BorderThickness="1"
                         CornerRadius="8"
                         Padding="16"
@@ -117,14 +111,14 @@
                         <TextBlock Grid.Row="0"
                                    Grid.Column="0"
                                    Text="Hora"
-                                   Foreground="#AAAAAA"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                    FontSize="12"
                                    Margin="0,0,0,6"/>
 
                         <TextBlock Grid.Row="0"
                                    Grid.Column="2"
                                    Text="Tipo de actividad"
-                                   Foreground="#AAAAAA"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                    FontSize="12"
                                    Margin="0,0,0,6"/>
 
@@ -134,9 +128,6 @@
                                  Height="40"
                                  Padding="9"
                                  FontSize="15"
-                                 Background="#2A2A2A"
-                                 Foreground="White"
-                                 BorderBrush="#444444"
                                  ToolTip="Ejemplo: 10:00"/>
 
                         <ComboBox x:Name="TxtTipoActividad"
@@ -146,9 +137,6 @@
                                   Padding="9,4"
                                   IsEditable="True"
                                   IsTextSearchEnabled="False"
-                                  Background="#2A2A2A"
-                                  Foreground="White"
-                                  BorderBrush="#444444"
                                   ToolTip="Selecciona un tipo predefinido o escribe uno personalizado">
                             <ComboBoxItem Content="RSC"/>
                             <ComboBoxItem Content="Predicación"/>
@@ -166,7 +154,7 @@
                                    Grid.Column="0"
                                    Grid.ColumnSpan="3"
                                    Text="Notas"
-                                   Foreground="#AAAAAA"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                    FontSize="12"
                                    Margin="0,14,0,6"/>
 
@@ -178,16 +166,13 @@
                                  Padding="9"
                                  AcceptsReturn="True"
                                  TextWrapping="Wrap"
-                                 VerticalScrollBarVisibility="Auto"
-                                 Background="#2A2A2A"
-                                 Foreground="White"
-                                 BorderBrush="#444444"/>
+                                 VerticalScrollBarVisibility="Auto"/>
                     </Grid>
                 </Border>
 
                 <!-- UBICACIÓN -->
-                <Border Background="#252528"
-                        BorderBrush="#3E3E42"
+                <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                         BorderThickness="1"
                         CornerRadius="8"
                         Padding="16">
@@ -200,7 +185,7 @@
 
                             <TextBlock Grid.Column="0"
                                        Text="Dirección / ubicación"
-                                       Foreground="#AAAAAA"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                        FontSize="12"
                                        VerticalAlignment="Center"/>
 
@@ -210,18 +195,12 @@
                                         Click="BtnUsarDireccionAcompanante_Click"
                                         Padding="10,6"
                                         Margin="8,0,0,0"
-                                        Background="#333333"
-                                        Foreground="White"
-                                        BorderBrush="#555555"
                                         Cursor="Hand"/>
 
                                 <Button Content="Usar la del SR"
                                         Click="BtnUsarDireccionSR_Click"
                                         Padding="10,6"
                                         Margin="8,0,0,0"
-                                        Background="#333333"
-                                        Foreground="White"
-                                        BorderBrush="#555555"
                                         Cursor="Hand"/>
                             </WrapPanel>
                         </Grid>
@@ -231,9 +210,6 @@
                                  Padding="9"
                                  AcceptsReturn="True"
                                  TextWrapping="Wrap"
-                                 Background="#2A2A2A"
-                                 Foreground="White"
-                                 BorderBrush="#444444"
                                  TextChanged="TxtDireccion_TextChanged"/>
 
                         <Grid Margin="0,10,0,0">
@@ -246,7 +222,7 @@
                             <TextBlock x:Name="TxtCoordenadas"
                                        Grid.Column="0"
                                        Text="Coordenadas: sin fijar"
-                                       Foreground="#888888"
+                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                        VerticalAlignment="Center"/>
 
                             <Button x:Name="BtnBuscarCoordenadas"
@@ -255,9 +231,6 @@
                                     Click="BtnBuscarCoordenadas_Click"
                                     Padding="11,6"
                                     Margin="8,0,0,0"
-                                    Background="#333333"
-                                    Foreground="White"
-                                    BorderBrush="#555555"
                                     Cursor="Hand"/>
 
                             <Button x:Name="BtnCoordenadasManuales"
@@ -266,16 +239,13 @@
                                     Click="BtnCoordenadasManuales_Click"
                                     Padding="11,6"
                                     Margin="8,0,0,0"
-                                    Background="#333333"
-                                    Foreground="White"
-                                    BorderBrush="#555555"
                                     Cursor="Hand"/>
                         </Grid>
 
                         <Border x:Name="PanelCoordenadasManuales"
                                 Visibility="Collapsed"
-                                Background="#202023"
-                                BorderBrush="#3A3A3E"
+                                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                                 BorderThickness="1"
                                 CornerRadius="6"
                                 Padding="12"
@@ -294,12 +264,12 @@
 
                                 <TextBlock Grid.Row="0" Grid.Column="0"
                                            Text="Latitud"
-                                           Foreground="#AAAAAA"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                            FontSize="11"
                                            Margin="0,0,0,5"/>
                                 <TextBlock Grid.Row="0" Grid.Column="2"
                                            Text="Longitud"
-                                           Foreground="#AAAAAA"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                            FontSize="11"
                                            Margin="0,0,0,5"/>
 
@@ -307,18 +277,12 @@
                                          Grid.Row="1" Grid.Column="0"
                                          Height="36"
                                          Padding="8"
-                                         Background="#2A2A2A"
-                                         Foreground="White"
-                                         BorderBrush="#444444"
                                          ToolTip="Ejemplo: 38.722252"/>
 
                                 <TextBox x:Name="TxtLongitudManual"
                                          Grid.Row="1" Grid.Column="2"
                                          Height="36"
                                          Padding="8"
-                                         Background="#2A2A2A"
-                                         Foreground="White"
-                                         BorderBrush="#444444"
                                          ToolTip="Ejemplo: -6.537110"/>
 
                                 <Button Grid.Row="1" Grid.Column="3"
@@ -334,7 +298,7 @@
                         </Border>
 
                         <TextBlock Text="Puedes usar la dirección del acompañante o la del Salón del Reino. Si la dirección completa (por ejemplo, con piso o puerta) no se puede geolocalizar, puedes conservarla tal cual y fijar las coordenadas manualmente."
-                                   Foreground="#777777"
+                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                    FontSize="11"
                                    TextWrapping="Wrap"
                                    Margin="0,8,0,0"/>
@@ -354,9 +318,6 @@
                     Click="BtnCancelar_Click"
                     Padding="18,9"
                     Margin="0,0,10,0"
-                    Background="#333333"
-                    Foreground="White"
-                    BorderBrush="#555555"
                     Cursor="Hand"/>
 
             <Button x:Name="BtnReplicarTodosDias"
@@ -364,9 +325,6 @@
                     Click="BtnReplicarTodosDias_Click"
                     Padding="18,9"
                     Margin="0,0,10,0"
-                    Background="#333333"
-                    Foreground="White"
-                    BorderBrush="#555555"
                     Cursor="Hand"/>
 
             <Button x:Name="BtnGuardar"

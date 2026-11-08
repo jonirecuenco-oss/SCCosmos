@@ -3,11 +3,11 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
         Title="Congregación" Height="780" Width="480"
-        WindowStartupLocation="CenterOwner" Background="#1E1E1E" Foreground="White" ResizeMode="NoResize">
+        WindowStartupLocation="CenterOwner" Background="{DynamicResource ApplicationBackgroundBrush}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" ResizeMode="NoResize">
 
     <Grid Margin="25">
         <StackPanel>
-            <TextBlock Text="Datos de Congregación" FontSize="20" FontWeight="SemiBold" Foreground="#4BA3E3" Margin="0,0,0,20"/>
+            <TextBlock Text="Datos de Congregación" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Margin="0,0,0,20"/>
 
             <Grid Margin="0,0,0,15">
                 <Grid.ColumnDefinitions>
@@ -15,19 +15,19 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel Margin="0,0,5,0">
-                    <TextBlock Text="Código:" Foreground="White" Margin="0,0,0,5"/>
+                    <TextBlock Text="Código:" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,5"/>
                     <TextBox x:Name="TxtCodigo" Padding="6"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Margin="5,0,0,0">
-                    <TextBlock Text="Nombre:" Foreground="White" Margin="0,0,0,5"/>
+                    <TextBlock Text="Nombre:" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,5"/>
                     <TextBox x:Name="TxtNombre" Padding="6"/>
                 </StackPanel>
             </Grid>
 
-            <TextBlock Text="Correo electrónico:" Foreground="White" Margin="0,0,0,5"/>
+            <TextBlock Text="Correo electrónico:" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,5"/>
             <TextBox x:Name="TxtEmail" Margin="0,0,0,15" Padding="6"/>
 
-            <TextBlock Text="Sección del circuito:" Foreground="White" Margin="0,0,0,5"/>
+            <TextBlock Text="Sección del circuito:" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,5"/>
             <ComboBox x:Name="ComboSecciones" DisplayMemberPath="Nombre" SelectedValuePath="Id" Margin="0,0,0,15" Padding="6" HorizontalAlignment="Stretch"/>
 
             <!-- NUEVO BLOQUE: PROVINCIA Y MUNICIPIO -->
@@ -37,25 +37,25 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" Margin="0,0,5,0">
-                    <TextBlock Text="Provincia:" Foreground="White" Margin="0,0,0,5"/>
+                    <TextBlock Text="Provincia:" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,5"/>
                     <ComboBox x:Name="ComboProvincia" HorizontalAlignment="Stretch" Padding="6"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Margin="5,0,0,0">
-                    <TextBlock Text="Municipio:" Foreground="White" Margin="0,0,0,5"/>
+                    <TextBlock Text="Municipio:" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,5"/>
                     <TextBox x:Name="TxtMunicipio" Padding="6"/>
                 </StackPanel>
             </Grid>
 
-            <TextBlock Text="Dirección del Salón del Reino:" Foreground="White" Margin="0,0,0,5"/>
+            <TextBlock Text="Dirección del Salón del Reino:" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,5"/>
             <TextBox x:Name="TxtDireccion" Margin="0,0,0,15" Padding="6"/>
 
-            <TextBlock Text="ID de Zoom:" Foreground="White" Margin="0,0,0,5"/>
+            <TextBlock Text="ID de Zoom:" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,5"/>
             <TextBox x:Name="TxtIdZoom" Margin="0,0,0,15" Padding="6"/>
 
-            <TextBlock Text="Contraseña de Zoom:" Foreground="White" Margin="0,0,0,5"/>
+            <TextBlock Text="Contraseña de Zoom:" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,5"/>
             <TextBox x:Name="TxtClaveZoom" Margin="0,0,0,15" Padding="6"/>
 
-            <TextBlock Text="Email del AV:" Foreground="White" Margin="0,0,0,5"/>
+            <TextBlock Text="Email del AV:" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,5"/>
             <TextBox x:Name="TxtEmailAV" Margin="0,0,0,15" Padding="6"/>
 
             <!-- BLOQUE: REUNIÓN DE ENTRE SEMANA -->
@@ -65,7 +65,7 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" Margin="0,0,5,0">
-                    <TextBlock Text="Día (Entre semana):" Foreground="White" Margin="0,0,0,5"/>
+                    <TextBlock Text="Día (Entre semana):" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,5"/>
                     <ComboBox x:Name="ComboDiaEntreSemana" HorizontalAlignment="Stretch" Padding="6">
                         <ComboBoxItem Content="Lunes"/>
                         <ComboBoxItem Content="Martes"/>
@@ -75,7 +75,7 @@
                     </ComboBox>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Margin="5,0,0,0">
-                    <TextBlock Text="Hora (Ej: 19:30):" Foreground="White" Margin="0,0,0,5"/>
+                    <TextBlock Text="Hora (Ej: 19:30):" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,5"/>
                     <TextBox x:Name="TxtHoraEntreSemana" Padding="6"/>
                 </StackPanel>
             </Grid>
@@ -87,14 +87,14 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" Margin="0,0,5,0">
-                    <TextBlock Text="Día del fin de semana:" Foreground="White" Margin="0,0,0,5"/>
+                    <TextBlock Text="Día del fin de semana:" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,5"/>
                     <ComboBox x:Name="ComboDiaFinSemana" HorizontalAlignment="Stretch" Padding="6">
                         <ComboBoxItem Content="Sábado"/>
                         <ComboBoxItem Content="Domingo"/>
                     </ComboBox>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Margin="5,0,0,0">
-                    <TextBlock Text="Hora FDS (Ej: 10:00):" Foreground="White" Margin="0,0,0,5"/>
+                    <TextBlock Text="Hora FDS (Ej: 10:00):" Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,5"/>
                     <TextBox x:Name="TxtHoraFinSemana" Padding="6"/>
                 </StackPanel>
             </Grid>

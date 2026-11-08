@@ -97,7 +97,7 @@ namespace SCCosmos
 
             if (actividadEditar != null)
             {
-                TxtTitulo.Text = "EDITAR ACTIVIDAD";
+                TxtTitulo.Text = "Editar actividad";
 
                 TxtHora.Text =
                     actividadEditar.Hora ?? "";
@@ -136,7 +136,7 @@ namespace SCCosmos
             }
             else
             {
-                TxtTitulo.Text = "PROGRAMAR ACTIVIDAD";
+                TxtTitulo.Text = "Programar actividad";
             }
 
             _cargandoInicial = false;
