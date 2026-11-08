@@ -532,12 +532,12 @@
                 <!-- INFORMACIÓN DE LA CONGREGACIÓN -->
                 <TabItem x:Name="TabInformacion" Header="Información">
                     <Border x:Name="PanelEstadisticas"
-                            Background="#171719"
-                            BorderBrush="#2D2D30"
+                            Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                             BorderThickness="1"
                             CornerRadius="10"
                             Padding="18"
-                            Margin="10,15,10,15">
+                            Margin="0,16,0,16">
                         <StackPanel>
                             <Grid Margin="0,0,0,16">
                                 <Grid.ColumnDefinitions>
@@ -547,11 +547,11 @@
 
                                 <StackPanel>
                                     <TextBlock Text="Resumen de la congregación"
-                                               Foreground="White"
+                                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                                FontSize="18"
                                                FontWeight="SemiBold"/>
                                     <TextBlock Text="Datos calculados para el mes de referencia seleccionado"
-                                               Foreground="#888888"
+                                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                                FontSize="12"
                                                Margin="0,3,0,0"/>
                                 </StackPanel>
@@ -564,23 +564,23 @@
                                         Padding="14,8">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="Publicadores activos"
-                                                   Foreground="#AAAAAA"
+                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                    FontSize="12"
                                                    VerticalAlignment="Center"
                                                    Margin="0,0,10,0"/>
                                         <TextBlock Text="{Binding TotalPersonas}"
-                                                   Foreground="White"
+                                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                                    FontSize="22"
                                                    FontWeight="Bold"
                                                    VerticalAlignment="Center"/>
 
                                         <Border Width="1"
                                                 Height="26"
-                                                Background="#405A5A60"
+                                                Background="{DynamicResource DividerStrokeColorDefaultBrush}"
                                                 Margin="14,0"/>
 
                                         <TextBlock Text="Cursos bíblicos"
-                                                   Foreground="#AAAAAA"
+                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                    FontSize="12"
                                                    VerticalAlignment="Center"
                                                    Margin="0,0,10,0"/>
@@ -596,8 +596,8 @@
                             <UniformGrid Columns="3">
 
                                 <!-- PERSONAS -->
-                                <Border Background="#202023"
-                                        BorderBrush="#303035"
+                                <Border Background="{DynamicResource ControlFillColorDefaultBrush}"
+                                        BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                                         BorderThickness="1"
                                         CornerRadius="8"
                                         Padding="16"
@@ -619,24 +619,24 @@
                                                 <RowDefinition Height="Auto"/>
                                                 <RowDefinition Height="Auto"/>
                                             </Grid.RowDefinitions>
-                                            <TextBlock Text="Hombres" Foreground="#AAAAAA" Margin="0,4"/>
-                                            <TextBlock Grid.Column="1" Text="{Binding TotalHombres}" Foreground="White" FontWeight="SemiBold" Margin="12,4,0,4"/>
+                                            <TextBlock Text="Hombres" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,4"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding TotalHombres}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontWeight="SemiBold" Margin="12,4,0,4"/>
 
-                                            <TextBlock Grid.Row="1" Text="Mujeres" Foreground="#AAAAAA" Margin="0,4"/>
-                                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding TotalMujeres}" Foreground="White" FontWeight="SemiBold" Margin="12,4,0,4"/>
+                                            <TextBlock Grid.Row="1" Text="Mujeres" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,4"/>
+                                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding TotalMujeres}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontWeight="SemiBold" Margin="12,4,0,4"/>
 
-                                            <TextBlock Grid.Row="2" Text="Media de edad" Foreground="#AAAAAA" Margin="0,4"/>
-                                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding MediaEdad, StringFormat='{}{0} años'}" Foreground="White" FontWeight="SemiBold" Margin="12,4,0,4"/>
+                                            <TextBlock Grid.Row="2" Text="Media de edad" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,4"/>
+                                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding MediaEdad, StringFormat='{}{0} años'}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontWeight="SemiBold" Margin="12,4,0,4"/>
 
-                                            <TextBlock Grid.Row="3" Text="No bautizados" Foreground="#AAAAAA" Margin="0,4"/>
-                                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding NoBautizados}" Foreground="White" FontWeight="SemiBold" Margin="12,4,0,4"/>
+                                            <TextBlock Grid.Row="3" Text="No bautizados" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,4"/>
+                                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding NoBautizados}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontWeight="SemiBold" Margin="12,4,0,4"/>
                                         </Grid>
                                     </StackPanel>
                                 </Border>
 
                                 <!-- NOMBRAMIENTOS -->
-                                <Border Background="#202023"
-                                        BorderBrush="#303035"
+                                <Border Background="{DynamicResource ControlFillColorDefaultBrush}"
+                                        BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                                         BorderThickness="1"
                                         CornerRadius="8"
                                         Padding="16"
@@ -658,24 +658,24 @@
                                                 <RowDefinition Height="Auto"/>
                                                 <RowDefinition Height="Auto"/>
                                             </Grid.RowDefinitions>
-                                            <TextBlock Text="Ancianos" Foreground="#AAAAAA" Margin="0,4"/>
-                                            <TextBlock Grid.Column="1" Text="{Binding Ancianos}" Foreground="White" FontWeight="SemiBold" Margin="12,4,0,4"/>
+                                            <TextBlock Text="Ancianos" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,4"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Ancianos}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontWeight="SemiBold" Margin="12,4,0,4"/>
 
-                                            <TextBlock Grid.Row="1" Text="Siervos ministeriales" Foreground="#AAAAAA" Margin="0,4"/>
-                                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SiervosMinisteriales}" Foreground="White" FontWeight="SemiBold" Margin="12,4,0,4"/>
+                                            <TextBlock Grid.Row="1" Text="Siervos ministeriales" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,4"/>
+                                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding SiervosMinisteriales}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontWeight="SemiBold" Margin="12,4,0,4"/>
 
-                                            <TextBlock Grid.Row="2" Text="Bautizados últ. 6 meses" Foreground="#AAAAAA" Margin="0,4"/>
+                                            <TextBlock Grid.Row="2" Text="Bautizados últ. 6 meses" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,4"/>
                                             <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding BautizadosRecientes}" Foreground="#55C855" FontWeight="SemiBold" Margin="12,4,0,4"/>
 
-                                            <TextBlock Grid.Row="3" Text="Irregulares últ. 6 meses" Foreground="#AAAAAA" Margin="0,4"/>
+                                            <TextBlock Grid.Row="3" Text="Irregulares últ. 6 meses" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,4"/>
                                             <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Irregulares}" Foreground="#FF7777" FontWeight="SemiBold" Margin="12,4,0,4"/>
                                         </Grid>
                                     </StackPanel>
                                 </Border>
 
                                 <!-- PRECURSORES -->
-                                <Border Background="#202023"
-                                        BorderBrush="#303035"
+                                <Border Background="{DynamicResource ControlFillColorDefaultBrush}"
+                                        BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                                         BorderThickness="1"
                                         CornerRadius="8"
                                         Padding="16"
@@ -698,20 +698,20 @@
                                                 <RowDefinition Height="Auto"/>
                                                 <RowDefinition Height="Auto"/>
                                             </Grid.RowDefinitions>
-                                            <TextBlock Text="Precursores regulares" Foreground="#AAAAAA" Margin="0,4"/>
-                                            <TextBlock Grid.Column="1" Text="{Binding PrecursoresRegulares}" Foreground="White" FontWeight="SemiBold" Margin="12,4,0,4"/>
+                                            <TextBlock Text="Precursores regulares" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,4"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding PrecursoresRegulares}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontWeight="SemiBold" Margin="12,4,0,4"/>
 
-                                            <TextBlock Grid.Row="1" Text="Especiales / misioneros" Foreground="#AAAAAA" Margin="0,4"/>
-                                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding PrecursoresEspeciales}" Foreground="White" FontWeight="SemiBold" Margin="12,4,0,4"/>
+                                            <TextBlock Grid.Row="1" Text="Especiales / misioneros" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,4"/>
+                                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding PrecursoresEspeciales}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontWeight="SemiBold" Margin="12,4,0,4"/>
 
-                                            <TextBlock Grid.Row="2" Text="Auxiliares este mes" Foreground="#AAAAAA" Margin="0,4"/>
+                                            <TextBlock Grid.Row="2" Text="Auxiliares este mes" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,4"/>
                                             <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding AuxiliaresMesEscogido}" Foreground="#FFB900" FontWeight="SemiBold" Margin="12,4,0,4"/>
 
-                                            <TextBlock Grid.Row="3" Text="Auxiliares últ. 6 meses" Foreground="#AAAAAA" Margin="0,4"/>
-                                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Auxiliares6Meses}" Foreground="White" FontWeight="SemiBold" Margin="12,4,0,4"/>
+                                            <TextBlock Grid.Row="3" Text="Auxiliares últ. 6 meses" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,4"/>
+                                            <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Auxiliares6Meses}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontWeight="SemiBold" Margin="12,4,0,4"/>
 
-                                            <TextBlock Grid.Row="4" Text="Media CB / publicador" Foreground="#AAAAAA" Margin="0,4"/>
-                                            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding MediaCursos}" Foreground="#CCCCCC" FontWeight="SemiBold" Margin="12,4,0,4"/>
+                                            <TextBlock Grid.Row="4" Text="Media CB / publicador" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,4"/>
+                                            <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding MediaCursos}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontWeight="SemiBold" Margin="12,4,0,4"/>
                                         </Grid>
                                     </StackPanel>
                                 </Border>
@@ -723,7 +723,7 @@
 
                 <!-- GRUPOS DE PREDICACIÓN -->
                 <TabItem x:Name="TabGruposVisita" Header="Grupos">
-                    <StackPanel Margin="10,15,10,10">
+                    <StackPanel Margin="0,16,0,0">
                         <ItemsControl x:Name="GraficoGrupos" PreviewMouseWheel="UIElement_PreviewMouseWheel">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
@@ -732,29 +732,29 @@
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Background="#10FFFFFF" CornerRadius="8" Padding="20" Margin="0,0,15,15" BorderThickness="1" BorderBrush="#20FFFFFF" MinWidth="260">
+                                    <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" Padding="20" Margin="0,0,12,12" BorderThickness="1" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" MinWidth="260">
                                         <StackPanel>
-                                            <TextBlock Text="{Binding NombreGrupo}" FontWeight="Bold" FontSize="18" Foreground="White" HorizontalAlignment="Center" Margin="0,0,0,15"/>
+                                            <TextBlock Text="{Binding NombreGrupo}" FontWeight="Bold" FontSize="18" Foreground="{DynamicResource TextFillColorPrimaryBrush}" HorizontalAlignment="Center" Margin="0,0,0,15"/>
                                             <StackPanel VerticalAlignment="Center">
                                                 <StackPanel Orientation="Horizontal" Margin="0,4">
-                                                    <TextBlock Text="Publicadores" Width="100" Foreground="#AAAAAA" FontSize="13" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="Publicadores" Width="100" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="13" VerticalAlignment="Center"/>
                                                     <Border Background="#0078D4" Height="14" Width="{Binding AnchoPublicadores}" CornerRadius="3" MinWidth="5"/>
-                                                    <TextBlock Text="{Binding NumPublicadores}" Foreground="White" FontSize="13" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{Binding NumPublicadores}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontSize="13" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center"/>
                                                 </StackPanel>
                                                 <StackPanel Orientation="Horizontal" Margin="0,4">
-                                                    <TextBlock Text="Precursores" Width="100" Foreground="#AAAAAA" FontSize="13" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="Precursores" Width="100" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="13" VerticalAlignment="Center"/>
                                                     <Border Background="#10893E" Height="14" Width="{Binding AnchoPrecursores}" CornerRadius="3" MinWidth="5"/>
-                                                    <TextBlock Text="{Binding NumPrecursores}" Foreground="White" FontSize="13" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{Binding NumPrecursores}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontSize="13" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center"/>
                                                 </StackPanel>
                                                 <StackPanel Orientation="Horizontal" Margin="0,4">
-                                                    <TextBlock Text="Ancianos" Width="100" Foreground="#AAAAAA" FontSize="13" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="Ancianos" Width="100" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="13" VerticalAlignment="Center"/>
                                                     <Border Background="#D83B01" Height="14" Width="{Binding AnchoAncianos}" CornerRadius="3" MinWidth="5"/>
-                                                    <TextBlock Text="{Binding NumAncianos}" Foreground="White" FontSize="13" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{Binding NumAncianos}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontSize="13" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center"/>
                                                 </StackPanel>
                                                 <StackPanel Orientation="Horizontal" Margin="0,4">
-                                                    <TextBlock Text="Siervos Min." Width="100" Foreground="#AAAAAA" FontSize="13" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="Siervos Min." Width="100" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="13" VerticalAlignment="Center"/>
                                                     <Border Background="#FFB900" Height="14" Width="{Binding AnchoSM}" CornerRadius="3" MinWidth="5"/>
-                                                    <TextBlock Text="{Binding NumSM}" Foreground="White" FontSize="13" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{Binding NumSM}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontSize="13" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center"/>
                                                 </StackPanel>
                                             </StackPanel>
                                         </StackPanel>
