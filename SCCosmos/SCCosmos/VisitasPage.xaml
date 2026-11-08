@@ -768,7 +768,7 @@
                 <!-- TERRITORIOS -->
                 <TabItem x:Name="TabTerritorios" Header="Territorios">
 
-                    <StackPanel Margin="10,15,10,10">
+                    <StackPanel Margin="0,16,0,0">
 
                         <!-- IMPORTAR S-13 Y SELECTOR DE AÑO DE SERVICIO -->
                         <Grid Margin="0,0,0,15">
@@ -796,7 +796,7 @@
                             <StackPanel Orientation="Horizontal"
                                         HorizontalAlignment="Right">
                                 <TextBlock Text="Año de servicio:"
-                                           Foreground="Gray"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                            FontSize="14"
                                            VerticalAlignment="Center"
                                            Margin="0,0,10,0"/>
@@ -808,13 +808,13 @@
                                            Cursor="Hand"
                                            Click="BtnMesAntTerritorios_Click"/>
 
-                                <Border Background="#2A2A2A"
-                                        CornerRadius="4"
+                                <Border Background="{DynamicResource ControlFillColorDefaultBrush}" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" BorderThickness="1"
+                                        CornerRadius="6"
                                         Padding="15,6"
                                         MinWidth="190">
                                     <TextBlock x:Name="TxtMesTerritorios"
                                                Text="Año de servicio"
-                                               Foreground="White"
+                                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                                FontSize="14"
                                                FontWeight="SemiBold"
                                                TextAlignment="Center"
@@ -849,13 +849,13 @@
                                     MouseLeftButtonUp="CardFiltroTerritorio_MouseLeftButtonUp">
                                 <StackPanel>
                                     <TextBlock Text="Nº Territorios"
-                                               Foreground="#AAAAAA"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                FontSize="12"/>
                                     <TextBlock x:Name="TxtTotalTerritorios"
                                                Text="0"
                                                FontWeight="Bold"
                                                FontSize="22"
-                                               Foreground="White"/>
+                                               Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                                 </StackPanel>
                             </Border>
 
@@ -873,7 +873,7 @@
                                     MouseLeftButtonUp="CardFiltroTerritorio_MouseLeftButtonUp">
                                 <StackPanel>
                                     <TextBlock Text="Trabajados (últ. 6 meses)"
-                                               Foreground="#AAAAAA"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                FontSize="12"/>
                                     <TextBlock x:Name="TxtTerritoriosTrabajados"
                                                Text="0"
@@ -897,7 +897,7 @@
                                     MouseLeftButtonUp="CardFiltroTerritorio_MouseLeftButtonUp">
                                 <StackPanel>
                                     <TextBlock Text="Trabajados (año de servicio)"
-                                               Foreground="#AAAAAA"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                FontSize="12"/>
                                     <TextBlock x:Name="TxtTerritoriosTrabajadosAnio"
                                                Text="0"
@@ -922,7 +922,7 @@
                                 <StackPanel>
                                     <TextBlock x:Name="TxtEtiquetaTerritoriosEnCurso"
                                                Text="Trabajándose en"
-                                               Foreground="#AAAAAA"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                FontSize="12"
                                                TextWrapping="Wrap"/>
                                     <TextBlock x:Name="TxtTerritoriosEnCurso"
@@ -947,7 +947,7 @@
                                     MouseLeftButtonUp="CardFiltroTerritorio_MouseLeftButtonUp">
                                 <StackPanel>
                                     <TextBlock Text="Caducados (≥ 4 meses)"
-                                               Foreground="#AAAAAA"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                FontSize="12"/>
                                     <TextBlock x:Name="TxtTerritoriosCaducados"
                                                Text="0"
@@ -971,7 +971,7 @@
                                     MouseLeftButtonUp="CardFiltroTerritorio_MouseLeftButtonUp">
                                 <StackPanel>
                                     <TextBlock Text="Sin trabajar > 1 año"
-                                               Foreground="#AAAAAA"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                FontSize="12"/>
                                     <TextBlock x:Name="TxtTerritorios1Ano"
                                                Text="0"
@@ -995,7 +995,7 @@
                                     MouseLeftButtonUp="CardFiltroTerritorio_MouseLeftButtonUp">
                                 <StackPanel>
                                     <TextBlock Text="Sin trabajar > 2 años"
-                                               Foreground="#AAAAAA"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                FontSize="12"/>
                                     <TextBlock x:Name="TxtTerritorios2Anos"
                                                Text="0"
@@ -1025,9 +1025,9 @@
                                   MaxHeight="650"
                                   ScrollViewer.HorizontalScrollBarVisibility="Auto"
                                   GridLinesVisibility="Horizontal"
-                                  HorizontalGridLinesBrush="#20FFFFFF"
+                                  HorizontalGridLinesBrush="{DynamicResource DividerStrokeColorDefaultBrush}"
                                   BorderThickness="1"
-                                  BorderBrush="#20FFFFFF"
+                                  BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
                                   Background="Transparent"
                                   RowBackground="Transparent">
 
@@ -1036,7 +1036,7 @@
                                     <Setter Property="Background"
                                             Value="Transparent"/>
                                     <Setter Property="Foreground"
-                                            Value="White"/>
+                                            Value="{DynamicResource TextFillColorPrimaryBrush}"/>
                                 </Style>
                             </DataGrid.RowStyle>
 
@@ -1089,8 +1089,8 @@
 
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>
-                                                        <Border Background="#1AFFFFFF"
-                                                                BorderBrush="#333333"
+                                                        <Border Background="{DynamicResource ControlFillColorDefaultBrush}"
+                                                                BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
                                                                 BorderThickness="1"
                                                                 CornerRadius="4"
                                                                 Padding="3,1"
@@ -1159,12 +1159,12 @@
                                                                                 MaxWidth="360">
                                                                             <StackPanel>
                                                                                 <TextBlock Text="Nombre original del registro S-13"
-                                                                                           Foreground="#AAAAAA"
+                                                                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                                                            FontSize="11"
                                                                                            FontWeight="SemiBold"
                                                                                            Margin="0,0,0,4"/>
                                                                                 <TextBlock Text="{Binding NombreS13}"
-                                                                                           Foreground="White"
+                                                                                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                                                                            FontSize="13"
                                                                                            FontWeight="SemiBold"
                                                                                            TextWrapping="Wrap"/>
@@ -1221,7 +1221,7 @@
 
                                                                 <TextBlock Grid.Column="2"
                                                                            Text="{Binding Fechas}"
-                                                                           Foreground="#AAAAAA"
+                                                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                                            FontSize="12"
                                                                            Margin="4,0,0,0"
                                                                            VerticalAlignment="Center"
@@ -1244,23 +1244,9 @@
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal"
                                                         HorizontalAlignment="Center">
-                                                <Button Content="✏️"
-                                                        ToolTip="Renombrar Territorio"
-                                                        Click="BtnEditarTerritorio_Click"
-                                                        Background="Transparent"
-                                                        BorderThickness="0"
-                                                        Cursor="Hand"
-                                                        Margin="2,0,8,0"
-                                                        FontSize="14"/>
+                                                <ui:Button Icon="{ui:SymbolIcon Edit24}" Appearance="Transparent" ToolTip="Renombrar Territorio" Click="BtnEditarTerritorio_Click" Padding="6" Margin="0,0,4,0" Cursor="Hand"/>
 
-                                                <Button Content="🗑️"
-                                                        ToolTip="Eliminar Territorio"
-                                                        Click="BtnEliminarTerritorio_Click"
-                                                        Background="Transparent"
-                                                        BorderThickness="0"
-                                                        Cursor="Hand"
-                                                        Margin="0,0,2,0"
-                                                        FontSize="14"/>
+                                                <ui:Button Icon="{ui:SymbolIcon Delete24}" Appearance="Transparent" Foreground="{DynamicResource SystemFillColorCriticalBrush}" ToolTip="Eliminar Territorio" Click="BtnEliminarTerritorio_Click" Padding="6" Cursor="Hand"/>
                                             </StackPanel>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
@@ -1279,16 +1265,16 @@
 
                 <!-- CONTABILIDAD -->
                 <TabItem x:Name="TabContabilidad" Header="Contabilidad">
-                    <StackPanel Margin="10,15,10,10">
+                    <StackPanel Margin="0,16,0,0">
 
                         <Grid Margin="0,0,0,15">
-                            <TextBlock Text="Los cambios se guardan automáticamente al escribir" Foreground="#888888" FontSize="12" VerticalAlignment="Center" FontStyle="Italic"/>
+                            <TextBlock Text="Los cambios se guardan automáticamente al escribir" Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="12" VerticalAlignment="Center" FontStyle="Italic"/>
                             <!-- CINTA DE MES INDIVIDUAL -->
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                <TextBlock Text="Año de servicio:" Foreground="Gray" FontSize="14" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBlock Text="Año de servicio:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="14" VerticalAlignment="Center" Margin="0,0,10,0"/>
                                 <ui:Button Icon="{ui:SymbolIcon ChevronLeft24}" Appearance="Transparent" Padding="4" Margin="0,0,5,0" Cursor="Hand" Click="BtnMesAntContabilidad_Click"/>
-                                <Border Background="#2A2A2A" CornerRadius="4" Padding="15,6" MinWidth="180">
-                                    <TextBlock x:Name="TxtMesContabilidad" Text="Año de servicio" Foreground="White" FontSize="14" FontWeight="SemiBold" TextAlignment="Center" VerticalAlignment="Center"/>
+                                <Border Background="{DynamicResource ControlFillColorDefaultBrush}" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="6" Padding="15,6" MinWidth="180">
+                                    <TextBlock x:Name="TxtMesContabilidad" Text="Año de servicio" Foreground="{DynamicResource TextFillColorPrimaryBrush}" FontSize="14" FontWeight="SemiBold" TextAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                                 <ui:Button Icon="{ui:SymbolIcon ChevronRight24}" Appearance="Transparent" Padding="4" Margin="5,0,0,0" Cursor="Hand" Click="BtnMesSigContabilidad_Click"/>
                             </StackPanel>
@@ -1296,13 +1282,13 @@
 
                         <DataGrid x:Name="TablaContabilidad" PreviewMouseWheel="UIElement_PreviewMouseWheel" AutoGenerateColumns="False" CanUserAddRows="False"
                                   HeadersVisibility="Column" SelectionMode="Single" IsReadOnly="False" ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                  GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#20FFFFFF"
-                                  BorderThickness="1" BorderBrush="#20FFFFFF" Background="Transparent" RowBackground="Transparent"
+                                  GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource DividerStrokeColorDefaultBrush}"
+                                  BorderThickness="1" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" Background="Transparent" RowBackground="Transparent"
                                   CellEditEnding="TablaContabilidad_CellEditEnding">
                             <DataGrid.RowStyle>
                                 <Style TargetType="DataGridRow">
                                     <Setter Property="Background" Value="Transparent"/>
-                                    <Setter Property="Foreground" Value="White"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
                                     <Setter Property="MinHeight" Value="35"/>
                                 </Style>
                             </DataGrid.RowStyle>
@@ -1345,12 +1331,12 @@
 
                 <!-- S-303 Y S-2 -->
                 <TabItem x:Name="TabS303" Header="S-303">
-                    <StackPanel Margin="10,15,10,10">
+                    <StackPanel Margin="0,16,0,0">
 
                         <!-- PARTE 1: S-303 -->
-                        <Border Background="#1A1A1C" CornerRadius="6" Padding="15" Margin="0,0,0,15" BorderBrush="#333333" BorderThickness="1">
+                        <Border Style="{StaticResource PanelTarjeta}" Margin="0,0,0,16">
                             <StackPanel>
-                                <TextBlock Text="DOCUMENTO S-303" FontSize="14" FontWeight="SemiBold" Foreground="#4BA3E3" Margin="0,0,0,10"/>
+                                <TextBlock Text="DOCUMENTO S-303" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Margin="0,0,0,10"/>
                                 <ItemsControl x:Name="ListaS303">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
@@ -1361,33 +1347,29 @@
                                                     <ColumnDefinition Width="Auto"/>
                                                     <ColumnDefinition Width="Auto"/>
                                                 </Grid.ColumnDefinitions>
-                                                <TextBlock Text="{Binding NombreVisual}" Foreground="White" VerticalAlignment="Center" TextWrapping="Wrap"/>
-                                                <Button Grid.Column="1" Content="{Binding TextoBoton}" Tag="{Binding}" Click="BtnEditarS303_Click" 
-                                                        Background="#0078D4" Foreground="White" BorderThickness="0" Padding="10,5" Cursor="Hand" Margin="10,0,0,0"/>
-                                                <Button Grid.Column="2" Content="💾" Tag="{Binding}" Click="BtnGuardarS303BD_Click" Visibility="{Binding VerBotonBorrar}"
-                                                        Background="Transparent" Foreground="#55C855" BorderThickness="0" Padding="5" Cursor="Hand" Margin="5,0,0,0"
-                                                        ToolTip="Guardar los cambios actuales del PDF en la base de datos" FontSize="16"/>
-                                                <Button Grid.Column="3" Content="🗑️" Tag="{Binding}" Click="BtnEliminarS303_Click" Visibility="{Binding VerBotonBorrar}"
-                                                        Background="Transparent" Foreground="#FF5555" BorderThickness="0" Padding="5" Cursor="Hand" Margin="5,0,0,0" ToolTip="Eliminar PDF generado" FontSize="16"/>
+                                                <TextBlock Text="{Binding NombreVisual}" Foreground="{DynamicResource TextFillColorPrimaryBrush}" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                                <ui:Button Grid.Column="1" Content="{Binding TextoBoton}" Tag="{Binding}" Click="BtnEditarS303_Click" Appearance="Secondary" Cursor="Hand" Margin="10,0,0,0"/>
+                                                <ui:Button Grid.Column="2" Icon="{ui:SymbolIcon Save24}" Appearance="Transparent" Foreground="{DynamicResource SystemFillColorSuccessBrush}" Tag="{Binding}" Click="BtnGuardarS303BD_Click" Visibility="{Binding VerBotonBorrar}" Padding="6" Cursor="Hand" Margin="6,0,0,0" ToolTip="Guardar los cambios actuales del PDF en la base de datos"/>
+                                                <ui:Button Grid.Column="3" Icon="{ui:SymbolIcon Delete24}" Appearance="Transparent" Foreground="{DynamicResource SystemFillColorCriticalBrush}" Tag="{Binding}" Click="BtnEliminarS303_Click" Visibility="{Binding VerBotonBorrar}" Padding="6" Cursor="Hand" Margin="4,0,0,0" ToolTip="Eliminar PDF generado"/>
                                             </Grid>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
-                                <TextBlock x:Name="TxtSinS303" Text="..." Foreground="#AAAAAA" FontStyle="Italic" Visibility="Collapsed" TextWrapping="Wrap"/>
+                                <TextBlock x:Name="TxtSinS303" Text="..." Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontStyle="Italic" Visibility="Collapsed" TextWrapping="Wrap"/>
                             </StackPanel>
                         </Border>
 
                         <!-- PARTE 2: S-2 (RECOMENDACIONES) -->
-                        <Border Background="#1A1A1C" CornerRadius="6" Padding="15" Margin="0,0,0,15" BorderBrush="#333333" BorderThickness="1">
+                        <Border Style="{StaticResource PanelTarjeta}" Margin="0,0,0,16">
                             <StackPanel>
-                                <TextBlock Text="RECOMENDACIONES Y BAJAS PENDIENTES (S-2)" FontSize="14" FontWeight="SemiBold" Foreground="#4BA3E3" Margin="0,0,0,10"/>
+                                <TextBlock Text="RECOMENDACIONES Y BAJAS PENDIENTES (S-2)" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Margin="0,0,0,10"/>
 
                                 <DataGrid x:Name="TablaS2" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column" SelectionMode="Single" 
-                                          IsReadOnly="False" Background="Transparent" RowBackground="Transparent" BorderThickness="0" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#333333">
+                                          IsReadOnly="False" Background="Transparent" RowBackground="Transparent" BorderThickness="0" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource DividerStrokeColorDefaultBrush}">
                                     <DataGrid.RowStyle>
                                         <Style TargetType="DataGridRow">
                                             <Setter Property="Background" Value="Transparent"/>
-                                            <Setter Property="Foreground" Value="White"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
                                             <Setter Property="MinHeight" Value="35"/>
                                         </Style>
                                     </DataGrid.RowStyle>
@@ -1396,7 +1378,6 @@
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <ComboBox Width="72" FontSize="12" Margin="6,3" VerticalAlignment="Center"
-                                                              Background="#2D2D30" Foreground="White" BorderThickness="0"
                                                               SelectedValuePath="Content"
                                                               SelectedValue="{Binding Decision, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                               ToolTip="Sí = aprobar en JW Hub; No = cancelar en JW Hub al enviar">
@@ -1412,26 +1393,22 @@
                                     </DataGrid.Columns>
                                 </DataGrid>
 
-                                <TextBlock x:Name="TxtSinS2" Text="No hay recomendaciones ni bajas pendientes en JW Hub para esta congregación." Foreground="#AAAAAA" FontStyle="Italic" Visibility="Collapsed"/>
+                                <TextBlock x:Name="TxtSinS2" Text="No hay recomendaciones ni bajas pendientes en JW Hub para esta congregación." Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontStyle="Italic" Visibility="Collapsed"/>
 
                                 <!-- La carta se genera sobre una COPIA del DOCX guardado en Documentación.
                                      Los cambios manuales de esa copia se conservan hasta el envío. -->
-                                <Border Margin="0,14,0,0" Padding="12,11" Background="#22252A" CornerRadius="6"
-                                        BorderBrush="#3B4652" BorderThickness="1">
+                                <Border Margin="0,14,0,0" Padding="12,11" Background="{DynamicResource ControlFillColorDefaultBrush}" CornerRadius="6"
+                                        BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" BorderThickness="1">
                                     <StackPanel>
-                                        <TextBlock Text="Carta de nombramientos" FontSize="13" FontWeight="SemiBold" Foreground="White"/>
+                                        <TextBlock Text="Carta de nombramientos" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                                         <TextBlock Text="Usa la carta subida en Correspondencia → Visitas a congregaciones → Envío de S-303 (apartado «Carta de nombramientos»). La carta incluye únicamente los nombramientos marcados como «Sí»."
-                                                   Foreground="#ABB7C4" FontSize="11" Margin="0,5,0,10" TextWrapping="Wrap"/>
+                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="11" Margin="0,5,0,10" TextWrapping="Wrap"/>
                                         <WrapPanel>
-                                            <Button x:Name="BtnAbrirCartaNombramiento" Content="Abrir / editar carta"
-                                                    Click="BtnAbrirCartaNombramiento_Click" Padding="12,7"
-                                                    Background="#315C79" Foreground="White" BorderThickness="0" Cursor="Hand" Margin="0,0,10,0"/>
-                                            <Button Content="Regenerar desde plantilla" Click="BtnRegenerarCartaNombramiento_Click"
-                                                    Padding="12,7" Background="#34383F" Foreground="White"
-                                                    BorderThickness="0" Cursor="Hand"/>
+                                            <ui:Button x:Name="BtnAbrirCartaNombramiento" Content="Abrir / editar carta" Icon="{ui:SymbolIcon DocumentEdit24}" Appearance="Secondary" Click="BtnAbrirCartaNombramiento_Click" Cursor="Hand" Margin="0,0,8,0"/>
+                                            <ui:Button Content="Regenerar desde plantilla" Icon="{ui:SymbolIcon ArrowSync24}" Appearance="Secondary" Click="BtnRegenerarCartaNombramiento_Click" Cursor="Hand"/>
                                         </WrapPanel>
                                         <TextBlock x:Name="TxtEstadoCarta" Text="Puedes abrir la carta, revisarla y editarla antes del envío."
-                                                   Foreground="#AAB3BD" Margin="0,9,0,0" FontSize="11" TextWrapping="Wrap"/>
+                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,9,0,0" FontSize="11" TextWrapping="Wrap"/>
 
                                     </StackPanel>
                                 </Border>
@@ -1439,30 +1416,30 @@
                         </Border>
 
                         <!-- PARTE 3: MENSAJE A LA CONGREGACIÓN -->
-                        <Border Background="#1A1A1C" CornerRadius="6" Padding="15" BorderBrush="#333333" BorderThickness="1">
+                        <Border Style="{StaticResource PanelTarjeta}">
                             <StackPanel>
-                                <TextBlock Text="MENSAJE PARA LA CONGREGACIÓN" FontSize="14" FontWeight="SemiBold" Foreground="#4BA3E3" Margin="0,0,0,10"/>
+                                <TextBlock Text="MENSAJE PARA LA CONGREGACIÓN" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Margin="0,0,0,10"/>
 
-                                <TextBlock Text="Asunto del correo:" Foreground="#CCC" Margin="0,0,0,5"/>
-                                <ui:TextBox x:Name="TxtAsuntoEnvio" Background="#1E1E1E" Foreground="White" Margin="0,0,0,15"/>
+                                <TextBlock Text="Asunto del correo:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+                                <ui:TextBox x:Name="TxtAsuntoEnvio" Margin="0,0,0,15"/>
 
-                                <TextBlock Text="Cuerpo del correo:" Foreground="#CCC" Margin="0,0,0,5"/>
+                                <TextBlock Text="Cuerpo del correo:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
 
                                 <!-- EDITOR DE TEXTO ENRIQUECIDO WEBBROWSER -->
-                                <Border BorderThickness="1" BorderBrush="#333333" CornerRadius="4" Background="#252528" Margin="0,0,0,15">
+                                <Border BorderThickness="1" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" CornerRadius="4" Background="{DynamicResource ControlFillColorDefaultBrush}" Margin="0,0,0,15">
                                     <StackPanel>
                                         <!-- BARRA DE HERRAMIENTAS -->
-                                        <Border Background="#1E1E1E" Padding="5">
+                                        <Border Background="{DynamicResource SubtleFillColorSecondaryBrush}" Padding="5">
                                             <StackPanel Orientation="Horizontal">
-                                                <Button Content="N" FontWeight="Bold" Width="30" Height="30" Margin="0,0,5,0" Tag="bold" Click="BtnFormato_Click" Background="Transparent" Foreground="White" BorderThickness="0" Cursor="Hand"/>
-                                                <Button Content="K" FontStyle="Italic" Width="30" Height="30" Margin="0,0,5,0" Tag="italic" Click="BtnFormato_Click" Background="Transparent" Foreground="White" BorderThickness="0" Cursor="Hand"/>
+                                                <Button Content="N" FontWeight="Bold" Width="30" Height="30" Margin="0,0,5,0" Tag="bold" Click="BtnFormato_Click" Background="Transparent" Foreground="{DynamicResource TextFillColorPrimaryBrush}" BorderThickness="0" Cursor="Hand"/>
+                                                <Button Content="K" FontStyle="Italic" Width="30" Height="30" Margin="0,0,5,0" Tag="italic" Click="BtnFormato_Click" Background="Transparent" Foreground="{DynamicResource TextFillColorPrimaryBrush}" BorderThickness="0" Cursor="Hand"/>
 
                                                 <!-- Botón S (Subrayado) con TextBlock interno -->
                                                 <Button Width="30" Height="30" Margin="0,0,10,0" Tag="underline" Click="BtnFormato_Click" Background="Transparent" BorderThickness="0" Cursor="Hand">
-                                                    <TextBlock Text="S" TextDecorations="Underline" Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                                    <TextBlock Text="S" TextDecorations="Underline" Foreground="{DynamicResource TextFillColorPrimaryBrush}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                                                 </Button>
 
-                                                <ComboBox Width="60" Height="30" SelectionChanged="CmbTamano_SelectionChanged" SelectedIndex="2" Background="#333" Foreground="White" BorderThickness="0" Cursor="Hand">
+                                                <ComboBox Width="72" VerticalAlignment="Center" SelectionChanged="CmbTamano_SelectionChanged" SelectedIndex="2" Cursor="Hand">
                                                     <ComboBoxItem Content="10" Tag="1"/>
                                                     <ComboBoxItem Content="13" Tag="2"/>
                                                     <ComboBoxItem Content="16" Tag="3"/>
@@ -1471,7 +1448,7 @@
                                                     <ComboBoxItem Content="32" Tag="6"/>
                                                     <ComboBoxItem Content="48" Tag="7"/>
                                                 </ComboBox>
-                                                <TextBlock Text="💡 Win + . para Emojis" Foreground="#888888" VerticalAlignment="Center" Margin="15,0,0,0" FontStyle="Italic"/>
+                                                <TextBlock Text="💡 Win + . para Emojis" Foreground="{DynamicResource TextFillColorTertiaryBrush}" VerticalAlignment="Center" Margin="15,0,0,0" FontStyle="Italic"/>
                                             </StackPanel>
                                         </Border>
 
@@ -1484,7 +1461,7 @@
 
                         <!-- CONTROLES DE ENVÍO -->
                         <StackPanel x:Name="PanelControlesEnvio" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
-                            <CheckBox x:Name="ChkCopiaSRV" Content="Copia a SRV" Foreground="White" Margin="0,0,15,0" VerticalAlignment="Center"/>
+                            <CheckBox x:Name="ChkCopiaSRV" Content="Copia a SRV" Margin="0,0,15,0" VerticalAlignment="Center"/>
                             <ui:Button Content="Enviar S-303 y S-2" Appearance="Primary" Icon="{ui:SymbolIcon Send24}" Click="BtnEnviarS2_Click"/>
                         </StackPanel>
 
