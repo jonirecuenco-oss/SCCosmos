@@ -5,7 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:views="clr-namespace:SCCosmos.Mobile.Views"
     Title="Asambleas"
-    BackgroundColor="#101216">
+    BackgroundColor="{StaticResource FondoPagina}">
 
     <Grid RowDefinitions="Auto,Auto,*"
           Padding="16,14,16,14"
@@ -63,22 +63,22 @@
                 <Grid ColumnDefinitions="Auto,*,Auto,*"
                       ColumnSpacing="6">
                     <Label Text="Año"
-                           TextColor="#9299A3"
+                           TextColor="{StaticResource TextoTerciario}"
                            FontSize="12"
                            VerticalTextAlignment="Center" />
                     <Picker x:Name="PickerAnioPrograma"
                             Grid.Column="1"
-                            TextColor="White"
+                            TextColor="{StaticResource TextoPrincipal}"
                             FontSize="13"
                             SelectedIndexChanged="FiltroPrograma_Changed" />
                     <Label Grid.Column="2"
                            Text="Tipo"
-                           TextColor="#9299A3"
+                           TextColor="{StaticResource TextoTerciario}"
                            FontSize="12"
                            VerticalTextAlignment="Center" />
                     <Picker x:Name="PickerTipoPrograma"
                             Grid.Column="3"
-                            TextColor="White"
+                            TextColor="{StaticResource TextoPrincipal}"
                             FontSize="13"
                             SelectedIndexChanged="FiltroPrograma_Changed" />
                 </Grid>
@@ -86,7 +86,7 @@
                 <Label x:Name="LblPrograma"
                        Text=""
                        FontSize="11"
-                       TextColor="#8F969F" />
+                       TextColor="{StaticResource TextoTerciario}" />
             </VerticalStackLayout>
 
             <RefreshView x:Name="RefrescarPrograma"
@@ -96,7 +96,7 @@
                                 SelectionMode="None">
                     <CollectionView.EmptyView>
                         <Label Text="Ninguna sección tiene programa para ese año y tipo de evento."
-                               TextColor="#9EA4AE"
+                               TextColor="{StaticResource TextoSecundario}"
                                Padding="20,40"
                                HorizontalTextAlignment="Center" />
                     </CollectionView.EmptyView>
@@ -132,11 +132,11 @@
                                            FontSize="10"
                                            FontAttributes="Bold" />
                                     <Label Text="{Binding TituloCabecera}"
-                                           TextColor="White"
+                                           TextColor="{StaticResource TextoPrincipal}"
                                            FontSize="14"
                                            FontAttributes="Bold" />
                                     <Label Text="{Binding Detalle}"
-                                           TextColor="#AEB4BC"
+                                           TextColor="{StaticResource TextoSecundario}"
                                            FontSize="11" />
                                     <Label Text="{Binding ResumenPrograma}"
                                            TextColor="#8BC98B"
@@ -161,22 +161,22 @@
                 <Grid ColumnDefinitions="Auto,*,Auto,*"
                       ColumnSpacing="6">
                     <Label Text="Año"
-                           TextColor="#9299A3"
+                           TextColor="{StaticResource TextoTerciario}"
                            FontSize="12"
                            VerticalTextAlignment="Center" />
                     <Picker x:Name="PickerAnioOrganigrama"
                             Grid.Column="1"
-                            TextColor="White"
+                            TextColor="{StaticResource TextoPrincipal}"
                             FontSize="13"
                             SelectedIndexChanged="FiltroOrganigrama_Changed" />
                     <Label Grid.Column="2"
                            Text="Tipo"
-                           TextColor="#9299A3"
+                           TextColor="{StaticResource TextoTerciario}"
                            FontSize="12"
                            VerticalTextAlignment="Center" />
                     <Picker x:Name="PickerTipoOrganigrama"
                             Grid.Column="3"
-                            TextColor="White"
+                            TextColor="{StaticResource TextoPrincipal}"
                             FontSize="13"
                             SelectedIndexChanged="FiltroOrganigrama_Changed" />
                 </Grid>
@@ -184,7 +184,7 @@
                 <Label x:Name="LblOrganigrama"
                        Text=""
                        FontSize="11"
-                       TextColor="#8F969F" />
+                       TextColor="{StaticResource TextoTerciario}" />
             </VerticalStackLayout>
 
             <RefreshView Grid.Row="1"
@@ -193,7 +193,7 @@
                                 SelectionMode="None">
                     <CollectionView.EmptyView>
                         <Label Text="Ninguna sección tiene organigrama para ese año y tipo de evento."
-                               TextColor="#9EA4AE"
+                               TextColor="{StaticResource TextoSecundario}"
                                Padding="20,40"
                                HorizontalTextAlignment="Center" />
                     </CollectionView.EmptyView>
@@ -229,11 +229,11 @@
                                            FontSize="10"
                                            FontAttributes="Bold" />
                                     <Label Text="{Binding TituloCabecera}"
-                                           TextColor="White"
+                                           TextColor="{StaticResource TextoPrincipal}"
                                            FontSize="14"
                                            FontAttributes="Bold" />
                                     <Label Text="{Binding Detalle}"
-                                           TextColor="#AEB4BC"
+                                           TextColor="{StaticResource TextoSecundario}"
                                            FontSize="11" />
                                     <Label Text="{Binding ResumenOrganigrama}"
                                            TextColor="#8BC9E8"
@@ -263,12 +263,12 @@
                 <Grid ColumnDefinitions="Auto,*"
                       ColumnSpacing="6">
                     <Label Text="Año"
-                           TextColor="#9299A3"
+                           TextColor="{StaticResource TextoTerciario}"
                            FontSize="12"
                            VerticalTextAlignment="Center" />
                     <Picker x:Name="PickerAnioPrecursores"
                             Grid.Column="1"
-                            TextColor="White"
+                            TextColor="{StaticResource TextoPrincipal}"
                             FontSize="13"
                             SelectedIndexChanged="FiltroPrecursores_Changed" />
                 </Grid>
@@ -276,7 +276,7 @@
                 <Label x:Name="LblPrecursores"
                        Text=""
                        FontSize="11"
-                       TextColor="#8F969F" />
+                       TextColor="{StaticResource TextoTerciario}" />
             </VerticalStackLayout>
 
             <CollectionView x:Name="ListaPrecursores"
@@ -284,7 +284,7 @@
                             SelectionMode="None">
                 <CollectionView.EmptyView>
                     <Label Text="No hay reunión de precursores en ese año."
-                           TextColor="#9EA4AE"
+                           TextColor="{StaticResource TextoSecundario}"
                            Padding="20,40"
                            HorizontalTextAlignment="Center" />
                 </CollectionView.EmptyView>
@@ -304,7 +304,7 @@
                                        FontSize="13"
                                        FontAttributes="Bold" />
                                 <Label Text="{Binding DetalleSesion}"
-                                       TextColor="#AEB4BC"
+                                       TextColor="{StaticResource TextoSecundario}"
                                        FontSize="11" />
                                 <VerticalStackLayout Spacing="3"
                                                      BindableLayout.ItemsSource="{Binding Partes}">
@@ -325,8 +325,8 @@
             <Button Grid.Row="2"
                     Text="Abrir editor de precursores"
                     Clicked="BtnEditorPrecursores_Clicked"
-                    BackgroundColor="#242830"
-                    TextColor="White"
+                    BackgroundColor="{StaticResource SuperficieAlta}"
+                    TextColor="{StaticResource TextoPrincipal}"
                     CornerRadius="9"
                     HeightRequest="44" />
         </Grid>

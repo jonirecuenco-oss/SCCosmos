@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Nueva RSC"
-    BackgroundColor="#101216">
+    BackgroundColor="{StaticResource FondoPagina}">
 
     <ScrollView>
         <VerticalStackLayout
@@ -28,7 +28,7 @@
 
                     <DatePicker
                         x:Name="DpFecha"
-                        TextColor="White"
+                        TextColor="{StaticResource TextoPrincipal}"
                         Format="dd/MM/yyyy" />
 
                     <Label
@@ -42,13 +42,13 @@
                             Content="Mañana"
                             GroupName="TurnoRsc"
                             IsChecked="True"
-                            TextColor="White" />
+                            TextColor="{StaticResource TextoPrincipal}" />
 
                         <RadioButton
                             x:Name="RadTarde"
                             Content="Tarde"
                             GroupName="TurnoRsc"
-                            TextColor="White" />
+                            TextColor="{StaticResource TextoPrincipal}" />
 
                     </HorizontalStackLayout>
 

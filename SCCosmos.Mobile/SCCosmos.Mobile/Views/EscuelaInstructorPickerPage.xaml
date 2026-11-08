@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Elegir"
-    BackgroundColor="#101216">
+    BackgroundColor="{StaticResource FondoPagina}">
 
     <Grid RowDefinitions="Auto,*">
 
@@ -17,7 +17,7 @@
 
             <Entry x:Name="TxtBuscar"
                    Placeholder="Buscar por nombre o congregación…"
-                   TextColor="White"
+                   TextColor="{StaticResource TextoPrincipal}"
                    TextChanged="TxtBuscar_TextChanged" />
 
         </VerticalStackLayout>
@@ -41,7 +41,7 @@
 
                         <Label Text="{Binding Visual}"
                                FontSize="14.5"
-                               TextColor="White" />
+                               TextColor="{StaticResource TextoPrincipal}" />
                     </Border>
                 </DataTemplate>
             </CollectionView.ItemTemplate>

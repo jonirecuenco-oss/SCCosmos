@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Tarjetas S-21"
-    BackgroundColor="#101216">
+    BackgroundColor="{StaticResource FondoPagina}">
 
     <ScrollView>
         <VerticalStackLayout Padding="20,16,20,28"
@@ -24,39 +24,39 @@
                            CharacterSpacing="1" />
 
                     <Label x:Name="LblCongregacion"
-                           TextColor="White"
+                           TextColor="{StaticResource TextoPrincipal}"
                            FontSize="16"
                            FontAttributes="Bold" />
 
                     <Label x:Name="LblPlantilla"
-                           TextColor="#AEB4BC"
+                           TextColor="{StaticResource TextoSecundario}"
                            FontSize="13" />
 
                     <Button x:Name="BtnCargarPlantilla"
                             Text="Cargar plantilla S-21 (PDF)"
                             Clicked="BtnCargarPlantilla_Clicked"
-                            BackgroundColor="#242830"
-                            TextColor="White"
+                            BackgroundColor="{StaticResource SuperficieAlta}"
+                            TextColor="{StaticResource TextoPrincipal}"
                             CornerRadius="9"
                             HeightRequest="46" />
 
                     <Label Text="Año de servicio"
-                           TextColor="#9299A3"
+                           TextColor="{StaticResource TextoTerciario}"
                            FontSize="12" />
 
                     <Entry x:Name="TxtAnio"
                            Keyboard="Numeric"
-                           TextColor="White" />
+                           TextColor="{StaticResource TextoPrincipal}" />
 
                     <Label x:Name="LblPublicadores"
-                           TextColor="#AEB4BC"
+                           TextColor="{StaticResource TextoSecundario}"
                            FontSize="13" />
 
                     <Button x:Name="BtnGenerar"
                             Text="Generar y compartir tarjetas S-21"
                             Clicked="BtnGenerar_Clicked"
                             BackgroundColor="#0B6FC2"
-                            TextColor="White"
+                            TextColor="{StaticResource TextoPrincipal}"
                             CornerRadius="10"
                             HeightRequest="50" />
 
@@ -65,7 +65,7 @@
 
             <Label x:Name="LblEstado"
                    Text=""
-                   TextColor="#9EA4AE"
+                   TextColor="{StaticResource TextoSecundario}"
                    FontSize="13" />
 
         </VerticalStackLayout>

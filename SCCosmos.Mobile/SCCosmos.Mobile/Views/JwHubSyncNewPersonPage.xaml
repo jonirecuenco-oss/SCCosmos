@@ -6,7 +6,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:converters="clr-namespace:SCCosmos.Mobile.Converters"
     Title="Nueva persona"
-    BackgroundColor="#101216">
+    BackgroundColor="{StaticResource FondoPagina}">
 
     <ContentPage.Resources>
 
@@ -32,12 +32,12 @@
                 Text="Nueva persona en JW Hub"
                 FontSize="24"
                 FontAttributes="Bold"
-                TextColor="White"/>
+                TextColor="{StaticResource TextoPrincipal}"/>
 
             <Label
                 Text="Revisa los datos antes de añadirla a SCCosmos."
                 FontSize="13"
-                TextColor="#9EA4AE"/>
+                TextColor="{StaticResource TextoSecundario}"/>
 
         </VerticalStackLayout>
 
@@ -110,13 +110,13 @@
                                 Text="{Binding NombreComun}"
                                 FontSize="20"
                                 FontAttributes="Bold"
-                                TextColor="White"
+                                TextColor="{StaticResource TextoPrincipal}"
                                 LineBreakMode="WordWrap"/>
 
                             <Label
                                 Text="{Binding Nombre}"
                                 FontSize="13"
-                                TextColor="#A8AFB9"
+                                TextColor="{StaticResource TextoSecundario}"
                                 LineBreakMode="WordWrap"/>
 
                             <Label
@@ -138,7 +138,7 @@
                     Text="DATOS DE JW HUB"
                     FontSize="12"
                     FontAttributes="Bold"
-                    TextColor="#7F8791"
+                    TextColor="{StaticResource TextoTerciario}"
                     Margin="2,6,0,0"/>
 
 
@@ -156,12 +156,12 @@
                         <Grid ColumnDefinitions="145,*">
                             <Label
                                 Text="Congregación"
-                                TextColor="#8F959F"/>
+                                TextColor="{StaticResource TextoTerciario}"/>
 
                             <Label
                                 Grid.Column="1"
                                 Text="{Binding CongregacionNombre}"
-                                TextColor="White"
+                                TextColor="{StaticResource TextoPrincipal}"
                                 LineBreakMode="WordWrap"/>
                         </Grid>
 
@@ -169,96 +169,96 @@
                         <Grid ColumnDefinitions="145,*">
                             <Label
                                 Text="Código"
-                                TextColor="#8F959F"/>
+                                TextColor="{StaticResource TextoTerciario}"/>
 
                             <Label
                                 Grid.Column="1"
                                 Text="{Binding CongregacionCodigo}"
-                                TextColor="White"/>
+                                TextColor="{StaticResource TextoPrincipal}"/>
                         </Grid>
 
 
                         <Grid ColumnDefinitions="145,*">
                             <Label
                                 Text="Nacimiento"
-                                TextColor="#8F959F"/>
+                                TextColor="{StaticResource TextoTerciario}"/>
 
                             <Label
                                 Grid.Column="1"
                                 Text="{Binding FechaNacimiento}"
-                                TextColor="White"/>
+                                TextColor="{StaticResource TextoPrincipal}"/>
                         </Grid>
 
 
                         <Grid ColumnDefinitions="145,*">
                             <Label
                                 Text="Bautismo"
-                                TextColor="#8F959F"/>
+                                TextColor="{StaticResource TextoTerciario}"/>
 
                             <Label
                                 Grid.Column="1"
                                 Text="{Binding FechaBautismo}"
-                                TextColor="White"/>
+                                TextColor="{StaticResource TextoPrincipal}"/>
                         </Grid>
 
 
                         <Grid ColumnDefinitions="145,*">
                             <Label
                                 Text="Esperanza"
-                                TextColor="#8F959F"/>
+                                TextColor="{StaticResource TextoTerciario}"/>
 
                             <Label
                                 Grid.Column="1"
                                 Text="{Binding Esperanza}"
-                                TextColor="White"/>
+                                TextColor="{StaticResource TextoPrincipal}"/>
                         </Grid>
 
 
                         <Grid ColumnDefinitions="145,*">
                             <Label
                                 Text="Nombramiento"
-                                TextColor="#8F959F"/>
+                                TextColor="{StaticResource TextoTerciario}"/>
 
                             <Label
                                 Grid.Column="1"
                                 Text="{Binding Nombramiento}"
-                                TextColor="White"/>
+                                TextColor="{StaticResource TextoPrincipal}"/>
                         </Grid>
 
 
                         <Grid ColumnDefinitions="145,*">
                             <Label
                                 Text="Servicio"
-                                TextColor="#8F959F"/>
+                                TextColor="{StaticResource TextoTerciario}"/>
 
                             <Label
                                 Grid.Column="1"
                                 Text="{Binding Servicio}"
-                                TextColor="White"/>
+                                TextColor="{StaticResource TextoPrincipal}"/>
                         </Grid>
 
 
                         <Grid ColumnDefinitions="145,*">
                             <Label
                                 Text="Inicio precursorado"
-                                TextColor="#8F959F"/>
+                                TextColor="{StaticResource TextoTerciario}"/>
 
                             <Label
                                 Grid.Column="1"
                                 Text="{Binding FechaInicioPrec}"
-                                TextColor="White"/>
+                                TextColor="{StaticResource TextoPrincipal}"/>
                         </Grid>
 
 
                         <Grid ColumnDefinitions="145,*">
                             <Label
                                 Text="Última escuela"
-                                TextColor="#8F959F"/>
+                                TextColor="{StaticResource TextoTerciario}"/>
 
                             <Label
                                 Grid.Column="1"
                                 Text="{Binding FechaUltimaEscuela}"
-                                TextColor="White"/>
+                                TextColor="{StaticResource TextoPrincipal}"/>
                         </Grid>
 
                     </VerticalStackLayout>
@@ -272,7 +272,7 @@
                     Text="CONTACTO"
                     FontSize="12"
                     FontAttributes="Bold"
-                    TextColor="#7F8791"
+                    TextColor="{StaticResource TextoTerciario}"
                     Margin="2,6,0,0"/>
 
 
@@ -290,12 +290,12 @@
                         <Grid ColumnDefinitions="100,*">
                             <Label
                                 Text="Teléfono"
-                                TextColor="#8F959F"/>
+                                TextColor="{StaticResource TextoTerciario}"/>
 
                             <Label
                                 Grid.Column="1"
                                 Text="{Binding Telefono}"
-                                TextColor="White"
+                                TextColor="{StaticResource TextoPrincipal}"
                                 LineBreakMode="WordWrap"/>
                         </Grid>
 
@@ -303,12 +303,12 @@
                         <Grid ColumnDefinitions="100,*">
                             <Label
                                 Text="Email"
-                                TextColor="#8F959F"/>
+                                TextColor="{StaticResource TextoTerciario}"/>
 
                             <Label
                                 Grid.Column="1"
                                 Text="{Binding Email}"
-                                TextColor="White"
+                                TextColor="{StaticResource TextoPrincipal}"
                                 LineBreakMode="WordWrap"/>
                         </Grid>
 
@@ -316,12 +316,12 @@
                         <Grid ColumnDefinitions="100,*">
                             <Label
                                 Text="Email JW"
-                                TextColor="#8F959F"/>
+                                TextColor="{StaticResource TextoTerciario}"/>
 
                             <Label
                                 Grid.Column="1"
                                 Text="{Binding EmailJW}"
-                                TextColor="White"
+                                TextColor="{StaticResource TextoPrincipal}"
                                 LineBreakMode="WordWrap"/>
                         </Grid>
 
@@ -329,12 +329,12 @@
                         <Grid ColumnDefinitions="100,*">
                             <Label
                                 Text="Dirección"
-                                TextColor="#8F959F"/>
+                                TextColor="{StaticResource TextoTerciario}"/>
 
                             <Label
                                 Grid.Column="1"
                                 Text="{Binding Direccion}"
-                                TextColor="White"
+                                TextColor="{StaticResource TextoPrincipal}"
                                 LineBreakMode="WordWrap"/>
                         </Grid>
 
@@ -349,7 +349,7 @@
                     Text="OTROS DATOS"
                     FontSize="12"
                     FontAttributes="Bold"
-                    TextColor="#7F8791"
+                    TextColor="{StaticResource TextoTerciario}"
                     Margin="2,6,0,0"/>
 
 
@@ -368,11 +368,11 @@
 
                             <Label
                                 Text="Solicitudes"
-                                TextColor="#8F959F"/>
+                                TextColor="{StaticResource TextoTerciario}"/>
 
                             <Label
                                 Text="{Binding Solicitudes}"
-                                TextColor="White"
+                                TextColor="{StaticResource TextoPrincipal}"
                                 LineBreakMode="WordWrap"/>
 
                         </VerticalStackLayout>
@@ -382,11 +382,11 @@
 
                             <Label
                                 Text="Privilegios"
-                                TextColor="#8F959F"/>
+                                TextColor="{StaticResource TextoTerciario}"/>
 
                             <Label
                                 Text="{Binding Privilegios}"
-                                TextColor="White"
+                                TextColor="{StaticResource TextoPrincipal}"
                                 LineBreakMode="WordWrap"/>
 
                         </VerticalStackLayout>
@@ -435,22 +435,22 @@
                             <Label
                 Text="Persona existente"
                 FontSize="12"
-                TextColor="#AAAAAA"/>
+                TextColor="{StaticResource TextoSecundario}"/>
 
 
                             <Picker
                 x:Name="PickerVincular"
                 Title="Selecciona una persona..."
-                TitleColor="#999999"
-                TextColor="White"
-                BackgroundColor="#252526"
+                TitleColor="{StaticResource TextoTerciario}"
+                TextColor="{StaticResource TextoPrincipal}"
+                BackgroundColor="{StaticResource SuperficieAlta}"
                 ItemDisplayBinding="{Binding Texto}"/>
 
 
                             <Button
                 Text="Vincular con persona existente"
                 BackgroundColor="#8A6500"
-                TextColor="White"
+                TextColor="{StaticResource TextoPrincipal}"
                 FontAttributes="Bold"
                 CornerRadius="8"
                 Clicked="BtnVincular_Clicked"/>
@@ -499,7 +499,7 @@
                 Text="Cancelar"
                 HeightRequest="48"
                 BackgroundColor="#353A42"
-                TextColor="White"
+                TextColor="{StaticResource TextoPrincipal}"
                 CornerRadius="9"
                 Clicked="BtnCancelar_Clicked"/>
 
@@ -510,7 +510,7 @@
                 Text="Añadir a BD"
                 HeightRequest="48"
                 BackgroundColor="#267A42"
-                TextColor="White"
+                TextColor="{StaticResource TextoPrincipal}"
                 FontAttributes="Bold"
                 CornerRadius="9"
                 Clicked="BtnAnadir_Clicked"/>

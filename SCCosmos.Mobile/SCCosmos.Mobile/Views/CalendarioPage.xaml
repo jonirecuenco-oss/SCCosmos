@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Calendario"
-    BackgroundColor="#101216">
+    BackgroundColor="{StaticResource FondoPagina}">
 
     <ContentPage.ToolbarItems>
         <ToolbarItem x:Name="BtnCiclo"
@@ -44,7 +44,7 @@
                                          HorizontalOptions="Center"
                                          Spacing="8">
                         <Label Text="No hay semanas para mostrar."
-                               TextColor="#9EA4AE"
+                               TextColor="{StaticResource TextoSecundario}"
                                HorizontalTextAlignment="Center" />
                     </VerticalStackLayout>
                 </CollectionView.EmptyView>
@@ -92,13 +92,13 @@
                                        Text="{Binding RangoFechas}"
                                        FontSize="16"
                                        FontAttributes="Bold"
-                                       TextColor="White" />
+                                       TextColor="{StaticResource TextoPrincipal}" />
 
                                 <Label Grid.Row="0"
                                        Grid.Column="1"
                                        Text="{Binding MarcadorParalela}"
                                        FontSize="11"
-                                       TextColor="#9EA4AE"
+                                       TextColor="{StaticResource TextoSecundario}"
                                        VerticalOptions="Center"
                                        IsVisible="{Binding EsActividadParalela}" />
 
@@ -113,7 +113,7 @@
                                 <Label Grid.Row="2"
                                        Text="{Binding DetallePrincipal}"
                                        FontSize="14"
-                                       TextColor="#E7E9EC"
+                                       TextColor="{StaticResource TextoPrincipal}"
                                        IsVisible="{Binding MostrarDetallePrincipal}"
                                        LineBreakMode="WordWrap" />
 
@@ -121,7 +121,7 @@
                                 <Label Grid.Row="3"
                                        Text="{Binding DetalleSecundario}"
                                        FontSize="12"
-                                       TextColor="#AEB4BC"
+                                       TextColor="{StaticResource TextoSecundario}"
                                        IsVisible="{Binding MostrarDetalleSecundario}"
                                        LineBreakMode="WordWrap" />
 
@@ -140,7 +140,7 @@
                                             FontSize="11"
                                             WidthRequest="26"
                                             HeightRequest="24"
-                                            BackgroundColor="#242830"
+                                            BackgroundColor="{StaticResource SuperficieAlta}"
                                             CornerRadius="7"
                                             IsVisible="{Binding MostrarBotonEditar}" />
 
@@ -169,7 +169,7 @@
                                             WidthRequest="26"
                                             HeightRequest="24"
                                             BackgroundColor="#2A3038"
-                                            TextColor="White"
+                                            TextColor="{StaticResource TextoPrincipal}"
                                             CornerRadius="7"
                                             IsVisible="{Binding MostrarMenuSemana}" />
                                 </HorizontalStackLayout>
@@ -193,14 +193,14 @@
                         Clicked="BtnMesAnterior_Clicked"
                         FontSize="16"
                         Padding="12,4"
-                        BackgroundColor="#242830"
-                        TextColor="#4BA3E3"
+                        BackgroundColor="{StaticResource SuperficieAlta}"
+                        TextColor="{StaticResource Acento}"
                         CornerRadius="10"/>
 
                 <Label x:Name="LblMesCalendario"
                        Grid.Column="1"
                        Text=""
-                       TextColor="White"
+                       TextColor="{StaticResource TextoPrincipal}"
                        FontSize="18"
                        FontAttributes="Bold"
                        HorizontalTextAlignment="Center"
@@ -211,8 +211,8 @@
                         Clicked="BtnMesSiguiente_Clicked"
                         FontSize="16"
                         Padding="12,4"
-                        BackgroundColor="#242830"
-                        TextColor="#4BA3E3"
+                        BackgroundColor="{StaticResource SuperficieAlta}"
+                        TextColor="{StaticResource Acento}"
                         CornerRadius="10"/>
             </Grid>
 
@@ -233,12 +233,12 @@
                 VerticalOptions="Center"
                 Spacing="12">
                 <ActivityIndicator IsRunning="True"
-                                   Color="#4BA3E3"
+                                   Color="{StaticResource Acento}"
                                    WidthRequest="42"
                                    HeightRequest="42" />
                 <Label x:Name="LblCargando"
                        Text="Cargando calendario..."
-                       TextColor="White"
+                       TextColor="{StaticResource TextoPrincipal}"
                        FontAttributes="Bold"
                        HorizontalTextAlignment="Center" />
             </VerticalStackLayout>
@@ -253,7 +253,7 @@
                 VerticalOptions="End"
                 Margin="0,0,18,16"
                 BackgroundColor="#0B6FC2"
-                TextColor="White"
+                TextColor="{StaticResource TextoPrincipal}"
                 FontAttributes="Bold"
                 FontSize="13"
                 CornerRadius="22"

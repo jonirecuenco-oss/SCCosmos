@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Tarea"
-    BackgroundColor="#101216">
+    BackgroundColor="{StaticResource FondoPagina}">
 
     <Grid RowDefinitions="*,Auto"
           Padding="16,14,16,14"
@@ -22,17 +22,17 @@
                            Style="{StaticResource TextoNota}" />
                     <Entry x:Name="TxtTitulo"
                            Placeholder="Título de la tarea o evento"
-                           PlaceholderColor="#6E767F"
-                           TextColor="White"
-                           BackgroundColor="#1A1D22" />
+                           PlaceholderColor="{StaticResource TextoTerciario}"
+                           TextColor="{StaticResource TextoPrincipal}"
+                           BackgroundColor="{StaticResource Superficie}" />
                 </VerticalStackLayout>
 
                 <VerticalStackLayout Spacing="4">
                     <Label Text="Categoría"
                            Style="{StaticResource TextoNota}" />
                     <Picker x:Name="PckCategoria"
-                            TextColor="White"
-                            BackgroundColor="#1A1D22">
+                            TextColor="{StaticResource TextoPrincipal}"
+                            BackgroundColor="{StaticResource Superficie}">
                         <Picker.Items>
                             <x:String>Personal</x:String>
                             <x:String>Calendario</x:String>
@@ -46,11 +46,11 @@
                            Style="{StaticResource TextoNota}" />
                     <Editor x:Name="TxtDescripcion"
                             Placeholder="Detalles (opcional)"
-                            PlaceholderColor="#6E767F"
+                            PlaceholderColor="{StaticResource TextoTerciario}"
                             AutoSize="TextChanges"
                             HeightRequest="90"
-                            TextColor="White"
-                            BackgroundColor="#1A1D22" />
+                            TextColor="{StaticResource TextoPrincipal}"
+                            BackgroundColor="{StaticResource Superficie}" />
                 </VerticalStackLayout>
 
                 <Grid ColumnDefinitions="*,Auto"
@@ -59,8 +59,8 @@
                         <Label Text="Fecha"
                                Style="{StaticResource TextoNota}" />
                         <DatePicker x:Name="PckFecha"
-                                    TextColor="White"
-                                    BackgroundColor="#1A1D22" />
+                                    TextColor="{StaticResource TextoPrincipal}"
+                                    BackgroundColor="{StaticResource Superficie}" />
                     </VerticalStackLayout>
 
                     <VerticalStackLayout Grid.Column="1"
@@ -82,8 +82,8 @@
                     <Label Text="Hora"
                            Style="{StaticResource TextoNota}" />
                     <TimePicker x:Name="PckHora"
-                                TextColor="White"
-                                BackgroundColor="#1A1D22" />
+                                TextColor="{StaticResource TextoPrincipal}"
+                                BackgroundColor="{StaticResource Superficie}" />
                 </VerticalStackLayout>
 
                 <VerticalStackLayout x:Name="PanelRango"
@@ -92,8 +92,8 @@
                     <Label Text="Hasta (fin del rango)"
                            Style="{StaticResource TextoNota}" />
                     <DatePicker x:Name="PckFechaFin"
-                                TextColor="White"
-                                BackgroundColor="#1A1D22" />
+                                TextColor="{StaticResource TextoPrincipal}"
+                                BackgroundColor="{StaticResource Superficie}" />
                 </VerticalStackLayout>
 
                 <HorizontalStackLayout Spacing="10">
@@ -102,7 +102,7 @@
                             Toggled="SwRango_Toggled"
                             VerticalOptions="Center" />
                     <Label Text="Es un rango de varios días"
-                           TextColor="White"
+                           TextColor="{StaticResource TextoPrincipal}"
                            VerticalOptions="Center" />
                 </HorizontalStackLayout>
 
@@ -110,16 +110,16 @@
                     <Label Text="Aviso"
                            Style="{StaticResource TextoNota}" />
                     <Picker x:Name="PckAviso"
-                            TextColor="White"
-                            BackgroundColor="#1A1D22" />
+                            TextColor="{StaticResource TextoPrincipal}"
+                            BackgroundColor="{StaticResource Superficie}" />
                 </VerticalStackLayout>
 
                 <VerticalStackLayout Spacing="4">
                     <Label Text="Repetición"
                            Style="{StaticResource TextoNota}" />
                     <Picker x:Name="PckRepeticion"
-                            TextColor="White"
-                            BackgroundColor="#1A1D22" />
+                            TextColor="{StaticResource TextoPrincipal}"
+                            BackgroundColor="{StaticResource Superficie}" />
                 </VerticalStackLayout>
 
                 <HorizontalStackLayout Spacing="10">
@@ -128,7 +128,7 @@
                             VerticalOptions="Center" />
                     <Label x:Name="LblCompartir"
                            Text="Compartir con mi esposa"
-                           TextColor="White"
+                           TextColor="{StaticResource TextoPrincipal}"
                            VerticalOptions="Center" />
                 </HorizontalStackLayout>
 
@@ -145,7 +145,7 @@
                     Text="🗑️ Eliminar"
                     IsVisible="False"
                     Clicked="BtnEliminar_Clicked"
-                    BackgroundColor="#3A2023"
+                    BackgroundColor="{StaticResource PeligroSuave}"
                     TextColor="#FFB7BC"
                     CornerRadius="9"
                     HeightRequest="46" />
@@ -154,7 +154,7 @@
                     Text="Guardar"
                     Clicked="BtnGuardar_Clicked"
                     BackgroundColor="#0B6FC2"
-                    TextColor="White"
+                    TextColor="{StaticResource TextoPrincipal}"
                     CornerRadius="9"
                     HeightRequest="46"
                     Padding="22,0" />

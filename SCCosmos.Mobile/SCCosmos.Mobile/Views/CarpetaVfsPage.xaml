@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Carpeta"
-    BackgroundColor="#101216">
+    BackgroundColor="{StaticResource FondoPagina}">
 
     <ScrollView>
         <VerticalStackLayout Padding="16,14,16,28"
@@ -13,22 +13,22 @@
             <Label x:Name="LblRuta"
                    Text=""
                    FontSize="13"
-                   TextColor="#9EA4AE" />
+                   TextColor="{StaticResource TextoSecundario}" />
 
             <Grid ColumnDefinitions="*,*"
                   ColumnSpacing="8">
                 <Button Grid.Column="0"
                         Text="ï¼‹ Carpeta"
                         Clicked="BtnNuevaCarpeta_Clicked"
-                        BackgroundColor="#163553"
+                        BackgroundColor="{StaticResource AcentoSuave}"
                         TextColor="#B9DEFF"
                         CornerRadius="9"
                         HeightRequest="44" />
                 <Button Grid.Column="1"
                         Text="ï¼‹ Subir archivo"
                         Clicked="BtnSubir_Clicked"
-                        BackgroundColor="#245C38"
-                        TextColor="White"
+                        BackgroundColor="{StaticResource ExitoSuave}"
+                        TextColor="{StaticResource TextoPrincipal}"
                         CornerRadius="9"
                         HeightRequest="44" />
             </Grid>
@@ -38,7 +38,7 @@
                    Margin="0,6,0,0" />
             <Label x:Name="LblSinCarpetas"
                    Text="Sin subcarpetas."
-                   TextColor="#7E858F"
+                   TextColor="{StaticResource TextoTerciario}"
                    FontSize="13" />
             <VerticalStackLayout x:Name="ListaCarpetas"
                                  Spacing="6">
@@ -54,7 +54,7 @@
                             <Grid ColumnDefinitions="*,Auto,Auto,Auto">
                                 <Label Grid.Column="0"
                                        Text="{Binding Nombre}"
-                                       TextColor="#DCE0E5"
+                                       TextColor="{StaticResource TextoPrincipal}"
                                        FontSize="13"
                                        VerticalOptions="Center" />
                                 <Button Grid.Column="1"
@@ -63,7 +63,7 @@
                                         CommandParameter="{Binding .}"
                                         Padding="9,4"
                                         FontSize="11"
-                                        BackgroundColor="#163553"
+                                        BackgroundColor="{StaticResource AcentoSuave}"
                                         TextColor="#B9DEFF"
                                         CornerRadius="7"
                                         Margin="0,0,5,0" />
@@ -73,8 +73,8 @@
                                         CommandParameter="{Binding .}"
                                         Padding="9,4"
                                         FontSize="11"
-                                        BackgroundColor="#242830"
-                                        TextColor="White"
+                                        BackgroundColor="{StaticResource SuperficieAlta}"
+                                        TextColor="{StaticResource TextoPrincipal}"
                                         CornerRadius="7"
                                         Margin="0,0,5,0" />
                                 <Button Grid.Column="3"
@@ -83,7 +83,7 @@
                                         CommandParameter="{Binding .}"
                                         Padding="9,4"
                                         FontSize="11"
-                                        BackgroundColor="#3A2023"
+                                        BackgroundColor="{StaticResource PeligroSuave}"
                                         TextColor="#FFB7BC"
                                         CornerRadius="7" />
                             </Grid>
@@ -97,7 +97,7 @@
                    Margin="0,8,0,0" />
             <Label x:Name="LblSinArchivos"
                    Text="Sin archivos."
-                   TextColor="#7E858F"
+                   TextColor="{StaticResource TextoTerciario}"
                    FontSize="13" />
             <VerticalStackLayout x:Name="ListaArchivos"
                                  Spacing="6">
@@ -113,7 +113,7 @@
                             <Grid ColumnDefinitions="*,Auto,Auto,Auto">
                                 <Label Grid.Column="0"
                                        Text="{Binding NombreOriginal}"
-                                       TextColor="#DCE0E5"
+                                       TextColor="{StaticResource TextoPrincipal}"
                                        FontSize="13"
                                        VerticalOptions="Center" />
                                 <Button Grid.Column="1"
@@ -122,8 +122,8 @@
                                         CommandParameter="{Binding .}"
                                         Padding="9,4"
                                         FontSize="11"
-                                        BackgroundColor="#242830"
-                                        TextColor="White"
+                                        BackgroundColor="{StaticResource SuperficieAlta}"
+                                        TextColor="{StaticResource TextoPrincipal}"
                                         CornerRadius="7"
                                         Margin="0,0,5,0" />
                                 <Button Grid.Column="2"
@@ -132,8 +132,8 @@
                                         CommandParameter="{Binding .}"
                                         Padding="9,4"
                                         FontSize="11"
-                                        BackgroundColor="#242830"
-                                        TextColor="White"
+                                        BackgroundColor="{StaticResource SuperficieAlta}"
+                                        TextColor="{StaticResource TextoPrincipal}"
                                         CornerRadius="7"
                                         Margin="0,0,5,0" />
                                 <Button Grid.Column="3"
@@ -142,7 +142,7 @@
                                         CommandParameter="{Binding .}"
                                         Padding="9,4"
                                         FontSize="11"
-                                        BackgroundColor="#3A2023"
+                                        BackgroundColor="{StaticResource PeligroSuave}"
                                         TextColor="#FFB7BC"
                                         CornerRadius="7" />
                             </Grid>

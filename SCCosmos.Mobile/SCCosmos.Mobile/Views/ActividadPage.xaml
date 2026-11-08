@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Actividad"
-    BackgroundColor="#101216">
+    BackgroundColor="{StaticResource FondoPagina}">
 
     <Grid
         Padding="16,14,16,12"
@@ -17,13 +17,13 @@
 
             <Label
                 Text="ACTIVIDAD"
-                TextColor="White"
+                TextColor="{StaticResource TextoPrincipal}"
                 FontSize="26"
                 FontAttributes="Bold"/>
 
             <Label
                 Text="Todo lo que se hace en SCCosmos, en lenguaje natural: quién (dispositivo y perfil), cuándo y qué."
-                TextColor="#9299A3"
+                TextColor="{StaticResource TextoTerciario}"
                 FontSize="13"
                 LineBreakMode="WordWrap"/>
 
@@ -43,8 +43,8 @@
             <Picker
                 x:Name="PickerCategoria"
                 Title="Categoría"
-                TextColor="White"
-                TitleColor="#A5ABB4"
+                TextColor="{StaticResource TextoPrincipal}"
+                TitleColor="{StaticResource TextoSecundario}"
                 SelectedIndexChanged="PickerCategoria_SelectedIndexChanged"/>
 
             <Button
@@ -53,7 +53,7 @@
                 HeightRequest="44"
                 Padding="16,6"
                 BackgroundColor="#343A43"
-                TextColor="White"
+                TextColor="{StaticResource TextoPrincipal}"
                 CornerRadius="9"
                 Clicked="BtnActualizar_Clicked"/>
 
@@ -71,7 +71,7 @@
 
                     <Border
                         BackgroundColor="{StaticResource Superficie}"
-                        Stroke="#343B45"
+                        Stroke="{StaticResource Borde}"
                         StrokeThickness="1"
                         Padding="14,12"
                         Margin="0,0,0,10">
@@ -91,7 +91,7 @@
 
                             <Label
                                 Text="{Binding Descripcion}"
-                                TextColor="White"
+                                TextColor="{StaticResource TextoPrincipal}"
                                 FontSize="15"
                                 LineBreakMode="WordWrap"/>
 

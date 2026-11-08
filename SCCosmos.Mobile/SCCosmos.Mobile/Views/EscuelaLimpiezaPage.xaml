@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Programa de limpieza"
-    BackgroundColor="#101216">
+    BackgroundColor="{StaticResource FondoPagina}">
 
     <ScrollView>
         <VerticalStackLayout Padding="20,16,20,24"
@@ -17,7 +17,7 @@
                    Text=""
                    FontSize="13.5"
                    FontAttributes="Bold"
-                   TextColor="#4BA3E3" />
+                   TextColor="{StaticResource Acento}" />
 
             <Button x:Name="BtnPdfLimpieza"
                     Text="PDF del programa"
@@ -51,11 +51,11 @@
                                            Text="{Binding Dia}"
                                            FontSize="13"
                                            FontAttributes="Bold"
-                                           TextColor="#4BA3E3" />
+                                           TextColor="{StaticResource Acento}" />
                                     <Label Grid.Column="1"
                                            Text="{Binding Nombres}"
                                            FontSize="13"
-                                           TextColor="#DDDDDD"
+                                           TextColor="{StaticResource TextoPrincipal}"
                                            LineBreakMode="WordWrap" />
                                 </Grid>
                             </DataTemplate>
@@ -93,7 +93,7 @@
                                 <Label Grid.Column="0"
                                        Text="{Binding Nombre}"
                                        FontSize="14"
-                                       TextColor="White"
+                                       TextColor="{StaticResource TextoPrincipal}"
                                        VerticalOptions="Center" />
 
                                 <Picker Grid.Column="1"

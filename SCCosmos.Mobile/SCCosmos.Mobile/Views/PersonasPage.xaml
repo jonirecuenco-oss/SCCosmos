@@ -6,7 +6,7 @@
     xmlns:converters="clr-namespace:SCCosmos.Mobile.Converters"
     x:Class="SCCosmos.Mobile.Views.PersonasPage"
     Title="Personas"
-    BackgroundColor="#101216">
+    BackgroundColor="{StaticResource FondoPagina}">
 
     <ContentPage.Resources>
 
@@ -91,8 +91,8 @@
                     Grid.Column="0"
                     Text="Sincronizar JW Hub"
                     HeightRequest="46"
-                    BackgroundColor="#2478B5"
-                    TextColor="White"
+                    BackgroundColor="{StaticResource AcentoFuerte}"
+                    TextColor="{StaticResource TextoPrincipal}"
                     FontAttributes="Bold"
                     CornerRadius="8"
                     Clicked="BtnSintonizarHub_Click"/>
@@ -104,7 +104,7 @@
                     Text="Cancelar"
                     HeightRequest="46"
                     BackgroundColor="#6A3030"
-                    TextColor="White"
+                    TextColor="{StaticResource TextoPrincipal}"
                     CornerRadius="8"
                     IsVisible="False"
                     Clicked="BtnCancelarHub_Click"/>
@@ -128,7 +128,7 @@
                 Text="Revisar resultados JW Hub"
                 HeightRequest="44"
                 BackgroundColor="#315A3A"
-                TextColor="White"
+                TextColor="{StaticResource TextoPrincipal}"
                 FontAttributes="Bold"
                 CornerRadius="8"
                 IsVisible="False"
@@ -155,7 +155,7 @@
                 x:Name="LblEstadoHub"
                 Grid.Row="4"
                 Text=""
-                TextColor="#9EA4AE"
+                TextColor="{StaticResource TextoSecundario}"
                 FontSize="12"
                 LineBreakMode="WordWrap"
                 IsVisible="False"/>
@@ -172,10 +172,10 @@
             x:Name="TxtBuscar"
             Placeholder="Buscar persona..."
             TextChanged="TxtBuscar_TextChanged"
-            TextColor="White"
-            PlaceholderColor="#777E89"
-            CancelButtonColor="#4BA3E3"
-            BackgroundColor="#1A1E24"
+            TextColor="{StaticResource TextoPrincipal}"
+            PlaceholderColor="{StaticResource TextoTerciario}"
+            CancelButtonColor="{StaticResource Acento}"
+            BackgroundColor="{StaticResource SuperficieAlta}"
             Margin="0,0,0,10"/>
 
 
@@ -314,7 +314,7 @@
 
                                     <Label
                                         Text="{Binding NombreMostrarTabla}"
-                                        TextColor="White"
+                                        TextColor="{StaticResource TextoPrincipal}"
                                         FontSize="17"
                                         FontAttributes="Bold"
                                         LineBreakMode="TailTruncation"/>
@@ -322,7 +322,7 @@
 
                                     <Label
                                         Text="{Binding CongregacionNombre}"
-                                        TextColor="#9299A3"
+                                        TextColor="{StaticResource TextoTerciario}"
                                         FontSize="13"
                                         LineBreakMode="TailTruncation"/>
 
@@ -332,14 +332,14 @@
 
                                         <Label
                                             Text="{Binding Nombramiento}"
-                                            TextColor="#4BA3E3"
+                                            TextColor="{StaticResource Acento}"
                                             FontSize="12"
                                             LineBreakMode="TailTruncation"/>
 
 
                                         <Label
                                             Text="{Binding Servicio}"
-                                            TextColor="#AAB0B9"
+                                            TextColor="{StaticResource TextoSecundario}"
                                             FontSize="12"
                                             LineBreakMode="TailTruncation"/>
 

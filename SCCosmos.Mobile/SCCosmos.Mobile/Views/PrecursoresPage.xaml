@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Reunión de precursores"
-    BackgroundColor="#101216">
+    BackgroundColor="{StaticResource FondoPagina}">
 
     <Grid RowDefinitions="Auto,*"
           Padding="16,14,16,14"
@@ -26,7 +26,7 @@
                             SelectionMode="None">
                 <CollectionView.EmptyView>
                     <Label Text="No hay reuniones de precursores."
-                           TextColor="#9EA4AE"
+                           TextColor="{StaticResource TextoSecundario}"
                            Padding="20,50"
                            HorizontalTextAlignment="Center" />
                 </CollectionView.EmptyView>
@@ -44,7 +44,7 @@
                                 <Label Text="{Binding Detalle}"
                                        FontSize="16"
                                        FontAttributes="Bold"
-                                       TextColor="White" />
+                                       TextColor="{StaticResource TextoPrincipal}" />
                                 <Label Text="{Binding TextoTematico}"
                                        FontSize="12"
                                        TextColor="#80C4FF" />
@@ -53,8 +53,8 @@
                                         CommandParameter="{Binding .}"
                                         Padding="10,6"
                                         FontSize="12"
-                                        BackgroundColor="#245C38"
-                                        TextColor="White"
+                                        BackgroundColor="{StaticResource ExitoSuave}"
+                                        TextColor="{StaticResource TextoPrincipal}"
                                         CornerRadius="8" />
                                 <VerticalStackLayout
                                     BindableLayout.ItemsSource="{Binding Sesiones}"
@@ -71,7 +71,7 @@
                                                 <Grid ColumnDefinitions="*,Auto">
                                                     <Label Grid.Column="0"
                                                            Text="{Binding Detalle}"
-                                                           TextColor="#AEB4BC"
+                                                           TextColor="{StaticResource TextoSecundario}"
                                                            FontSize="12"
                                                            VerticalOptions="Center" />
                                                     <HorizontalStackLayout Grid.Column="1"
@@ -81,7 +81,7 @@
                                                                 CommandParameter="{Binding .}"
                                                                 Padding="10,5"
                                                                 FontSize="11"
-                                                                BackgroundColor="#163553"
+                                                                BackgroundColor="{StaticResource AcentoSuave}"
                                                                 TextColor="#B9DEFF"
                                                                 CornerRadius="7" />
                                                         <Button Text="Editar"
@@ -89,8 +89,8 @@
                                                                 CommandParameter="{Binding .}"
                                                                 Padding="10,5"
                                                                 FontSize="11"
-                                                                BackgroundColor="#242830"
-                                                                TextColor="White"
+                                                                BackgroundColor="{StaticResource SuperficieAlta}"
+                                                                TextColor="{StaticResource TextoPrincipal}"
                                                                 CornerRadius="7" />
                                                     </HorizontalStackLayout>
                                                 </Grid>

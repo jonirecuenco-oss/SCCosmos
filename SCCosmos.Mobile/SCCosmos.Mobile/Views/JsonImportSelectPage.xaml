@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Importar actividad"
-    BackgroundColor="#101216"
+    BackgroundColor="{StaticResource FondoPagina}"
     Shell.NavBarIsVisible="False" NavigationPage.HasNavigationBar="False">
 
     <Grid RowDefinitions="Auto,*,Auto">
@@ -20,19 +20,19 @@
                 <Label Text="IMPORTAR ACTIVIDAD"
                        FontSize="22"
                        FontAttributes="Bold"
-                       TextColor="White" />
+                       TextColor="{StaticResource TextoPrincipal}" />
 
                 <Label x:Name="LblSubtitulo"
                        FontSize="12"
-                       TextColor="#9EA4AE"
+                       TextColor="{StaticResource TextoSecundario}"
                        LineBreakMode="TailTruncation" />
             </VerticalStackLayout>
 
             <Button Grid.Column="1"
                     Text="Cerrar"
                     Clicked="BtnCancelar_Clicked"
-                    BackgroundColor="#242830"
-                    TextColor="White"
+                    BackgroundColor="{StaticResource SuperficieAlta}"
+                    TextColor="{StaticResource TextoPrincipal}"
                     CornerRadius="9"
                     Padding="13,7"
                     VerticalOptions="Center" />
@@ -79,32 +79,32 @@
                                     <RoundRectangle CornerRadius="11" />
                                 </Border.StrokeShape>
                                 <Label Text="1"
-                                       TextColor="White"
+                                       TextColor="{StaticResource TextoPrincipal}"
                                        FontSize="11"
                                        FontAttributes="Bold"
                                        HorizontalOptions="Center"
                                        VerticalOptions="Center" />
                             </Border>
                             <Label Text="ACTIVIDAD DE PUBLICADORES (S-21)"
-                                   TextColor="White"
+                                   TextColor="{StaticResource TextoPrincipal}"
                                    FontAttributes="Bold"
                                    FontSize="14"
                                    VerticalOptions="Center" />
                         </HorizontalStackLayout>
 
                         <Label Text="Obligatorio. Una tarjeta por publicador y año de servicio."
-                               TextColor="#7E8794"
+                               TextColor="{StaticResource TextoTerciario}"
                                FontSize="11" />
 
                         <Grid ColumnDefinitions="*,Auto"
                               ColumnSpacing="10">
                             <VerticalStackLayout Spacing="3">
                                 <Label Text="Archivo ya convertido (JSON)"
-                                       TextColor="#C3C7CD"
+                                       TextColor="{StaticResource TextoSecundario}"
                                        FontSize="11.5" />
                                 <Label x:Name="LblS21"
                                        Text="Ningún archivo seleccionado"
-                                       TextColor="#8F969F"
+                                       TextColor="{StaticResource TextoTerciario}"
                                        FontSize="12"
                                        LineBreakMode="TailTruncation" />
                             </VerticalStackLayout>
@@ -112,7 +112,7 @@
                             <Button Grid.Column="1"
                                     Text="Examinar"
                                     Clicked="BtnS21_Clicked"
-                                    BackgroundColor="#163553"
+                                    BackgroundColor="{StaticResource AcentoSuave}"
                                     TextColor="#B9DEFF"
                                     CornerRadius="9"
                                     Padding="12,7"
@@ -125,11 +125,11 @@
                               ColumnSpacing="10">
                             <VerticalStackLayout Spacing="3">
                                 <Label Text="O convertir desde PDF"
-                                       TextColor="#C3C7CD"
+                                       TextColor="{StaticResource TextoSecundario}"
                                        FontSize="11.5" />
                                 <Label x:Name="LblPdfS21"
                                        Text="Elige la carpeta con las tarjetas S-21 y se generará el JSON."
-                                       TextColor="#8F969F"
+                                       TextColor="{StaticResource TextoTerciario}"
                                        FontSize="11.5"
                                        LineBreakMode="WordWrap" />
                             </VerticalStackLayout>
@@ -138,8 +138,8 @@
                                     Grid.Column="1"
                                     Text="Convertir"
                                     Clicked="BtnConvertirPdf_Clicked"
-                                    BackgroundColor="#242830"
-                                    TextColor="White"
+                                    BackgroundColor="{StaticResource SuperficieAlta}"
+                                    TextColor="{StaticResource TextoPrincipal}"
                                     CornerRadius="9"
                                     Padding="12,7"
                                     VerticalOptions="Center" />
@@ -148,7 +148,7 @@
                         <Button x:Name="BtnCompartirJson"
                                 Text="Compartir JSON"
                                 Clicked="BtnCompartirJson_Clicked"
-                                BackgroundColor="#163553"
+                                BackgroundColor="{StaticResource AcentoSuave}"
                                 TextColor="#B9DEFF"
                                 CornerRadius="9"
                                 Padding="10,7"
@@ -178,25 +178,25 @@
                                     <RoundRectangle CornerRadius="11" />
                                 </Border.StrokeShape>
                                 <Label Text="2"
-                                       TextColor="White"
+                                       TextColor="{StaticResource TextoPrincipal}"
                                        FontSize="11"
                                        FontAttributes="Bold"
                                        HorizontalOptions="Center"
                                        VerticalOptions="Center" />
                             </Border>
                             <Label Text="TERRITORIOS (S-13)"
-                                   TextColor="White"
+                                   TextColor="{StaticResource TextoPrincipal}"
                                    FontAttributes="Bold"
                                    FontSize="14"
                                    VerticalOptions="Center" />
                             <Label Text="opcional"
-                                   TextColor="#7E8794"
+                                   TextColor="{StaticResource TextoTerciario}"
                                    FontSize="11"
                                    VerticalOptions="Center" />
                         </HorizontalStackLayout>
 
                         <Label Text="Registro de territorios ya convertido (datos_s13.json) desde el ordenador: admite el S-13 oficial en PDF, registros con un territorio por página y Excel."
-                               TextColor="#7E8794"
+                               TextColor="{StaticResource TextoTerciario}"
                                FontSize="11"
                                LineBreakMode="WordWrap" />
 
@@ -204,11 +204,11 @@
                               ColumnSpacing="10">
                             <VerticalStackLayout Spacing="3">
                                 <Label Text="Archivo ya convertido (JSON)"
-                                       TextColor="#C3C7CD"
+                                       TextColor="{StaticResource TextoSecundario}"
                                        FontSize="11.5" />
                                 <Label x:Name="LblS13"
                                        Text="Ningún archivo seleccionado"
-                                       TextColor="#8F969F"
+                                       TextColor="{StaticResource TextoTerciario}"
                                        FontSize="12"
                                        LineBreakMode="TailTruncation" />
                             </VerticalStackLayout>
@@ -216,8 +216,8 @@
                             <Button Grid.Column="1"
                                     Text="Examinar"
                                     Clicked="BtnS13_Clicked"
-                                    BackgroundColor="#242830"
-                                    TextColor="White"
+                                    BackgroundColor="{StaticResource SuperficieAlta}"
+                                    TextColor="{StaticResource TextoPrincipal}"
                                     CornerRadius="9"
                                     Padding="12,7"
                                     VerticalOptions="Center" />
@@ -225,8 +225,8 @@
                     </VerticalStackLayout>
                 </Border>
 
-                <Border BackgroundColor="#15191E"
-                        Stroke="#2E343C"
+                <Border BackgroundColor="{StaticResource Superficie}"
+                        Stroke="{StaticResource BordeSuave}"
                         StrokeThickness="1"
                         Padding="12">
                     <Border.StrokeShape>
@@ -240,14 +240,14 @@
                                FontSize="12" />
 
                         <Label Text="El S-21 aporta el nombre completo, grupo y actividad. JW Hub aporta su nombre JW, nombre común y otros datos. Si parecen ser la misma persona, podrás vincularlas antes de guardar para evitar duplicados."
-                               TextColor="#AEB4BC"
+                               TextColor="{StaticResource TextoSecundario}"
                                FontSize="11"
                                LineBreakMode="WordWrap" />
                     </VerticalStackLayout>
                 </Border>
 
                 <Label x:Name="LblEstado"
-                       TextColor="#9EA4AE"
+                       TextColor="{StaticResource TextoSecundario}"
                        FontSize="11"
                        LineBreakMode="WordWrap" />
             </VerticalStackLayout>
@@ -260,8 +260,8 @@
 
             <Button Text="Cancelar"
                     Clicked="BtnCancelar_Clicked"
-                    BackgroundColor="#242830"
-                    TextColor="White"
+                    BackgroundColor="{StaticResource SuperficieAlta}"
+                    TextColor="{StaticResource TextoPrincipal}"
                     CornerRadius="10"
                     HeightRequest="46" />
 
@@ -270,7 +270,7 @@
                     Text="Analizar archivos"
                     Clicked="BtnAnalizar_Clicked"
                     BackgroundColor="#0B6FC2"
-                    TextColor="White"
+                    TextColor="{StaticResource TextoPrincipal}"
                     FontAttributes="Bold"
                     CornerRadius="10"
                     HeightRequest="46" />
@@ -285,12 +285,12 @@
                 VerticalOptions="Center"
                 Spacing="12">
                 <ActivityIndicator IsRunning="True"
-                                   Color="#4BA3E3"
+                                   Color="{StaticResource Acento}"
                                    WidthRequest="42"
                                    HeightRequest="42" />
                 <Label x:Name="LblCargando"
                        Text="Leyendo archivos..."
-                       TextColor="White"
+                       TextColor="{StaticResource TextoPrincipal}"
                        FontAttributes="Bold"
                        HorizontalTextAlignment="Center" />
             </VerticalStackLayout>

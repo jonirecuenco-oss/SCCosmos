@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Actividad mensual"
-    BackgroundColor="#101216">
+    BackgroundColor="{StaticResource FondoPagina}">
 
     <Grid RowDefinitions="*,Auto">
 
@@ -22,51 +22,51 @@
                     <VerticalStackLayout Spacing="14">
 
                         <Label Text="Mes"
-                               TextColor="#9299A3"
+                               TextColor="{StaticResource TextoTerciario}"
                                FontSize="12" />
                         <Picker x:Name="PickerMes"
-                                TextColor="White" />
+                                TextColor="{StaticResource TextoPrincipal}" />
 
                         <Label Text="Año de servicio"
-                               TextColor="#9299A3"
+                               TextColor="{StaticResource TextoTerciario}"
                                FontSize="12" />
                         <Entry x:Name="TxtAnio"
                                Keyboard="Numeric"
                                Placeholder="p. ej. 2025"
-                               TextColor="White" />
+                               TextColor="{StaticResource TextoPrincipal}" />
 
                         <Label Text="Horas"
-                               TextColor="#9299A3"
+                               TextColor="{StaticResource TextoTerciario}"
                                FontSize="12" />
                         <Entry x:Name="TxtHoras"
                                Keyboard="Numeric"
-                               TextColor="White" />
+                               TextColor="{StaticResource TextoPrincipal}" />
 
                         <Label x:Name="LblCredito"
                                Text="Crédito (otras actividades; vacío: lo que digan las notas)"
-                               TextColor="#9299A3"
+                               TextColor="{StaticResource TextoTerciario}"
                                FontSize="12" />
                         <Entry x:Name="TxtCredito"
                                Keyboard="Numeric"
-                               TextColor="White" />
+                               TextColor="{StaticResource TextoPrincipal}" />
 
                         <Label Text="Cursos bíblicos"
-                               TextColor="#9299A3"
+                               TextColor="{StaticResource TextoTerciario}"
                                FontSize="12" />
                         <Entry x:Name="TxtCursos"
                                Keyboard="Numeric"
-                               TextColor="White" />
+                               TextColor="{StaticResource TextoPrincipal}" />
 
                         <Label Text="Notas"
-                               TextColor="#9299A3"
+                               TextColor="{StaticResource TextoTerciario}"
                                FontSize="12" />
                         <Entry x:Name="TxtNotas"
-                               TextColor="White" />
+                               TextColor="{StaticResource TextoPrincipal}" />
 
                         <Grid ColumnDefinitions="*,Auto">
                             <Label Grid.Column="0"
                                    Text="Participación"
-                                   TextColor="#E7E9EC"
+                                   TextColor="{StaticResource TextoPrincipal}"
                                    VerticalOptions="Center" />
                             <Switch x:Name="SwParticipacion"
                                     Grid.Column="1"
@@ -76,7 +76,7 @@
                         <Grid ColumnDefinitions="*,Auto">
                             <Label Grid.Column="0"
                                    Text="Precursor auxiliar"
-                                   TextColor="#E7E9EC"
+                                   TextColor="{StaticResource TextoPrincipal}"
                                    VerticalOptions="Center" />
                             <Switch x:Name="SwPrecAux"
                                     Grid.Column="1"
@@ -89,7 +89,7 @@
                 <Button x:Name="BtnEliminar"
                         Text="Eliminar registro"
                         Clicked="BtnEliminar_Clicked"
-                        BackgroundColor="#3A2023"
+                        BackgroundColor="{StaticResource PeligroSuave}"
                         TextColor="#FFB7BC"
                         CornerRadius="10"
                         HeightRequest="48"
@@ -111,8 +111,8 @@
 
             <Button Grid.Column="1"
                     Text="Guardar"
-                    BackgroundColor="#2478B5"
-                    TextColor="White"
+                    BackgroundColor="{StaticResource AcentoFuerte}"
+                    TextColor="{StaticResource TextoPrincipal}"
                     FontAttributes="Bold"
                     Clicked="BtnGuardar_Clicked" />
 

@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Archivo"
-    BackgroundColor="#101216">
+    BackgroundColor="{StaticResource FondoPagina}">
 
     <Grid RowDefinitions="Auto,Auto,*"
           Padding="16,14,16,14"
@@ -16,20 +16,20 @@
                    Text=""
                    FontSize="20"
                    FontAttributes="Bold"
-                   TextColor="White" />
+                   TextColor="{StaticResource TextoPrincipal}" />
             <Grid ColumnDefinitions="*,*"
                   ColumnSpacing="8">
                 <Button Grid.Column="0"
                         Text="＋ Añadir"
                         Clicked="BtnAnadir_Clicked"
-                        BackgroundColor="#245C38"
-                        TextColor="White"
+                        BackgroundColor="{StaticResource ExitoSuave}"
+                        TextColor="{StaticResource TextoPrincipal}"
                         CornerRadius="9"
                         HeightRequest="44" />
                 <Button Grid.Column="1"
                         Text="PDF"
                         Clicked="BtnPdf_Clicked"
-                        BackgroundColor="#163553"
+                        BackgroundColor="{StaticResource AcentoSuave}"
                         TextColor="#B9DEFF"
                         CornerRadius="9"
                         HeightRequest="44" />
@@ -41,7 +41,7 @@
                         SelectionMode="None">
             <CollectionView.EmptyView>
                 <Label Text="No hay registros."
-                       TextColor="#9EA4AE"
+                       TextColor="{StaticResource TextoSecundario}"
                        Padding="20,50"
                        HorizontalTextAlignment="Center" />
             </CollectionView.EmptyView>
@@ -59,11 +59,11 @@
                             <VerticalStackLayout Grid.Column="0"
                                                  Spacing="3">
                                 <Label Text="{Binding Titulo}"
-                                       TextColor="White"
+                                       TextColor="{StaticResource TextoPrincipal}"
                                        FontSize="14"
                                        FontAttributes="Bold" />
                                 <Label Text="{Binding Descripcion}"
-                                       TextColor="#AEB4BC"
+                                       TextColor="{StaticResource TextoSecundario}"
                                        FontSize="12" />
                             </VerticalStackLayout>
                             <Button Grid.Column="1"
@@ -72,7 +72,7 @@
                                     CommandParameter="{Binding .}"
                                     Padding="10,5"
                                     FontSize="11"
-                                    BackgroundColor="#3A2023"
+                                    BackgroundColor="{StaticResource PeligroSuave}"
                                     TextColor="#FFB7BC"
                                     CornerRadius="7"
                                     VerticalOptions="Center" />

@@ -5,7 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     x:Class="SCCosmos.Mobile.Views.JwHubLoginPage"
     Title="Sesión JW Hub"
-    BackgroundColor="#101216">
+    BackgroundColor="{StaticResource FondoPagina}">
 
     <Grid RowDefinitions="Auto,*,Auto">
 
@@ -24,14 +24,14 @@
 
                 <Label
                     Text="Acceso a JW Hub"
-                    TextColor="White"
+                    TextColor="{StaticResource TextoPrincipal}"
                     FontSize="18"
                     FontAttributes="Bold"/>
 
                 <Label
                     x:Name="LblEstado"
                     Text="Inicia sesión normalmente. SCCosmos conservará la sesión de este navegador."
-                    TextColor="#AAB0B9"
+                    TextColor="{StaticResource TextoSecundario}"
                     FontSize="13"/>
 
             </VerticalStackLayout>
@@ -60,8 +60,8 @@
             <Button
                 Grid.Column="1"
                 Text="Comprobar sesión"
-                BackgroundColor="#2478B5"
-                TextColor="White"
+                BackgroundColor="{StaticResource AcentoFuerte}"
+                TextColor="{StaticResource TextoPrincipal}"
                 FontAttributes="Bold"
                 Clicked="BtnComprobar_Click"/>
 

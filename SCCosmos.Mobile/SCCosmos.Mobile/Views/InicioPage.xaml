@@ -5,7 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     x:Class="SCCosmos.Mobile.Views.InicioPage"
     Title="Inicio"
-    BackgroundColor="#101216">
+    BackgroundColor="{StaticResource FondoPagina}">
 
     <ContentPage.ToolbarItems>
     </ContentPage.ToolbarItems>
@@ -27,7 +27,7 @@
                     <Label
                         x:Name="TxtSaludo"
                         Text="¡Hola!"
-                        TextColor="White"
+                        TextColor="{StaticResource TextoPrincipal}"
                         FontSize="29"
                         FontAttributes="Bold"/>
 
@@ -108,7 +108,7 @@
                             <Label
                                 x:Name="LblActividad"
                                 Text="Cargando..."
-                                TextColor="White"
+                                TextColor="{StaticResource TextoPrincipal}"
                                 FontSize="22"
                                 FontAttributes="Bold"/>
 
@@ -117,7 +117,7 @@
                         <Border
                             x:Name="MarcoIconoSemana"
                             Grid.Column="1"
-                            BackgroundColor="#222832"
+                            BackgroundColor="{StaticResource SuperficieAlta}"
                             Padding="11"
                             StrokeThickness="0">
 
@@ -128,7 +128,7 @@
                             <Label
                                 x:Name="LblIconoSemana"
                                 Text="●"
-                                TextColor="#4BA3E3"
+                                TextColor="{StaticResource Acento}"
                                 FontSize="20"/>
 
                         </Border>
@@ -140,7 +140,7 @@
                             SemanticProperties.Description="Ver visita"
                             Clicked="BtnVerVisitaInicio_Click"
                             BackgroundColor="#0B6FC2"
-                            TextColor="White"
+                            TextColor="{StaticResource TextoPrincipal}"
                             FontSize="20"
                             CornerRadius="9"
                             WidthRequest="54"
@@ -154,7 +154,7 @@
                     <Label
                         x:Name="LblFechas"
                         Text=""
-                        TextColor="#AAB0B9"
+                        TextColor="{StaticResource TextoSecundario}"
                         FontSize="14"/>
 
                     <!-- VISITA -->
@@ -167,7 +167,7 @@
                         <Label
                             x:Name="LblAcompanante"
                             Text=""
-                            TextColor="#AAB0B9"
+                            TextColor="{StaticResource TextoSecundario}"
                             FontSize="14"
                             IsVisible="False"/>
 
@@ -182,12 +182,12 @@
 
                         <BoxView
                             HeightRequest="1"
-                            Color="#303640"/>
+                            Color="{StaticResource Borde}"/>
 
                         <Label
                             x:Name="LblOtraActividad"
                             Text=""
-                            TextColor="#C3C7CD"
+                            TextColor="{StaticResource TextoSecundario}"
                             FontSize="15"
                             Margin="0,6,0,0"/>
 
@@ -216,7 +216,7 @@
                     <Label
                         x:Name="TxtSinDatos"
                         Text="No hay ninguna actividad registrada para esta semana."
-                        TextColor="#AAB0B9"
+                        TextColor="{StaticResource TextoSecundario}"
                         FontSize="14"
                         IsVisible="False"/>
 
@@ -245,7 +245,7 @@
 
                         <Label
                             Text="PREDICACIÓN ESTE MES"
-                            TextColor="#858C96"
+                            TextColor="{StaticResource TextoTerciario}"
                             FontSize="12"
                             FontAttributes="Bold"
                             CharacterSpacing="1.5"/>
@@ -253,14 +253,14 @@
                         <Label
                             x:Name="LblHorasMes"
                             Text="0"
-                            TextColor="White"
+                            TextColor="{StaticResource TextoPrincipal}"
                             FontSize="30"
                             FontAttributes="Bold"/>
 
                         <Label
                             x:Name="LblHorasMesEtiqueta"
                             Text=""
-                            TextColor="#8A929C"
+                            TextColor="{StaticResource TextoTerciario}"
                             FontSize="12"/>
                     </VerticalStackLayout>
 
@@ -275,7 +275,7 @@
                         HeightRequest="44"
                         Padding="0"
                         BackgroundColor="#0B6FC2"
-                        TextColor="White"
+                        TextColor="{StaticResource TextoPrincipal}"
                         CornerRadius="12"
                         VerticalOptions="Center"/>
                 </Grid>
@@ -298,8 +298,8 @@
                         SemanticProperties.Description="Día anterior"
                         Padding="10,2"
                         FontSize="14"
-                        BackgroundColor="#242830"
-                        TextColor="#4BA3E3"
+                        BackgroundColor="{StaticResource SuperficieAlta}"
+                        TextColor="{StaticResource Acento}"
                         CornerRadius="8"
                         VerticalOptions="Center"/>
 
@@ -307,7 +307,7 @@
                         x:Name="LblDiaPrograma"
                         Grid.Column="1"
                         Text="HOY"
-                        TextColor="#858C96"
+                        TextColor="{StaticResource TextoTerciario}"
                         FontSize="12"
                         FontAttributes="Bold"
                         CharacterSpacing="1.5"
@@ -321,8 +321,8 @@
                         SemanticProperties.Description="Día siguiente"
                         Padding="10,2"
                         FontSize="14"
-                        BackgroundColor="#242830"
-                        TextColor="#4BA3E3"
+                        BackgroundColor="{StaticResource SuperficieAlta}"
+                        TextColor="{StaticResource Acento}"
                         CornerRadius="8"
                         VerticalOptions="Center"/>
                 </Grid>
@@ -330,7 +330,7 @@
                 <Label
                     x:Name="TxtSinProgramaDia"
                     Text="No hay actividades programadas para este día."
-                    TextColor="#7E858F"
+                    TextColor="{StaticResource TextoTerciario}"
                     FontSize="13"
                     HorizontalTextAlignment="Center"
                     Margin="0,4,0,6"
@@ -365,7 +365,7 @@
                                     <Label
                                         Grid.RowSpan="3"
                                         Text="{Binding Hora}"
-                                        TextColor="#4BA3E3"
+                                        TextColor="{StaticResource Acento}"
                                         FontSize="15"
                                         FontAttributes="Bold"
                                         VerticalOptions="Start"/>
@@ -373,14 +373,14 @@
                                     <Label
                                         Grid.Column="1"
                                         Text="{Binding TipoActividad}"
-                                        TextColor="White"
+                                        TextColor="{StaticResource TextoPrincipal}"
                                         FontSize="15"
                                         FontAttributes="Bold"/>
 
                                     <Border
                                         Grid.Column="2"
                                         Grid.RowSpan="2"
-                                        BackgroundColor="#242A33"
+                                        BackgroundColor="{StaticResource SuperficieAlta}"
                                         Padding="8,3"
                                         StrokeThickness="0"
                                         VerticalOptions="Start"
@@ -401,7 +401,7 @@
                                         Spacing="10">
                                         <Label
                                             Text="{Binding CompaneroNombre, StringFormat='con {0}'}"
-                                            TextColor="#9299A3"
+                                            TextColor="{StaticResource TextoTerciario}"
                                             FontSize="13"
                                             IsVisible="{Binding VerCompanero}"/>
                                         <Label
@@ -417,7 +417,7 @@
                                         Grid.Column="1"
                                         Grid.ColumnSpan="2"
                                         Text="{Binding Notas}"
-                                        TextColor="#8A919B"
+                                        TextColor="{StaticResource TextoTerciario}"
                                         FontSize="12.5"
                                         LineBreakMode="WordWrap"
                                         IsVisible="{Binding MostrarNotas}"/>
@@ -432,7 +432,7 @@
                                         SemanticProperties.Description="Ver en Google Maps"
                                         FontSize="15"
                                         Padding="9,4"
-                                        BackgroundColor="#242830"
+                                        BackgroundColor="{StaticResource SuperficieAlta}"
                                         TextColor="#8BC9E8"
                                         CornerRadius="10"
                                         VerticalOptions="Center"/>
@@ -454,7 +454,7 @@
 
             <Label
                 Text="RESUMEN DEL CIRCUITO"
-                TextColor="#858C96"
+                TextColor="{StaticResource TextoTerciario}"
                 FontSize="12"
                 FontAttributes="Bold"
                 CharacterSpacing="1.5"
@@ -489,12 +489,12 @@
                     <VerticalStackLayout Spacing="4">
                         <Label
                             Text="P. regulares"
-                            TextColor="#AAB0B9"
+                            TextColor="{StaticResource TextoSecundario}"
                             FontSize="13"/>
                         <Label
                             x:Name="TxtTotalPrecReg"
                             Text="—"
-                            TextColor="White"
+                            TextColor="{StaticResource TextoPrincipal}"
                             FontSize="27"
                             FontAttributes="Bold"/>
                     </VerticalStackLayout>
@@ -523,12 +523,12 @@
                     <VerticalStackLayout Spacing="4">
                         <Label
                             Text="P. especiales"
-                            TextColor="#AAB0B9"
+                            TextColor="{StaticResource TextoSecundario}"
                             FontSize="13"/>
                         <Label
                             x:Name="TxtTotalPrecEsp"
                             Text="—"
-                            TextColor="White"
+                            TextColor="{StaticResource TextoPrincipal}"
                             FontSize="27"
                             FontAttributes="Bold"/>
                     </VerticalStackLayout>
@@ -558,12 +558,12 @@
                     <VerticalStackLayout Spacing="4">
                         <Label
                             Text="Ancianos"
-                            TextColor="#AAB0B9"
+                            TextColor="{StaticResource TextoSecundario}"
                             FontSize="13"/>
                         <Label
                             x:Name="TxtTotalAncianos"
                             Text="—"
-                            TextColor="White"
+                            TextColor="{StaticResource TextoPrincipal}"
                             FontSize="27"
                             FontAttributes="Bold"/>
                     </VerticalStackLayout>
@@ -592,12 +592,12 @@
                     <VerticalStackLayout Spacing="4">
                         <Label
                             Text="Siervos M."
-                            TextColor="#AAB0B9"
+                            TextColor="{StaticResource TextoSecundario}"
                             FontSize="13"/>
                         <Label
                             x:Name="TxtTotalSM"
                             Text="—"
-                            TextColor="White"
+                            TextColor="{StaticResource TextoPrincipal}"
                             FontSize="27"
                             FontAttributes="Bold"/>
                     </VerticalStackLayout>
@@ -626,12 +626,12 @@
                     <VerticalStackLayout Spacing="4">
                         <Label
                             Text="Sol. A-2"
-                            TextColor="#AAB0B9"
+                            TextColor="{StaticResource TextoSecundario}"
                             FontSize="13"/>
                         <Label
                             x:Name="TxtTotalA2"
                             Text="—"
-                            TextColor="White"
+                            TextColor="{StaticResource TextoPrincipal}"
                             FontSize="27"
                             FontAttributes="Bold"/>
                     </VerticalStackLayout>
@@ -660,12 +660,12 @@
                     <VerticalStackLayout Spacing="4">
                         <Label
                             Text="Sol. A-19"
-                            TextColor="#AAB0B9"
+                            TextColor="{StaticResource TextoSecundario}"
                             FontSize="13"/>
                         <Label
                             x:Name="TxtTotalA19"
                             Text="—"
-                            TextColor="White"
+                            TextColor="{StaticResource TextoPrincipal}"
                             FontSize="27"
                             FontAttributes="Bold"/>
                     </VerticalStackLayout>
@@ -694,12 +694,12 @@
                     <VerticalStackLayout Spacing="4">
                         <Label
                             Text="Sol. A-8"
-                            TextColor="#AAB0B9"
+                            TextColor="{StaticResource TextoSecundario}"
                             FontSize="13"/>
                         <Label
                             x:Name="TxtTotalA8"
                             Text="—"
-                            TextColor="White"
+                            TextColor="{StaticResource TextoPrincipal}"
                             FontSize="27"
                             FontAttributes="Bold"/>
                     </VerticalStackLayout>
@@ -728,12 +728,12 @@
                     <VerticalStackLayout Spacing="4">
                         <Label
                             Text="Sol. G-8"
-                            TextColor="#AAB0B9"
+                            TextColor="{StaticResource TextoSecundario}"
                             FontSize="13"/>
                         <Label
                             x:Name="TxtTotalG8"
                             Text="—"
-                            TextColor="White"
+                            TextColor="{StaticResource TextoPrincipal}"
                             FontSize="27"
                             FontAttributes="Bold"/>
                     </VerticalStackLayout>
@@ -747,8 +747,8 @@
                         <RoundRectangle CornerRadius="16"/>
                     </Border.StrokeShape>
                     <VerticalStackLayout Spacing="4">
-                        <Label Text="Publicadores" TextColor="#AAB0B9" FontSize="13"/>
-                        <Label x:Name="TxtTotalPublicadores" Text="—" TextColor="White" FontSize="27" FontAttributes="Bold"/>
+                        <Label Text="Publicadores" TextColor="{StaticResource TextoSecundario}" FontSize="13"/>
+                        <Label x:Name="TxtTotalPublicadores" Text="—" TextColor="{StaticResource TextoPrincipal}" FontSize="27" FontAttributes="Bold"/>
                     </VerticalStackLayout>
                 </Border>
 
@@ -759,8 +759,8 @@
                         <RoundRectangle CornerRadius="16"/>
                     </Border.StrokeShape>
                     <VerticalStackLayout Spacing="4">
-                        <Label Text="Hombres" TextColor="#AAB0B9" FontSize="13"/>
-                        <Label x:Name="TxtTotalHombres" Text="—" TextColor="White" FontSize="27" FontAttributes="Bold"/>
+                        <Label Text="Hombres" TextColor="{StaticResource TextoSecundario}" FontSize="13"/>
+                        <Label x:Name="TxtTotalHombres" Text="—" TextColor="{StaticResource TextoPrincipal}" FontSize="27" FontAttributes="Bold"/>
                     </VerticalStackLayout>
                 </Border>
 
@@ -771,8 +771,8 @@
                         <RoundRectangle CornerRadius="16"/>
                     </Border.StrokeShape>
                     <VerticalStackLayout Spacing="4">
-                        <Label Text="Mujeres" TextColor="#AAB0B9" FontSize="13"/>
-                        <Label x:Name="TxtTotalMujeres" Text="—" TextColor="White" FontSize="27" FontAttributes="Bold"/>
+                        <Label Text="Mujeres" TextColor="{StaticResource TextoSecundario}" FontSize="13"/>
+                        <Label x:Name="TxtTotalMujeres" Text="—" TextColor="{StaticResource TextoPrincipal}" FontSize="27" FontAttributes="Bold"/>
                     </VerticalStackLayout>
                 </Border>
 
@@ -783,8 +783,8 @@
                         <RoundRectangle CornerRadius="16"/>
                     </Border.StrokeShape>
                     <VerticalStackLayout Spacing="4">
-                        <Label Text="No bautizados" TextColor="#AAB0B9" FontSize="13"/>
-                        <Label x:Name="TxtTotalNoBautizados" Text="—" TextColor="White" FontSize="27" FontAttributes="Bold"/>
+                        <Label Text="No bautizados" TextColor="{StaticResource TextoSecundario}" FontSize="13"/>
+                        <Label x:Name="TxtTotalNoBautizados" Text="—" TextColor="{StaticResource TextoPrincipal}" FontSize="27" FontAttributes="Bold"/>
                     </VerticalStackLayout>
                 </Border>
 
@@ -795,8 +795,8 @@
                         <RoundRectangle CornerRadius="16"/>
                     </Border.StrokeShape>
                     <VerticalStackLayout Spacing="4">
-                        <Label Text="Cursos bíblicos" TextColor="#AAB0B9" FontSize="13"/>
-                        <Label x:Name="TxtTotalCursos" Text="—" TextColor="White" FontSize="27" FontAttributes="Bold"/>
+                        <Label Text="Cursos bíblicos" TextColor="{StaticResource TextoSecundario}" FontSize="13"/>
+                        <Label x:Name="TxtTotalCursos" Text="—" TextColor="{StaticResource TextoPrincipal}" FontSize="27" FontAttributes="Bold"/>
                     </VerticalStackLayout>
                 </Border>
 
@@ -807,8 +807,8 @@
                         <RoundRectangle CornerRadius="16"/>
                     </Border.StrokeShape>
                     <VerticalStackLayout Spacing="4">
-                        <Label Text="Media de edad" TextColor="#AAB0B9" FontSize="13"/>
-                        <Label x:Name="TxtMediaEdad" Text="—" TextColor="White" FontSize="27" FontAttributes="Bold"/>
+                        <Label Text="Media de edad" TextColor="{StaticResource TextoSecundario}" FontSize="13"/>
+                        <Label x:Name="TxtMediaEdad" Text="—" TextColor="{StaticResource TextoPrincipal}" FontSize="27" FontAttributes="Bold"/>
                     </VerticalStackLayout>
                 </Border>
 
@@ -819,8 +819,8 @@
                         <RoundRectangle CornerRadius="16"/>
                     </Border.StrokeShape>
                     <VerticalStackLayout Spacing="4">
-                        <Label Text="Media prec. auxiliares" TextColor="#AAB0B9" FontSize="13"/>
-                        <Label x:Name="TxtMediaPrecAux" Text="—" TextColor="White" FontSize="27" FontAttributes="Bold"/>
+                        <Label Text="Media prec. auxiliares" TextColor="{StaticResource TextoSecundario}" FontSize="13"/>
+                        <Label x:Name="TxtMediaPrecAux" Text="—" TextColor="{StaticResource TextoPrincipal}" FontSize="27" FontAttributes="Bold"/>
                     </VerticalStackLayout>
                 </Border>
 
@@ -831,8 +831,8 @@
                         <RoundRectangle CornerRadius="16"/>
                     </Border.StrokeShape>
                     <VerticalStackLayout Spacing="4">
-                        <Label Text="Betel" TextColor="#AAB0B9" FontSize="13"/>
-                        <Label x:Name="TxtTotalBetel" Text="—" TextColor="White" FontSize="27" FontAttributes="Bold"/>
+                        <Label Text="Betel" TextColor="{StaticResource TextoSecundario}" FontSize="13"/>
+                        <Label x:Name="TxtTotalBetel" Text="—" TextColor="{StaticResource TextoPrincipal}" FontSize="27" FontAttributes="Bold"/>
                     </VerticalStackLayout>
                 </Border>
 

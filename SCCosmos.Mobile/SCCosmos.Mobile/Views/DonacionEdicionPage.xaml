@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Registro"
-    BackgroundColor="#101216">
+    BackgroundColor="{StaticResource FondoPagina}">
 
     <Grid RowDefinitions="*,Auto">
 
@@ -27,14 +27,14 @@
                         <Label Text="Fecha"
                                Style="{StaticResource TextoNota}" />
                         <DatePicker x:Name="FechaDonacion"
-                                    TextColor="White" />
+                                    TextColor="{StaticResource TextoPrincipal}" />
 
                         <Label Text="Persona que dona"
                                Style="{StaticResource TextoNota}" />
 
                         <Entry x:Name="TxtBuscarPersona"
                                Placeholder="Buscar por nombre o congregación…"
-                               TextColor="White"
+                               TextColor="{StaticResource TextoPrincipal}"
                                TextChanged="TxtBuscarPersona_TextChanged" />
 
                         <Label x:Name="LblCoincidencias"
@@ -56,7 +56,7 @@
                         <Entry x:Name="TxtCantidad"
                                Keyboard="Numeric"
                                Placeholder="25,50"
-                               TextColor="White" />
+                               TextColor="{StaticResource TextoPrincipal}" />
 
                         <Label Text="Medio de pago"
                                Style="{StaticResource TextoNota}" />
@@ -66,7 +66,7 @@
                                Style="{StaticResource TextoNota}" />
                         <Entry x:Name="TxtNotas"
                                Placeholder="Referencia de la transferencia, etc."
-                               TextColor="White" />
+                               TextColor="{StaticResource TextoPrincipal}" />
 
                     </VerticalStackLayout>
                 </Border>

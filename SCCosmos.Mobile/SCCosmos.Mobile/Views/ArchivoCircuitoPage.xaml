@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Archivo del circuito"
-    BackgroundColor="#101216">
+    BackgroundColor="{StaticResource FondoPagina}">
 
     <Grid RowDefinitions="Auto,Auto,*"
           Padding="16,14,16,10"
@@ -42,7 +42,7 @@
                             SelectionMode="None">
                 <CollectionView.EmptyView>
                     <Label Text="No hay secciones o no se encuentra la carpeta sincronizada. Configura la carpeta y la subcarpeta en Configuración."
-                           TextColor="#9EA4AE"
+                           TextColor="{StaticResource TextoSecundario}"
                            Padding="20,50"
                            HorizontalTextAlignment="Center" />
                 </CollectionView.EmptyView>
@@ -82,7 +82,7 @@
                                                VerticalOptions="Center" />
 
                                         <Label Text="{Binding Nombre}"
-                                               TextColor="White"
+                                               TextColor="{StaticResource TextoPrincipal}"
                                                FontSize="15"
                                                FontAttributes="Bold"
                                                VerticalOptions="Center" />
@@ -95,8 +95,8 @@
                                             FontSize="15"
                                             WidthRequest="40"
                                             HeightRequest="36"
-                                            BackgroundColor="#242830"
-                                            TextColor="White"
+                                            BackgroundColor="{StaticResource SuperficieAlta}"
+                                            TextColor="{StaticResource TextoPrincipal}"
                                             CornerRadius="8"
                                             SemanticProperties.Description="Crear carpeta en la sección" />
                                     <Button Grid.Column="2"
@@ -107,7 +107,7 @@
                                             FontSize="14"
                                             WidthRequest="40"
                                             HeightRequest="36"
-                                            BackgroundColor="#265B36"
+                                            BackgroundColor="{StaticResource ExitoSuave}"
                                             TextColor="#D6F6DE"
                                             CornerRadius="8"
                                             SemanticProperties.Description="Subir archivo a la sección" />
@@ -119,8 +119,8 @@
                                             FontSize="14"
                                             WidthRequest="40"
                                             HeightRequest="36"
-                                            BackgroundColor="#242830"
-                                            TextColor="White"
+                                            BackgroundColor="{StaticResource SuperficieAlta}"
+                                            TextColor="{StaticResource TextoPrincipal}"
                                             CornerRadius="8"
                                             SemanticProperties.Description="Renombrar sección" />
                                     <Button Grid.Column="4"
@@ -131,7 +131,7 @@
                                             FontSize="14"
                                             WidthRequest="40"
                                             HeightRequest="36"
-                                            BackgroundColor="#3A2023"
+                                            BackgroundColor="{StaticResource PeligroSuave}"
                                             TextColor="#FFB7BC"
                                             CornerRadius="8"
                                             SemanticProperties.Description="Eliminar sección" />
@@ -218,8 +218,8 @@
                                                             FontSize="12"
                                                             WidthRequest="36"
                                                             HeightRequest="34"
-                                                            BackgroundColor="#242830"
-                                                            TextColor="White"
+                                                            BackgroundColor="{StaticResource SuperficieAlta}"
+                                                            TextColor="{StaticResource TextoPrincipal}"
                                                             CornerRadius="7" />
 
                                                     <Button Grid.Column="3"
@@ -231,8 +231,8 @@
                                                             FontSize="12"
                                                             WidthRequest="36"
                                                             HeightRequest="34"
-                                                            BackgroundColor="#242830"
-                                                            TextColor="White"
+                                                            BackgroundColor="{StaticResource SuperficieAlta}"
+                                                            TextColor="{StaticResource TextoPrincipal}"
                                                             CornerRadius="7" />
 
                                                     <Button Grid.Column="4"
@@ -244,8 +244,8 @@
                                                             FontSize="12"
                                                             WidthRequest="36"
                                                             HeightRequest="34"
-                                                            BackgroundColor="#242830"
-                                                            TextColor="White"
+                                                            BackgroundColor="{StaticResource SuperficieAlta}"
+                                                            TextColor="{StaticResource TextoPrincipal}"
                                                             CornerRadius="7" />
 
                                                     <Button Grid.Column="5"
@@ -257,7 +257,7 @@
                                                             FontSize="12"
                                                             WidthRequest="36"
                                                             HeightRequest="34"
-                                                            BackgroundColor="#3A2023"
+                                                            BackgroundColor="{StaticResource PeligroSuave}"
                                                             TextColor="#FFB7BC"
                                                             CornerRadius="7" />
                                                 </Grid>

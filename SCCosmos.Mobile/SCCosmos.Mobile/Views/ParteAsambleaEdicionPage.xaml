@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Parte del programa"
-    BackgroundColor="#101216">
+    BackgroundColor="{StaticResource FondoPagina}">
 
     <Grid RowDefinitions="*,Auto">
 
@@ -26,44 +26,44 @@
                                CharacterSpacing="1" />
 
                         <Label Text="Turno"
-                               TextColor="#9299A3"
+                               TextColor="{StaticResource TextoTerciario}"
                                FontSize="12" />
                         <Picker x:Name="PickerTurno"
-                                TextColor="White" />
+                                TextColor="{StaticResource TextoPrincipal}" />
 
                         <Label Text="Hora"
-                               TextColor="#9299A3"
+                               TextColor="{StaticResource TextoTerciario}"
                                FontSize="12" />
                         <Entry x:Name="TxtHora"
                                Placeholder="10:00"
-                               TextColor="White" />
+                               TextColor="{StaticResource TextoPrincipal}" />
 
                         <Label Text="Título"
-                               TextColor="#9299A3"
+                               TextColor="{StaticResource TextoTerciario}"
                                FontSize="12" />
                         <Entry x:Name="TxtTitulo"
-                               TextColor="White" />
+                               TextColor="{StaticResource TextoPrincipal}" />
 
                         <Label Text="Asignado"
-                               TextColor="#9299A3"
+                               TextColor="{StaticResource TextoTerciario}"
                                FontSize="12" />
                         <Picker x:Name="PickerAsignado"
                                 Title="(Sin asignar)"
-                                TextColor="White"
+                                TextColor="{StaticResource TextoPrincipal}"
                                 ItemDisplayBinding="{Binding NombreMostrarTabla}" />
 
                         <Label Text="Participantes"
-                               TextColor="#9299A3"
+                               TextColor="{StaticResource TextoTerciario}"
                                FontSize="12" />
                         <Entry x:Name="TxtParticipantes"
-                               TextColor="White" />
+                               TextColor="{StaticResource TextoPrincipal}" />
 
                         <Label Text="Tipo"
-                               TextColor="#9299A3"
+                               TextColor="{StaticResource TextoTerciario}"
                                FontSize="12" />
                         <Entry x:Name="TxtTipo"
                                Placeholder="Discurso, Estudio..."
-                               TextColor="White" />
+                               TextColor="{StaticResource TextoPrincipal}" />
 
                     </VerticalStackLayout>
                 </Border>
@@ -71,7 +71,7 @@
                 <Button x:Name="BtnEliminar"
                         Text="Eliminar parte"
                         Clicked="BtnEliminar_Clicked"
-                        BackgroundColor="#3A2023"
+                        BackgroundColor="{StaticResource PeligroSuave}"
                         TextColor="#FFB7BC"
                         CornerRadius="10"
                         HeightRequest="48"
@@ -93,8 +93,8 @@
 
             <Button Grid.Column="1"
                     Text="Guardar"
-                    BackgroundColor="#2478B5"
-                    TextColor="White"
+                    BackgroundColor="{StaticResource AcentoFuerte}"
+                    TextColor="{StaticResource TextoPrincipal}"
                     FontAttributes="Bold"
                     Clicked="BtnGuardar_Clicked" />
 

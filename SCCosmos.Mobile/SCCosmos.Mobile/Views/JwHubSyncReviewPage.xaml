@@ -5,7 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     x:Class="SCCosmos.Mobile.Views.JwHubSyncReviewPage"
     Title="Revisión JW Hub"
-    BackgroundColor="#101216">
+    BackgroundColor="{StaticResource FondoPagina}">
 
     <Grid
         RowDefinitions="Auto,Auto,*,Auto"
@@ -23,14 +23,14 @@
 
             <Label
                 Text="Revisión de JW Hub"
-                TextColor="White"
+                TextColor="{StaticResource TextoPrincipal}"
                 FontSize="26"
                 FontAttributes="Bold"/>
 
             <Label
                 x:Name="LblEstado"
                 Text=""
-                TextColor="#9299A3"
+                TextColor="{StaticResource TextoTerciario}"
                 FontSize="13"/>
 
         </VerticalStackLayout>
@@ -59,7 +59,7 @@
                     HeightRequest="42"
                     Padding="14,7"
                     BackgroundColor="#6A5420"
-                    TextColor="White"
+                    TextColor="{StaticResource TextoPrincipal}"
                     FontAttributes="Bold"
                     CornerRadius="9"
                     Clicked="BtnConflictos_Clicked"/>
@@ -70,7 +70,7 @@
                     HeightRequest="42"
                     Padding="14,7"
                     BackgroundColor="#315A3A"
-                    TextColor="White"
+                    TextColor="{StaticResource TextoPrincipal}"
                     FontAttributes="Bold"
                     CornerRadius="9"
                     Clicked="BtnNuevos_Clicked"/>
@@ -81,7 +81,7 @@
                     HeightRequest="42"
                     Padding="14,7"
                     BackgroundColor="#6A3030"
-                    TextColor="White"
+                    TextColor="{StaticResource TextoPrincipal}"
                     FontAttributes="Bold"
                     CornerRadius="9"
                     Clicked="BtnBajas_Clicked"/>
@@ -92,7 +92,7 @@
                     HeightRequest="42"
                     Padding="14,7"
                     BackgroundColor="#2E5A6E"
-                    TextColor="White"
+                    TextColor="{StaticResource TextoPrincipal}"
                     FontAttributes="Bold"
                     CornerRadius="9"
                     Clicked="BtnTraslados_Clicked"/>
@@ -103,7 +103,7 @@
                     HeightRequest="42"
                     Padding="14,7"
                     BackgroundColor="#343A43"
-                    TextColor="White"
+                    TextColor="{StaticResource TextoPrincipal}"
                     FontAttributes="Bold"
                     CornerRadius="9"
                     Clicked="BtnIguales_Clicked"/>
@@ -126,7 +126,7 @@
                 x:Name="LblTituloLista"
                 Grid.Row="0"
                 Text="Resultados"
-                TextColor="White"
+                TextColor="{StaticResource TextoPrincipal}"
                 FontSize="18"
                 FontAttributes="Bold"/>
 
@@ -162,7 +162,7 @@
                                 <!-- Nombre mostrado por SCCosmos -->
                                 <Label
                                     Text="{Binding NombreVisual}"
-                                    TextColor="White"
+                                    TextColor="{StaticResource TextoPrincipal}"
                                     FontSize="17"
                                     FontAttributes="Bold"
                                     LineBreakMode="TailTruncation"/>
@@ -189,7 +189,7 @@
 
                                 <Label
                                     Text="{Binding Descripcion}"
-                                    TextColor="#A9AFB8"
+                                    TextColor="{StaticResource TextoSecundario}"
                                     FontSize="13"
                                     LineBreakMode="WordWrap"/>
 
@@ -219,8 +219,8 @@
                                         CommandParameter="{Binding .}"
                                         HeightRequest="40"
                                         Padding="16,6"
-                                        BackgroundColor="#2478B5"
-                                        TextColor="White"
+                                        BackgroundColor="{StaticResource AcentoFuerte}"
+                                        TextColor="{StaticResource TextoPrincipal}"
                                         FontAttributes="Bold"
                                         CornerRadius="8"
                                         Clicked="BtnResolverConflicto_Clicked"/>
@@ -234,7 +234,7 @@
                                         HeightRequest="40"
                                         Padding="14,6"
                                         BackgroundColor="#315A3A"
-                                        TextColor="White"
+                                        TextColor="{StaticResource TextoPrincipal}"
                                         FontAttributes="Bold"
                                         CornerRadius="8"
                                         Clicked="BtnAnadirNuevo_Clicked"/>
@@ -249,7 +249,7 @@
                                         HeightRequest="40"
                                         Padding="14,6"
                                         BackgroundColor="#6A3030"
-                                        TextColor="White"
+                                        TextColor="{StaticResource TextoPrincipal}"
                                         FontAttributes="Bold"
                                         CornerRadius="8"
                                         Clicked="BtnConfirmarBaja_Clicked"/>
@@ -263,7 +263,7 @@
                                         HeightRequest="40"
                                         Padding="14,6"
                                         BackgroundColor="#2E5A6E"
-                                        TextColor="White"
+                                        TextColor="{StaticResource TextoPrincipal}"
                                         FontAttributes="Bold"
                                         CornerRadius="8"
                                         Clicked="BtnConfirmarTraslado_Clicked"/>
@@ -275,7 +275,7 @@
                                         HeightRequest="40"
                                         Padding="12,6"
                                         BackgroundColor="#343A43"
-                                        TextColor="White"
+                                        TextColor="{StaticResource TextoPrincipal}"
                                         CornerRadius="8"
                                         Clicked="BtnNoEsTraslado_Clicked"/>
 
@@ -289,7 +289,7 @@
                                         HeightRequest="40"
                                         Padding="14,6"
                                         BackgroundColor="#343A43"
-                                        TextColor="White"
+                                        TextColor="{StaticResource TextoPrincipal}"
                                         CornerRadius="8"
                                         Clicked="BtnDescartar_Clicked"/>
 
@@ -323,7 +323,7 @@
                 Text="Cerrar"
                 HeightRequest="46"
                 BackgroundColor="#343A43"
-                TextColor="White"
+                TextColor="{StaticResource TextoPrincipal}"
                 CornerRadius="9"
                 Clicked="BtnCerrar_Clicked"/>
 
@@ -332,8 +332,8 @@
                 Grid.Column="1"
                 Text="Finalizar revisión"
                 HeightRequest="46"
-                BackgroundColor="#2478B5"
-                TextColor="White"
+                BackgroundColor="{StaticResource AcentoFuerte}"
+                TextColor="{StaticResource TextoPrincipal}"
                 FontAttributes="Bold"
                 CornerRadius="9"
                 Clicked="BtnFinalizar_Clicked"/>

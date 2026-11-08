@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Ciclo de visitas"
-    BackgroundColor="#101216"
+    BackgroundColor="{StaticResource FondoPagina}"
     Shell.NavBarIsVisible="False" NavigationPage.HasNavigationBar="False">
 
     <Grid RowDefinitions="Auto,Auto,Auto,*,Auto"
@@ -21,18 +21,18 @@
                 <Label Text="MATRIZ DE VISITAS"
                        FontSize="23"
                        FontAttributes="Bold"
-                       TextColor="White" />
+                       TextColor="{StaticResource TextoPrincipal}" />
 
                 <Label Text="Ciclo de 3 años · 6 ruedas"
                        FontSize="12"
-                       TextColor="#9EA4AE" />
+                       TextColor="{StaticResource TextoSecundario}" />
             </VerticalStackLayout>
 
             <Button Grid.Column="1"
                     Text="Cerrar"
                     Clicked="BtnCerrar_Clicked"
-                    BackgroundColor="#242830"
-                    TextColor="White"
+                    BackgroundColor="{StaticResource SuperficieAlta}"
+                    TextColor="{StaticResource TextoPrincipal}"
                     CornerRadius="9"
                     Padding="13,7"
                     VerticalOptions="Center" />
@@ -50,7 +50,7 @@
 
             <VerticalStackLayout Spacing="10">
                 <Label Text="Marca el candado para impedir que una congregación sea reemplazada al autocompletar."
-                       TextColor="#B6BBC2"
+                       TextColor="{StaticResource TextoSecundario}"
                        FontSize="12"
                        LineBreakMode="WordWrap" />
 
@@ -60,7 +60,7 @@
                     <Button Grid.Column="0"
                             Text="Limpiar futuras"
                             Clicked="BtnLimpiar_Clicked"
-                            BackgroundColor="#3A2023"
+                            BackgroundColor="{StaticResource PeligroSuave}"
                             TextColor="#FFB7BC"
                             CornerRadius="8"
                             FontSize="12"
@@ -70,7 +70,7 @@
                             Text="Auto-completar"
                             Clicked="BtnAutoGenerar_Clicked"
                             BackgroundColor="#0B6FC2"
-                            TextColor="White"
+                            TextColor="{StaticResource TextoPrincipal}"
                             CornerRadius="8"
                             FontAttributes="Bold"
                             FontSize="12"
@@ -146,14 +146,14 @@
 
                     <Label x:Name="LblPeriodoActual"
                            Text="Septiembre"
-                           TextColor="#9EA4AE"
+                           TextColor="{StaticResource TextoSecundario}"
                            FontSize="11" />
                 </VerticalStackLayout>
 
                 <Label x:Name="LblTotalFilas"
                        Grid.Column="1"
                        VerticalOptions="Center"
-                       TextColor="#9EA4AE"
+                       TextColor="{StaticResource TextoSecundario}"
                        FontSize="11" />
             </Grid>
         </VerticalStackLayout>
@@ -167,7 +167,7 @@
             <CollectionView.EmptyView>
                 <Label Text="No hay congregaciones disponibles."
                        Padding="20,40"
-                       TextColor="#9EA4AE"
+                       TextColor="{StaticResource TextoSecundario}"
                        HorizontalTextAlignment="Center" />
             </CollectionView.EmptyView>
 
@@ -207,9 +207,9 @@
                                     ItemsSource="{Binding Congregaciones}"
                                     SelectedItem="{Binding ValorActual, Mode=TwoWay}"
                                     Title="Seleccionar congregación"
-                                    TitleColor="#808791"
-                                    BackgroundColor="#1A1D22"
-                                    TextColor="White"
+                                    TitleColor="{StaticResource TextoTerciario}"
+                                    BackgroundColor="{StaticResource Superficie}"
+                                    TextColor="{StaticResource TextoPrincipal}"
                                     VerticalOptions="Center" />
 
                             <VerticalStackLayout Grid.Column="2"
@@ -217,11 +217,11 @@
                                                  VerticalOptions="Center"
                                                  HorizontalOptions="Center">
                                 <CheckBox IsChecked="{Binding BloqueadoActual, Mode=TwoWay}"
-                                          Color="#4BA3E3"
+                                          Color="{StaticResource Acento}"
                                           HorizontalOptions="Center" />
                                 <Label Text="Bloquear"
                                        FontSize="9"
-                                       TextColor="#9EA4AE"
+                                       TextColor="{StaticResource TextoSecundario}"
                                        HorizontalTextAlignment="Center" />
                             </VerticalStackLayout>
                         </Grid>
@@ -238,7 +238,7 @@
             <Label x:Name="LblEstado"
                    Text="Los cambios se guardan automáticamente."
                    FontSize="11"
-                   TextColor="#8D949D"
+                   TextColor="{StaticResource TextoTerciario}"
                    VerticalOptions="Center" />
 
             <Label x:Name="LblGuardado"
@@ -264,13 +264,13 @@
                 Spacing="12">
 
                 <ActivityIndicator IsRunning="True"
-                                   Color="#4BA3E3"
+                                   Color="{StaticResource Acento}"
                                    WidthRequest="42"
                                    HeightRequest="42" />
 
                 <Label x:Name="LblCargando"
                        Text="Cargando ciclo..."
-                       TextColor="White"
+                       TextColor="{StaticResource TextoPrincipal}"
                        FontAttributes="Bold"
                        HorizontalTextAlignment="Center" />
             </VerticalStackLayout>

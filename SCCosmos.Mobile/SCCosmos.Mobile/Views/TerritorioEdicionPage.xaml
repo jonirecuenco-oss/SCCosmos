@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Territorio"
-    BackgroundColor="#101216">
+    BackgroundColor="{StaticResource FondoPagina}">
 
     <Grid RowDefinitions="*,Auto">
 
@@ -26,32 +26,32 @@
                                CharacterSpacing="1" />
 
                         <Label x:Name="LblNombre"
-                               TextColor="White"
+                               TextColor="{StaticResource TextoPrincipal}"
                                FontSize="17"
                                FontAttributes="Bold" />
 
                         <Label x:Name="LblEstado"
-                               TextColor="#AEB4BC"
+                               TextColor="{StaticResource TextoSecundario}"
                                FontSize="13" />
 
                         <Label Text="Vincular a publicador"
-                               TextColor="#9299A3"
+                               TextColor="{StaticResource TextoTerciario}"
                                FontSize="12"
                                Margin="0,6,0,0" />
 
                         <Picker x:Name="PickerPersona"
                                 Title="Selecciona un publicador"
-                                TextColor="White"
+                                TextColor="{StaticResource TextoPrincipal}"
                                 ItemDisplayBinding="{Binding NombreMostrarTabla}"
                                 SelectedIndexChanged="PickerPersona_SelectedIndexChanged" />
 
                         <Label Text="Nombre vinculado"
-                               TextColor="#9299A3"
+                               TextColor="{StaticResource TextoTerciario}"
                                FontSize="12" />
 
                         <Entry x:Name="TxtVinculado"
                                Placeholder="Nombre a vincular (o vacío para quitar)"
-                               TextColor="White" />
+                               TextColor="{StaticResource TextoPrincipal}" />
 
                     </VerticalStackLayout>
                 </Border>
@@ -59,7 +59,7 @@
                 <Button x:Name="BtnEliminar"
                         Text="Eliminar registro de territorio"
                         Clicked="BtnEliminar_Clicked"
-                        BackgroundColor="#3A2023"
+                        BackgroundColor="{StaticResource PeligroSuave}"
                         TextColor="#FFB7BC"
                         CornerRadius="10"
                         HeightRequest="48" />
@@ -80,8 +80,8 @@
 
             <Button Grid.Column="1"
                     Text="Guardar"
-                    BackgroundColor="#2478B5"
-                    TextColor="White"
+                    BackgroundColor="{StaticResource AcentoFuerte}"
+                    TextColor="{StaticResource TextoPrincipal}"
                     FontAttributes="Bold"
                     Clicked="BtnGuardar_Clicked" />
 

@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Clase"
-    BackgroundColor="#101216">
+    BackgroundColor="{StaticResource FondoPagina}">
 
     <Grid RowDefinitions="*,Auto">
 
@@ -25,7 +25,7 @@
                         <Label x:Name="LblSemana"
                                FontSize="20"
                                FontAttributes="Bold"
-                               TextColor="White" />
+                               TextColor="{StaticResource TextoPrincipal}" />
 
                         <Label x:Name="LblInfo"
                                FontSize="13"
@@ -127,7 +127,7 @@
                                                          Spacing="2">
                                         <Label Text="{Binding Nombre}"
                                                FontSize="14.5"
-                                               TextColor="White" />
+                                               TextColor="{StaticResource TextoPrincipal}" />
                                         <Label Text="{Binding Detalle}"
                                                FontSize="12"
                                                TextColor="#8B94A0" />
@@ -139,7 +139,7 @@
                                             Clicked="BtnQuitarAlumno_Clicked"
                                             Padding="10,4"
                                             FontSize="12"
-                                            BackgroundColor="#3A1F27"
+                                            BackgroundColor="{StaticResource PeligroSuave}"
                                             TextColor="#F2B8C6"
                                             CornerRadius="8"
                                             VerticalOptions="Center" />

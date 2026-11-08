@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Revisar S-21"
-    BackgroundColor="#101216"
+    BackgroundColor="{StaticResource FondoPagina}"
     Shell.NavBarIsVisible="False" NavigationPage.HasNavigationBar="False">
 
     <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
@@ -19,19 +19,19 @@
                 <Label Text="REVISAR IMPORTACIÓN"
                        FontSize="22"
                        FontAttributes="Bold"
-                       TextColor="White" />
+                       TextColor="{StaticResource TextoPrincipal}" />
 
                 <Label x:Name="LblSubtitulo"
                        FontSize="12"
-                       TextColor="#9EA4AE"
+                       TextColor="{StaticResource TextoSecundario}"
                        LineBreakMode="TailTruncation" />
             </VerticalStackLayout>
 
             <Button Grid.Column="1"
                     Text="Cancelar"
                     Clicked="BtnCancelar_Clicked"
-                    BackgroundColor="#242830"
-                    TextColor="White"
+                    BackgroundColor="{StaticResource SuperficieAlta}"
+                    TextColor="{StaticResource TextoPrincipal}"
                     CornerRadius="9"
                     Padding="12,7"
                     VerticalOptions="Center" />
@@ -63,7 +63,7 @@
                            FontAttributes="Bold" />
                     <Label x:Name="TxtNumConflictos"
                            Text="0"
-                           TextColor="White"
+                           TextColor="{StaticResource TextoPrincipal}"
                            FontSize="22"
                            FontAttributes="Bold" />
                 </VerticalStackLayout>
@@ -87,7 +87,7 @@
                            FontAttributes="Bold" />
                     <Label x:Name="TxtNumNuevos"
                            Text="0"
-                           TextColor="White"
+                           TextColor="{StaticResource TextoPrincipal}"
                            FontSize="22"
                            FontAttributes="Bold" />
                 </VerticalStackLayout>
@@ -111,7 +111,7 @@
                            FontAttributes="Bold" />
                     <Label x:Name="TxtNumBajas"
                            Text="0"
-                           TextColor="White"
+                           TextColor="{StaticResource TextoPrincipal}"
                            FontSize="22"
                            FontAttributes="Bold" />
                 </VerticalStackLayout>
@@ -119,8 +119,8 @@
 
             <Border Grid.Row="1"
                     Grid.Column="1"
-                    BackgroundColor="#1B1F24"
-                    Stroke="#3A414A"
+                    BackgroundColor="{StaticResource SuperficieAlta}"
+                    Stroke="{StaticResource Borde}"
                     Padding="10">
                 <Border.StrokeShape>
                     <RoundRectangle CornerRadius="10" />
@@ -130,12 +130,12 @@
                 </Border.GestureRecognizers>
                 <VerticalStackLayout Spacing="1">
                     <Label Text="✓ SIN CAMBIOS"
-                           TextColor="#AEB4BC"
+                           TextColor="{StaticResource TextoSecundario}"
                            FontSize="10"
                            FontAttributes="Bold" />
                     <Label x:Name="TxtNumIguales"
                            Text="0"
-                           TextColor="White"
+                           TextColor="{StaticResource TextoPrincipal}"
                            FontSize="22"
                            FontAttributes="Bold" />
                 </VerticalStackLayout>
@@ -148,13 +148,13 @@
               Padding="16,7,16,7">
             <Label x:Name="LblTituloLista"
                    Text="Conflictos"
-                   TextColor="White"
+                   TextColor="{StaticResource TextoPrincipal}"
                    FontSize="16"
                    FontAttributes="Bold" />
 
             <Label x:Name="LblEstado"
                    Grid.Column="1"
-                   TextColor="#8F969F"
+                   TextColor="{StaticResource TextoTerciario}"
                    FontSize="11"
                    VerticalOptions="Center" />
         </Grid>
@@ -170,7 +170,7 @@
                                      Spacing="6"
                                      HorizontalOptions="Center">
                     <Label Text="No hay elementos en esta categoría."
-                           TextColor="#8F969F"
+                           TextColor="{StaticResource TextoTerciario}"
                            HorizontalTextAlignment="Center" />
                 </VerticalStackLayout>
             </CollectionView.EmptyView>
@@ -200,7 +200,7 @@
                                        FontAttributes="Bold" />
 
                                 <Label Text="{Binding NombreVisual}"
-                                       TextColor="White"
+                                       TextColor="{StaticResource TextoPrincipal}"
                                        FontSize="14"
                                        FontAttributes="Bold"
                                        LineBreakMode="TailTruncation" />
@@ -213,7 +213,7 @@
                                     Clicked="BtnAccion_Clicked"
                                     CommandParameter="{Binding .}"
                                     IsVisible="{Binding TieneAccion}"
-                                    BackgroundColor="#163553"
+                                    BackgroundColor="{StaticResource AcentoSuave}"
                                     TextColor="#C5E4FF"
                                     CornerRadius="8"
                                     Padding="11,6"
@@ -223,7 +223,7 @@
                             <Label Grid.Row="1"
                                    Grid.Column="0"
                                    Text="{Binding Descripcion}"
-                                   TextColor="#AEB4BC"
+                                   TextColor="{StaticResource TextoSecundario}"
                                    FontSize="11"
                                    LineBreakMode="WordWrap" />
 
@@ -247,8 +247,8 @@
 
             <Button Text="Cancelar importación"
                     Clicked="BtnCancelar_Clicked"
-                    BackgroundColor="#242830"
-                    TextColor="White"
+                    BackgroundColor="{StaticResource SuperficieAlta}"
+                    TextColor="{StaticResource TextoPrincipal}"
                     CornerRadius="10"
                     HeightRequest="46" />
 
@@ -257,7 +257,7 @@
                     Text="Finalizar"
                     Clicked="BtnFinalizar_Clicked"
                     BackgroundColor="#0B6FC2"
-                    TextColor="White"
+                    TextColor="{StaticResource TextoPrincipal}"
                     FontAttributes="Bold"
                     CornerRadius="10"
                     HeightRequest="46" />
@@ -272,11 +272,11 @@
                 VerticalOptions="Center"
                 Spacing="12">
                 <ActivityIndicator IsRunning="True"
-                                   Color="#4BA3E3"
+                                   Color="{StaticResource Acento}"
                                    WidthRequest="42"
                                    HeightRequest="42" />
                 <Label Text="Guardando importación..."
-                       TextColor="White"
+                       TextColor="{StaticResource TextoPrincipal}"
                        FontAttributes="Bold" />
             </VerticalStackLayout>
         </Grid>

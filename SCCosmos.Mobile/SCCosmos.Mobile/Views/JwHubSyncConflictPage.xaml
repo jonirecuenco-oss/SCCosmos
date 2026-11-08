@@ -5,7 +5,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Resolver conflicto"
-    BackgroundColor="#101216">
+    BackgroundColor="{StaticResource FondoPagina}">
 
     <Grid
         Padding="16"
@@ -20,7 +20,7 @@
                 Text="Resolver conflicto"
                 FontSize="25"
                 FontAttributes="Bold"
-                TextColor="White"/>
+                TextColor="{StaticResource TextoPrincipal}"/>
 
             <!-- FOTOGRAFÍA DE LA PERSONA (una sola vez, arriba) -->
             <Grid
@@ -74,7 +74,7 @@
                     <Label
                         Text="Selecciona qué valor quieres conservar en cada campo."
                         FontSize="13"
-                        TextColor="#A5ABB4"
+                        TextColor="{StaticResource TextoSecundario}"
                         LineBreakMode="WordWrap"/>
 
                 </VerticalStackLayout>
@@ -97,12 +97,12 @@
                 Text="Fotografía"
                 FontSize="16"
                 FontAttributes="Bold"
-                TextColor="White"/>
+                TextColor="{StaticResource TextoPrincipal}"/>
 
             <Label
                 Text="La fotografía de JW Hub es distinta de la que hay en la base de datos. Toca la que quieras conservar."
                 FontSize="13"
-                TextColor="#A5ABB4"
+                TextColor="{StaticResource TextoSecundario}"
                 LineBreakMode="WordWrap"/>
 
             <Grid
@@ -113,7 +113,7 @@
                     x:Name="FotoBdBorder"
                     Grid.Column="0"
                     Padding="10"
-                    BackgroundColor="#141D25"
+                    BackgroundColor="{StaticResource Superficie}"
                     Stroke="#2D526B"
                     StrokeThickness="1">
 
@@ -263,7 +263,7 @@
 
                     <Label
                         Text="Ya no se detectan campos en conflicto."
-                        TextColor="#AAAAAA"
+                        TextColor="{StaticResource TextoSecundario}"
                         HorizontalTextAlignment="Center"/>
 
                 </VerticalStackLayout>
@@ -278,7 +278,7 @@
                         Margin="0,0,0,12"
                         Padding="13"
                         BackgroundColor="{StaticResource Superficie}"
-                        Stroke="#343B45"
+                        Stroke="{StaticResource Borde}"
                         StrokeThickness="1">
 
                         <Border.StrokeShape>
@@ -292,7 +292,7 @@
                                 Text="{Binding Nombre}"
                                 FontSize="16"
                                 FontAttributes="Bold"
-                                TextColor="White"/>
+                                TextColor="{StaticResource TextoPrincipal}"/>
 
                             <Grid
                                 ColumnDefinitions="*,*"
@@ -301,7 +301,7 @@
                                 <Border
                                     Grid.Column="0"
                                     Padding="10"
-                                    BackgroundColor="#141D25"
+                                    BackgroundColor="{StaticResource Superficie}"
                                     Stroke="#2D526B"
                                     StrokeThickness="1">
 
@@ -322,7 +322,7 @@
                                             IsVisible="{Binding EsTexto}"
                                             Text="{Binding ValorBdVisual}"
                                             FontSize="13"
-                                            TextColor="White"
+                                            TextColor="{StaticResource TextoPrincipal}"
                                             LineBreakMode="WordWrap"/>
 
                                     </VerticalStackLayout>
@@ -353,7 +353,7 @@
                                             IsVisible="{Binding EsTexto}"
                                             Text="{Binding ValorHubVisual}"
                                             FontSize="13"
-                                            TextColor="White"
+                                            TextColor="{StaticResource TextoPrincipal}"
                                             LineBreakMode="WordWrap"/>
 
                                     </VerticalStackLayout>
@@ -369,7 +369,7 @@
                                 <Label
                                     Grid.Column="0"
                                     Text="Conservar:"
-                                    TextColor="#A5ABB4"
+                                    TextColor="{StaticResource TextoSecundario}"
                                     FontSize="13"
                                     VerticalOptions="Center"/>
 
@@ -377,10 +377,10 @@
                                     Grid.Column="1"
                                     ItemsSource="{Binding Opciones}"
                                     SelectedItem="{Binding Seleccion, Mode=TwoWay}"
-                                    TextColor="White"
-                                    BackgroundColor="#252B33"
+                                    TextColor="{StaticResource TextoPrincipal}"
+                                    BackgroundColor="{StaticResource SuperficieAlta}"
                                     Title="Selecciona un valor"
-                                    TitleColor="#A5ABB4"
+                                    TitleColor="{StaticResource TextoSecundario}"
                                     HorizontalOptions="Fill"/>
 
                             </Grid>
@@ -405,7 +405,7 @@
                 Text="Cancelar"
                 HeightRequest="48"
                 BackgroundColor="#353A42"
-                TextColor="White"
+                TextColor="{StaticResource TextoPrincipal}"
                 CornerRadius="9"
                 Clicked="BtnCancelar_Clicked"/>
 
@@ -414,8 +414,8 @@
                 Grid.Column="1"
                 Text="Guardar resolución"
                 HeightRequest="48"
-                BackgroundColor="#2478B5"
-                TextColor="White"
+                BackgroundColor="{StaticResource AcentoFuerte}"
+                TextColor="{StaticResource TextoPrincipal}"
                 FontAttributes="Bold"
                 CornerRadius="9"
                 Clicked="BtnGuardar_Clicked"/>

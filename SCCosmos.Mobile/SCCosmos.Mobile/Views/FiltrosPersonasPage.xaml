@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     x:Class="SCCosmos.Mobile.Views.FiltrosPersonasPage"
-    BackgroundColor="#101216">
+    BackgroundColor="{StaticResource FondoPagina}">
 
     <Grid RowDefinitions="Auto,*,Auto">
 
@@ -19,14 +19,14 @@
             <Button
                 Text="Cancelar"
                 BackgroundColor="Transparent"
-                TextColor="#AAB0B9"
+                TextColor="{StaticResource TextoSecundario}"
                 Padding="5"
                 Clicked="BtnCancelar_Click"/>
 
             <Label
                 Grid.Column="1"
                 Text="Filtros"
-                TextColor="White"
+                TextColor="{StaticResource TextoPrincipal}"
                 FontSize="20"
                 FontAttributes="Bold"
                 HorizontalOptions="Center"
@@ -56,16 +56,16 @@
 
                     <Label
                         Text="Nombramiento"
-                        TextColor="#9299A3"
+                        TextColor="{StaticResource TextoTerciario}"
                         FontSize="12"
                         FontAttributes="Bold"/>
 
                     <Picker
                         x:Name="PickerNombramiento"
                         Title="Todos"
-                        TextColor="White"
-                        TitleColor="#777E89"
-                        BackgroundColor="#1A1E24"/>
+                        TextColor="{StaticResource TextoPrincipal}"
+                        TitleColor="{StaticResource TextoTerciario}"
+                        BackgroundColor="{StaticResource SuperficieAlta}"/>
 
                 </VerticalStackLayout>
 
@@ -81,16 +81,16 @@
 
                         <Label
                             Text="Sexo"
-                            TextColor="#9299A3"
+                            TextColor="{StaticResource TextoTerciario}"
                             FontSize="12"
                             FontAttributes="Bold"/>
 
                         <Picker
                             x:Name="PickerSexo"
                             Title="Todos"
-                            TextColor="White"
-                            TitleColor="#777E89"
-                            BackgroundColor="#1A1E24"/>
+                            TextColor="{StaticResource TextoPrincipal}"
+                            TitleColor="{StaticResource TextoTerciario}"
+                            BackgroundColor="{StaticResource SuperficieAlta}"/>
 
                     </VerticalStackLayout>
 
@@ -100,16 +100,16 @@
 
                         <Label
                             Text="Esperanza"
-                            TextColor="#9299A3"
+                            TextColor="{StaticResource TextoTerciario}"
                             FontSize="12"
                             FontAttributes="Bold"/>
 
                         <Picker
                             x:Name="PickerEsperanza"
                             Title="Todas"
-                            TextColor="White"
-                            TitleColor="#777E89"
-                            BackgroundColor="#1A1E24"/>
+                            TextColor="{StaticResource TextoPrincipal}"
+                            TitleColor="{StaticResource TextoTerciario}"
+                            BackgroundColor="{StaticResource SuperficieAlta}"/>
 
                     </VerticalStackLayout>
 
@@ -121,13 +121,13 @@
 
                     <Label
                         Text="Congregaciones"
-                        TextColor="White"
+                        TextColor="{StaticResource TextoPrincipal}"
                         FontSize="16"
                         FontAttributes="Bold"/>
 
                     <Label
                         Text="Puedes seleccionar varias."
-                        TextColor="#777E89"
+                        TextColor="{StaticResource TextoTerciario}"
                         FontSize="12"/>
 
                     <VerticalStackLayout
@@ -142,7 +142,7 @@
 
                     <Label
                         Text="Servicio"
-                        TextColor="White"
+                        TextColor="{StaticResource TextoPrincipal}"
                         FontSize="16"
                         FontAttributes="Bold"/>
 
@@ -158,7 +158,7 @@
 
                     <Label
                         Text="Solicitudes"
-                        TextColor="White"
+                        TextColor="{StaticResource TextoPrincipal}"
                         FontSize="16"
                         FontAttributes="Bold"/>
 
@@ -174,7 +174,7 @@
 
                     <Label
                         Text="Privilegios"
-                        TextColor="White"
+                        TextColor="{StaticResource TextoPrincipal}"
                         FontSize="16"
                         FontAttributes="Bold"/>
 
@@ -198,8 +198,8 @@
             <Button
                 Text="Aplicar filtros"
                 HeightRequest="50"
-                BackgroundColor="#2478B5"
-                TextColor="White"
+                BackgroundColor="{StaticResource AcentoFuerte}"
+                TextColor="{StaticResource TextoPrincipal}"
                 FontAttributes="Bold"
                 CornerRadius="12"
                 Clicked="BtnAplicar_Click"/>

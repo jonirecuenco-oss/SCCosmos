@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Visita"
-    BackgroundColor="#101216"
+    BackgroundColor="{StaticResource FondoPagina}"
     Shell.NavBarIsVisible="False" NavigationPage.HasNavigationBar="False">
 
     <Grid RowDefinitions="Auto,Auto,Auto,*">
@@ -34,7 +34,7 @@
                     VerticalOptions="Center"
                     WidthRequest="42"
                     HeightRequest="42"
-                    BackgroundColor="#1A1D22"
+                    BackgroundColor="{StaticResource Superficie}"
                     StrokeThickness="0">
                 <Border.StrokeShape>
                     <RoundRectangle CornerRadius="10" />
@@ -43,7 +43,7 @@
                     <TapGestureRecognizer Tapped="Volver_Tapped" />
                 </Border.GestureRecognizers>
                 <Label Text="←"
-                       TextColor="White"
+                       TextColor="{StaticResource TextoPrincipal}"
                        FontSize="22"
                        HorizontalTextAlignment="Center"
                        VerticalTextAlignment="Center" />
@@ -71,7 +71,7 @@
                         Clicked="Tab_Clicked"
                         CommandParameter="ministerio"
                         BackgroundColor="#1B4E7A"
-                        TextColor="White"
+                        TextColor="{StaticResource TextoPrincipal}"
                         FontSize="12.5"
                         FontAttributes="Bold"
                         CornerRadius="9"
@@ -81,7 +81,7 @@
                         Text="Mapa"
                         Clicked="Tab_Clicked"
                         CommandParameter="mapa"
-                        BackgroundColor="#1A1D22"
+                        BackgroundColor="{StaticResource Superficie}"
                         TextColor="#9CC3F5"
                         FontSize="12.5"
                         CornerRadius="9"
@@ -91,7 +91,7 @@
                         Text="Programa"
                         Clicked="Tab_Clicked"
                         CommandParameter="programa"
-                        BackgroundColor="#1A1D22"
+                        BackgroundColor="{StaticResource Superficie}"
                         TextColor="#9CC3F5"
                         FontSize="12.5"
                         CornerRadius="9"
@@ -101,7 +101,7 @@
                         Text="Notas"
                         Clicked="Tab_Clicked"
                         CommandParameter="notas"
-                        BackgroundColor="#1A1D22"
+                        BackgroundColor="{StaticResource Superficie}"
                         TextColor="#9CC3F5"
                         FontSize="12.5"
                         CornerRadius="9"
@@ -111,7 +111,7 @@
                         Text="Información"
                         Clicked="Tab_Clicked"
                         CommandParameter="informacion"
-                        BackgroundColor="#1A1D22"
+                        BackgroundColor="{StaticResource Superficie}"
                         TextColor="#9CC3F5"
                         FontSize="12.5"
                         CornerRadius="9"
@@ -121,7 +121,7 @@
                         Text="Grupos"
                         Clicked="Tab_Clicked"
                         CommandParameter="grupos"
-                        BackgroundColor="#1A1D22"
+                        BackgroundColor="{StaticResource Superficie}"
                         TextColor="#9CC3F5"
                         FontSize="12.5"
                         CornerRadius="9"
@@ -131,7 +131,7 @@
                         Text="Territorios"
                         Clicked="Tab_Clicked"
                         CommandParameter="territorios"
-                        BackgroundColor="#1A1D22"
+                        BackgroundColor="{StaticResource Superficie}"
                         TextColor="#9CC3F5"
                         FontSize="12.5"
                         CornerRadius="9"
@@ -141,7 +141,7 @@
                         Text="Contabilidad"
                         Clicked="Tab_Clicked"
                         CommandParameter="contabilidad"
-                        BackgroundColor="#1A1D22"
+                        BackgroundColor="{StaticResource Superficie}"
                         TextColor="#9CC3F5"
                         FontSize="12.5"
                         CornerRadius="9"
@@ -151,7 +151,7 @@
                         Text="S-303"
                         Clicked="Tab_Clicked"
                         CommandParameter="s303"
-                        BackgroundColor="#1A1D22"
+                        BackgroundColor="{StaticResource Superficie}"
                         TextColor="#9CC3F5"
                         FontSize="12.5"
                         CornerRadius="9"
@@ -180,24 +180,24 @@
                                FontAttributes="Bold" />
 
                         <Label x:Name="LblReuniones"
-                               TextColor="#B6BBC2"
+                               TextColor="{StaticResource TextoSecundario}"
                                FontSize="12"
                                IsVisible="False" />
 
                         <Label x:Name="LblEmail"
-                               TextColor="#B6BBC2"
+                               TextColor="{StaticResource TextoSecundario}"
                                FontSize="12"
                                IsVisible="False" />
 
                         <Label x:Name="LblEmailAV"
-                               TextColor="#B6BBC2"
+                               TextColor="{StaticResource TextoSecundario}"
                                FontSize="12"
                                IsVisible="False" />
 
                         <Button x:Name="BtnMapaSalon"
                                 Text="Ver Salón del Reino en el mapa"
                                 Clicked="BtnMapaSalon_Clicked"
-                                BackgroundColor="#163553"
+                                BackgroundColor="{StaticResource AcentoSuave}"
                                 TextColor="#B9DEFF"
                                 CornerRadius="9"
                                 HeightRequest="42"
@@ -219,7 +219,7 @@
                                      Spacing="12">
 
                 <Label Text="Resumen de la congregación"
-                       TextColor="White"
+                       TextColor="{StaticResource TextoPrincipal}"
                        FontAttributes="Bold"
                        FontSize="17"
                        Margin="0,5,0,0" />
@@ -239,11 +239,11 @@
                         </Border.StrokeShape>
                         <VerticalStackLayout>
                             <Label Text="Publicadores"
-                                   TextColor="#9EA4AE"
+                                   TextColor="{StaticResource TextoSecundario}"
                                    FontSize="11" />
                             <Label x:Name="LblPublicadores"
                                    Text="0"
-                                   TextColor="White"
+                                   TextColor="{StaticResource TextoPrincipal}"
                                    FontSize="24"
                                    FontAttributes="Bold" />
                         </VerticalStackLayout>
@@ -259,11 +259,11 @@
                         </Border.StrokeShape>
                         <VerticalStackLayout>
                             <Label Text="Media de edad"
-                                   TextColor="#9EA4AE"
+                                   TextColor="{StaticResource TextoSecundario}"
                                    FontSize="11" />
                             <Label x:Name="LblEdad"
                                    Text="0"
-                                   TextColor="White"
+                                   TextColor="{StaticResource TextoPrincipal}"
                                    FontSize="24"
                                    FontAttributes="Bold" />
                         </VerticalStackLayout>
@@ -279,11 +279,11 @@
                         </Border.StrokeShape>
                         <VerticalStackLayout>
                             <Label Text="Ancianos / SM"
-                                   TextColor="#9EA4AE"
+                                   TextColor="{StaticResource TextoSecundario}"
                                    FontSize="11" />
                             <Label x:Name="LblNombrados"
                                    Text="0 / 0"
-                                   TextColor="White"
+                                   TextColor="{StaticResource TextoPrincipal}"
                                    FontSize="20"
                                    FontAttributes="Bold" />
                         </VerticalStackLayout>
@@ -299,7 +299,7 @@
                         </Border.StrokeShape>
                         <VerticalStackLayout>
                             <Label Text="PR / Especiales"
-                                   TextColor="#9EA4AE"
+                                   TextColor="{StaticResource TextoSecundario}"
                                    FontSize="11" />
                             <Label x:Name="LblPrecursores"
                                    Text="0 / 0"
@@ -319,11 +319,11 @@
                         </Border.StrokeShape>
                         <VerticalStackLayout>
                             <Label Text="Hombres / Mujeres"
-                                   TextColor="#9EA4AE"
+                                   TextColor="{StaticResource TextoSecundario}"
                                    FontSize="11" />
                             <Label x:Name="LblSexo"
                                    Text="0 / 0"
-                                   TextColor="White"
+                                   TextColor="{StaticResource TextoPrincipal}"
                                    FontSize="20"
                                    FontAttributes="Bold" />
                         </VerticalStackLayout>
@@ -339,11 +339,11 @@
                         </Border.StrokeShape>
                         <VerticalStackLayout>
                             <Label Text="No bautizados"
-                                   TextColor="#9EA4AE"
+                                   TextColor="{StaticResource TextoSecundario}"
                                    FontSize="11" />
                             <Label x:Name="LblNoBautizados"
                                    Text="0"
-                                   TextColor="White"
+                                   TextColor="{StaticResource TextoPrincipal}"
                                    FontSize="20"
                                    FontAttributes="Bold" />
                         </VerticalStackLayout>
@@ -357,7 +357,7 @@
                                      Spacing="12">
 
                 <Label Text="Grupos de predicación"
-                       TextColor="White"
+                       TextColor="{StaticResource TextoPrincipal}"
                        FontAttributes="Bold"
                        FontSize="17"
                        Margin="0,6,0,0" />
@@ -388,16 +388,16 @@
                                           RowDefinitions="Auto,Auto,Auto,Auto"
                                           RowSpacing="4">
                                         <Label Text="Publicadores"
-                                               TextColor="#B6BBC2"
+                                               TextColor="{StaticResource TextoSecundario}"
                                                FontSize="12" />
                                         <Label Grid.Column="1"
                                                Text="{Binding Publicadores}"
-                                               TextColor="White"
+                                               TextColor="{StaticResource TextoPrincipal}"
                                                FontAttributes="Bold" />
 
                                         <Label Grid.Row="1"
                                                Text="Precursores / misioneros"
-                                               TextColor="#B6BBC2"
+                                               TextColor="{StaticResource TextoSecundario}"
                                                FontSize="12" />
                                         <Label Grid.Row="1"
                                                Grid.Column="1"
@@ -407,7 +407,7 @@
 
                                         <Label Grid.Row="2"
                                                Text="Ancianos"
-                                               TextColor="#B6BBC2"
+                                               TextColor="{StaticResource TextoSecundario}"
                                                FontSize="12" />
                                         <Label Grid.Row="2"
                                                Grid.Column="1"
@@ -417,7 +417,7 @@
 
                                         <Label Grid.Row="3"
                                                Text="Siervos ministeriales"
-                                               TextColor="#B6BBC2"
+                                               TextColor="{StaticResource TextoSecundario}"
                                                FontSize="12" />
                                         <Label Grid.Row="3"
                                                Grid.Column="1"
@@ -452,8 +452,8 @@
                     <Picker x:Name="PickerGrupo"
                             Grid.Column="0"
                             SelectedIndexChanged="PickerGrupo_SelectedIndexChanged"
-                            BackgroundColor="#1A1D22"
-                            TextColor="White"
+                            BackgroundColor="{StaticResource Superficie}"
+                            TextColor="{StaticResource TextoPrincipal}"
                             HorizontalOptions="Start"
                             WidthRequest="150"
                             Title="Grupo" />
@@ -464,14 +464,14 @@
                                            VerticalOptions="Center">
                         <Button Text="‹"
                                 Clicked="BtnMesAntMinisterio_Clicked"
-                                BackgroundColor="#242830"
-                                TextColor="White"
+                                BackgroundColor="{StaticResource SuperficieAlta}"
+                                TextColor="{StaticResource TextoPrincipal}"
                                 WidthRequest="34"
                                 HeightRequest="34"
                                 Padding="0" />
 
                         <Label x:Name="LblMesMinisterio"
-                               TextColor="White"
+                               TextColor="{StaticResource TextoPrincipal}"
                                FontAttributes="Bold"
                                FontSize="13"
                                WidthRequest="104"
@@ -480,8 +480,8 @@
 
                         <Button Text="›"
                                 Clicked="BtnMesSigMinisterio_Clicked"
-                                BackgroundColor="#242830"
-                                TextColor="White"
+                                BackgroundColor="{StaticResource SuperficieAlta}"
+                                TextColor="{StaticResource TextoPrincipal}"
                                 WidthRequest="34"
                                 HeightRequest="34"
                                 Padding="0" />
@@ -520,7 +520,7 @@
 
                                         <Border WidthRequest="50"
                                                 HeightRequest="50"
-                                                BackgroundColor="#242830"
+                                                BackgroundColor="{StaticResource SuperficieAlta}"
                                                 StrokeThickness="0">
                                             <Border.StrokeShape>
                                                 <RoundRectangle CornerRadius="25" />
@@ -547,7 +547,7 @@
                                               ColumnSpacing="4">
 
                                             <Label Text="{Binding NombreVisual}"
-                                                   TextColor="White"
+                                                   TextColor="{StaticResource TextoPrincipal}"
                                                    FontAttributes="Bold"
                                                    FontSize="14.5"
                                                    LineBreakMode="TailTruncation"
@@ -612,7 +612,7 @@
                                                 <TapGestureRecognizer CommandParameter="{Binding Actividad1}"
                                                                       Tapped="ActividadMes_Tapped" />
                                             </Border.GestureRecognizers>
-                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><Label Text="{Binding Actividad1.Mes}" TextColor="#9EA4AE" FontSize="9" HorizontalOptions="Center" VerticalTextAlignment="Center"/><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad1.Valor}" TextColor="{Binding Actividad1.TextoColor}" FontSize="{Binding Actividad1.ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad1.TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad1.Acumulado}" IsVisible="{Binding Actividad1.MostrarAcumulado}" TextColor="{Binding Actividad1.AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
+                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><Label Text="{Binding Actividad1.Mes}" TextColor="{StaticResource TextoSecundario}" FontSize="9" HorizontalOptions="Center" VerticalTextAlignment="Center"/><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad1.Valor}" TextColor="{Binding Actividad1.TextoColor}" FontSize="{Binding Actividad1.ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad1.TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad1.Acumulado}" IsVisible="{Binding Actividad1.MostrarAcumulado}" TextColor="{Binding Actividad1.AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
                                         </Border>
 
                                         <Border Grid.Column="1"
@@ -626,7 +626,7 @@
                                                 <TapGestureRecognizer CommandParameter="{Binding Actividad2}"
                                                                       Tapped="ActividadMes_Tapped" />
                                             </Border.GestureRecognizers>
-                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><Label Text="{Binding Actividad2.Mes}" TextColor="#9EA4AE" FontSize="9" HorizontalOptions="Center" VerticalTextAlignment="Center"/><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad2.Valor}" TextColor="{Binding Actividad2.TextoColor}" FontSize="{Binding Actividad2.ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad2.TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad2.Acumulado}" IsVisible="{Binding Actividad2.MostrarAcumulado}" TextColor="{Binding Actividad2.AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
+                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><Label Text="{Binding Actividad2.Mes}" TextColor="{StaticResource TextoSecundario}" FontSize="9" HorizontalOptions="Center" VerticalTextAlignment="Center"/><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad2.Valor}" TextColor="{Binding Actividad2.TextoColor}" FontSize="{Binding Actividad2.ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad2.TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad2.Acumulado}" IsVisible="{Binding Actividad2.MostrarAcumulado}" TextColor="{Binding Actividad2.AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
                                         </Border>
 
                                         <Border Grid.Column="2"
@@ -640,7 +640,7 @@
                                                 <TapGestureRecognizer CommandParameter="{Binding Actividad3}"
                                                                       Tapped="ActividadMes_Tapped" />
                                             </Border.GestureRecognizers>
-                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><Label Text="{Binding Actividad3.Mes}" TextColor="#9EA4AE" FontSize="9" HorizontalOptions="Center" VerticalTextAlignment="Center"/><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad3.Valor}" TextColor="{Binding Actividad3.TextoColor}" FontSize="{Binding Actividad3.ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad3.TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad3.Acumulado}" IsVisible="{Binding Actividad3.MostrarAcumulado}" TextColor="{Binding Actividad3.AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
+                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><Label Text="{Binding Actividad3.Mes}" TextColor="{StaticResource TextoSecundario}" FontSize="9" HorizontalOptions="Center" VerticalTextAlignment="Center"/><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad3.Valor}" TextColor="{Binding Actividad3.TextoColor}" FontSize="{Binding Actividad3.ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad3.TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad3.Acumulado}" IsVisible="{Binding Actividad3.MostrarAcumulado}" TextColor="{Binding Actividad3.AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
                                         </Border>
 
                                         <Border Grid.Column="3"
@@ -654,7 +654,7 @@
                                                 <TapGestureRecognizer CommandParameter="{Binding Actividad4}"
                                                                       Tapped="ActividadMes_Tapped" />
                                             </Border.GestureRecognizers>
-                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><Label Text="{Binding Actividad4.Mes}" TextColor="#9EA4AE" FontSize="9" HorizontalOptions="Center" VerticalTextAlignment="Center"/><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad4.Valor}" TextColor="{Binding Actividad4.TextoColor}" FontSize="{Binding Actividad4.ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad4.TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad4.Acumulado}" IsVisible="{Binding Actividad4.MostrarAcumulado}" TextColor="{Binding Actividad4.AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
+                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><Label Text="{Binding Actividad4.Mes}" TextColor="{StaticResource TextoSecundario}" FontSize="9" HorizontalOptions="Center" VerticalTextAlignment="Center"/><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad4.Valor}" TextColor="{Binding Actividad4.TextoColor}" FontSize="{Binding Actividad4.ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad4.TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad4.Acumulado}" IsVisible="{Binding Actividad4.MostrarAcumulado}" TextColor="{Binding Actividad4.AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
                                         </Border>
 
                                         <Border Grid.Column="4"
@@ -668,7 +668,7 @@
                                                 <TapGestureRecognizer CommandParameter="{Binding Actividad5}"
                                                                       Tapped="ActividadMes_Tapped" />
                                             </Border.GestureRecognizers>
-                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><Label Text="{Binding Actividad5.Mes}" TextColor="#9EA4AE" FontSize="9" HorizontalOptions="Center" VerticalTextAlignment="Center"/><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad5.Valor}" TextColor="{Binding Actividad5.TextoColor}" FontSize="{Binding Actividad5.ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad5.TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad5.Acumulado}" IsVisible="{Binding Actividad5.MostrarAcumulado}" TextColor="{Binding Actividad5.AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
+                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><Label Text="{Binding Actividad5.Mes}" TextColor="{StaticResource TextoSecundario}" FontSize="9" HorizontalOptions="Center" VerticalTextAlignment="Center"/><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad5.Valor}" TextColor="{Binding Actividad5.TextoColor}" FontSize="{Binding Actividad5.ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad5.TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad5.Acumulado}" IsVisible="{Binding Actividad5.MostrarAcumulado}" TextColor="{Binding Actividad5.AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
                                         </Border>
 
                                         <Border Grid.Column="5"
@@ -682,7 +682,7 @@
                                                 <TapGestureRecognizer CommandParameter="{Binding Actividad6}"
                                                                       Tapped="ActividadMes_Tapped" />
                                             </Border.GestureRecognizers>
-                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><Label Text="{Binding Actividad6.Mes}" TextColor="#9EA4AE" FontSize="9" HorizontalOptions="Center" VerticalTextAlignment="Center"/><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad6.Valor}" TextColor="{Binding Actividad6.TextoColor}" FontSize="{Binding Actividad6.ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad6.TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad6.Acumulado}" IsVisible="{Binding Actividad6.MostrarAcumulado}" TextColor="{Binding Actividad6.AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
+                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><Label Text="{Binding Actividad6.Mes}" TextColor="{StaticResource TextoSecundario}" FontSize="9" HorizontalOptions="Center" VerticalTextAlignment="Center"/><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad6.Valor}" TextColor="{Binding Actividad6.TextoColor}" FontSize="{Binding Actividad6.ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad6.TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad6.Acumulado}" IsVisible="{Binding Actividad6.MostrarAcumulado}" TextColor="{Binding Actividad6.AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
                                         </Border>
                                         </Grid>
                                     </VerticalStackLayout>
@@ -739,8 +739,8 @@
                     <Button Grid.Column="1"
                             Text="＋"
                             Clicked="BtnNuevaActividad_Clicked"
-                            BackgroundColor="#245C38"
-                            TextColor="White"
+                            BackgroundColor="{StaticResource ExitoSuave}"
+                            TextColor="{StaticResource TextoPrincipal}"
                             FontSize="18"
                             CornerRadius="10"
                             WidthRequest="48" />
@@ -752,14 +752,14 @@
 
                     <Button Text="Importar programa desde JSON"
                             Clicked="BtnImportarPrograma_Clicked"
-                            BackgroundColor="#265B36"
+                            BackgroundColor="{StaticResource ExitoSuave}"
                             TextColor="#D6F6DE"
                             CornerRadius="9"
                             HeightRequest="42" />
 
                     <Label x:Name="LblSinPrograma"
                            Text="No hay actividades programadas para esta visita."
-                           TextColor="#8F969F"
+                           TextColor="{StaticResource TextoTerciario}"
                            FontSize="12"
                            IsVisible="False" />
 
@@ -784,7 +784,7 @@
                                         <!-- Hora, como en Inicio -->
                                         <Label Grid.RowSpan="5"
                                                Text="{Binding Original.Hora}"
-                                               TextColor="#4BA3E3"
+                                               TextColor="{StaticResource Acento}"
                                                FontSize="15"
                                                FontAttributes="Bold"
                                                VerticalOptions="Start" />
@@ -792,21 +792,21 @@
                                         <!-- Tipo de actividad y día/turno -->
                                         <Label Grid.Column="1"
                                                Text="{Binding Original.TipoActividad}"
-                                               TextColor="White"
+                                               TextColor="{StaticResource TextoPrincipal}"
                                                FontSize="15"
                                                FontAttributes="Bold" />
 
                                         <Label Grid.Row="1"
                                                Grid.Column="1"
                                                Text="{Binding DiaTurno}"
-                                               TextColor="#9EA4AE"
+                                               TextColor="{StaticResource TextoSecundario}"
                                                FontSize="12" />
 
                                         <!-- Responsable (chip), como en Inicio -->
                                         <Border Grid.Row="0"
                                                 Grid.RowSpan="2"
                                                 Grid.Column="2"
-                                                BackgroundColor="#242A33"
+                                                BackgroundColor="{StaticResource SuperficieAlta}"
                                                 Padding="8,3"
                                                 StrokeThickness="0"
                                                 VerticalOptions="Start"
@@ -825,7 +825,7 @@
                                                Grid.Column="1"
                                                Grid.ColumnSpan="2"
                                                Text="{Binding CompaneroVisual}"
-                                               TextColor="#9299A3"
+                                               TextColor="{StaticResource TextoTerciario}"
                                                FontSize="12.5"
                                                IsVisible="{Binding MostrarCompanero}" />
 
@@ -846,7 +846,7 @@
                                                     Text="📍"
                                                     CommandParameter="{Binding .}"
                                                     Clicked="BtnMapaPrograma_Clicked"
-                                                    BackgroundColor="#242830"
+                                                    BackgroundColor="{StaticResource SuperficieAlta}"
                                                     TextColor="#8BC9E8"
                                                     FontSize="14"
                                                     Padding="8,2"
@@ -859,7 +859,7 @@
                                                Grid.Column="1"
                                                Grid.ColumnSpan="2"
                                                Text="{Binding Notas}"
-                                               TextColor="#8A919B"
+                                               TextColor="{StaticResource TextoTerciario}"
                                                FontSize="12"
                                                LineBreakMode="WordWrap"
                                                IsVisible="{Binding MostrarNotas}" />
@@ -874,8 +874,8 @@
                                             <Button Text="✏️"
                                                     CommandParameter="{Binding .}"
                                                     Clicked="BtnEditarActividad_Clicked"
-                                                    BackgroundColor="#242830"
-                                                    TextColor="White"
+                                                    BackgroundColor="{StaticResource SuperficieAlta}"
+                                                    TextColor="{StaticResource TextoPrincipal}"
                                                     Padding="6,2"
                                                     CornerRadius="7" />
 
@@ -921,12 +921,12 @@
                     <Picker x:Name="PickerCategoriaNotas"
                             Title="Categoría"
                             SelectedIndexChanged="PickerCategoriaNotas_SelectedIndexChanged"
-                            BackgroundColor="#1A1D22"
-                            TextColor="White" />
+                            BackgroundColor="{StaticResource Superficie}"
+                            TextColor="{StaticResource TextoPrincipal}" />
 
                     <Label x:Name="LblSinNotas"
                            Text="No hay notas para esta visita."
-                           TextColor="#8F969F"
+                           TextColor="{StaticResource TextoTerciario}"
                            FontSize="12"
                            IsVisible="False" />
 
@@ -958,13 +958,13 @@
                                      IsVisible="True"
                                      Spacing="7">
                     <Label x:Name="LblTotalTerritorios"
-                           TextColor="#9EA4AE"
+                           TextColor="{StaticResource TextoSecundario}"
                            FontSize="12" />
 
                     <Button x:Name="BtnImportarTerritoriosJson"
                             Text="⬆ Importar JSON (S-13)"
                             Clicked="BtnImportarTerritoriosJson_Clicked"
-                            BackgroundColor="#163553"
+                            BackgroundColor="{StaticResource AcentoSuave}"
                             TextColor="#B9DEFF"
                             FontSize="12.5"
                             CornerRadius="9"
@@ -977,14 +977,14 @@
                                 Grid.Column="0"
                                 Text="‹ Anterior"
                                 Clicked="BtnTerrAnt_Clicked"
-                                BackgroundColor="#242830"
-                                TextColor="White"
+                                BackgroundColor="{StaticResource SuperficieAlta}"
+                                TextColor="{StaticResource TextoPrincipal}"
                                 FontSize="12"
                                 Padding="10,6" />
                         <Label x:Name="LblPaginaTerritorios"
                                Grid.Column="1"
                                Text=""
-                               TextColor="#9EA4AE"
+                               TextColor="{StaticResource TextoSecundario}"
                                FontSize="12"
                                HorizontalTextAlignment="Center"
                                VerticalTextAlignment="Center" />
@@ -992,8 +992,8 @@
                                 Grid.Column="2"
                                 Text="Siguiente ›"
                                 Clicked="BtnTerrSig_Clicked"
-                                BackgroundColor="#242830"
-                                TextColor="White"
+                                BackgroundColor="{StaticResource SuperficieAlta}"
+                                TextColor="{StaticResource TextoPrincipal}"
                                 FontSize="12"
                                 Padding="10,6" />
                     </Grid>
@@ -1018,14 +1018,14 @@
                                         <VerticalStackLayout Grid.Column="0"
                                                              Spacing="3">
                                             <Label Text="{Binding Nombre}"
-                                                   TextColor="White"
+                                                   TextColor="{StaticResource TextoPrincipal}"
                                                    FontAttributes="Bold"
                                                    FontSize="13" />
                                             <Label Text="{Binding Estado}"
-                                                   TextColor="#B6BBC2"
+                                                   TextColor="{StaticResource TextoSecundario}"
                                                    FontSize="11" />
                                             <Label Text="{Binding Ultima}"
-                                                   TextColor="#8F969F"
+                                                   TextColor="{StaticResource TextoTerciario}"
                                                    FontSize="10"
                                                    IsVisible="{Binding MostrarUltima}" />
                                         </VerticalStackLayout>
@@ -1109,13 +1109,13 @@
                           ColumnSpacing="8">
                         <Button Text="‹"
                                 Clicked="BtnMesAntContabilidad_Clicked"
-                                BackgroundColor="#242830"
-                                TextColor="White"
+                                BackgroundColor="{StaticResource SuperficieAlta}"
+                                TextColor="{StaticResource TextoPrincipal}"
                                 WidthRequest="46" />
 
                         <Label x:Name="LblMesContabilidad"
                                Grid.Column="1"
-                               TextColor="White"
+                               TextColor="{StaticResource TextoPrincipal}"
                                FontAttributes="Bold"
                                HorizontalTextAlignment="Center"
                                VerticalTextAlignment="Center" />
@@ -1123,13 +1123,13 @@
                         <Button Grid.Column="2"
                                 Text="›"
                                 Clicked="BtnMesSigContabilidad_Clicked"
-                                BackgroundColor="#242830"
-                                TextColor="White"
+                                BackgroundColor="{StaticResource SuperficieAlta}"
+                                TextColor="{StaticResource TextoPrincipal}"
                                 WidthRequest="46" />
                     </Grid>
 
                     <Label Text="Los cambios se guardan al salir de cada campo."
-                           TextColor="#8F969F"
+                           TextColor="{StaticResource TextoTerciario}"
                            FontSize="10" />
 
                     <VerticalStackLayout x:Name="PanelContabilidadFilas"
@@ -1174,7 +1174,7 @@
                                    FontSize="12" />
 
                             <Label x:Name="LblEstadoS303"
-                                   TextColor="#B6BBC2"
+                                   TextColor="{StaticResource TextoSecundario}"
                                    FontSize="11"
                                    LineBreakMode="WordWrap" />
 
@@ -1184,22 +1184,22 @@
                                   RowSpacing="7">
                                 <Button Text="Plantilla PDF"
                                         Clicked="BtnSeleccionarPlantillaS303_Clicked"
-                                        BackgroundColor="#242830"
-                                        TextColor="White"
+                                        BackgroundColor="{StaticResource SuperficieAlta}"
+                                        TextColor="{StaticResource TextoPrincipal}"
                                         CornerRadius="8" />
 
                                 <Button Grid.Column="1"
                                         Text="Crear / abrir"
                                         Clicked="BtnCrearAbrirS303_Clicked"
-                                        BackgroundColor="#2478B5"
-                                        TextColor="White"
+                                        BackgroundColor="{StaticResource AcentoFuerte}"
+                                        TextColor="{StaticResource TextoPrincipal}"
                                         CornerRadius="8" />
 
                                 <Button Grid.Row="1"
                                         Text="Importar completado"
                                         Clicked="BtnImportarS303Completado_Clicked"
-                                        BackgroundColor="#245C38"
-                                        TextColor="White"
+                                        BackgroundColor="{StaticResource ExitoSuave}"
+                                        TextColor="{StaticResource TextoPrincipal}"
                                         CornerRadius="8" />
 
                                 <Button Grid.Row="1"
@@ -1228,7 +1228,7 @@
 
                             <Label x:Name="LblSinS2"
                                    Text="No hay recomendaciones ni bajas pendientes."
-                                   TextColor="#8F969F"
+                                   TextColor="{StaticResource TextoTerciario}"
                                    FontSize="11"
                                    IsVisible="False" />
 
@@ -1251,27 +1251,27 @@
                                    FontSize="12" />
 
                             <Label Text="Asunto"
-                                   TextColor="#9EA4AE"
+                                   TextColor="{StaticResource TextoSecundario}"
                                    FontSize="10" />
 
                             <Entry x:Name="TxtAsuntoS303"
-                                   TextColor="White"
-                                   BackgroundColor="#1A1D22" />
+                                   TextColor="{StaticResource TextoPrincipal}"
+                                   BackgroundColor="{StaticResource Superficie}" />
 
                             <Label Text="Mensaje (HTML mostrado como texto limpio)"
-                                   TextColor="#9EA4AE"
+                                   TextColor="{StaticResource TextoSecundario}"
                                    FontSize="10" />
 
                             <Editor x:Name="TxtCuerpoS303"
-                                    TextColor="White"
-                                    BackgroundColor="#1A1D22"
+                                    TextColor="{StaticResource TextoPrincipal}"
+                                    BackgroundColor="{StaticResource Superficie}"
                                     MinimumHeightRequest="130"
                                     AutoSize="TextChanges" />
 
                             <Grid ColumnDefinitions="*,Auto"
                                   ColumnSpacing="8">
                                 <Label Text="Copia a SRV"
-                                       TextColor="#B6BBC2"
+                                       TextColor="{StaticResource TextoSecundario}"
                                        VerticalTextAlignment="Center" />
                                 <Switch x:Name="ChkCopiaSRV"
                                         Grid.Column="1" />
@@ -1279,8 +1279,8 @@
 
                             <Button Text="Preparar correo con S-303 y S-2"
                                     Clicked="BtnEnviarS303_Clicked"
-                                    BackgroundColor="#2478B5"
-                                    TextColor="White"
+                                    BackgroundColor="{StaticResource AcentoFuerte}"
+                                    TextColor="{StaticResource TextoPrincipal}"
                                     FontAttributes="Bold"
                                     CornerRadius="9" />
                         </VerticalStackLayout>
@@ -1300,12 +1300,12 @@
                                  VerticalOptions="Center"
                                  Spacing="12">
                 <ActivityIndicator IsRunning="True"
-                                   Color="#4BA3E3"
+                                   Color="{StaticResource Acento}"
                                    WidthRequest="42"
                                    HeightRequest="42" />
                 <Label x:Name="LblCargando"
                        Text="Cargando visita..."
-                       TextColor="White"
+                       TextColor="{StaticResource TextoPrincipal}"
                        FontAttributes="Bold" />
             </VerticalStackLayout>
         </Grid>

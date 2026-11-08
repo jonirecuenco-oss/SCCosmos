@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="RSC"
-    BackgroundColor="#101216">
+    BackgroundColor="{StaticResource FondoPagina}">
 
     <ScrollView>
         <VerticalStackLayout
@@ -37,7 +37,7 @@
 
                         <Label
                             Text="Ver un día:"
-                            TextColor="#A7AEB8"
+                            TextColor="{StaticResource TextoSecundario}"
                             FontSize="13"
                             VerticalTextAlignment="Center" />
 
@@ -45,7 +45,7 @@
                             x:Name="DpFiltro"
                             Grid.Column="1"
                             DateSelected="DpFiltro_DateSelected"
-                            TextColor="White"
+                            TextColor="{StaticResource TextoPrincipal}"
                             Format="dd/MM/yyyy" />
 
                         <Button

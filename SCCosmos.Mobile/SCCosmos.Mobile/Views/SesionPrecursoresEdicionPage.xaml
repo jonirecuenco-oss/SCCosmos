@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Sesión de precursores"
-    BackgroundColor="#101216">
+    BackgroundColor="{StaticResource FondoPagina}">
 
     <Grid RowDefinitions="*,Auto">
 
@@ -26,39 +26,39 @@
                                CharacterSpacing="1" />
 
                         <Label Text="Número"
-                               TextColor="#9299A3"
+                               TextColor="{StaticResource TextoTerciario}"
                                FontSize="12" />
                         <Entry x:Name="TxtNumero"
                                Keyboard="Numeric"
-                               TextColor="White" />
+                               TextColor="{StaticResource TextoPrincipal}" />
 
                         <Label Text="Fecha"
-                               TextColor="#9299A3"
+                               TextColor="{StaticResource TextoTerciario}"
                                FontSize="12" />
                         <Entry x:Name="TxtFecha"
                                Placeholder="dd/MM/aaaa"
-                               TextColor="White" />
+                               TextColor="{StaticResource TextoPrincipal}" />
 
                         <Label Text="Hora"
-                               TextColor="#9299A3"
+                               TextColor="{StaticResource TextoTerciario}"
                                FontSize="12" />
                         <Entry x:Name="TxtHora"
                                Placeholder="16:00"
-                               TextColor="White" />
+                               TextColor="{StaticResource TextoPrincipal}" />
 
                         <Label Text="Congregaciones"
-                               TextColor="#9299A3"
+                               TextColor="{StaticResource TextoTerciario}"
                                FontSize="12" />
                         <Editor x:Name="TxtCongregaciones"
                                 AutoSize="TextChanges"
                                 MinimumHeightRequest="70"
-                                TextColor="White" />
+                                TextColor="{StaticResource TextoPrincipal}" />
 
                         <Label Text="Lugar"
-                               TextColor="#9299A3"
+                               TextColor="{StaticResource TextoTerciario}"
                                FontSize="12" />
                         <Entry x:Name="TxtLugar"
-                               TextColor="White" />
+                               TextColor="{StaticResource TextoPrincipal}" />
 
                     </VerticalStackLayout>
                 </Border>
@@ -66,7 +66,7 @@
                 <Button x:Name="BtnEliminar"
                         Text="Eliminar sesión"
                         Clicked="BtnEliminar_Clicked"
-                        BackgroundColor="#3A2023"
+                        BackgroundColor="{StaticResource PeligroSuave}"
                         TextColor="#FFB7BC"
                         CornerRadius="10"
                         HeightRequest="48"
@@ -88,8 +88,8 @@
 
             <Button Grid.Column="1"
                     Text="Guardar"
-                    BackgroundColor="#2478B5"
-                    TextColor="White"
+                    BackgroundColor="{StaticResource AcentoFuerte}"
+                    TextColor="{StaticResource TextoPrincipal}"
                     FontAttributes="Bold"
                     Clicked="BtnGuardar_Clicked" />
 

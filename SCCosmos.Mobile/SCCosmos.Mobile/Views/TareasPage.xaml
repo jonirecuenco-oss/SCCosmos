@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Tareas"
-    BackgroundColor="#101216">
+    BackgroundColor="{StaticResource FondoPagina}">
 
     <Grid RowDefinitions="Auto,*,Auto"
           Padding="16,14,16,14"
@@ -31,7 +31,7 @@
                     Text="＋ Nueva"
                     Clicked="BtnNueva_Clicked"
                     BackgroundColor="#0B6FC2"
-                    TextColor="White"
+                    TextColor="{StaticResource TextoPrincipal}"
                     CornerRadius="9"
                     HeightRequest="40"
                     Padding="14,0"
@@ -49,7 +49,7 @@
                         Clicked="Categoria_Clicked"
                         CommandParameter="Personal"
                         BackgroundColor="#0B6FC2"
-                        TextColor="White"
+                        TextColor="{StaticResource TextoPrincipal}"
                         CornerRadius="9"
                         Padding="12,6"
                         FontSize="12" />
@@ -58,8 +58,8 @@
                         Text="Calendario"
                         Clicked="Categoria_Clicked"
                         CommandParameter="Calendario"
-                        BackgroundColor="#242830"
-                        TextColor="White"
+                        BackgroundColor="{StaticResource SuperficieAlta}"
+                        TextColor="{StaticResource TextoPrincipal}"
                         CornerRadius="9"
                         Padding="12,6"
                         FontSize="12" />
@@ -68,8 +68,8 @@
                         Text="Asambleas"
                         Clicked="Categoria_Clicked"
                         CommandParameter="Asambleas"
-                        BackgroundColor="#242830"
-                        TextColor="White"
+                        BackgroundColor="{StaticResource SuperficieAlta}"
+                        TextColor="{StaticResource TextoPrincipal}"
                         CornerRadius="9"
                         Padding="12,6"
                         FontSize="12" />
@@ -89,11 +89,11 @@
                                          HorizontalOptions="Center"
                                          Spacing="8">
                         <Label Text="No hay tareas ni eventos."
-                               TextColor="#9EA4AE"
+                               TextColor="{StaticResource TextoSecundario}"
                                FontSize="15"
                                HorizontalTextAlignment="Center" />
                         <Label Text="Pulsa «＋ Nueva» para programar uno."
-                               TextColor="#6E767F"
+                               TextColor="{StaticResource TextoTerciario}"
                                FontSize="12"
                                HorizontalTextAlignment="Center" />
                     </VerticalStackLayout>
@@ -123,14 +123,14 @@
                                 <CheckBox Grid.Column="0"
                                           IsChecked="{Binding Completada, Mode=OneTime}"
                                           CheckedChanged="Completada_CheckedChanged"
-                                          Color="#4BA3E3"
+                                          Color="{StaticResource Acento}"
                                           VerticalOptions="Center" />
 
                                 <VerticalStackLayout Grid.Column="1"
                                                      Spacing="5">
 
                                     <Label Text="{Binding TituloVisual}"
-                                           TextColor="White"
+                                           TextColor="{StaticResource TextoPrincipal}"
                                            FontSize="15"
                                            FontAttributes="Bold" />
 
@@ -139,7 +139,7 @@
                                            FontSize="13" />
 
                                     <Label Text="{Binding Descripcion}"
-                                           TextColor="#B6BBC2"
+                                           TextColor="{StaticResource TextoSecundario}"
                                            FontSize="12"
                                            LineBreakMode="TailTruncation"
                                            MaxLines="2" />
@@ -148,7 +148,7 @@
                                                 Wrap="Wrap">
 
                                         <Border IsVisible="{Binding MostrarAviso}"
-                                                BackgroundColor="#242830"
+                                                BackgroundColor="{StaticResource SuperficieAlta}"
                                                 Padding="8,3"
                                                 Margin="0,0,6,4"
                                                 StrokeThickness="0">
@@ -162,7 +162,7 @@
                                         </Border>
 
                                         <Border IsVisible="{Binding MostrarRepeticion}"
-                                                BackgroundColor="#242830"
+                                                BackgroundColor="{StaticResource SuperficieAlta}"
                                                 Padding="8,3"
                                                 Margin="0,0,6,4"
                                                 StrokeThickness="0">

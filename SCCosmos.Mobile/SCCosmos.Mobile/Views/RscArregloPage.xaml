@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Arreglo"
-    BackgroundColor="#101216">
+    BackgroundColor="{StaticResource FondoPagina}">
 
     <ScrollView>
         <VerticalStackLayout
@@ -18,7 +18,7 @@
                         x:Name="LblPersona"
                         FontSize="16"
                         FontAttributes="Bold"
-                        TextColor="White"
+                        TextColor="{StaticResource TextoPrincipal}"
                         LineBreakMode="WordWrap" />
 
                     <Label
@@ -46,14 +46,14 @@
                                 <Switch
                                     x:Name="TogAcepta"
                                     IsToggled="True"
-                                    OnColor="#2478B5"
+                                    OnColor="{StaticResource AcentoFuerte}"
                                     ThumbColor="White"
                                     VerticalOptions="Center" />
 
                                 <Label
                                     Text="Puede ir en un grupo más grande"
                                     FontSize="13"
-                                    TextColor="White"
+                                    TextColor="{StaticResource TextoPrincipal}"
                                     VerticalTextAlignment="Center" />
 
                             </HorizontalStackLayout>

@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Resolver S-21"
-    BackgroundColor="#101216"
+    BackgroundColor="{StaticResource FondoPagina}"
     Shell.NavBarIsVisible="False" NavigationPage.HasNavigationBar="False">
 
     <Grid RowDefinitions="Auto,Auto,*,Auto">
@@ -18,7 +18,7 @@
                        Text="RESOLVER CONFLICTO"
                        FontSize="21"
                        FontAttributes="Bold"
-                       TextColor="White" />
+                       TextColor="{StaticResource TextoPrincipal}" />
 
                 <Label x:Name="LblNombre"
                        FontSize="13"
@@ -29,8 +29,8 @@
             <Button Grid.Column="1"
                     Text="Volver"
                     Clicked="BtnCancelar_Clicked"
-                    BackgroundColor="#242830"
-                    TextColor="White"
+                    BackgroundColor="{StaticResource SuperficieAlta}"
+                    TextColor="{StaticResource TextoPrincipal}"
                     CornerRadius="9"
                     Padding="12,7"
                     VerticalOptions="Center" />
@@ -38,14 +38,14 @@
 
         <Border Grid.Row="1"
                 Margin="16,4,16,10"
-                BackgroundColor="#15191E"
-                Stroke="#2E343C"
+                BackgroundColor="{StaticResource Superficie}"
+                Stroke="{StaticResource BordeSuave}"
                 Padding="11">
             <Border.StrokeShape>
                 <RoundRectangle CornerRadius="10" />
             </Border.StrokeShape>
             <Label x:Name="LblExplicacion"
-                   TextColor="#AEB4BC"
+                   TextColor="{StaticResource TextoSecundario}"
                    FontSize="11"
                    LineBreakMode="WordWrap" />
         </Border>
@@ -58,7 +58,7 @@
                 <VerticalStackLayout Padding="20,40"
                                      HorizontalOptions="Center">
                     <Label Text="No hay diferencias de ficha que resolver."
-                           TextColor="#8F969F"
+                           TextColor="{StaticResource TextoTerciario}"
                            HorizontalTextAlignment="Center" />
                 </VerticalStackLayout>
             </CollectionView.EmptyView>
@@ -75,13 +75,13 @@
 
                         <VerticalStackLayout Spacing="7">
                             <Label Text="{Binding Etiqueta}"
-                                   TextColor="White"
+                                   TextColor="{StaticResource TextoPrincipal}"
                                    FontAttributes="Bold"
                                    FontSize="13" />
 
                             <Grid ColumnDefinitions="*,*"
                                   ColumnSpacing="8">
-                                <Border BackgroundColor="#20242A"
+                                <Border BackgroundColor="{StaticResource SuperficieAlta}"
                                         StrokeThickness="0"
                                         Padding="8">
                                     <Border.StrokeShape>
@@ -89,11 +89,11 @@
                                     </Border.StrokeShape>
                                     <VerticalStackLayout Spacing="2">
                                         <Label Text="BASE DE DATOS"
-                                               TextColor="#8F969F"
+                                               TextColor="{StaticResource TextoTerciario}"
                                                FontSize="8"
                                                FontAttributes="Bold" />
                                         <Label Text="{Binding ValorBd}"
-                                               TextColor="#D7DBE0"
+                                               TextColor="{StaticResource TextoPrincipal}"
                                                FontSize="11"
                                                LineBreakMode="WordWrap" />
                                     </VerticalStackLayout>
@@ -112,7 +112,7 @@
                                                FontSize="8"
                                                FontAttributes="Bold" />
                                         <Label Text="{Binding ValorJson}"
-                                               TextColor="White"
+                                               TextColor="{StaticResource TextoPrincipal}"
                                                FontSize="11"
                                                LineBreakMode="WordWrap" />
                                     </VerticalStackLayout>
@@ -121,8 +121,8 @@
 
                             <Picker ItemsSource="{Binding Opciones}"
                                     SelectedItem="{Binding Seleccion, Mode=TwoWay}"
-                                    BackgroundColor="#20242A"
-                                    TextColor="White"
+                                    BackgroundColor="{StaticResource SuperficieAlta}"
+                                    TextColor="{StaticResource TextoPrincipal}"
                                     Title="Elegir valor" />
                         </VerticalStackLayout>
                     </Border>
@@ -136,8 +136,8 @@
               ColumnSpacing="10">
             <Button Text="Cancelar"
                     Clicked="BtnCancelar_Clicked"
-                    BackgroundColor="#242830"
-                    TextColor="White"
+                    BackgroundColor="{StaticResource SuperficieAlta}"
+                    TextColor="{StaticResource TextoPrincipal}"
                     CornerRadius="10"
                     HeightRequest="46" />
 
@@ -146,7 +146,7 @@
                     Text="Guardar resolución"
                     Clicked="BtnGuardar_Clicked"
                     BackgroundColor="#0B6FC2"
-                    TextColor="White"
+                    TextColor="{StaticResource TextoPrincipal}"
                     FontAttributes="Bold"
                     CornerRadius="10"
                     HeightRequest="46" />

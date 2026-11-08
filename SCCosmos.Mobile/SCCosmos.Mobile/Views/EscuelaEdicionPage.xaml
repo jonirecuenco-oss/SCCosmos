@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Escuela"
-    BackgroundColor="#101216">
+    BackgroundColor="{StaticResource FondoPagina}">
 
     <Grid RowDefinitions="*,Auto">
 
@@ -29,7 +29,7 @@
                                Style="{StaticResource TextoNota}" />
                         <DatePicker x:Name="FechaSemana"
                                     DateSelected="FechaSemana_DateSelected"
-                                    TextColor="White" />
+                                    TextColor="{StaticResource TextoPrincipal}" />
 
                         <Grid ColumnDefinitions="Auto,*,Auto"
                               ColumnSpacing="6"
@@ -66,7 +66,7 @@
                         <Label x:Name="LblSemana"
                                FontSize="13.5"
                                FontAttributes="Bold"
-                               TextColor="#4BA3E3" />
+                               TextColor="{StaticResource Acento}" />
 
                         <Label Text="Instructor (precursor regular, especial o misionero; hombre y anciano)"
                                Style="{StaticResource TextoNota}" />
@@ -79,7 +79,7 @@
                         <Label x:Name="LblInstructorElegido"
                                Text="Sin instructor"
                                FontSize="13"
-                               TextColor="#4BA3E3" />
+                               TextColor="{StaticResource Acento}" />
 
                         <Label Text="Instructor sustituto (opcional)"
                                Style="{StaticResource TextoNota}" />
@@ -100,13 +100,13 @@
                                 Title="Elige congregación" />
                         <Entry x:Name="TxtOtraCongregacion"
                                Placeholder="O escribe otra congregación distinta…"
-                               TextColor="White" />
+                               TextColor="{StaticResource TextoPrincipal}" />
 
                         <Label Text="Notas (opcional)"
                                Style="{StaticResource TextoNota}" />
                         <Entry x:Name="TxtNotas"
                                Placeholder="Ideas, recordatorios…"
-                               TextColor="White" />
+                               TextColor="{StaticResource TextoPrincipal}" />
 
                     </VerticalStackLayout>
                 </Border>

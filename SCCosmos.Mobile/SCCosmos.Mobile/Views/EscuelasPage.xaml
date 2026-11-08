@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Escuelas"
-    BackgroundColor="#101216">
+    BackgroundColor="{StaticResource FondoPagina}">
 
     <Grid RowDefinitions="Auto,Auto,*"
           Padding="16,14,16,14"
@@ -80,7 +80,7 @@
                                              HorizontalOptions="Center"
                                              Spacing="8">
                             <Label Text="No hay candidatos para este año de servicio."
-                                   TextColor="#9EA4AE"
+                                   TextColor="{StaticResource TextoSecundario}"
                                    HorizontalTextAlignment="Center" />
                         </VerticalStackLayout>
                     </CollectionView.EmptyView>
@@ -102,13 +102,13 @@
                                         <Label Text="{Binding NombreComun}"
                                                FontSize="16"
                                                FontAttributes="Bold"
-                                               TextColor="White" />
+                                               TextColor="{StaticResource TextoPrincipal}" />
                                         <Label Text="{Binding Detalle}"
                                                FontSize="12"
-                                               TextColor="#AEB4BC" />
+                                               TextColor="{StaticResource TextoSecundario}" />
                                         <Label Text="{Binding Email}"
                                                FontSize="12"
-                                               TextColor="#7E858F" />
+                                               TextColor="{StaticResource TextoTerciario}" />
                                     </VerticalStackLayout>
 
                                     <Button Grid.Column="1"
@@ -117,7 +117,7 @@
                                             CommandParameter="{Binding .}"
                                             Padding="12,6"
                                             FontSize="12"
-                                            BackgroundColor="#163553"
+                                            BackgroundColor="{StaticResource AcentoSuave}"
                                             TextColor="#B9DEFF"
                                             CornerRadius="8"
                                             VerticalOptions="Center" />
@@ -172,7 +172,7 @@
                                              HorizontalOptions="Center"
                                              Spacing="8">
                             <Label Text="Todavía no hay clases creadas. Pulsa «＋ Nueva» para crear la primera."
-                                   TextColor="#9EA4AE"
+                                   TextColor="{StaticResource TextoSecundario}"
                                    HorizontalTextAlignment="Center" />
                         </VerticalStackLayout>
                     </CollectionView.EmptyView>
@@ -198,10 +198,10 @@
                                         <Label Text="{Binding SemanaTexto}"
                                                FontSize="16"
                                                FontAttributes="Bold"
-                                               TextColor="White" />
+                                               TextColor="{StaticResource TextoPrincipal}" />
                                         <Label Text="{Binding Detalle}"
                                                FontSize="12.5"
-                                               TextColor="#4BA3E3" />
+                                               TextColor="{StaticResource Acento}" />
                                         <Label Text="{Binding NotasTexto}"
                                                FontSize="12"
                                                TextColor="#8B94A0" />
@@ -210,7 +210,7 @@
                                     <Label Grid.Column="1"
                                            Text="›"
                                            FontSize="24"
-                                           TextColor="#888888"
+                                           TextColor="{StaticResource TextoTerciario}"
                                            VerticalOptions="Center" />
                                 </Grid>
                             </Border>

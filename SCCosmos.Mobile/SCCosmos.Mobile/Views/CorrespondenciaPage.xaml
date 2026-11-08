@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Correspondencia"
-    BackgroundColor="#101216">
+    BackgroundColor="{StaticResource FondoPagina}">
 
     <ScrollView>
         <VerticalStackLayout Padding="16,14,16,28"
@@ -27,20 +27,20 @@
                 <VerticalStackLayout Spacing="12">
 
                     <Label Text="Categoría"
-                           TextColor="#9299A3"
+                           TextColor="{StaticResource TextoTerciario}"
                            FontSize="12" />
                     <Picker x:Name="PickerCategoria"
-                            TextColor="White"
+                            TextColor="{StaticResource TextoPrincipal}"
                             SelectedIndexChanged="PickerCategoria_SelectedIndexChanged" />
 
                     <Label Text="Asunto"
-                           TextColor="#9299A3"
+                           TextColor="{StaticResource TextoTerciario}"
                            FontSize="12" />
                     <Entry x:Name="TxtAsunto"
-                           TextColor="White" />
+                           TextColor="{StaticResource TextoPrincipal}" />
 
                     <Label Text="Cuerpo (HTML) · editor con formato"
-                           TextColor="#9299A3"
+                           TextColor="{StaticResource TextoTerciario}"
                            FontSize="12" />
 
                     <HorizontalStackLayout Spacing="6">
@@ -48,56 +48,56 @@
                                 Clicked="Formato_Clicked"
                                 CommandParameter="bold"
                                 FontAttributes="Bold"
-                                BackgroundColor="#242830"
-                                TextColor="White"
+                                BackgroundColor="{StaticResource SuperficieAlta}"
+                                TextColor="{StaticResource TextoPrincipal}"
                                 Padding="12,4"
                                 FontSize="13" />
                         <Button Text="C"
                                 Clicked="Formato_Clicked"
                                 CommandParameter="italic"
                                 FontAttributes="Italic"
-                                BackgroundColor="#242830"
-                                TextColor="White"
+                                BackgroundColor="{StaticResource SuperficieAlta}"
+                                TextColor="{StaticResource TextoPrincipal}"
                                 Padding="12,4"
                                 FontSize="13" />
                         <Button Text="S"
                                 Clicked="Formato_Clicked"
                                 CommandParameter="underline"
-                                BackgroundColor="#242830"
-                                TextColor="White"
+                                BackgroundColor="{StaticResource SuperficieAlta}"
+                                TextColor="{StaticResource TextoPrincipal}"
                                 Padding="12,4"
                                 FontSize="13" />
                         <Button Text="Título"
                                 Clicked="Formato_Clicked"
                                 CommandParameter="h2"
-                                BackgroundColor="#242830"
-                                TextColor="White"
+                                BackgroundColor="{StaticResource SuperficieAlta}"
+                                TextColor="{StaticResource TextoPrincipal}"
                                 Padding="10,4"
                                 FontSize="12" />
                         <Button Text="Lista"
                                 Clicked="Formato_Clicked"
                                 CommandParameter="insertUnorderedList"
-                                BackgroundColor="#242830"
-                                TextColor="White"
+                                BackgroundColor="{StaticResource SuperficieAlta}"
+                                TextColor="{StaticResource TextoPrincipal}"
                                 Padding="10,4"
                                 FontSize="12" />
                         <Button Text="Enlace"
                                 Clicked="Formato_Clicked"
                                 CommandParameter="createLink"
-                                BackgroundColor="#242830"
-                                TextColor="White"
+                                BackgroundColor="{StaticResource SuperficieAlta}"
+                                TextColor="{StaticResource TextoPrincipal}"
                                 Padding="10,4"
                                 FontSize="12" />
                         <Button Text="Quitar formato"
                                 Clicked="Formato_Clicked"
                                 CommandParameter="removeFormat"
-                                BackgroundColor="#242830"
-                                TextColor="White"
+                                BackgroundColor="{StaticResource SuperficieAlta}"
+                                TextColor="{StaticResource TextoPrincipal}"
                                 Padding="10,4"
                                 FontSize="12" />
                     </HorizontalStackLayout>
 
-                    <Border BackgroundColor="#101216"
+                    <Border BackgroundColor="{StaticResource FondoPagina}"
                             Stroke="{StaticResource Borde}"
                             Padding="2">
                         <Border.StrokeShape>
@@ -151,7 +151,7 @@
                                     <Grid ColumnDefinitions="*,Auto">
                                         <Label Grid.Column="0"
                                                Text="{Binding NombreArchivo}"
-                                               TextColor="White"
+                                               TextColor="{StaticResource TextoPrincipal}"
                                                FontSize="14"
                                                VerticalOptions="Center" />
                                         <Button Grid.Column="1"
@@ -160,7 +160,7 @@
                                                 CommandParameter="{Binding .}"
                                                 Padding="12,6"
                                                 FontSize="12"
-                                                BackgroundColor="#3A2023"
+                                                BackgroundColor="{StaticResource PeligroSuave}"
                                                 TextColor="#FFB7BC"
                                                 CornerRadius="8" />
                                     </Grid>
@@ -171,7 +171,7 @@
 
                     <Button Text="Añadir adjunto"
                             Clicked="BtnAnadirAdjunto_Clicked"
-                            BackgroundColor="#265B36"
+                            BackgroundColor="{StaticResource ExitoSuave}"
                             TextColor="#D6F6DE"
                             CornerRadius="9" />
 
@@ -181,7 +181,7 @@
             <Label x:Name="LblEstado"
                    Text=""
                    FontSize="13"
-                   TextColor="#9EA4AE" />
+                   TextColor="{StaticResource TextoSecundario}" />
 
         </VerticalStackLayout>
     </ScrollView>

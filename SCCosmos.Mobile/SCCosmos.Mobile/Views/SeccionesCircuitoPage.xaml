@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Secciones"
-    BackgroundColor="#101216">
+    BackgroundColor="{StaticResource FondoPagina}">
 
     <Grid RowDefinitions="Auto,Auto,*"
           Padding="16,14,16,14"
@@ -20,11 +20,11 @@
             <Entry x:Name="TxtNueva"
                    Grid.Column="0"
                    Placeholder="Nombre de la nueva sección"
-                   TextColor="White" />
+                   TextColor="{StaticResource TextoPrincipal}" />
             <Button Grid.Column="1"
                     Text="Añadir"
                     Clicked="BtnAnadir_Clicked"
-                    BackgroundColor="#163553"
+                    BackgroundColor="{StaticResource AcentoSuave}"
                     TextColor="#B9DEFF"
                     CornerRadius="9" />
         </Grid>
@@ -34,7 +34,7 @@
                         SelectionMode="None">
             <CollectionView.EmptyView>
                 <Label Text="No hay secciones."
-                       TextColor="#9EA4AE"
+                       TextColor="{StaticResource TextoSecundario}"
                        Padding="20,40"
                        HorizontalTextAlignment="Center" />
             </CollectionView.EmptyView>
@@ -51,7 +51,7 @@
                         <Grid ColumnDefinitions="*,Auto">
                             <Label Grid.Column="0"
                                    Text="{Binding Nombre}"
-                                   TextColor="White"
+                                   TextColor="{StaticResource TextoPrincipal}"
                                    FontSize="15"
                                    VerticalOptions="Center" />
                             <Button Grid.Column="1"
@@ -60,7 +60,7 @@
                                     CommandParameter="{Binding .}"
                                     Padding="12,6"
                                     FontSize="12"
-                                    BackgroundColor="#3A2023"
+                                    BackgroundColor="{StaticResource PeligroSuave}"
                                     TextColor="#FFB7BC"
                                     CornerRadius="8" />
                         </Grid>

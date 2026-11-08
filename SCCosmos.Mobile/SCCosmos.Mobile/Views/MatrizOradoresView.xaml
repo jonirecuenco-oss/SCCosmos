@@ -17,12 +17,12 @@
             <Grid ColumnDefinitions="Auto,*"
                   ColumnSpacing="8">
                 <Label Text="Sección:"
-                       TextColor="#9299A3"
+                       TextColor="{StaticResource TextoTerciario}"
                        FontSize="12"
                        VerticalTextAlignment="Center" />
                 <Picker x:Name="PickerSeccion"
                         Grid.Column="1"
-                        TextColor="White"
+                        TextColor="{StaticResource TextoPrincipal}"
                         FontSize="13"
                         SelectedIndexChanged="PickerSeccion_SelectedIndexChanged" />
             </Grid>
@@ -30,7 +30,7 @@
             <Label x:Name="LblInfo"
                    Text=""
                    FontSize="11"
-                   TextColor="#8F969F" />
+                   TextColor="{StaticResource TextoTerciario}" />
         </VerticalStackLayout>
 
         <Button Grid.Row="1"
@@ -43,7 +43,7 @@
                         SelectionMode="None">
             <CollectionView.EmptyView>
                 <Label Text="Ningún orador con participación todavía."
-                       TextColor="#9EA4AE"
+                       TextColor="{StaticResource TextoSecundario}"
                        Padding="20,40"
                        HorizontalTextAlignment="Center" />
             </CollectionView.EmptyView>
@@ -65,11 +65,11 @@
                                 <VerticalStackLayout Grid.Column="0"
                                                      Spacing="2">
                                     <Label Text="{Binding Nombre}"
-                                           TextColor="White"
+                                           TextColor="{StaticResource TextoPrincipal}"
                                            FontSize="14"
                                            FontAttributes="Bold" />
                                     <Label Text="{Binding SeccionVisual}"
-                                           TextColor="#9EA4AE"
+                                           TextColor="{StaticResource TextoSecundario}"
                                            FontSize="11" />
                                 </VerticalStackLayout>
 
@@ -79,14 +79,14 @@
                                         CommandParameter="{Binding .}"
                                         Padding="10,5"
                                         FontSize="11"
-                                        BackgroundColor="#3A2023"
+                                        BackgroundColor="{StaticResource PeligroSuave}"
                                         TextColor="#FFB7BC"
                                         CornerRadius="7"
                                         VerticalOptions="Center" />
                             </Grid>
 
                             <Border BackgroundColor="{StaticResource SuperficieAlta}"
-                                    Stroke="#2E3540"
+                                    Stroke="{StaticResource Borde}"
                                     Padding="8,5">
                                 <Border.StrokeShape>
                                     <RoundRectangle CornerRadius="8" />
@@ -105,8 +105,8 @@
                                                  BindableLayout.ItemsSource="{Binding Anios}">
                                 <BindableLayout.ItemTemplate>
                                     <DataTemplate>
-                                        <Border BackgroundColor="#12151A"
-                                                Stroke="#2A3038"
+                                        <Border BackgroundColor="{StaticResource SuperficieBaja}"
+                                                Stroke="{StaticResource BordeSuave}"
                                                 Padding="7">
                                             <Border.StrokeShape>
                                                 <RoundRectangle CornerRadius="8" />
@@ -115,18 +115,18 @@
                                             <VerticalStackLayout Spacing="5">
                                                 <Grid ColumnDefinitions="*,Auto">
                                                     <Label Text="{Binding Anio}"
-                                                           TextColor="White"
+                                                           TextColor="{StaticResource TextoPrincipal}"
                                                            FontSize="12"
                                                            FontAttributes="Bold"
                                                            VerticalTextAlignment="Center" />
                                                     <HorizontalStackLayout Grid.Column="1"
                                                                            Spacing="5">
                                                         <Label Text="EV"
-                                                               TextColor="#9EA4AE"
+                                                               TextColor="{StaticResource TextoSecundario}"
                                                                FontSize="11"
                                                                VerticalTextAlignment="Center" />
                                                         <Switch IsToggled="{Binding Evaluacion}"
-                                                                OnColor="#2478B5"
+                                                                OnColor="{StaticResource AcentoFuerte}"
                                                                 Toggled="Evaluacion_Toggled"
                                                                 VerticalOptions="Center" />
                                                     </HorizontalStackLayout>
@@ -142,19 +142,19 @@
                                                     <Label Grid.Row="0"
                                                            Grid.Column="0"
                                                            Text="AC-BR"
-                                                           TextColor="#8F969F"
+                                                           TextColor="{StaticResource TextoTerciario}"
                                                            FontSize="9"
                                                            HorizontalTextAlignment="Center" />
                                                     <Label Grid.Row="0"
                                                            Grid.Column="1"
                                                            Text="R. Prec"
-                                                           TextColor="#8F969F"
+                                                           TextColor="{StaticResource TextoTerciario}"
                                                            FontSize="9"
                                                            HorizontalTextAlignment="Center" />
                                                     <Label Grid.Row="0"
                                                            Grid.Column="2"
                                                            Text="AC-CO"
-                                                           TextColor="#8F969F"
+                                                           TextColor="{StaticResource TextoTerciario}"
                                                            FontSize="9"
                                                            HorizontalTextAlignment="Center" />
 
@@ -172,7 +172,7 @@
                                                                 CommandParameter="{Binding .}" />
                                                         </Border.GestureRecognizers>
                                                         <Label Text="{Binding Acbr}"
-                                                               TextColor="White"
+                                                               TextColor="{StaticResource TextoPrincipal}"
                                                                FontSize="11"
                                                                HorizontalTextAlignment="Center" />
                                                     </Border>
@@ -191,7 +191,7 @@
                                                                 CommandParameter="{Binding .}" />
                                                         </Border.GestureRecognizers>
                                                         <Label Text="{Binding Rp}"
-                                                               TextColor="White"
+                                                               TextColor="{StaticResource TextoPrincipal}"
                                                                FontSize="11"
                                                                HorizontalTextAlignment="Center" />
                                                     </Border>
@@ -210,7 +210,7 @@
                                                                 CommandParameter="{Binding .}" />
                                                         </Border.GestureRecognizers>
                                                         <Label Text="{Binding Acco}"
-                                                               TextColor="White"
+                                                               TextColor="{StaticResource TextoPrincipal}"
                                                                FontSize="11"
                                                                HorizontalTextAlignment="Center" />
                                                     </Border>

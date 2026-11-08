@@ -4,7 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Acciones de la semana"
-    BackgroundColor="#101216">
+    BackgroundColor="{StaticResource FondoPagina}">
 
     <ScrollView>
         <VerticalStackLayout Padding="16"
@@ -27,13 +27,13 @@
                     <Label x:Name="LblCongregacion"
                            FontSize="19"
                            FontAttributes="Bold"
-                           TextColor="White" />
+                           TextColor="{StaticResource TextoPrincipal}" />
                     <Label x:Name="LblFechas"
                            FontSize="13"
-                           TextColor="#AEB4BC" />
+                           TextColor="{StaticResource TextoSecundario}" />
                     <Label x:Name="LblTipo"
                            FontSize="13"
-                           TextColor="#9EA4AE" />
+                           TextColor="{StaticResource TextoSecundario}" />
                 </VerticalStackLayout>
             </Border>
 
@@ -44,21 +44,21 @@
                 <Label Text="Formulario S-302"
                        FontSize="14"
                        FontAttributes="Bold"
-                       TextColor="#D7DBE0"
+                       TextColor="{StaticResource TextoPrincipal}"
                        Margin="2,4,0,0" />
 
                 <Button x:Name="BtnPrepararS302"
                         Text="Generar y compartir S-302"
                         Clicked="BtnPrepararS302_Clicked"
                         BackgroundColor="#0B6FC2"
-                        TextColor="White"
+                        TextColor="{StaticResource TextoPrincipal}"
                         CornerRadius="10"
                         HeightRequest="50" />
 
                 <Button x:Name="BtnEnviarS302"
                         Text="Enviar S-302 por correo"
                         Clicked="BtnEnviarS302_Clicked"
-                        BackgroundColor="#163553"
+                        BackgroundColor="{StaticResource AcentoSuave}"
                         TextColor="#B9DEFF"
                         CornerRadius="10"
                         HeightRequest="50" />
@@ -66,13 +66,13 @@
                 <Label Text="Documentación"
                        FontSize="14"
                        FontAttributes="Bold"
-                       TextColor="#D7DBE0"
+                       TextColor="{StaticResource TextoPrincipal}"
                        Margin="2,8,0,0" />
 
                 <Button x:Name="BtnEnviarDocumentacion"
                         Text="Preparar correo de documentación"
                         Clicked="BtnEnviarDocumentacion_Clicked"
-                        BackgroundColor="#265B36"
+                        BackgroundColor="{StaticResource ExitoSuave}"
                         TextColor="#D6F6DE"
                         CornerRadius="10"
                         HeightRequest="50" />
@@ -87,13 +87,13 @@
                 <Label Text="Notificación de asamblea"
                        FontSize="14"
                        FontAttributes="Bold"
-                       TextColor="#D7DBE0"
+                       TextColor="{StaticResource TextoPrincipal}"
                        Margin="2,4,0,0" />
 
                 <Button x:Name="BtnNotificacionAsamblea"
                         Text="Preparar notificación a las congregaciones"
                         Clicked="BtnNotificacionAsamblea_Clicked"
-                        BackgroundColor="#163553"
+                        BackgroundColor="{StaticResource AcentoSuave}"
                         TextColor="#B9DEFF"
                         CornerRadius="10"
                         HeightRequest="50" />
@@ -101,7 +101,7 @@
                 <Label Text="Representante de Betel"
                        FontSize="14"
                        FontAttributes="Bold"
-                       TextColor="#D7DBE0"
+                       TextColor="{StaticResource TextoPrincipal}"
                        Margin="2,8,0,0" />
 
                 <Button x:Name="BtnEnviarBetel"
@@ -117,7 +117,7 @@
             <Label Text="Estado de los envíos"
                    FontSize="14"
                    FontAttributes="Bold"
-                   TextColor="#D7DBE0"
+                   TextColor="{StaticResource TextoPrincipal}"
                    Margin="2,8,0,0" />
 
             <Border BackgroundColor="{StaticResource Superficie}"
@@ -133,7 +133,7 @@
                           x:Name="FilaS302">
                         <Label Grid.Column="0"
                                Text="S-302 enviado"
-                               TextColor="#E7E9EC"
+                               TextColor="{StaticResource TextoPrincipal}"
                                VerticalOptions="Center" />
                         <Switch x:Name="SwS302"
                                 Grid.Column="1"
@@ -144,7 +144,7 @@
                           x:Name="FilaDoc">
                         <Label Grid.Column="0"
                                Text="Documentación enviada"
-                               TextColor="#E7E9EC"
+                               TextColor="{StaticResource TextoPrincipal}"
                                VerticalOptions="Center" />
                         <Switch x:Name="SwDoc"
                                 Grid.Column="1"
@@ -156,7 +156,7 @@
                           IsVisible="False">
                         <Label Grid.Column="0"
                                Text="Notificación de asamblea enviada"
-                               TextColor="#E7E9EC"
+                               TextColor="{StaticResource TextoPrincipal}"
                                VerticalOptions="Center" />
                         <Switch x:Name="SwNotificacion"
                                 Grid.Column="1"
@@ -168,7 +168,7 @@
                           IsVisible="False">
                         <Label Grid.Column="0"
                                Text="Mensaje a Betel enviado"
-                               TextColor="#E7E9EC"
+                               TextColor="{StaticResource TextoPrincipal}"
                                VerticalOptions="Center" />
                         <Switch x:Name="SwBetel"
                                 Grid.Column="1"
@@ -178,8 +178,8 @@
                     <Button x:Name="BtnGuardarEstado"
                             Text="Guardar estado"
                             Clicked="BtnGuardarEstado_Clicked"
-                            BackgroundColor="#242830"
-                            TextColor="White"
+                            BackgroundColor="{StaticResource SuperficieAlta}"
+                            TextColor="{StaticResource TextoPrincipal}"
                             CornerRadius="9"
                             Margin="0,8,0,0" />
                 </VerticalStackLayout>
@@ -188,7 +188,7 @@
             <Label x:Name="LblEstado"
                    Text=""
                    FontSize="13"
-                   TextColor="#9EA4AE"
+                   TextColor="{StaticResource TextoSecundario}"
                    Margin="2,4,0,0" />
 
         </VerticalStackLayout>

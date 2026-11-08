@@ -9,9 +9,9 @@
 
     FlyoutBehavior="Flyout"
 
-    BackgroundColor="#17191E"
+    BackgroundColor="{StaticResource Superficie}"
     ForegroundColor="White"
-    TitleColor="White"
+    TitleColor="{StaticResource TextoPrincipal}"
     UnselectedColor="#A8ADB5"
 
     FlyoutBackgroundColor="#101216">
@@ -26,7 +26,7 @@
             <Grid Padding="16,9"
                   ColumnDefinitions="28,*"
                   ColumnSpacing="12"
-                  BackgroundColor="#101216">
+                  BackgroundColor="{StaticResource FondoPagina}">
 
                 <Label Grid.Column="0"
                        Text="{Binding Title, Converter={StaticResource IconoMenu}}"
@@ -37,7 +37,7 @@
                 <Label Grid.Column="1"
                        Text="{Binding Title}"
                        FontSize="15"
-                       TextColor="#E9ECF1"
+                       TextColor="{StaticResource TextoPrincipal}"
                        VerticalTextAlignment="Center" />
 
             </Grid>
@@ -49,7 +49,7 @@
         <Grid
             HeightRequest="125"
             Padding="22,20"
-            BackgroundColor="#121419">
+            BackgroundColor="{StaticResource SuperficieBaja}">
 
             <HorizontalStackLayout
                 VerticalOptions="End"
@@ -67,13 +67,13 @@
 
                     <Label
                         Text="SCCosmos"
-                        TextColor="White"
+                        TextColor="{StaticResource TextoPrincipal}"
                         FontSize="26"
                         FontAttributes="Bold"/>
 
                     <Label
                         Text="Gestión del circuito"
-                        TextColor="#9EA4AE"
+                        TextColor="{StaticResource TextoSecundario}"
                         FontSize="13"/>
 
                 </VerticalStackLayout>
@@ -232,18 +232,18 @@
     <Shell.FlyoutFooter>
 
         <VerticalStackLayout
-            BackgroundColor="#101216">
+            BackgroundColor="{StaticResource FondoPagina}">
 
             <BoxView
                 HeightRequest="1"
-                Color="#2A2F37"
+                Color="{StaticResource BordeSuave}"
                 Margin="16,4,16,0"/>
 
             <Grid
                 Padding="16,12,16,14"
                 ColumnDefinitions="28,*"
                 ColumnSpacing="12"
-                BackgroundColor="#101216">
+                BackgroundColor="{StaticResource FondoPagina}">
 
                 <Grid.GestureRecognizers>
                     <TapGestureRecognizer Tapped="Configuracion_Tapped"/>
@@ -260,7 +260,7 @@
                     Grid.Column="1"
                     Text="Configuración"
                     FontSize="15"
-                    TextColor="#E9ECF1"
+                    TextColor="{StaticResource TextoPrincipal}"
                     VerticalTextAlignment="Center"/>
 
             </Grid>
