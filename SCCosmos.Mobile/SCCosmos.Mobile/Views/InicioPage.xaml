@@ -326,15 +326,16 @@
                     ColumnDefinitions="Auto,*,Auto"
                     ColumnSpacing="6">
 
-                    <Button
-                        Text="◀"
+                    <!-- Flecha redonda, como las de la predicación y el widget -->
+                    <ImageButton
+                        Source="icono_anterior.png"
                         Clicked="BtnDiaAnterior_Clicked"
                         SemanticProperties.Description="Día anterior"
-                        Padding="10,2"
-                        FontSize="14"
+                        WidthRequest="36"
+                        HeightRequest="36"
+                        Padding="8"
+                        CornerRadius="18"
                         BackgroundColor="{StaticResource SuperficieAlta}"
-                        TextColor="{StaticResource Acento}"
-                        CornerRadius="8"
                         VerticalOptions="Center"/>
 
                     <Label
@@ -348,16 +349,17 @@
                         HorizontalTextAlignment="Center"
                         VerticalTextAlignment="Center"/>
 
-                    <Button
+                    <!-- Flecha redonda, como las de la predicación y el widget -->
+                    <ImageButton
                         Grid.Column="2"
-                        Text="▶"
+                        Source="icono_siguiente.png"
                         Clicked="BtnDiaSiguiente_Clicked"
                         SemanticProperties.Description="Día siguiente"
-                        Padding="10,2"
-                        FontSize="14"
+                        WidthRequest="36"
+                        HeightRequest="36"
+                        Padding="8"
+                        CornerRadius="18"
                         BackgroundColor="{StaticResource SuperficieAlta}"
-                        TextColor="{StaticResource Acento}"
-                        CornerRadius="8"
                         VerticalOptions="Center"/>
                 </Grid>
 

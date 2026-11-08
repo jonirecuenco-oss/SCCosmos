@@ -279,6 +279,8 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - Android: Inicio y el Programa de la visita usan el icono de ubicación del widget (`icono_mapa.svg`). Las flechas, editar y borrar usan iconos de Fluent (`icono_anterior/siguiente/editar/borrar.svg`).
   - Android › Visitas › Programa: la lista va agrupada por días (`DiaProgramaUi`), de martes a domingo como en Windows, y se ordena por hora con `MinutosHora`. Las actividades sin uno de esos días van en «Otros días», al final. La actividad sigue la regla de Windows: en el programa antiguo, Comida, Cenar y Dormir eran responsables. Editar y borrar tienen su propia fila (antes se solapaban con el chip y el mapa). Comprobado en el móvil.
 - 08/11/2026 · Publicada la v2.1.47.
+- 08/11/2026 · v2.1.48: en Android › Inicio, las flechas de día de las actividades pasan a ser un ImageButton redondo con `icono_anterior/siguiente`, como las de la predicación y el widget.
+- 08/11/2026 · Publicada la v2.1.48.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 
