@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/background"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#1B1F27"
-    android:padding="14dp">
+    android:background="@drawable/widget_fondo"
+    android:paddingLeft="16dp"
+    android:paddingTop="14dp"
+    android:paddingRight="12dp"
+    android:paddingBottom="6dp">
 
-    <!-- CABECERA FIJA: icono + título + flechas de día -->
+    <!-- CABECERA FIJA: icono y día (al pulsarlos se abre la app) + flechas de día -->
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -14,62 +18,79 @@
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
-        <ImageView
-            android:id="@+id/widget_icono"
-            android:layout_width="26dp"
-            android:layout_height="26dp"
-            android:layout_marginRight="8dp"
-            android:src="@mipmap/appicon"
-            android:contentDescription="SCCosmos" />
-
-        <TextView
+        <LinearLayout
             android:id="@+id/widget_titulo"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="SCCosmos"
-            android:textColor="#FFFFFF"
-            android:textSize="17sp"
-            android:textStyle="bold" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-        <TextView
+            <ImageView
+                android:id="@+id/widget_icono"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_marginRight="12dp"
+                android:src="@mipmap/appicon"
+                android:contentDescription="SCCosmos" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <!-- «Hoy», «Mañana», «Ayer» o el día de la semana -->
+                <TextView
+                    android:id="@+id/widget_fecha"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Hoy"
+                    android:textColor="#F2F4F7"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:maxLines="1" />
+
+                <!-- Fecha completa -->
+                <TextView
+                    android:id="@+id/widget_fecha_larga"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textColor="#A7AEB8"
+                    android:textSize="13sp"
+                    android:maxLines="1"
+                    android:ellipsize="end" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <ImageView
             android:id="@+id/widget_dia_atras"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:minWidth="44dp"
-            android:minHeight="44dp"
-            android:gravity="center"
-            android:paddingLeft="10dp"
-            android:paddingRight="10dp"
-            android:text="◀"
-            android:textColor="#4BA3E3"
-            android:textSize="25sp"
-            android:textStyle="bold" />
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:padding="9dp"
+            android:background="@drawable/widget_boton"
+            android:src="@drawable/widget_atras"
+            android:contentDescription="Día anterior" />
 
-        <TextView
-            android:id="@+id/widget_fecha"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingLeft="2dp"
-            android:paddingRight="2dp"
-            android:text=""
-            android:textColor="#E6E8EB"
-            android:textSize="14sp" />
-
-        <TextView
+        <ImageView
             android:id="@+id/widget_dia_adelante"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:minWidth="44dp"
-            android:minHeight="44dp"
-            android:gravity="center"
-            android:paddingLeft="10dp"
-            android:paddingRight="10dp"
-            android:text="▶"
-            android:textColor="#4BA3E3"
-            android:textSize="25sp"
-            android:textStyle="bold" />
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:layout_marginLeft="8dp"
+            android:padding="9dp"
+            android:background="@drawable/widget_boton"
+            android:src="@drawable/widget_adelante"
+            android:contentDescription="Día siguiente" />
     </LinearLayout>
+
+    <!-- Línea bajo la cabecera (FrameLayout: View no se admite en un widget) -->
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="12dp"
+        android:background="#2A3038" />
 
     <!-- CONTENIDO DESPLAZABLE -->
 
@@ -78,10 +99,10 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:layout_marginTop="6dp"
+        android:layout_marginTop="2dp"
         android:divider="@android:color/transparent"
         android:dividerHeight="0dp"
         android:listSelector="@android:color/transparent"
-        android:scrollbars="vertical" />
+        android:scrollbars="none" />
 
 </LinearLayout>

@@ -27,7 +27,11 @@ namespace SCCosmos.Mobile.Platforms.Android;
 [IntentFilter(
     new[]
     {
-        AppWidgetManager.ActionAppwidgetUpdate
+        AppWidgetManager.ActionAppwidgetUpdate,
+        // Cambio de hora, de zona o de día: se repinta con el día nuevo.
+        Intent.ActionTimeChanged,
+        Intent.ActionTimezoneChanged,
+        Intent.ActionDateChanged
     })]
 [MetaData(
     "android.appwidget.provider",
@@ -51,6 +55,18 @@ public class SccosmosWidgetProvider : AppWidgetProvider
 
     private const string ClaveDia =
         "Sccosmos_WidgetDia";
+
+    // Día en que se eligió ClaveDia: lo elegido con las flechas solo vale
+    // ese día; al cambiar de día el widget vuelve a «Hoy».
+    private const string ClaveDiaElegidoEl =
+        "Sccosmos_WidgetDiaElegidoEl";
+
+    // Alarma de las 00:00 para que el widget cambie de día él solo.
+    private const string AccionMedianoche =
+        "sccosmos.widget.medianoche";
+
+    private const int IdMedianoche =
+        4803;
 
     private const string ExtraDestino =
         "sccosmos_destino";
@@ -109,7 +125,16 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                     ClaveDia,
                     "");
 
-            if (DateTime.TryParseExact(
+            string elegidoEl =
+                Preferences.Default.Get(
+                    ClaveDiaElegidoEl,
+                    "");
+
+            // Lo elegido otro día ya no vale: desde las 00:00 se enseña el
+            // día nuevo (antes se quedaba en el día elegido).
+            if (elegidoEl == FechaClave(DateTime.Today)
+                &&
+                DateTime.TryParseExact(
                     texto,
                     "yyyy-MM-dd",
                     CultureInfo.InvariantCulture,
@@ -133,12 +158,22 @@ public class SccosmosWidgetProvider : AppWidgetProvider
         {
             Preferences.Default.Set(
                 ClaveDia,
-                dia.ToString("yyyy-MM-dd"));
+                FechaClave(dia));
+
+            Preferences.Default.Set(
+                ClaveDiaElegidoEl,
+                FechaClave(DateTime.Today));
         }
         catch
         {
         }
     }
+
+
+    private static string FechaClave(DateTime dia) =>
+        dia.ToString(
+            "yyyy-MM-dd",
+            CultureInfo.InvariantCulture);
 
 
     public override void OnUpdate(
@@ -165,6 +200,9 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                 appWidgetManager,
                 id);
         }
+
+        ProgramarMedianoche(
+            context);
     }
 
 
@@ -178,6 +216,17 @@ public class SccosmosWidgetProvider : AppWidgetProvider
         if (accion == AccionItem)
         {
             EjecutarAccionItem(context, intent);
+            return;
+        }
+
+        // A las 00:00 (alarma propia) o si cambian la hora, la zona o el
+        // día: se vuelve a pintar, ya con el día nuevo.
+        if (accion == AccionMedianoche
+            || accion == Intent.ActionTimeChanged
+            || accion == Intent.ActionTimezoneChanged
+            || accion == Intent.ActionDateChanged)
+        {
+            ActualizarTodos();
             return;
         }
 
@@ -437,6 +486,106 @@ public class SccosmosWidgetProvider : AppWidgetProvider
     }
 
 
+    /// <summary>
+    /// Alarma de las 00:00 para que el widget cambie de día él solo. Antes
+    /// solo cambiaba cuando Android lo refrescaba (cada media hora como
+    /// pronto) o al abrir la app. Es exacta si el móvil lo permite, como los
+    /// avisos de tareas; si no, aproximada.
+    /// </summary>
+    private static void ProgramarMedianoche(
+        Context contexto)
+    {
+        try
+        {
+            var gestor =
+                (AlarmManager?)contexto.GetSystemService(
+                    Context.AlarmService);
+
+            if (gestor is null)
+            {
+                return;
+            }
+
+            long momento =
+                new DateTimeOffset(
+                    DateTime.Today.AddDays(1).AddSeconds(2))
+                    .ToUnixTimeMilliseconds();
+
+            PendingIntent intencion =
+                CrearAccionMedianoche(
+                    contexto);
+
+            bool exacta =
+                global::Android.OS.Build.VERSION.SdkInt
+                    < global::Android.OS.BuildVersionCodes.S
+                || gestor.CanScheduleExactAlarms();
+
+            if (exacta)
+            {
+                gestor.SetExactAndAllowWhileIdle(
+                    AlarmType.RtcWakeup,
+                    momento,
+                    intencion);
+            }
+            else
+            {
+                gestor.SetAndAllowWhileIdle(
+                    AlarmType.RtcWakeup,
+                    momento,
+                    intencion);
+            }
+        }
+        catch
+        {
+        }
+    }
+
+
+    private static PendingIntent CrearAccionMedianoche(
+        Context contexto)
+    {
+        var intencion =
+            new Intent(
+                contexto,
+                typeof(SccosmosWidgetProvider));
+
+        intencion.SetAction(
+            AccionMedianoche);
+
+        return PendingIntent.GetBroadcast(
+                   contexto,
+                   IdMedianoche,
+                   intencion,
+                   PendingIntentFlags.Immutable
+                   | PendingIntentFlags.UpdateCurrent)!;
+    }
+
+
+    /// <summary>Se ha quitado el último widget: fuera la alarma.</summary>
+    public override void OnDisabled(
+        Context? context)
+    {
+        base.OnDisabled(
+            context);
+
+        if (context is null)
+        {
+            return;
+        }
+
+        try
+        {
+            ((AlarmManager?)context.GetSystemService(
+                Context.AlarmService))
+                ?.Cancel(
+                    CrearAccionMedianoche(
+                        context));
+        }
+        catch
+        {
+        }
+    }
+
     /// <summary>Actualiza todos los widgets puestos en el escritorio.</summary>
     public static void ActualizarTodos()
     {
@@ -475,6 +624,12 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                     contexto,
                     gestor,
                     id);
+            }
+
+            if (ids.Length > 0)
+            {
+                ProgramarMedianoche(
+                    contexto);
             }
         }
         catch
@@ -515,6 +670,11 @@ public class SccosmosWidgetProvider : AppWidgetProvider
             DateTime hoy =
                 DateTime.Today;
 
+            var es =
+                new CultureInfo("es-ES");
+
+            // Arriba «Hoy», «Mañana», «Ayer» o el día de la semana; debajo,
+            // la fecha completa.
             string etiquetaDia =
                 dia == hoy
                     ? "Hoy"
@@ -522,13 +682,26 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                         ? "Mañana"
                         : dia == hoy.AddDays(-1)
                             ? "Ayer"
-                            : dia.ToString(
-                                "ddd d MMM",
-                                new CultureInfo("es-ES"));
+                            : es.TextInfo.ToTitleCase(
+                                dia.ToString("dddd", es));
+
+            bool relativo =
+                Math.Abs((dia - hoy).TotalDays) <= 1;
+
+            string fechaLarga =
+                dia.ToString(
+                    (relativo ? "dddd, " : "")
+                    + "d 'de' MMMM"
+                    + (dia.Year != hoy.Year ? " 'de' yyyy" : ""),
+                    es);
 
             vistas.SetTextViewText(
                 Resource.Id.widget_fecha,
                 etiquetaDia);
+
+            vistas.SetTextViewText(
+                Resource.Id.widget_fecha_larga,
+                fechaLarga);
 
             // Flechas para moverse de día.
             vistas.SetOnClickPendingIntent(

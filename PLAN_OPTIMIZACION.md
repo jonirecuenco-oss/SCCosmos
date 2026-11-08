@@ -267,6 +267,12 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - Revisión en vertical, horizontal y plegable de las 13 páginas y de la visita. Rendimientos ya no tapa los filtros en horizontal: cabecera y filtros van dentro de la lista. Cabecera del menú más baja (`CollapseOnScroll` no hace nada en Android). Barra del editor de Correspondencia deslizable. «Actividad» en minúsculas.
   - Pruebas en el emulador con datos inventados: el procedimiento está en `Herramientas\android_captura.ps1`, con la instantánea `datos_prueba`.
 - 08/11/2026 · Publicada la v2.1.45.
+- 08/11/2026 · Mejoras pedidas por el usuario (v2.1.46):
+  - Estadísticas de Inicio: los cursos bíblicos y la media de auxiliares siguen una regla común, `SincroCompartido/ResumenActividadInicio.cs`. Solo cuentan las fichas actuales y los meses con informes de verdad: no futuros y con al menos la mitad de informes del mes con más de los últimos 12. Antes Windows tomaba el último mes con filas (noviembre, sin informes, con 0 cursos). Android usaba también los meses futuros con filas preparadas: 2 auxiliares continuos daban una media de 2 y 0 cursos. Ahora las dos apps dan 106 cursos (ago 2026: septiembre está a medio importar) y una media de 55,2. Android cuenta Betel como Windows (Privilegios «Asesor de Betel» o «Voluntario a distancia») y muestra las medias con un decimal. Hay prueba en `PruebasWindows` (38/38).
+  - Diferencias de personas (151/149 ancianos, 1066/1065 publicadores): no era un fallo de sincronización. El PC no se abría desde el 06/11 y no tenía los cambios del móvil (nombramientos de JW Hub y una ficha nueva). Al abrirlo, se igualaron.
+  - Widget: cambia de día a las 00:00 con una alarma exacta, `sccosmos.widget.medianoche`, que usa el mismo permiso que los avisos de tareas; también se actualiza si cambia la hora o la zona. El día elegido con las flechas solo vale ese día (`Sccosmos_WidgetDiaElegidoEl`). Tiene diseño nuevo: cabecera con el día y la fecha completa, flechas redondas, filas en tarjetas e iconos vectoriales en `Platforms/Android/Resources/drawable/widget_*.xml` en lugar de ✓, 📍 y +. Comprobado en el móvil.
+  - Incidente: al recorrer la lista de Personas del móvil con deslizamientos lentos se abrió un chat de WhatsApp, sin enviar nada. Desde entonces: deslizamientos rápidos y comprobar la app en primer plano.
+- 08/11/2026 · Publicada la v2.1.46.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

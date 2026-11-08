@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Data.Sqlite;
+using SCCosmos.Sincro;
 
 namespace SCCosmos
 {
@@ -1033,202 +1034,37 @@ namespace SCCosmos
         private static void CargarResumenActividadActual(
             EstadisticasCircuito res)
         {
-            var registros =
-                new List<ActividadResumenCircuito>();
+            // Misma regla que Android: SincroCompartido/ResumenActividadInicio.cs
+            // (solo meses con informes de verdad, no las filas preparadas).
+            using var connection =
+                new SqliteConnection(
+                    $"Data Source={DatabaseHelper.RutaBaseDatos};Pooling=True");
 
-            string dbPath =
-                DatabaseHelper.RutaBaseDatos;
+            connection.Open();
 
-            using (var connection =
-                   new SqliteConnection(
-                       $"Data Source={dbPath};Pooling=True"))
-            {
-                connection.Open();
+            ResumenActividadInicio.Resultado resumen =
+                ResumenActividadInicio.Calcular(
+                    connection,
+                    DateTime.Today);
 
-                using var cmd =
-                    connection.CreateCommand();
-
-                cmd.CommandText = @"
-                    SELECT
-                        a.PersonaId,
-                        a.Mes,
-                        a.AnioServicio,
-                        a.CursosBiblicos,
-                        a.PrecursorAuxiliar
-                    FROM ActividadPersonas a
-                    INNER JOIN Personas p
-                        ON p.Id = a.PersonaId
-                    WHERE p.MesHistorico IS NULL
-                      AND (p.FechaEliminacion IS NULL
-                           OR trim(p.FechaEliminacion) = '');";
-
-                using var reader =
-                    cmd.ExecuteReader();
-
-                DateTime mesActual =
-                    new DateTime(
-                        DateTime.Today.Year,
-                        DateTime.Today.Month,
-                        1);
-
-                while (reader.Read())
-                {
-                    string mes =
-                        reader.IsDBNull(1)
-                            ? ""
-                            : reader.GetString(1);
-
-                    string anioServicio =
-                        reader.IsDBNull(2)
-                            ? ""
-                            : reader.GetString(2);
-
-                    DateTime? mesCalendario =
-                        ObtenerMesCalendarioActividad(
-                            mes,
-                            anioServicio);
-
-                    if (!mesCalendario.HasValue
-                        || mesCalendario.Value > mesActual)
-                    {
-                        continue;
-                    }
-
-                    int cursos = 0;
-                    if (!reader.IsDBNull(3))
-                    {
-                        int.TryParse(
-                            reader.GetValue(3)?.ToString(),
-                            out cursos);
-                    }
-
-                    bool auxiliar =
-                        !reader.IsDBNull(4)
-                        && Convert.ToInt32(
-                            reader.GetValue(4)) == 1;
-
-                    registros.Add(
-                        new ActividadResumenCircuito
-                        {
-                            PersonaId =
-                                reader.GetInt32(0),
-                            MesCalendario =
-                                mesCalendario.Value,
-                            CursosBiblicos =
-                                Math.Max(0, cursos),
-                            PrecursorAuxiliar =
-                                auxiliar
-                        });
-                }
-            }
-
-            var mesesConDatos =
-                registros
-                    .Select(r => r.MesCalendario)
-                    .Distinct()
-                    .OrderByDescending(m => m)
-                    .ToList();
-
-            if (mesesConDatos.Count == 0)
+            if (resumen.MesReferencia is not DateTime ultimoMes)
             {
                 return;
             }
 
-            DateTime ultimoMes =
-                mesesConDatos[0];
-
             res.CursosBiblicos =
-                registros
-                    .Where(r =>
-                        r.MesCalendario == ultimoMes)
-                    .Sum(r =>
-                        r.CursosBiblicos);
-
-            CultureInfo es =
-                CultureInfo.GetCultureInfo("es-ES");
+                resumen.CursosBiblicos;
 
             res.MesActividadReferencia =
                 ultimoMes
-                    .ToString("MMM yyyy", es)
+                    .ToString("MMM yyyy", CultureInfo.GetCultureInfo("es-ES"))
                     .TrimEnd('.');
 
-            var ultimosMeses =
-                mesesConDatos
-                    .Take(6)
-                    .ToList();
-
             res.MesesMediaAuxiliares =
-                ultimosMeses.Count;
+                resumen.MesesMediaAuxiliares;
 
-            if (ultimosMeses.Count > 0)
-            {
-                var auxiliaresPorMes =
-                    ultimosMeses
-                        .Select(m =>
-                            registros
-                                .Where(r =>
-                                    r.MesCalendario == m
-                                    && r.PrecursorAuxiliar)
-                                .Select(r => r.PersonaId)
-                                .Distinct()
-                                .Count())
-                        .ToList();
-
-                res.MediaAuxiliares =
-                    auxiliaresPorMes.Average();
-            }
-        }
-
-        private static DateTime? ObtenerMesCalendarioActividad(
-            string mes,
-            string anioServicio)
-        {
-            if (string.IsNullOrWhiteSpace(mes)
-                || !int.TryParse(
-                    anioServicio?.Trim(),
-                    out int anioServicioNumero))
-            {
-                return null;
-            }
-
-            string normalizado =
-                QuitarAcentos(
-                    mes.Trim().ToLowerInvariant());
-
-            string[] meses =
-            {
-                "enero", "febrero", "marzo", "abril",
-                "mayo", "junio", "julio", "agosto",
-                "septiembre", "octubre", "noviembre", "diciembre"
-            };
-
-            int numeroMes =
-                Array.IndexOf(
-                    meses,
-                    normalizado) + 1;
-
-            if (numeroMes <= 0)
-            {
-                return null;
-            }
-
-            // El año de servicio 2026 comprende septiembre-diciembre de 2025
-            // y enero-agosto de 2026.
-            int anioCalendario =
-                numeroMes >= 9
-                    ? anioServicioNumero - 1
-                    : anioServicioNumero;
-
-            if (anioCalendario < 1900
-                || anioCalendario > 2200)
-            {
-                return null;
-            }
-
-            return new DateTime(
-                anioCalendario,
-                numeroMes,
-                1);
+            res.MediaAuxiliares =
+                resumen.MediaAuxiliares;
         }
 
         private static int? CalcularEdadActual(
@@ -1299,30 +1135,6 @@ namespace SCCosmos
                 out fecha);
         }
 
-        private static string QuitarAcentos(
-            string texto)
-        {
-            if (string.IsNullOrEmpty(texto))
-            {
-                return "";
-            }
-
-            string normalizado =
-                texto.Normalize(
-                    System.Text.NormalizationForm.FormD);
-
-            var chars =
-                normalizado
-                    .Where(c =>
-                        CharUnicodeInfo.GetUnicodeCategory(c)
-                        != UnicodeCategory.NonSpacingMark)
-                    .ToArray();
-
-            return new string(chars)
-                .Normalize(
-                    System.Text.NormalizationForm.FormC);
-        }
-
         private static bool Contiene(
             string texto,
             string valor)
@@ -1374,14 +1186,6 @@ namespace SCCosmos
             public int SolA19 { get; set; }
             public int SolA8 { get; set; }
             public int SolG8 { get; set; }
-        }
-
-        private class ActividadResumenCircuito
-        {
-            public int PersonaId { get; set; }
-            public DateTime MesCalendario { get; set; }
-            public int CursosBiblicos { get; set; }
-            public bool PrecursorAuxiliar { get; set; }
         }
 
         public class ActividadHoy

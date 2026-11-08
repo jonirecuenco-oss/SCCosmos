@@ -38,6 +38,7 @@ internal static class Programa
             Formulario();
             Fusion();
             GuardarFicha();
+            ActividadInicio();
             Ver("sin motor de sincronización", SincronizacionRed.Config is null, true);
             string log = Path.Combine(carpeta, "errores.log");
             Ver("sin errores anotados", File.Exists(log) ? File.ReadLines(log).First() : "", "");
@@ -146,6 +147,29 @@ internal static class Programa
         leida.First(m => m.Mes == "octubre").CursosBiblicos = "5";
         DatabaseHelper.ReemplazarActividadPersona((int)p, leida);
         Ver("los cursos se guardan", Texto($"SELECT Cursos || '|' || CursosBiblicos FROM ActividadPersonas WHERE PersonaId = {p} AND Mes = 'octubre'"), "5|5");
+    }
+
+    // Inicio: cursos bíblicos y media de auxiliares con la regla común de Windows y
+    // Android. Las filas preparadas de los meses sin informar y el mes que acaba de
+    // empezar a llegar no cuentan.
+    private static void ActividadInicio()
+    {
+        var filas = new List<ResumenActividadInicio.Fila>();
+        DateTime agosto = new(2026, 8, 1), septiembre = new(2026, 9, 1), octubre = new(2026, 10, 1);
+        for (int p = 1; p <= 10; p++)
+        {
+            filas.Add(new(p, agosto, true, 2, p == 1));
+            filas.Add(new(p, septiembre, p <= 8, p <= 8 ? 1 : 0, p <= 3));
+            filas.Add(new(p, octubre, p == 1, p == 1 ? 5 : 0, false));
+            for (DateTime mes = new(2026, 11, 1); mes <= new DateTime(2027, 8, 1); mes = mes.AddMonths(1))
+                filas.Add(new(p, mes, false, 0, p <= 2));
+        }
+        var r = ResumenActividadInicio.Calcular(filas, new DateTime(2026, 11, 8));
+        Ver("actividad: mes de los cursos", r.MesReferencia, (DateTime?)septiembre);
+        Ver("actividad: cursos del mes", r.CursosBiblicos, 8);
+        Ver("actividad: media de auxiliares", r.MediaAuxiliares, 2.0);
+        Ver("actividad: meses de la media", r.MesesMediaAuxiliares, 2);
+        Ver("actividad: mes del año de servicio", ResumenActividadInicio.MesCalendario("Septiembre", "2027"), (DateTime?)septiembre);
     }
 
     private static void Ver(string que, object obtenido, object esperado)

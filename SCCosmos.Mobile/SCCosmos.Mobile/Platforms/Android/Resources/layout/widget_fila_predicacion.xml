@@ -1,32 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Predicación del mes, en una tarjeta, con el botón de apuntar horas -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal"
-    android:gravity="center_vertical"
-    android:paddingTop="5dp">
+    android:orientation="vertical"
+    android:paddingTop="6dp">
 
-    <TextView
-        android:id="@+id/fila_predicacion_texto"
-        android:layout_width="0dp"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:text=""
-        android:textColor="#E6E8EB"
-        android:textSize="16sp" />
+        android:minHeight="48dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/widget_tarjeta"
+        android:paddingLeft="12dp"
+        android:paddingRight="6dp">
 
-    <TextView
-        android:id="@+id/fila_predicacion_mas"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:minWidth="52dp"
-        android:minHeight="44dp"
-        android:gravity="center"
-        android:paddingLeft="8dp"
-        android:paddingRight="8dp"
-        android:text="+"
-        android:textColor="#4BA3E3"
-        android:textSize="26sp"
-        android:textStyle="bold"
-        android:visibility="gone" />
+        <TextView
+            android:id="@+id/fila_predicacion_texto"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:text=""
+            android:textColor="#F2F4F7"
+            android:textSize="15sp" />
+
+        <ImageView
+            android:id="@+id/fila_predicacion_mas"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:padding="8dp"
+            android:background="@drawable/widget_boton_acento"
+            android:src="@drawable/widget_mas"
+            android:contentDescription="Apuntar horas"
+            android:visibility="gone" />
+    </LinearLayout>
 </LinearLayout>

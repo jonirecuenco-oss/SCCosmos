@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using SCCosmos.Sincro;
 
 namespace SCCosmos.Mobile.Data;
 
@@ -38,82 +39,21 @@ public static partial class DatabaseHelper
             return resultado;
         }
 
-        const string ordenMes =
-            "CASE lower(Mes) " +
-            "WHEN 'agosto' THEN 12 " +
-            "WHEN 'julio' THEN 11 " +
-            "WHEN 'junio' THEN 10 " +
-            "WHEN 'mayo' THEN 9 " +
-            "WHEN 'abril' THEN 8 " +
-            "WHEN 'marzo' THEN 7 " +
-            "WHEN 'febrero' THEN 6 " +
-            "WHEN 'enero' THEN 5 " +
-            "WHEN 'diciembre' THEN 4 " +
-            "WHEN 'noviembre' THEN 3 " +
-            "WHEN 'octubre' THEN 2 " +
-            "WHEN 'septiembre' THEN 1 " +
-            "ELSE 0 END";
+        // Misma regla que Windows: SincroCompartido/ResumenActividadInicio.cs.
+        // Antes se tomaban los últimos meses con filas, y las filas preparadas
+        // de los meses aún sin informar (con los auxiliares continuos) daban
+        // 0 cursos y una media de 2 auxiliares. Ahora solo cuentan los meses
+        // con informes de verdad y las fichas actuales, como en Windows.
+        ResumenActividadInicio.Resultado resumen =
+            ResumenActividadInicio.Calcular(
+                connection,
+                DateTime.Today);
 
-        // Cursos bíblicos del último mes con datos.
-        using (SqliteCommand cmd =
-               connection.CreateCommand())
-        {
-            cmd.CommandText =
-                $"""
-                SELECT COALESCE(SUM(CursosBiblicos), 0)
-                FROM ActividadPersonas
-                WHERE AnioServicio = (
-                    SELECT AnioServicio
-                    FROM ActividadPersonas
-                    ORDER BY CAST(AnioServicio AS INTEGER) DESC
-                    LIMIT 1)
-                  AND lower(Mes) = (
-                    SELECT lower(Mes)
-                    FROM ActividadPersonas
-                    WHERE AnioServicio = (
-                        SELECT AnioServicio
-                        FROM ActividadPersonas
-                        ORDER BY CAST(AnioServicio AS INTEGER) DESC
-                        LIMIT 1)
-                    ORDER BY {ordenMes} DESC
-                    LIMIT 1);
-                """;
+        resultado.CursosUltimoMes =
+            resumen.CursosBiblicos;
 
-            resultado.CursosUltimoMes =
-                Convert.ToInt32(
-                    cmd.ExecuteScalar() ?? 0);
-        }
-
-        // Media de precursores auxiliares (últimos 6 meses con datos).
-        using (SqliteCommand cmd =
-               connection.CreateCommand())
-        {
-            cmd.CommandText =
-                $"""
-                SELECT COALESCE(AVG(cnt), 0)
-                FROM (
-                    SELECT SUM(
-                               CASE WHEN PrecursorAuxiliar = 1
-                                    THEN 1 ELSE 0 END) AS cnt
-                    FROM ActividadPersonas
-                    GROUP BY AnioServicio, lower(Mes)
-                    ORDER BY CAST(AnioServicio AS INTEGER) DESC,
-                             {ordenMes} DESC
-                    LIMIT 6
-                );
-                """;
-
-            object? valor =
-                cmd.ExecuteScalar();
-
-            if (valor is not null
-                &&
-                valor != DBNull.Value)
-            {
-                resultado.MediaPrecursoresAuxiliares =
-                    Convert.ToDouble(valor);
-            }
-        }
+        resultado.MediaPrecursoresAuxiliares =
+            resumen.MediaAuxiliares;
 
         return resultado;
     }

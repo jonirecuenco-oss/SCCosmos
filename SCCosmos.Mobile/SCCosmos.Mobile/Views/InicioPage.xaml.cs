@@ -1323,9 +1323,10 @@ public partial class InicioPage : ContentPage, IActualizableMobile
 
                 int betel =
                     personasActivas.Count(p =>
-                        ContieneTexto(p.Servicio, "Betel")
+                        // Igual que en Windows.
+                        ContieneTexto(p.Privilegios, "Asesor de Betel")
                         ||
-                        ContieneTexto(p.Privilegios, "Betel"));
+                        ContieneTexto(p.Privilegios, "Voluntario a distancia"));
 
                 List<int> edades =
                     personasActivas
@@ -1341,8 +1342,7 @@ public partial class InicioPage : ContentPage, IActualizableMobile
 
                 string mediaEdad =
                     edades.Count > 0
-                        ? Math.Round(edades.Average(), 1)
-                              .ToString()
+                        ? edades.Average().ToString("0.0")
                         : "—";
 
                 DatabaseHelper.EstadisticasExtraMobile extra =
@@ -1414,7 +1414,7 @@ public partial class InicioPage : ContentPage, IActualizableMobile
 
         TxtMediaPrecAux.Text =
             stats.extra.MediaPrecursoresAuxiliares
-                .ToString("0.#");
+                .ToString("0.0");
     }
 
 
