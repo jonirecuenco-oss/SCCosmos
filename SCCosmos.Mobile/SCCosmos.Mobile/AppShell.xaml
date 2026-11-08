@@ -28,11 +28,14 @@
                   ColumnSpacing="12"
                   BackgroundColor="{StaticResource FondoPagina}">
 
-                <Label Grid.Column="0"
-                       Text="{Binding Title, Converter={StaticResource IconoMenu}}"
-                       FontSize="17"
-                       VerticalTextAlignment="Center"
-                       HorizontalTextAlignment="Center" />
+                <!-- Icono de Fluent: el mismo que en el menú de Windows -->
+                <Image Grid.Column="0"
+                       Source="{Binding Title, Converter={StaticResource IconoMenu}}"
+                       WidthRequest="22"
+                       HeightRequest="22"
+                       Aspect="AspectFit"
+                       VerticalOptions="Center"
+                       HorizontalOptions="Center" />
 
                 <Label Grid.Column="1"
                        Text="{Binding Title}"

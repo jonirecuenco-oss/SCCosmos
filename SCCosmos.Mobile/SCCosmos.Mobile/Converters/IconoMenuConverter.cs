@@ -3,13 +3,14 @@
 namespace SCCosmos.Mobile.Converters;
 
 /// <summary>
-/// Devuelve el icono del menú lateral a partir del título del módulo.
-/// Se hace con un convertidor (y no con fuentes de iconos) para no
-/// depender de recursos externos en el APK.
+/// Devuelve el icono del menú lateral a partir del título del módulo: los
+/// mismos símbolos de Fluent que el menú de Windows, como SVG en
+/// Resources/Images (menu_*.svg, sacados de la fuente de Wpf.Ui con
+/// Herramientas\Capturas, modo Iconos). Antes eran emojis.
 /// </summary>
 public class IconoMenuConverter : IValueConverter
 {
-    public object Convert(
+    public object? Convert(
         object? value,
         Type targetType,
         object? parameter,
@@ -19,77 +20,27 @@ public class IconoMenuConverter : IValueConverter
             (value as string ?? "")
                 .ToLowerInvariant();
 
-        if (titulo.Contains("inicio"))
-        {
-            return "\U0001F3E0";   // 🏠
-        }
+        // «Archivo del circuito» antes que «Circuito».
+        string? icono =
+            titulo.Contains("inicio") ? "menu_inicio"
+            : titulo.Contains("calendario") ? "menu_calendario"
+            : titulo.Contains("personas") ? "menu_personas"
+            : titulo.Contains("correspondencia") ? "menu_correspondencia"
+            : titulo.Contains("archivo") ? "menu_archivo"
+            : titulo.Contains("circuito") ? "menu_circuito"
+            : titulo.Contains("asambleas") ? "menu_asambleas"
+            : titulo.Contains("rendimientos") || titulo.Contains("donaciones") ? "menu_rendimientos"
+            : titulo.Contains("escuelas") ? "menu_escuelas"
+            : titulo.Contains("rsc") ? "menu_rsc"
+            : titulo.Contains("tareas") ? "menu_tareas"
+            : titulo.Contains("actividad") ? "menu_actividad"
+            : titulo.Contains("configuraci") ? "menu_configuracion"
+            : null;
 
-        if (titulo.Contains("calendario"))
-        {
-            return "\U0001F4C5";   // 📅
-        }
-
-        if (titulo.Contains("personas"))
-        {
-            return "\U0001F465";   // 👥
-        }
-
-        if (titulo.Contains("correspondencia"))
-        {
-            return "\u2709";       // ✉
-        }
-
-        if (titulo.Contains("circuito")
-            &&
-            !titulo.Contains("archivo"))
-        {
-            return "\U0001F5FA";   // 🗺
-        }
-
-        if (titulo.Contains("archivo"))
-        {
-            return "\U0001F5C4";   // 🗄
-        }
-
-        if (titulo.Contains("asambleas"))
-        {
-            return "\U0001F3DB";   // 🏛
-        }
-
-        if (titulo.Contains("rendimientos")
-            || titulo.Contains("donaciones"))
-        {
-            return "\U0001F4BC";   // 💰
-        }
-
-        if (titulo.Contains("escuelas"))
-        {
-            return "\U0001F393";   // 🎓
-        }
-
-        if (titulo.Contains("rsc"))
-        {
-            return "\U0001F91D";   // 🤝
-        }
-
-        if (titulo.Contains("tareas"))
-        {
-            return "\u2705";       // check
-        }
-
-        if (titulo.Contains("actividad"))
-        {
-            return "\U0001F4DC";   // pergamino
-        }
-
-        if (titulo.Contains("configuraci"))
-        {
-            return "\u2699";       // ⚙
-        }
-
-        return "\u25CF";           // ●
+        return icono is null
+            ? null
+            : ImageSource.FromFile(icono + ".png");
     }
-
     public object ConvertBack(
         object? value,
         Type targetType,

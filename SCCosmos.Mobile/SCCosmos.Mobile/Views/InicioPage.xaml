@@ -235,18 +235,52 @@
                 </Border.StrokeShape>
 
                 <Grid ColumnDefinitions="*,Auto"
-                      ColumnSpacing="12">
+                      RowDefinitions="Auto,Auto"
+                      ColumnSpacing="12"
+                      RowSpacing="8">
+
+                    <!-- «PREDICACIÓN · NOVIEMBRE 2026», con flechas para ver otros meses (como el widget) -->
+                    <Label
+                        x:Name="LblTituloPredicacion"
+                        Text="PREDICACIÓN"
+                        TextColor="{StaticResource TextoTerciario}"
+                        FontSize="12"
+                        FontAttributes="Bold"
+                        CharacterSpacing="1.5"
+                        VerticalOptions="Center"/>
+
+                    <HorizontalStackLayout
+                        Grid.Column="1"
+                        Spacing="8">
+
+                        <ImageButton
+                            x:Name="BtnMesAnterior"
+                            Source="icono_anterior.png"
+                            Clicked="BtnMesPredicacion_Clicked"
+                            CommandParameter="-1"
+                            SemanticProperties.Description="Mes anterior"
+                            WidthRequest="36"
+                            HeightRequest="36"
+                            Padding="8"
+                            CornerRadius="18"
+                            BackgroundColor="{StaticResource SuperficieAlta}"/>
+
+                        <ImageButton
+                            x:Name="BtnMesSiguiente"
+                            Source="icono_siguiente.png"
+                            Clicked="BtnMesPredicacion_Clicked"
+                            CommandParameter="1"
+                            SemanticProperties.Description="Mes siguiente"
+                            WidthRequest="36"
+                            HeightRequest="36"
+                            Padding="8"
+                            CornerRadius="18"
+                            BackgroundColor="{StaticResource SuperficieAlta}"/>
+                    </HorizontalStackLayout>
 
                     <VerticalStackLayout
-                        Grid.Column="0"
+                        Grid.Row="1"
                         Spacing="2">
-
-                        <Label
-                            Text="PREDICACIÓN ESTE MES"
-                            TextColor="{StaticResource TextoTerciario}"
-                            FontSize="12"
-                            FontAttributes="Bold"
-                            CharacterSpacing="1.5"/>
 
                         <Label
                             x:Name="LblHorasMes"
@@ -263,7 +297,9 @@
                     </VerticalStackLayout>
 
                     <Button
+                        Grid.Row="1"
                         Grid.Column="1"
+                        HorizontalOptions="End"
                         Text="+"
                         Clicked="BtnSumarHoras_Clicked"
                         SemanticProperties.Description="Añadir horas"
@@ -420,18 +456,19 @@
                                         LineBreakMode="WordWrap"
                                         IsVisible="{Binding MostrarNotas}"/>
 
-                                    <Button
+                                    <!-- Ubicación: el mismo icono que el widget -->
+                                    <ImageButton
                                         Grid.Column="3"
                                         Grid.RowSpan="3"
                                         IsVisible="{Binding MostrarMapa}"
-                                        Text="📍"
+                                        Source="icono_mapa.png"
                                         Clicked="BtnMapaActividadInicio_Clicked"
                                         CommandParameter="{Binding .}"
                                         SemanticProperties.Description="Ver en Google Maps"
-                                        FontSize="15"
-                                        Padding="9,4"
+                                        WidthRequest="38"
+                                        HeightRequest="38"
+                                        Padding="8"
                                         BackgroundColor="{StaticResource SuperficieAlta}"
-                                        TextColor="#8BC9E8"
                                         CornerRadius="10"
                                         VerticalOptions="Center"/>
 

@@ -273,6 +273,12 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - Widget: cambia de día a las 00:00 con una alarma exacta, `sccosmos.widget.medianoche`, que usa el mismo permiso que los avisos de tareas; también se actualiza si cambia la hora o la zona. El día elegido con las flechas solo vale ese día (`Sccosmos_WidgetDiaElegidoEl`). Tiene diseño nuevo: cabecera con el día y la fecha completa, flechas redondas, filas en tarjetas e iconos vectoriales en `Platforms/Android/Resources/drawable/widget_*.xml` en lugar de ✓, 📍 y +. Comprobado en el móvil.
   - Incidente: al recorrer la lista de Personas del móvil con deslizamientos lentos se abrió un chat de WhatsApp, sin enviar nada. Desde entonces: deslizamientos rápidos y comprobar la app en primer plano.
 - 08/11/2026 · Publicada la v2.1.46.
+- 08/11/2026 · Mejoras pedidas por el usuario (v2.1.47):
+  - Android › Inicio: la tarjeta «Predicación · mes año» tiene flechas (`_mesPredicacion`) que llegan hasta el mes actual y muestra «Este mes», «El mes pasado» o «Hace N meses».
+  - Menú: Android también usa iconos de Fluent. Son `Resources/Images/menu_*.svg`, sacados de la fuente de Wpf.Ui con `Herramientas\Capturas` en modo `Iconos`, y `IconoMenuConverter` devuelve la imagen. Windows y Android usan: Circuito Map24, Calendario CalendarLtr24, Asambleas PeopleAudience24, Archivo Archive24 y Actividad History24.
+  - Android: Inicio y el Programa de la visita usan el icono de ubicación del widget (`icono_mapa.svg`). Las flechas, editar y borrar usan iconos de Fluent (`icono_anterior/siguiente/editar/borrar.svg`).
+  - Android › Visitas › Programa: la lista va agrupada por días (`DiaProgramaUi`), de martes a domingo como en Windows, y se ordena por hora con `MinutosHora`. Las actividades sin uno de esos días van en «Otros días», al final. La actividad sigue la regla de Windows: en el programa antiguo, Comida, Cenar y Dormir eran responsables. Editar y borrar tienen su propia fila (antes se solapaban con el chip y el mapa). Comprobado en el móvil.
+- 08/11/2026 · Publicada la v2.1.47.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

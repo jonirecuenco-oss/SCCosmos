@@ -688,7 +688,9 @@ public partial class InicioPage : ContentPage, IActualizableMobile
                     : "Esposa";
 
             string mes =
-                DateTime.Today.ToString("yyyy-MM");
+                _mesPredicacion.ToString(
+                    "yyyy-MM",
+                    System.Globalization.CultureInfo.InvariantCulture);
 
             double horas =
                 DatabaseHelper.ObtenerHorasMesMobile(
@@ -706,15 +708,71 @@ public partial class InicioPage : ContentPage, IActualizableMobile
                 + cbs.ToString()
                 + " CBs";
 
+            var es =
+                System.Globalization.CultureInfo
+                    .GetCultureInfo("es-ES");
+
+            LblTituloPredicacion.Text =
+                "PREDICACIÓN · "
+                + _mesPredicacion
+                    .ToString("MMMM yyyy", es)
+                    .ToUpper(es);
+
+            DateTime mesActual =
+                new(DateTime.Today.Year, DateTime.Today.Month, 1);
+
+            int diferencia =
+                (mesActual.Year - _mesPredicacion.Year) * 12
+                + mesActual.Month - _mesPredicacion.Month;
+
             LblHorasMesEtiqueta.Text =
-                DateTime.Today.ToString(
-                    "MMMM yyyy",
-                    System.Globalization.CultureInfo
-                        .GetCultureInfo("es-ES"));
+                diferencia switch
+                {
+                    0 => "Este mes",
+                    1 => "El mes pasado",
+                    _ => $"Hace {diferencia} meses"
+                };
+
+            // Los meses futuros no tienen nada que ver: en el mes actual la
+            // flecha de avanzar se apaga.
+            BtnMesSiguiente.IsEnabled =
+                diferencia > 0;
+
+            BtnMesSiguiente.Opacity =
+                diferencia > 0 ? 1 : 0.35;
         }
         catch
         {
         }
+    }
+
+
+    // Mes que enseña la tarjeta de predicación (con las flechas se ven otros).
+    private DateTime _mesPredicacion =
+        new(DateTime.Today.Year, DateTime.Today.Month, 1);
+
+
+    private void BtnMesPredicacion_Clicked(
+        object sender,
+        EventArgs e)
+    {
+        int paso =
+            (sender as ImageButton)?.CommandParameter is string texto
+            && int.TryParse(texto, out int valor)
+                ? valor
+                : 0;
+
+        DateTime nuevo =
+            _mesPredicacion.AddMonths(paso);
+
+        if (paso == 0
+            || nuevo > new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1))
+        {
+            return;
+        }
+
+        _mesPredicacion = nuevo;
+        CargarHorasMes();
     }
 
 
@@ -751,8 +809,7 @@ public partial class InicioPage : ContentPage, IActualizableMobile
     {
         try
         {
-            if (sender is not Button boton
-                || boton.CommandParameter is not ActividadHoy actividad)
+            if (((sender as ImageButton)?.CommandParameter ?? (sender as Button)?.CommandParameter) is not ActividadHoy actividad)
             {
                 return;
             }

@@ -1274,8 +1274,76 @@ public partial class VisitaDetallePage
     {
         _programaPreparado = true;
         ListaPrograma.ItemsSource = null;
-        ListaPrograma.ItemsSource = _programaUi;
+        ListaPrograma.ItemsSource = AgruparProgramaPorDia(_programaUi);
         LblSinPrograma.IsVisible = _programaUi.Count == 0;
+    }
+
+
+    // Días de la visita, como en Windows.
+    private static readonly string[] DiasPrograma =
+    {
+        "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"
+    };
+
+
+    /// <summary>
+    /// Un apartado por día (de martes a domingo, como en Windows) con las
+    /// actividades por orden de hora. Antes iban todas seguidas, sin
+    /// ordenar. Lo que no tenga uno de esos días va al final, para no perderlo.
+    /// </summary>
+    private static List<DiaProgramaUi> AgruparProgramaPorDia(
+        List<ProgramaVisitaUi> programa)
+    {
+        var grupos = new List<DiaProgramaUi>();
+
+        if (programa.Count == 0)
+        {
+            return grupos;
+        }
+
+        ILookup<string, ProgramaVisitaUi> porDia =
+            programa.ToLookup(p => TextoParaBuscar(p.Original.Dia));
+
+        foreach (string dia in DiasPrograma)
+        {
+            grupos.Add(new DiaProgramaUi(
+                dia,
+                porDia[TextoParaBuscar(dia)].OrderBy(p => MinutosHora(p.Original.Hora))));
+        }
+
+        HashSet<string> conocidos =
+            DiasPrograma.Select(d => TextoParaBuscar(d)).ToHashSet();
+
+        List<ProgramaVisitaUi> otros =
+            programa
+                .Where(p => !conocidos.Contains(TextoParaBuscar(p.Original.Dia)))
+                .OrderBy(p => MinutosHora(p.Original.Hora))
+                .ToList();
+
+        if (otros.Count > 0)
+        {
+            grupos.Add(new DiaProgramaUi("Otros días", otros));
+        }
+
+        return grupos;
+    }
+
+
+    /// <summary>Minutos desde las 00:00 («10:30», «10.30», «10h30», «10»); sin hora, al final.</summary>
+    private static int MinutosHora(string? hora)
+    {
+        Match m = Regex.Match(hora ?? "", @"(\d{1,2})\s*[:.h]\s*(\d{2})");
+
+        if (m.Success)
+        {
+            return int.Parse(m.Groups[1].Value) * 60 + int.Parse(m.Groups[2].Value);
+        }
+
+        m = Regex.Match(hora ?? "", @"^\s*(\d{1,2})\s*$");
+
+        return m.Success
+            ? int.Parse(m.Groups[1].Value) * 60
+            : int.MaxValue;
     }
 
 
@@ -1304,8 +1372,7 @@ public partial class VisitaDetallePage
         object sender,
         EventArgs e)
     {
-        if (sender is not Button boton
-            || boton.CommandParameter is not ProgramaVisitaUi fila)
+        if (((sender as ImageButton)?.CommandParameter ?? (sender as Button)?.CommandParameter) is not ProgramaVisitaUi fila)
         {
             return;
         }
@@ -1473,9 +1540,7 @@ public partial class VisitaDetallePage
         object sender,
         EventArgs e)
     {
-        if (sender is Button boton
-            &&
-            boton.CommandParameter is ProgramaVisitaUi fila)
+        if (((sender as ImageButton)?.CommandParameter ?? (sender as Button)?.CommandParameter) is ProgramaVisitaUi fila)
         {
             await AbrirEditorActividadAsync(fila.Original);
         }
@@ -1506,9 +1571,7 @@ public partial class VisitaDetallePage
         object sender,
         EventArgs e)
     {
-        if (sender is not Button boton
-            ||
-            boton.CommandParameter is not ProgramaVisitaUi fila)
+        if (((sender as ImageButton)?.CommandParameter ?? (sender as Button)?.CommandParameter) is not ProgramaVisitaUi fila)
         {
             return;
         }
@@ -4037,7 +4100,27 @@ public sealed class ProgramaVisitaUi
         !string.IsNullOrWhiteSpace(Ubicacion);
 
     public bool MostrarResponsable =>
-        !string.IsNullOrWhiteSpace(Original.Responsable);
+        !string.IsNullOrWhiteSpace(Original.Responsable)
+        && !ResponsableEsActividad;
+
+    /// <summary>Hora para mostrar («--:--» si no tiene), como en Windows.</summary>
+    public string HoraVisual =>
+        string.IsNullOrWhiteSpace(Original.Hora)
+            ? "--:--"
+            : Original.Hora.Trim();
+
+    // Programa antiguo: Comida, Cenar y Dormir se guardaban como responsable.
+    private bool ResponsableEsActividad =>
+        string.IsNullOrWhiteSpace(Original.TipoActividad)
+        && (Original.Responsable ?? "").Trim().ToLowerInvariant() is "comida" or "cenar" or "dormir";
+
+    /// <summary>Actividad, con las mismas reglas que Windows.</summary>
+    public string Tipo =>
+        !string.IsNullOrWhiteSpace(Original.TipoActividad)
+            ? Original.TipoActividad.Trim()
+            : ResponsableEsActividad
+                ? Original.Responsable.Trim()
+                : "Actividad";
 
     public string Responsable =>
         Original.Responsable;
@@ -4072,6 +4155,29 @@ public sealed class ProgramaVisitaUi
 
     public bool MostrarNotas =>
         !string.IsNullOrWhiteSpace(Notas);
+}
+
+
+/// <summary>Un día del programa (cabecera del apartado) con sus actividades.</summary>
+public sealed class DiaProgramaUi : List<ProgramaVisitaUi>
+{
+    public DiaProgramaUi(
+        string dia,
+        IEnumerable<ProgramaVisitaUi> actividades)
+        : base(actividades)
+    {
+        Dia = dia;
+    }
+
+    public string Dia { get; }
+
+    public string Resumen =>
+        Count switch
+        {
+            0 => "Sin actividades",
+            1 => "1 actividad",
+            _ => $"{Count} actividades"
+        };
 }
 
 
