@@ -72,7 +72,9 @@ namespace SCCosmos.Mobile
 
                 try
                 {
-                    await SincronizarAlArrancarAsync();
+                    // Avisos de tareas cada 30 s. Antes iban dentro del bucle
+                    // de la sincronización antigua, que ya no existe.
+                    TareasAvisoService.IniciarComprobacionPeriodica();
                 }
                 catch
                 {
@@ -80,7 +82,7 @@ namespace SCCosmos.Mobile
 
                 try
                 {
-                    AutoSyncService.Iniciar();
+                    RestosSincroAntigua.BorrarUnaVez();
                 }
                 catch
                 {
@@ -169,17 +171,6 @@ namespace SCCosmos.Mobile
             }
         }
 
-        private static async Task SincronizarAlArrancarAsync()
-        {
-            try
-            {
-                await AutoSyncService.ImportarSiHayCambiosAsync();
-            }
-            catch
-            {
-            }
-        }
-
         protected override void OnSleep()
         {
             // Al salir a segundo plano (o cerrar), se envían AHORA los
@@ -205,8 +196,6 @@ namespace SCCosmos.Mobile
                 "Ciclo.OnSleep",
                 relojVaciado.ElapsedMilliseconds);
 
-            // Sistema antiguo de carpeta (solo si siguiera activo).
-            _ = AutoSyncService.SincronizarSiHayCambiosAsync();
 
             // Se reprograma el próximo aviso de tareas con lo último que
             // haya guardado (por si se tocaron tareas hace un momento).

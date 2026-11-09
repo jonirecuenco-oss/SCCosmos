@@ -312,51 +312,6 @@ public static class SyncFolderService
 #endif
     }
 
-    public static async Task CopiarLocalABaseDatosAsync(
-    string origenLocal)
-    {
-#if ANDROID
-        if (!File.Exists(origenLocal))
-        {
-            throw new FileNotFoundException(
-                "No existe la base de datos local que se quiere exportar.");
-        }
-
-        var archivoUri =
-            BuscarArchivo("sccosmos.db");
-
-        if (archivoUri == null)
-        {
-            throw new FileNotFoundException(
-                "No se encuentra sccosmos.db en la carpeta sincronizada.");
-        }
-
-        var resolver =
-            Android.App.Application.Context.ContentResolver;
-
-        using var entrada =
-            File.OpenRead(origenLocal);
-
-        using var salida =
-            resolver.OpenOutputStream(
-                archivoUri,
-                "wt")
-            ?? throw new IOException(
-                "Android no pudo abrir sccosmos.db para escritura.");
-
-        await entrada.CopyToAsync(salida);
-        await salida.FlushAsync();
-#else
-    await Task.CompletedTask;
-#endif
-    }
-
-
-    // =========================================================
-    // EXPLORACIÓN DE ARCHIVOS DE LA CARPETA SINCRONIZADA
-    // (Archivo del circuito: JSON + carpeta ArchivosGuardados)
-    // =========================================================
-
     /// <summary>
     /// Archivos de una subcarpeta con su «firma» (tamaño y fecha de
     /// modificación), todo en una sola consulta: permite saber si un archivo

@@ -212,6 +212,18 @@ public sealed class ResultadoAnalisisJwHub
         Iguales.Count;
 
 
+    /// <summary>
+    /// ¿Hay algo que revisar (cambios, altas, bajas o traslados)? Si no, la
+    /// sincronización no deja revisión pendiente: ni notificación ni
+    /// «Revisar» en Personas.
+    /// </summary>
+    public bool HayQueRevisar =>
+        TotalConflictos > 0
+        || TotalNuevos > 0
+        || TotalBajas > 0
+        || TotalTraslados > 0;
+
+
     public string CrearResumen()
     {
         return
@@ -281,6 +293,13 @@ public static class JwHubSyncAnalysisService
                 _ultimoAnalisis =
                     JwHubSyncReviewStore
                         .Cargar();
+
+                // Una revisión guardada sin nada que revisar (de versiones
+                // anteriores) se descarta, como si se hubiera finalizado.
+                if (_ultimoAnalisis is { HayQueRevisar: false })
+                {
+                    LimpiarUltimoAnalisis();
+                }
             }
 
 
@@ -705,6 +724,16 @@ public static class JwHubSyncAnalysisService
         // =====================================================
         // CONSERVAR Y PERSISTIR
         // =====================================================
+
+        // Sin nada que revisar no se guarda: es lo mismo que pulsar
+        // «Finalizar», y así no salen la notificación ni «Revisar».
+        if (!resultado.HayQueRevisar)
+        {
+            LimpiarUltimoAnalisis();
+
+            return resultado;
+        }
+
 
         UltimoAnalisis =
             resultado;

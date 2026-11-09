@@ -240,6 +240,58 @@ public static class TareasAvisoService
     }
 
 
+    private static CancellationTokenSource? _comprobacion;
+
+
+    /// <summary>
+    /// Comprueba los avisos cada 30 segundos mientras la app está abierta:
+    /// la primera vez a los 4 s y después cada 30 s. Antes lo hacía el bucle
+    /// de la sincronización antigua (AutoSyncService), que ya no existe.
+    /// </summary>
+    public static void IniciarComprobacionPeriodica()
+    {
+        if (_comprobacion is not null)
+        {
+            return;
+        }
+
+        _comprobacion =
+            new CancellationTokenSource();
+
+        CancellationToken token =
+            _comprobacion.Token;
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Task.Delay(
+                    4000,
+                    token);
+
+                while (!token.IsCancellationRequested)
+                {
+                    try
+                    {
+                        await VerificarAsync();
+                    }
+                    catch
+                    {
+                        // Silencioso: se reintenta en la siguiente vuelta.
+                    }
+
+                    await Task.Delay(
+                        TimeSpan.FromSeconds(30),
+                        token);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        });
+    }
+
+
     /// <summary>
     /// Programa la siguiente alarma de avisos de tareas (Android).
     /// </summary>

@@ -215,10 +215,12 @@ public static class AlertasMobileService
 #if ANDROID
         try
         {
+            // Solo si hay algo que revisar (cambios, altas, bajas o traslados).
             if (SCCosmos.Mobile.Platforms
                     .Android
-                    .JwHubSyncReviewStore
-                    .ExisteRevisionPendiente)
+                    .JwHubSyncAnalysisService
+                    .UltimoAnalisis?
+                    .HayQueRevisar == true)
             {
                 alertas.Insert(
                     0,

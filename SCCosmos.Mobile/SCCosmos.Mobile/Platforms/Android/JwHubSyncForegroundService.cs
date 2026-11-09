@@ -427,12 +427,7 @@ public sealed class JwHubSyncForegroundService
                         calcularBajas);
 
 
-                hayRevisionPendiente =
-                    analisis.TotalConflictos > 0
-                    ||
-                    analisis.TotalNuevos > 0
-                    ||
-                    analisis.TotalBajas > 0;
+                hayRevisionPendiente = analisis.HayQueRevisar;
 
 
                 if (hayRevisionPendiente)
@@ -440,7 +435,8 @@ public sealed class JwHubSyncForegroundService
                     mensajeRevisionPendiente =
                         $"Conflictos: {analisis.TotalConflictos} · " +
                         $"Altas: {analisis.TotalNuevos} · " +
-                        $"Posibles bajas: {analisis.TotalBajas}. " +
+                        $"Posibles bajas: {analisis.TotalBajas} · " +
+                        $"Posibles traslados: {analisis.TotalTraslados}. " +
                         "Abre SCCosmos para revisar los cambios.";
                 }
 
@@ -548,12 +544,7 @@ public sealed class JwHubSyncForegroundService
                             calcularBajas: false);
 
 
-                    hayRevisionPendiente =
-                        analisis.TotalConflictos > 0
-                        ||
-                        analisis.TotalNuevos > 0
-                        ||
-                        analisis.TotalBajas > 0;
+                    hayRevisionPendiente = analisis.HayQueRevisar;
 
 
                     if (hayRevisionPendiente)
@@ -561,7 +552,8 @@ public sealed class JwHubSyncForegroundService
                         mensajeRevisionPendiente =
                             $"Conflictos: {analisis.TotalConflictos} · " +
                             $"Altas: {analisis.TotalNuevos} · " +
-                            $"Posibles bajas: {analisis.TotalBajas}.";
+                            $"Posibles bajas: {analisis.TotalBajas} · " +
+                            $"Posibles traslados: {analisis.TotalTraslados}.";
                     }
 
 

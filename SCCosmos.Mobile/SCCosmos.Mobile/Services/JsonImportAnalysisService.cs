@@ -212,11 +212,12 @@ public static class JsonImportAnalysisService
         if (!string.IsNullOrWhiteSpace(json.Esperanza) && !Iguales(db.Esperanza, json.Esperanza))
             campos.Add("Esperanza");
 
-        // En nombramiento y servicio el vacío puede ser significativo.
-        if (!Iguales(db.Nombramiento, json.Nombramiento))
+        // Como en Windows (S41): la tarjeta solo rellena. Un nombramiento o
+        // servicio vacío en la tarjeta no es un cambio ni borra el de la ficha.
+        if (!string.IsNullOrWhiteSpace(json.Nombramiento) && !Iguales(db.Nombramiento, json.Nombramiento))
             campos.Add("Nombramiento");
 
-        if (!Iguales(db.Servicio, json.Servicio))
+        if (!string.IsNullOrWhiteSpace(json.Servicio) && !Iguales(db.Servicio, json.Servicio))
             campos.Add("Servicio");
 
         if (!string.IsNullOrWhiteSpace(json.FechaNacimiento) &&

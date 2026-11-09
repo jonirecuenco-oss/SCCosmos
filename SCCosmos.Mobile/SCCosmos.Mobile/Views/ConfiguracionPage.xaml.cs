@@ -31,9 +31,6 @@ public partial class ConfiguracionPage : ContentPage
 
         ActualizarMensajeClavesViaje();
 
-        // La sincronización es siempre automática: no hay interruptor.
-        AutoSyncService.Activo =
-            true;
 
         // Selector nuevo entre dispositivos.
         CargarSincronizacion();
