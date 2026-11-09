@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+﻿using SCCosmos.Sincro;
+using System.Collections.ObjectModel;
 using SCCosmos.Mobile.Data;
 using SCCosmos.Mobile.Models;
 using SCCosmos.Mobile.Services;
@@ -321,12 +322,12 @@ public partial class InicioPage : ContentPage, IActualizableMobile
         _mesVisitaActual = "";
 
         PanelProgramaDia.IsVisible = false;
+        NavDiaPrograma.IsVisible = false;
         PanelVisita.IsVisible = false;
         PanelOtraActividad.IsVisible = false;
         TxtSinDatos.IsVisible = false;
         LblTipoSemana.IsVisible = true;
         LblTipoSemana.TextColor = Color.FromArgb("#858C96");
-        TxtSinProgramaDia.IsVisible = false;
         MarcoIconoSemana.IsVisible = true;
         BtnVerVisitaSemana.IsVisible = false;
 
@@ -742,7 +743,9 @@ public partial class InicioPage : ContentPage, IActualizableMobile
             LblPieTiempo.Text =
                 hayVisita
                     ? "No se ha podido obtener la previsión de AEMET."
-                    : "Activa la ubicación para ver el tiempo donde estás.";
+                    : TiempoAemetService.ProblemaUbicacion.Length > 0
+                        ? TiempoAemetService.ProblemaUbicacion
+                        : "Activa la ubicación para ver el tiempo donde estás.";
             return;
         }
 
@@ -760,27 +763,44 @@ public partial class InicioPage : ContentPage, IActualizableMobile
             LblMaxMinTiempo.Text = $"↑ {maxima}°   ↓ {minima}°" + (tiempo.ProbLluviaDia is int lluvia && lluvia > 0 ? $"   ·   lluvia {lluvia}%" : "");
         }
 
-        foreach (AvisoTiempo aviso in tiempo.Avisos)
-        {
-            PanelAvisosTiempo.Children.Add(CrearAvisoTiempo(aviso));
-        }
-
-        PanelAvisosTiempo.IsVisible =
-            tiempo.Avisos.Count > 0;
-
         bool esHoy = tiempo.Fecha == DateTime.Today;
         int horaActual = DateTime.Now.Hour;
 
         // Hoy, desde la hora actual; otro día, desde las 6 (se desliza a los lados).
-        foreach (HoraTiempo hora in tiempo.Horas.Where(h => !tiempo.PorHoras || h.Hora >= (esHoy ? horaActual : 6)))
+        List<HoraTiempo> visibles =
+            tiempo.Horas
+                .Where(h => !tiempo.PorHoras || h.Hora >= (esHoy ? horaActual : 6))
+                .ToList();
+
+        foreach (HoraTiempo hora in visibles)
         {
             PanelHorasTiempo.Children.Add(
                 CrearHoraTiempo(hora, destacada: esHoy && hora.Hora == horaActual));
         }
 
+        // Los avisos van debajo de cada hora; aquí solo los que no caen en ninguna.
+        List<AvisoTiempo> sueltos =
+            tiempo.Avisos
+                .Where(a => !visibles.Any(h => h.Avisos.Contains(a)))
+                .ToList();
+
+        foreach (AvisoTiempo aviso in sueltos)
+        {
+            PanelAvisosTiempo.Children.Add(CrearAvisoTiempo(aviso));
+        }
+
+        PanelAvisosTiempo.IsVisible =
+            sueltos.Count > 0;
+
         LblPieTiempo.Text =
-            $"AEMET · {tiempo.Motivo}"
-            + (tiempo.Actualizado != default ? $" · {tiempo.Actualizado:HH:mm}" : "");
+            string.Join(
+                "\n",
+                new[]
+                {
+                    $"AEMET · {tiempo.Motivo}" + (tiempo.Actualizado != default ? $" · {tiempo.Actualizado:HH:mm}" : ""),
+                    tiempo.NotaTramos
+                }
+                .Where(s => s.Length > 0));
 
         _ = ScrollHorasTiempo.ScrollToAsync(0, 0, false);
     }
@@ -802,9 +822,25 @@ public partial class InicioPage : ContentPage, IActualizableMobile
         celda.Add(new Label { Text = hora.Temperatura is int t ? $"{t}°" : "", FontSize = 15, FontAttributes = FontAttributes.Bold, TextColor = Color.FromArgb("#F2F4F7"), HorizontalTextAlignment = TextAlignment.Center });
         celda.Add(new Label { Text = hora.TextoLluvia.Length > 0 ? hora.TextoLluvia : " ", FontSize = 11, TextColor = Color.FromArgb("#4BA3E3"), HorizontalTextAlignment = TextAlignment.Center });
 
+        // El aviso que cubre esa hora (con «+1» si hay más).
+        if (hora.Aviso is AvisoTiempo aviso)
+        {
+            var avisoFila =
+                new HorizontalStackLayout
+                {
+                    Spacing = 2,
+                    HorizontalOptions = LayoutOptions.Center
+                };
+
+            avisoFila.Add(new Image { Source = "icono_aviso.png", WidthRequest = 11, HeightRequest = 11, VerticalOptions = LayoutOptions.Center });
+            avisoFila.Add(new Label { Text = hora.TextoAviso, FontSize = 10, TextColor = Color.FromArgb(aviso.Color), VerticalTextAlignment = TextAlignment.Center });
+
+            celda.Add(avisoFila);
+        }
+
         SemanticProperties.SetDescription(
             celda,
-            $"{hora.Etiqueta}: {hora.Descripcion}");
+            $"{hora.Etiqueta}: {hora.Descripcion}" + (hora.Aviso is null ? "" : $". {hora.Aviso.Titulo}"));
 
         return new Border
         {
@@ -1234,13 +1270,13 @@ public partial class InicioPage : ContentPage, IActualizableMobile
             !string.IsNullOrWhiteSpace(
                 _codigoVisitaActual);
 
-        PanelProgramaDia.IsVisible =
-            ProgramaHoy.Count > 0
-            || esDiaDeVisita;
+        // Las flechas de día, en la semana de la visita (arriba del tiempo).
+        NavDiaPrograma.IsVisible =
+            esDiaDeVisita;
 
-        TxtSinProgramaDia.IsVisible =
-            ProgramaHoy.Count == 0
-            && esDiaDeVisita;
+        // Las actividades, solo si las hay: sin mensaje de «no hay actividades».
+        PanelProgramaDia.IsVisible =
+            ProgramaHoy.Count > 0;
 
         MarcoListaProgramaDia.IsVisible =
             ProgramaHoy.Count > 0;
@@ -1707,6 +1743,7 @@ public partial class InicioPage : ContentPage, IActualizableMobile
         PanelVisita.IsVisible = false;
         PanelOtraActividad.IsVisible = false;
         PanelProgramaDia.IsVisible = false;
+        NavDiaPrograma.IsVisible = false;
 
         TxtSinDatos.IsVisible = true;
 

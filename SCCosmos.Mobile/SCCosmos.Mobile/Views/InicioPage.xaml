@@ -223,95 +223,49 @@
             </Border>
 
 
-            <!-- HORAS PREDICADAS -->
-            <Border
-                BackgroundColor="{StaticResource Superficie}"
-                Stroke="{StaticResource Borde}"
-                StrokeThickness="1"
-                Padding="18">
+            <!-- Flechas de día (semana de la visita): arriba del tiempo y de las actividades -->
+            <Grid
+                x:Name="NavDiaPrograma"
+                IsVisible="False"
+                ColumnDefinitions="Auto,*,Auto"
+                ColumnSpacing="6">
 
-                <Border.StrokeShape>
-                    <RoundRectangle CornerRadius="18"/>
-                </Border.StrokeShape>
+                <!-- Flecha redonda, como las de la predicación y el widget -->
+                <ImageButton
+                    Source="icono_anterior.png"
+                    Clicked="BtnDiaAnterior_Clicked"
+                    SemanticProperties.Description="Día anterior"
+                    WidthRequest="36"
+                    HeightRequest="36"
+                    Padding="8"
+                    CornerRadius="18"
+                    BackgroundColor="{StaticResource SuperficieAlta}"
+                    VerticalOptions="Center"/>
 
-                <Grid ColumnDefinitions="*,Auto"
-                      RowDefinitions="Auto,Auto"
-                      ColumnSpacing="12"
-                      RowSpacing="8">
+                <Label
+                    x:Name="LblDiaPrograma"
+                    Grid.Column="1"
+                    Text="HOY"
+                    TextColor="{StaticResource TextoTerciario}"
+                    FontSize="12"
+                    FontAttributes="Bold"
+                    CharacterSpacing="1.5"
+                    HorizontalTextAlignment="Center"
+                    VerticalTextAlignment="Center"/>
 
-                    <!-- «PREDICACIÓN · NOVIEMBRE 2026», con flechas para ver otros meses (como el widget) -->
-                    <Label
-                        x:Name="LblTituloPredicacion"
-                        Text="PREDICACIÓN"
-                        TextColor="{StaticResource TextoTerciario}"
-                        FontSize="12"
-                        FontAttributes="Bold"
-                        CharacterSpacing="1.5"
-                        VerticalOptions="Center"/>
-
-                    <HorizontalStackLayout
-                        Grid.Column="1"
-                        Spacing="8">
-
-                        <ImageButton
-                            x:Name="BtnMesAnterior"
-                            Source="icono_anterior.png"
-                            Clicked="BtnMesPredicacion_Clicked"
-                            CommandParameter="-1"
-                            SemanticProperties.Description="Mes anterior"
-                            WidthRequest="36"
-                            HeightRequest="36"
-                            Padding="8"
-                            CornerRadius="18"
-                            BackgroundColor="{StaticResource SuperficieAlta}"/>
-
-                        <ImageButton
-                            x:Name="BtnMesSiguiente"
-                            Source="icono_siguiente.png"
-                            Clicked="BtnMesPredicacion_Clicked"
-                            CommandParameter="1"
-                            SemanticProperties.Description="Mes siguiente"
-                            WidthRequest="36"
-                            HeightRequest="36"
-                            Padding="8"
-                            CornerRadius="18"
-                            BackgroundColor="{StaticResource SuperficieAlta}"/>
-                    </HorizontalStackLayout>
-
-                    <VerticalStackLayout
-                        Grid.Row="1"
-                        Spacing="2">
-
-                        <Label
-                            x:Name="LblHorasMes"
-                            Text="0"
-                            TextColor="{StaticResource TextoPrincipal}"
-                            FontSize="30"
-                            FontAttributes="Bold"/>
-
-                        <Label
-                            x:Name="LblHorasMesEtiqueta"
-                            Text=""
-                            TextColor="{StaticResource TextoTerciario}"
-                            FontSize="12"/>
-                    </VerticalStackLayout>
-
-                    <!-- Editar las horas y CBs de un día del mes que se está viendo -->
-                    <ImageButton
-                        Grid.Row="1"
-                        Grid.Column="1"
-                        HorizontalOptions="End"
-                        Source="icono_editar.png"
-                        Clicked="BtnSumarHoras_Clicked"
-                        SemanticProperties.Description="Editar horas"
-                        WidthRequest="54"
-                        HeightRequest="44"
-                        Padding="12"
-                        BackgroundColor="#0B6FC2"
-                        CornerRadius="12"
-                        VerticalOptions="Center"/>
-                </Grid>
-            </Border>
+                <!-- Flecha redonda, como las de la predicación y el widget -->
+                <ImageButton
+                    Grid.Column="2"
+                    Source="icono_siguiente.png"
+                    Clicked="BtnDiaSiguiente_Clicked"
+                    SemanticProperties.Description="Día siguiente"
+                    WidthRequest="36"
+                    HeightRequest="36"
+                    Padding="8"
+                    CornerRadius="18"
+                    BackgroundColor="{StaticResource SuperficieAlta}"
+                    VerticalOptions="Center"/>
+            </Grid>
 
             <!-- TIEMPO (AEMET): el del día que se ve abajo, donde se va a estar -->
             <Border
@@ -379,56 +333,6 @@
                 x:Name="PanelProgramaDia"
                 IsVisible="False"
                 Spacing="11">
-
-                <Grid
-                    ColumnDefinitions="Auto,*,Auto"
-                    ColumnSpacing="6">
-
-                    <!-- Flecha redonda, como las de la predicación y el widget -->
-                    <ImageButton
-                        Source="icono_anterior.png"
-                        Clicked="BtnDiaAnterior_Clicked"
-                        SemanticProperties.Description="Día anterior"
-                        WidthRequest="36"
-                        HeightRequest="36"
-                        Padding="8"
-                        CornerRadius="18"
-                        BackgroundColor="{StaticResource SuperficieAlta}"
-                        VerticalOptions="Center"/>
-
-                    <Label
-                        x:Name="LblDiaPrograma"
-                        Grid.Column="1"
-                        Text="HOY"
-                        TextColor="{StaticResource TextoTerciario}"
-                        FontSize="12"
-                        FontAttributes="Bold"
-                        CharacterSpacing="1.5"
-                        HorizontalTextAlignment="Center"
-                        VerticalTextAlignment="Center"/>
-
-                    <!-- Flecha redonda, como las de la predicación y el widget -->
-                    <ImageButton
-                        Grid.Column="2"
-                        Source="icono_siguiente.png"
-                        Clicked="BtnDiaSiguiente_Clicked"
-                        SemanticProperties.Description="Día siguiente"
-                        WidthRequest="36"
-                        HeightRequest="36"
-                        Padding="8"
-                        CornerRadius="18"
-                        BackgroundColor="{StaticResource SuperficieAlta}"
-                        VerticalOptions="Center"/>
-                </Grid>
-
-                <Label
-                    x:Name="TxtSinProgramaDia"
-                    Text="No hay actividades programadas para este día."
-                    TextColor="{StaticResource TextoTerciario}"
-                    FontSize="13"
-                    HorizontalTextAlignment="Center"
-                    Margin="0,4,0,6"
-                    IsVisible="False"/>
 
                 <Border
                     x:Name="MarcoListaProgramaDia"
@@ -544,6 +448,96 @@
 
             </VerticalStackLayout>
 
+
+            <!-- HORAS PREDICADAS -->
+            <Border
+                BackgroundColor="{StaticResource Superficie}"
+                Stroke="{StaticResource Borde}"
+                StrokeThickness="1"
+                Padding="18">
+
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="18"/>
+                </Border.StrokeShape>
+
+                <Grid ColumnDefinitions="*,Auto"
+                      RowDefinitions="Auto,Auto"
+                      ColumnSpacing="12"
+                      RowSpacing="8">
+
+                    <!-- «PREDICACIÓN · NOVIEMBRE 2026», con flechas para ver otros meses (como el widget) -->
+                    <Label
+                        x:Name="LblTituloPredicacion"
+                        Text="PREDICACIÓN"
+                        TextColor="{StaticResource TextoTerciario}"
+                        FontSize="12"
+                        FontAttributes="Bold"
+                        CharacterSpacing="1.5"
+                        VerticalOptions="Center"/>
+
+                    <HorizontalStackLayout
+                        Grid.Column="1"
+                        Spacing="8">
+
+                        <ImageButton
+                            x:Name="BtnMesAnterior"
+                            Source="icono_anterior.png"
+                            Clicked="BtnMesPredicacion_Clicked"
+                            CommandParameter="-1"
+                            SemanticProperties.Description="Mes anterior"
+                            WidthRequest="36"
+                            HeightRequest="36"
+                            Padding="8"
+                            CornerRadius="18"
+                            BackgroundColor="{StaticResource SuperficieAlta}"/>
+
+                        <ImageButton
+                            x:Name="BtnMesSiguiente"
+                            Source="icono_siguiente.png"
+                            Clicked="BtnMesPredicacion_Clicked"
+                            CommandParameter="1"
+                            SemanticProperties.Description="Mes siguiente"
+                            WidthRequest="36"
+                            HeightRequest="36"
+                            Padding="8"
+                            CornerRadius="18"
+                            BackgroundColor="{StaticResource SuperficieAlta}"/>
+                    </HorizontalStackLayout>
+
+                    <VerticalStackLayout
+                        Grid.Row="1"
+                        Spacing="2">
+
+                        <Label
+                            x:Name="LblHorasMes"
+                            Text="0"
+                            TextColor="{StaticResource TextoPrincipal}"
+                            FontSize="30"
+                            FontAttributes="Bold"/>
+
+                        <Label
+                            x:Name="LblHorasMesEtiqueta"
+                            Text=""
+                            TextColor="{StaticResource TextoTerciario}"
+                            FontSize="12"/>
+                    </VerticalStackLayout>
+
+                    <!-- Editar las horas y CBs de un día del mes que se está viendo -->
+                    <ImageButton
+                        Grid.Row="1"
+                        Grid.Column="1"
+                        HorizontalOptions="End"
+                        Source="icono_editar.png"
+                        Clicked="BtnSumarHoras_Clicked"
+                        SemanticProperties.Description="Editar horas"
+                        WidthRequest="54"
+                        HeightRequest="44"
+                        Padding="12"
+                        BackgroundColor="#0B6FC2"
+                        CornerRadius="12"
+                        VerticalOptions="Center"/>
+                </Grid>
+            </Border>
 
             <!-- ESTADÍSTICAS -->
 

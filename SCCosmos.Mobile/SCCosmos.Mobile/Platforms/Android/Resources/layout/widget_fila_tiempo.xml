@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Tiempo de AEMET por horas: 6 huecos (los que sobran se ocultan) -->
+<!-- Tiempo de AEMET: 6 horas (o tramos) con su aviso debajo y flechas para moverse por las horas -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/fila_tiempo_raiz"
     android:layout_width="match_parent"
@@ -11,11 +11,22 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
+        android:gravity="center_vertical"
         android:background="@drawable/widget_tarjeta"
-        android:paddingLeft="4dp"
+        android:paddingLeft="2dp"
         android:paddingTop="8dp"
-        android:paddingRight="4dp"
+        android:paddingRight="2dp"
         android:paddingBottom="8dp">
+
+        <ImageView
+            android:id="@+id/tiempo_antes"
+            android:layout_width="22dp"
+            android:layout_height="44dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:src="@drawable/widget_atras"
+            android:contentDescription="Horas anteriores"
+            android:visibility="invisible" />
         <LinearLayout
             android:id="@+id/tiempo_celda_1"
             android:layout_width="0dp"
@@ -59,6 +70,32 @@
                 android:textColor="#4BA3E3"
                 android:textSize="10sp"
                 android:maxLines="1" />
+
+            <LinearLayout
+                android:id="@+id/tiempo_avisofila_1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="10dp"
+                    android:layout_height="10dp"
+                    android:layout_marginRight="2dp"
+                    android:src="@drawable/widget_aviso"
+                    android:contentDescription="Aviso" />
+
+                <TextView
+                    android:id="@+id/tiempo_aviso_1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textColor="#E5C07B"
+                    android:textSize="9sp"
+                    android:maxLines="1" />
+            </LinearLayout>
         </LinearLayout>
         <LinearLayout
             android:id="@+id/tiempo_celda_2"
@@ -103,6 +140,32 @@
                 android:textColor="#4BA3E3"
                 android:textSize="10sp"
                 android:maxLines="1" />
+
+            <LinearLayout
+                android:id="@+id/tiempo_avisofila_2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="10dp"
+                    android:layout_height="10dp"
+                    android:layout_marginRight="2dp"
+                    android:src="@drawable/widget_aviso"
+                    android:contentDescription="Aviso" />
+
+                <TextView
+                    android:id="@+id/tiempo_aviso_2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textColor="#E5C07B"
+                    android:textSize="9sp"
+                    android:maxLines="1" />
+            </LinearLayout>
         </LinearLayout>
         <LinearLayout
             android:id="@+id/tiempo_celda_3"
@@ -147,6 +210,32 @@
                 android:textColor="#4BA3E3"
                 android:textSize="10sp"
                 android:maxLines="1" />
+
+            <LinearLayout
+                android:id="@+id/tiempo_avisofila_3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="10dp"
+                    android:layout_height="10dp"
+                    android:layout_marginRight="2dp"
+                    android:src="@drawable/widget_aviso"
+                    android:contentDescription="Aviso" />
+
+                <TextView
+                    android:id="@+id/tiempo_aviso_3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textColor="#E5C07B"
+                    android:textSize="9sp"
+                    android:maxLines="1" />
+            </LinearLayout>
         </LinearLayout>
         <LinearLayout
             android:id="@+id/tiempo_celda_4"
@@ -191,6 +280,32 @@
                 android:textColor="#4BA3E3"
                 android:textSize="10sp"
                 android:maxLines="1" />
+
+            <LinearLayout
+                android:id="@+id/tiempo_avisofila_4"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="10dp"
+                    android:layout_height="10dp"
+                    android:layout_marginRight="2dp"
+                    android:src="@drawable/widget_aviso"
+                    android:contentDescription="Aviso" />
+
+                <TextView
+                    android:id="@+id/tiempo_aviso_4"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textColor="#E5C07B"
+                    android:textSize="9sp"
+                    android:maxLines="1" />
+            </LinearLayout>
         </LinearLayout>
         <LinearLayout
             android:id="@+id/tiempo_celda_5"
@@ -235,6 +350,32 @@
                 android:textColor="#4BA3E3"
                 android:textSize="10sp"
                 android:maxLines="1" />
+
+            <LinearLayout
+                android:id="@+id/tiempo_avisofila_5"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="10dp"
+                    android:layout_height="10dp"
+                    android:layout_marginRight="2dp"
+                    android:src="@drawable/widget_aviso"
+                    android:contentDescription="Aviso" />
+
+                <TextView
+                    android:id="@+id/tiempo_aviso_5"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textColor="#E5C07B"
+                    android:textSize="9sp"
+                    android:maxLines="1" />
+            </LinearLayout>
         </LinearLayout>
         <LinearLayout
             android:id="@+id/tiempo_celda_6"
@@ -279,5 +420,41 @@
                 android:textColor="#4BA3E3"
                 android:textSize="10sp"
                 android:maxLines="1" />
-        </LinearLayout>    </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/tiempo_avisofila_6"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="10dp"
+                    android:layout_height="10dp"
+                    android:layout_marginRight="2dp"
+                    android:src="@drawable/widget_aviso"
+                    android:contentDescription="Aviso" />
+
+                <TextView
+                    android:id="@+id/tiempo_aviso_6"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textColor="#E5C07B"
+                    android:textSize="9sp"
+                    android:maxLines="1" />
+            </LinearLayout>
+        </LinearLayout>
+        <ImageView
+            android:id="@+id/tiempo_despues"
+            android:layout_width="22dp"
+            android:layout_height="44dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:src="@drawable/widget_adelante"
+            android:contentDescription="Horas siguientes"
+            android:visibility="invisible" />
+    </LinearLayout>
 </LinearLayout>

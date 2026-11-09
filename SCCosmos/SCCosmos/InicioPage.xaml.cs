@@ -114,6 +114,7 @@ namespace SCCosmos
                 PanelVisita.Visibility = Visibility.Collapsed;
                 PanelOtraActividad.Visibility = Visibility.Collapsed;
                 PanelProgramaDia.Visibility = Visibility.Collapsed;
+                _ = CargarTiempoAsync(DateTime.Today);
                 BtnVerVisita.Visibility = Visibility.Collapsed;
                 TxtSinDatos.Visibility = Visibility.Collapsed;
                 IconoActividad.Visibility = Visibility.Visible;
@@ -289,6 +290,7 @@ namespace SCCosmos
                     StringComparison.OrdinalIgnoreCase))
             {
                 PanelProgramaDia.Visibility = Visibility.Collapsed;
+                _ = CargarTiempoAsync(DateTime.Today);
                 return;
             }
 
@@ -312,6 +314,9 @@ namespace SCCosmos
             TxtFechaProgramaDia.Text =
                 FormatearFechaPrograma(
                     _fechaProgramaSeleccionada);
+
+            // El tiempo sigue al día del programa.
+            _ = CargarTiempoAsync(_fechaProgramaSeleccionada);
 
             string diaDb =
                 ObtenerNombreDiaPrograma(
@@ -1188,6 +1193,180 @@ namespace SCCosmos
             public int SolG8 { get; set; }
         }
 
+        // =========================================================
+        // TIEMPO (AEMET): el del día del programa (o de hoy), donde se va a
+        // estar: el salón de la visita o, si no, donde está el móvil.
+        // =========================================================
+
+        private System.Threading.CancellationTokenSource _cargaTiempo;
+
+        private async Task CargarTiempoAsync(DateTime dia)
+        {
+            _cargaTiempo?.Cancel();
+
+            var cancelacion =
+                _cargaTiempo = new System.Threading.CancellationTokenSource();
+
+            try
+            {
+                LugarTiempo lugar =
+                    await Task.Run(() => TiempoPc.LugarParaDia(dia));
+
+                TiempoDia tiempo =
+                    lugar == null
+                        ? null
+                        : await Task.Run(() => TiempoAemet.ObtenerAsync(lugar, dia, false, cancelacion.Token));
+
+                if (cancelacion.IsCancellationRequested)
+                {
+                    return;
+                }
+
+                PintarTiempo(tiempo);
+            }
+            catch
+            {
+            }
+        }
+
+        private void PintarTiempo(TiempoDia tiempo)
+        {
+            // Sin sitio (ni visita ni ubicación del móvil): no hay tarjeta.
+            if (tiempo == null)
+            {
+                TarjetaTiempo.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            var es = CultureInfo.GetCultureInfo("es-ES");
+
+            TarjetaTiempo.Visibility = Visibility.Visible;
+            TxtTituloTiempo.Text = "TIEMPO · " + tiempo.Lugar.ToUpper(es);
+            TxtMaxMinTiempo.Text =
+                (tiempo.Maxima is int maxima && tiempo.Minima is int minima ? $"↑ {maxima}°   ↓ {minima}°" : "")
+                + (tiempo.ProbLluviaDia is int lluvia && lluvia > 0 ? $"   ·   lluvia {lluvia}%" : "");
+
+            if (tiempo.SinPrevision)
+            {
+                ListaHorasTiempo.ItemsSource = null;
+                ListaAvisosTiempo.ItemsSource = null;
+                TxtPieTiempo.Text = "AEMET todavía no tiene previsión para este día.";
+                return;
+            }
+
+            bool esHoy = tiempo.Fecha == DateTime.Today;
+            int horaActual = DateTime.Now.Hour;
+
+            // Hoy, desde la hora actual; otro día, desde las 6.
+            List<HoraTiempo> visibles =
+                tiempo.Horas
+                    .Where(h => !tiempo.PorHoras || h.Hora >= (esHoy ? horaActual : 6))
+                    .ToList();
+
+            ListaHorasTiempo.ItemsSource =
+                visibles.Select(h => new CeldaTiempo(h, esHoy && h.Hora == horaActual)).ToList();
+
+            // Los avisos van debajo de cada hora; arriba solo los que no caen en ninguna.
+            ListaAvisosTiempo.ItemsSource =
+                tiempo.Avisos
+                    .Where(a => !visibles.Any(h => h.Avisos.Contains(a)))
+                    .Select(a => new AvisoTiempoUI(a))
+                    .ToList();
+
+            TxtPieTiempo.Text =
+                string.Join(
+                    "\n",
+                    new[]
+                    {
+                        $"AEMET · {tiempo.Motivo}" + (tiempo.Actualizado != default ? $" · {tiempo.Actualizado:HH:mm}" : ""),
+                        tiempo.NotaTramos
+                    }
+                    .Where(s => s.Length > 0));
+        }
+
+        // La rueda mueve la página, no la fila de horas (esa va con su barra).
+        private void ScrollTiempo_PreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
+        {
+            if (e.Handled || sender is not FrameworkElement elemento || elemento.Parent is not UIElement padre)
+            {
+                return;
+            }
+
+            e.Handled = true;
+
+            padre.RaiseEvent(
+                new System.Windows.Input.MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta)
+                {
+                    RoutedEvent = UIElement.MouseWheelEvent,
+                    Source = sender
+                });
+        }
+
+        private static System.Windows.Media.Brush Pincel(string color)
+        {
+            var pincel =
+                new System.Windows.Media.SolidColorBrush(
+                    (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(color));
+
+            pincel.Freeze();
+
+            return pincel;
+        }
+
+        /// <summary>Una hora (o tramo) del tiempo, con los iconos de Fluent como en Android.</summary>
+        public class CeldaTiempo
+        {
+            public CeldaTiempo(HoraTiempo hora, bool destacada)
+            {
+                Etiqueta = hora.Etiqueta;
+                Temperatura = hora.Temperatura is int t ? $"{t}°" : "";
+                Lluvia = hora.TextoLluvia;
+                Descripcion = hora.Descripcion + (hora.Aviso == null ? "" : "\n" + hora.Aviso.Titulo + " · " + hora.Aviso.Periodo);
+                Fondo = destacada ? Pincel("#1FFFFFFF") : System.Windows.Media.Brushes.Transparent;
+                Aviso = hora.TextoAviso;
+                VerAviso = hora.Aviso == null ? Visibility.Collapsed : Visibility.Visible;
+                ColorAviso = Pincel(hora.Aviso?.Color ?? "#E5C07B");
+
+                (Simbolo, ColorIcono) = hora.Icono switch
+                {
+                    "tiempo_sol" => (Wpf.Ui.Controls.SymbolRegular.WeatherSunny24, Pincel("#F5C451")),
+                    "tiempo_luna" => (Wpf.Ui.Controls.SymbolRegular.WeatherMoon24, Pincel("#C9D1D9")),
+                    "tiempo_sol_nubes" => (Wpf.Ui.Controls.SymbolRegular.WeatherPartlyCloudyDay24, Pincel("#E3C46A")),
+                    "tiempo_luna_nubes" => (Wpf.Ui.Controls.SymbolRegular.WeatherPartlyCloudyNight24, Pincel("#C9D1D9")),
+                    "tiempo_lluvia" => (Wpf.Ui.Controls.SymbolRegular.WeatherRain24, Pincel("#4BA3E3")),
+                    "tiempo_llovizna" => (Wpf.Ui.Controls.SymbolRegular.WeatherDrizzle24, Pincel("#7FB8E6")),
+                    "tiempo_tormenta" => (Wpf.Ui.Controls.SymbolRegular.WeatherThunderstorm24, Pincel("#B48EAD")),
+                    "tiempo_nieve" => (Wpf.Ui.Controls.SymbolRegular.WeatherSnow24, Pincel("#E6E8EB")),
+                    "tiempo_niebla" => (Wpf.Ui.Controls.SymbolRegular.WeatherFog24, Pincel("#8A929C")),
+                    _ => (Wpf.Ui.Controls.SymbolRegular.WeatherCloudy24, Pincel("#A7AEB8"))
+                };
+            }
+
+            public string Etiqueta { get; }
+            public Wpf.Ui.Controls.SymbolRegular Simbolo { get; }
+            public System.Windows.Media.Brush ColorIcono { get; }
+            public string Temperatura { get; }
+            public string Lluvia { get; }
+            public string Aviso { get; }
+            public Visibility VerAviso { get; }
+            public System.Windows.Media.Brush ColorAviso { get; }
+            public System.Windows.Media.Brush Fondo { get; }
+            public string Descripcion { get; }
+        }
+
+        public class AvisoTiempoUI
+        {
+            public AvisoTiempoUI(AvisoTiempo aviso)
+            {
+                Texto = $"{aviso.Titulo} · {aviso.Periodo}";
+                Color = Pincel(aviso.Color);
+                Fondo = Pincel("#26" + aviso.Color.TrimStart('#'));
+            }
+
+            public string Texto { get; }
+            public System.Windows.Media.Brush Color { get; }
+            public System.Windows.Media.Brush Fondo { get; }
+        }
         public class ActividadHoy
         {
             public string Hora { get; set; }

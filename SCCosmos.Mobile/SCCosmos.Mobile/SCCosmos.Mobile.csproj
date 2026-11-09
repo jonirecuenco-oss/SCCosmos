@@ -82,6 +82,8 @@
 	<ItemGroup>
 		<!-- Motor de sincronización entre dispositivos (compartido con Windows). -->
 		<Compile Include="..\..\SincroCompartido\*.cs" />
+    <!-- Municipios del INE para el tiempo de AEMET (TiempoAemet) -->
+    <EmbeddedResource Include="..\..\SincroCompartido\municipios_ine.csv" LogicalName="municipios_ine.csv" />
 	</ItemGroup>
 
 	<ItemGroup>

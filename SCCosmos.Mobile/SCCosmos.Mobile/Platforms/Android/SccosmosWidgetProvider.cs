@@ -170,6 +170,35 @@ public class SccosmosWidgetProvider : AppWidgetProvider
     }
 
 
+    // Cuánto se ha movido el tiempo del widget en el día que se ve: «yyyy-MM-dd|horas».
+    private const string ClaveTiempoDesplazamiento =
+        "Widget_TiempoDesplazamiento";
+
+
+    /// <summary>Horas que se ha movido el tiempo en ese día (0 si es otro día).</summary>
+    internal static int DesplazamientoTiempo(DateTime dia)
+    {
+        string[] partes =
+            Preferences.Default.Get(ClaveTiempoDesplazamiento, "").Split('|');
+
+        return partes.Length == 2
+               && partes[0] == FechaClave(dia)
+               && int.TryParse(partes[1], out int horas)
+            ? horas
+            : 0;
+    }
+
+
+    private static void MoverTiempo(int paso)
+    {
+        DateTime dia = ObtenerDiaSeleccionado();
+
+        Preferences.Default.Set(
+            ClaveTiempoDesplazamiento,
+            FechaClave(dia) + "|" + (DesplazamientoTiempo(dia) + paso * 6));
+    }
+
+
     private static string FechaClave(DateTime dia) =>
         dia.ToString(
             "yyyy-MM-dd",
@@ -367,6 +396,15 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                     }
                 }
 
+                break;
+            }
+
+            case "tiempo_antes":
+            case "tiempo_despues":
+            {
+                // Moverse por las horas del tiempo (de 6 en 6).
+                MoverTiempo(accion == "tiempo_antes" ? -1 : 1);
+                ActualizarTodos();
                 break;
             }
 

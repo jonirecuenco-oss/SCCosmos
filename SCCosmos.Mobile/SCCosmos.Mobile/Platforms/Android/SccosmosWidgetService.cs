@@ -1,3 +1,4 @@
+using SCCosmos.Sincro;
 using System.Globalization;
 using SCCosmos.Mobile.Services;
 using Android.App;
@@ -71,6 +72,8 @@ public class SccosmosWidgetFactory
         public int TareaId;
         public bool Vencida;
         public List<HoraTiempo>? Horas;
+        public bool TiempoAntes;
+        public bool TiempoDespues;
     }
 
 
@@ -249,7 +252,11 @@ public class SccosmosWidgetFactory
                 }
             }
 
-            // ---- PREDICACIÓN (mes y año en vigor) ----
+            // ---- TIEMPO (AEMET) del día elegido, donde se va a estar ----
+
+            AgregarTiempo(dia);
+
+            // ---- PREDICACIÓN (mes y año en vigor): abajo del todo ----
 
             (string Titulo, string Texto) predicacion =
                 SccosmosWidgetProvider
@@ -268,9 +275,6 @@ public class SccosmosWidgetFactory
                 Texto = predicacion.Texto
             });
 
-            // ---- TIEMPO (AEMET) del día elegido, donde se va a estar ----
-
-            AgregarTiempo(dia);
         }
         catch
         {
@@ -311,7 +315,11 @@ public class SccosmosWidgetFactory
                 Color = "#F5C451"
             });
 
-            foreach (AvisoTiempo aviso in tiempo.Avisos.Take(3))
+            List<HoraTiempo> horas =
+                HorasParaWidget(tiempo, out bool antes, out bool despues);
+
+            // Los avisos van debajo de cada hora; aquí solo los que no caen en ninguna.
+            foreach (AvisoTiempo aviso in tiempo.Avisos.Where(a => !horas.Any(h => h.Avisos.Contains(a))).Take(3))
             {
                 _filas.Add(new Fila
                 {
@@ -324,7 +332,9 @@ public class SccosmosWidgetFactory
             _filas.Add(new Fila
             {
                 Tipo = TipoTiempo,
-                Horas = HorasParaWidget(tiempo)
+                Horas = horas,
+                TiempoAntes = antes,
+                TiempoDespues = despues
             });
         }
         catch
@@ -333,32 +343,35 @@ public class SccosmosWidgetFactory
     }
 
 
-    /// <summary>Hoy: las 6 horas siguientes. Otro día: mañana, mediodía, tarde y noche.</summary>
-    private static List<HoraTiempo> HorasParaWidget(TiempoDia tiempo)
+    /// <summary>
+    /// 6 horas seguidas: hoy desde la hora actual y otro día desde las 8. Con
+    /// las flechas se mueve de 6 en 6 (lo guarda el proveedor por día).
+    /// </summary>
+    private static List<HoraTiempo> HorasParaWidget(
+        TiempoDia tiempo,
+        out bool antes,
+        out bool despues)
     {
-        if (!tiempo.PorHoras)
+        antes = false;
+        despues = false;
+
+        List<HoraTiempo> horas = tiempo.Horas;
+
+        if (!tiempo.PorHoras || horas.Count <= 6)
         {
-            return tiempo.Horas.Take(6).ToList();
+            return horas.Take(6).ToList();
         }
 
-        if (tiempo.Fecha == DateTime.Today)
-        {
-            List<HoraTiempo> siguientes =
-                tiempo.Horas.Where(h => h.Hora >= DateTime.Now.Hour).Take(6).ToList();
+        int inicio =
+            Math.Max(0, horas.FindIndex(h => h.Hora >= (tiempo.Fecha == DateTime.Today ? DateTime.Now.Hour : 8)))
+            + SccosmosWidgetProvider.DesplazamientoTiempo(tiempo.Fecha);
 
-            return siguientes.Count >= 3
-                ? siguientes
-                : tiempo.Horas.TakeLast(6).ToList();
-        }
+        inicio = Math.Clamp(inicio, 0, horas.Count - 6);
 
-        int[] elegidas = { 8, 10, 12, 15, 18, 20 };
+        antes = inicio > 0;
+        despues = inicio + 6 < horas.Count;
 
-        List<HoraTiempo> lista =
-            tiempo.Horas.Where(h => elegidas.Contains(h.Hora)).ToList();
-
-        return lista.Count > 0
-            ? lista
-            : tiempo.Horas.Take(6).ToList();
+        return horas.Skip(inicio).Take(6).ToList();
     }
 
 
@@ -583,6 +596,9 @@ public class SccosmosWidgetFactory
                     int[] temperaturas = { Resource.Id.tiempo_temp_1, Resource.Id.tiempo_temp_2, Resource.Id.tiempo_temp_3, Resource.Id.tiempo_temp_4, Resource.Id.tiempo_temp_5, Resource.Id.tiempo_temp_6 };
                     int[] lluvias = { Resource.Id.tiempo_lluvia_1, Resource.Id.tiempo_lluvia_2, Resource.Id.tiempo_lluvia_3, Resource.Id.tiempo_lluvia_4, Resource.Id.tiempo_lluvia_5, Resource.Id.tiempo_lluvia_6 };
 
+                    int[] avisosFila = { Resource.Id.tiempo_avisofila_1, Resource.Id.tiempo_avisofila_2, Resource.Id.tiempo_avisofila_3, Resource.Id.tiempo_avisofila_4, Resource.Id.tiempo_avisofila_5, Resource.Id.tiempo_avisofila_6 };
+                    int[] avisosTexto = { Resource.Id.tiempo_aviso_1, Resource.Id.tiempo_aviso_2, Resource.Id.tiempo_aviso_3, Resource.Id.tiempo_aviso_4, Resource.Id.tiempo_aviso_5, Resource.Id.tiempo_aviso_6 };
+
                     List<HoraTiempo> lista =
                         fila.Horas ?? new List<HoraTiempo>();
 
@@ -600,7 +616,26 @@ public class SccosmosWidgetFactory
                         vistas.SetImageViewResource(iconos[i], IconoWidget(hora.Icono));
                         vistas.SetTextViewText(temperaturas[i], hora.Temperatura is int t ? $"{t}°" : "");
                         vistas.SetTextViewText(lluvias[i], hora.TextoLluvia);
+
+                        // El aviso que cubre esa hora (con «+1» si hay más).
+                        if (hora.Aviso is AvisoTiempo aviso)
+                        {
+                            vistas.SetViewVisibility(avisosFila[i], ViewStates.Visible);
+                            vistas.SetTextViewText(avisosTexto[i], hora.TextoAviso);
+                            vistas.SetTextColor(avisosTexto[i], global::Android.Graphics.Color.ParseColor(aviso.Color));
+                        }
+                        else
+                        {
+                            vistas.SetViewVisibility(avisosFila[i], ViewStates.Gone);
+                        }
                     }
+
+                    // Flechas para moverse por las horas (si hay más antes o después).
+                    vistas.SetViewVisibility(Resource.Id.tiempo_antes, fila.TiempoAntes ? ViewStates.Visible : ViewStates.Invisible);
+                    vistas.SetViewVisibility(Resource.Id.tiempo_despues, fila.TiempoDespues ? ViewStates.Visible : ViewStates.Invisible);
+
+                    SccosmosWidgetProvider.PonerClicItem(vistas, Resource.Id.tiempo_antes, "tiempo_antes");
+                    SccosmosWidgetProvider.PonerClicItem(vistas, Resource.Id.tiempo_despues, "tiempo_despues");
 
                     SccosmosWidgetProvider.PonerClicItem(
                         vistas,

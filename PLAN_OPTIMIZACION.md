@@ -306,6 +306,15 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
     - Los iconos del tiempo son de Fluent: en SVG y como vectores de Android (`Herramientas\Capturas` en modo `Iconos`, carpeta `drawable`).
   - Comprobado en el móvil: hoy Montijo (ubicación, es lunes) con 2 avisos amarillos; mañana, Navalmoral de la Mata (visita).
 - 09/11/2026 · Publicada la v2.1.50.
+- 09/11/2026 · v2.1.51:
+  - El tiempo pasa a ser común: `SincroCompartido/TiempoAemet.cs` (descargas, municipios, avisos y caché). `municipios_ine.csv` va incrustado en las dos apps. Android (`TiempoAemetService`) y Windows (`TiempoPc`) solo deciden el sitio.
+  - Windows › Inicio: tarjeta del tiempo antes del programa del día, que sigue al día elegido. Sin visita, usa la ubicación del móvil: el móvil del SC la deja en `Configuracion` (`TiempoUbicacionMovil`, solo al cambiar de municipio), que se sincroniza.
+  - Avisos debajo de cada hora o tramo (`HoraTiempo.Avisos` y `TextoAviso`, con «+1»). Arriba solo van los que no caen en ninguna hora visible.
+  - Tramos: se rotulan con sus horas («6–12 h», «Todo el día»), llevan la temperatura de AEMET (`dato`) en los de 6 h y una nota explica que AEMET da horas solo hasta pasado mañana. Arreglo: los días con un solo valor sin periodo salían vacíos.
+  - Android › Inicio: flechas de día → tiempo → actividades (sin mensaje de vacío) → predicación. Si no se sabe dónde está el móvil, dice el motivo (`ProblemaUbicacion`).
+  - Widget: el tiempo va antes de la predicación (que queda abajo del todo). Lleva flechas de horas de 6 en 6 (`Widget_TiempoDesplazamiento` por día) y el aviso debajo de cada hora.
+  - Probado: Windows con una copia de la base; Android en el emulador en frío (orden y arranque; el emulador estaba en modo avión). El móvil no estaba conectado.
+- 09/11/2026 · Publicada la v2.1.51.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

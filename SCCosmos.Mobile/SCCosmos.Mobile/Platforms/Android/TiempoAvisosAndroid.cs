@@ -5,6 +5,7 @@ using Android.OS;
 using AndroidX.Core.App;
 
 using SCCosmos.Mobile.Services;
+using SCCosmos.Sincro;
 
 namespace SCCosmos.Mobile.Platforms.Android;
 
