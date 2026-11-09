@@ -296,23 +296,81 @@
                             FontSize="12"/>
                     </VerticalStackLayout>
 
-                    <Button
+                    <!-- Editar las horas y CBs de un día del mes que se está viendo -->
+                    <ImageButton
                         Grid.Row="1"
                         Grid.Column="1"
                         HorizontalOptions="End"
-                        Text="+"
+                        Source="icono_editar.png"
                         Clicked="BtnSumarHoras_Clicked"
-                        SemanticProperties.Description="Añadir horas"
-                        FontSize="20"
-                        FontAttributes="Bold"
+                        SemanticProperties.Description="Editar horas"
                         WidthRequest="54"
                         HeightRequest="44"
-                        Padding="0"
+                        Padding="12"
                         BackgroundColor="#0B6FC2"
-                        TextColor="{StaticResource TextoPrincipal}"
                         CornerRadius="12"
                         VerticalOptions="Center"/>
                 </Grid>
+            </Border>
+
+            <!-- TIEMPO (AEMET): el del día que se ve abajo, donde se va a estar -->
+            <Border
+                x:Name="TarjetaTiempo"
+                IsVisible="False"
+                BackgroundColor="{StaticResource Superficie}"
+                Stroke="{StaticResource Borde}"
+                StrokeThickness="1"
+                Padding="16,14">
+
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="18"/>
+                </Border.StrokeShape>
+
+                <VerticalStackLayout Spacing="10">
+
+                    <Grid ColumnDefinitions="*,Auto"
+                          ColumnSpacing="8">
+
+                        <Label
+                            x:Name="LblTituloTiempo"
+                            Text="TIEMPO"
+                            TextColor="{StaticResource TextoTerciario}"
+                            FontSize="12"
+                            FontAttributes="Bold"
+                            CharacterSpacing="1.5"
+                            LineBreakMode="TailTruncation"
+                            VerticalOptions="Center"/>
+
+                        <Label
+                            x:Name="LblMaxMinTiempo"
+                            Grid.Column="1"
+                            Text=""
+                            TextColor="{StaticResource TextoSecundario}"
+                            FontSize="12.5"
+                            VerticalOptions="Center"/>
+                    </Grid>
+
+                    <VerticalStackLayout
+                        x:Name="PanelAvisosTiempo"
+                        Spacing="6"
+                        IsVisible="False"/>
+
+                    <ScrollView
+                        x:Name="ScrollHorasTiempo"
+                        Orientation="Horizontal"
+                        HorizontalScrollBarVisibility="Never">
+
+                        <HorizontalStackLayout
+                            x:Name="PanelHorasTiempo"
+                            Spacing="4"/>
+                    </ScrollView>
+
+                    <Label
+                        x:Name="LblPieTiempo"
+                        Text=""
+                        TextColor="{StaticResource TextoTerciario}"
+                        FontSize="11"/>
+                </VerticalStackLayout>
             </Border>
 
             <!-- PROGRAMA DE HOY -->

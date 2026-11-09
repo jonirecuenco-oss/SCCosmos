@@ -26,6 +26,10 @@ public class HorasDialogActivity : global::Android.App.Activity
     public static event Action? AlGuardar;
 
 
+    /// <summary>Fecha con la que se abre (yyyy-MM-dd); sin ella, hoy.</summary>
+    public const string ExtraFecha = "sccosmos_fecha";
+
+
     private DateTime _fecha = DateTime.Today;
 
     private global::Android.Widget.Button? _botonFecha;
@@ -95,6 +99,17 @@ public class HorasDialogActivity : global::Android.App.Activity
             }
 
             guardar.Click += (s, e) => Guardar();
+
+            // Desde Inicio se abre en el mes que se está viendo.
+            if (DateTime.TryParseExact(
+                    Intent?.GetStringExtra(ExtraFecha),
+                    "yyyy-MM-dd",
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.None,
+                    out DateTime fecha))
+            {
+                _fecha = fecha;
+            }
 
             CargarDia();
         }

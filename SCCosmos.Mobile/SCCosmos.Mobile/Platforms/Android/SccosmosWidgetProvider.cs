@@ -203,6 +203,9 @@ public class SccosmosWidgetProvider : AppWidgetProvider
 
         ProgramarMedianoche(
             context);
+
+        // Y la revisión del tiempo cada 2 horas (avisos de AEMET).
+        TiempoAvisosAndroid.ProgramarRevision();
     }
 
 
@@ -630,6 +633,9 @@ public class SccosmosWidgetProvider : AppWidgetProvider
             {
                 ProgramarMedianoche(
                     contexto);
+
+                // Y la revisión del tiempo cada 2 horas (avisos de AEMET).
+                TiempoAvisosAndroid.ProgramarRevision();
             }
         }
         catch

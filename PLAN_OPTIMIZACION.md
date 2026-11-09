@@ -84,7 +84,7 @@ Herramientas: adb en `C:\Program Files (x86)\Android\android-sdk\platform-tools\
 | S36 | Fichas duplicadas: al retirar la fusión heredada volvieron a insertarse fichas de JW Hub ya fusionadas (13 parejas en una congregación, con el mismo nombre de Hub y foto); además, importar con el nombre en otro orden o sin acentos creaba una ficha nueva. La fusión no pasaba las asignaciones a la ficha que queda | ✔️ v2.1.31, para que no se repita: `NombresPersona` (mismas palabras, fechas compatibles, una sola ficha) y `ReferenciasPersona`. Pruebas 33 y 34. Fusionadas el 03/11/2026, con autorización y copia de seguridad, esas 13 parejas y otra más de otra congregación (la misma persona con y sin acento): de 1.079 a 1.065 fichas, sin perder más que 12 meses repetidos. Falta reimportar el S-21 de esa congregación para recuperar la actividad perdida | 3 |
 | S37 | La página Personas de Windows mostraba las bajas y las contaba en sus filtros (Inicio y Android ya las excluían; la baja sí se detectaba) | ✔️ v2.1.31: ocultas salvo la casilla «Bajas: Mostrar», y fuera del mapa | 2 |
 | S38 | Importar en Windows: «Finalizar» reescribía la ficha con la tarjeta, incluso con campos vacíos y por encima de lo elegido al resolver un conflicto. Con S35 se vería en la tabla | ✔️ v2.1.31: la tarjeta solo rellena; las fichas decididas o con conflicto sin revisar conservan sus datos (la actividad sí se guarda). La ventana indica la ficha de cada tarjeta. La fecha aproximada de JW Hub (01/01/año) no es conflicto: la exacta la sustituye si el año encaja. Quien entra como persona nueva también tiene instantánea. Reimportar lo mismo ya no reescribe la actividad | 3 |
-| S39 | 17 asignaciones de programas apuntan a personas que ya no existen, restos probables de fusiones antiguas (12 de asambleas, 5 de la visita) | Sin reparar: no queda rastro de a quién apuntaban | 1 |
+| S39 | 17 asignaciones de programas apuntan a personas que ya no existen, restos probables de fusiones antiguas (12 de asambleas, 5 de la visita) | ✔️ v2.1.50 (autorizado): 5 apuntan ya a la ficha actual de esa persona (por su nombre de JW Hub) y 12 quedan sin asignar. Los −1/−2 son marcas de la app, no referencias rotas | 1 |
 | S40 | Fusionar dos fichas borra las instantáneas de la que desaparece: si la que queda no tiene la de ese mes, esa visita pasa a mostrar la ficha actual | ✔️ v2.1.33: pasan a la ficha que queda (`ReferenciasPersona`), en las dos apps | 1 |
 | S41 | Android marca como cambio un nombramiento o servicio vacío en la tarjeta; Windows ya no: la tarjeta solo rellena | ✔️ v2.1.49: Android solo cuenta el nombramiento o el servicio si la tarjeta los trae | 1 |
 | S42 | Conversor: 2.119 de 7.583 PDF son formularios con los campos solo en la página (sin registrar en el documento). Se leían por su aspecto y la cabecera salía casi siempre como hombre, anciano y precursor regular (1.197 mujeres, 1.696 y 1.492 casillas vacías); también se perdían fechas y actividad. No llegó a los datos reales: los repartos de cada congregación son normales | ✔️ v2.1.32: se leen de sus campos. Las 2.119 cabeceras coinciden con la casilla real, sin tarjetas perdidas ni nuevas | 3 |
@@ -287,6 +287,25 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - S41: `JsonImportAnalysisService.ObtenerCamposCambiados` ya no cuenta como cambio un nombramiento o un servicio vacíos en la tarjeta.
   - Pruebas: en el emulador cargado con `-snapshot datos_prueba`, `adb install` se cuelga, también sin streaming. Se probó la Release en el móvil antes de publicar: arranca sin errores.
 - 09/11/2026 · Publicada la v2.1.49.
+- 09/11/2026 · v2.1.50:
+  - Limpiezas autorizadas, con copia en `%LOCALAPPDATA%\SCCosmos\copia_antes_de_limpieza_20261109`:
+    - Dispositivo fantasma `ed873906…` (las pruebas del 03/11): fuera de `SCCosmos_SincroPares` y `SincroEstado` del PC, y su `cambios-*.jsonl` se movió a la copia. En los móviles lo olvida `RestosSincroAntigua.OlvidarDispositivoFantasma` al arrancar.
+    - S39, reapuntadas por el nombre de JW Hub: 342→2293 (dos), 397→2299, 389→2483 y 192→2371.
+    - S39, sin asignar (0): Partes 4651 (713), 4665 (182), 5371 (715), 5373 (766), 5637 (414), 5788 (72) y 5800 (705); ProgramaVisita 1 (531); ProgramaVisitaV2 2 y 5 (511, «Morales, Ana Belén» en `copia_base_carpeta_20261102`), y 10 y 19 (957).
+    - Quedan registrados 17 cambios para sincronizar.
+  - El «+» de la predicación pasa a ser un lápiz, en Inicio y en el widget. `HorasDialogActivity.ExtraFecha` abre la ventanita en el mes que se está viendo.
+  - Tiempo de AEMET (`TiempoAemetService`):
+    - Fuente: los XML públicos por municipio, sin clave; por horas para 3 días y por tramos hasta 7.
+    - El municipio sale de `Resources/Raw/municipios_ine.csv` (diccionario del INE de 2026).
+    - Lugar: el salón de la visita de martes a domingo (`DatabaseHelper.ObtenerVisitaParaTiempo`); si no, la ubicación guardada, sacada con el geocodificador.
+    - Dónde se ve: en Inicio, una tarjeta antes de las actividades que sigue al día elegido; abajo en el widget, 6 horas.
+    - En cada hora salen los mm de lluvia, y la probabilidad del día va arriba (AEMET la da por tramos de 6 horas).
+  - Avisos de Meteoalerta (CAP): se leen el RSS y los avisos de la provincia del sitio, y el polígono dice si afectan al punto.
+    - Una notificación por aviso, de hoy a pasado mañana (`TiempoAvisosAndroid`), en el canal «Avisos meteorológicos». La esposa no recibe notificaciones, igual que los avisos de tareas.
+    - Se revisa cada 2 horas con una alarma inexacta (`TiempoAlarmReceiver`), también con la app cerrada.
+    - Los iconos del tiempo son de Fluent: en SVG y como vectores de Android (`Herramientas\Capturas` en modo `Iconos`, carpeta `drawable`).
+  - Comprobado en el móvil: hoy Montijo (ubicación, es lunes) con 2 avisos amarillos; mañana, Navalmoral de la Mata (visita).
+- 09/11/2026 · Publicada la v2.1.50.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

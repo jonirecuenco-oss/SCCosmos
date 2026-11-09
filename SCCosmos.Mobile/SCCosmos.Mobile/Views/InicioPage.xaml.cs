@@ -315,6 +315,9 @@ public partial class InicioPage : ContentPage, IActualizableMobile
         ProgramaHoy.Clear();
 
         _codigoVisitaActual = "";
+
+        // El tiempo de hoy (si hay visita, se vuelve a cargar con el día que se vea).
+        _ = CargarTiempoAsync();
         _mesVisitaActual = "";
 
         PanelProgramaDia.IsVisible = false;
@@ -653,12 +656,204 @@ public partial class InicioPage : ContentPage, IActualizableMobile
 
             LblDiaPrograma.Text =
                 texto;
+
+            // El tiempo sigue al día que se ve.
+            _ = CargarTiempoAsync();
         }
         catch
         {
         }
     }
 
+
+    // =========================================================
+    // TIEMPO (AEMET)
+    // =========================================================
+
+    private CancellationTokenSource? _cargaTiempo;
+
+
+    /// <summary>
+    /// El tiempo del día que se ve en las actividades (en la semana de la
+    /// visita se puede cambiar de día) o el de hoy, en el sitio donde se va a
+    /// estar: el salón de la congregación visitada o, si no, la ubicación.
+    /// </summary>
+    private async Task CargarTiempoAsync()
+    {
+        _cargaTiempo?.Cancel();
+
+        var cancelacion =
+            _cargaTiempo = new CancellationTokenSource();
+
+        DateTime dia =
+            string.IsNullOrWhiteSpace(_codigoVisitaActual) || _diaPrograma == default
+                ? DateTime.Today
+                : _diaPrograma.Date;
+
+        try
+        {
+            bool hayVisita =
+                await Task.Run(() => TiempoAemetService.HayVisita(dia));
+
+            // Sin visita ese día: el tiempo es el de donde está el móvil.
+            if (!hayVisita)
+            {
+                await TiempoAemetService.ActualizarUbicacionAsync(pedirPermiso: true);
+            }
+
+            TiempoDia? tiempo =
+                await Task.Run(() => TiempoAemetService.ObtenerAsync(dia, cancelacion.Token));
+
+            if (cancelacion.IsCancellationRequested)
+            {
+                return;
+            }
+
+            PintarTiempo(tiempo, hayVisita);
+
+            // Los próximos días y los avisos nuevos (notificación), sin esperar.
+            if (dia == DateTime.Today)
+            {
+                _ = Task.Run(() => TiempoAemetService.ActualizarEnSegundoPlanoAsync(CancellationToken.None));
+            }
+        }
+        catch
+        {
+        }
+    }
+
+
+    private void PintarTiempo(
+        TiempoDia? tiempo,
+        bool hayVisita)
+    {
+        var es =
+            System.Globalization.CultureInfo.GetCultureInfo("es-ES");
+
+        TarjetaTiempo.IsVisible = true;
+        PanelHorasTiempo.Children.Clear();
+        PanelAvisosTiempo.Children.Clear();
+        PanelAvisosTiempo.IsVisible = false;
+        LblMaxMinTiempo.Text = "";
+
+        if (tiempo is null)
+        {
+            LblTituloTiempo.Text = "TIEMPO";
+            LblPieTiempo.Text =
+                hayVisita
+                    ? "No se ha podido obtener la previsión de AEMET."
+                    : "Activa la ubicación para ver el tiempo donde estás.";
+            return;
+        }
+
+        LblTituloTiempo.Text =
+            "TIEMPO · " + tiempo.Lugar.ToUpper(es);
+
+        if (tiempo.SinPrevision)
+        {
+            LblPieTiempo.Text = "AEMET todavía no tiene previsión para este día.";
+            return;
+        }
+
+        if (tiempo.Maxima is int maxima && tiempo.Minima is int minima)
+        {
+            LblMaxMinTiempo.Text = $"↑ {maxima}°   ↓ {minima}°" + (tiempo.ProbLluviaDia is int lluvia && lluvia > 0 ? $"   ·   lluvia {lluvia}%" : "");
+        }
+
+        foreach (AvisoTiempo aviso in tiempo.Avisos)
+        {
+            PanelAvisosTiempo.Children.Add(CrearAvisoTiempo(aviso));
+        }
+
+        PanelAvisosTiempo.IsVisible =
+            tiempo.Avisos.Count > 0;
+
+        bool esHoy = tiempo.Fecha == DateTime.Today;
+        int horaActual = DateTime.Now.Hour;
+
+        // Hoy, desde la hora actual; otro día, desde las 6 (se desliza a los lados).
+        foreach (HoraTiempo hora in tiempo.Horas.Where(h => !tiempo.PorHoras || h.Hora >= (esHoy ? horaActual : 6)))
+        {
+            PanelHorasTiempo.Children.Add(
+                CrearHoraTiempo(hora, destacada: esHoy && hora.Hora == horaActual));
+        }
+
+        LblPieTiempo.Text =
+            $"AEMET · {tiempo.Motivo}"
+            + (tiempo.Actualizado != default ? $" · {tiempo.Actualizado:HH:mm}" : "");
+
+        _ = ScrollHorasTiempo.ScrollToAsync(0, 0, false);
+    }
+
+
+    private static View CrearHoraTiempo(
+        HoraTiempo hora,
+        bool destacada)
+    {
+        var celda =
+            new VerticalStackLayout
+            {
+                Spacing = 2,
+                HorizontalOptions = LayoutOptions.Center
+            };
+
+        celda.Add(new Label { Text = hora.Etiqueta, FontSize = 11.5, TextColor = Color.FromArgb("#A7AEB8"), HorizontalTextAlignment = TextAlignment.Center });
+        celda.Add(new Image { Source = hora.Icono + ".png", WidthRequest = 26, HeightRequest = 26, HorizontalOptions = LayoutOptions.Center });
+        celda.Add(new Label { Text = hora.Temperatura is int t ? $"{t}°" : "", FontSize = 15, FontAttributes = FontAttributes.Bold, TextColor = Color.FromArgb("#F2F4F7"), HorizontalTextAlignment = TextAlignment.Center });
+        celda.Add(new Label { Text = hora.TextoLluvia.Length > 0 ? hora.TextoLluvia : " ", FontSize = 11, TextColor = Color.FromArgb("#4BA3E3"), HorizontalTextAlignment = TextAlignment.Center });
+
+        SemanticProperties.SetDescription(
+            celda,
+            $"{hora.Etiqueta}: {hora.Descripcion}");
+
+        return new Border
+        {
+            Content = celda,
+            WidthRequest = 54,
+            Padding = new Thickness(2, 6),
+            StrokeThickness = 0,
+            BackgroundColor = destacada ? Color.FromArgb("#1E2228") : Colors.Transparent,
+            StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = 10 }
+        };
+    }
+
+
+    private static View CrearAvisoTiempo(AvisoTiempo aviso)
+    {
+        var fila =
+            new Grid
+            {
+                ColumnDefinitions =
+                {
+                    new ColumnDefinition(GridLength.Auto),
+                    new ColumnDefinition(GridLength.Star)
+                },
+                ColumnSpacing = 8
+            };
+
+        fila.Add(new Image { Source = "icono_aviso.png", WidthRequest = 18, HeightRequest = 18, VerticalOptions = LayoutOptions.Start });
+
+        var texto =
+            new Label
+            {
+                Text = $"{aviso.Titulo} · {aviso.Periodo}",
+                FontSize = 12.5,
+                TextColor = Color.FromArgb(aviso.Color),
+                LineBreakMode = LineBreakMode.WordWrap
+            };
+
+        Grid.SetColumn(texto, 1);
+        fila.Add(texto);
+
+        return new Border
+        {
+            Content = fila,
+            Padding = new Thickness(10, 8),
+            StrokeThickness = 0,
+            BackgroundColor = Color.FromArgb("#26" + aviso.Color.TrimStart('#')),
+            StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = 10 }
+        };
+    }
 
     // =========================================================
     // HORAS PREDICADAS DEL MES
@@ -788,6 +983,17 @@ public partial class InicioPage : ContentPage, IActualizableMobile
                     global::Android.App.Application.Context,
                     typeof(SCCosmos.Mobile.Platforms.Android
                         .HorasDialogActivity));
+
+            // Se abre en el mes que se está viendo: hoy si es el actual; si
+            // no, su último día (en la ventanita se puede cambiar de día).
+            DateTime fecha =
+                _mesPredicacion == new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1)
+                    ? DateTime.Today
+                    : _mesPredicacion.AddMonths(1).AddDays(-1);
+
+            intencion.PutExtra(
+                SCCosmos.Mobile.Platforms.Android.HorasDialogActivity.ExtraFecha,
+                fecha.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture));
 
             intencion.AddFlags(
                 global::Android.Content.ActivityFlags

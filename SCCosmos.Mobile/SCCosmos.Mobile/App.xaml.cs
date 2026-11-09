@@ -83,6 +83,16 @@ namespace SCCosmos.Mobile
                 try
                 {
                     RestosSincroAntigua.BorrarUnaVez();
+                    RestosSincroAntigua.OlvidarDispositivoFantasma();
+                }
+                catch
+                {
+                }
+
+                try
+                {
+                    // Tiempo de AEMET: revisión cada 2 horas (avisos y widget).
+                    SCCosmos.Mobile.Platforms.Android.TiempoAvisosAndroid.ProgramarRevision();
                 }
                 catch
                 {

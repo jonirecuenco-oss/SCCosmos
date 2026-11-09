@@ -1,3 +1,5 @@
+using System.Globalization;
+using SCCosmos.Mobile.Services;
 using Android.App;
 using Android.Appwidget;
 using Android.Content;
@@ -50,6 +52,12 @@ public class SccosmosWidgetFactory
     private const int TipoPredicacion =
         4;
 
+    private const int TipoTiempo =
+        5;
+
+    private const int TipoAvisoTiempo =
+        6;
+
 
     private sealed class Fila
     {
@@ -62,6 +70,7 @@ public class SccosmosWidgetFactory
         public string Firma = "";
         public int TareaId;
         public bool Vencida;
+        public List<HoraTiempo>? Horas;
     }
 
 
@@ -91,7 +100,7 @@ public class SccosmosWidgetFactory
         null;
 
     public int ViewTypeCount =>
-        5;
+        7;
 
 
     public void OnCreate()
@@ -258,12 +267,115 @@ public class SccosmosWidgetFactory
                 Tipo = TipoPredicacion,
                 Texto = predicacion.Texto
             });
+
+            // ---- TIEMPO (AEMET) del día elegido, donde se va a estar ----
+
+            AgregarTiempo(dia);
         }
         catch
         {
         }
     }
 
+
+    /// <summary>
+    /// Tiempo de AEMET al final: lo que haya en la caché (lo refresca Inicio y
+    /// la revisión de cada 2 horas). Avisos y, debajo, 6 horas (o los tramos).
+    /// </summary>
+    private void AgregarTiempo(DateTime dia)
+    {
+        try
+        {
+            TiempoDia? tiempo =
+                TiempoAemetService.ObtenerDeCache(dia);
+
+            if (tiempo is null
+                || tiempo.SinPrevision
+                || tiempo.Horas.Count == 0)
+            {
+                return;
+            }
+
+            string extremos =
+                (tiempo.Maxima is int maxima && tiempo.Minima is int minima
+                    ? $" · {maxima}° / {minima}°"
+                    : "")
+                + (tiempo.ProbLluviaDia is int lluvia && lluvia > 0
+                    ? $" · LLUVIA {lluvia}%"
+                    : "");
+
+            _filas.Add(new Fila
+            {
+                Tipo = TipoSeccion,
+                Texto = "TIEMPO · " + tiempo.Lugar.ToUpper(CultureInfo.GetCultureInfo("es-ES")) + extremos,
+                Color = "#F5C451"
+            });
+
+            foreach (AvisoTiempo aviso in tiempo.Avisos.Take(3))
+            {
+                _filas.Add(new Fila
+                {
+                    Tipo = TipoAvisoTiempo,
+                    Texto = $"{aviso.Titulo} · {aviso.Periodo}",
+                    Color = aviso.Color
+                });
+            }
+
+            _filas.Add(new Fila
+            {
+                Tipo = TipoTiempo,
+                Horas = HorasParaWidget(tiempo)
+            });
+        }
+        catch
+        {
+        }
+    }
+
+
+    /// <summary>Hoy: las 6 horas siguientes. Otro día: mañana, mediodía, tarde y noche.</summary>
+    private static List<HoraTiempo> HorasParaWidget(TiempoDia tiempo)
+    {
+        if (!tiempo.PorHoras)
+        {
+            return tiempo.Horas.Take(6).ToList();
+        }
+
+        if (tiempo.Fecha == DateTime.Today)
+        {
+            List<HoraTiempo> siguientes =
+                tiempo.Horas.Where(h => h.Hora >= DateTime.Now.Hour).Take(6).ToList();
+
+            return siguientes.Count >= 3
+                ? siguientes
+                : tiempo.Horas.TakeLast(6).ToList();
+        }
+
+        int[] elegidas = { 8, 10, 12, 15, 18, 20 };
+
+        List<HoraTiempo> lista =
+            tiempo.Horas.Where(h => elegidas.Contains(h.Hora)).ToList();
+
+        return lista.Count > 0
+            ? lista
+            : tiempo.Horas.Take(6).ToList();
+    }
+
+
+    private static int IconoWidget(string icono) =>
+        icono switch
+        {
+            "tiempo_sol" => Resource.Drawable.widget_tiempo_sol,
+            "tiempo_luna" => Resource.Drawable.widget_tiempo_luna,
+            "tiempo_sol_nubes" => Resource.Drawable.widget_tiempo_sol_nubes,
+            "tiempo_luna_nubes" => Resource.Drawable.widget_tiempo_luna_nubes,
+            "tiempo_lluvia" => Resource.Drawable.widget_tiempo_lluvia,
+            "tiempo_llovizna" => Resource.Drawable.widget_tiempo_llovizna,
+            "tiempo_tormenta" => Resource.Drawable.widget_tiempo_tormenta,
+            "tiempo_nieve" => Resource.Drawable.widget_tiempo_nieve,
+            "tiempo_niebla" => Resource.Drawable.widget_tiempo_niebla,
+            _ => Resource.Drawable.widget_tiempo_nubes
+        };
 
     public RemoteViews? GetViewAt(
         int position)
@@ -458,6 +570,68 @@ public class SccosmosWidgetFactory
                     return vistas;
                 }
 
+                case TipoTiempo:
+                {
+                    var vistas =
+                        new RemoteViews(
+                            _contexto.PackageName,
+                            Resource.Layout.widget_fila_tiempo);
+
+                    int[] celdas = { Resource.Id.tiempo_celda_1, Resource.Id.tiempo_celda_2, Resource.Id.tiempo_celda_3, Resource.Id.tiempo_celda_4, Resource.Id.tiempo_celda_5, Resource.Id.tiempo_celda_6 };
+                    int[] horas = { Resource.Id.tiempo_hora_1, Resource.Id.tiempo_hora_2, Resource.Id.tiempo_hora_3, Resource.Id.tiempo_hora_4, Resource.Id.tiempo_hora_5, Resource.Id.tiempo_hora_6 };
+                    int[] iconos = { Resource.Id.tiempo_icono_1, Resource.Id.tiempo_icono_2, Resource.Id.tiempo_icono_3, Resource.Id.tiempo_icono_4, Resource.Id.tiempo_icono_5, Resource.Id.tiempo_icono_6 };
+                    int[] temperaturas = { Resource.Id.tiempo_temp_1, Resource.Id.tiempo_temp_2, Resource.Id.tiempo_temp_3, Resource.Id.tiempo_temp_4, Resource.Id.tiempo_temp_5, Resource.Id.tiempo_temp_6 };
+                    int[] lluvias = { Resource.Id.tiempo_lluvia_1, Resource.Id.tiempo_lluvia_2, Resource.Id.tiempo_lluvia_3, Resource.Id.tiempo_lluvia_4, Resource.Id.tiempo_lluvia_5, Resource.Id.tiempo_lluvia_6 };
+
+                    List<HoraTiempo> lista =
+                        fila.Horas ?? new List<HoraTiempo>();
+
+                    for (int i = 0; i < celdas.Length; i++)
+                    {
+                        if (i >= lista.Count)
+                        {
+                            vistas.SetViewVisibility(celdas[i], ViewStates.Gone);
+                            continue;
+                        }
+
+                        HoraTiempo hora = lista[i];
+
+                        vistas.SetTextViewText(horas[i], hora.Etiqueta);
+                        vistas.SetImageViewResource(iconos[i], IconoWidget(hora.Icono));
+                        vistas.SetTextViewText(temperaturas[i], hora.Temperatura is int t ? $"{t}°" : "");
+                        vistas.SetTextViewText(lluvias[i], hora.TextoLluvia);
+                    }
+
+                    SccosmosWidgetProvider.PonerClicItem(
+                        vistas,
+                        Resource.Id.fila_tiempo_raiz,
+                        "abrir");
+
+                    return vistas;
+                }
+
+                case TipoAvisoTiempo:
+                {
+                    var vistas =
+                        new RemoteViews(
+                            _contexto.PackageName,
+                            Resource.Layout.widget_fila_tiempo_aviso);
+
+                    vistas.SetTextViewText(
+                        Resource.Id.fila_tiempo_aviso_texto,
+                        fila.Texto);
+
+                    vistas.SetTextColor(
+                        Resource.Id.fila_tiempo_aviso_texto,
+                        global::Android.Graphics.Color.ParseColor(fila.Color));
+
+                    SccosmosWidgetProvider.PonerClicItem(
+                        vistas,
+                        Resource.Id.fila_tiempo_aviso_raiz,
+                        "abrir");
+
+                    return vistas;
+                }
                 case TipoPredicacion:
                 {
                     var vistas =

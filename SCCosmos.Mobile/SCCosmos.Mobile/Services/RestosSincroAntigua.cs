@@ -1,3 +1,6 @@
+using Microsoft.Data.Sqlite;
+using SCCosmos.Mobile.Data;
+
 namespace SCCosmos.Mobile.Services;
 
 /// <summary>
@@ -67,6 +70,49 @@ public static class RestosSincroAntigua
 
         // Se ve desde el PC en sccosmos_perf.log (archivos de la app).
         Perf.Registrar("Limpieza.RestosSincroAntiguaKB", bytes / 1024);
+    }
+
+
+    private const string ClaveFantasma =
+        "SCCosmos_DispositivoFantasmaOlvidado";
+
+    // El de las pruebas del 03/11/2026: ya no existe y su archivo se quitó de la
+    // carpeta (09/11). Su fila de pares retrasaba la compactación de cambios.
+    private const string IdFantasma =
+        "ed873906d117427fb5d6a93669ad53f8";
+
+
+    /// <summary>Una sola vez: olvida el dispositivo «fantasma» en este móvil.</summary>
+    public static void OlvidarDispositivoFantasma()
+    {
+        if (Preferences.Default.Get(ClaveFantasma, false))
+        {
+            return;
+        }
+
+        try
+        {
+            using var conexion =
+                new SqliteConnection($"Data Source={DatabasePaths.RutaLocal}");
+
+            conexion.Open();
+
+            using var cmd =
+                conexion.CreateCommand();
+
+            cmd.CommandText =
+                "DELETE FROM SCCosmos_SincroPares WHERE Dispositivo = $id; " +
+                "DELETE FROM SCCosmos_SincroEstado WHERE Clave LIKE '%' || $id || '%';";
+
+            cmd.Parameters.AddWithValue("$id", IdFantasma);
+            cmd.ExecuteNonQuery();
+
+            Preferences.Default.Set(ClaveFantasma, true);
+        }
+        catch
+        {
+            // Sin las tablas de sincronización todavía: se reintenta al arrancar.
+        }
     }
 
 

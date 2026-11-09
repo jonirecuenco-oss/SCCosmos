@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tiempo de AEMET por horas: 6 huecos (los que sobran se ocultan) -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/fila_tiempo_raiz"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingTop="6dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="@drawable/widget_tarjeta"
+        android:paddingLeft="4dp"
+        android:paddingTop="8dp"
+        android:paddingRight="4dp"
+        android:paddingBottom="8dp">
+        <LinearLayout
+            android:id="@+id/tiempo_celda_1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tiempo_hora_1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="#A7AEB8"
+                android:textSize="11sp"
+                android:maxLines="1" />
+
+            <ImageView
+                android:id="@+id/tiempo_icono_1"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginTop="3dp"
+                android:layout_marginBottom="2dp"
+                android:contentDescription="Cielo" />
+
+            <TextView
+                android:id="@+id/tiempo_temp_1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="#F2F4F7"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:maxLines="1" />
+
+            <TextView
+                android:id="@+id/tiempo_lluvia_1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="#4BA3E3"
+                android:textSize="10sp"
+                android:maxLines="1" />
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/tiempo_celda_2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tiempo_hora_2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="#A7AEB8"
+                android:textSize="11sp"
+                android:maxLines="1" />
+
+            <ImageView
+                android:id="@+id/tiempo_icono_2"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginTop="3dp"
+                android:layout_marginBottom="2dp"
+                android:contentDescription="Cielo" />
+
+            <TextView
+                android:id="@+id/tiempo_temp_2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="#F2F4F7"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:maxLines="1" />
+
+            <TextView
+                android:id="@+id/tiempo_lluvia_2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="#4BA3E3"
+                android:textSize="10sp"
+                android:maxLines="1" />
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/tiempo_celda_3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tiempo_hora_3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="#A7AEB8"
+                android:textSize="11sp"
+                android:maxLines="1" />
+
+            <ImageView
+                android:id="@+id/tiempo_icono_3"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginTop="3dp"
+                android:layout_marginBottom="2dp"
+                android:contentDescription="Cielo" />
+
+            <TextView
+                android:id="@+id/tiempo_temp_3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="#F2F4F7"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:maxLines="1" />
+
+            <TextView
+                android:id="@+id/tiempo_lluvia_3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="#4BA3E3"
+                android:textSize="10sp"
+                android:maxLines="1" />
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/tiempo_celda_4"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tiempo_hora_4"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="#A7AEB8"
+                android:textSize="11sp"
+                android:maxLines="1" />
+
+            <ImageView
+                android:id="@+id/tiempo_icono_4"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginTop="3dp"
+                android:layout_marginBottom="2dp"
+                android:contentDescription="Cielo" />
+
+            <TextView
+                android:id="@+id/tiempo_temp_4"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="#F2F4F7"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:maxLines="1" />
+
+            <TextView
+                android:id="@+id/tiempo_lluvia_4"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="#4BA3E3"
+                android:textSize="10sp"
+                android:maxLines="1" />
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/tiempo_celda_5"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tiempo_hora_5"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="#A7AEB8"
+                android:textSize="11sp"
+                android:maxLines="1" />
+
+            <ImageView
+                android:id="@+id/tiempo_icono_5"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginTop="3dp"
+                android:layout_marginBottom="2dp"
+                android:contentDescription="Cielo" />
+
+            <TextView
+                android:id="@+id/tiempo_temp_5"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="#F2F4F7"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:maxLines="1" />
+
+            <TextView
+                android:id="@+id/tiempo_lluvia_5"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="#4BA3E3"
+                android:textSize="10sp"
+                android:maxLines="1" />
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/tiempo_celda_6"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tiempo_hora_6"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="#A7AEB8"
+                android:textSize="11sp"
+                android:maxLines="1" />
+
+            <ImageView
+                android:id="@+id/tiempo_icono_6"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginTop="3dp"
+                android:layout_marginBottom="2dp"
+                android:contentDescription="Cielo" />
+
+            <TextView
+                android:id="@+id/tiempo_temp_6"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="#F2F4F7"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:maxLines="1" />
+
+            <TextView
+                android:id="@+id/tiempo_lluvia_6"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="#4BA3E3"
+                android:textSize="10sp"
+                android:maxLines="1" />
+        </LinearLayout>    </LinearLayout>
+</LinearLayout>
