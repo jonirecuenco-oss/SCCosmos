@@ -27,6 +27,18 @@ public partial class CircuitoPage : ContentPage, IActualizableMobile
         Services.Perf.Registrar(
             "Circuito",
             reloj.ElapsedMilliseconds);
+
+        // Al abrir Circuito también se miran los avisos rojos de sus congregaciones.
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await Services.TiempoAemetService.RevisarAvisosRojosAsync(CancellationToken.None);
+            }
+            catch
+            {
+            }
+        });
     }
 
     public void DatosActualizados()
@@ -216,7 +228,9 @@ public partial class CircuitoPage : ContentPage, IActualizableMobile
                             .ObtenerCongregacionesCompletasMobile());
 
             Lista.ItemsSource =
-                congregaciones;
+                congregaciones
+                    .Select(c => new CongregacionCircuito(c))
+                    .ToList();
 
             LblTotal.Text =
                 $"{congregaciones.Count} congregaciones";
@@ -236,10 +250,13 @@ public partial class CircuitoPage : ContentPage, IActualizableMobile
         TappedEventArgs e)
     {
         if (e.Parameter is not
-            Congregacion congregacion)
+            CongregacionCircuito item)
         {
             return;
         }
+
+        Congregacion congregacion =
+            item.Congregacion;
 
         var editor =
             new CongregacionEdicionPage(
@@ -253,6 +270,43 @@ public partial class CircuitoPage : ContentPage, IActualizableMobile
         }
     }
 
+    // Despliega (o pliega) el tiempo de AEMET de la congregación, debajo.
+    private async void BtnTiempo_Clicked(
+        object sender,
+        EventArgs e)
+    {
+        if ((sender as BindableObject)?.BindingContext is CongregacionCircuito item)
+        {
+            await item.AlternarAsync();
+        }
+    }
+
+    // Al tocar uno de los 7 días, se ven sus horas.
+    private async void DiaTiempo_Tapped(
+        object sender,
+        TappedEventArgs e)
+    {
+        if (e.Parameter is DiaCelda dia)
+        {
+            await dia.Congregacion.CargarAsync(dia.Fecha);
+        }
+    }
+
+    // Con las horas ya puestas, hoy se ven desde la hora actual (como en Inicio).
+    private void HorasTiempo_ChildAdded(
+        object? sender,
+        ElementEventArgs e)
+    {
+        if (sender is Layout fila
+            && fila.Parent is ScrollView scroll
+            && fila.BindingContext is CongregacionCircuito item
+            && fila.Children.Count == item.Horas.Count)
+        {
+            fila.Dispatcher.DispatchDelayed(
+                TimeSpan.FromMilliseconds(120),
+                () => _ = scroll.ScrollToAsync(item.IndiceActual * 56, 0, false));
+        }
+    }
     private async void BtnAnadir_Clicked(
         object sender,
         EventArgs e)

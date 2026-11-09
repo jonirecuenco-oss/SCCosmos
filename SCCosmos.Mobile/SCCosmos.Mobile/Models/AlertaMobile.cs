@@ -12,7 +12,7 @@ public class AlertaMobile
 
     /// <summary>
     /// Categoría interna: JWHub, S302, Documentacion, S303,
-    /// Recordatorio.
+    /// Recordatorio, TiempoRojo (aviso rojo de AEMET en el circuito).
     /// </summary>
     public string Tipo { get; set; } = "";
 

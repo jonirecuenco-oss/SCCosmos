@@ -61,26 +61,165 @@
                         <Border BackgroundColor="{StaticResource Superficie}"
                                 Stroke="{StaticResource Borde}"
                                 StrokeThickness="1"
-                                Padding="13"
+                                Padding="0"
                                 Margin="0,0,0,8">
                             <Border.StrokeShape>
                                 <RoundRectangle CornerRadius="12" />
                             </Border.StrokeShape>
 
-                            <Border.GestureRecognizers>
-                                <TapGestureRecognizer
-                                    Tapped="Congregacion_Tapped"
-                                    CommandParameter="{Binding .}" />
-                            </Border.GestureRecognizers>
+                            <VerticalStackLayout>
 
-                            <VerticalStackLayout Spacing="3">
-                                <Label Text="{Binding Nombre}"
-                                       FontSize="16"
-                                       FontAttributes="Bold"
-                                       TextColor="{StaticResource TextoPrincipal}" />
-                                <Label Text="{Binding DetalleLista}"
-                                       FontSize="12"
-                                       TextColor="{StaticResource TextoSecundario}" />
+                                <!-- Al tocar la congregación se edita; el botón del tiempo lo despliega debajo -->
+                                <Grid ColumnDefinitions="*,Auto"
+                                      ColumnSpacing="8"
+                                      Padding="13,13,10,13">
+
+                                    <Grid.GestureRecognizers>
+                                        <TapGestureRecognizer
+                                            Tapped="Congregacion_Tapped"
+                                            CommandParameter="{Binding .}" />
+                                    </Grid.GestureRecognizers>
+
+                                    <VerticalStackLayout Spacing="3"
+                                                         VerticalOptions="Center">
+                                        <Label Text="{Binding Nombre}"
+                                               FontSize="16"
+                                               FontAttributes="Bold"
+                                               TextColor="{StaticResource TextoPrincipal}" />
+                                        <Label Text="{Binding DetalleLista}"
+                                               FontSize="12"
+                                               TextColor="{StaticResource TextoSecundario}" />
+                                    </VerticalStackLayout>
+
+                                    <ImageButton Grid.Column="1"
+                                                 Source="tiempo_sol_nubes.png"
+                                                 Clicked="BtnTiempo_Clicked"
+                                                 SemanticProperties.Description="Tiempo"
+                                                 WidthRequest="40"
+                                                 HeightRequest="40"
+                                                 Padding="8"
+                                                 CornerRadius="20"
+                                                 BackgroundColor="{StaticResource SuperficieAlta}"
+                                                 VerticalOptions="Center" />
+                                </Grid>
+
+                                <!-- TIEMPO (AEMET): los 7 días y las horas del día elegido -->
+                                <VerticalStackLayout IsVisible="{Binding TiempoAbierto}"
+                                                     Spacing="8"
+                                                     Padding="13,0,13,13">
+
+                                    <BoxView HeightRequest="1"
+                                             Color="{StaticResource Borde}" />
+
+                                    <Label Text="{Binding Resumen}"
+                                           FontSize="12"
+                                           TextColor="{StaticResource TextoSecundario}" />
+
+                                    <Label Text="{Binding Mensaje}"
+                                           IsVisible="{Binding HayMensaje}"
+                                           FontSize="13"
+                                           TextColor="{StaticResource TextoSecundario}" />
+
+                                    <!-- Los 7 días: al tocar uno, sus horas debajo -->
+                                    <ScrollView Orientation="Horizontal"
+                                                HorizontalScrollBarVisibility="Never">
+                                        <HorizontalStackLayout BindableLayout.ItemsSource="{Binding Dias}"
+                                                               Spacing="4">
+                                            <BindableLayout.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border WidthRequest="56"
+                                                            Padding="0,6"
+                                                            StrokeThickness="0"
+                                                            BackgroundColor="{Binding Fondo}">
+                                                        <Border.StrokeShape>
+                                                            <RoundRectangle CornerRadius="10" />
+                                                        </Border.StrokeShape>
+                                                        <Border.GestureRecognizers>
+                                                            <TapGestureRecognizer
+                                                                Tapped="DiaTiempo_Tapped"
+                                                                CommandParameter="{Binding .}" />
+                                                        </Border.GestureRecognizers>
+                                                        <VerticalStackLayout Spacing="2">
+                                                            <Label Text="{Binding Etiqueta}"
+                                                                   FontSize="11"
+                                                                   TextColor="{StaticResource TextoSecundario}"
+                                                                   HorizontalTextAlignment="Center" />
+                                                            <Image Source="{Binding Icono}"
+                                                                   WidthRequest="24"
+                                                                   HeightRequest="24"
+                                                                   HorizontalOptions="Center" />
+                                                            <HorizontalStackLayout Spacing="4"
+                                                                                   HorizontalOptions="Center">
+                                                                <Label Text="{Binding Maxima}"
+                                                                       FontSize="12"
+                                                                       FontAttributes="Bold"
+                                                                       TextColor="{StaticResource TextoPrincipal}" />
+                                                                <Label Text="{Binding Minima}"
+                                                                       FontSize="11"
+                                                                       TextColor="{StaticResource TextoSecundario}" />
+                                                            </HorizontalStackLayout>
+                                                            <Label Text="{Binding Lluvia}"
+                                                                   FontSize="10"
+                                                                   TextColor="#4BA3E3"
+                                                                   HorizontalTextAlignment="Center" />
+                                                            <Image Source="{Binding IconoAviso}"
+                                                                   IsVisible="{Binding HayAviso}"
+                                                                   WidthRequest="15"
+                                                                   HeightRequest="15"
+                                                                   HorizontalOptions="Center" />
+                                                        </VerticalStackLayout>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </BindableLayout.ItemTemplate>
+                                        </HorizontalStackLayout>
+                                    </ScrollView>
+
+                                    <!-- Horas (o tramos) del día elegido, con el icono del aviso debajo -->
+                                    <ScrollView Orientation="Horizontal"
+                                                HorizontalScrollBarVisibility="Never">
+                                        <HorizontalStackLayout BindableLayout.ItemsSource="{Binding Horas}"
+                                                               ChildAdded="HorasTiempo_ChildAdded"
+                                                               Spacing="2">
+                                            <BindableLayout.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border WidthRequest="{Binding Ancho}"
+                                                            Padding="0,6"
+                                                            StrokeThickness="0"
+                                                            BackgroundColor="{Binding Fondo}">
+                                                        <Border.StrokeShape>
+                                                            <RoundRectangle CornerRadius="10" />
+                                                        </Border.StrokeShape>
+                                                        <VerticalStackLayout Spacing="2">
+                                                            <Label Text="{Binding Etiqueta}"
+                                                                   FontSize="11"
+                                                                   TextColor="{StaticResource TextoSecundario}"
+                                                                   HorizontalTextAlignment="Center"
+                                                                   LineBreakMode="NoWrap" />
+                                                            <Image Source="{Binding Icono}"
+                                                                   WidthRequest="24"
+                                                                   HeightRequest="24"
+                                                                   HorizontalOptions="Center" />
+                                                            <Label Text="{Binding Temperatura}"
+                                                                   FontSize="14"
+                                                                   FontAttributes="Bold"
+                                                                   TextColor="{StaticResource TextoPrincipal}"
+                                                                   HorizontalTextAlignment="Center" />
+                                                            <Label Text="{Binding Lluvia}"
+                                                                   FontSize="10"
+                                                                   TextColor="#4BA3E3"
+                                                                   HorizontalTextAlignment="Center" />
+                                                            <Image Source="{Binding IconoAviso}"
+                                                                   IsVisible="{Binding HayAviso}"
+                                                                   WidthRequest="15"
+                                                                   HeightRequest="15"
+                                                                   HorizontalOptions="Center" />
+                                                        </VerticalStackLayout>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </BindableLayout.ItemTemplate>
+                                        </HorizontalStackLayout>
+                                    </ScrollView>
+                                </VerticalStackLayout>
                             </VerticalStackLayout>
                         </Border>
                     </DataTemplate>

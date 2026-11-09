@@ -243,6 +243,28 @@ public static class AlertasMobileService
         }
 #endif
 
+        // Avisos rojos de AEMET en congregaciones del circuito (los guarda la
+        // revisión del tiempo cada 30 minutos): arriba del todo.
+        try
+        {
+            foreach (TiempoAemetService.AvisoRojo aviso
+                     in TiempoAemetService.AvisosRojosVigentes())
+            {
+                alertas.Insert(
+                    0,
+                    new AlertaMobile
+                    {
+                        Tipo = TiempoAemetService.TipoAlertaRojo,
+                        Identidad = aviso.Identidad,
+                        Titulo = aviso.Titulo,
+                        Descripcion = aviso.Texto
+                    });
+            }
+        }
+        catch
+        {
+        }
+
         HashSet<string> leidas =
             ObtenerLeidas();
 

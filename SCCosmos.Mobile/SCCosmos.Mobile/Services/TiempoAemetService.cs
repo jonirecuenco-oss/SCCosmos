@@ -260,11 +260,21 @@ public static class TiempoAemetService
 
     /// <summary>
     /// Descarga la previsión de hoy, mañana y pasado en el sitio de cada día y
-    /// avisa (notificación) de los avisos nuevos. Cada 2 horas, aunque la app
-    /// esté cerrada.
+    /// avisa (notificación) de los avisos nuevos. Cada 30 minutos, aunque la
+    /// app esté cerrada.
     /// </summary>
     public static async Task ActualizarEnSegundoPlanoAsync(CancellationToken ct)
     {
+        // Primero los avisos rojos del circuito: así, si uno es también donde
+        // vas a estar, se notifica una sola vez y con «Marcar como leída».
+        try
+        {
+            await RevisarAvisosRojosAsync(ct);
+        }
+        catch
+        {
+        }
+
         var avisos = new List<(AvisoTiempo Aviso, LugarTiempo Lugar)>();
 
         for (int i = 0; i < 3; i++)
@@ -287,5 +297,136 @@ public static class TiempoAemetService
         TiempoAemet.BorrarAvisosViejos();
 
         SCCosmos.Mobile.Platforms.Android.TiempoAvisosAndroid.Notificar(avisos);
+    }
+
+
+    // =========================================================================
+    // AVISOS ROJOS EN EL CIRCUITO
+    // =========================================================================
+
+    private const string ClaveAvisosRojos =
+        "Tiempo_AvisosRojos";
+
+    /// <summary>Tipo de las alertas de la app que son avisos rojos de AEMET.</summary>
+    public const string TipoAlertaRojo =
+        "TiempoRojo";
+
+
+    /// <summary>Un aviso rojo de AEMET en congregaciones del circuito.</summary>
+    public sealed record AvisoRojo(
+        string Identidad,
+        string Titulo,
+        string Congregaciones,
+        DateTimeOffset Inicio,
+        DateTimeOffset Fin,
+        string Descripcion)
+    {
+        /// <summary>La del aviso de AEMET (la identidad lleva delante «TiempoRojo|»).</summary>
+        public string Clave =>
+            Identidad.StartsWith(TipoAlertaRojo + "|", StringComparison.Ordinal)
+                ? Identidad[(TipoAlertaRojo.Length + 1)..]
+                : Identidad;
+
+        /// <summary>«Mérida - Centro, Mérida - Nueva Ciudad · hoy, 12:00–23:59».</summary>
+        public string Texto =>
+            $"{Congregaciones} · {new AvisoTiempo { Inicio = Inicio, Fin = Fin }.Periodo}";
+    }
+
+
+    /// <summary>Los avisos rojos de la última revisión que aún no han terminado.</summary>
+    public static List<AvisoRojo> AvisosRojosVigentes()
+    {
+        var lista = new List<AvisoRojo>();
+
+        foreach (string linea in Preferences.Default.Get(ClaveAvisosRojos, "").Split('\n', StringSplitOptions.RemoveEmptyEntries))
+        {
+            string[] c = linea.Split('\t');
+
+            if (c.Length >= 6
+                && long.TryParse(c[3], out long inicio)
+                && long.TryParse(c[4], out long fin)
+                && fin > DateTimeOffset.UtcNow.UtcTicks)
+            {
+                lista.Add(new AvisoRojo(
+                    c[0],
+                    c[1],
+                    c[2],
+                    new DateTimeOffset(inicio, TimeSpan.Zero),
+                    new DateTimeOffset(fin, TimeSpan.Zero),
+                    c[5]));
+            }
+        }
+
+        return lista;
+    }
+
+
+    /// <summary>
+    /// Mira si hay avisos rojos de AEMET en alguna congregación del circuito
+    /// (cada 30 minutos con la revisión del tiempo, y al abrir Circuito). Se
+    /// guardan como alertas de la app, que se marcan como leídas, y de los
+    /// nuevos se avisa con una notificación. Solo en el móvil del SC.
+    /// </summary>
+    public static async Task RevisarAvisosRojosAsync(CancellationToken ct)
+    {
+        if (!PerfilAccesoService.EsHombre)
+        {
+            return;
+        }
+
+        var nombres = new List<string>();
+        var sitios = new List<LugarTiempo>();
+
+        foreach (var congregacion in DatabaseHelper.ObtenerCongregacionesParaTiempo())
+        {
+            if (TiempoAemet.LugarDe(congregacion.Municipio, congregacion.Provincia, congregacion.Latitud, congregacion.Longitud, congregacion.Nombre) is LugarTiempo lugar)
+            {
+                nombres.Add(congregacion.Nombre);
+                sitios.Add(lugar);
+            }
+        }
+
+        if (sitios.Count == 0)
+        {
+            return;
+        }
+
+        List<(AvisoTiempo Aviso, List<int> Sitios)>? rojos =
+            await TiempoAemet.AvisosRojosAsync(sitios, ct);
+
+        // Sin red: se queda lo de la última vez.
+        if (rojos is null)
+        {
+            return;
+        }
+
+        static string Limpio(string texto) =>
+            texto.Replace('\t', ' ').Replace('\r', ' ').Replace('\n', ' ').Trim();
+
+        List<AvisoRojo> lista =
+            rojos
+                .Select(r => new AvisoRojo(
+                    TipoAlertaRojo + "|" + Limpio(r.Aviso.Clave),
+                    Limpio(r.Aviso.Titulo),
+                    Limpio(string.Join(", ", r.Sitios.Select(i => nombres[i]).Distinct())),
+                    r.Aviso.Inicio,
+                    r.Aviso.Fin,
+                    Limpio(r.Aviso.Descripcion)))
+                .ToList();
+
+        Preferences.Default.Set(
+            ClaveAvisosRojos,
+            string.Join(
+                "\n",
+                lista.Select(a => string.Join(
+                    "\t",
+                    a.Identidad,
+                    a.Titulo,
+                    a.Congregaciones,
+                    a.Inicio.UtcTicks.ToString(CultureInfo.InvariantCulture),
+                    a.Fin.UtcTicks.ToString(CultureInfo.InvariantCulture),
+                    a.Descripcion))));
+
+        SCCosmos.Mobile.Platforms.Android.TiempoAvisosAndroid.NotificarRojos(lista);
     }
 }

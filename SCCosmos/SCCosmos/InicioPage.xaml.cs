@@ -1249,39 +1249,31 @@ namespace SCCosmos
             if (tiempo.SinPrevision)
             {
                 ListaHorasTiempo.ItemsSource = null;
-                ListaAvisosTiempo.ItemsSource = null;
                 TxtPieTiempo.Text = "AEMET todavía no tiene previsión para este día.";
+                TxtPieTiempo.Visibility = Visibility.Visible;
                 return;
             }
+
+            TxtPieTiempo.Visibility = Visibility.Collapsed;
 
             bool esHoy = tiempo.Fecha == DateTime.Today;
             int horaActual = DateTime.Now.Hour;
 
-            // Hoy, desde la hora actual; otro día, desde las 6.
+            // Todas las horas del día (desde las 6, o antes si ya es de madrugada).
             List<HoraTiempo> visibles =
                 tiempo.Horas
-                    .Where(h => !tiempo.PorHoras || h.Hora >= (esHoy ? horaActual : 6))
+                    .Where(h => !tiempo.PorHoras || h.Hora >= (esHoy ? Math.Min(6, horaActual) : 6))
                     .ToList();
 
             ListaHorasTiempo.ItemsSource =
                 visibles.Select(h => new CeldaTiempo(h, esHoy && h.Hora == horaActual)).ToList();
 
-            // Los avisos van debajo de cada hora; arriba solo los que no caen en ninguna.
-            ListaAvisosTiempo.ItemsSource =
-                tiempo.Avisos
-                    .Where(a => !visibles.Any(h => h.Avisos.Contains(a)))
-                    .Select(a => new AvisoTiempoUI(a))
-                    .ToList();
+            // Hoy se ve desde la hora actual (las anteriores, desplazando a la izquierda).
+            int indice = esHoy ? Math.Max(0, visibles.FindIndex(h => h.Hora == horaActual)) : 0;
 
-            TxtPieTiempo.Text =
-                string.Join(
-                    "\n",
-                    new[]
-                    {
-                        $"AEMET · {tiempo.Motivo}" + (tiempo.Actualizado != default ? $" · {tiempo.Actualizado:HH:mm}" : ""),
-                        tiempo.NotaTramos
-                    }
-                    .Where(s => s.Length > 0));
+            Dispatcher.BeginInvoke(
+                new Action(() => ScrollHorasTiempo.ScrollToHorizontalOffset(indice * 74)),
+                System.Windows.Threading.DispatcherPriority.Loaded);
         }
 
         // La rueda mueve la página, no la fila de horas (esa va con su barra).
@@ -1302,7 +1294,7 @@ namespace SCCosmos
                 });
         }
 
-        private static System.Windows.Media.Brush Pincel(string color)
+        internal static System.Windows.Media.Brush Pincel(string color)
         {
             var pincel =
                 new System.Windows.Media.SolidColorBrush(
@@ -1312,6 +1304,22 @@ namespace SCCosmos
 
             return pincel;
         }
+
+        /// <summary>El icono de Fluent (y su color) de un cielo de AEMET, como en Android.</summary>
+        internal static (Wpf.Ui.Controls.SymbolRegular Simbolo, System.Windows.Media.Brush Color) SimboloTiempo(string icono) =>
+            icono switch
+            {
+                "tiempo_sol" => (Wpf.Ui.Controls.SymbolRegular.WeatherSunny24, Pincel("#F5C451")),
+                "tiempo_luna" => (Wpf.Ui.Controls.SymbolRegular.WeatherMoon24, Pincel("#C9D1D9")),
+                "tiempo_sol_nubes" => (Wpf.Ui.Controls.SymbolRegular.WeatherPartlyCloudyDay24, Pincel("#E3C46A")),
+                "tiempo_luna_nubes" => (Wpf.Ui.Controls.SymbolRegular.WeatherPartlyCloudyNight24, Pincel("#C9D1D9")),
+                "tiempo_lluvia" => (Wpf.Ui.Controls.SymbolRegular.WeatherRain24, Pincel("#4BA3E3")),
+                "tiempo_llovizna" => (Wpf.Ui.Controls.SymbolRegular.WeatherDrizzle24, Pincel("#7FB8E6")),
+                "tiempo_tormenta" => (Wpf.Ui.Controls.SymbolRegular.WeatherThunderstorm24, Pincel("#B48EAD")),
+                "tiempo_nieve" => (Wpf.Ui.Controls.SymbolRegular.WeatherSnow24, Pincel("#E6E8EB")),
+                "tiempo_niebla" => (Wpf.Ui.Controls.SymbolRegular.WeatherFog24, Pincel("#8A929C")),
+                _ => (Wpf.Ui.Controls.SymbolRegular.WeatherCloudy24, Pincel("#A7AEB8"))
+            };
 
         /// <summary>Una hora (o tramo) del tiempo, con los iconos de Fluent como en Android.</summary>
         public class CeldaTiempo
@@ -1323,23 +1331,11 @@ namespace SCCosmos
                 Lluvia = hora.TextoLluvia;
                 Descripcion = hora.Descripcion + (hora.Aviso == null ? "" : "\n" + hora.Aviso.Titulo + " · " + hora.Aviso.Periodo);
                 Fondo = destacada ? Pincel("#1FFFFFFF") : System.Windows.Media.Brushes.Transparent;
-                Aviso = hora.TextoAviso;
+                Ancho = hora.Hora < 0 ? 92 : 70;
                 VerAviso = hora.Aviso == null ? Visibility.Collapsed : Visibility.Visible;
                 ColorAviso = Pincel(hora.Aviso?.Color ?? "#E5C07B");
 
-                (Simbolo, ColorIcono) = hora.Icono switch
-                {
-                    "tiempo_sol" => (Wpf.Ui.Controls.SymbolRegular.WeatherSunny24, Pincel("#F5C451")),
-                    "tiempo_luna" => (Wpf.Ui.Controls.SymbolRegular.WeatherMoon24, Pincel("#C9D1D9")),
-                    "tiempo_sol_nubes" => (Wpf.Ui.Controls.SymbolRegular.WeatherPartlyCloudyDay24, Pincel("#E3C46A")),
-                    "tiempo_luna_nubes" => (Wpf.Ui.Controls.SymbolRegular.WeatherPartlyCloudyNight24, Pincel("#C9D1D9")),
-                    "tiempo_lluvia" => (Wpf.Ui.Controls.SymbolRegular.WeatherRain24, Pincel("#4BA3E3")),
-                    "tiempo_llovizna" => (Wpf.Ui.Controls.SymbolRegular.WeatherDrizzle24, Pincel("#7FB8E6")),
-                    "tiempo_tormenta" => (Wpf.Ui.Controls.SymbolRegular.WeatherThunderstorm24, Pincel("#B48EAD")),
-                    "tiempo_nieve" => (Wpf.Ui.Controls.SymbolRegular.WeatherSnow24, Pincel("#E6E8EB")),
-                    "tiempo_niebla" => (Wpf.Ui.Controls.SymbolRegular.WeatherFog24, Pincel("#8A929C")),
-                    _ => (Wpf.Ui.Controls.SymbolRegular.WeatherCloudy24, Pincel("#A7AEB8"))
-                };
+                (Simbolo, ColorIcono) = SimboloTiempo(hora.Icono);
             }
 
             public string Etiqueta { get; }
@@ -1347,26 +1343,13 @@ namespace SCCosmos
             public System.Windows.Media.Brush ColorIcono { get; }
             public string Temperatura { get; }
             public string Lluvia { get; }
-            public string Aviso { get; }
+            public double Ancho { get; }
             public Visibility VerAviso { get; }
             public System.Windows.Media.Brush ColorAviso { get; }
             public System.Windows.Media.Brush Fondo { get; }
             public string Descripcion { get; }
         }
 
-        public class AvisoTiempoUI
-        {
-            public AvisoTiempoUI(AvisoTiempo aviso)
-            {
-                Texto = $"{aviso.Titulo} · {aviso.Periodo}";
-                Color = Pincel(aviso.Color);
-                Fondo = Pincel("#26" + aviso.Color.TrimStart('#'));
-            }
-
-            public string Texto { get; }
-            public System.Windows.Media.Brush Color { get; }
-            public System.Windows.Media.Brush Fondo { get; }
-        }
         public class ActividadHoy
         {
             public string Hora { get; set; }

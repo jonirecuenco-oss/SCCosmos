@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -71,12 +72,6 @@ public sealed class HoraTiempo
         Precipitacion is double mm
             ? (mm >= 0.1 ? mm.ToString("0.#", Es) + " mm" : mm > 0 ? "<0,1 mm" : "")
             : Hora < 0 && ProbLluvia is int p && p > 0 ? $"{p}%" : "";
-
-    /// <summary>«Lluvia», o «Lluvia +1» si a esa hora hay más avisos.</summary>
-    public string TextoAviso =>
-        Aviso is null
-            ? ""
-            : Aviso.Corto + (Avisos.Count > 1 ? $" +{Avisos.Count - 1}" : "");
 }
 
 
@@ -109,22 +104,9 @@ public sealed class AvisoTiempo
 
     public string Color => Nivel switch { "rojo" => "#FF6B6B", "naranja" => "#FFB74D", _ => "#E5C07B" };
 
-    /// <summary>Nombre corto para ponerlo debajo de cada hora.</summary>
-    public string Corto =>
-        Codigo switch
-        {
-            "PR" => "Lluvia",
-            "TO" => "Tormenta",
-            "VI" => "Viento",
-            "NE" => "Nieve",
-            "TA" => "Calor",
-            "TI" => "Frío",
-            "NI" => "Niebla",
-            "PO" => "Polvo",
-            "CO" => "Costero",
-            "AV" => "Aludes",
-            _ => Fenomeno.Split(' ').FirstOrDefault() ?? "Aviso"
-        };
+    /// <summary>«amarillo», «naranja» o «rojo»: el icono de aviso de su color.</summary>
+    public string NivelIcono =>
+        Nivel is "rojo" or "naranja" ? Nivel : "amarillo";
 
     public string Titulo =>
         $"Aviso {Nivel} por " +
@@ -176,14 +158,47 @@ public sealed class TiempoDia
     public List<AvisoTiempo> Avisos { get; init; } = new();
 
     public DateTime Actualizado { get; init; }
-
-    /// <summary>Nota para los días que AEMET no da por horas.</summary>
-    public string NotaTramos =>
-        PorHoras || SinPrevision
-            ? ""
-            : "AEMET solo da la previsión por horas hasta pasado mañana; este día va por tramos.";
 }
 
+
+/// <summary>Resumen de un día: cielo, máxima, mínima, lluvia y su aviso de más nivel.</summary>
+public sealed class ResumenDia
+{
+    private static readonly string[] NombresDia = { "Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb" };
+
+    public DateTime Fecha { get; init; }
+
+    public string Cielo { get; init; } = "";
+
+    public string Descripcion { get; init; } = "";
+
+    public int? Maxima { get; init; }
+
+    public int? Minima { get; init; }
+
+    public int? ProbLluvia { get; init; }
+
+    /// <summary>El aviso de más nivel de ese día (si hay).</summary>
+    public AvisoTiempo? Aviso { get; set; }
+
+    public string Icono => TiempoAemet.Icono(Cielo);
+
+    /// <summary>«Hoy» o «Mié 11».</summary>
+    public string Etiqueta =>
+        Fecha == DateTime.Today ? "Hoy" : $"{NombresDia[(int)Fecha.DayOfWeek]} {Fecha.Day}";
+
+    public string TextoLluvia =>
+        ProbLluvia is int p && p > 0 ? $"{p}%" : "";
+}
+
+
+/// <summary>Los días que publica AEMET en un sitio (hasta 7).</summary>
+public sealed class SemanaTiempo
+{
+    public List<ResumenDia> Dias { get; init; } = new();
+
+    public DateTime Actualizado { get; init; }
+}
 
 /// <summary>Sitio de la previsión: municipio del INE y coordenadas.</summary>
 public sealed record LugarTiempo(
@@ -361,6 +376,24 @@ public static class TiempoAemet
     }
 
 
+    /// <summary>
+    /// El sitio de una congregación (municipio, provincia y coordenadas del
+    /// salón); null si el municipio no está en la lista del INE.
+    /// </summary>
+    public static LugarTiempo? LugarDe(
+        string? municipio,
+        string? provincia,
+        double latitud,
+        double longitud,
+        string motivo)
+    {
+        string? ine = BuscarIne(municipio, provincia);
+
+        return ine is null
+            ? null
+            : new LugarTiempo(ine, NombreMunicipio(ine, municipio ?? ""), motivo, latitud, longitud);
+    }
+
     private static string Normalizar(string texto)
     {
         var resultado = new StringBuilder(texto.Length);
@@ -430,7 +463,7 @@ public static class TiempoAemet
         }
 
         List<AvisoTiempo> avisos =
-            await AvisosParaDiaAsync(lugar, fecha, soloCache, ct);
+            await AvisosEntreAsync(lugar, fecha, fecha.AddDays(1), soloCache, ct);
 
         // Cada hora (o tramo) con los avisos que la cubren, el de más nivel primero.
         foreach (HoraTiempo hora in lista)
@@ -452,14 +485,88 @@ public static class TiempoAemet
             Horas = lista,
             Maxima = maxima,
             Minima = minima,
-            ProbLluviaDia =
-                Entero(diaTramos?.Elements("prob_precipitacion").FirstOrDefault(e => Periodo(e) == "00-24")?.Value)
-                ?? diaTramos?.Elements("prob_precipitacion").Select(e => Entero(e.Value)).Max(),
+            ProbLluviaDia = ProbLluviaDe(diaTramos),
             Avisos = avisos,
             Actualizado = File.Exists(rutaHoras) ? File.GetLastWriteTime(rutaHoras) : default
         };
     }
 
+
+    /// <summary>
+    /// Los días que publica AEMET en ese sitio (hasta 7), cada uno con su
+    /// aviso de más nivel.
+    /// </summary>
+    public static async Task<SemanaTiempo> ObtenerSemanaAsync(
+        LugarTiempo lugar,
+        bool soloCache,
+        CancellationToken ct)
+    {
+        string archivo = $"aemet_d_{lugar.Ine}.xml";
+
+        XDocument? documento =
+            await DescargarAsync(string.Format(UrlDias, lugar.Ine), archivo, TimeSpan.FromHours(3), latin: true, soloCache, ct);
+
+        var dias = new List<ResumenDia>();
+
+        foreach (XElement dia in documento?.Root?.Element("prediccion")?.Elements("dia") ?? Enumerable.Empty<XElement>())
+        {
+            if (!DateTime.TryParseExact((string?)dia.Attribute("fecha"), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime fecha)
+                || fecha < DateTime.Today)
+            {
+                continue;
+            }
+
+            // El cielo de todo el día o, hoy, el de lo que queda de día.
+            List<XElement> cielos =
+                dia.Elements("estado_cielo")
+                    .Where(e => e.Value.Trim().Length > 0)
+                    .ToList();
+
+            XElement? cielo =
+                new[] { "00-24", "12-24", "12-18", "18-24" }
+                    .Select(p => cielos.FirstOrDefault(e => Periodo(e) == p))
+                    .FirstOrDefault(e => e is not null)
+                ?? cielos.FirstOrDefault();
+
+            dias.Add(new ResumenDia
+            {
+                Fecha = fecha,
+                Cielo = cielo?.Value.Trim() ?? "",
+                Descripcion = (string?)cielo?.Attribute("descripcion") ?? "",
+                Maxima = Entero(dia.Element("temperatura")?.Element("maxima")?.Value),
+                Minima = Entero(dia.Element("temperatura")?.Element("minima")?.Value),
+                ProbLluvia = ProbLluviaDe(dia)
+            });
+        }
+
+        List<AvisoTiempo> avisos =
+            dias.Count == 0
+                ? new List<AvisoTiempo>()
+                : await AvisosEntreAsync(lugar, dias[0].Fecha, dias[^1].Fecha.AddDays(1), soloCache, ct);
+
+        foreach (ResumenDia resumen in dias)
+        {
+            resumen.Aviso =
+                avisos
+                    .Where(a => a.Inicio.LocalDateTime < resumen.Fecha.AddDays(1) && a.Fin.LocalDateTime > resumen.Fecha)
+                    .OrderByDescending(a => a.Orden)
+                    .FirstOrDefault();
+        }
+
+        string ruta = RutaCache(archivo);
+
+        return new SemanaTiempo
+        {
+            Dias = dias,
+            Actualizado = File.Exists(ruta) ? File.GetLastWriteTime(ruta) : default
+        };
+    }
+
+
+    // Probabilidad de lluvia del día: la de 00-24 o, si ya no está (hoy), la mayor de lo que queda.
+    private static int? ProbLluviaDe(XElement? dia) =>
+        Entero(dia?.Elements("prob_precipitacion").FirstOrDefault(e => Periodo(e) == "00-24")?.Value)
+        ?? dia?.Elements("prob_precipitacion").Select(e => Entero(e.Value)).Max();
 
     private static XElement? DiaDe(
         XDocument? documento,
@@ -644,9 +751,10 @@ public static class TiempoAemet
     // AVISOS (METEOALERTA)
     // =========================================================================
 
-    private static async Task<List<AvisoTiempo>> AvisosParaDiaAsync(
+    private static async Task<List<AvisoTiempo>> AvisosEntreAsync(
         LugarTiempo lugar,
-        DateTime dia,
+        DateTime inicio,
+        DateTime fin,
         bool soloCache,
         CancellationToken ct)
     {
@@ -669,8 +777,8 @@ public static class TiempoAemet
         // se miran los de la provincia del sitio y, de esos, los que lo contienen.
         string provincia = lugar.Ine[..2];
 
-        DateTimeOffset desde = new(dia);
-        DateTimeOffset hasta = desde.AddDays(1);
+        DateTimeOffset desde = new(inicio);
+        DateTimeOffset hasta = new(fin);
 
         IEnumerable<string> enlaces =
             rss.Descendants("item")
@@ -705,9 +813,83 @@ public static class TiempoAemet
     }
 
 
+    /// <summary>
+    /// Los avisos rojos vigentes (o por venir) que afectan a alguno de esos
+    /// sitios —las congregaciones del circuito—, cada uno con los sitios a los
+    /// que afecta. Solo se abren los avisos rojos de sus provincias. Null si
+    /// no se pudo saber (sin red y sin nada guardado).
+    /// </summary>
+    public static async Task<List<(AvisoTiempo Aviso, List<int> Sitios)>?> AvisosRojosAsync(
+        IReadOnlyList<LugarTiempo> sitios,
+        CancellationToken ct)
+    {
+        XDocument? rss =
+            await DescargarAsync(UrlAvisos, "aemet_avisos.xml", TimeSpan.FromMinutes(10), latin: false, soloCache: false, ct);
+
+        if (rss is null)
+        {
+            return null;
+        }
+
+        HashSet<string> provincias =
+            sitios.Select(s => s.Ine[..2]).ToHashSet();
+
+        // El título ya dice el nivel («Aviso. Nivel rojo. Lluvias. …»).
+        List<string> enlaces =
+            rss.Descendants("item")
+                .Where(i => Regex.IsMatch((string?)i.Element("title") ?? "", @"nivel\s+rojo", RegexOptions.IgnoreCase))
+                .Select(i => ((string?)i.Element("link") ?? "").Trim())
+                .Where(l => Regex.Match(l, @"AFAZ\d\d(\d\d)\d\d") is { Success: true } m && provincias.Contains(m.Groups[1].Value))
+                .Distinct()
+                .ToList();
+
+        var lista = new List<(AvisoTiempo Aviso, List<int> Sitios)>();
+
+        foreach (string enlace in enlaces)
+        {
+            XDocument? cap =
+                await DescargarAsync(enlace, "aemet_cap_" + Path.GetFileName(new Uri(enlace).AbsolutePath), TimeSpan.FromDays(7), latin: false, soloCache: false, ct);
+
+            if (cap is null
+                || LeerCap(cap) is not { } leido
+                || leido.Aviso.Nivel != "rojo"
+                || leido.Aviso.Fin <= DateTimeOffset.Now)
+            {
+                continue;
+            }
+
+            List<int> afectados =
+                Enumerable.Range(0, sitios.Count)
+                    .Where(i => (sitios[i].Latitud != 0 || sitios[i].Longitud != 0)
+                                && leido.Poligonos.Any(p => Contiene(p, sitios[i].Latitud, sitios[i].Longitud)))
+                    .ToList();
+
+            if (afectados.Count > 0)
+            {
+                lista.Add((leido.Aviso, afectados));
+            }
+        }
+
+        // Si AEMET actualizó un aviso, vale el último que envió.
+        return lista
+            .GroupBy(a => a.Aviso.Clave)
+            .Select(g => g.OrderByDescending(a => a.Aviso.Enviado).First())
+            .OrderBy(a => a.Aviso.Inicio)
+            .ToList();
+    }
+
+
     private static AvisoTiempo? LeerAviso(
         XDocument cap,
-        LugarTiempo lugar)
+        LugarTiempo lugar) =>
+        LeerCap(cap) is { } leido
+        && leido.Poligonos.Any(p => Contiene(p, lugar.Latitud, lugar.Longitud))
+            ? leido.Aviso
+            : null;
+
+
+    /// <summary>Un aviso (CAP) de AEMET y los polígonos de su zona; null si no avisa de nada.</summary>
+    private static (AvisoTiempo Aviso, List<string> Poligonos)? LeerCap(XDocument cap)
     {
         XElement? alerta = cap.Root;
 
@@ -739,20 +921,16 @@ public static class TiempoAemet
             return null;
         }
 
-        bool dentro =
+        List<string> poligonos =
             info.Elements(Cap + "area")
                 .SelectMany(a => a.Elements(Cap + "polygon"))
-                .Any(p => Contiene(p.Value, lugar.Latitud, lugar.Longitud));
-
-        if (!dentro)
-        {
-            return null;
-        }
+                .Select(p => p.Value)
+                .ToList();
 
         string[] fenomeno =
             (info.Element(Cap + "eventCode")?.Element(Cap + "value")?.Value ?? "").Split(';');
 
-        return new AvisoTiempo
+        var aviso = new AvisoTiempo
         {
             Nivel = nivel,
             Codigo = fenomeno.ElementAtOrDefault(0)?.Trim() ?? "",
@@ -763,6 +941,8 @@ public static class TiempoAemet
             Fin = Fecha(info.Element(Cap + "expires")) ?? DateTimeOffset.MaxValue,
             Enviado = Fecha(alerta.Element(Cap + "sent")) ?? DateTimeOffset.MinValue
         };
+
+        return (aviso, poligonos);
     }
 
 
@@ -843,13 +1023,46 @@ public static class TiempoAemet
 
         try
         {
-            byte[] datos = await Http.GetByteArrayAsync(url, ct);
+            // Con la fecha de lo guardado, AEMET contesta «sin cambios» (304) sin volver a mandarlo.
+            string rutaFecha = ruta + ".fecha";
 
-            // Solo se guarda si es XML de verdad.
+            using var peticion =
+                new HttpRequestMessage(HttpMethod.Get, url);
+
+            if (hay
+                && File.Exists(rutaFecha)
+                && DateTimeOffset.TryParse(File.ReadAllText(rutaFecha), CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTimeOffset modificado))
+            {
+                peticion.Headers.IfModifiedSince = modificado;
+            }
+
+            using HttpResponseMessage respuesta =
+                await Http.SendAsync(peticion, ct);
+
+            if (respuesta.StatusCode == HttpStatusCode.NotModified && hay)
+            {
+                File.SetLastWriteTimeUtc(ruta, DateTime.UtcNow);
+
+                return LeerSeguro(File.ReadAllBytes(ruta), latin);
+            }
+
+            respuesta.EnsureSuccessStatusCode();
+
+            byte[] datos = await respuesta.Content.ReadAsByteArrayAsync(ct);
+
+            // Solo se guarda si es XML de verdad, y de golpe (puede haber otra descarga a la vez).
             XDocument documento = Leer(datos, latin);
 
             Directory.CreateDirectory(CarpetaCache);
-            await File.WriteAllBytesAsync(ruta, datos, ct);
+
+            string temporal = $"{ruta}.{Guid.NewGuid():N}.tmp";
+            await File.WriteAllBytesAsync(temporal, datos, ct);
+            File.Move(temporal, ruta, overwrite: true);
+
+            if (respuesta.Content.Headers.LastModified is DateTimeOffset fecha)
+            {
+                File.WriteAllText(rutaFecha, fecha.ToString("o", CultureInfo.InvariantCulture));
+            }
 
             return documento;
         }

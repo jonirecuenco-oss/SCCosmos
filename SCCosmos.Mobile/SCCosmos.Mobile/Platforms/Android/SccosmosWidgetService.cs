@@ -318,16 +318,6 @@ public class SccosmosWidgetFactory
             List<HoraTiempo> horas =
                 HorasParaWidget(tiempo, out bool antes, out bool despues);
 
-            // Los avisos van debajo de cada hora; aquí solo los que no caen en ninguna.
-            foreach (AvisoTiempo aviso in tiempo.Avisos.Where(a => !horas.Any(h => h.Avisos.Contains(a))).Take(3))
-            {
-                _filas.Add(new Fila
-                {
-                    Tipo = TipoAvisoTiempo,
-                    Texto = $"{aviso.Titulo} · {aviso.Periodo}",
-                    Color = aviso.Color
-                });
-            }
 
             _filas.Add(new Fila
             {
@@ -596,8 +586,7 @@ public class SccosmosWidgetFactory
                     int[] temperaturas = { Resource.Id.tiempo_temp_1, Resource.Id.tiempo_temp_2, Resource.Id.tiempo_temp_3, Resource.Id.tiempo_temp_4, Resource.Id.tiempo_temp_5, Resource.Id.tiempo_temp_6 };
                     int[] lluvias = { Resource.Id.tiempo_lluvia_1, Resource.Id.tiempo_lluvia_2, Resource.Id.tiempo_lluvia_3, Resource.Id.tiempo_lluvia_4, Resource.Id.tiempo_lluvia_5, Resource.Id.tiempo_lluvia_6 };
 
-                    int[] avisosFila = { Resource.Id.tiempo_avisofila_1, Resource.Id.tiempo_avisofila_2, Resource.Id.tiempo_avisofila_3, Resource.Id.tiempo_avisofila_4, Resource.Id.tiempo_avisofila_5, Resource.Id.tiempo_avisofila_6 };
-                    int[] avisosTexto = { Resource.Id.tiempo_aviso_1, Resource.Id.tiempo_aviso_2, Resource.Id.tiempo_aviso_3, Resource.Id.tiempo_aviso_4, Resource.Id.tiempo_aviso_5, Resource.Id.tiempo_aviso_6 };
+                    int[] avisos = { Resource.Id.tiempo_aviso_1, Resource.Id.tiempo_aviso_2, Resource.Id.tiempo_aviso_3, Resource.Id.tiempo_aviso_4, Resource.Id.tiempo_aviso_5, Resource.Id.tiempo_aviso_6 };
 
                     List<HoraTiempo> lista =
                         fila.Horas ?? new List<HoraTiempo>();
@@ -617,16 +606,23 @@ public class SccosmosWidgetFactory
                         vistas.SetTextViewText(temperaturas[i], hora.Temperatura is int t ? $"{t}°" : "");
                         vistas.SetTextViewText(lluvias[i], hora.TextoLluvia);
 
-                        // El aviso que cubre esa hora (con «+1» si hay más).
+                        // El aviso que cubre esa hora: su icono, del color del nivel.
                         if (hora.Aviso is AvisoTiempo aviso)
                         {
-                            vistas.SetViewVisibility(avisosFila[i], ViewStates.Visible);
-                            vistas.SetTextViewText(avisosTexto[i], hora.TextoAviso);
-                            vistas.SetTextColor(avisosTexto[i], global::Android.Graphics.Color.ParseColor(aviso.Color));
+                            vistas.SetViewVisibility(avisos[i], ViewStates.Visible);
+                            vistas.SetImageViewResource(
+                                avisos[i],
+                                aviso.NivelIcono switch
+                                {
+                                    "rojo" => Resource.Drawable.widget_aviso_rojo,
+                                    "naranja" => Resource.Drawable.widget_aviso_naranja,
+                                    _ => Resource.Drawable.widget_aviso_amarillo
+                                });
+                            vistas.SetContentDescription(avisos[i], aviso.Titulo);
                         }
                         else
                         {
-                            vistas.SetViewVisibility(avisosFila[i], ViewStates.Gone);
+                            vistas.SetViewVisibility(avisos[i], ViewStates.Gone);
                         }
                     }
 

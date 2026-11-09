@@ -11,8 +11,9 @@ namespace SCCosmos.Mobile.Platforms.Android;
 
 /// <summary>
 /// Avisos meteorológicos de AEMET: una notificación por aviso (no se repite
-/// aunque AEMET lo reenvíe) y una revisión cada 2 horas en segundo plano, con
-/// la app cerrada, que además refresca el tiempo del widget.
+/// aunque AEMET lo reenvíe) y una revisión cada 30 minutos en segundo plano,
+/// con la app cerrada, que además refresca el tiempo del widget. Los avisos
+/// rojos en congregaciones del circuito llevan «Marcar como leída».
 /// </summary>
 public static class TiempoAvisosAndroid
 {
@@ -22,15 +23,73 @@ public static class TiempoAvisosAndroid
     private const string ClaveNotificados =
         "Tiempo_AvisosNotificados";
 
-    private const int IdAlarma =
+    // Hasta la v2.1.51 la revisión iba cada 2 horas con este código.
+    private const int IdAlarmaAntigua =
         4810;
+
+    private const int IdAlarma =
+        4812;
 
     private const int IdAbrir =
         4811;
 
 
+    /// <summary>Avisos (de cualquier nivel) donde vas a estar.</summary>
     public static void Notificar(
-        IEnumerable<(AvisoTiempo Aviso, LugarTiempo Lugar)> avisos)
+        IEnumerable<(AvisoTiempo Aviso, LugarTiempo Lugar)> avisos) =>
+        Publicar(
+            avisos.Select(x => (
+                x.Aviso.Clave,
+                $"{x.Aviso.Titulo} · {x.Lugar.Nombre}",
+                $"{x.Aviso.Zona}: {x.Aviso.Periodo}",
+                x.Aviso.Descripcion,
+                x.Aviso.Fin,
+                "")));
+
+
+    /// <summary>
+    /// Avisos rojos en congregaciones del circuito: son alertas de la app y
+    /// la notificación lleva «Marcar como leída».
+    /// </summary>
+    public static void NotificarRojos(
+        IEnumerable<TiempoAemetService.AvisoRojo> avisos) =>
+        Publicar(
+            avisos.Select(a => (
+                a.Clave,
+                a.Titulo,
+                a.Texto,
+                a.Descripcion,
+                a.Fin,
+                a.Identidad)));
+
+
+    /// <summary>
+    /// Quita la notificación de los avisos rojos que ya se han marcado como
+    /// leídos (desde la app o el widget).
+    /// </summary>
+    public static void RetirarRojosLeidos(ICollection<string> pendientes)
+    {
+        try
+        {
+            NotificationManagerCompat gestor =
+                NotificationManagerCompat.From(global::Android.App.Application.Context);
+
+            foreach (TiempoAemetService.AvisoRojo aviso in TiempoAemetService.AvisosRojosVigentes())
+            {
+                if (!pendientes.Contains(aviso.Identidad))
+                {
+                    gestor.Cancel(IdDe(aviso.Clave));
+                }
+            }
+        }
+        catch
+        {
+        }
+    }
+
+
+    private static void Publicar(
+        IEnumerable<(string Clave, string Titulo, string Texto, string Detalle, DateTimeOffset Fin, string Firma)> avisos)
     {
         // Como los avisos de tareas: la esposa del SC no recibe notificaciones.
         if (!PerfilAccesoService.EsHombre)
@@ -52,7 +111,7 @@ public static class TiempoAvisosAndroid
                             "Avisos meteorológicos",
                             NotificationImportance.High)
                         {
-                            Description = "Avisos de AEMET donde vas a estar"
+                            Description = "Avisos de AEMET donde vas a estar y avisos rojos en el circuito"
                         });
             }
 
@@ -75,7 +134,7 @@ public static class TiempoAvisosAndroid
             NotificationManagerCompat gestor =
                 NotificationManagerCompat.From(contexto);
 
-            foreach ((AvisoTiempo aviso, LugarTiempo lugar) in avisos)
+            foreach (var aviso in avisos)
             {
                 if (hechos.ContainsKey(aviso.Clave))
                 {
@@ -85,30 +144,61 @@ public static class TiempoAvisosAndroid
                 hechos[aviso.Clave] =
                     aviso.Fin.UtcTicks;
 
-                string texto =
-                    $"{aviso.Zona}: {aviso.Periodo}";
+                int id =
+                    IdDe(aviso.Clave);
 
                 var notificacion =
                     new NotificationCompat.Builder(contexto, Canal)
                         .SetSmallIcon(contexto.ApplicationInfo?.Icon ?? 0)
-                        .SetContentTitle($"{aviso.Titulo} · {lugar.Nombre}")
-                        .SetContentText(texto)
+                        .SetContentTitle(aviso.Titulo)
+                        .SetContentText(aviso.Texto)
                         .SetStyle(
                             new NotificationCompat.BigTextStyle()
                                 .BigText(
-                                    string.IsNullOrWhiteSpace(aviso.Descripcion)
-                                        ? texto
-                                        : $"{texto}.\n{aviso.Descripcion}"))
+                                    string.IsNullOrWhiteSpace(aviso.Detalle)
+                                        ? aviso.Texto
+                                        : $"{aviso.Texto}.\n{aviso.Detalle}"))
                         .SetPriority(NotificationCompat.PriorityHigh)
                         .SetAutoCancel(true);
+
+                // Se quita sola cuando termina el aviso.
+                long restante =
+                    (long)(aviso.Fin - DateTimeOffset.Now).TotalMilliseconds;
+
+                if (restante > 0)
+                {
+                    notificacion.SetTimeoutAfter(restante);
+                }
 
                 if (alPulsar is not null)
                 {
                     notificacion.SetContentIntent(alPulsar);
                 }
 
+                // Los rojos del circuito son alertas de la app: se marcan como leídas.
+                if (aviso.Firma.Length > 0)
+                {
+                    var leida =
+                        new Intent(contexto, typeof(TiempoAvisoLeidoReceiver));
+
+                    leida.PutExtra(TiempoAvisoLeidoReceiver.ExtraFirma, aviso.Firma);
+                    leida.PutExtra(TiempoAvisoLeidoReceiver.ExtraId, id);
+
+                    PendingIntent? alLeer =
+                        PendingIntent.GetBroadcast(
+                            contexto,
+                            id,
+                            leida,
+                            PendingIntentFlags.Immutable | PendingIntentFlags.UpdateCurrent);
+
+                    if (alLeer is not null)
+                    {
+                        notificacion.AddAction(0, "Marcar como leída", alLeer);
+                    }
+                }
+
                 gestor.Notify(
-                    IdDe(aviso.Clave),
+                    id,
                     notificacion.Build());
             }
 
@@ -122,8 +212,9 @@ public static class TiempoAvisosAndroid
 
 
     /// <summary>
-    /// Revisión cada 2 horas (avisos y tiempo del widget). Si ya está
-    /// programada no se toca: volver a programarla la retrasaría.
+    /// Revisión cada 30 minutos (avisos rojos del circuito, avisos donde vas a
+    /// estar y tiempo del widget). Si ya está programada no se toca: volver a
+    /// programarla la retrasaría.
     /// </summary>
     public static void ProgramarRevision()
     {
@@ -136,6 +227,20 @@ public static class TiempoAvisosAndroid
                 new Intent(
                     contexto,
                     typeof(TiempoAlarmReceiver));
+
+            var alarmas =
+                (AlarmManager?)contexto.GetSystemService(Context.AlarmService);
+
+            // Fuera la de cada 2 horas de las versiones anteriores.
+            if (PendingIntent.GetBroadcast(
+                    contexto,
+                    IdAlarmaAntigua,
+                    intencion,
+                    PendingIntentFlags.Immutable | PendingIntentFlags.NoCreate) is PendingIntent antigua)
+            {
+                alarmas?.Cancel(antigua);
+                antigua.Cancel();
+            }
 
             if (PendingIntent.GetBroadcast(
                     contexto,
@@ -158,12 +263,11 @@ public static class TiempoAvisosAndroid
                 return;
             }
 
-            ((AlarmManager?)contexto.GetSystemService(Context.AlarmService))
-                ?.SetInexactRepeating(
-                    AlarmType.RtcWakeup,
-                    Java.Lang.JavaSystem.CurrentTimeMillis() + 10 * 60 * 1000,
-                    2 * AlarmManager.IntervalHour,
-                    pendiente);
+            alarmas?.SetInexactRepeating(
+                AlarmType.RtcWakeup,
+                Java.Lang.JavaSystem.CurrentTimeMillis() + 2 * 60 * 1000,
+                AlarmManager.IntervalHalfHour,
+                pendiente);
         }
         catch
         {
@@ -214,7 +318,7 @@ public static class TiempoAvisosAndroid
 }
 
 
-/// <summary>Revisión del tiempo cada 2 horas, aunque la app esté cerrada.</summary>
+/// <summary>Revisión del tiempo cada 30 minutos, aunque la app esté cerrada.</summary>
 [BroadcastReceiver(
     Enabled = true,
     Exported = false)]
@@ -247,5 +351,50 @@ public class TiempoAlarmReceiver : BroadcastReceiver
                 pendiente?.Finish();
             }
         });
+    }
+}
+
+
+/// <summary>«Marcar como leída» en la notificación de un aviso rojo del circuito.</summary>
+[BroadcastReceiver(
+    Enabled = true,
+    Exported = false)]
+public class TiempoAvisoLeidoReceiver : BroadcastReceiver
+{
+    public const string ExtraFirma =
+        "sccosmos_firma_aviso";
+
+    public const string ExtraId =
+        "sccosmos_id_aviso";
+
+
+    public override void OnReceive(
+        Context? context,
+        Intent? intent)
+    {
+        try
+        {
+            string firma =
+                intent?.GetStringExtra(ExtraFirma) ?? "";
+
+            if (firma.Length > 0)
+            {
+                AlertasMobileService.MarcarLeidaPorFirma(firma);
+            }
+
+            int id =
+                intent?.GetIntExtra(ExtraId, 0) ?? 0;
+
+            if (context is not null && id != 0)
+            {
+                NotificationManagerCompat.From(context).Cancel(id);
+            }
+
+            // El widget enseña las alertas pendientes.
+            SccosmosWidgetProvider.ActualizarTodos();
+        }
+        catch
+        {
+        }
     }
 }

@@ -39,13 +39,21 @@ public static class AlertasNotificacionService
                     () =>
                         AlertasMobileService.Calcular());
 
+            // Los avisos rojos de AEMET llevan su propia notificación (con
+            // «Marcar como leída»): aquí solo se quita la de los ya leídos.
+            TiempoAvisosAndroid.RetirarRojosLeidos(
+                alertas
+                    .Where(a => a.Tipo == TiempoAemetService.TipoAlertaRojo)
+                    .Select(a => a.Identidad)
+                    .ToHashSet());
+
             var titulos =
                 new List<string>();
 
             var destinos =
                 new List<string>();
 
-            foreach (AlertaMobile alerta in alertas)
+            foreach (AlertaMobile alerta in alertas.Where(a => a.Tipo != TiempoAemetService.TipoAlertaRojo))
             {
                 string descripcion =
                     (alerta.Descripcion ?? "").Trim();

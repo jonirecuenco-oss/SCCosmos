@@ -132,6 +132,116 @@ namespace SCCosmos
         }
 
         // ========================================================
+        // TIEMPO (AEMET) DE CADA CONGREGACIÓN: debajo de su fila
+        // ========================================================
+
+        private readonly Dictionary<string, TiempoCongregacionVista> _tiempos = new Dictionary<string, TiempoCongregacionVista>();
+
+        private void BtnTiempoCongregacion_Click(object sender, RoutedEventArgs e)
+        {
+            if (DataGridRow.GetRowContainingElement(sender as FrameworkElement) is DataGridRow fila)
+            {
+                fila.DetailsVisibility =
+                    fila.DetailsVisibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+            }
+        }
+
+        // Al desplegarse por primera vez se descarga el tiempo de hoy.
+        private async void TablaCongregaciones_LoadingRowDetails(object sender, DataGridRowDetailsEventArgs e)
+        {
+            if (!(e.Row.Item is Congregacion congregacion) || e.DetailsElement == null)
+            {
+                return;
+            }
+
+            string clave = congregacion.Codigo + "|" + congregacion.Nombre;
+            bool nueva = !_tiempos.TryGetValue(clave, out TiempoCongregacionVista vista);
+
+            if (nueva)
+            {
+                vista = new TiempoCongregacionVista(congregacion);
+                _tiempos[clave] = vista;
+            }
+
+            e.DetailsElement.DataContext = vista;
+
+            if (nueva)
+            {
+                await vista.CargarAsync(DateTime.Today);
+            }
+
+            DesplazarHoras(e.Row, vista);
+        }
+
+        // Un clic en el tiempo no abre la edición de la congregación.
+        private void DetalleTiempo_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            e.Handled = true;
+        }
+
+        // Al pulsar uno de los 7 días, se ven sus horas.
+        private async void DiaTiempo_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement boton && boton.DataContext is DiaTiempoUI dia)
+            {
+                await dia.Vista.CargarAsync(dia.Fecha);
+                DesplazarHoras(DataGridRow.GetRowContainingElement(boton), dia.Vista);
+            }
+        }
+
+        // Hoy, las horas se ven desde la actual (como en Inicio).
+        private static void DesplazarHoras(DataGridRow fila, TiempoCongregacionVista vista)
+        {
+            fila?.Dispatcher.BeginInvoke(
+                new Action(() =>
+                {
+                    if (Descendiente<ScrollViewer>(fila) is ScrollViewer scroll)
+                    {
+                        scroll.ScrollToHorizontalOffset(vista.IndiceActual * 74);
+                    }
+                }),
+                System.Windows.Threading.DispatcherPriority.Loaded);
+        }
+
+        private static T Descendiente<T>(DependencyObject raiz) where T : DependencyObject
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(raiz); i++)
+            {
+                DependencyObject hijo = VisualTreeHelper.GetChild(raiz, i);
+
+                if (hijo is T encontrado)
+                {
+                    return encontrado;
+                }
+
+                if (Descendiente<T>(hijo) is T dentro)
+                {
+                    return dentro;
+                }
+            }
+
+            return null;
+        }
+
+        // La rueda mueve la tabla, no la fila de horas (esa va con su barra).
+        private void ScrollTiempo_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (e.Handled || !(sender is FrameworkElement elemento) || !(elemento.Parent is UIElement padre))
+            {
+                return;
+            }
+
+            e.Handled = true;
+
+            padre.RaiseEvent(
+                new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta)
+                {
+                    RoutedEvent = UIElement.MouseWheelEvent,
+                    Source = sender
+                });
+        }
+
+        // ========================================================
         // NUEVO: UN SOLO CLIC PARA EDITAR
         // ========================================================
         private void RowCongregacion_Click(object sender, MouseButtonEventArgs e)

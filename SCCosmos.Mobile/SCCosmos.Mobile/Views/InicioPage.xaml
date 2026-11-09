@@ -304,11 +304,6 @@
                             VerticalOptions="Center"/>
                     </Grid>
 
-                    <VerticalStackLayout
-                        x:Name="PanelAvisosTiempo"
-                        Spacing="6"
-                        IsVisible="False"/>
-
                     <ScrollView
                         x:Name="ScrollHorasTiempo"
                         Orientation="Horizontal"
@@ -321,6 +316,7 @@
 
                     <Label
                         x:Name="LblPieTiempo"
+                        IsVisible="False"
                         Text=""
                         TextColor="{StaticResource TextoTerciario}"
                         FontSize="11"/>

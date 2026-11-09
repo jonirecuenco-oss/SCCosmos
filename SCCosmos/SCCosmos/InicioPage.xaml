@@ -92,9 +92,9 @@
                                 <TextBlock x:Name="TxtHorasMes" Text="0" FontSize="32" FontWeight="SemiBold"/>
                                 <TextBlock x:Name="TxtHorasMesEtiqueta" Text="" Style="{StaticResource NotaDato}" FontSize="12"/>
                             </StackPanel>
-                            <ui:Button x:Name="BtnSumarHoras" Grid.Column="1" Appearance="Primary" Icon="{ui:SymbolIcon Add24}"
+                            <ui:Button x:Name="BtnSumarHoras" Grid.Column="1" Appearance="Primary" Icon="{ui:SymbolIcon Edit24}"
                                        Padding="10" Cursor="Hand" VerticalAlignment="Center"
-                                       ToolTip="Añadir horas de predicación" Click="BtnSumarHoras_Click"/>
+                                       ToolTip="Editar horas de predicación" Click="BtnSumarHoras_Click"/>
                         </Grid>
                     </Grid>
                 </ui:Card>
@@ -113,21 +113,7 @@
                         <TextBlock x:Name="TxtMaxMinTiempo" Grid.Column="1" Style="{StaticResource NotaDato}" FontSize="13" VerticalAlignment="Center"/>
                     </Grid>
 
-                    <!-- Avisos que no caen en ninguna de las horas que se ven (los demás van debajo de cada hora) -->
-                    <ItemsControl x:Name="ListaAvisosTiempo">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border Background="{Binding Fondo}" CornerRadius="6" Padding="10,6" Margin="0,0,0,8">
-                                    <StackPanel Orientation="Horizontal">
-                                        <ui:SymbolIcon Symbol="Warning24" FontSize="16" Foreground="{Binding Color}" Margin="0,0,8,0"/>
-                                        <TextBlock Text="{Binding Texto}" Foreground="{Binding Color}" FontSize="13" TextWrapping="Wrap" VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-
-                    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" PreviewMouseWheel="ScrollTiempo_PreviewMouseWheel">
+                    <ScrollViewer x:Name="ScrollHorasTiempo" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" PreviewMouseWheel="ScrollTiempo_PreviewMouseWheel">
                         <ItemsControl x:Name="ListaHorasTiempo">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
@@ -136,16 +122,13 @@
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Width="70" Padding="4,8" Margin="0,0,4,4" CornerRadius="8" Background="{Binding Fondo}" ToolTip="{Binding Descripcion}">
+                                    <Border Width="{Binding Ancho}" Padding="4,8" Margin="0,0,4,4" CornerRadius="8" Background="{Binding Fondo}" ToolTip="{Binding Descripcion}">
                                         <StackPanel HorizontalAlignment="Center">
                                             <TextBlock Text="{Binding Etiqueta}" FontSize="12" HorizontalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                                             <ui:SymbolIcon Symbol="{Binding Simbolo}" FontSize="26" Foreground="{Binding ColorIcono}" HorizontalAlignment="Center" Margin="0,4"/>
                                             <TextBlock Text="{Binding Temperatura}" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center"/>
                                             <TextBlock Text="{Binding Lluvia}" FontSize="11" Foreground="#4BA3E3" HorizontalAlignment="Center"/>
-                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,2,0,0" Visibility="{Binding VerAviso}">
-                                                <ui:SymbolIcon Symbol="Warning24" FontSize="11" Foreground="{Binding ColorAviso}" Margin="0,0,2,0"/>
-                                                <TextBlock Text="{Binding Aviso}" FontSize="11" FontWeight="SemiBold" Foreground="{Binding ColorAviso}"/>
-                                            </StackPanel>
+                                            <ui:SymbolIcon Symbol="Warning24" Filled="True" FontSize="16" Foreground="{Binding ColorAviso}" HorizontalAlignment="Center" Margin="0,3,0,0" Visibility="{Binding VerAviso}"/>
                                         </StackPanel>
                                     </Border>
                                 </DataTemplate>
@@ -153,7 +136,7 @@
                         </ItemsControl>
                     </ScrollViewer>
 
-                    <TextBlock x:Name="TxtPieTiempo" Style="{StaticResource NotaDato}" FontSize="11" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="TxtPieTiempo" Style="{StaticResource NotaDato}" FontSize="11" Margin="0,8,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>
                 </StackPanel>
             </ui:Card>
             </Grid>

@@ -315,6 +315,14 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - Widget: el tiempo va antes de la predicación (que queda abajo del todo). Lleva flechas de horas de 6 en 6 (`Widget_TiempoDesplazamiento` por día) y el aviso debajo de cada hora.
   - Probado: Windows con una copia de la base; Android en el emulador en frío (orden y arranque; el emulador estaba en modo avión). El móvil no estaba conectado.
 - 09/11/2026 · Publicada la v2.1.51.
+- 10/11/2026 · v2.1.52:
+  - Tiempo: debajo de cada hora (o tramo) solo el icono del aviso, del color de su nivel (`AvisoTiempo.NivelIcono`; `icono_aviso_{nivel}` y `widget_aviso_{nivel}`). Fuera los avisos sueltos de arriba, la nota de tramos y el pie «AEMET…» de Inicio. Se ven todas las horas del día (desde las 6, o antes de madrugada) y hoy se colocan en la hora actual.
+  - Circuito (Android y Windows): botón del tiempo en cada congregación; despliega los 7 días (`TiempoAemet.ObtenerSemanaAsync`) y, al elegir uno, sus horas. En Windows, detalle de fila (`TiempoCongregacionVista`) y desplazamiento suave de la tabla.
+  - Avisos rojos en las congregaciones del circuito (`TiempoAemet.AvisosRojosAsync`, `TiempoAemetService.RevisarAvisosRojosAsync`): cada 30 minutos (alarma 4812; la de 2 horas, 4810, se cancela) y al abrir Circuito. Son alertas de la app (`TiempoRojo`) y su notificación lleva «Marcar como leída» (`TiempoAvisoLeidoReceiver`). Probado en real: aviso rojo por lluvias en Jarandilla de la Vera, notificado a las 23:57 del 09/11.
+  - Descargas de AEMET con If-Modified-Since (304 si no hay cambios; el RSS de avisos pesa unos 118 KB) y caché escrita de golpe.
+  - Windows: el «+» de predicación pasa a lápiz (ya editaba el día). Capturas: `Página:Desplegar=n` y `Página:Pulsar=Botón*n`.
+  - Ojo en pruebas: abrir la app con `Abrir` la reinicia y Android retira sus notificaciones (motivo 5).
+- 10/11/2026 · Publicada la v2.1.52.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

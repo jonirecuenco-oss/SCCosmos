@@ -71,31 +71,14 @@
                 android:textSize="10sp"
                 android:maxLines="1" />
 
-            <LinearLayout
-                android:id="@+id/tiempo_avisofila_1"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:visibility="gone">
-
-                <ImageView
-                    android:layout_width="10dp"
-                    android:layout_height="10dp"
-                    android:layout_marginRight="2dp"
-                    android:src="@drawable/widget_aviso"
-                    android:contentDescription="Aviso" />
-
-                <TextView
-                    android:id="@+id/tiempo_aviso_1"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text=""
-                    android:textColor="#E5C07B"
-                    android:textSize="9sp"
-                    android:maxLines="1" />
-            </LinearLayout>
+            <ImageView
+                android:id="@+id/tiempo_aviso_1"
+                android:layout_width="15dp"
+                android:layout_height="15dp"
+                android:layout_marginTop="3dp"
+                android:src="@drawable/widget_aviso_amarillo"
+                android:contentDescription="Aviso"
+                android:visibility="gone" />
         </LinearLayout>
         <LinearLayout
             android:id="@+id/tiempo_celda_2"
@@ -141,31 +124,14 @@
                 android:textSize="10sp"
                 android:maxLines="1" />
 
-            <LinearLayout
-                android:id="@+id/tiempo_avisofila_2"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:visibility="gone">
-
-                <ImageView
-                    android:layout_width="10dp"
-                    android:layout_height="10dp"
-                    android:layout_marginRight="2dp"
-                    android:src="@drawable/widget_aviso"
-                    android:contentDescription="Aviso" />
-
-                <TextView
-                    android:id="@+id/tiempo_aviso_2"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text=""
-                    android:textColor="#E5C07B"
-                    android:textSize="9sp"
-                    android:maxLines="1" />
-            </LinearLayout>
+            <ImageView
+                android:id="@+id/tiempo_aviso_2"
+                android:layout_width="15dp"
+                android:layout_height="15dp"
+                android:layout_marginTop="3dp"
+                android:src="@drawable/widget_aviso_amarillo"
+                android:contentDescription="Aviso"
+                android:visibility="gone" />
         </LinearLayout>
         <LinearLayout
             android:id="@+id/tiempo_celda_3"
@@ -211,31 +177,14 @@
                 android:textSize="10sp"
                 android:maxLines="1" />
 
-            <LinearLayout
-                android:id="@+id/tiempo_avisofila_3"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:visibility="gone">
-
-                <ImageView
-                    android:layout_width="10dp"
-                    android:layout_height="10dp"
-                    android:layout_marginRight="2dp"
-                    android:src="@drawable/widget_aviso"
-                    android:contentDescription="Aviso" />
-
-                <TextView
-                    android:id="@+id/tiempo_aviso_3"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text=""
-                    android:textColor="#E5C07B"
-                    android:textSize="9sp"
-                    android:maxLines="1" />
-            </LinearLayout>
+            <ImageView
+                android:id="@+id/tiempo_aviso_3"
+                android:layout_width="15dp"
+                android:layout_height="15dp"
+                android:layout_marginTop="3dp"
+                android:src="@drawable/widget_aviso_amarillo"
+                android:contentDescription="Aviso"
+                android:visibility="gone" />
         </LinearLayout>
         <LinearLayout
             android:id="@+id/tiempo_celda_4"
@@ -281,31 +230,14 @@
                 android:textSize="10sp"
                 android:maxLines="1" />
 
-            <LinearLayout
-                android:id="@+id/tiempo_avisofila_4"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:visibility="gone">
-
-                <ImageView
-                    android:layout_width="10dp"
-                    android:layout_height="10dp"
-                    android:layout_marginRight="2dp"
-                    android:src="@drawable/widget_aviso"
-                    android:contentDescription="Aviso" />
-
-                <TextView
-                    android:id="@+id/tiempo_aviso_4"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text=""
-                    android:textColor="#E5C07B"
-                    android:textSize="9sp"
-                    android:maxLines="1" />
-            </LinearLayout>
+            <ImageView
+                android:id="@+id/tiempo_aviso_4"
+                android:layout_width="15dp"
+                android:layout_height="15dp"
+                android:layout_marginTop="3dp"
+                android:src="@drawable/widget_aviso_amarillo"
+                android:contentDescription="Aviso"
+                android:visibility="gone" />
         </LinearLayout>
         <LinearLayout
             android:id="@+id/tiempo_celda_5"
@@ -351,31 +283,14 @@
                 android:textSize="10sp"
                 android:maxLines="1" />
 
-            <LinearLayout
-                android:id="@+id/tiempo_avisofila_5"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:visibility="gone">
-
-                <ImageView
-                    android:layout_width="10dp"
-                    android:layout_height="10dp"
-                    android:layout_marginRight="2dp"
-                    android:src="@drawable/widget_aviso"
-                    android:contentDescription="Aviso" />
-
-                <TextView
-                    android:id="@+id/tiempo_aviso_5"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text=""
-                    android:textColor="#E5C07B"
-                    android:textSize="9sp"
-                    android:maxLines="1" />
-            </LinearLayout>
+            <ImageView
+                android:id="@+id/tiempo_aviso_5"
+                android:layout_width="15dp"
+                android:layout_height="15dp"
+                android:layout_marginTop="3dp"
+                android:src="@drawable/widget_aviso_amarillo"
+                android:contentDescription="Aviso"
+                android:visibility="gone" />
         </LinearLayout>
         <LinearLayout
             android:id="@+id/tiempo_celda_6"
@@ -421,31 +336,14 @@
                 android:textSize="10sp"
                 android:maxLines="1" />
 
-            <LinearLayout
-                android:id="@+id/tiempo_avisofila_6"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:visibility="gone">
-
-                <ImageView
-                    android:layout_width="10dp"
-                    android:layout_height="10dp"
-                    android:layout_marginRight="2dp"
-                    android:src="@drawable/widget_aviso"
-                    android:contentDescription="Aviso" />
-
-                <TextView
-                    android:id="@+id/tiempo_aviso_6"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text=""
-                    android:textColor="#E5C07B"
-                    android:textSize="9sp"
-                    android:maxLines="1" />
-            </LinearLayout>
+            <ImageView
+                android:id="@+id/tiempo_aviso_6"
+                android:layout_width="15dp"
+                android:layout_height="15dp"
+                android:layout_marginTop="3dp"
+                android:src="@drawable/widget_aviso_amarillo"
+                android:contentDescription="Aviso"
+                android:visibility="gone" />
         </LinearLayout>
         <ImageView
             android:id="@+id/tiempo_despues"

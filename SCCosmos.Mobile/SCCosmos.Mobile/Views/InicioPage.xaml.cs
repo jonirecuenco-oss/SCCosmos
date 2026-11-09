@@ -733,9 +733,11 @@ public partial class InicioPage : ContentPage, IActualizableMobile
 
         TarjetaTiempo.IsVisible = true;
         PanelHorasTiempo.Children.Clear();
-        PanelAvisosTiempo.Children.Clear();
-        PanelAvisosTiempo.IsVisible = false;
         LblMaxMinTiempo.Text = "";
+
+        // Abajo solo sale un mensaje cuando no hay previsión.
+        LblPieTiempo.Text = "";
+        LblPieTiempo.IsVisible = false;
 
         if (tiempo is null)
         {
@@ -746,6 +748,7 @@ public partial class InicioPage : ContentPage, IActualizableMobile
                     : TiempoAemetService.ProblemaUbicacion.Length > 0
                         ? TiempoAemetService.ProblemaUbicacion
                         : "Activa la ubicación para ver el tiempo donde estás.";
+            LblPieTiempo.IsVisible = true;
             return;
         }
 
@@ -755,6 +758,7 @@ public partial class InicioPage : ContentPage, IActualizableMobile
         if (tiempo.SinPrevision)
         {
             LblPieTiempo.Text = "AEMET todavía no tiene previsión para este día.";
+            LblPieTiempo.IsVisible = true;
             return;
         }
 
@@ -766,10 +770,10 @@ public partial class InicioPage : ContentPage, IActualizableMobile
         bool esHoy = tiempo.Fecha == DateTime.Today;
         int horaActual = DateTime.Now.Hour;
 
-        // Hoy, desde la hora actual; otro día, desde las 6 (se desliza a los lados).
+        // Todas las horas del día (desde las 6, o antes si ya es de madrugada).
         List<HoraTiempo> visibles =
             tiempo.Horas
-                .Where(h => !tiempo.PorHoras || h.Hora >= (esHoy ? horaActual : 6))
+                .Where(h => !tiempo.PorHoras || h.Hora >= (esHoy ? Math.Min(6, horaActual) : 6))
                 .ToList();
 
         foreach (HoraTiempo hora in visibles)
@@ -778,31 +782,14 @@ public partial class InicioPage : ContentPage, IActualizableMobile
                 CrearHoraTiempo(hora, destacada: esHoy && hora.Hora == horaActual));
         }
 
-        // Los avisos van debajo de cada hora; aquí solo los que no caen en ninguna.
-        List<AvisoTiempo> sueltos =
-            tiempo.Avisos
-                .Where(a => !visibles.Any(h => h.Avisos.Contains(a)))
-                .ToList();
+        // Hoy se ve desde la hora actual (las anteriores, deslizando a la
+        // izquierda); a última hora, las últimas, con la actual al final.
+        int indice =
+            esHoy ? Math.Max(0, visibles.FindIndex(h => h.Hora == horaActual)) : 0;
 
-        foreach (AvisoTiempo aviso in sueltos)
-        {
-            PanelAvisosTiempo.Children.Add(CrearAvisoTiempo(aviso));
-        }
-
-        PanelAvisosTiempo.IsVisible =
-            sueltos.Count > 0;
-
-        LblPieTiempo.Text =
-            string.Join(
-                "\n",
-                new[]
-                {
-                    $"AEMET · {tiempo.Motivo}" + (tiempo.Actualizado != default ? $" · {tiempo.Actualizado:HH:mm}" : ""),
-                    tiempo.NotaTramos
-                }
-                .Where(s => s.Length > 0));
-
-        _ = ScrollHorasTiempo.ScrollToAsync(0, 0, false);
+        Dispatcher.DispatchDelayed(
+            TimeSpan.FromMilliseconds(150),
+            () => _ = ScrollHorasTiempo.ScrollToAsync(indice * 58, 0, false));
     }
 
 
@@ -822,20 +809,10 @@ public partial class InicioPage : ContentPage, IActualizableMobile
         celda.Add(new Label { Text = hora.Temperatura is int t ? $"{t}°" : "", FontSize = 15, FontAttributes = FontAttributes.Bold, TextColor = Color.FromArgb("#F2F4F7"), HorizontalTextAlignment = TextAlignment.Center });
         celda.Add(new Label { Text = hora.TextoLluvia.Length > 0 ? hora.TextoLluvia : " ", FontSize = 11, TextColor = Color.FromArgb("#4BA3E3"), HorizontalTextAlignment = TextAlignment.Center });
 
-        // El aviso que cubre esa hora (con «+1» si hay más).
+        // El aviso que cubre esa hora: su icono, del color del nivel.
         if (hora.Aviso is AvisoTiempo aviso)
         {
-            var avisoFila =
-                new HorizontalStackLayout
-                {
-                    Spacing = 2,
-                    HorizontalOptions = LayoutOptions.Center
-                };
-
-            avisoFila.Add(new Image { Source = "icono_aviso.png", WidthRequest = 11, HeightRequest = 11, VerticalOptions = LayoutOptions.Center });
-            avisoFila.Add(new Label { Text = hora.TextoAviso, FontSize = 10, TextColor = Color.FromArgb(aviso.Color), VerticalTextAlignment = TextAlignment.Center });
-
-            celda.Add(avisoFila);
+            celda.Add(new Image { Source = $"icono_aviso_{aviso.NivelIcono}.png", WidthRequest = 16, HeightRequest = 16, HorizontalOptions = LayoutOptions.Center, Margin = new Thickness(0, 2, 0, 0) });
         }
 
         SemanticProperties.SetDescription(
@@ -845,48 +822,12 @@ public partial class InicioPage : ContentPage, IActualizableMobile
         return new Border
         {
             Content = celda,
-            WidthRequest = 54,
+
+            // Los tramos («12–24 h», «Todo el día») necesitan más sitio que una hora.
+            WidthRequest = hora.Hora < 0 ? 74 : 54,
             Padding = new Thickness(2, 6),
             StrokeThickness = 0,
             BackgroundColor = destacada ? Color.FromArgb("#1E2228") : Colors.Transparent,
-            StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = 10 }
-        };
-    }
-
-
-    private static View CrearAvisoTiempo(AvisoTiempo aviso)
-    {
-        var fila =
-            new Grid
-            {
-                ColumnDefinitions =
-                {
-                    new ColumnDefinition(GridLength.Auto),
-                    new ColumnDefinition(GridLength.Star)
-                },
-                ColumnSpacing = 8
-            };
-
-        fila.Add(new Image { Source = "icono_aviso.png", WidthRequest = 18, HeightRequest = 18, VerticalOptions = LayoutOptions.Start });
-
-        var texto =
-            new Label
-            {
-                Text = $"{aviso.Titulo} · {aviso.Periodo}",
-                FontSize = 12.5,
-                TextColor = Color.FromArgb(aviso.Color),
-                LineBreakMode = LineBreakMode.WordWrap
-            };
-
-        Grid.SetColumn(texto, 1);
-        fila.Add(texto);
-
-        return new Border
-        {
-            Content = fila,
-            Padding = new Thickness(10, 8),
-            StrokeThickness = 0,
-            BackgroundColor = Color.FromArgb("#26" + aviso.Color.TrimStart('#')),
             StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = 10 }
         };
     }

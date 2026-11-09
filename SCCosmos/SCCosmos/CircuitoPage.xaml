@@ -72,9 +72,75 @@
                                 <ui:Button Content="Añadir congregación" Icon="{ui:SymbolIcon Add24}" Appearance="Primary" HorizontalAlignment="Right" Click="BtnAnadirCongregacion_Click"/>
                             </Grid>
 
-                            <DataGrid x:Name="TablaCongregaciones" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column" SelectionMode="Single" IsReadOnly="True" 
+                            <DataGrid x:Name="TablaCongregaciones" Grid.Row="1" ScrollViewer.CanContentScroll="False" RowDetailsVisibilityMode="Collapsed" AreRowDetailsFrozen="True" LoadingRowDetails="TablaCongregaciones_LoadingRowDetails" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column" SelectionMode="Single" IsReadOnly="True" 
                                       GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource DividerStrokeColorDefaultBrush}" BorderThickness="1" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" 
                                       Background="Transparent" RowBackground="Transparent" Foreground="{DynamicResource TextFillColorPrimaryBrush}" RowHeight="34">
+
+                                <!-- TIEMPO (AEMET) de la congregación: lo despliega el botón de la primera columna -->
+                                <DataGrid.RowDetailsTemplate>
+                                    <DataTemplate>
+                                        <Border Padding="16,10,16,12" Margin="8,2,8,8" CornerRadius="8" Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}" MouseLeftButtonUp="DetalleTiempo_MouseLeftButtonUp" Cursor="Arrow">
+                                            <StackPanel>
+                                                <Grid Margin="0,0,0,8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding Titulo}" Style="{StaticResource Rotulo}" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="1" Text="{Binding Datos}" Style="{StaticResource NotaDato}" FontSize="13" Margin="24,0,0,0" VerticalAlignment="Center"/>
+                                                </Grid>
+                                                <TextBlock Text="{Binding Mensaje}" Visibility="{Binding VerMensaje}" Style="{StaticResource NotaDato}" FontSize="13" Margin="0,0,0,8"/>
+                                                <!-- Los 7 días: al pulsar uno, sus horas debajo -->
+                                                <ItemsControl ItemsSource="{Binding Dias}" Margin="0,0,0,8">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <StackPanel Orientation="Horizontal"/>
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Button Click="DiaTiempo_Click" Width="80" Padding="4,6" Margin="0,0,4,0" Background="{Binding Fondo}" BorderThickness="0" ToolTip="{Binding Descripcion}" Cursor="Hand">
+                                                                <StackPanel HorizontalAlignment="Center">
+                                                                    <TextBlock Text="{Binding Etiqueta}" FontSize="12" HorizontalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                                                    <ui:SymbolIcon Symbol="{Binding Simbolo}" FontSize="24" Foreground="{Binding ColorIcono}" HorizontalAlignment="Center" Margin="0,4"/>
+                                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                                        <TextBlock Text="{Binding Maxima}" FontSize="14" FontWeight="SemiBold"/>
+                                                                        <TextBlock Text="{Binding Minima}" FontSize="13" Margin="6,0,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                                                    </StackPanel>
+                                                                    <TextBlock Text="{Binding Lluvia}" FontSize="11" Foreground="#4BA3E3" HorizontalAlignment="Center"/>
+                                                                    <ui:SymbolIcon Symbol="Warning24" Filled="True" FontSize="15" Foreground="{Binding ColorAviso}" HorizontalAlignment="Center" Margin="0,2,0,0" Visibility="{Binding VerAviso}"/>
+                                                                </StackPanel>
+                                                            </Button>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                                <!-- Horas (o tramos) del día elegido, con el icono del aviso debajo (como en Inicio) -->
+                                                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" PreviewMouseWheel="ScrollTiempo_PreviewMouseWheel">
+                                                    <ItemsControl ItemsSource="{Binding Horas}">
+                                                        <ItemsControl.ItemsPanel>
+                                                            <ItemsPanelTemplate>
+                                                                <StackPanel Orientation="Horizontal"/>
+                                                            </ItemsPanelTemplate>
+                                                        </ItemsControl.ItemsPanel>
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Border Width="{Binding Ancho}" Padding="4,8" Margin="0,0,4,4" CornerRadius="8" Background="{Binding Fondo}" ToolTip="{Binding Descripcion}">
+                                                                    <StackPanel HorizontalAlignment="Center">
+                                                                        <TextBlock Text="{Binding Etiqueta}" FontSize="12" HorizontalAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                                                        <ui:SymbolIcon Symbol="{Binding Simbolo}" FontSize="26" Foreground="{Binding ColorIcono}" HorizontalAlignment="Center" Margin="0,4"/>
+                                                                        <TextBlock Text="{Binding Temperatura}" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                                                                        <TextBlock Text="{Binding Lluvia}" FontSize="11" Foreground="#4BA3E3" HorizontalAlignment="Center"/>
+                                                                        <ui:SymbolIcon Symbol="Warning24" Filled="True" FontSize="16" Foreground="{Binding ColorAviso}" HorizontalAlignment="Center" Margin="0,3,0,0" Visibility="{Binding VerAviso}"/>
+                                                                    </StackPanel>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </ScrollViewer>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGrid.RowDetailsTemplate>
 
                                 <!-- AHORA REACCIONA A UN SOLO CLIC -->
                                 <DataGrid.RowStyle>
@@ -91,6 +157,14 @@
                                 </DataGrid.RowStyle>
 
                                 <DataGrid.Columns>
+                                    <!-- Tiempo de AEMET: se despliega debajo de la fila -->
+                                    <DataGridTemplateColumn Width="44">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <ui:Button Click="BtnTiempoCongregacion_Click" Appearance="Transparent" Padding="4" Icon="{ui:SymbolIcon WeatherPartlyCloudyDay24}" ToolTip="Tiempo de AEMET" HorizontalAlignment="Center"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
                                     <DataGridTextColumn Header="Código" Binding="{Binding Codigo}" Width="65"/>
                                     <DataGridTextColumn Header="Nombre" Binding="{Binding Nombre}" Width="140"/>
                                     <DataGridTextColumn Header="Sección" Binding="{Binding NombreSeccion}" Width="70"/>
