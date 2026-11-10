@@ -443,7 +443,7 @@ public static class TiempoAemet
         string archivoHoras = $"aemet_h_{lugar.Ine}.xml";
 
         XDocument? horas =
-            await DescargarAsync(string.Format(UrlHoras, lugar.Ine), archivoHoras, TimeSpan.FromMinutes(60), latin: true, soloCache, ct);
+            await DescargarAsync(string.Format(UrlHoras, lugar.Ine), archivoHoras, TimeSpan.FromMinutes(60), latin: true, soloCache, ct, conservarHoras: true);
 
         XDocument? dias =
             await DescargarAsync(string.Format(UrlDias, lugar.Ine), $"aemet_d_{lugar.Ine}.xml", TimeSpan.FromHours(3), latin: true, soloCache, ct);
@@ -683,6 +683,49 @@ public static class TiempoAemet
             })
             .ToList();
     }
+
+
+    /// <summary>
+    /// AEMET quita del primer día los tramos que ya han pasado: por la tarde,
+    /// hoy empieza a las 07h o a las 13h. Se le añaden a la previsión nueva las
+    /// horas de la anterior que ya no trae, para ver el día desde las 00h (y así
+    /// pasan de una descarga a la siguiente). Devuelve si ha añadido algo.
+    /// </summary>
+    public static bool ConservarHorasPasadas(
+        XDocument nueva,
+        XDocument anterior)
+    {
+        bool anadidas = false;
+
+        foreach (XElement dia in nueva.Root?.Element("prediccion")?.Elements("dia") ?? Enumerable.Empty<XElement>())
+        {
+            XElement? vieja = DiaDe(anterior, (string?)dia.Attribute("fecha") ?? "");
+
+            if (vieja is null)
+            {
+                continue;
+            }
+
+            var hay = new HashSet<string>(dia.Elements().Select(ClaveHora));
+
+            foreach (XElement e in vieja.Elements().Where(e => e.Attribute("periodo") is not null))
+            {
+                // Lo que trae la nueva manda; de la anterior, solo lo que falta.
+                if (hay.Add(ClaveHora(e)))
+                {
+                    dia.Add(new XElement(e));
+                    anadidas = true;
+                }
+            }
+        }
+
+        return anadidas;
+    }
+
+
+    // «temperatura|07»: el dato y su hora (o su tramo, «prob_precipitacion|0107»).
+    private static string ClaveHora(XElement e) =>
+        e.Name.LocalName + "|" + ((string?)e.Attribute("periodo") ?? "");
 
 
     /// <summary>
@@ -1027,7 +1070,8 @@ public static class TiempoAemet
         TimeSpan vigencia,
         bool latin,
         bool soloCache,
-        CancellationToken ct)
+        CancellationToken ct,
+        bool conservarHoras = false)
     {
         string ruta = RutaCache(archivo);
         bool hay = File.Exists(ruta);
@@ -1069,6 +1113,18 @@ public static class TiempoAemet
 
             // Solo se guarda si es XML de verdad, y de golpe (puede haber otra descarga a la vez).
             XDocument documento = Leer(datos, latin);
+
+            // Por horas: se guardan también las de hoy que AEMET ya ha quitado.
+            if (conservarHoras
+                && hay
+                && LeerSeguro(File.ReadAllBytes(ruta), latin) is XDocument anterior
+                && ConservarHorasPasadas(documento, anterior))
+            {
+                datos =
+                    (latin ? Encoding.Latin1 : Encoding.UTF8).GetBytes(
+                        (documento.Declaration is null ? "" : documento.Declaration + "\n")
+                        + documento.ToString());
+            }
 
             Directory.CreateDirectory(CarpetaCache);
 

@@ -82,7 +82,19 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        <TextBlock Text="PREDICACIÓN ESTE MES" Style="{StaticResource Rotulo}"/>
+                        <!-- Con flechas para ver otros meses (como en Android) -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="PREDICACIÓN" Style="{StaticResource Rotulo}" VerticalAlignment="Center"/>
+                            <ui:Button x:Name="BtnMesAnterior" Grid.Column="1" Icon="{ui:SymbolIcon ChevronLeft24}" Appearance="Transparent"
+                                       Padding="4" Cursor="Hand" ToolTip="Mes anterior" Tag="-1" Click="BtnMesPredicacion_Click"/>
+                            <ui:Button x:Name="BtnMesSiguiente" Grid.Column="2" Icon="{ui:SymbolIcon ChevronRight24}" Appearance="Transparent"
+                                       Padding="4" Cursor="Hand" ToolTip="Mes siguiente" Tag="1" Click="BtnMesPredicacion_Click"/>
+                        </Grid>
                         <Grid Grid.Row="1" VerticalAlignment="Center">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>

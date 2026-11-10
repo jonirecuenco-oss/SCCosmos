@@ -463,7 +463,7 @@ namespace SCCosmos
                         : "Esposa";
 
                 string mes =
-                    DateTime.Today.ToString("yyyy-MM");
+                    _mesPredicacion.ToString("yyyy-MM");
 
                 double horas =
                     DatabaseHelper.ObtenerHorasMes(
@@ -481,15 +481,62 @@ namespace SCCosmos
                     + cbs.ToString()
                     + " CBs";
 
+                DateTime mesActual =
+                    new(DateTime.Today.Year, DateTime.Today.Month, 1);
+
+                int diferencia =
+                    (mesActual.Year - _mesPredicacion.Year) * 12
+                    + mesActual.Month - _mesPredicacion.Month;
+
                 TxtHorasMesEtiqueta.Text =
-                    DateTime.Today.ToString(
+                    _mesPredicacion.ToString(
                         "MMMM yyyy",
                         System.Globalization.CultureInfo
-                            .GetCultureInfo("es-ES"));
+                            .GetCultureInfo("es-ES"))
+                    + diferencia switch
+                    {
+                        0 => " · este mes",
+                        1 => " · el mes pasado",
+                        _ => $" · hace {diferencia} meses"
+                    };
+
+                // Los meses futuros no tienen nada que ver: en el mes actual la
+                // flecha de avanzar se apaga.
+                BtnMesSiguiente.IsEnabled =
+                    diferencia > 0;
             }
             catch
             {
             }
+        }
+
+
+        // Mes que enseña la tarjeta de predicación (con las flechas se ven otros).
+        private DateTime _mesPredicacion =
+            new(DateTime.Today.Year, DateTime.Today.Month, 1);
+
+
+        private void BtnMesPredicacion_Click(
+            object sender,
+            RoutedEventArgs e)
+        {
+            int paso =
+                (sender as FrameworkElement)?.Tag is string texto
+                && int.TryParse(texto, out int valor)
+                    ? valor
+                    : 0;
+
+            DateTime nuevo =
+                _mesPredicacion.AddMonths(paso);
+
+            if (paso == 0
+                || nuevo > new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1))
+            {
+                return;
+            }
+
+            _mesPredicacion = nuevo;
+            CargarHorasMes();
         }
 
 
@@ -499,8 +546,15 @@ namespace SCCosmos
         {
             try
             {
+                // Se abre en el mes que se está viendo: hoy si es el actual; si
+                // no, su último día (en la ventana se puede cambiar de día).
+                DateTime dia =
+                    _mesPredicacion == new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1)
+                        ? DateTime.Today
+                        : _mesPredicacion.AddMonths(1).AddDays(-1);
+
                 var ventana =
-                    new VentanaPredicacion
+                    new VentanaPredicacion(dia)
                     {
                         Owner =
                             Window.GetWindow(this)

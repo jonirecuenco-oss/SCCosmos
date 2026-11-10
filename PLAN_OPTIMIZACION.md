@@ -349,6 +349,13 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - Remitente @jwpub.org: `CorreoService.CuentaJw` (Preferences `Correo_CuentaJw`, por dispositivo; no va a la base ni se sincroniza). Se pide en «Nuevo mensaje» (Indicar/Cambiar, y al abrir Gmail si falta); los demás correos no preguntan nada nuevo. Si está guardada, todos los correos a Gmail llevan el extra `fromAccountString` (clave del ComposeActivity de AOSP UnifiedEmail; no oficial y sin comprobar en el Gmail actual: el emulador no tiene cuentas).
   - Probado en el emulador con datos inventados. Lección: la restauración de su base de prueba en la v2.1.56 (y en esta) no llegó a disco porque `adb emu kill` cerró el emulador antes de escribirla; limpiada en un arranque aparte (queda solo la 999, sin correo ni secciones). Antes de `emu kill`: `adb shell sync`, y comprobar en el siguiente arranque.
 - 10/11/2026 · Publicada la v2.1.57.
+- 10/11/2026 · v2.1.58:
+  - Remitente @jwpub.org: el extra `fromAccountString` sí funciona en el Gmail actual (lo comprobó el usuario en su móvil).
+  - Windows › Inicio › Predicación: flechas de mes como en Android (`_mesPredicacion`; «este mes / el mes pasado / hace N meses»; la de avanzar, apagada en el mes actual). El lápiz abre `VentanaPredicacion(dia)` en el mes que se ve (hoy o su último día).
+  - Tiempo desde las 00h: AEMET quita del primer día los tramos pasados (la elaborada a las 14:55 trae hoy desde las 07h; la de anoche, de 00 a 23). `DescargarAsync(conservarHoras)` añade a la nueva lo que solo traía la anterior (`ConservarHorasPasadas`, por dato y periodo; lo nuevo manda) y lo guarda en Latin-1, como llega, así que pasa de una descarga a la siguiente. 5 comprobaciones nuevas en PruebasWindows (47) y prueba de punta a punta con una descarga real en una caché aparte. Lo de hoy ya no se recupera: se verá desde la próxima previsión.
+  - Medido: los XML de AEMET por municipio son Latin-1 y la app los lee bien; su `<provincia>` trae «Cáceres» en UTF-8 dentro del Latin-1 («CÃ¡ceres»), pero no se muestra en ningún sitio.
+  - Pendiente de valorar: el tercer día de la previsión por horas solo trae de 00 a 06h y se enseña así (sin completar con los tramos del archivo diario).
+- 10/11/2026 · Publicada la v2.1.58.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

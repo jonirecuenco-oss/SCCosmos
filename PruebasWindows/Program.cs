@@ -4,6 +4,7 @@ using System.IO.Compression;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.Xml.Linq;
 using Microsoft.Data.Sqlite;
 using SCCosmos;
 using SCCosmos.Sincro;
@@ -41,6 +42,7 @@ internal static class Programa
             GuardarFicha();
             ActividadInicio();
             RegistroS13Excel();
+            TiempoHorasPasadas();
             Ver("sin motor de sincronización", SincronizacionRed.Config is null, true);
             string log = Path.Combine(carpeta, "errores.log");
             Ver("sin errores anotados", File.Exists(log) ? File.ReadLines(log).First() : "", "");
@@ -217,6 +219,29 @@ internal static class Programa
             Ver("S-13 Excel: territorio sin asignaciones", lista.Where(t => t.Nombre == "T 3").Select(t => t.AsignadoA + "|" + t.UltimaFechaCompletado).FirstOrDefault(), "|01/05/2024");
         }
         finally { try { File.Delete(ruta); } catch (IOException) { } }
+    }
+
+    // AEMET quita de hoy los tramos pasados: se conservan los de la previsión anterior.
+    private static void TiempoHorasPasadas()
+    {
+        static string Dia(string fecha, int desde, int hasta, string cielo) =>
+            $"<dia fecha=\"{fecha}\">"
+            + string.Concat(Enumerable.Range(desde, hasta - desde + 1).Select(h => $"<estado_cielo periodo=\"{h:00}\" descripcion=\"\">{cielo}</estado_cielo><temperatura periodo=\"{h:00}\">{h}</temperatura>"))
+            + "</dia>";
+        static XDocument Prevision(params string[] dias) => XDocument.Parse("<root><prediccion>" + string.Concat(dias) + "</prediccion></root>");
+
+        // La de anoche traía hoy entero; la de esta tarde, hoy desde las 07h.
+        var anterior = Prevision(Dia("2026-11-10", 0, 23, "11"), Dia("2026-11-11", 0, 18, "11"));
+        var nueva = Prevision(Dia("2026-11-10", 7, 23, "15"), Dia("2026-11-11", 0, 23, "15"), Dia("2026-11-12", 0, 6, "15"));
+        XElement DiaDe(string fecha) => nueva.Descendants("dia").First(d => (string?)d.Attribute("fecha") == fecha);
+        string Periodos(string fecha, string dato) => string.Join(",", DiaDe(fecha).Elements(dato).Select(e => (string?)e.Attribute("periodo")).Order());
+        string Cielo(string fecha, string hora) => DiaDe(fecha).Elements("estado_cielo").Single(e => (string?)e.Attribute("periodo") == hora).Value;
+
+        Ver("Tiempo: añade lo que AEMET ha quitado", TiempoAemet.ConservarHorasPasadas(nueva, anterior), true);
+        Ver("Tiempo: hoy, desde las 00h", Periodos("2026-11-10", "estado_cielo"), string.Join(",", Enumerable.Range(0, 24).Select(h => h.ToString("00"))));
+        Ver("Tiempo: hoy, temperaturas desde las 00h", Periodos("2026-11-10", "temperatura").Split(',').Length, 24);
+        Ver("Tiempo: lo nuevo manda", Cielo("2026-11-10", "06") + "/" + Cielo("2026-11-10", "07") + "/" + Cielo("2026-11-11", "05"), "11/15/15");
+        Ver("Tiempo: otra descarga igual no añade nada", TiempoAemet.ConservarHorasPasadas(nueva, anterior), false);
     }
 
     private static void Ver(string que, object obtenido, object esperado)

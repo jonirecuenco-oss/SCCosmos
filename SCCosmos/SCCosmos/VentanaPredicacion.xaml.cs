@@ -44,6 +44,15 @@ namespace SCCosmos
         }
 
 
+        /// <summary>Abierta en otro día (el del mes que se ve en Inicio).</summary>
+        public VentanaPredicacion(DateTime dia)
+            : this()
+        {
+            // Al cambiar la fecha se cargan las horas guardadas de ese día.
+            FechaDia.SelectedDate = dia.Date;
+        }
+
+
         private static string UsuarioActual() =>
             PerfilAcceso.AccesoCompleto ? "SC" : "Esposa";
 
