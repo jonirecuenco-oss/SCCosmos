@@ -470,6 +470,21 @@ public static class TiempoAemet
                 ? HorasDe(diaHoras, fecha)
                 : TramosDe(diaTramos!, fecha);
 
+        // El último día por horas solo llega a las 06h: el resto, con los tramos
+        // de la previsión diaria (el que ya ha empezado, desde la última hora).
+        if (diaHoras is not null
+            && diaTramos is not null
+            && lista.Count > 0
+            && lista[^1].Hasta < fecha.AddDays(1))
+        {
+            DateTime fin = lista[^1].Hasta;
+
+            lista.AddRange(
+                TramosDe(diaTramos, fecha)
+                    .Where(t => t.Hasta > fin)
+                    .Select(t => t.Desde >= fin ? t : Recortar(t, fin, fecha)));
+        }
+
         int? maxima = Entero(diaTramos?.Element("temperatura")?.Element("maxima")?.Value);
         int? minima = Entero(diaTramos?.Element("temperatura")?.Element("minima")?.Value);
 
@@ -784,6 +799,23 @@ public static class TiempoAemet
             })
             .ToList();
     }
+
+
+    // Un tramo que ya ha empezado, desde donde acaban las horas («7–12 h»).
+    private static HoraTiempo Recortar(
+        HoraTiempo tramo,
+        DateTime desde,
+        DateTime fecha) =>
+        new()
+        {
+            Etiqueta = $"{(int)(desde - fecha).TotalHours}–{(int)(tramo.Hasta - fecha).TotalHours} h",
+            Desde = desde,
+            Hasta = tramo.Hasta,
+            Cielo = tramo.Cielo,
+            Descripcion = tramo.Descripcion,
+            Temperatura = tramo.Temperatura,
+            ProbLluvia = tramo.ProbLluvia
+        };
 
 
     /// <summary>Icono (tiempo_*) de un código de cielo de AEMET.</summary>

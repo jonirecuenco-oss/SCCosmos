@@ -220,11 +220,9 @@ namespace SCCosmos
                         .Select(d => new DiaTiempoUI(d, d.Fecha == tiempo.Fecha, this))
                         .ToList();
 
-                // Todas las horas del día (desde las 6, o antes si ya es de madrugada).
+                // Todas las horas del día, desde las 00h.
                 List<HoraTiempo> visibles =
-                    tiempo.Horas
-                        .Where(h => !tiempo.PorHoras || h.Hora >= (esHoy ? Math.Min(6, horaActual) : 6))
-                        .ToList();
+                    tiempo.Horas.ToList();
 
                 Horas =
                     visibles

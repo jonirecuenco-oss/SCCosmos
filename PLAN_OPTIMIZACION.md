@@ -356,6 +356,10 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - Medido: los XML de AEMET por municipio son Latin-1 y la app los lee bien; su `<provincia>` trae «Cáceres» en UTF-8 dentro del Latin-1 («CÃ¡ceres»), pero no se muestra en ningún sitio.
   - Pendiente de valorar: el tercer día de la previsión por horas solo trae de 00 a 06h y se enseña así (sin completar con los tramos del archivo diario).
 - 10/11/2026 · Publicada la v2.1.58.
+- 10/11/2026 · v2.1.59:
+  - Corrige la v2.1.58: las cuatro tarjetas del tiempo (Inicio de Windows y Android, `TiempoPc` y Circuito de Android) tenían un filtro «desde las 6» (`h.Hora >= (esHoy ? Math.Min(6, horaActual) : 6)`) que no vi porque el `.Where` iba en otra línea, y le dije al usuario que no filtraban. Quitado: todas las horas desde las 00h; hoy se sigue abriendo en la hora actual. El widget no filtraba (empieza en la hora actual o a las 08h y sus flechas llegan a la primera hora).
+  - El último día por horas (00–06h) se completa con los tramos del diario; el que ya ha empezado se recorta (`Recortar`: «7–12 h», «12–24 h»). 3 comprobaciones nuevas sin red, con una caché aparte (50). Visto en Windows con una copia de la base (borrada).
+- 10/11/2026 · Publicada la v2.1.59.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

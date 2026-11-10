@@ -43,6 +43,7 @@ internal static class Programa
             ActividadInicio();
             RegistroS13Excel();
             TiempoHorasPasadas();
+            TiempoTercerDia();
             Ver("sin motor de sincronización", SincronizacionRed.Config is null, true);
             string log = Path.Combine(carpeta, "errores.log");
             Ver("sin errores anotados", File.Exists(log) ? File.ReadLines(log).First() : "", "");
@@ -242,6 +243,37 @@ internal static class Programa
         Ver("Tiempo: hoy, temperaturas desde las 00h", Periodos("2026-11-10", "temperatura").Split(',').Length, 24);
         Ver("Tiempo: lo nuevo manda", Cielo("2026-11-10", "06") + "/" + Cielo("2026-11-10", "07") + "/" + Cielo("2026-11-11", "05"), "11/15/15");
         Ver("Tiempo: otra descarga igual no añade nada", TiempoAemet.ConservarHorasPasadas(nueva, anterior), false);
+    }
+
+    // El tercer día por horas solo llega a las 06h: el resto, con los tramos del diario.
+    // Sin red: una caché aparte con archivos inventados.
+    private static void TiempoTercerDia()
+    {
+        string anterior = TiempoAemet.CarpetaCache;
+        string carpeta = Path.Combine(Path.GetTempPath(), "PruebasTiempo_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(carpeta);
+        try
+        {
+            TiempoAemet.CarpetaCache = carpeta;
+            string horas = string.Concat(Enumerable.Range(0, 7).Select(h => $"<estado_cielo periodo=\"{h:00}\" descripcion=\"Despejado\">11n</estado_cielo><temperatura periodo=\"{h:00}\">{h}</temperatura>"));
+            File.WriteAllText(Path.Combine(carpeta, "aemet_h_99999.xml"), $"<root><prediccion><dia fecha=\"2026-11-12\">{horas}</dia></prediccion></root>", System.Text.Encoding.Latin1);
+            File.WriteAllText(Path.Combine(carpeta, "aemet_d_99999.xml"),
+                "<root><prediccion><dia fecha=\"2026-11-12\">"
+                + "<prob_precipitacion periodo=\"00-24\">40</prob_precipitacion><prob_precipitacion periodo=\"00-12\">10</prob_precipitacion><prob_precipitacion periodo=\"12-24\">40</prob_precipitacion>"
+                + "<estado_cielo periodo=\"00-24\" descripcion=\"Nuboso\">14</estado_cielo><estado_cielo periodo=\"00-12\" descripcion=\"Poco nuboso\">12</estado_cielo><estado_cielo periodo=\"12-24\" descripcion=\"Nuboso con lluvia\">25</estado_cielo>"
+                + "<temperatura><maxima>18</maxima><minima>6</minima></temperatura></dia></prediccion></root>", System.Text.Encoding.Latin1);
+
+            TiempoDia tiempo = Task.Run(() => TiempoAemet.ObtenerAsync(new LugarTiempo("99999", "Prueba", "prueba", 0, 0), new DateTime(2026, 11, 12), true, default)).GetAwaiter().GetResult();
+
+            Ver("Tiempo: tercer día, horas y luego tramos", string.Join(" ", tiempo.Horas.Select(h => h.Etiqueta)), "00h 01h 02h 03h 04h 05h 06h 7–12 h 12–24 h");
+            Ver("Tiempo: el tramo empezado conserva sus datos", tiempo.Horas[7].Cielo + "/" + tiempo.Horas[7].ProbLluvia + "/" + tiempo.Horas[8].Cielo + "/" + tiempo.Horas[8].ProbLluvia, "12/10/25/40");
+            Ver("Tiempo: el tramo empezado va de 07 a 12", $"{tiempo.Horas[7].Desde:HH}-{tiempo.Horas[7].Hasta:HH}", "07-12");
+        }
+        finally
+        {
+            TiempoAemet.CarpetaCache = anterior;
+            try { Directory.Delete(carpeta, true); } catch (IOException) { }
+        }
     }
 
     private static void Ver(string que, object obtenido, object esperado)
