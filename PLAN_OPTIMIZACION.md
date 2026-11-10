@@ -344,6 +344,11 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - «Nuevo mensaje al circuito» (`MensajeCircuitoPage`, como `EnviarMensajeWindow`): asunto, texto (a HTML), adjuntos y destinatarios agrupados por sección (casilla por sección, Todas/Ninguna, aviso de las que no tienen correo). Se prepara en Gmail con `CorreoService` (todas en «Para», como Windows).
   - Probado en el emulador con secciones y congregaciones inventadas (@example.org) en su base de prueba, restaurada después. Para copiar su base: `exec-out run-as … cat` leyendo bytes, y subirla por /data/local/tmp.
 - 10/11/2026 · Publicada la v2.1.56.
+- 10/11/2026 · v2.1.57:
+  - «Nuevo mensaje al circuito» sin asunto, texto ni adjuntos (el usuario los escribe en Gmail): solo destinatarios por sección y «Abrir Gmail con estos correos».
+  - Remitente @jwpub.org: `CorreoService.CuentaJw` (Preferences `Correo_CuentaJw`, por dispositivo; no va a la base ni se sincroniza). Se pide en «Nuevo mensaje» (Indicar/Cambiar, y al abrir Gmail si falta); los demás correos no preguntan nada nuevo. Si está guardada, todos los correos a Gmail llevan el extra `fromAccountString` (clave del ComposeActivity de AOSP UnifiedEmail; no oficial y sin comprobar en el Gmail actual: el emulador no tiene cuentas).
+  - Probado en el emulador con datos inventados. Lección: la restauración de su base de prueba en la v2.1.56 (y en esta) no llegó a disco porque `adb emu kill` cerró el emulador antes de escribirla; limpiada en un arranque aparte (queda solo la 999, sin correo ni secciones). Antes de `emu kill`: `adb shell sync`, y comprobar en el siguiente arranque.
+- 10/11/2026 · Publicada la v2.1.57.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

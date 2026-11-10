@@ -20,6 +20,61 @@ namespace SCCosmos.Mobile.Services;
 
 public static class CorreoService
 {
+    private const string ClaveCuentaJw =
+        "Correo_CuentaJw";
+
+
+    /// <summary>Tu cuenta @jwpub.org: se le pide a Gmail como remitente.</summary>
+    public static string CuentaJw
+    {
+        get => Preferences.Default.Get(ClaveCuentaJw, "");
+        private set => Preferences.Default.Set(ClaveCuentaJw, value.Trim());
+    }
+
+
+    public static bool EsCuentaJw(string? cuenta) =>
+        !string.IsNullOrWhiteSpace(cuenta)
+        && cuenta.Trim().IndexOf('@') > 0
+        && cuenta.Trim().EndsWith("@jwpub.org", StringComparison.OrdinalIgnoreCase);
+
+
+    /// <summary>
+    /// Pide la cuenta @jwpub.org (la primera vez o para cambiarla) y la
+    /// guarda. Devuelve la que queda guardada.
+    /// </summary>
+    public static async Task<string> PedirCuentaJwAsync(Page pagina)
+    {
+        string? escrita =
+            await pagina.DisplayPromptAsync(
+                "Cuenta de correo JW",
+                "Escribe tu cuenta @jwpub.org: es la que Gmail usará como remitente.",
+                "Guardar",
+                "Cancelar",
+                placeholder: "nombre@jwpub.org",
+                keyboard: Keyboard.Email,
+                initialValue: CuentaJw);
+
+        if (escrita is null)
+        {
+            return CuentaJw;
+        }
+
+        if (!EsCuentaJw(escrita))
+        {
+            await pagina.DisplayAlert(
+                "Cuenta de correo JW",
+                "Tiene que ser una dirección @jwpub.org.",
+                "Aceptar");
+
+            return CuentaJw;
+        }
+
+        CuentaJw = escrita;
+
+        return CuentaJw;
+    }
+
+
     public static async Task<bool> ComponerAsync(
         string asunto,
         string cuerpoHtml,
@@ -144,6 +199,16 @@ public static class CorreoService
 
             intencion.SetPackage(
                 "com.google.android.gm");
+
+            // La cuenta @jwpub.org como «De». No hay forma oficial: el código
+            // abierto del que viene Gmail (AOSP) la elige con esta clave; si
+            // no la respeta, Gmail abre con la última cuenta usada.
+            if (EsCuentaJw(CuentaJw))
+            {
+                intencion.PutExtra(
+                    "fromAccountString",
+                    CuentaJw);
+            }
 
             var correos =
                 new List<string>();

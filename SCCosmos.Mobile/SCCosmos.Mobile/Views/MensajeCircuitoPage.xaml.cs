@@ -1,14 +1,14 @@
-using System.Net;
-
 using SCCosmos.Mobile.Data;
 using SCCosmos.Mobile.Models;
+using SCCosmos.Mobile.Services;
 
 namespace SCCosmos.Mobile.Views;
 
 /// <summary>
-/// «Nuevo mensaje» al circuito (como en Windows): un correo para todas las
-/// congregaciones, por secciones o para las que se marquen. Se prepara en
-/// Gmail con CorreoService y se envía desde allí.
+/// «Nuevo mensaje» al circuito (como en Windows): se marcan las
+/// congregaciones (todas, por secciones o sueltas) y se abre Gmail con sus
+/// correos puestos y la cuenta @jwpub.org como remitente. El mensaje se
+/// escribe en Gmail.
 /// </summary>
 public partial class MensajeCircuitoPage : ContentPage
 {
@@ -16,9 +16,6 @@ public partial class MensajeCircuitoPage : ContentPage
         new();
 
     private readonly Dictionary<string, CheckBox> _secciones =
-        new();
-
-    private readonly List<string> _adjuntos =
         new();
 
     // Al marcar en bloque (sección, todas) no se repasa casilla a casilla.
@@ -34,6 +31,8 @@ public partial class MensajeCircuitoPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+
+        PintarCuenta();
 
         if (_congregaciones.Count == 0)
         {
@@ -269,103 +268,37 @@ public partial class MensajeCircuitoPage : ContentPage
 
 
     // =========================================================================
-    // ADJUNTOS
+    // REMITENTE: la cuenta @jwpub.org
     // =========================================================================
 
-    private async void BtnAdjuntar_Clicked(
+    private void PintarCuenta()
+    {
+        bool indicada =
+            CorreoService.EsCuentaJw(CorreoService.CuentaJw);
+
+        LblCuenta.Text =
+            indicada ? CorreoService.CuentaJw : "Sin indicar";
+
+        BtnCuenta.Text =
+            indicada ? "Cambiar" : "Indicar";
+    }
+
+
+    private async void BtnCuenta_Clicked(
         object sender,
         EventArgs e)
     {
-        try
-        {
-            var archivos =
-                await FilePicker.Default.PickMultipleAsync();
+        await CorreoService.PedirCuentaJwAsync(this);
 
-            if (archivos is null)
-            {
-                return;
-            }
-
-            foreach (var archivo in archivos)
-            {
-                if (archivo is not null
-                    && !_adjuntos.Contains(archivo.FullPath))
-                {
-                    _adjuntos.Add(archivo.FullPath);
-                }
-            }
-
-            PintarAdjuntos();
-        }
-        catch (Exception ex)
-        {
-            await DisplayAlert(
-                "Adjuntos",
-                "No se pudo añadir el archivo: " + ex.Message,
-                "Aceptar");
-        }
-    }
-
-
-    private void PintarAdjuntos()
-    {
-        ListaAdjuntos.Clear();
-
-        foreach (string ruta in _adjuntos.ToList())
-        {
-            var fila =
-                new Grid
-                {
-                    ColumnDefinitions =
-                    {
-                        new ColumnDefinition(GridLength.Star),
-                        new ColumnDefinition(GridLength.Auto)
-                    },
-                    ColumnSpacing = 8
-                };
-
-            fila.Add(
-                new Label
-                {
-                    Text = Path.GetFileName(ruta),
-                    FontSize = 13,
-                    TextColor = Color.FromArgb("#F2F4F7"),
-                    VerticalOptions = LayoutOptions.Center,
-                    LineBreakMode = LineBreakMode.MiddleTruncation
-                },
-                0);
-
-            var quitar =
-                new Button
-                {
-                    Text = "Quitar",
-                    FontSize = 12,
-                    HeightRequest = 32,
-                    Padding = new Thickness(10, 2),
-                    CornerRadius = 8,
-                    BackgroundColor = Color.FromArgb("#3A2023"),
-                    TextColor = Color.FromArgb("#FFB7BC")
-                };
-
-            quitar.Clicked +=
-                (_, _) =>
-                {
-                    _adjuntos.Remove(ruta);
-                    PintarAdjuntos();
-                };
-
-            fila.Add(quitar, 1);
-
-            ListaAdjuntos.Add(fila);
-        }
+        PintarCuenta();
     }
 
 
     // =========================================================================
-    // PREPARAR EL CORREO
+    // ABRIR GMAIL
     // =========================================================================
 
-    private async void BtnPreparar_Clicked(
+    private async void BtnAbrirGmail_Clicked(
         object sender,
         EventArgs e)
     {
@@ -386,27 +319,19 @@ public partial class MensajeCircuitoPage : ContentPage
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(TxtAsunto.Text)
-            && !await DisplayAlert(
-                "Nuevo mensaje",
-                "El correo no tiene asunto. ¿Prepararlo igualmente?",
-                "Sí",
-                "No"))
+        // La primera vez, la cuenta @jwpub.org; sin ella, Gmail abre igual.
+        if (!CorreoService.EsCuentaJw(CorreoService.CuentaJw))
         {
-            return;
+            await CorreoService.PedirCuentaJwAsync(this);
+
+            PintarCuenta();
         }
 
-        // El texto, como HTML (con sus saltos de línea).
-        string cuerpo =
-            WebUtility.HtmlEncode(TxtCuerpo.Text ?? "")
-                .Replace("\r\n", "\n")
-                .Replace("\n", "<br>");
-
-        // Como en Windows: todas las congregaciones en «Para».
-        await Services.CorreoService.ComponerAsync(
-            (TxtAsunto.Text ?? "").Trim(),
-            cuerpo,
-            correos,
-            _adjuntos);
+        // Como en Windows: todas las congregaciones en «Para». El asunto y el
+        // mensaje se escriben en Gmail.
+        await CorreoService.ComponerAsync(
+            "",
+            "",
+            correos);
     }
 }

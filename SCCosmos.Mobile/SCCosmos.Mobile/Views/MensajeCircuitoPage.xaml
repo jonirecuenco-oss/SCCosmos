@@ -13,47 +13,31 @@
             <VerticalStackLayout Spacing="3">
                 <Label Text="NUEVO MENSAJE AL CIRCUITO"
                        Style="{StaticResource Antetitulo}" />
-                <Label Text="Se abre Gmail con el correo preparado para las congregaciones que marques; lo envías tú desde allí."
+                <Label Text="Marca las congregaciones y se abrirá Gmail con sus correos puestos; el mensaje lo escribes allí."
                        Style="{StaticResource SubtituloPagina}" />
             </VerticalStackLayout>
 
-            <!-- MENSAJE -->
+            <!-- REMITENTE: la cuenta @jwpub.org -->
             <Border Style="{StaticResource Tarjeta}">
-                <VerticalStackLayout Spacing="10">
-
-                    <Label Text="Asunto"
-                           TextColor="{StaticResource TextoTerciario}"
-                           FontSize="12" />
-                    <Entry x:Name="TxtAsunto"
-                           Placeholder="Asunto del correo"
-                           PlaceholderColor="{StaticResource TextoTerciario}"
-                           TextColor="{StaticResource TextoPrincipal}" />
-
-                    <Label Text="Mensaje"
-                           TextColor="{StaticResource TextoTerciario}"
-                           FontSize="12" />
-                    <Editor x:Name="TxtCuerpo"
-                            AutoSize="TextChanges"
-                            MinimumHeightRequest="150"
-                            Placeholder="Escribe el mensaje (en Gmail podrás retocarlo)"
-                            PlaceholderColor="{StaticResource TextoTerciario}"
-                            TextColor="{StaticResource TextoPrincipal}" />
-
-                    <Grid ColumnDefinitions="*,Auto">
-                        <Label Text="Adjuntos"
-                               TextColor="{StaticResource TextoTerciario}"
-                               FontSize="12"
-                               VerticalOptions="Center" />
-                        <Button Grid.Column="1"
-                                Text="Añadir"
-                                Style="{StaticResource BotonSecundario}"
-                                HeightRequest="38"
-                                Clicked="BtnAdjuntar_Clicked" />
-                    </Grid>
-
-                    <VerticalStackLayout x:Name="ListaAdjuntos"
-                                         Spacing="6" />
-                </VerticalStackLayout>
+                <Grid ColumnDefinitions="*,Auto"
+                      ColumnSpacing="10">
+                    <VerticalStackLayout Spacing="2"
+                                         VerticalOptions="Center">
+                        <Label Text="REMITENTE EN GMAIL"
+                               Style="{StaticResource Antetitulo}" />
+                        <Label x:Name="LblCuenta"
+                               TextColor="{StaticResource TextoPrincipal}"
+                               FontSize="14" />
+                        <Label Text="Comprueba en Gmail que «De» es esta cuenta."
+                               Style="{StaticResource TextoNota}" />
+                    </VerticalStackLayout>
+                    <Button x:Name="BtnCuenta"
+                            Grid.Column="1"
+                            Style="{StaticResource BotonSecundario}"
+                            HeightRequest="38"
+                            VerticalOptions="Center"
+                            Clicked="BtnCuenta_Clicked" />
+                </Grid>
             </Border>
 
             <!-- DESTINATARIOS: por secciones, como en Windows -->
@@ -85,9 +69,9 @@
                 </VerticalStackLayout>
             </Border>
 
-            <Button Text="Preparar el correo en Gmail"
+            <Button Text="Abrir Gmail con estos correos"
                     Style="{StaticResource BotonPrincipal}"
-                    Clicked="BtnPreparar_Clicked" />
+                    Clicked="BtnAbrirGmail_Clicked" />
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>
