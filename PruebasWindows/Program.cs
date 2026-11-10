@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using System.IO;
+using System.IO.Compression;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
@@ -39,6 +40,7 @@ internal static class Programa
             Fusion();
             GuardarFicha();
             ActividadInicio();
+            RegistroS13Excel();
             Ver("sin motor de sincronización", SincronizacionRed.Config is null, true);
             string log = Path.Combine(carpeta, "errores.log");
             Ver("sin errores anotados", File.Exists(log) ? File.ReadLines(log).First() : "", "");
@@ -170,6 +172,51 @@ internal static class Programa
         Ver("actividad: media de auxiliares", r.MediaAuxiliares, 2.0);
         Ver("actividad: meses de la media", r.MesesMediaAuxiliares, 2);
         Ver("actividad: mes del año de servicio", ResumenActividadInicio.MesCalendario("Septiembre", "2027"), (DateTime?)septiembre);
+    }
+
+    // S-13 en Excel con el formulario oficial: dos hojas (años de servicio), lo
+    // mismo en las dos, una asignación que pasa de una hoja a otra, otra devuelta
+    // sin completar y columnas propias a la derecha que no cuentan.
+    private static void RegistroS13Excel()
+    {
+        static string T(string r, string texto) => $"<c r=\"{r}\" t=\"inlineStr\"><is><t>{texto}</t></is></c>";
+        static string F(string r, int a, int m, int d) => $"<c r=\"{r}\"><v>{new DateTime(a, m, d).ToOADate().ToString(CultureInfo.InvariantCulture)}</v></c>";
+        static string Fila(int n, params string[] celdas) => $"<row r=\"{n}\">{string.Concat(celdas)}</row>";
+        static string Hoja(int anio, params string[] filas) =>
+            "<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetData>"
+            + Fila(4, T("B4", "Año de servicio:"), $"<c r=\"C4\"><v>{anio}</v></c>")
+            + Fila(6, T("B6", "Núm. de terr."), T("C6", "Última fecha en que se completó"), T("D6", "Asignado a"), T("F6", "Asignado a"), T("H6", "Meses totales"))
+            + Fila(7, T("D7", "Fecha en que se asignó"), T("E7", "Fecha en que se completó"), T("F7", "Fecha en que se asignó"), T("G7", "Fecha en que se completó"), T("H7", "Asignado a"))
+            + string.Concat(filas) + "</sheetData></worksheet>";
+
+        string ruta = Path.Combine(Path.GetTempPath(), $"s13_{Guid.NewGuid():N}.xlsx");
+        try
+        {
+            using (var zip = ZipFile.Open(ruta, ZipArchiveMode.Create))
+            {
+                void Entrada(string nombre, string xml) { using var w = new StreamWriter(zip.CreateEntry(nombre).Open()); w.Write(xml); }
+                Entrada("xl/worksheets/sheet1.xml", Hoja(2026,
+                    Fila(8, T("B8", "T 1"), F("C8", 2025, 11, 1), T("D8", "Ana Ruiz"), T("F8", "Luis Pérez"), T("H8", "Luis Pérez")),
+                    Fila(9, F("D9", 2025, 10, 1), F("E9", 2025, 11, 1), F("F9", 2026, 1, 10), "<c r=\"H9\"><v>3</v></c>"),
+                    Fila(10, T("B10", "T 2"), T("D10", "Eva Gil")),
+                    Fila(11, F("D11", 2025, 9, 5), F("E11", 2026, 2, 1)),
+                    Fila(12, T("B12", "T 3"), F("C12", 2024, 5, 1))));
+                Entrada("xl/worksheets/sheet2.xml", Hoja(2025,
+                    Fila(8, T("B8", "T 1"), T("D8", "Ana Ruiz")),
+                    Fila(9, F("D9", 2025, 10, 1), F("E9", 2025, 11, 1)),
+                    Fila(10, T("B10", "T 2"), T("D10", "Pablo Sanz"), T("F10", "Eva Gil")),
+                    Fila(11, F("D11", 2025, 3, 1), F("F11", 2025, 8, 1))));
+            }
+
+            var lista = ConvertidorS13.ConvertirArchivo(ruta);
+            string Vueltas(string nombre) => string.Join(" / ", lista.Where(t => t.Nombre == nombre).Select(t => $"{t.AsignadoA} {t.FechaAsignado}-{t.FechaCompletado}"));
+
+            Ver("S-13 Excel: filas (sin las columnas propias)", lista.Count, 4);
+            Ver("S-13 Excel: lo de las dos hojas, una vez", Vueltas("T 1"), "Ana Ruiz 01/10/2025-01/11/2025 / Luis Pérez 10/01/2026-");
+            Ver("S-13 Excel: pasa de una hoja a otra", Vueltas("T 2"), "Eva Gil 01/08/2025-01/02/2026");
+            Ver("S-13 Excel: territorio sin asignaciones", lista.Where(t => t.Nombre == "T 3").Select(t => t.AsignadoA + "|" + t.UltimaFechaCompletado).FirstOrDefault(), "|01/05/2024");
+        }
+        finally { try { File.Delete(ruta); } catch (IOException) { } }
     }
 
     private static void Ver(string que, object obtenido, object esperado)

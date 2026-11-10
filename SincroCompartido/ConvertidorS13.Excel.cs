@@ -10,11 +10,15 @@ using System.Xml.Linq;
 namespace SCCosmos.Sincro;
 
 // ============================================================
-// S-13 · LECTURA DEL EXCEL (TABLERO DE TERRITORIOS)
+// S-13 · LECTURA DEL EXCEL
 //
-// Se lee el .xlsx sin dependencias externas (ZIP + XML). Estructura
-// habitual: una fila de cabecera con los números de territorio y,
-// debajo, rondas de «Publicador» y «Entregado / Devuelto».
+// Se lee el .xlsx sin dependencias externas (ZIP + XML). Dos formas:
+//   - El formulario oficial (S-13): un territorio cada dos filas
+//     (nombres arriba, fechas debajo) y hasta 7 asignaciones en parejas
+//     de columnas «se asignó / se completó», con una hoja por año de
+//     servicio. Se juntan todas las hojas.
+//   - El tablero: una fila de cabecera con los números de territorio y,
+//     debajo, rondas de «Publicador» y «Entregado / Devuelto».
 // ============================================================
 
 public static partial class ConvertidorS13
@@ -25,7 +29,18 @@ public static partial class ConvertidorS13
 
     private static List<TerritorioS13> ConvertirExcel(string ruta)
     {
-        var celdas = LeerHoja(ruta);
+        List<Dictionary<Posicion, string>> hojas = LeerHojas(ruta);
+
+        // Primero, el formulario oficial en todas las hojas.
+        List<TerritorioS13> registro = ConvertirRegistroExcel(hojas);
+
+        if (registro.Count > 0)
+        {
+            return registro;
+        }
+
+        // Si no, el tablero de la primera hoja.
+        var celdas = hojas.FirstOrDefault() ?? new Dictionary<Posicion, string>();
 
         if (celdas.Count == 0)
         {
@@ -159,6 +174,218 @@ public static partial class ConvertidorS13
     }
 
 
+    // ========================================================
+    // FORMULARIO OFICIAL (S-13)
+    // ========================================================
+
+    private sealed class AsignacionS13
+    {
+        public string Publicador = "";
+        public string Asignado = "";
+        public string Completado = "";
+
+        // «Última fecha en que se completó» de la hoja de la que sale.
+        public string Ultima = "";
+
+        // Año de servicio de la hoja y posición: ordena lo que no tiene fecha.
+        public int Orden;
+    }
+
+
+    /// <summary>
+    /// El formulario oficial en Excel: la cabecera «Núm. de terr.», la
+    /// columna «Última fecha en que se completó» y las parejas «Asignado a»
+    /// con «Fecha en que se asignó / se completó» debajo. Las columnas que
+    /// alguien añada a la derecha (meses, pedir territorio…) no cuentan. Sale
+    /// cada asignación de todas las hojas (una fila por asignación, sin
+    /// repetir las que estén en dos hojas), para que la pestaña Territorios
+    /// cuente todas las vueltas de cada año de servicio.
+    /// </summary>
+    private static List<TerritorioS13> ConvertirRegistroExcel(List<Dictionary<Posicion, string>> hojas)
+    {
+        var asignaciones = new Dictionary<string, List<AsignacionS13>>(StringComparer.OrdinalIgnoreCase);
+        var ultimas = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        var orden = new List<string>();
+
+        foreach (var celdas in hojas)
+        {
+            if (celdas.Count == 0)
+            {
+                continue;
+            }
+
+            Posicion cabecera = celdas
+                .Where(c => c.Key.Fila <= 20 && Plano(c.Value).Contains("terr") && Plano(c.Value).Contains("num"))
+                .Select(c => c.Key)
+                .OrderBy(c => c.Fila)
+                .FirstOrDefault();
+
+            if (cabecera is null)
+            {
+                continue;
+            }
+
+            int filaCabecera = cabecera.Fila;
+            int columnaNumero = cabecera.Columna;
+            int filas = celdas.Keys.Max(k => k.Fila);
+            int columnas = celdas.Keys.Max(k => k.Columna);
+
+            // «Año de servicio: 2026»: el número va a la derecha de la etiqueta.
+            int anio = 0;
+
+            foreach (var etiqueta in celdas.Where(c => c.Key.Fila < filaCabecera && Plano(c.Value).Contains("servicio")))
+            {
+                if (int.TryParse(Obtener(celdas, etiqueta.Key.Fila, etiqueta.Key.Columna + 1), out int valor))
+                {
+                    anio = valor;
+                }
+            }
+
+            int columnaUltima = Enumerable.Range(1, columnas)
+                .FirstOrDefault(c => Plano(Obtener(celdas, filaCabecera, c)).Contains("ultima"));
+
+            List<int> parejas = Enumerable.Range(1, columnas)
+                .Where(c => Plano(Obtener(celdas, filaCabecera, c)).Contains("asignado")
+                            && Plano(Obtener(celdas, filaCabecera + 1, c)).Contains("asign")
+                            && Plano(Obtener(celdas, filaCabecera + 1, c + 1)).Contains("complet"))
+                .ToList();
+
+            if (parejas.Count == 0)
+            {
+                continue;
+            }
+
+            for (int f = filaCabecera + 2; f <= filas; f++)
+            {
+                string territorio = Obtener(celdas, f, columnaNumero).Trim();
+
+                // Filas vacías o la cabecera repetida en otra página.
+                if (territorio.Length == 0 || Plano(territorio).Contains("terr"))
+                {
+                    continue;
+                }
+
+                if (!asignaciones.ContainsKey(territorio))
+                {
+                    asignaciones[territorio] = new List<AsignacionS13>();
+                    ultimas[territorio] = new List<string>();
+                    orden.Add(territorio);
+                }
+
+                string ultimaHoja = "";
+
+                if (columnaUltima > 0)
+                {
+                    string ultima = FechaExcel(Obtener(celdas, f, columnaUltima));
+
+                    if (EsFecha(ultima))
+                    {
+                        ultimaHoja = NormalizarFecha(ultima);
+                        ultimas[territorio].Add(ultimaHoja);
+                    }
+                }
+
+                // Los nombres en esta fila y sus fechas en la de debajo.
+                for (int i = 0; i < parejas.Count; i++)
+                {
+                    int c = parejas[i];
+
+                    string publicador = Obtener(celdas, f, c).Trim();
+                    string asignado = FechaExcel(Obtener(celdas, f + 1, c));
+                    string completado = FechaExcel(Obtener(celdas, f + 1, c + 1));
+
+                    if (!EsNombre(publicador) && !EsFecha(asignado) && !EsFecha(completado))
+                    {
+                        continue;
+                    }
+
+                    asignaciones[territorio].Add(new AsignacionS13
+                    {
+                        Publicador = EsNombre(publicador) ? publicador : "",
+                        Asignado = EsFecha(asignado) ? NormalizarFecha(asignado) : "",
+                        Completado = EsFecha(completado) ? NormalizarFecha(completado) : "",
+                        Ultima = ultimaHoja,
+                        Orden = anio * 100 + i,
+                    });
+                }
+
+                // La fila de las fechas ya está leída (si no empieza otro territorio en ella).
+                if (Obtener(celdas, f + 1, columnaNumero).Trim().Length == 0)
+                {
+                    f++;
+                }
+            }
+        }
+
+        // Todas las asignaciones (la pestaña Territorios cuenta cada vuelta del
+        // año de servicio), una fila por asignación.
+        var resultado = new List<TerritorioS13>();
+
+        foreach (string territorio in orden)
+        {
+            // Sin repetir lo que esté en dos hojas, y por fecha.
+            List<AsignacionS13> lista = asignaciones[territorio]
+                .GroupBy(a => (Plano(a.Publicador), a.Asignado, a.Completado))
+                .Select(g => g.First())
+                .OrderBy(a => ClaveFecha(a.Asignado) > 0 ? ClaveFecha(a.Asignado) : ClaveFecha(a.Completado))
+                .ThenBy(a => a.Orden)
+                .ToList();
+
+            // Solo la última puede seguir abierta. Una sin completar a la que
+            // sigue la misma persona es la misma asignación pasada a la hoja
+            // del año siguiente; si sigue otra, se devolvió sin completar.
+            var validas = new List<AsignacionS13>();
+
+            for (int i = 0; i < lista.Count; i++)
+            {
+                AsignacionS13 actual = lista[i];
+
+                if (actual.Completado.Length == 0 && i + 1 < lista.Count)
+                {
+                    AsignacionS13 siguiente = lista[i + 1];
+
+                    if (actual.Publicador.Length > 0
+                        && Plano(actual.Publicador) == Plano(siguiente.Publicador)
+                        && actual.Asignado.Length > 0)
+                    {
+                        siguiente.Asignado = actual.Asignado;
+                    }
+
+                    continue;
+                }
+
+                validas.Add(actual);
+            }
+
+            if (validas.Count == 0)
+            {
+                // Sin asignaciones: el territorio cuenta igual, con su última fecha.
+                resultado.Add(new TerritorioS13
+                {
+                    Nombre = territorio,
+                    UltimaFechaCompletado = ultimas[territorio].OrderBy(ClaveFecha).LastOrDefault() ?? "",
+                });
+
+                continue;
+            }
+
+            foreach (AsignacionS13 asignacion in validas)
+            {
+                resultado.Add(new TerritorioS13
+                {
+                    Nombre = territorio,
+                    UltimaFechaCompletado = asignacion.Ultima,
+                    AsignadoA = asignacion.Publicador,
+                    FechaAsignado = asignacion.Asignado,
+                    FechaCompletado = asignacion.Completado,
+                });
+            }
+        }
+
+        return resultado;
+    }
+
+
     private sealed class Posicion : IEquatable<Posicion>
     {
         public int Fila;
@@ -188,9 +415,10 @@ public static partial class ConvertidorS13
     }
 
 
-    private static Dictionary<Posicion, string> LeerHoja(string ruta)
+    /// <summary>Las celdas con texto de cada hoja, en el orden del libro (sheet1, sheet2…).</summary>
+    private static List<Dictionary<Posicion, string>> LeerHojas(string ruta)
     {
-        var celdas = new Dictionary<Posicion, string>();
+        var hojas = new List<Dictionary<Posicion, string>>();
 
         using var archivo = ZipFile.OpenRead(ruta);
 
@@ -211,20 +439,32 @@ public static partial class ConvertidorS13
             }
         }
 
-        var hoja = archivo.Entries
+        var entradas = archivo.Entries
             .Where(e => e.FullName.StartsWith("xl/worksheets/sheet", StringComparison.OrdinalIgnoreCase)
                         && e.FullName.EndsWith(".xml", StringComparison.OrdinalIgnoreCase))
-            .OrderBy(e => e.FullName, StringComparer.OrdinalIgnoreCase)
-            .FirstOrDefault();
+            .OrderBy(e =>
+            {
+                var m = Regex.Match(e.FullName, @"(\d+)\.xml$", RegexOptions.IgnoreCase);
+                return m.Success ? int.Parse(m.Groups[1].Value) : int.MaxValue;
+            })
+            .ToList();
 
-        if (hoja == null)
+        foreach (var entrada in entradas)
         {
-            return celdas;
+            using var flujoHoja = entrada.Open();
+
+            hojas.Add(LeerCeldas(XDocument.Load(flujoHoja), compartidos));
         }
 
-        using var flujoHoja = hoja.Open();
+        return hojas;
+    }
 
-        var documentoHoja = XDocument.Load(flujoHoja);
+
+    private static Dictionary<Posicion, string> LeerCeldas(
+        XDocument documentoHoja,
+        List<string> compartidos)
+    {
+        var celdas = new Dictionary<Posicion, string>();
 
         var datos = documentoHoja.Root.Element(EspacioHoja + "sheetData");
 

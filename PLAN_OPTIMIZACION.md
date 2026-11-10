@@ -329,6 +329,11 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - Títulos del tiempo sin «TIEMPO ·» (widget, Inicio y Circuito de Windows).
   - Circuito (Android): al elegir un día, las horas vuelven al principio (hoy, a la hora actual).
 - 10/11/2026 · Publicada la v2.1.53.
+- 10/11/2026 · v2.1.54:
+  - S-13 en Excel con el formulario oficial (`ConvertidorS13.ConvertirRegistroExcel`): cabecera «Núm. de terr.», parejas «Asignado a» con «se asignó / se completó» debajo (las columnas propias de la derecha no cuentan) y todas las hojas (años de servicio). Da una fila por asignación para que la pestaña Territorios cuente cada vuelta; solo la última puede quedar abierta (la que pasa de una hoja a otra con la misma persona se une; si sigue otra persona, se descarta). El tablero sigue igual (primera hoja). Antes este Excel daba 0 territorios.
+  - Navalmoral (3004): 111 territorios y 375 asignaciones; año 2026: 84 trabajados; año 2027: 26 trabajados, 45 en curso, 12 caducados, 21 sin trabajar >1 año y 7 >2 años. Probado sobre una copia de la base; en la real aún no está importado (Visitas › Territorios › Importar PDF / Excel).
+  - Prueba nueva en PruebasWindows con un S-13 inventado (42/42).
+- 10/11/2026 · Publicada la v2.1.54.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

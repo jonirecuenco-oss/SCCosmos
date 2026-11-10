@@ -27,7 +27,9 @@ namespace SCCosmos.Sincro;
 // (S-13-S) sea cual sea el reparto de sus columnas, los registros con
 // un territorio por página y los tableros de control en Excel.
 //
-// De cada territorio se queda la ÚLTIMA asignación.
+// De cada territorio se queda la ÚLTIMA asignación, salvo en el Excel del
+// formulario oficial, que da todas (una fila por asignación). Al convertir una
+// carpeta (Fusionar) siempre queda una por territorio.
 // ============================================================
 
 public sealed class TerritorioS13
