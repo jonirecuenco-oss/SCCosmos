@@ -34,17 +34,34 @@ public static class TiempoAvisosAndroid
         4811;
 
 
-    /// <summary>Avisos (de cualquier nivel) donde vas a estar.</summary>
+    /// <summary>
+    /// Avisos naranjas y rojos donde vas a estar (los amarillos se ven en el
+    /// tiempo, sin notificación). Como los rojos del circuito: el sitio (la
+    /// congregación que se visita o tu municipio) y no la zona de AEMET, que
+    /// va al final del detalle.
+    /// </summary>
     public static void Notificar(
         IEnumerable<(AvisoTiempo Aviso, LugarTiempo Lugar)> avisos) =>
         Publicar(
-            avisos.Select(x => (
-                x.Aviso.Clave,
-                $"{x.Aviso.Titulo} · {x.Lugar.Nombre}",
-                $"{x.Aviso.Zona}: {x.Aviso.Periodo}",
-                x.Aviso.Descripcion,
-                x.Aviso.Fin,
-                "")));
+            avisos
+                .Where(x => x.Aviso.Orden >= 2)
+                .Select(x => (
+                    x.Aviso.Clave,
+                    x.Aviso.Titulo,
+                    $"{Sitio(x.Lugar)} · {x.Aviso.Periodo}",
+                    string.Join(
+                        "\n",
+                        new[] { x.Aviso.Descripcion, x.Aviso.Zona.Length > 0 ? $"(Zona de AEMET: {x.Aviso.Zona})" : "" }
+                            .Where(s => s.Length > 0)),
+                    x.Aviso.Fin,
+                    "")));
+
+
+    // «Visita a Navalmoral de la Mata» → la congregación; si no, el municipio.
+    private static string Sitio(LugarTiempo lugar) =>
+        lugar.Motivo.StartsWith("Visita a ", StringComparison.Ordinal)
+            ? lugar.Motivo["Visita a ".Length..]
+            : lugar.Nombre;
 
 
     /// <summary>
@@ -111,7 +128,7 @@ public static class TiempoAvisosAndroid
                             "Avisos meteorológicos",
                             NotificationImportance.High)
                         {
-                            Description = "Avisos de AEMET donde vas a estar y avisos rojos en el circuito"
+                            Description = "Avisos naranjas y rojos de AEMET donde vas a estar y avisos rojos en el circuito"
                         });
             }
 

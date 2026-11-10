@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Globalization;
 
+using SCCosmos.Mobile.Data;
 using SCCosmos.Mobile.Models;
 using SCCosmos.Sincro;
 
@@ -18,6 +19,15 @@ namespace SCCosmos.Mobile.Views;
 public sealed class CongregacionCircuito : INotifyPropertyChanged
 {
     private int _carga;
+
+    // El salón y los pueblos de su territorio; el elegido (0, el del salón).
+    private List<LugarTiempo>? _lugares;
+
+    private int _pueblo;
+
+    private DateTime _dia = DateTime.Today;
+
+    private readonly Dictionary<string, SemanaTiempo> _semanas = new();
 
 
     public CongregacionCircuito(Congregacion congregacion) =>
@@ -41,6 +51,9 @@ public sealed class CongregacionCircuito : INotifyPropertyChanged
 
     public bool HayMensaje =>
         Mensaje.Length > 0;
+
+    /// <summary>El del salón y los pueblos de su territorio: al tocar uno, su tiempo.</summary>
+    public List<PuebloCelda> Pueblos { get; private set; } = new();
 
     public List<DiaCelda> Dias { get; private set; } = new();
 
@@ -70,22 +83,20 @@ public sealed class CongregacionCircuito : INotifyPropertyChanged
     {
         int carga = ++_carga;
 
+        _dia = dia;
+
         try
         {
-            LugarTiempo? lugar =
-                await Task.Run(() =>
-                    TiempoAemet.LugarDe(
-                        Congregacion.Municipio,
-                        Congregacion.Provincia,
-                        Congregacion.Latitud,
-                        Congregacion.Longitud,
-                        Congregacion.Nombre));
+            _lugares ??= await Task.Run(Lugares);
 
-            if (lugar is null)
+            if (_lugares.Count == 0)
             {
                 PonerMensaje($"No se encuentra el municipio «{Congregacion.Municipio}» en la lista del INE.");
                 return;
             }
+
+            LugarTiempo lugar =
+                _lugares[Math.Clamp(_pueblo, 0, _lugares.Count - 1)];
 
             if (Dias.Count == 0)
             {
@@ -95,12 +106,32 @@ public sealed class CongregacionCircuito : INotifyPropertyChanged
             SemanaTiempo semana =
                 await Task.Run(() => TiempoAemet.ObtenerSemanaAsync(lugar, false, CancellationToken.None));
 
+            _semanas[lugar.Ine] = semana;
+
             TiempoDia tiempo =
                 await Task.Run(() => TiempoAemet.ObtenerAsync(lugar, dia, false, CancellationToken.None));
 
             if (carga == _carga)
             {
                 Pintar(lugar, semana, tiempo);
+            }
+
+            // Los demás pueblos, para su resumen en la fila (después, sin esperar por ellos).
+            foreach (LugarTiempo otro in _lugares.Where(l => !_semanas.ContainsKey(l.Ine)).ToList())
+            {
+                try
+                {
+                    _semanas[otro.Ine] =
+                        await Task.Run(() => TiempoAemet.ObtenerSemanaAsync(otro, false, CancellationToken.None));
+                }
+                catch
+                {
+                }
+            }
+
+            if (carga == _carga)
+            {
+                PintarPueblos();
             }
         }
         catch
@@ -113,6 +144,59 @@ public sealed class CongregacionCircuito : INotifyPropertyChanged
     }
 
 
+    /// <summary>Al tocar un pueblo de la fila, su tiempo (el mismo día).</summary>
+    public async Task ElegirPuebloAsync(int indice)
+    {
+        if (indice == _pueblo)
+        {
+            return;
+        }
+
+        _pueblo = indice;
+        PintarPueblos();
+
+        await CargarAsync(_dia);
+    }
+
+
+    // El salón (si su municipio está en la lista del INE) y los pueblos de su territorio.
+    private List<LugarTiempo> Lugares()
+    {
+        var lista = new List<LugarTiempo>();
+
+        if (TiempoAemet.LugarDe(Congregacion.Municipio, Congregacion.Provincia, Congregacion.Latitud, Congregacion.Longitud, Congregacion.Nombre) is LugarTiempo salon)
+        {
+            lista.Add(salon);
+        }
+
+        foreach (PuebloTerritorio pueblo in DatabaseHelper.ObtenerPueblosTerritorio(Congregacion.Codigo))
+        {
+            if (lista.All(l => l.Ine != pueblo.Ine))
+            {
+                lista.Add(new LugarTiempo(pueblo.Ine, pueblo.Nombre, Congregacion.Nombre, pueblo.Latitud, pueblo.Longitud));
+            }
+        }
+
+        return lista;
+    }
+
+
+    private void PintarPueblos()
+    {
+        Pueblos =
+            (_lugares ?? new List<LugarTiempo>())
+                .Select((l, i) => new PuebloCelda(
+                    l,
+                    i,
+                    i == _pueblo,
+                    _semanas.GetValueOrDefault(l.Ine)?.Dias.FirstOrDefault(d => d.Fecha == _dia),
+                    this))
+                .ToList();
+
+        Avisar(nameof(Pueblos));
+    }
+
+
     private void Pintar(
         LugarTiempo lugar,
         SemanaTiempo semana,
@@ -120,6 +204,8 @@ public sealed class CongregacionCircuito : INotifyPropertyChanged
     {
         bool esHoy = tiempo.Fecha == DateTime.Today;
         int horaActual = DateTime.Now.Hour;
+
+        PintarPueblos();
 
         ResumenDia? elegido =
             semana.Dias.FirstOrDefault(d => d.Fecha == tiempo.Fecha);
@@ -182,6 +268,54 @@ public sealed class CongregacionCircuito : INotifyPropertyChanged
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propiedad));
         }
     }
+}
+
+
+/// <summary>
+/// Un pueblo de la fila (el del salón, el primero), con su tiempo del día
+/// elegido: icono, máxima/mínima y el aviso de más nivel.
+/// </summary>
+public sealed class PuebloCelda
+{
+    public PuebloCelda(
+        LugarTiempo lugar,
+        int indice,
+        bool elegido,
+        ResumenDia? dia,
+        CongregacionCircuito congregacion)
+    {
+        Congregacion = congregacion;
+        Indice = indice;
+        Nombre = lugar.Nombre;
+        Icono = dia is null ? "" : dia.Icono + ".png";
+        Temperaturas = dia?.Maxima is int maxima && dia.Minima is int minima ? $"{maxima}°/{minima}°" : "";
+        HayAviso = dia?.Aviso is not null;
+        IconoAviso = $"icono_aviso_{dia?.Aviso?.NivelIcono ?? "amarillo"}.png";
+        Fondo = Color.FromArgb(elegido ? "#1B3A52" : "#1E2228");
+        Borde = Color.FromArgb(elegido ? "#4BA3E3" : "#343942");
+    }
+
+    public CongregacionCircuito Congregacion { get; }
+
+    public int Indice { get; }
+
+    public string Nombre { get; }
+
+    public string Icono { get; }
+
+    public bool HayIcono =>
+        Icono.Length > 0;
+
+    public string Temperaturas { get; }
+
+    public bool HayAviso { get; }
+
+    public string IconoAviso { get; }
+
+    /// <summary>El elegido, con el fondo y el borde del acento.</summary>
+    public Color Fondo { get; }
+
+    public Color Borde { get; }
 }
 
 

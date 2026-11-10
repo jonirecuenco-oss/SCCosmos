@@ -28,6 +28,18 @@ public partial class CircuitoPage : ContentPage, IActualizableMobile
             "Circuito",
             reloj.ElapsedMilliseconds);
 
+        // Al volver de sus pueblos, el tiempo de esa congregación sigue desplegado.
+        if (_reabrirTiempo is string codigo)
+        {
+            _reabrirTiempo = null;
+
+            if ((Lista.ItemsSource as IEnumerable<CongregacionCircuito>)?
+                    .FirstOrDefault(c => c.Congregacion.Codigo == codigo) is CongregacionCircuito abierta)
+            {
+                await abierta.AlternarAsync();
+            }
+        }
+
         // Al abrir Circuito también se miran los avisos rojos de sus congregaciones.
         _ = Task.Run(async () =>
         {
@@ -280,6 +292,37 @@ public partial class CircuitoPage : ContentPage, IActualizableMobile
             await item.AlternarAsync();
         }
     }
+
+    // Al tocar un pueblo de la fila, su tiempo.
+    private async void PuebloTiempo_Tapped(
+        object sender,
+        TappedEventArgs e)
+    {
+        if (e.Parameter is PuebloCelda pueblo)
+        {
+            await pueblo.Congregacion.ElegirPuebloAsync(pueblo.Indice);
+        }
+    }
+
+
+    // La congregación cuyo tiempo se vuelve a desplegar al volver de sus pueblos.
+    private string? _reabrirTiempo;
+
+
+    // Los pueblos de su territorio (además del del salón).
+    private async void BtnPueblos_Clicked(
+        object sender,
+        EventArgs e)
+    {
+        if ((sender as BindableObject)?.BindingContext is CongregacionCircuito item)
+        {
+            _reabrirTiempo = item.Congregacion.Codigo;
+
+            await Navigation.PushAsync(
+                new PueblosTerritorioPage(item.Congregacion));
+        }
+    }
+
 
     // Al tocar uno de los 7 días, se ven sus horas.
     private async void DiaTiempo_Tapped(

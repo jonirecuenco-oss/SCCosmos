@@ -179,6 +179,28 @@ namespace SCCosmos
             e.Handled = true;
         }
 
+        // Al pulsar un pueblo de la fila, su tiempo.
+        private async void PuebloTiempo_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement boton && boton.DataContext is PuebloTiempoUI pueblo)
+            {
+                await pueblo.Vista.ElegirPuebloAsync(pueblo.Indice);
+                DesplazarHoras(DataGridRow.GetRowContainingElement(boton), pueblo.Vista);
+            }
+        }
+
+        // Los pueblos del territorio de la congregación (además del del salón).
+        private async void BtnPueblosTerritorio_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement boton && boton.DataContext is TiempoCongregacionVista vista)
+            {
+                new PueblosTerritorioWindow(vista.Congregacion) { Owner = Window.GetWindow(this) }.ShowDialog();
+
+                await vista.RecargarPueblosAsync();
+                DesplazarHoras(DataGridRow.GetRowContainingElement(boton), vista);
+            }
+        }
+
         // Al pulsar uno de los 7 días, se ven sus horas.
         private async void DiaTiempo_Click(object sender, RoutedEventArgs e)
         {

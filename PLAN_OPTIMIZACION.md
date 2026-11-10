@@ -360,6 +360,12 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - Corrige la v2.1.58: las cuatro tarjetas del tiempo (Inicio de Windows y Android, `TiempoPc` y Circuito de Android) tenían un filtro «desde las 6» (`h.Hora >= (esHoy ? Math.Min(6, horaActual) : 6)`) que no vi porque el `.Where` iba en otra línea, y le dije al usuario que no filtraban. Quitado: todas las horas desde las 00h; hoy se sigue abriendo en la hora actual. El widget no filtraba (empieza en la hora actual o a las 08h y sus flechas llegan a la primera hora).
   - El último día por horas (00–06h) se completa con los tramos del diario; el que ya ha empezado se recorta (`Recortar`: «7–12 h», «12–24 h»). 3 comprobaciones nuevas sin red, con una caché aparte (50). Visto en Windows con una copia de la base (borrada).
 - 10/11/2026 · Publicada la v2.1.59.
+- 10/11/2026 · v2.1.60:
+  - «Tajo y Alagón» es la zona de AEMET de Navalmoral de la Mata (la única del circuito dentro; medido con los polígonos de la caché). Venían de «avisos donde vas a estar» (hoy, mañana y pasado). Por decisión del usuario, esa notificación solo es de avisos naranjas y rojos (los amarillos se ven en el tiempo) y dice el sitio como las rojas: «Aviso naranja por lluvias» / «Navalmoral de la Mata · mañana, 12:00–23:59»; la zona, al final del detalle.
+  - Pueblos del territorio (móvil y Windows, por decisión del usuario): `SincroCompartido/PueblosTerritorio.cs`, en Configuracion «Tiempo_Pueblos_{código}» = «ine|lat|lon;…» (se sincroniza; sin tocar tablas). Coordenadas de OpenStreetMap al añadir (como las direcciones); sugerencias por el código postal de las direcciones de sus publicadores (su provincia, sin el del salón); buscador (`TiempoAemet.BuscarMunicipios`, `ProvinciaDe`).
+  - Tiempo de Circuito: fila con el pueblo del salón y los suyos (icono, máx/mín del día elegido y aviso); al tocar uno, su tiempo. Botón «Pueblos» (Android `PueblosTerritorioPage`; Windows `PueblosTerritorioWindow`). Avisos rojos del móvil: también sus pueblos, «Navalmoral de la Mata (Talayuela)» si no llega al salón.
+  - Probado: 57 comprobaciones (7 nuevas); Windows con una copia de la base (borrada); Android en el emulador (está en modo avión: sin AEMET ni mapa, se probó el camino sin coordenadas); OpenStreetMap desde el PC con el código de la app. La limpieza del emulador con `sync` sí persistió.
+- 10/11/2026 · Publicada la v2.1.60.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

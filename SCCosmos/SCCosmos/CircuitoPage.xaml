@@ -89,6 +89,29 @@
                                                     <TextBlock Text="{Binding Titulo}" Style="{StaticResource Rotulo}" VerticalAlignment="Center"/>
                                                     <TextBlock Grid.Column="1" Text="{Binding Datos}" Style="{StaticResource NotaDato}" FontSize="13" Margin="24,0,0,0" VerticalAlignment="Center"/>
                                                 </Grid>
+                                                <!-- El pueblo del salón y los de su territorio (al pulsar uno, su tiempo) y, detrás, el botón para elegirlos -->
+                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                                    <ItemsControl ItemsSource="{Binding Pueblos}">
+                                                        <ItemsControl.ItemsPanel>
+                                                            <ItemsPanelTemplate>
+                                                                <StackPanel Orientation="Horizontal"/>
+                                                            </ItemsPanelTemplate>
+                                                        </ItemsControl.ItemsPanel>
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Button Click="PuebloTiempo_Click" Padding="10,4" Margin="0,0,6,6" Background="{Binding Fondo}" BorderBrush="{Binding Borde}" BorderThickness="1" ToolTip="{Binding Descripcion}" Cursor="Hand">
+                                                                    <StackPanel Orientation="Horizontal">
+                                                                        <ui:SymbolIcon Symbol="{Binding Simbolo}" FontSize="16" Foreground="{Binding ColorIcono}" Visibility="{Binding VerIcono}" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                                                        <TextBlock Text="{Binding Nombre}" FontSize="13" VerticalAlignment="Center"/>
+                                                                        <TextBlock Text="{Binding Temperaturas}" FontSize="12" Margin="6,0,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}" VerticalAlignment="Center"/>
+                                                                        <StackPanel Orientation="Horizontal" Margin="6,0,0,0" Visibility="{Binding VerAviso}" VerticalAlignment="Center"><ui:SymbolIcon Symbol="Warning24" Filled="True" FontSize="13" Foreground="{Binding ColorAviso}"/><TextBlock Text="{Binding PuntosAviso}" FontSize="11" Margin="2,0,0,0" Foreground="{Binding ColorAviso}" VerticalAlignment="Center"/></StackPanel>
+                                                                    </StackPanel>
+                                                                </Button>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                    <ui:Button Content="Pueblos…" Icon="{ui:SymbolIcon Location24}" Appearance="Secondary" Padding="10,4" Margin="2,0,0,6" VerticalAlignment="Top" Cursor="Hand" ToolTip="Los pueblos de su territorio, además del del salón" Click="BtnPueblosTerritorio_Click"/>
+                                                </StackPanel>
                                                 <TextBlock Text="{Binding Mensaje}" Visibility="{Binding VerMensaje}" Style="{StaticResource NotaDato}" FontSize="13" Margin="0,0,0,8"/>
                                                 <!-- Los 7 días: al pulsar uno, sus horas debajo -->
                                                 <ItemsControl ItemsSource="{Binding Dias}" Margin="0,0,0,8">

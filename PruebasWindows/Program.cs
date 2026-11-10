@@ -44,6 +44,7 @@ internal static class Programa
             RegistroS13Excel();
             TiempoHorasPasadas();
             TiempoTercerDia();
+            PueblosDelTerritorio();
             Ver("sin motor de sincronización", SincronizacionRed.Config is null, true);
             string log = Path.Combine(carpeta, "errores.log");
             Ver("sin errores anotados", File.Exists(log) ? File.ReadLines(log).First() : "", "");
@@ -274,6 +275,33 @@ internal static class Programa
             TiempoAemet.CarpetaCache = anterior;
             try { Directory.Delete(carpeta, true); } catch (IOException) { }
         }
+    }
+
+    // Los pueblos del territorio: su formato en Configuracion, las sugerencias por
+    // las direcciones (de la provincia del salón y sin el suyo) y la búsqueda.
+    private static void PueblosDelTerritorio()
+    {
+        string guardado = "10180|39.9876|-5.6012;10122|39.85|-5.58;10180|1|1";
+        Ver("Pueblos: se leen sin repetir", string.Join(",", PueblosTerritorio.Leer(guardado).Select(p => p.Nombre)), "Talayuela,Millanes");
+        Ver("Pueblos: se escriben igual", PueblosTerritorio.Escribir(PueblosTerritorio.Leer(guardado)), "10180|39.9876|-5.6012;10122|39.85|-5.58");
+        Ver("Pueblos: clave en Configuracion", PueblosTerritorio.Clave(" 3004 "), "Tiempo_Pueblos_3004");
+
+        string[] direcciones =
+        {
+            "Calle Mayor 1, 10300 Navalmoral de la Mata",
+            "Calle Real 2, 10310 TALAYUELA",
+            "C/ Luna 3, 10310 - Talayuela (Cáceres)",
+            "Avenida 4, 10320 Millanes",
+            "Calle Sol 5, 45600 Talavera de la Reina",
+            "Sin código postal"
+        };
+        Ver("Pueblos: sugeridos por las direcciones", string.Join(", ", PueblosTerritorio.Sugerencias(direcciones, "10131").Select(s => $"{s.Nombre} ({s.Personas})")), "Talayuela (2), Millanes (1)");
+
+        Ver("Pueblos: buscar, primero los de su provincia", TiempoAemet.BuscarMunicipios("talay", "10", 3).FirstOrDefault().Ine, "10180");
+        Ver("Pueblos: provincia de un municipio", TiempoAemet.ProvinciaDe("10180"), "Cáceres");
+
+        var ventana = new PueblosTerritorioWindow(new Congregacion { Codigo = "778", Nombre = "Almendralejo", Municipio = "Almendralejo", Provincia = "Badajoz" });
+        Ver("Pueblos: la ventana dice el del salón", ((TextBlock)ventana.FindName("TxtSalon")).Text, "El del salón: Almendralejo.");
     }
 
     private static void Ver(string que, object obtenido, object esperado)

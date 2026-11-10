@@ -269,6 +269,8 @@ public static class TiempoAemet
 
     private static Dictionary<string, string>? _nombres;
 
+    private static Dictionary<string, string>? _provincias;
+
     private static readonly object CandadoMunicipios = new();
 
 
@@ -283,6 +285,7 @@ public static class TiempoAemet
 
             var codigos = new Dictionary<string, string>();
             var nombres = new Dictionary<string, string>();
+            var provincias = new Dictionary<string, string>();
 
             using Stream archivo =
                 typeof(TiempoAemet).Assembly.GetManifestResourceStream("municipios_ine.csv")
@@ -303,6 +306,7 @@ public static class TiempoAemet
                 }
 
                 nombres[c[0]] = c[1];
+                provincias[c[0]] = c[2];
 
                 foreach (string nombre in Variantes(c[1]))
                 {
@@ -316,6 +320,7 @@ public static class TiempoAemet
             }
 
             _nombres = nombres;
+            _provincias = provincias;
             _codigos = codigos;
         }
     }
@@ -390,6 +395,46 @@ public static class TiempoAemet
         return _nombres!.TryGetValue(ine, out string? nombre)
             ? Variantes(nombre).Last()
             : otro;
+    }
+
+
+    /// <summary>Provincia de un municipio («10180» → «Cáceres»); "" si no está.</summary>
+    public static string ProvinciaDe(string ine)
+    {
+        CargarMunicipios();
+
+        return _provincias!.GetValueOrDefault(ine, "");
+    }
+
+
+    /// <summary>
+    /// Municipios cuyo nombre contiene el texto (sin tildes ni mayúsculas):
+    /// primero los que empiezan por él y los de la provincia preferida (su
+    /// código, «10»).
+    /// </summary>
+    public static List<(string Ine, string Nombre, string Provincia)> BuscarMunicipios(
+        string texto,
+        string codigoProvincia = "",
+        int maximo = 15)
+    {
+        string t = Normalizar(texto ?? "");
+
+        if (t.Length < 2)
+        {
+            return new List<(string Ine, string Nombre, string Provincia)>();
+        }
+
+        CargarMunicipios();
+
+        return _nombres!
+            .Select(m => (Ine: m.Key, Nombre: Variantes(m.Value).Last(), Clave: Normalizar(Variantes(m.Value).Last())))
+            .Where(m => m.Clave.Contains(t, StringComparison.Ordinal))
+            .OrderBy(m => m.Clave.StartsWith(t, StringComparison.Ordinal) ? 0 : 1)
+            .ThenBy(m => codigoProvincia.Length > 0 && m.Ine.StartsWith(codigoProvincia, StringComparison.Ordinal) ? 0 : 1)
+            .ThenBy(m => m.Nombre, StringComparer.CurrentCultureIgnoreCase)
+            .Take(maximo)
+            .Select(m => (m.Ine, m.Nombre, _provincias!.GetValueOrDefault(m.Ine, "")))
+            .ToList();
     }
 
 

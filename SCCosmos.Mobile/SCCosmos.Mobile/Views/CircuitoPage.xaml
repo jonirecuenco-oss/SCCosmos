@@ -111,6 +111,67 @@
                                     <BoxView HeightRequest="1"
                                              Color="{StaticResource Borde}" />
 
+                                    <!-- El pueblo del salón y los de su territorio: al tocar uno, su tiempo -->
+                                    <Grid ColumnDefinitions="*,Auto"
+                                          ColumnSpacing="6">
+                                        <ScrollView Orientation="Horizontal"
+                                                    HorizontalScrollBarVisibility="Never">
+                                            <HorizontalStackLayout BindableLayout.ItemsSource="{Binding Pueblos}"
+                                                                   Spacing="6">
+                                                <BindableLayout.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Padding="10,5"
+                                                                StrokeThickness="1"
+                                                                Stroke="{Binding Borde}"
+                                                                BackgroundColor="{Binding Fondo}">
+                                                            <Border.StrokeShape>
+                                                                <RoundRectangle CornerRadius="15" />
+                                                            </Border.StrokeShape>
+                                                            <Border.GestureRecognizers>
+                                                                <TapGestureRecognizer
+                                                                    Tapped="PuebloTiempo_Tapped"
+                                                                    CommandParameter="{Binding .}" />
+                                                            </Border.GestureRecognizers>
+                                                            <HorizontalStackLayout Spacing="5">
+                                                                <Image Source="{Binding Icono}"
+                                                                       IsVisible="{Binding HayIcono}"
+                                                                       WidthRequest="18"
+                                                                       HeightRequest="18"
+                                                                       VerticalOptions="Center" />
+                                                                <Label Text="{Binding Nombre}"
+                                                                       FontSize="12.5"
+                                                                       TextColor="{StaticResource TextoPrincipal}"
+                                                                       VerticalOptions="Center" />
+                                                                <Label Text="{Binding Temperaturas}"
+                                                                       FontSize="11.5"
+                                                                       TextColor="{StaticResource TextoSecundario}"
+                                                                       VerticalOptions="Center" />
+                                                                <Image Source="{Binding IconoAviso}"
+                                                                       IsVisible="{Binding HayAviso}"
+                                                                       WidthRequest="13"
+                                                                       HeightRequest="16"
+                                                                       VerticalOptions="Center" />
+                                                            </HorizontalStackLayout>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </BindableLayout.ItemTemplate>
+                                            </HorizontalStackLayout>
+                                        </ScrollView>
+                                        <Button Grid.Column="1"
+                                                Text="Pueblos"
+                                                FontSize="12"
+                                                HeightRequest="32"
+                                                Padding="12,0"
+                                                CornerRadius="16"
+                                                BackgroundColor="{StaticResource SuperficieAlta}"
+                                                TextColor="{StaticResource TextoPrincipal}"
+                                                BorderColor="{StaticResource Borde}"
+                                                BorderWidth="1"
+                                                VerticalOptions="Center"
+                                                FontAutoScalingEnabled="False"
+                                                Clicked="BtnPueblos_Clicked" />
+                                    </Grid>
+
                                     <Label Text="{Binding Resumen}"
                                            FontSize="12"
                                            TextColor="{StaticResource TextoSecundario}" />

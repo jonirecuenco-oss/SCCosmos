@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.PueblosTerritorioPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Pueblos del territorio"
+    BackgroundColor="{StaticResource FondoPagina}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16,14,16,28"
+                             Spacing="14">
+
+            <VerticalStackLayout Spacing="3">
+                <Label x:Name="LblCongregacion"
+                       Style="{StaticResource Antetitulo}" />
+                <Label Text="Los pueblos de su territorio, además del del salón: en Circuito se ve su tiempo y avisan sus alertas rojas."
+                       Style="{StaticResource SubtituloPagina}" />
+            </VerticalStackLayout>
+
+            <!-- LOS QUE YA ESTÁN -->
+            <Border Style="{StaticResource Tarjeta}">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="PUEBLOS"
+                           Style="{StaticResource Antetitulo}" />
+                    <Label x:Name="LblSalon"
+                           Style="{StaticResource TextoNota}" />
+                    <Label x:Name="LblEstado"
+                           IsVisible="False"
+                           FontSize="13"
+                           TextColor="#4BA3E3" />
+                    <VerticalStackLayout x:Name="ListaPueblos"
+                                         Spacing="6" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- SUGERIDOS: donde viven sus publicadores -->
+            <Border x:Name="TarjetaSugerencias"
+                    Style="{StaticResource Tarjeta}"
+                    IsVisible="False">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="DONDE VIVEN SUS PUBLICADORES"
+                           Style="{StaticResource Antetitulo}" />
+                    <VerticalStackLayout x:Name="ListaSugerencias"
+                                         Spacing="6" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- CUALQUIER OTRO -->
+            <Border Style="{StaticResource Tarjeta}">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="BUSCAR OTRO"
+                           Style="{StaticResource Antetitulo}" />
+                    <Entry x:Name="TxtBuscar"
+                           Placeholder="Nombre del pueblo"
+                           PlaceholderColor="{StaticResource TextoTerciario}"
+                           TextColor="{StaticResource TextoPrincipal}"
+                           TextChanged="TxtBuscar_TextChanged" />
+                    <VerticalStackLayout x:Name="ListaResultados"
+                                         Spacing="6" />
+                </VerticalStackLayout>
+            </Border>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

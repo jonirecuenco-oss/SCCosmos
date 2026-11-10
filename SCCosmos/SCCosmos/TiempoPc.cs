@@ -148,10 +148,24 @@ namespace SCCosmos
 
         private int _carga;
 
+        // El salón y los pueblos de su territorio; el elegido (0, el del salón).
+        private List<LugarTiempo> _lugares;
+
+        private int _pueblo;
+
+        private DateTime _dia = DateTime.Today;
+
+        private readonly Dictionary<string, SemanaTiempo> _semanas = new Dictionary<string, SemanaTiempo>();
+
         public TiempoCongregacionVista(Congregacion congregacion)
         {
             _congregacion = congregacion;
         }
+
+        public Congregacion Congregacion => _congregacion;
+
+        /// <summary>El del salón y los pueblos de su territorio: al pulsar uno, su tiempo.</summary>
+        public List<PuebloTiempoUI> Pueblos { get; private set; } = new List<PuebloTiempoUI>();
 
         public string Titulo { get; private set; } = "TIEMPO";
 
@@ -177,20 +191,29 @@ namespace SCCosmos
         {
             int carga = ++_carga;
 
+            _dia = dia;
+
             try
             {
-                LugarTiempo lugar =
-                    await Task.Run(() => TiempoPc.LugarDe(_congregacion));
+                if (_lugares == null)
+                {
+                    _lugares = await Task.Run(Lugares);
+                }
 
-                if (lugar == null)
+                if (_lugares.Count == 0)
                 {
                     Mensaje = $"No se encuentra el municipio «{_congregacion.Municipio}» en la lista del INE.";
                     Avisar(nameof(Mensaje), nameof(VerMensaje));
                     return;
                 }
 
+                LugarTiempo lugar =
+                    _lugares[Math.Max(0, Math.Min(_pueblo, _lugares.Count - 1))];
+
                 SemanaTiempo semana =
                     await Task.Run(() => TiempoAemet.ObtenerSemanaAsync(lugar, false, CancellationToken.None));
+
+                _semanas[lugar.Ine] = semana;
 
                 TiempoDia tiempo =
                     await Task.Run(() => TiempoAemet.ObtenerAsync(lugar, dia, false, CancellationToken.None));
@@ -237,6 +260,8 @@ namespace SCCosmos
                     : semana.Dias.Count == 0 && tiempo.Horas.Count == 0 ? "No se ha podido descargar el tiempo."
                     : "";
 
+                PintarPueblos();
+
                 Avisar(
                     nameof(Titulo),
                     nameof(Datos),
@@ -245,6 +270,24 @@ namespace SCCosmos
                     nameof(Horas),
                     nameof(Mensaje),
                     nameof(VerMensaje));
+
+                // Los demás pueblos, para su resumen en la fila (después, sin esperar por ellos).
+                foreach (LugarTiempo otro in _lugares.Where(l => !_semanas.ContainsKey(l.Ine)).ToList())
+                {
+                    try
+                    {
+                        _semanas[otro.Ine] =
+                            await Task.Run(() => TiempoAemet.ObtenerSemanaAsync(otro, false, CancellationToken.None));
+                    }
+                    catch
+                    {
+                    }
+                }
+
+                if (carga == _carga)
+                {
+                    PintarPueblos();
+                }
             }
             catch
             {
@@ -257,6 +300,69 @@ namespace SCCosmos
         }
 
 
+        /// <summary>Al pulsar un pueblo de la fila, su tiempo (el mismo día).</summary>
+        public async Task ElegirPuebloAsync(int indice)
+        {
+            if (indice == _pueblo)
+            {
+                return;
+            }
+
+            _pueblo = indice;
+            PintarPueblos();
+
+            await CargarAsync(_dia);
+        }
+
+
+        /// <summary>Tras cambiar sus pueblos: se vuelven a leer y se ve el del salón.</summary>
+        public async Task RecargarPueblosAsync()
+        {
+            _lugares = null;
+            _pueblo = 0;
+
+            await CargarAsync(_dia);
+        }
+
+
+        // El salón (si su municipio está en la lista del INE) y los pueblos de su territorio.
+        private List<LugarTiempo> Lugares()
+        {
+            var lista = new List<LugarTiempo>();
+
+            if (TiempoPc.LugarDe(_congregacion) is LugarTiempo salon)
+            {
+                lista.Add(salon);
+            }
+
+            foreach (PuebloTerritorio pueblo in DatabaseHelper.ObtenerPueblosTerritorio(_congregacion.Codigo))
+            {
+                if (lista.All(l => l.Ine != pueblo.Ine))
+                {
+                    lista.Add(new LugarTiempo(pueblo.Ine, pueblo.Nombre, _congregacion.Nombre, pueblo.Latitud, pueblo.Longitud));
+                }
+            }
+
+            return lista;
+        }
+
+
+        private void PintarPueblos()
+        {
+            Pueblos =
+                (_lugares ?? new List<LugarTiempo>())
+                    .Select((l, i) => new PuebloTiempoUI(
+                        l,
+                        i,
+                        i == _pueblo,
+                        _semanas.TryGetValue(l.Ine, out SemanaTiempo semana) ? semana.Dias.FirstOrDefault(d => d.Fecha == _dia) : null,
+                        this))
+                    .ToList();
+
+            Avisar(nameof(Pueblos));
+        }
+
+
         private void Avisar(params string[] propiedades)
         {
             foreach (string propiedad in propiedades)
@@ -264,6 +370,47 @@ namespace SCCosmos
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propiedad));
             }
         }
+    }
+
+
+    /// <summary>
+    /// Un pueblo de la fila del tiempo (el del salón, el primero), con su día
+    /// elegido: icono, máxima/mínima y el aviso de más nivel.
+    /// </summary>
+    public sealed class PuebloTiempoUI
+    {
+        public PuebloTiempoUI(LugarTiempo lugar, int indice, bool elegido, ResumenDia dia, TiempoCongregacionVista vista)
+        {
+            Vista = vista;
+            Indice = indice;
+            Nombre = lugar.Nombre;
+            Temperaturas = dia?.Maxima is int maxima && dia.Minima is int minima ? $"{maxima}°/{minima}°" : "";
+            (Simbolo, ColorIcono) = InicioPage.SimboloTiempo(dia?.Icono ?? "");
+            VerIcono = dia == null ? Visibility.Collapsed : Visibility.Visible;
+            VerAviso = dia?.Aviso == null ? Visibility.Collapsed : Visibility.Visible;
+            ColorAviso = InicioPage.Pincel(dia?.Aviso?.Color ?? "#E5C07B");
+            PuntosAviso = dia?.Aviso?.Puntos ?? "";
+            Fondo = elegido ? InicioPage.Pincel("#1FFFFFFF") : Brushes.Transparent;
+            Borde = InicioPage.Pincel(elegido ? "#4BA3E3" : "#33FFFFFF");
+            Descripcion = dia == null
+                ? lugar.Nombre
+                : $"{lugar.Nombre}: {dia.Descripcion}" + (dia.Aviso == null ? "" : "\n" + dia.Aviso.Titulo + " · " + dia.Aviso.Periodo);
+        }
+
+        public TiempoCongregacionVista Vista { get; }
+        public int Indice { get; }
+        public string Nombre { get; }
+        public string Temperaturas { get; }
+        public Wpf.Ui.Controls.SymbolRegular Simbolo { get; }
+        public Brush ColorIcono { get; }
+        public Visibility VerIcono { get; }
+        public Visibility VerAviso { get; }
+        public Brush ColorAviso { get; }
+        public string PuntosAviso { get; }
+        /// <summary>El elegido, con fondo y el borde del acento.</summary>
+        public Brush Fondo { get; }
+        public Brush Borde { get; }
+        public string Descripcion { get; }
     }
 
 

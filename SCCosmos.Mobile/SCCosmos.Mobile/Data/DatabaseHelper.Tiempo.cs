@@ -2,6 +2,8 @@ using System.Globalization;
 
 using Microsoft.Data.Sqlite;
 
+using SCCosmos.Sincro;
+
 namespace SCCosmos.Mobile.Data;
 
 
@@ -75,10 +77,10 @@ public static partial class DatabaseHelper
     /// Las congregaciones del circuito con su municipio, provincia y las
     /// coordenadas del salón (para los avisos rojos de AEMET).
     /// </summary>
-    public static List<(string Nombre, string Municipio, string Provincia, double Latitud, double Longitud)>
+    public static List<(string Codigo, string Nombre, string Municipio, string Provincia, double Latitud, double Longitud)>
         ObtenerCongregacionesParaTiempo()
     {
-        var lista = new List<(string Nombre, string Municipio, string Provincia, double Latitud, double Longitud)>();
+        var lista = new List<(string Codigo, string Nombre, string Municipio, string Provincia, double Latitud, double Longitud)>();
 
         try
         {
@@ -92,7 +94,8 @@ public static partial class DatabaseHelper
 
             cmd.CommandText =
                 """
-                SELECT Nombre,
+                SELECT COALESCE(Codigo, ''),
+                       Nombre,
                        COALESCE(Municipio, ''),
                        COALESCE(Provincia, ''),
                        COALESCE(Latitud, 0),
@@ -111,8 +114,68 @@ public static partial class DatabaseHelper
                     reader.GetString(0),
                     reader.GetString(1),
                     reader.GetString(2),
-                    Convert.ToDouble(reader.GetValue(3), CultureInfo.InvariantCulture),
-                    Convert.ToDouble(reader.GetValue(4), CultureInfo.InvariantCulture)));
+                    reader.GetString(3),
+                    Convert.ToDouble(reader.GetValue(4), CultureInfo.InvariantCulture),
+                    Convert.ToDouble(reader.GetValue(5), CultureInfo.InvariantCulture)));
+            }
+        }
+        catch
+        {
+        }
+
+        return lista;
+    }
+
+
+    // ------------------------------------------------------------------------
+    // PUEBLOS DEL TERRITORIO (en Configuracion: se sincroniza con Windows)
+    // ------------------------------------------------------------------------
+
+    public static List<PuebloTerritorio> ObtenerPueblosTerritorio(string codigoCongregacion) =>
+        PueblosTerritorio.Leer(
+            ObtenerConfiguracion(PueblosTerritorio.Clave(codigoCongregacion)));
+
+
+    public static void GuardarPueblosTerritorio(
+        string codigoCongregacion,
+        IEnumerable<PuebloTerritorio> pueblos) =>
+        GuardarConfiguracion(
+            PueblosTerritorio.Clave(codigoCongregacion),
+            PueblosTerritorio.Escribir(pueblos));
+
+
+    /// <summary>Una dirección por publicador de la congregación (para sugerir sus pueblos).</summary>
+    public static List<string> ObtenerDireccionesCongregacion(string codigoCongregacion)
+    {
+        var lista = new List<string>();
+
+        try
+        {
+            using var connection =
+                new SqliteConnection(ConnectionString);
+
+            connection.Open();
+
+            using var cmd =
+                connection.CreateCommand();
+
+            cmd.CommandText =
+                """
+                SELECT MAX(Direccion)
+                FROM Personas
+                WHERE CongregacionCodigo = $codigo
+                  AND COALESCE(Direccion, '') <> ''
+                GROUP BY COALESCE(NULLIF(PersonaRaizId, 0), Id);
+                """;
+
+            cmd.Parameters.AddWithValue("$codigo", codigoCongregacion);
+
+            using var reader =
+                cmd.ExecuteReader();
+
+            while (reader.Read())
+            {
+                lista.Add(reader.GetString(0));
             }
         }
         catch

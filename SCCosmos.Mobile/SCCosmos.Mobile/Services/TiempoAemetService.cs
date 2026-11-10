@@ -374,7 +374,10 @@ public static class TiempoAemetService
             return;
         }
 
+        // Cada sitio es el salón de una congregación o un pueblo de su
+        // territorio (con su nombre; "" en el salón).
         var nombres = new List<string>();
+        var pueblos = new List<string>();
         var sitios = new List<LugarTiempo>();
 
         foreach (var congregacion in DatabaseHelper.ObtenerCongregacionesParaTiempo())
@@ -382,7 +385,15 @@ public static class TiempoAemetService
             if (TiempoAemet.LugarDe(congregacion.Municipio, congregacion.Provincia, congregacion.Latitud, congregacion.Longitud, congregacion.Nombre) is LugarTiempo lugar)
             {
                 nombres.Add(congregacion.Nombre);
+                pueblos.Add("");
                 sitios.Add(lugar);
+            }
+
+            foreach (PuebloTerritorio pueblo in DatabaseHelper.ObtenerPueblosTerritorio(congregacion.Codigo))
+            {
+                nombres.Add(congregacion.Nombre);
+                pueblos.Add(pueblo.Nombre);
+                sitios.Add(new LugarTiempo(pueblo.Ine, pueblo.Nombre, congregacion.Nombre, pueblo.Latitud, pueblo.Longitud));
             }
         }
 
@@ -403,12 +414,23 @@ public static class TiempoAemetService
         static string Limpio(string texto) =>
             texto.Replace('\t', ' ').Replace('\r', ' ').Replace('\n', ' ').Trim();
 
+        // «Mérida - Centro, Navalmoral de la Mata (Talayuela)»: entre
+        // paréntesis los pueblos, si el aviso no llega a su salón.
+        string Afectados(List<int> indices) =>
+            string.Join(
+                ", ",
+                indices
+                    .GroupBy(i => nombres[i])
+                    .Select(g => g.Any(i => pueblos[i].Length == 0)
+                        ? g.Key
+                        : $"{g.Key} ({string.Join(", ", g.Select(i => pueblos[i]).Distinct())})"));
+
         List<AvisoRojo> lista =
             rojos
                 .Select(r => new AvisoRojo(
                     TipoAlertaRojo + "|" + Limpio(r.Aviso.Clave),
                     Limpio(r.Aviso.Titulo),
-                    Limpio(string.Join(", ", r.Sitios.Select(i => nombres[i]).Distinct())),
+                    Limpio(Afectados(r.Sitios)),
                     r.Aviso.Inicio,
                     r.Aviso.Fin,
                     Limpio(r.Aviso.Descripcion)))

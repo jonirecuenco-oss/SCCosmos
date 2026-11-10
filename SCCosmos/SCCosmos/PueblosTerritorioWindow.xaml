@@ -1,0 +1,87 @@
+<Window x:Class="SCCosmos.PueblosTerritorioWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Pueblos del territorio"
+        Width="470"
+        SizeToContent="Height"
+        MaxHeight="680"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Background="{DynamicResource ApplicationBackgroundBrush}"
+        Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+    <Grid Margin="22">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel>
+            <TextBlock x:Name="TxtCongregacion"
+                       FontSize="17"
+                       FontWeight="SemiBold"/>
+            <TextBlock Text="Los pueblos de su territorio, además del del salón: en Circuito se ve su tiempo y el móvil avisa de sus alertas rojas."
+                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                       FontSize="13"
+                       TextWrapping="Wrap"
+                       Margin="0,4,0,0"/>
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1"
+                      VerticalScrollBarVisibility="Auto"
+                      Margin="0,14,0,0">
+            <StackPanel>
+                <TextBlock Text="PUEBLOS"
+                           FontSize="12"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                <TextBlock x:Name="TxtSalon"
+                           FontSize="12"
+                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                           Margin="0,2,0,6"/>
+                <TextBlock x:Name="TxtEstado"
+                           FontSize="13"
+                           Foreground="#4BA3E3"
+                           Visibility="Collapsed"
+                           Margin="0,0,0,6"/>
+                <StackPanel x:Name="ListaPueblos"/>
+
+                <StackPanel x:Name="PanelSugerencias"
+                            Visibility="Collapsed"
+                            Margin="0,16,0,0">
+                    <TextBlock Text="DONDE VIVEN SUS PUBLICADORES"
+                               FontSize="12"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                               Margin="0,0,0,6"/>
+                    <StackPanel x:Name="ListaSugerencias"/>
+                </StackPanel>
+
+                <TextBlock Text="BUSCAR OTRO"
+                           FontSize="12"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                           Margin="0,16,0,6"/>
+                <TextBox x:Name="TxtBuscar"
+                         Padding="8,6"
+                         BorderThickness="1"
+                         TextChanged="TxtBuscar_TextChanged"/>
+                <StackPanel x:Name="ListaResultados"
+                            Margin="0,6,0,0"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Button Grid.Row="2"
+                Content="Cerrar"
+                Click="BtnCerrar_Click"
+                HorizontalAlignment="Right"
+                Padding="14,6"
+                Margin="0,16,0,0"
+                Background="#0B6FC2"
+                Foreground="White"
+                BorderThickness="0"
+                IsCancel="True"
+                Cursor="Hand"/>
+    </Grid>
+</Window>
