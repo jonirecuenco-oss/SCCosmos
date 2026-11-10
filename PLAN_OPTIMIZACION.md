@@ -339,6 +339,11 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - Acciones de la visita y el S-303 pasan por `CorreoService` (Gmail directo con la cuenta JW; si no, la app de correo), como Asambleas. `CorreoService`: copia (Cc), cuerpo HTML como texto con formato (`Html.FromHtml`) y adjuntos copiados a `cache/correo` (el FileProvider de MAUI solo comparte la caché; se borran a los 2 días).
   - Probado en el emulador: antes salía el aviso; ahora Gmail recibe `SEND message/rfc822` con asunto y cuerpo, sin bloqueos. Los adjuntos no se pudieron probar ahí (los datos de prueba no tienen documentos ni plantilla S-302).
 - 10/11/2026 · Publicada la v2.1.55.
+- 10/11/2026 · v2.1.56:
+  - Android › Correspondencia con pestañas como Windows: «Visitas a congregaciones» / «Asambleas» (`BotonPestana`, azul la elegida) y una sub-pestaña por categoría (fila deslizable) en lugar del desplegable. Asambleas en el orden de Windows; el resto, de visitas.
+  - «Nuevo mensaje al circuito» (`MensajeCircuitoPage`, como `EnviarMensajeWindow`): asunto, texto (a HTML), adjuntos y destinatarios agrupados por sección (casilla por sección, Todas/Ninguna, aviso de las que no tienen correo). Se prepara en Gmail con `CorreoService` (todas en «Para», como Windows).
+  - Probado en el emulador con secciones y congregaciones inventadas (@example.org) en su base de prueba, restaurada después. Para copiar su base: `exec-out run-as … cat` leyendo bytes, y subirla por /data/local/tmp.
+- 10/11/2026 · Publicada la v2.1.56.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

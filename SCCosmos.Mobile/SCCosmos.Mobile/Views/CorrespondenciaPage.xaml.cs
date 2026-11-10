@@ -17,7 +17,20 @@ public partial class CorrespondenciaPage : ContentPage, IActualizableMobile
     private List<DocumentoVisitaMobile> _adjuntos =
         new();
 
-    private bool _cargando;
+    // Las de asambleas, en el orden de Windows; el resto son de visitas.
+    private static readonly string[] CategoriasAsamblea =
+    {
+        "Notificación AC",
+        "Recordatorio AC",
+        "Asignación asamblea circuito",
+        "Asignación reunión precursores",
+        "Envío de organigrama",
+        "Mensaje a rep. de Betel"
+    };
+
+    private bool _pestanaAsambleas;
+
+    private string? _categoriaActual;
 
     private bool _editorListo;
 
@@ -283,23 +296,17 @@ public partial class CorrespondenciaPage : ContentPage, IActualizableMobile
                         DatabaseHelper
                             .ObtenerCategoriasCorrespondenciaMobile());
 
-            _cargando =
-                true;
-
-            PickerCategoria.ItemsSource =
-                _categorias;
-
-            if (_categorias.Count > 0)
+            // La que estaba elegida, si sigue; si no, la primera de la pestaña.
+            if (_categoriaActual is null
+                || !_categorias.Contains(_categoriaActual))
             {
-                PickerCategoria.SelectedIndex =
-                    0;
+                _categoriaActual =
+                    CategoriasDePestana().FirstOrDefault();
             }
 
-            _cargando =
-                false;
+            PintarPestanas();
 
-            if (PickerCategoria.SelectedItem is
-                string categoria)
+            if (_categoriaActual is string categoria)
             {
                 await CargarCategoriaAsync(
                     categoria);
@@ -315,20 +322,119 @@ public partial class CorrespondenciaPage : ContentPage, IActualizableMobile
         }
     }
 
-    private async void PickerCategoria_SelectedIndexChanged(
+    private List<string> CategoriasDePestana() =>
+        _pestanaAsambleas
+            ? CategoriasAsamblea
+                .Where(c => _categorias.Contains(c, StringComparer.OrdinalIgnoreCase))
+                .ToList()
+            : _categorias
+                .Where(c => !CategoriasAsamblea.Contains(c, StringComparer.OrdinalIgnoreCase))
+                .ToList();
+
+
+    // Pestañas «Visitas a congregaciones» / «Asambleas» (como en Windows).
+    private async void Pestana_Clicked(
         object sender,
         EventArgs e)
     {
-        if (_cargando
-            ||
-            PickerCategoria.SelectedItem is not
-                string categoria)
+        bool asambleas =
+            ReferenceEquals(sender, BtnPestanaAsambleas);
+
+        if (asambleas == _pestanaAsambleas)
         {
             return;
         }
 
+        _pestanaAsambleas =
+            asambleas;
+
+        _categoriaActual =
+            CategoriasDePestana().FirstOrDefault();
+
+        PintarPestanas();
+
+        if (_categoriaActual is string categoria)
+        {
+            await CargarCategoriaAsync(
+                categoria);
+        }
+    }
+
+
+    // Sub-pestañas: una por categoría.
+    private async void Categoria_Clicked(
+        object sender,
+        EventArgs e)
+    {
+        if (sender is not Button { CommandParameter: string categoria }
+            || categoria == _categoriaActual)
+        {
+            return;
+        }
+
+        _categoriaActual =
+            categoria;
+
+        PintarPestanas();
+
         await CargarCategoriaAsync(
             categoria);
+    }
+
+
+    private void PintarPestanas()
+    {
+        PintarBoton(BtnPestanaVisitas, !_pestanaAsambleas);
+        PintarBoton(BtnPestanaAsambleas, _pestanaAsambleas);
+
+        BarraCategorias.Children.Clear();
+
+        foreach (string categoria in CategoriasDePestana())
+        {
+            var boton =
+                new Button
+                {
+                    Text = categoria,
+                    CommandParameter = categoria,
+                    FontSize = 12.5,
+                    CornerRadius = 16,
+                    HeightRequest = 34,
+                    Padding = new Thickness(12, 4),
+                    FontAutoScalingEnabled = false
+                };
+
+            boton.Clicked += Categoria_Clicked;
+
+            PintarBoton(boton, categoria == _categoriaActual);
+
+            BarraCategorias.Children.Add(boton);
+        }
+
+        LblCategoria.Text =
+            _categoriaActual ?? "";
+    }
+
+
+    // Como las pestañas de Asambleas: la elegida, en azul.
+    private static void PintarBoton(
+        Button boton,
+        bool activa)
+    {
+        boton.BackgroundColor =
+            Color.FromArgb(activa ? "#2478B5" : "#242830");
+
+        boton.TextColor =
+            Colors.White;
+    }
+
+
+    // «Nuevo mensaje» (como en Windows): a todas las congregaciones o por secciones.
+    private async void BtnNuevoMensaje_Clicked(
+        object sender,
+        EventArgs e)
+    {
+        await Navigation.PushAsync(
+            new MensajeCircuitoPage());
     }
 
     private async Task CargarCategoriaAsync(
@@ -387,7 +493,7 @@ public partial class CorrespondenciaPage : ContentPage, IActualizableMobile
         object sender,
         EventArgs e)
     {
-        if (PickerCategoria.SelectedItem is not
+        if (_categoriaActual is not
             string categoria)
         {
             return;
@@ -433,7 +539,7 @@ public partial class CorrespondenciaPage : ContentPage, IActualizableMobile
         object sender,
         EventArgs e)
     {
-        if (PickerCategoria.SelectedItem is not
+        if (_categoriaActual is not
             string categoria)
         {
             return;
@@ -497,7 +603,7 @@ public partial class CorrespondenciaPage : ContentPage, IActualizableMobile
             boton.CommandParameter is not
                 DocumentoVisitaMobile documento
             ||
-            PickerCategoria.SelectedItem is not
+            _categoriaActual is not
                 string categoria)
         {
             return;

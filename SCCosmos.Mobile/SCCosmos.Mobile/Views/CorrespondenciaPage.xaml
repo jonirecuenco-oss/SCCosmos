@@ -17,6 +17,33 @@
                        Style="{StaticResource SubtituloPagina}" />
             </VerticalStackLayout>
 
+            <!-- Como «Nuevo mensaje» en Windows: un correo a todas las
+                 congregaciones, por secciones o a las que se marquen -->
+            <Button Text="Nuevo mensaje al circuito"
+                    Style="{StaticResource BotonPrincipal}"
+                    Clicked="BtnNuevoMensaje_Clicked" />
+
+            <!-- PESTAÑAS (como en Windows) y, debajo, sus categorías -->
+            <Grid ColumnDefinitions="*,*"
+                  ColumnSpacing="8">
+                <Button x:Name="BtnPestanaVisitas"
+                        Text="Visitas a congregaciones"
+                        Style="{StaticResource BotonPestana}"
+                        Clicked="Pestana_Clicked" />
+                <Button x:Name="BtnPestanaAsambleas"
+                        Grid.Column="1"
+                        Text="Asambleas"
+                        Style="{StaticResource BotonPestana}"
+                        Clicked="Pestana_Clicked" />
+            </Grid>
+
+            <!-- Sub-pestañas: una por categoría; la barra se desliza -->
+            <ScrollView Orientation="Horizontal"
+                        HorizontalScrollBarVisibility="Never">
+                <HorizontalStackLayout x:Name="BarraCategorias"
+                                       Spacing="6" />
+            </ScrollView>
+
             <Border BackgroundColor="{StaticResource Superficie}"
                     Stroke="{StaticResource Borde}"
                     Padding="16">
@@ -26,12 +53,10 @@
 
                 <VerticalStackLayout Spacing="12">
 
-                    <Label Text="Categoría"
-                           TextColor="{StaticResource TextoTerciario}"
-                           FontSize="12" />
-                    <Picker x:Name="PickerCategoria"
-                            TextColor="{StaticResource TextoPrincipal}"
-                            SelectedIndexChanged="PickerCategoria_SelectedIndexChanged" />
+                    <Label x:Name="LblCategoria"
+                           TextColor="{StaticResource TextoPrincipal}"
+                           FontAttributes="Bold"
+                           FontSize="15" />
 
                     <Label Text="Asunto"
                            TextColor="{StaticResource TextoTerciario}"
