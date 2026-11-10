@@ -164,8 +164,8 @@
                                                                    HorizontalTextAlignment="Center" />
                                                             <Image Source="{Binding IconoAviso}"
                                                                    IsVisible="{Binding HayAviso}"
-                                                                   WidthRequest="15"
-                                                                   HeightRequest="15"
+                                                                   WidthRequest="17"
+                                                                   HeightRequest="21"
                                                                    HorizontalOptions="Center" />
                                                         </VerticalStackLayout>
                                                     </Border>
@@ -189,6 +189,11 @@
                                                         <Border.StrokeShape>
                                                             <RoundRectangle CornerRadius="10" />
                                                         </Border.StrokeShape>
+                                                        <Border.GestureRecognizers>
+                                                            <TapGestureRecognizer
+                                                                Tapped="AvisoTiempo_Tapped"
+                                                                CommandParameter="{Binding .}" />
+                                                        </Border.GestureRecognizers>
                                                         <VerticalStackLayout Spacing="2">
                                                             <Label Text="{Binding Etiqueta}"
                                                                    FontSize="11"
@@ -210,8 +215,8 @@
                                                                    HorizontalTextAlignment="Center" />
                                                             <Image Source="{Binding IconoAviso}"
                                                                    IsVisible="{Binding HayAviso}"
-                                                                   WidthRequest="15"
-                                                                   HeightRequest="15"
+                                                                   WidthRequest="17"
+                                                                   HeightRequest="21"
                                                                    HorizontalOptions="Center" />
                                                         </VerticalStackLayout>
                                                     </Border>

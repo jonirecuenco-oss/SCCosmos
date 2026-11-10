@@ -408,6 +408,20 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                 break;
             }
 
+            case "aviso_tiempo":
+            {
+                // Qué aviso es (sin depender del color): un mensaje breve.
+                string texto =
+                    intent.GetStringExtra(ExtraConsultaItem) ?? "";
+
+                if (texto.Length > 0)
+                {
+                    global::Android.Widget.Toast.MakeText(contexto, texto, global::Android.Widget.ToastLength.Long)?.Show();
+                }
+
+                break;
+            }
+
             case "horas":
             {
                 try

@@ -323,6 +323,12 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - Windows: el «+» de predicación pasa a lápiz (ya editaba el día). Capturas: `Página:Desplegar=n` y `Página:Pulsar=Botón*n`.
   - Ojo en pruebas: abrir la app con `Abrir` la reinicia y Android retira sus notificaciones (motivo 5).
 - 10/11/2026 · Publicada la v2.1.52.
+- 10/11/2026 · v2.1.53 (el usuario es daltónico: la gravedad no puede ir solo en el color):
+  - Icono de aviso: triángulo relleno con 1, 2 o 3 puntos de gravedad debajo (`icono_aviso_{nivel}`, `widget_aviso_{nivel}`); en Windows, los «●» de `AvisoTiempo.Puntos` bajo el icono.
+  - Al pulsar una hora con aviso se explica (`AvisoTiempo.Detalle`, `HoraTiempo.TextoAvisos`): ventana en Inicio y Circuito (Android y Windows); en el widget, mensaje breve (acción `aviso_tiempo`, `TextoAvisosCorto`).
+  - Títulos del tiempo sin «TIEMPO ·» (widget, Inicio y Circuito de Windows).
+  - Circuito (Android): al elegir un día, las horas vuelven al principio (hoy, a la hora actual).
+- 10/11/2026 · Publicada la v2.1.53.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

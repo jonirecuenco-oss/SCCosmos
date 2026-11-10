@@ -286,9 +286,31 @@ public partial class CircuitoPage : ContentPage, IActualizableMobile
         object sender,
         TappedEventArgs e)
     {
-        if (e.Parameter is DiaCelda dia)
+        if (e.Parameter is not DiaCelda dia)
         {
-            await dia.Congregacion.CargarAsync(dia.Fecha);
+            return;
+        }
+
+        await dia.Congregacion.CargarAsync(dia.Fecha);
+
+        // Las horas del día elegido, desde el principio (hoy, desde la hora actual).
+        if ((sender as Element)?.Parent?.Parent is ScrollView dias
+            && dias.Parent is Layout panel
+            && panel.Children.SkipWhile(c => !ReferenceEquals(c, dias)).Skip(1).OfType<ScrollView>().FirstOrDefault() is ScrollView horas)
+        {
+            await Task.Delay(150);
+            await horas.ScrollToAsync(dia.Congregacion.IndiceActual * 56, 0, false);
+        }
+    }
+
+    // Al tocar una hora con aviso, qué aviso es (sin depender del color).
+    private async void AvisoTiempo_Tapped(
+        object sender,
+        TappedEventArgs e)
+    {
+        if (e.Parameter is HoraCelda hora && hora.HayAviso)
+        {
+            await DisplayAlert("Avisos de AEMET", hora.TextoAvisos, "Aceptar");
         }
     }
 

@@ -311,7 +311,7 @@ public class SccosmosWidgetFactory
             _filas.Add(new Fila
             {
                 Tipo = TipoSeccion,
-                Texto = "TIEMPO · " + tiempo.Lugar.ToUpper(CultureInfo.GetCultureInfo("es-ES")) + extremos,
+                Texto = tiempo.Lugar.ToUpper(CultureInfo.GetCultureInfo("es-ES")) + extremos,
                 Color = "#F5C451"
             });
 
@@ -619,6 +619,9 @@ public class SccosmosWidgetFactory
                                     _ => Resource.Drawable.widget_aviso_amarillo
                                 });
                             vistas.SetContentDescription(avisos[i], aviso.Titulo);
+
+                            // Al tocarlo, qué aviso es (sin depender del color).
+                            SccosmosWidgetProvider.PonerClicItem(vistas, avisos[i], "aviso_tiempo", consulta: hora.TextoAvisosCorto);
                         }
                         else
                         {

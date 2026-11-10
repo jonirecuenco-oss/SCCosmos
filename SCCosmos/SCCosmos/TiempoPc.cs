@@ -208,7 +208,7 @@ namespace SCCosmos
                     semana.Dias.FirstOrDefault(d => d.Fecha == tiempo.Fecha);
 
                 Titulo =
-                    $"TIEMPO · {lugar.Nombre.ToUpper(es)} · {(elegido?.Etiqueta ?? tiempo.Fecha.ToString("d MMM", es)).ToUpper(es)}";
+                    $"{lugar.Nombre.ToUpper(es)} · {(elegido?.Etiqueta ?? tiempo.Fecha.ToString("d MMM", es)).ToUpper(es)}";
 
                 Datos =
                     (tiempo.Maxima is int maxima && tiempo.Minima is int minima ? $"↑ {maxima}°   ↓ {minima}°" : "")
@@ -284,6 +284,7 @@ namespace SCCosmos
             Fondo = elegido ? InicioPage.Pincel("#1FFFFFFF") : Brushes.Transparent;
             VerAviso = dia.Aviso == null ? Visibility.Collapsed : Visibility.Visible;
             ColorAviso = InicioPage.Pincel(dia.Aviso?.Color ?? "#E5C07B");
+            PuntosAviso = dia.Aviso?.Puntos ?? "";
             Descripcion = dia.Descripcion + (dia.Aviso == null ? "" : "\n" + dia.Aviso.Titulo + " · " + dia.Aviso.Periodo);
         }
 
@@ -298,6 +299,7 @@ namespace SCCosmos
         public Brush Fondo { get; }
         public Visibility VerAviso { get; }
         public Brush ColorAviso { get; }
+        public string PuntosAviso { get; }
         public string Descripcion { get; }
     }
 }

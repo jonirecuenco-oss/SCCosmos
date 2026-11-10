@@ -128,7 +128,7 @@
                                             <ui:SymbolIcon Symbol="{Binding Simbolo}" FontSize="26" Foreground="{Binding ColorIcono}" HorizontalAlignment="Center" Margin="0,4"/>
                                             <TextBlock Text="{Binding Temperatura}" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center"/>
                                             <TextBlock Text="{Binding Lluvia}" FontSize="11" Foreground="#4BA3E3" HorizontalAlignment="Center"/>
-                                            <ui:SymbolIcon Symbol="Warning24" Filled="True" FontSize="16" Foreground="{Binding ColorAviso}" HorizontalAlignment="Center" Margin="0,3,0,0" Visibility="{Binding VerAviso}"/>
+                                            <StackPanel HorizontalAlignment="Center" Margin="0,3,0,0" Visibility="{Binding VerAviso}" Background="Transparent" Cursor="Hand" MouseLeftButtonUp="AvisoTiempo_MouseLeftButtonUp"><ui:SymbolIcon Symbol="Warning24" Filled="True" FontSize="16" Foreground="{Binding ColorAviso}" HorizontalAlignment="Center"/><TextBlock Text="{Binding PuntosAviso}" FontSize="13" Foreground="{Binding ColorAviso}" HorizontalAlignment="Center"/></StackPanel>
                                         </StackPanel>
                                     </Border>
                                 </DataTemplate>

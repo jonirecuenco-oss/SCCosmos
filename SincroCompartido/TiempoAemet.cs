@@ -62,6 +62,14 @@ public sealed class HoraTiempo
 
     public AvisoTiempo? Aviso => Avisos.FirstOrDefault();
 
+    /// <summary>Los avisos de esa hora explicados (al pulsar su icono).</summary>
+    public string TextoAvisos =>
+        string.Join("\n\n", Avisos.Select(a => a.Detalle));
+
+    /// <summary>Los avisos de esa hora, uno por línea (mensaje breve del widget).</summary>
+    public string TextoAvisosCorto =>
+        string.Join("\n", Avisos.Select(a => $"{a.Titulo} (nivel {a.Orden} de 3) · {a.Periodo}"));
+
     public string Icono => TiempoAemet.Icono(Cielo);
 
     /// <summary>
@@ -107,6 +115,15 @@ public sealed class AvisoTiempo
     /// <summary>«amarillo», «naranja» o «rojo»: el icono de aviso de su color.</summary>
     public string NivelIcono =>
         Nivel is "rojo" or "naranja" ? Nivel : "amarillo";
+
+    /// <summary>«●», «●●» o «●●●»: la gravedad sin depender del color.</summary>
+    public string Puntos =>
+        new('●', Orden);
+
+    /// <summary>«Aviso naranja por lluvias (nivel 2 de 3)», su periodo y la explicación de AEMET.</summary>
+    public string Detalle =>
+        $"{Titulo} (nivel {Orden} de 3)\n{Periodo}"
+        + (Descripcion.Length > 0 ? $"\n{Descripcion}" : "");
 
     public string Titulo =>
         $"Aviso {Nivel} por " +

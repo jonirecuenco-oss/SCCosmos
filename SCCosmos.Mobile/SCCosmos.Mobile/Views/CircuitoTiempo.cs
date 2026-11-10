@@ -243,6 +243,7 @@ public sealed class HoraCelda
         Lluvia = hora.TextoLluvia;
         HayAviso = hora.Aviso is not null;
         IconoAviso = $"icono_aviso_{hora.Aviso?.NivelIcono ?? "amarillo"}.png";
+        TextoAvisos = hora.TextoAvisos;
         Fondo = destacada ? Color.FromArgb("#1E2228") : Colors.Transparent;
 
         // Los tramos («12–24 h», «Todo el día») necesitan más sitio que una hora.
@@ -260,6 +261,9 @@ public sealed class HoraCelda
     public bool HayAviso { get; }
 
     public string IconoAviso { get; }
+
+    /// <summary>Qué avisos son (al tocar la hora).</summary>
+    public string TextoAvisos { get; }
 
     public Color Fondo { get; }
 

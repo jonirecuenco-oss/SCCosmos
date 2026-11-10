@@ -223,6 +223,13 @@ namespace SCCosmos
             return null;
         }
 
+        // Al pulsar el icono de un aviso, qué aviso es (sin depender del color).
+        private void AvisoTiempo_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            e.Handled = true;
+            InicioPage.MostrarAvisos(sender);
+        }
+
         // La rueda mueve la tabla, no la fila de horas (esa va con su barra).
         private void ScrollTiempo_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {

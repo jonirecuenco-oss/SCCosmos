@@ -1241,7 +1241,7 @@ namespace SCCosmos
             var es = CultureInfo.GetCultureInfo("es-ES");
 
             TarjetaTiempo.Visibility = Visibility.Visible;
-            TxtTituloTiempo.Text = "TIEMPO · " + tiempo.Lugar.ToUpper(es);
+            TxtTituloTiempo.Text = tiempo.Lugar.ToUpper(es);
             TxtMaxMinTiempo.Text =
                 (tiempo.Maxima is int maxima && tiempo.Minima is int minima ? $"↑ {maxima}°   ↓ {minima}°" : "")
                 + (tiempo.ProbLluviaDia is int lluvia && lluvia > 0 ? $"   ·   lluvia {lluvia}%" : "");
@@ -1305,6 +1305,22 @@ namespace SCCosmos
             return pincel;
         }
 
+        // Al pulsar el icono de un aviso, qué aviso es (sin depender del color).
+        private void AvisoTiempo_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            e.Handled = true;
+            MostrarAvisos(sender);
+        }
+
+        /// <summary>Explica los avisos de la hora del icono pulsado (Inicio y Circuito).</summary>
+        internal static void MostrarAvisos(object sender)
+        {
+            if (sender is FrameworkElement icono && icono.DataContext is CeldaTiempo celda && celda.TextoAvisos.Length > 0)
+            {
+                MessageBox.Show(Window.GetWindow(icono), celda.TextoAvisos, "Avisos de AEMET", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
         /// <summary>El icono de Fluent (y su color) de un cielo de AEMET, como en Android.</summary>
         internal static (Wpf.Ui.Controls.SymbolRegular Simbolo, System.Windows.Media.Brush Color) SimboloTiempo(string icono) =>
             icono switch
@@ -1332,6 +1348,8 @@ namespace SCCosmos
                 Descripcion = hora.Descripcion + (hora.Aviso == null ? "" : "\n" + hora.Aviso.Titulo + " · " + hora.Aviso.Periodo);
                 Fondo = destacada ? Pincel("#1FFFFFFF") : System.Windows.Media.Brushes.Transparent;
                 Ancho = hora.Hora < 0 ? 92 : 70;
+                PuntosAviso = hora.Aviso?.Puntos ?? "";
+                TextoAvisos = hora.TextoAvisos;
                 VerAviso = hora.Aviso == null ? Visibility.Collapsed : Visibility.Visible;
                 ColorAviso = Pincel(hora.Aviso?.Color ?? "#E5C07B");
 
@@ -1344,6 +1362,8 @@ namespace SCCosmos
             public string Temperatura { get; }
             public string Lluvia { get; }
             public double Ancho { get; }
+            public string PuntosAviso { get; }
+            public string TextoAvisos { get; }
             public Visibility VerAviso { get; }
             public System.Windows.Media.Brush ColorAviso { get; }
             public System.Windows.Media.Brush Fondo { get; }

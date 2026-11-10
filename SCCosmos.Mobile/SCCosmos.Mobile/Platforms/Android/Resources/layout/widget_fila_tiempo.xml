@@ -73,8 +73,8 @@
 
             <ImageView
                 android:id="@+id/tiempo_aviso_1"
-                android:layout_width="15dp"
-                android:layout_height="15dp"
+                android:layout_width="17dp"
+                android:layout_height="21dp"
                 android:layout_marginTop="3dp"
                 android:src="@drawable/widget_aviso_amarillo"
                 android:contentDescription="Aviso"
@@ -126,8 +126,8 @@
 
             <ImageView
                 android:id="@+id/tiempo_aviso_2"
-                android:layout_width="15dp"
-                android:layout_height="15dp"
+                android:layout_width="17dp"
+                android:layout_height="21dp"
                 android:layout_marginTop="3dp"
                 android:src="@drawable/widget_aviso_amarillo"
                 android:contentDescription="Aviso"
@@ -179,8 +179,8 @@
 
             <ImageView
                 android:id="@+id/tiempo_aviso_3"
-                android:layout_width="15dp"
-                android:layout_height="15dp"
+                android:layout_width="17dp"
+                android:layout_height="21dp"
                 android:layout_marginTop="3dp"
                 android:src="@drawable/widget_aviso_amarillo"
                 android:contentDescription="Aviso"
@@ -232,8 +232,8 @@
 
             <ImageView
                 android:id="@+id/tiempo_aviso_4"
-                android:layout_width="15dp"
-                android:layout_height="15dp"
+                android:layout_width="17dp"
+                android:layout_height="21dp"
                 android:layout_marginTop="3dp"
                 android:src="@drawable/widget_aviso_amarillo"
                 android:contentDescription="Aviso"
@@ -285,8 +285,8 @@
 
             <ImageView
                 android:id="@+id/tiempo_aviso_5"
-                android:layout_width="15dp"
-                android:layout_height="15dp"
+                android:layout_width="17dp"
+                android:layout_height="21dp"
                 android:layout_marginTop="3dp"
                 android:src="@drawable/widget_aviso_amarillo"
                 android:contentDescription="Aviso"
@@ -338,8 +338,8 @@
 
             <ImageView
                 android:id="@+id/tiempo_aviso_6"
-                android:layout_width="15dp"
-                android:layout_height="15dp"
+                android:layout_width="17dp"
+                android:layout_height="21dp"
                 android:layout_marginTop="3dp"
                 android:src="@drawable/widget_aviso_amarillo"
                 android:contentDescription="Aviso"

@@ -753,7 +753,7 @@ public partial class InicioPage : ContentPage, IActualizableMobile
         }
 
         LblTituloTiempo.Text =
-            "TIEMPO · " + tiempo.Lugar.ToUpper(es);
+            tiempo.Lugar.ToUpper(es);
 
         if (tiempo.SinPrevision)
         {
@@ -778,8 +778,18 @@ public partial class InicioPage : ContentPage, IActualizableMobile
 
         foreach (HoraTiempo hora in visibles)
         {
-            PanelHorasTiempo.Children.Add(
-                CrearHoraTiempo(hora, destacada: esHoy && hora.Hora == horaActual));
+            View celda =
+                CrearHoraTiempo(hora, destacada: esHoy && hora.Hora == horaActual);
+
+            // Al tocar una hora con aviso, qué aviso es (sin depender del color).
+            if (hora.Avisos.Count > 0)
+            {
+                var toque = new TapGestureRecognizer();
+                toque.Tapped += async (_, _) => await DisplayAlert("Avisos de AEMET", hora.TextoAvisos, "Aceptar");
+                celda.GestureRecognizers.Add(toque);
+            }
+
+            PanelHorasTiempo.Children.Add(celda);
         }
 
         // Hoy se ve desde la hora actual (las anteriores, deslizando a la
@@ -812,7 +822,7 @@ public partial class InicioPage : ContentPage, IActualizableMobile
         // El aviso que cubre esa hora: su icono, del color del nivel.
         if (hora.Aviso is AvisoTiempo aviso)
         {
-            celda.Add(new Image { Source = $"icono_aviso_{aviso.NivelIcono}.png", WidthRequest = 16, HeightRequest = 16, HorizontalOptions = LayoutOptions.Center, Margin = new Thickness(0, 2, 0, 0) });
+            celda.Add(new Image { Source = $"icono_aviso_{aviso.NivelIcono}.png", WidthRequest = 18, HeightRequest = 22, HorizontalOptions = LayoutOptions.Center, Margin = new Thickness(0, 2, 0, 0) });
         }
 
         SemanticProperties.SetDescription(
