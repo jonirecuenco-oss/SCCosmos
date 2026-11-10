@@ -334,6 +334,11 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - Navalmoral (3004): 111 territorios y 375 asignaciones; año 2026: 84 trabajados; año 2027: 26 trabajados, 45 en curso, 12 caducados, 21 sin trabajar >1 año y 7 >2 años. Probado sobre una copia de la base; en la real aún no está importado (Visitas › Territorios › Importar PDF / Excel).
   - Prueba nueva en PruebasWindows con un S-13 inventado (42/42).
 - 10/11/2026 · Publicada la v2.1.54.
+- 10/11/2026 · v2.1.55:
+  - Correo en Android: `Email.ComposeAsync` fallaba siempre en Android 11+ («no tiene ninguna aplicación de correo»): faltaban las `<queries>` de correo (logcat: `AppsFilter … -> com.google.android.gm BLOCKED`). Añadidas: SENDTO mailto, SEND message/rfc822 y el paquete de Gmail.
+  - Acciones de la visita y el S-303 pasan por `CorreoService` (Gmail directo con la cuenta JW; si no, la app de correo), como Asambleas. `CorreoService`: copia (Cc), cuerpo HTML como texto con formato (`Html.FromHtml`) y adjuntos copiados a `cache/correo` (el FileProvider de MAUI solo comparte la caché; se borran a los 2 días).
+  - Probado en el emulador: antes salía el aviso; ahora Gmail recibe `SEND message/rfc822` con asunto y cuerpo, sin bloqueos. Los adjuntos no se pudieron probar ahí (los datos de prueba no tienen documentos ni plantilla S-302).
+- 10/11/2026 · Publicada la v2.1.55.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

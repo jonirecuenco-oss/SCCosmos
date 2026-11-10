@@ -3635,15 +3635,8 @@ public partial class VisitaDetallePage
                                     .Where(v => !string.IsNullOrWhiteSpace(v))))));
             }
 
-            var mensaje =
-                new EmailMessage
-                {
-                    Subject = TxtAsuntoS303.Text ?? "Informe S-303",
-                    Body = cuerpo,
-                    BodyFormat = EmailBodyFormat.Html
-                };
-
-            mensaje.To.Add(_vista.EmailCongregacion);
+            var copias =
+                new List<string>();
 
             if (ChkCopiaSRV.IsToggled)
             {
@@ -3653,25 +3646,27 @@ public partial class VisitaDetallePage
                             "EmailSRV",
                             "srv.es@jwpub.org"));
 
-                if (!string.IsNullOrWhiteSpace(emailSrv))
-                {
-                    mensaje.Cc.Add(emailSrv);
-                }
+                copias.Add(emailSrv ?? "");
             }
 
-            mensaje.Attachments.Add(
-                new EmailAttachment(ruta));
+            var adjuntos =
+                new List<string> { ruta };
 
             // Carta de nombramientos en PDF (solo si hay aprobaciones),
             // ya generada antes de tocar JW Hub.
             if (rutaCarta is not null)
             {
-                mensaje.Attachments.Add(
-                    new EmailAttachment(
-                        rutaCarta));
+                adjuntos.Add(rutaCarta);
             }
 
-            await Email.Default.ComposeAsync(mensaje);
+            // Gmail (con la cuenta JW) o, si no está, la app de correo del
+            // dispositivo, como en el resto de la app.
+            await Services.CorreoService.ComponerAsync(
+                TxtAsuntoS303.Text ?? "Informe S-303",
+                cuerpo,
+                new List<string> { _vista.EmailCongregacion ?? "" },
+                adjuntos,
+                copias);
         }
         catch (FeatureNotSupportedException)
         {

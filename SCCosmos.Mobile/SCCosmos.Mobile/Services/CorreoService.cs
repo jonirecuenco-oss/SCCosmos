@@ -24,7 +24,8 @@ public static class CorreoService
         string asunto,
         string cuerpoHtml,
         IList<string>? destinatarios = null,
-        IList<string>? adjuntos = null)
+        IList<string>? adjuntos = null,
+        IList<string>? copias = null)
     {
         var mensaje =
             new EmailMessage
@@ -41,6 +42,17 @@ public static class CorreoService
                 if (!string.IsNullOrWhiteSpace(correo))
                 {
                     mensaje.To.Add(correo);
+                }
+            }
+        }
+
+        if (copias is not null)
+        {
+            foreach (string correo in copias)
+            {
+                if (!string.IsNullOrWhiteSpace(correo))
+                {
+                    mensaje.Cc.Add(correo);
                 }
             }
         }
@@ -67,7 +79,8 @@ public static class CorreoService
             if (AbrirConGmail(
                     mensaje,
                     destinatarios,
-                    adjuntos))
+                    adjuntos,
+                    copias))
             {
                 return true;
             }
@@ -112,8 +125,11 @@ public static class CorreoService
     private static bool AbrirConGmail(
         EmailMessage mensaje,
         IList<string>? destinatarios,
-        IList<string>? adjuntos)
+        IList<string>? adjuntos,
+        IList<string>? copias)
     {
+        BorrarCopiasViejas();
+
         try
         {
             var contexto =
@@ -148,13 +164,29 @@ public static class CorreoService
                     correos.ToArray());
             }
 
+            string[] conCopia =
+                (copias ?? new List<string>())
+                    .Where(c => !string.IsNullOrWhiteSpace(c))
+                    .ToArray();
+
+            if (conCopia.Length > 0)
+            {
+                intencion.PutExtra(
+                    Android.Content.Intent.ExtraCc,
+                    conCopia);
+            }
+
             intencion.PutExtra(
                 Android.Content.Intent.ExtraSubject,
                 mensaje.Subject ?? "");
 
+            // El cuerpo es HTML: va como texto con formato para que Gmail no
+            // enseñe las etiquetas (<br>, <b>…).
             intencion.PutExtra(
                 Android.Content.Intent.ExtraText,
-                mensaje.Body ?? "");
+                Android.Text.Html.FromHtml(
+                    mensaje.Body ?? "",
+                    Android.Text.FromHtmlOptions.ModeLegacy));
 
             intencion.PutExtra(
                 "android.intent.extra.HTML_TEXT",
@@ -166,6 +198,14 @@ public static class CorreoService
             string autoridad =
                 contexto.PackageName + ".fileProvider";
 
+            // El proveedor de archivos solo comparte la caché: cada adjunto se
+            // copia ahí (con su nombre) antes de dárselo a Gmail.
+            string carpeta =
+                Path.Combine(
+                    FileSystem.CacheDirectory,
+                    "correo",
+                    Guid.NewGuid().ToString("N"));
+
             foreach (string ruta in
                      adjuntos ?? new List<string>())
             {
@@ -175,12 +215,21 @@ public static class CorreoService
                     continue;
                 }
 
+                Directory.CreateDirectory(carpeta);
+
+                string copia =
+                    Path.Combine(
+                        carpeta,
+                        Path.GetFileName(ruta));
+
+                File.Copy(ruta, copia, true);
+
                 uris.Add(
                     AndroidX.Core.Content.FileProvider
                         .GetUriForFile(
                             contexto,
                             autoridad,
-                            new Java.IO.File(ruta)));
+                            new Java.IO.File(copia)));
             }
 
             if (uris.Count == 1)
@@ -219,6 +268,35 @@ public static class CorreoService
             // Sin Gmail (o sin permisos para adjuntar): se sigue por el
             // camino habitual.
             return false;
+        }
+    }
+
+
+    // Las copias de los adjuntos de hace más de dos días ya no hacen falta.
+    private static void BorrarCopiasViejas()
+    {
+        try
+        {
+            string carpeta =
+                Path.Combine(
+                    FileSystem.CacheDirectory,
+                    "correo");
+
+            if (!Directory.Exists(carpeta))
+            {
+                return;
+            }
+
+            foreach (string envio in Directory.GetDirectories(carpeta))
+            {
+                if (DateTime.UtcNow - Directory.GetCreationTimeUtc(envio) > TimeSpan.FromDays(2))
+                {
+                    Directory.Delete(envio, true);
+                }
+            }
+        }
+        catch
+        {
         }
     }
 #endif

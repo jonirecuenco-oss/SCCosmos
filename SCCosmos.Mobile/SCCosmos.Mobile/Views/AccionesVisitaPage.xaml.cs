@@ -657,29 +657,15 @@ public partial class AccionesVisitaPage : ContentPage
                     "[Congregacion]",
                     _semana.Congregacion ?? "");
 
-        var mensaje =
-            new EmailMessage
-            {
-                Subject = asunto,
-                Body = cuerpo,
-                BodyFormat =
-                    EmailBodyFormat.Html
-            };
+        var destinatarios =
+            new List<string>();
 
         if (destinatariosOverride is not null
             &&
             destinatariosOverride.Count > 0)
         {
-            foreach (string correo in
-                     destinatariosOverride)
-            {
-                if (!string.IsNullOrWhiteSpace(
-                        correo))
-                {
-                    mensaje.To.Add(
-                        correo);
-                }
-            }
+            destinatarios.AddRange(
+                destinatariosOverride);
         }
         else
         {
@@ -689,54 +675,25 @@ public partial class AccionesVisitaPage : ContentPage
                     ? ObtenerCorreoCongregacion()
                     : destinatarioOverride;
 
-            if (!string.IsNullOrWhiteSpace(
-                    destino))
-            {
-                mensaje.To.Add(
-                    destino);
-            }
+            destinatarios.Add(
+                destino ?? "");
         }
 
-        if (adjuntos is not null)
-        {
-            foreach (string ruta in adjuntos)
-            {
-                if (File.Exists(ruta))
-                {
-                    mensaje.Attachments.Add(
-                        new EmailAttachment(
-                            ruta));
-                }
-            }
-        }
+        // Como en Asambleas: Gmail (con la cuenta JW) o, si no está, la app
+        // de correo del dispositivo. El servicio descarta lo vacío y avisa
+        // si no se puede abrir.
+        bool abierto =
+            await Services.CorreoService.ComponerAsync(
+                asunto,
+                cuerpo,
+                destinatarios,
+                adjuntos);
 
-        try
+        if (abierto && esS302)
         {
-            await Email.Default.ComposeAsync(
-                mensaje);
-
-            if (esS302)
-            {
-                LblEstado.Text =
-                    "Correo S-302 preparado. Recuerda marcar " +
-                    "«S-302 enviado» si lo has enviado.";
-            }
-        }
-        catch (FeatureNotSupportedException)
-        {
-            await DisplayAlert(
-                "Correo",
-                "Este dispositivo no tiene ninguna aplicación " +
-                "de correo configurada.",
-                "Aceptar");
-        }
-        catch (Exception ex)
-        {
-            await DisplayAlert(
-                "Correo",
-                "No se pudo abrir la aplicación de correo: " +
-                ex.Message,
-                "Aceptar");
+            LblEstado.Text =
+                "Correo S-302 preparado. Recuerda marcar " +
+                "«S-302 enviado» si lo has enviado.";
         }
     }
 
