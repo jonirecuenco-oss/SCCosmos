@@ -327,6 +327,11 @@ namespace SCCosmos
 
                 // Comprobación de versión nueva (en segundo plano).
                 _ = ComprobarActualizacionAlArrancarAsync();
+
+                // Con la app abierta varios días se vuelve a mirar cada 6 horas
+                // (solo el botón de arriba, sin preguntar).
+                _relojActualizacion.Tick += (s2, e2) => _ = ComprobarActualizacionDeNuevoAsync();
+                _relojActualizacion.Start();
             };
 
             this.Activated += (s, e) => VerificarAlertas();
@@ -362,12 +367,13 @@ namespace SCCosmos
                 var version =
                     resultado.Version;
 
+                // Arriba, junto a las alertas, el botón para actualizar ya.
+                MostrarBotonActualizar(version);
+
                 if (ActualizacionPc.AutoActiva)
                 {
-                    // Se descarga en silencio y se aplica al cerrar.
-                    await ActualizacionPc
-                        .PrepararAsync(
-                            version);
+                    // Se descarga en silencio y se aplica al cerrar (o al pulsar el botón).
+                    await PrepararEnSilencioAsync(version);
 
                     return;
                 }
@@ -411,6 +417,125 @@ namespace SCCosmos
             }
             catch
             {
+            }
+        }
+
+
+        private readonly DispatcherTimer _relojActualizacion =
+            new DispatcherTimer { Interval = TimeSpan.FromHours(6) };
+
+        // La versión nueva que ofrece el botón de arriba, y la ya descargada.
+        private SCCosmos.Sincro.VersionPublicada _versionNueva;
+
+        private string _versionPreparada = "";
+
+
+        private async Task ComprobarActualizacionDeNuevoAsync()
+        {
+            try
+            {
+                var resultado =
+                    await ActualizacionPc.ComprobarAsync();
+
+                if (!ActualizacionPc.HayNueva(resultado))
+                {
+                    return;
+                }
+
+                MostrarBotonActualizar(resultado.Version);
+
+                if (ActualizacionPc.AutoActiva)
+                {
+                    await PrepararEnSilencioAsync(resultado.Version);
+                }
+            }
+            catch
+            {
+            }
+        }
+
+
+        private async Task PrepararEnSilencioAsync(SCCosmos.Sincro.VersionPublicada version)
+        {
+            if (_versionPreparada == version.Numero
+                && ActualizacionPc.HayPreparada)
+            {
+                return;
+            }
+
+            if (await ActualizacionPc.PrepararAsync(version))
+            {
+                _versionPreparada = version.Numero;
+            }
+        }
+
+
+        private void MostrarBotonActualizar(SCCosmos.Sincro.VersionPublicada version)
+        {
+            _versionNueva = version;
+
+            BtnActualizar.Content = "Actualizar a v" + version.Numero;
+            BtnActualizar.ToolTip =
+                "Hay una versión nueva de SCCosmos. Al pulsar se envía lo pendiente, "
+                + "la app se cierra, se instala y se vuelve a abrir.";
+            BtnActualizar.Visibility = Visibility.Visible;
+        }
+
+
+        // Descarga la versión nueva (si no lo está ya) y cierra: al cerrar se envía
+        // lo pendiente de sincronizar, se copia la versión nueva y se vuelve a abrir.
+        private async void BtnActualizar_Click(object sender, RoutedEventArgs e)
+        {
+            var version = _versionNueva;
+
+            if (version == null)
+            {
+                return;
+            }
+
+            BtnActualizar.IsEnabled = false;
+
+            try
+            {
+                if (!(_versionPreparada == version.Numero && ActualizacionPc.HayPreparada))
+                {
+                    BtnActualizar.Content = "Descargando…";
+
+                    bool preparada =
+                        await ActualizacionPc.PrepararAsync(
+                            version,
+                            progreso =>
+                                Dispatcher.Invoke(() =>
+                                    BtnActualizar.Content = "Descargando… " + progreso.ToString("P0")));
+
+                    if (!preparada)
+                    {
+                        System.Windows.MessageBox.Show(
+                            "No se pudo preparar la actualización.",
+                            "Actualizar SCCosmos");
+
+                        MostrarBotonActualizar(version);
+                        return;
+                    }
+
+                    _versionPreparada = version.Numero;
+                }
+
+                BtnActualizar.Content = "Actualizando…";
+
+                Close();
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show(
+                    "No se pudo actualizar: " + ex.Message,
+                    "Actualizar SCCosmos");
+
+                MostrarBotonActualizar(version);
+            }
+            finally
+            {
+                BtnActualizar.IsEnabled = true;
             }
         }
 

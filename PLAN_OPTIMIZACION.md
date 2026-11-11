@@ -366,6 +366,11 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - Tiempo de Circuito: fila con el pueblo del salón y los suyos (icono, máx/mín del día elegido y aviso); al tocar uno, su tiempo. Botón «Pueblos» (Android `PueblosTerritorioPage`; Windows `PueblosTerritorioWindow`). Avisos rojos del móvil: también sus pueblos, «Navalmoral de la Mata (Talayuela)» si no llega al salón.
   - Probado: 57 comprobaciones (7 nuevas); Windows con una copia de la base (borrada); Android en el emulador (está en modo avión: sin AEMET ni mapa, se probó el camino sin coordenadas); OpenStreetMap desde el PC con el código de la app. La limpieza del emulador con `sync` sí persistió.
 - 10/11/2026 · Publicada la v2.1.60.
+- 11/11/2026 · v2.1.61:
+  - Windows: botón «Actualizar a vX» en la barra de título, junto a la campana, cuando hay versión nueva en GitHub. Al pulsarlo se descarga si hace falta y se cierra por el camino normal (`MainWindow_Closing`: envía lo pendiente, aplica la preparada y vuelve a abrir). Se mira al arrancar (como antes, con su pregunta si la automática está desactivada) y cada 6 h con la app abierta (solo el botón; con la automática se prepara en silencio).
+  - El PC del usuario tiene la actualización automática activada (`actualizaciones.json` = {"Auto":true}): la nueva se aplicaba al cerrar sin avisar, por eso no veía nada.
+  - No se probó abriendo la ventana principal (arrancaría la sincronización con la identidad real): compila sin avisos y 57/57.
+- 11/11/2026 · Publicada la v2.1.61.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

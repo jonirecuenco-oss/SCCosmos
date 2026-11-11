@@ -40,10 +40,17 @@
             <ui:TitleBar.Header>
                 <!-- LA CLAVE ESTÁ AQUÍ: HorizontalAlignment="Right" lo empuja al fondo a la derecha -->
                 <Grid HorizontalAlignment="Right" Margin="0,0,10,0">
-                    <ui:Button x:Name="BtnAlertas" Icon="{ui:SymbolIcon Alert24}" 
-                               Appearance="Transparent" 
-                               Cursor="Hand" Click="BtnAlertas_Click" MouseEnter="BtnAlertas_MouseEnter"
-                               ToolTip="Notificaciones y Alertas" Padding="8,6"/>
+                    <StackPanel Orientation="Horizontal">
+                        <!-- Versión nueva: solo se ve cuando la hay (al pulsar, se instala y se vuelve a abrir) -->
+                        <ui:Button x:Name="BtnActualizar" Visibility="Collapsed"
+                                   Icon="{ui:SymbolIcon ArrowSync24}" Appearance="Primary"
+                                   Cursor="Hand" Click="BtnActualizar_Click"
+                                   Padding="10,4" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                        <ui:Button x:Name="BtnAlertas" Icon="{ui:SymbolIcon Alert24}" 
+                                   Appearance="Transparent" 
+                                   Cursor="Hand" Click="BtnAlertas_Click" MouseEnter="BtnAlertas_MouseEnter"
+                                   ToolTip="Notificaciones y Alertas" Padding="8,6"/>
+                    </StackPanel>
 
 
 
