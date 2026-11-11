@@ -74,6 +74,8 @@ public class SccosmosWidgetFactory
         public List<HoraTiempo>? Horas;
         public bool TiempoAntes;
         public bool TiempoDespues;
+        // El tiempo es de hoy: su hora actual va resaltada (como en Inicio).
+        public bool EsHoy;
     }
 
 
@@ -258,7 +260,7 @@ public class SccosmosWidgetFactory
 
             // ---- PREDICACIÓN (mes y año en vigor): abajo del todo ----
 
-            (string Titulo, string Texto) predicacion =
+            var predicacion =
                 SccosmosWidgetProvider
                     .ObtenerPredicacionWidget();
 
@@ -269,10 +271,13 @@ public class SccosmosWidgetFactory
                 Color = "#9CC3F5"
             });
 
+            // Debajo de las horas, si se va con atraso (en naranja) o al día.
             _filas.Add(new Fila
             {
                 Tipo = TipoPredicacion,
-                Texto = predicacion.Texto
+                Texto = predicacion.Texto,
+                Secundaria = predicacion.Estado,
+                Color = predicacion.Atraso ? "#FFB74D" : "#A7AEB8"
             });
 
         }
@@ -324,7 +329,8 @@ public class SccosmosWidgetFactory
                 Tipo = TipoTiempo,
                 Horas = horas,
                 TiempoAntes = antes,
-                TiempoDespues = despues
+                TiempoDespues = despues,
+                EsHoy = tiempo.Fecha == DateTime.Today
             });
         }
         catch
@@ -601,6 +607,13 @@ public class SccosmosWidgetFactory
 
                         HoraTiempo hora = lista[i];
 
+                        // La hora actual, resaltada como en Inicio (las demás, sin fondo:
+                        // la lista reutiliza las vistas).
+                        vistas.SetInt(
+                            celdas[i],
+                            "setBackgroundResource",
+                            fila.EsHoy && hora.Hora == DateTime.Now.Hour ? Resource.Drawable.widget_celda_actual : 0);
+
                         vistas.SetTextViewText(horas[i], hora.Etiqueta);
                         vistas.SetImageViewResource(iconos[i], IconoWidget(hora.Icono));
                         vistas.SetTextViewText(temperaturas[i], hora.Temperatura is int t ? $"{t}°" : "");
@@ -676,6 +689,21 @@ public class SccosmosWidgetFactory
                     vistas.SetTextViewText(
                         Resource.Id.fila_predicacion_texto,
                         fila.Texto);
+
+                    vistas.SetTextViewText(
+                        Resource.Id.fila_predicacion_estado,
+                        fila.Secundaria);
+
+                    vistas.SetViewVisibility(
+                        Resource.Id.fila_predicacion_estado,
+                        string.IsNullOrWhiteSpace(fila.Secundaria) ? ViewStates.Gone : ViewStates.Visible);
+
+                    if (!string.IsNullOrWhiteSpace(fila.Color))
+                    {
+                        vistas.SetTextColor(
+                            Resource.Id.fila_predicacion_estado,
+                            global::Android.Graphics.Color.ParseColor(fila.Color));
+                    }
 
                     SccosmosWidgetProvider.PonerClicItem(
                         vistas,

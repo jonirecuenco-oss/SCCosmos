@@ -365,6 +365,9 @@ namespace SCCosmos
             TxtApellido.Text = DatabaseHelper.ObtenerConfiguracion("ApellidoSC", "");
             TxtNombreEsposa.Text = DatabaseHelper.ObtenerConfiguracion("NombreEsposaSC", "");
             TxtApellidoEsposa.Text = DatabaseHelper.ObtenerConfiguracion("ApellidoEsposaSC", "");
+            FechaNacimientoEsposa.SelectedDate =
+                SCCosmos.Sincro.RequisitoHoras.LeerNacimiento(
+                    DatabaseHelper.ObtenerConfiguracion(SCCosmos.Sincro.RequisitoHoras.ClaveNacimientoEsposa, ""));
             TxtNumCircuito.Text = DatabaseHelper.ObtenerConfiguracion("NumeroCircuito", "");
             TxtRutaArchivoCircuito.Text = DatabaseHelper.ObtenerConfiguracion("RutaArchivoCircuito", "");
 
@@ -409,6 +412,17 @@ namespace SCCosmos
                 DatabaseHelper.GuardarConfiguracion("ApellidoSC", TxtApellido.Text.Trim());
                 DatabaseHelper.GuardarConfiguracion("NombreEsposaSC", TxtNombreEsposa.Text.Trim());
                 DatabaseHelper.GuardarConfiguracion("ApellidoEsposaSC", TxtApellidoEsposa.Text.Trim());
+
+                // Sin fecha no se crea la clave (no viaja un cambio vacío).
+                string nacimiento =
+                    SCCosmos.Sincro.RequisitoHoras.EscribirNacimiento(FechaNacimientoEsposa.SelectedDate);
+
+                if (nacimiento.Length > 0
+                    || DatabaseHelper.ObtenerConfiguracion(SCCosmos.Sincro.RequisitoHoras.ClaveNacimientoEsposa, "").Length > 0)
+                {
+                    DatabaseHelper.GuardarConfiguracion(SCCosmos.Sincro.RequisitoHoras.ClaveNacimientoEsposa, nacimiento);
+                }
+
                 DatabaseHelper.GuardarConfiguracion("NumeroCircuito", TxtNumCircuito.Text.Trim());
                 DatabaseHelper.GuardarConfiguracion("RutaArchivoCircuito", TxtRutaArchivoCircuito.Text.Trim());
 
@@ -463,6 +477,8 @@ namespace SCCosmos
             {
                 campo.LostFocus += (s, e) => Autoguardar();
             }
+
+            FechaNacimientoEsposa.SelectedDateChanged += (s, e) => Autoguardar();
 
             ToggleDescargas.Checked += (s, e) => Autoguardar();
             ToggleDescargas.Unchecked += (s, e) => Autoguardar();

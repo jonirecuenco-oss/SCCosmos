@@ -102,6 +102,15 @@
 
                                 
                             </Grid>
+
+                            <!-- Para el requisito de horas de la esposa (40 h al mes desde los 40 años) -->
+                            <StackPanel Orientation="Horizontal" Margin="0,15,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="Nacimiento esposa (opcional)" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+                                    <DatePicker x:Name="FechaNacimientoEsposa" Width="180"/>
+                                </StackPanel>
+                                <TextBlock Text="Para su requisito de horas: 50 h al mes; 40 h desde los 40 años." Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="12" VerticalAlignment="Bottom" Margin="15,0,0,6" TextWrapping="Wrap"/>
+                            </StackPanel>
                         </StackPanel>
                     </Grid>
                 </ui:Card>

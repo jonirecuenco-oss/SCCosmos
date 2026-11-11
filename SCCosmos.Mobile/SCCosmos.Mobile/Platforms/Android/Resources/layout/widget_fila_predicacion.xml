@@ -16,16 +16,35 @@
         android:paddingLeft="12dp"
         android:paddingRight="6dp">
 
-        <TextView
-            android:id="@+id/fila_predicacion_texto"
+        <!-- Horas y CBs del mes y, debajo, si se va con atraso o al día -->
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:orientation="vertical"
             android:paddingTop="8dp"
-            android:paddingBottom="8dp"
-            android:text=""
-            android:textColor="#F2F4F7"
-            android:textSize="15sp" />
+            android:paddingBottom="8dp">
+
+            <TextView
+                android:id="@+id/fila_predicacion_texto"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="#F2F4F7"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/fila_predicacion_estado"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text=""
+                android:textColor="#A7AEB8"
+                android:textSize="12sp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:visibility="gone" />
+        </LinearLayout>
 
         <ImageView
             android:id="@+id/fila_predicacion_mas"

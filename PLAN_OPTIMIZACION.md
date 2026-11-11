@@ -371,6 +371,12 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - El PC del usuario tiene la actualización automática activada (`actualizaciones.json` = {"Auto":true}): la nueva se aplicaba al cerrar sin avisar, por eso no veía nada.
   - No se probó abriendo la ventana principal (arrancaría la sincronización con la identidad real): compila sin avisos y 57/57.
 - 11/11/2026 · Publicada la v2.1.61.
+- 11/11/2026 · v2.1.62:
+  - Atraso de horas en el mes (decisión del usuario: mes a mes): `SincroCompartido/RequisitoHoras.cs`. Requisito 50 h; 40 h la esposa si a final de ese mes tiene 40 años o más (Configuracion «FechaNacimientoEsposa», sincronizada; sin fecha no se crea la clave). Lo que toca hasta hoy = requisito × días terminados / días del mes (hoy no pide su parte). Textos: «Vas X h por detrás · faltan Y h» (naranja), «Vas al día · faltan Y h», «Requisito cumplido (50 h)»; meses pasados «Cumplido (50 h)» / «Faltaron X h para las 50».
+  - En la tarjeta de predicación de Windows y Android (bajo el mes) y en el widget (segunda línea de la fila de predicación). Fecha de nacimiento de la esposa en Configuración (Windows: tarjeta «Datos del circuito»; Android: con «Quitar»).
+  - Widget: la hora actual del tiempo, con fondo `widget_celda_actual` (#2E343D: el de Inicio, #1E2228, no se ve sobre la tarjeta del widget). No se pudo ver en el emulador (modo avión y sin municipio en su base); la predicación del widget sí (se añadió el widget a su pantalla de inicio).
+  - 69/69 comprobaciones (12 nuevas). Windows visto con una copia de la base (borrada).
+- 11/11/2026 · Publicada la v2.1.62.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

@@ -1561,9 +1561,10 @@ public class SccosmosWidgetProvider : AppWidgetProvider
 
 
     /// <summary>
-    /// Título y texto de la predicación en vigor: el mes actual con su año.
+    /// Título y texto de la predicación en vigor (el mes actual con su año) y
+    /// si se va con atraso respecto al requisito del mes.
     /// </summary>
-    internal static (string Titulo, string Texto)
+    internal static (string Titulo, string Texto, string Estado, bool Atraso)
         ObtenerPredicacionWidget()
     {
         try
@@ -1609,11 +1610,22 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                 + cbsMes.ToString()
                 + " CBs";
 
-            return (titulo, texto);
+            // El requisito del mes (50 h; 40 h la esposa desde los 40 años).
+            int requisito =
+                SCCosmos.Sincro.RequisitoHoras.Mensual(
+                    usuario == "Esposa",
+                    SCCosmos.Sincro.RequisitoHoras.LeerNacimiento(
+                        DatabaseHelper.ObtenerConfiguracion(SCCosmos.Sincro.RequisitoHoras.ClaveNacimientoEsposa, "")),
+                    hoy);
+
+            var estado =
+                SCCosmos.Sincro.RequisitoHoras.Estado(horasMes, requisito, hoy, hoy);
+
+            return (titulo, texto, estado.Texto, estado.Atraso);
         }
         catch
         {
-            return ("PREDICACIÓN", "0 h  ·  0 CBs");
+            return ("PREDICACIÓN", "0 h  ·  0 CBs", "", false);
         }
     }
 }

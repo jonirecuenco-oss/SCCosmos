@@ -63,6 +63,30 @@
                            FontSize="12"/>
                     <Entry x:Name="TxtApellidoEsposaSC" TextColor="{StaticResource TextoPrincipal}"/>
 
+                    <!-- Para el requisito de horas de la esposa (40 h al mes desde los 40 años) -->
+                    <Label Text="Fecha de nacimiento de la esposa (opcional)"
+                           TextColor="{StaticResource TextoTerciario}"
+                           FontSize="12"/>
+                    <Grid ColumnDefinitions="*,Auto"
+                          ColumnSpacing="8">
+                        <DatePicker x:Name="FechaNacimientoEsposa"
+                                    Format="dd/MM/yyyy"
+                                    TextColor="{StaticResource TextoPrincipal}"/>
+                        <Button Grid.Column="1"
+                                Text="Quitar"
+                                FontSize="12"
+                                HeightRequest="36"
+                                Padding="12,0"
+                                CornerRadius="8"
+                                BackgroundColor="{StaticResource SuperficieAlta}"
+                                TextColor="{StaticResource TextoPrincipal}"
+                                VerticalOptions="Center"
+                                Clicked="BtnQuitarNacimiento_Clicked"/>
+                    </Grid>
+                    <Label Text="Para su requisito de horas: 50 h al mes; 40 h desde los 40 años."
+                           TextColor="{StaticResource TextoTerciario}"
+                           FontSize="11"/>
+
                     <VerticalStackLayout x:Name="PanelDatosSCFinal"
                                          Spacing="10">
 

@@ -504,6 +504,24 @@ namespace SCCosmos
                 // flecha de avanzar se apaga.
                 BtnMesSiguiente.IsEnabled =
                     diferencia > 0;
+
+                // El requisito del mes (50 h; 40 h la esposa desde los 40 años) y si
+                // se va con atraso o, en meses pasados, si se cumplió.
+                int requisito =
+                    SCCosmos.Sincro.RequisitoHoras.Mensual(
+                        usuario == "Esposa",
+                        SCCosmos.Sincro.RequisitoHoras.LeerNacimiento(
+                            DatabaseHelper.ObtenerConfiguracion(SCCosmos.Sincro.RequisitoHoras.ClaveNacimientoEsposa, "")),
+                        _mesPredicacion);
+
+                var estado =
+                    SCCosmos.Sincro.RequisitoHoras.Estado(horas, requisito, _mesPredicacion, DateTime.Today);
+
+                TxtEstadoHoras.Text = estado.Texto;
+                TxtEstadoHoras.Foreground =
+                    estado.Atraso
+                        ? Pincel("#FFB74D")
+                        : (System.Windows.Media.Brush)FindResource("TextFillColorSecondaryBrush");
             }
             catch
             {

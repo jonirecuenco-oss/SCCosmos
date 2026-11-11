@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- La hora actual en el tiempo del widget (como en Inicio): algo más clara que su tarjeta -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#2E343D" />
+    <corners android:radius="10dp" />
+</shape>

@@ -719,6 +719,10 @@ public partial class ConfiguracionPage : ContentPage
             TxtApellidoEsposaSC.Text =
                 DatabaseHelper.ObtenerConfiguracion("ApellidoEsposaSC", "");
 
+            FechaNacimientoEsposa.Date =
+                SCCosmos.Sincro.RequisitoHoras.LeerNacimiento(
+                    DatabaseHelper.ObtenerConfiguracion(SCCosmos.Sincro.RequisitoHoras.ClaveNacimientoEsposa, ""));
+
             TxtNumCircuito.Text =
                 DatabaseHelper.ObtenerConfiguracion("NumeroCircuito", "");
 
@@ -770,6 +774,18 @@ public partial class ConfiguracionPage : ContentPage
                 "ApellidoEsposaSC",
                 TxtApellidoEsposaSC.Text?.Trim() ?? "");
 
+            // Sin fecha no se crea la clave (no viaja un cambio vacío).
+            string nacimiento =
+                SCCosmos.Sincro.RequisitoHoras.EscribirNacimiento(FechaNacimientoEsposa.Date);
+
+            if (nacimiento.Length > 0
+                || DatabaseHelper.ObtenerConfiguracion(SCCosmos.Sincro.RequisitoHoras.ClaveNacimientoEsposa, "").Length > 0)
+            {
+                DatabaseHelper.GuardarConfiguracion(
+                    SCCosmos.Sincro.RequisitoHoras.ClaveNacimientoEsposa,
+                    nacimiento);
+            }
+
             DatabaseHelper.GuardarConfiguracion(
                 "NumeroCircuito",
                 TxtNumCircuito.Text?.Trim() ?? "");
@@ -795,6 +811,17 @@ public partial class ConfiguracionPage : ContentPage
     }
 
 
+    // Deja sin fecha de nacimiento a la esposa (requisito de 50 h).
+    private void BtnQuitarNacimiento_Clicked(
+        object sender,
+        EventArgs e)
+    {
+        FechaNacimientoEsposa.Date = null;
+
+        GuardarDatosGlobales();
+    }
+
+
     // =========================================================
     // AUTOGUARDADO (SIN BOTONES)
     // =========================================================
@@ -817,6 +844,9 @@ public partial class ConfiguracionPage : ContentPage
             campo.Unfocused +=
                 (s, e) => GuardarDatosGlobales();
         }
+
+        FechaNacimientoEsposa.DateSelected +=
+            (s, e) => GuardarDatosGlobales();
 
         TxtNombreSincro.Unfocused +=
             (s, e) => AplicarSincroAutomatico();

@@ -516,6 +516,13 @@
                             Text=""
                             TextColor="{StaticResource TextoTerciario}"
                             FontSize="12"/>
+
+                        <!-- Si se va con atraso respecto al requisito del mes (o si se cumplió) -->
+                        <Label
+                            x:Name="LblEstadoHoras"
+                            Text=""
+                            FontSize="12"
+                            Margin="0,2,0,0"/>
                     </VerticalStackLayout>
 
                     <!-- Editar las horas y CBs de un día del mes que se está viendo -->

@@ -45,6 +45,7 @@ internal static class Programa
             TiempoHorasPasadas();
             TiempoTercerDia();
             PueblosDelTerritorio();
+            RequisitoDeHoras();
             Ver("sin motor de sincronización", SincronizacionRed.Config is null, true);
             string log = Path.Combine(carpeta, "errores.log");
             Ver("sin errores anotados", File.Exists(log) ? File.ReadLines(log).First() : "", "");
@@ -302,6 +303,27 @@ internal static class Programa
 
         var ventana = new PueblosTerritorioWindow(new Congregacion { Codigo = "778", Nombre = "Almendralejo", Municipio = "Almendralejo", Provincia = "Badajoz" });
         Ver("Pueblos: la ventana dice el del salón", ((TextBlock)ventana.FindName("TxtSalon")).Text, "El del salón: Almendralejo.");
+    }
+
+    // El requisito de horas (50; 40 la esposa de 40 años o más) y si se va con atraso en el mes.
+    private static void RequisitoDeHoras()
+    {
+        var nov = new DateTime(2026, 11, 1);
+        Ver("Horas: requisito del SC", RequisitoHoras.Mensual(false, new DateTime(1970, 1, 1), nov), 50);
+        Ver("Horas: esposa sin fecha", RequisitoHoras.Mensual(true, null, nov), 50);
+        Ver("Horas: esposa de 36", RequisitoHoras.Mensual(true, new DateTime(1990, 1, 1), nov), 50);
+        Ver("Horas: esposa que cumple 40 ese mes", RequisitoHoras.Mensual(true, new DateTime(1986, 11, 20), nov), 40);
+        Ver("Horas: esposa que los cumple el mes siguiente", RequisitoHoras.Mensual(true, new DateTime(1986, 12, 1), nov), 50);
+
+        // El 11 de noviembre hay 10 días terminados de 30: tocan 16,7 h.
+        var hoy = new DateTime(2026, 11, 11);
+        Ver("Horas: por detrás", RequisitoHoras.Estado(15, 50, nov, hoy), ("Vas 1,7 h por detrás · faltan 35 h", true));
+        Ver("Horas: al día", RequisitoHoras.Estado(20, 50, nov, hoy), ("Vas al día · faltan 30 h", false));
+        Ver("Horas: el día 1 no va por detrás", RequisitoHoras.Estado(0, 50, nov, nov).Atraso, false);
+        Ver("Horas: cumplido este mes", RequisitoHoras.Estado(50, 50, nov, hoy).Texto, "Requisito cumplido (50 h)");
+        Ver("Horas: mes pasado con falta", RequisitoHoras.Estado(35, 50, new DateTime(2026, 10, 1), hoy), ("Faltaron 15 h para las 50", true));
+        Ver("Horas: mes pasado cumplido", RequisitoHoras.Estado(52.5, 50, new DateTime(2026, 10, 1), hoy).Texto, "Cumplido (50 h)");
+        Ver("Horas: fecha de nacimiento, ida y vuelta", RequisitoHoras.EscribirNacimiento(RequisitoHoras.LeerNacimiento("1986-11-20")), "1986-11-20");
     }
 
     private static void Ver(string que, object obtenido, object esperado)
