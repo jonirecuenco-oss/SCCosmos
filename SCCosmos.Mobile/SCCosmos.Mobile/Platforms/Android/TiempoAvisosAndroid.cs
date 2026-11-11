@@ -109,7 +109,9 @@ public static class TiempoAvisosAndroid
         IEnumerable<(string Clave, string Titulo, string Texto, string Detalle, DateTimeOffset Fin, string Firma)> avisos)
     {
         // Como los avisos de tareas: la esposa del SC no recibe notificaciones.
-        if (!PerfilAccesoService.EsHombre)
+        // Tampoco si las alertas meteorológicas están desactivadas (página Avisos).
+        if (!PerfilAccesoService.EsHombre
+            || !SCCosmos.Sincro.AjustesAvisos.Leer(clave => SCCosmos.Mobile.Data.DatabaseHelper.ObtenerConfiguracion(clave, "")).TiempoActivo)
         {
             return;
         }

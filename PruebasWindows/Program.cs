@@ -46,6 +46,7 @@ internal static class Programa
             TiempoTercerDia();
             PueblosDelTerritorio();
             RequisitoDeHoras();
+            AjustesDeAvisos();
             Ver("sin motor de sincronización", SincronizacionRed.Config is null, true);
             string log = Path.Combine(carpeta, "errores.log");
             Ver("sin errores anotados", File.Exists(log) ? File.ReadLines(log).First() : "", "");
@@ -324,6 +325,24 @@ internal static class Programa
         Ver("Horas: mes pasado con falta", RequisitoHoras.Estado(35, 50, new DateTime(2026, 10, 1), hoy), ("Faltaron 15 h para las 50", true));
         Ver("Horas: mes pasado cumplido", RequisitoHoras.Estado(52.5, 50, new DateTime(2026, 10, 1), hoy).Texto, "Cumplido (50 h)");
         Ver("Horas: fecha de nacimiento, ida y vuelta", RequisitoHoras.EscribirNacimiento(RequisitoHoras.LeerNacimiento("1986-11-20")), "1986-11-20");
+    }
+
+    // Ajustes de la página Avisos: sin nada guardado, lo de siempre; ida y vuelta; el día de quedar con el CCA.
+    private static void AjustesDeAvisos()
+    {
+        var vacio = AjustesAvisos.Leer(_ => "");
+        Ver("Avisos: sin nada guardado, como siempre", $"{vacio.AlertaActiva("S302")}|{vacio.DiasAlerta("S302")}|{vacio.DiasAlerta("Documentacion")}|{vacio.DiasAlerta("S303")}|{vacio.TiempoActivo}|{vacio.CcaActivo}|{vacio.S303Activo}", "True|90|42|14|True|False|False");
+
+        var ajustes = new AjustesAvisos { CcaActivo = true, CcaDia = DayOfWeek.Monday, CcaHora = new TimeSpan(9, 30, 0), S303Activo = true, S303Hora = new TimeSpan(21, 0, 0), TiempoActivo = false };
+        ajustes.PonerAlerta("Documentacion", false, 30);
+        var guardado = ajustes.Valores().ToDictionary(v => v.Clave, v => v.Valor);
+        var leido = AjustesAvisos.Leer(c => guardado.TryGetValue(c, out string v) ? v : "");
+        Ver("Avisos: ida y vuelta", $"{leido.CcaActivo}|{leido.CcaDia}|{leido.CcaHora:hh\\:mm}|{leido.S303Activo}|{leido.S303Hora:hh\\:mm}|{leido.TiempoActivo}|{leido.AlertaActiva("Documentacion")}|{leido.DiasAlerta("Documentacion")}|{leido.DiasAlerta("S302")}", "True|Monday|09:30|True|21:00|False|False|30|90");
+
+        var martes = new DateTime(2026, 11, 17);
+        Ver("Avisos: CCA el jueves de antes", AjustesAvisos.DiaCca(martes, DayOfWeek.Thursday), new DateTime(2026, 11, 12));
+        Ver("Avisos: CCA el lunes de antes", AjustesAvisos.DiaCca(martes, DayOfWeek.Monday), new DateTime(2026, 11, 16));
+        Ver("Avisos: CCA en martes, el de la semana antes", AjustesAvisos.DiaCca(martes, DayOfWeek.Tuesday), new DateTime(2026, 11, 10));
     }
 
     private static void Ver(string que, object obtenido, object esperado)

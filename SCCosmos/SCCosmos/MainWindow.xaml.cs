@@ -1058,8 +1058,17 @@ namespace SCCosmos
                     connection.Open();
                     var cmd = connection.CreateCommand();
 
+                    // Qué alertas están activas y con qué plazo (página Avisos del móvil;
+                    // se sincroniza). Sin nada guardado, los de siempre.
+                    var ajustes =
+                        SCCosmos.Sincro.AjustesAvisos.Leer(
+                            clave => DatabaseHelper.ObtenerConfiguracion(clave, ""));
+
+                    int diasAtras =
+                        Math.Max(14, ajustes.DiasAlerta("S303") + 7);
+
                     // CORRECCIÓN: Añadidas TipoAsamblea y RepBetelMensajeEnviado a la consulta SQL
-                    cmd.CommandText = "SELECT FechaMartes, Actividad, Congregacion, SeccionAsamblea, S302Enviado, DocEnviada, RecordatorioEnviado, Tipo, Id, TipoAsamblea, RepBetelMensajeEnviado FROM Semanas WHERE date(FechaMartes) >= date('now', '-14 days')";
+                    cmd.CommandText = $"SELECT FechaMartes, Actividad, Congregacion, SeccionAsamblea, S302Enviado, DocEnviada, RecordatorioEnviado, Tipo, Id, TipoAsamblea, RepBetelMensajeEnviado FROM Semanas WHERE date(FechaMartes) >= date('now', '-{diasAtras} days')";
 
                     using (var reader = cmd.ExecuteReader())
                     {
@@ -1096,7 +1105,7 @@ namespace SCCosmos
                                     string mesAlerta =
                                         fechaMartes.ToString("yyyy-MM");
 
-                                    if (!s302 && diasFaltantes <= 90)
+                                    if (ajustes.AlertaActiva("S302") && !s302 && diasFaltantes <= ajustes.DiasAlerta("S302"))
                                     {
                                         _alertasActuales.Add(new AlertaItem
                                         {
@@ -1109,7 +1118,7 @@ namespace SCCosmos
                                         });
                                     }
 
-                                    if (!doc && diasFaltantes <= 42)
+                                    if (ajustes.AlertaActiva("Documentacion") && !doc && diasFaltantes <= ajustes.DiasAlerta("Documentacion"))
                                     {
                                         _alertasActuales.Add(new AlertaItem
                                         {
@@ -1125,7 +1134,7 @@ namespace SCCosmos
                                 else if (actividad == "Asamblea de circuito")
                                 {
                                     // Alerta genérica del recordatorio a la sección
-                                    if (!rec && diasFaltantes <= 60)
+                                    if (ajustes.AlertaActiva("Recordatorio") && !rec && diasFaltantes <= ajustes.DiasAlerta("Recordatorio"))
                                     {
                                         _alertasActuales.Add(new AlertaItem
                                         {
@@ -1140,7 +1149,7 @@ namespace SCCosmos
 
                                     // NUEVA ALERTA: Mensaje al representante de Betel
                                     // 30 días = aproximadamente 1 mes
-                                    if (tipoAsamblea == "AC-BR" && !repBetelEnviado && diasFaltantes <= 30)
+                                    if (ajustes.AlertaActiva("RepBetel") && tipoAsamblea == "AC-BR" && !repBetelEnviado && diasFaltantes <= ajustes.DiasAlerta("RepBetel"))
                                     {
                                         _alertasActuales.Add(new AlertaItem
                                         {
@@ -1167,7 +1176,7 @@ namespace SCCosmos
                                     DateTime domingoVisita = fechaMartes.AddDays(5);
                                     DateTime limiteEnvio = domingoVisita.AddHours(17);
 
-                                    if (DateTime.Now >= limiteEnvio && (DateTime.Now - limiteEnvio).TotalDays <= 14)
+                                    if (ajustes.AlertaActiva("S303") && DateTime.Now >= limiteEnvio && (DateTime.Now - limiteEnvio).TotalDays <= ajustes.DiasAlerta("S303"))
                                     {
                                         string mesRef = fechaMartes.ToString("yyyy-MM");
                                         string congreCodigo = DatabaseHelper.ObtenerCodigoCongregacion(congregacion);

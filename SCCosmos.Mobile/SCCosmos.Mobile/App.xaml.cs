@@ -100,6 +100,16 @@ namespace SCCosmos.Mobile
 
                 try
                 {
+                    // Recordatorios con hora de la página Avisos (quedar con el CCA,
+                    // el S-303 del domingo): la alarma del siguiente.
+                    SCCosmos.Mobile.Platforms.Android.RecordatoriosVisitaScheduler.Revisar();
+                }
+                catch
+                {
+                }
+
+                try
+                {
                     SincronizacionMobile.Iniciar();
                 }
                 catch

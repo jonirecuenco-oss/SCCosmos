@@ -157,6 +157,52 @@ public static class AlertasNotificacionAndroid
     }
 
 
+    /// <summary>
+    /// Un recordatorio con hora de la página Avisos (quedar con el CCA, el
+    /// S-303 del domingo), en el canal de alertas. Al pulsarlo se abre la app.
+    /// </summary>
+    public static void PublicarRecordatorio(
+        string clave,
+        string titulo,
+        string texto)
+    {
+        try
+        {
+            Context contexto =
+                global::Android.App.Application.Context;
+
+            NotificationManagerCompat gestor =
+                NotificationManagerCompat.From(
+                    contexto);
+
+            CrearCanal(
+                contexto,
+                gestor);
+
+            gestor.Notify(
+                IdRecordatoriosBase
+                + Math.Abs((clave ?? "").GetHashCode()) % MaxRecordatorios,
+                CrearNotificacion(
+                    contexto,
+                    texto,
+                    -1,
+                    "",
+                    CanalId,
+                    titulo));
+        }
+        catch
+        {
+        }
+    }
+
+
+    private const int IdRecordatoriosBase =
+        4900;
+
+    private const int MaxRecordatorios =
+        50;
+
+
     private static void CrearCanal(
         Context contexto,
         NotificationManagerCompat gestor)

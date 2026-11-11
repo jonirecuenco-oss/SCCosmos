@@ -45,5 +45,15 @@ public class JwHubBootReceiver :
         catch
         {
         }
+
+        // Y los recordatorios con hora de la página Avisos.
+        try
+        {
+            RecordatoriosVisitaScheduler
+                .Revisar();
+        }
+        catch
+        {
+        }
     }
 }

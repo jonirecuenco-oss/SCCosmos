@@ -206,6 +206,18 @@
 
     </FlyoutItem>
 
+    <!-- Qué avisa la app y cuándo (solo el perfil del SC) -->
+    <FlyoutItem
+        x:Name="ItemAvisos"
+        Title="Avisos"
+        Route="avisos">
+
+        <ShellContent
+        Title="Avisos"
+        ContentTemplate="{DataTemplate views:AvisosPage}" />
+
+    </FlyoutItem>
+
     <FlyoutItem
         x:Name="ItemActividad"
         Title="Actividad"

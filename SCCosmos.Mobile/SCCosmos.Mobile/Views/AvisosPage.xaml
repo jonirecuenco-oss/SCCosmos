@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    x:Class="SCCosmos.Mobile.Views.AvisosPage"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    Title="Avisos"
+    BackgroundColor="{StaticResource FondoPagina}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16,14,16,28"
+                             Spacing="14">
+
+            <VerticalStackLayout Spacing="3">
+                <Label Text="AVISOS"
+                       Style="{StaticResource Antetitulo}" />
+                <Label Text="Qué te avisa SCCosmos y cuándo. Se guarda al momento y se sincroniza: los plazos valen también para la campana de Windows."
+                       Style="{StaticResource SubtituloPagina}" />
+            </VerticalStackLayout>
+
+            <!-- QUEDAR CON EL CCA: la semana antes de una visita -->
+            <Border Style="{StaticResource Tarjeta}">
+                <VerticalStackLayout Spacing="8">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Text="Quedar con el CCA"
+                               FontSize="15"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource TextoPrincipal}"
+                               VerticalOptions="Center" />
+                        <Switch x:Name="SwCca"
+                                Grid.Column="1"
+                                OnColor="{StaticResource AcentoFuerte}" />
+                    </Grid>
+                    <Label Text="Te avisa el día y a la hora que elijas de la semana antes de una visita. Si la semana siguiente no hay visita, no avisa."
+                           Style="{StaticResource TextoNota}" />
+                    <Grid x:Name="PanelCca"
+                          ColumnDefinitions="*,*"
+                          ColumnSpacing="12">
+                        <Picker x:Name="PickerDiaCca"
+                                Title="Día"
+                                TextColor="{StaticResource TextoPrincipal}" />
+                        <TimePicker x:Name="HoraCca"
+                                    Grid.Column="1"
+                                    Format="HH:mm"
+                                    TextColor="{StaticResource TextoPrincipal}" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- ENVÍO DEL S-303: el domingo de la visita -->
+            <Border Style="{StaticResource Tarjeta}">
+                <VerticalStackLayout Spacing="8">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Text="Envío del S-303"
+                               FontSize="15"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource TextoPrincipal}"
+                               VerticalOptions="Center" />
+                        <Switch x:Name="SwS303"
+                                Grid.Column="1"
+                                OnColor="{StaticResource AcentoFuerte}" />
+                    </Grid>
+                    <Label Text="El domingo de la semana de visita, a la hora que elijas (no en las visitas con el SCS)."
+                           Style="{StaticResource TextoNota}" />
+                    <TimePicker x:Name="HoraS303"
+                                Format="HH:mm"
+                                TextColor="{StaticResource TextoPrincipal}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- ALERTAS METEOROLÓGICAS -->
+            <Border Style="{StaticResource Tarjeta}">
+                <VerticalStackLayout Spacing="6">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Text="Alertas meteorológicas"
+                               FontSize="15"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource TextoPrincipal}"
+                               VerticalOptions="Center" />
+                        <Switch x:Name="SwTiempo"
+                                Grid.Column="1"
+                                OnColor="{StaticResource AcentoFuerte}" />
+                    </Grid>
+                    <Label Text="Avisos naranjas y rojos de AEMET donde vas a estar y los rojos del circuito. Desactivadas, el tiempo sigue enseñando sus triángulos."
+                           Style="{StaticResource TextoNota}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- LOS DE INICIO: activos y con cuánta antelación -->
+            <Border Style="{StaticResource Tarjeta}">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="AVISOS DE INICIO"
+                           Style="{StaticResource Antetitulo}" />
+                    <Label Text="Salen en Inicio (y en la campana de Windows) y se notifican cada día a la hora de la revisión."
+                           Style="{StaticResource TextoNota}" />
+                    <VerticalStackLayout x:Name="ListaAlertas"
+                                         Spacing="12" />
+                    <BoxView HeightRequest="1"
+                             Color="{StaticResource Borde}" />
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Text="Hora de la revisión diaria"
+                               FontSize="14"
+                               TextColor="{StaticResource TextoPrincipal}"
+                               VerticalOptions="Center" />
+                        <TimePicker x:Name="HoraRevision"
+                                    Grid.Column="1"
+                                    Format="HH:mm"
+                                    TextColor="{StaticResource TextoPrincipal}" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

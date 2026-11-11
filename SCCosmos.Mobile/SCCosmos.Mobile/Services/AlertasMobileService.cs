@@ -179,16 +179,24 @@ public static class AlertasMobileService
         DateTime martesActual =
             ObtenerMartesActual();
 
+        // Qué alertas están activas y con qué plazo (página Avisos; se
+        // sincroniza con Windows). Sin nada guardado, los de siempre.
+        var ajustes =
+            SCCosmos.Sincro.AjustesAvisos.Leer(
+                clave => DatabaseHelper.ObtenerConfiguracion(clave, ""));
+
         // Una sola consulta para todo el rango (antes: una por semana).
         try
         {
             DateTime desde =
                 martesActual.AddDays(
-                    -semanasAtras * 7);
+                    -Math.Max(semanasAtras * 7, ajustes.DiasAlerta("S303") + 7));
 
             DateTime hasta =
                 martesActual.AddDays(
-                    semanasAdelante * 7);
+                    Math.Max(
+                        semanasAdelante * 7,
+                        new[] { "S302", "Documentacion", "Recordatorio" }.Max(ajustes.DiasAlerta) + 7));
 
             List<SemanaCalendario> semanas =
                 DatabaseHelper
@@ -205,7 +213,8 @@ public static class AlertasMobileService
                 AnadirAlertasSemana(
                     alertas,
                     semana,
-                    hoy);
+                    hoy,
+                    ajustes);
             }
         }
         catch
@@ -216,7 +225,8 @@ public static class AlertasMobileService
         try
         {
             // Solo si hay algo que revisar (cambios, altas, bajas o traslados).
-            if (SCCosmos.Mobile.Platforms
+            if (ajustes.AlertaActiva("JWHub")
+                && SCCosmos.Mobile.Platforms
                     .Android
                     .JwHubSyncAnalysisService
                     .UltimoAnalisis?
@@ -244,11 +254,14 @@ public static class AlertasMobileService
 #endif
 
         // Avisos rojos de AEMET en congregaciones del circuito (los guarda la
-        // revisión del tiempo cada 30 minutos): arriba del todo.
+        // revisión del tiempo cada 30 minutos): arriba del todo, si las
+        // alertas meteorológicas están activas.
         try
         {
             foreach (TiempoAemetService.AvisoRojo aviso
-                     in TiempoAemetService.AvisosRojosVigentes())
+                     in ajustes.TiempoActivo
+                         ? TiempoAemetService.AvisosRojosVigentes()
+                         : new List<TiempoAemetService.AvisoRojo>())
             {
                 alertas.Insert(
                     0,
@@ -276,7 +289,8 @@ public static class AlertasMobileService
     private static void AnadirAlertasSemana(
         List<AlertaMobile> alertas,
         SemanaCalendario semana,
-        DateTime hoy)
+        DateTime hoy,
+        SCCosmos.Sincro.AjustesAvisos ajustes)
     {
         bool esVisita =
             string.Equals(
@@ -299,9 +313,9 @@ public static class AlertasMobileService
         bool futura =
             finSemana >= hoy;
 
-        // Los mismos umbrales que en Windows: el S-302 sale dentro de
-        // 90 días, la documentación dentro de 42, el recordatorio de
-        // asamblea dentro de 60 y el S-303 hasta 14 días después.
+        // Los mismos plazos que en Windows (página Avisos; sin nada guardado,
+        // el S-302 sale dentro de 90 días, la documentación dentro de 42, el
+        // recordatorio de asamblea dentro de 60 y el S-303 hasta 14 días después).
         int diasFaltantes =
             (semana.FechaMartes.Date - hoy.Date).Days;
 
@@ -319,7 +333,9 @@ public static class AlertasMobileService
                 &&
                 !semana.S302Enviado
                 &&
-                diasFaltantes <= 90)
+                diasFaltantes <= ajustes.DiasAlerta("S302")
+                &&
+                ajustes.AlertaActiva("S302"))
             {
                 alertas.Add(
                     new AlertaMobile
@@ -338,7 +354,9 @@ public static class AlertasMobileService
                 &&
                 !semana.DocEnviada
                 &&
-                diasFaltantes <= 42)
+                diasFaltantes <= ajustes.DiasAlerta("Documentacion")
+                &&
+                ajustes.AlertaActiva("Documentacion"))
             {
                 alertas.Add(
                     new AlertaMobile
@@ -355,7 +373,9 @@ public static class AlertasMobileService
 
             if (!futura
                 &&
-                (hoy.Date - finSemana.Date).TotalDays <= 14
+                (hoy.Date - finSemana.Date).TotalDays <= ajustes.DiasAlerta("S303")
+                &&
+                ajustes.AlertaActiva("S303")
                 &&
                 FaltaS303(semana))
             {
@@ -379,7 +399,9 @@ public static class AlertasMobileService
             &&
             !semana.RecordatorioEnviado
             &&
-            diasFaltantes <= 60)
+            diasFaltantes <= ajustes.DiasAlerta("Recordatorio")
+            &&
+            ajustes.AlertaActiva("Recordatorio"))
         {
             alertas.Add(
                 new AlertaMobile

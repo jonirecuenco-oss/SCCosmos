@@ -101,6 +101,9 @@ namespace SCCosmos.Mobile
             ItemEscuelas.IsVisible = completo;
             ItemActividad.IsVisible = completo;
 
+            // Los avisos (alertas y recordatorios) son solo del SC.
+            ItemAvisos.IsVisible = completo;
+
             // La RSC la ve también la esposa (el SC la va rellenando en
             // directo y ella lo sigue desde su dispositivo).
             ItemRsc.IsVisible = true;

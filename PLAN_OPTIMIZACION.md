@@ -377,6 +377,12 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - Widget: la hora actual del tiempo, con fondo `widget_celda_actual` (#2E343D: el de Inicio, #1E2228, no se ve sobre la tarjeta del widget). No se pudo ver en el emulador (modo avión y sin municipio en su base); la predicación del widget sí (se añadió el widget a su pantalla de inicio).
   - 69/69 comprobaciones (12 nuevas). Windows visto con una copia de la base (borrada).
 - 11/11/2026 · Publicada la v2.1.62.
+- 11/11/2026 · v2.1.63:
+  - Página «Avisos» (solo móvil y perfil del SC, decisión del usuario): `SincroCompartido/AjustesAvisos.cs` en Configuracion (se sincroniza): «Avisos_CCA» = activo|día|hora, «Avisos_S303Domingo» = activo|hora, «Avisos_Tiempo», «Avisos_Alerta_{tipo}» = activa|días. Sin nada guardado, como antes (90/42/14/60/30 días, tiempo activo, recordatorios nuevos apagados).
+  - Recordatorios con hora: `RecordatoriosVisitaService` + `RecordatoriosVisitaScheduler` (alarma exacta si se puede; si no, aproximada). CCA = el día elegido dentro de los 7 anteriores al martes de la visita; S-303 = domingo de la visita (no en las de SCS). Una vez por visita (Preferences «Avisos_RecordatoriosAvisados»), hasta 12 h tarde. Se reprograma al arrancar, al reiniciar el móvil, con la revisión diaria de alertas y al cambiar la página. Son del SC como la lista de alertas (sin perfil, también).
+  - Plazos y activación en la lista de Android (`AlertasMobileService`) y en la campana de Windows (`MainWindow`). Alertas meteorológicas desactivadas: sin notificaciones del tiempo ni avisos rojos en la lista (el tiempo sigue con sus triángulos). Hora de la revisión diaria (Preferences «SCCosmos_HoraAlertas», del móvil; antes no se podía cambiar).
+  - Probado en el emulador de punta a punta: visita inventada la semana siguiente y aviso del CCA a los 3 min; llegó «Quedar con el CCA · …» (alarma aproximada: ~1 min de margen) y la siguiente pasó al S-303 del domingo. Su permiso de notificaciones estaba denegado: se concedió para la prueba y se volvió a denegar; base y preferencias restauradas. Sus preferencias están en `com.companyname.sccosmos.mobile_preferences.xml`. 74/74 comprobaciones (5 nuevas).
+- 11/11/2026 · Publicada la v2.1.63.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

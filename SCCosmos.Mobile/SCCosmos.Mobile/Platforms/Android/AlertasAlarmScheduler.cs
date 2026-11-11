@@ -136,5 +136,9 @@ public class AlertasAlarmReceiver :
 
         _ = AlertasNotificacionService
             .ActualizarAsync();
+
+        // Una vez al día, los recordatorios con hora (por si cambió el calendario).
+        RecordatoriosVisitaScheduler
+            .Revisar();
     }
 }
