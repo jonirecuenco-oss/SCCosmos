@@ -318,12 +318,12 @@ internal static class Programa
 
         // El 11 de noviembre hay 10 días terminados de 30: tocan 16,7 h.
         var hoy = new DateTime(2026, 11, 11);
-        Ver("Horas: por detrás", RequisitoHoras.Estado(15, 50, nov, hoy), ("Vas 1,7 h por detrás · faltan 35 h", true));
-        Ver("Horas: al día", RequisitoHoras.Estado(20, 50, nov, hoy), ("Vas al día · faltan 30 h", false));
-        Ver("Horas: el día 1 no va por detrás", RequisitoHoras.Estado(0, 50, nov, nov).Atraso, false);
-        Ver("Horas: cumplido este mes", RequisitoHoras.Estado(50, 50, nov, hoy).Texto, "Requisito cumplido (50 h)");
-        Ver("Horas: mes pasado con falta", RequisitoHoras.Estado(35, 50, new DateTime(2026, 10, 1), hoy), ("Faltaron 15 h para las 50", true));
-        Ver("Horas: mes pasado cumplido", RequisitoHoras.Estado(52.5, 50, new DateTime(2026, 10, 1), hoy).Texto, "Cumplido (50 h)");
+        Ver("Horas: atraso", RequisitoHoras.Diferencia(15, 50, nov, hoy), ("−1,7", -1));
+        Ver("Horas: adelanto", RequisitoHoras.Diferencia(20, 50, nov, hoy), ("+3,3", 1));
+        Ver("Horas: el día 1, al día", RequisitoHoras.Diferencia(0, 50, nov, nov), ("±0", 0));
+        Ver("Horas: mes pasado con atraso", RequisitoHoras.Diferencia(35, 50, new DateTime(2026, 10, 1), hoy), ("−15", -1));
+        Ver("Horas: mes pasado con adelanto", RequisitoHoras.Diferencia(52.5, 50, new DateTime(2026, 10, 1), hoy), ("+2,5", 1));
+        Ver("Horas: mes futuro, nada", RequisitoHoras.Diferencia(0, 50, new DateTime(2026, 12, 1), hoy).Texto, "");
         Ver("Horas: fecha de nacimiento, ida y vuelta", RequisitoHoras.EscribirNacimiento(RequisitoHoras.LeerNacimiento("1986-11-20")), "1986-11-20");
     }
 

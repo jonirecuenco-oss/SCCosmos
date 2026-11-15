@@ -392,6 +392,11 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - Widget: el desplazamiento horizontal del tiempo no es posible (RemoteViews solo admite colecciones verticales); siguen las flechas. Pendiente de lo que quería añadir el usuario («Los…», mensaje cortado).
   - 75/75 comprobaciones. Probado en el emulador (base restaurada) y Windows con una copia de la base (borrada).
 - 15/11/2026 · Publicada la v2.1.64.
+- 15/11/2026 · v2.1.65:
+  - Predicación: `RequisitoHoras.Estado` («Vas 1,7 h por detrás · faltan 35 h») sustituido por `Diferencia` (texto con signo «+4», «−2,5» o «±0», y el signo): este mes, frente a lo que toca hasta hoy; meses pasados, frente al requisito. Lo pidió el usuario: «(+4, -2,5)», sin las horas que faltan.
+  - Widget: junto a las horas, «30 h (+6,7)  ·  4 CBs» (SpannableString: color y tamaño 0,87); fuera la segunda línea `fila_predicacion_estado`. Tarjetas de Inicio (móvil y Windows): en la línea de debajo («−8,3 h», 14, negrita), porque al lado no cabe (Windows: tarjeta de 308 px; móvil: ~214 dp junto a las flechas). Verde #7ED889, naranja #FFB74D, gris si ±0. Windows: ToolTip con el requisito.
+  - 75/75 comprobaciones (las de horas, adaptadas). Probado en el emulador (−23,3, +6,7, −15 y el widget; base restaurada) y en Windows con una copia de la base (borrada).
+- 15/11/2026 · Publicada la v2.1.65.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

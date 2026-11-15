@@ -1561,10 +1561,11 @@ public class SccosmosWidgetProvider : AppWidgetProvider
 
 
     /// <summary>
-    /// Título y texto de la predicación en vigor (el mes actual con su año) y
-    /// si se va con atraso respecto al requisito del mes.
+    /// Título y texto de la predicación en vigor (el mes actual con su año),
+    /// con las horas de adelanto o atraso junto a las horas: «25,5 h (−1,7)
+    /// ·  3 CBs». Diferencia es ese «(−1,7)», para darle color por su signo.
     /// </summary>
-    internal static (string Titulo, string Texto, string Estado, bool Atraso)
+    internal static (string Titulo, string Texto, string Diferencia, int Signo)
         ObtenerPredicacionWidget()
     {
         try
@@ -1602,15 +1603,8 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                 + mesNombre.ToUpperInvariant()
                 + " " + hoy.Year;
 
-            string texto =
-                horasMes.ToString(
-                    "0.#",
-                    new CultureInfo("es-ES"))
-                + " h  ·  "
-                + cbsMes.ToString()
-                + " CBs";
-
-            // El requisito del mes (50 h; 40 h la esposa desde los 40 años).
+            // El requisito del mes (50 h; 40 h la esposa desde los 40 años) y las
+            // horas de adelanto o atraso frente a lo que toca hasta hoy.
             int requisito =
                 SCCosmos.Sincro.RequisitoHoras.Mensual(
                     usuario == "Esposa",
@@ -1618,14 +1612,29 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                         DatabaseHelper.ObtenerConfiguracion(SCCosmos.Sincro.RequisitoHoras.ClaveNacimientoEsposa, "")),
                     hoy);
 
-            var estado =
-                SCCosmos.Sincro.RequisitoHoras.Estado(horasMes, requisito, hoy, hoy);
+            var adelanto =
+                SCCosmos.Sincro.RequisitoHoras.Diferencia(horasMes, requisito, hoy, hoy);
 
-            return (titulo, texto, estado.Texto, estado.Atraso);
+            string diferencia =
+                adelanto.Texto.Length > 0
+                    ? "(" + adelanto.Texto + ")"
+                    : "";
+
+            string texto =
+                horasMes.ToString(
+                    "0.#",
+                    new CultureInfo("es-ES"))
+                + " h"
+                + (diferencia.Length > 0 ? " " + diferencia : "")
+                + "  ·  "
+                + cbsMes.ToString()
+                + " CBs";
+
+            return (titulo, texto, diferencia, adelanto.Signo);
         }
         catch
         {
-            return ("PREDICACIÓN", "0 h  ·  0 CBs", "", false);
+            return ("PREDICACIÓN", "0 h  ·  0 CBs", "", 0);
         }
     }
 }

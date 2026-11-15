@@ -517,11 +517,12 @@
                             TextColor="{StaticResource TextoTerciario}"
                             FontSize="12"/>
 
-                        <!-- Si se va con atraso respecto al requisito del mes (o si se cumplió) -->
+                        <!-- Horas de adelanto (+4 h) o de atraso (−2,5 h) frente al requisito del mes -->
                         <Label
                             x:Name="LblEstadoHoras"
                             Text=""
-                            FontSize="12"
+                            FontSize="14"
+                            FontAttributes="Bold"
                             Margin="0,2,0,0"/>
                     </VerticalStackLayout>
 

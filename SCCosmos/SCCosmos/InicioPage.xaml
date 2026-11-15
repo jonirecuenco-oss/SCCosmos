@@ -103,8 +103,8 @@
                             <StackPanel Grid.Column="0" VerticalAlignment="Center">
                                 <TextBlock x:Name="TxtHorasMes" Text="0" FontSize="32" FontWeight="SemiBold"/>
                                 <TextBlock x:Name="TxtHorasMesEtiqueta" Text="" Style="{StaticResource NotaDato}" FontSize="12"/>
-                                <!-- Si se va con atraso respecto al requisito del mes (o si se cumplió) -->
-                                <TextBlock x:Name="TxtEstadoHoras" Text="" FontSize="12" Margin="0,3,0,0" TextWrapping="Wrap"/>
+                                <!-- Horas de adelanto (+4 h) o de atraso (−2,5 h) frente al requisito del mes -->
+                                <TextBlock x:Name="TxtEstadoHoras" Text="" FontSize="14" FontWeight="SemiBold" Margin="0,3,0,0" TextWrapping="Wrap"/>
                             </StackPanel>
                             <ui:Button x:Name="BtnSumarHoras" Grid.Column="1" Appearance="Primary" Icon="{ui:SymbolIcon Edit24}"
                                        Padding="10" Cursor="Hand" VerticalAlignment="Center"

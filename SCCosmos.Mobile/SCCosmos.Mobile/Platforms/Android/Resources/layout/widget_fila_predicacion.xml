@@ -16,7 +16,7 @@
         android:paddingLeft="12dp"
         android:paddingRight="6dp">
 
-        <!-- Horas y CBs del mes y, debajo, si se va con atraso o al día -->
+        <!-- Horas y CBs del mes, con las de adelanto o atraso junto a las horas -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -32,18 +32,6 @@
                 android:text=""
                 android:textColor="#F2F4F7"
                 android:textSize="15sp" />
-
-            <TextView
-                android:id="@+id/fila_predicacion_estado"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text=""
-                android:textColor="#A7AEB8"
-                android:textSize="12sp"
-                android:maxLines="1"
-                android:ellipsize="end"
-                android:visibility="gone" />
         </LinearLayout>
 
         <ImageView

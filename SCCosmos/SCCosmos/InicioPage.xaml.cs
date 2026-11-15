@@ -505,8 +505,9 @@ namespace SCCosmos
                 BtnMesSiguiente.IsEnabled =
                     diferencia > 0;
 
-                // El requisito del mes (50 h; 40 h la esposa desde los 40 años) y si
-                // se va con atraso o, en meses pasados, si se cumplió.
+                // El requisito del mes (50 h; 40 h la esposa desde los 40 años) y las
+                // horas de adelanto o atraso: frente a lo que toca hasta hoy o, en
+                // meses pasados, frente al requisito.
                 int requisito =
                     SCCosmos.Sincro.RequisitoHoras.Mensual(
                         usuario == "Esposa",
@@ -514,14 +515,19 @@ namespace SCCosmos
                             DatabaseHelper.ObtenerConfiguracion(SCCosmos.Sincro.RequisitoHoras.ClaveNacimientoEsposa, "")),
                         _mesPredicacion);
 
-                var estado =
-                    SCCosmos.Sincro.RequisitoHoras.Estado(horas, requisito, _mesPredicacion, DateTime.Today);
+                var adelanto =
+                    SCCosmos.Sincro.RequisitoHoras.Diferencia(horas, requisito, _mesPredicacion, DateTime.Today);
 
-                TxtEstadoHoras.Text = estado.Texto;
+                TxtEstadoHoras.Text =
+                    adelanto.Texto.Length > 0 ? adelanto.Texto + " h" : "";
                 TxtEstadoHoras.Foreground =
-                    estado.Atraso
-                        ? Pincel("#FFB74D")
-                        : (System.Windows.Media.Brush)FindResource("TextFillColorSecondaryBrush");
+                    adelanto.Signo < 0 ? Pincel("#FFB74D")
+                    : adelanto.Signo > 0 ? Pincel("#7ED889")
+                    : (System.Windows.Media.Brush)FindResource("TextFillColorSecondaryBrush");
+                TxtEstadoHoras.ToolTip =
+                    diferencia == 0
+                        ? $"Frente a lo que toca hasta hoy del requisito de {requisito} h"
+                        : $"Frente al requisito de {requisito} h";
             }
             catch
             {

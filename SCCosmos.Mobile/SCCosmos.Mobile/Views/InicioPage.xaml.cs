@@ -921,8 +921,9 @@ public partial class InicioPage : ContentPage, IActualizableMobile
             BtnMesSiguiente.Opacity =
                 diferencia > 0 ? 1 : 0.35;
 
-            // El requisito del mes (50 h; 40 h la esposa desde los 40 años) y si
-            // se va con atraso o, en meses pasados, si se cumplió.
+            // El requisito del mes (50 h; 40 h la esposa desde los 40 años) y las
+            // horas de adelanto o atraso: frente a lo que toca hasta hoy o, en
+            // meses pasados, frente al requisito.
             int requisito =
                 SCCosmos.Sincro.RequisitoHoras.Mensual(
                     usuario == "Esposa",
@@ -930,14 +931,14 @@ public partial class InicioPage : ContentPage, IActualizableMobile
                         DatabaseHelper.ObtenerConfiguracion(SCCosmos.Sincro.RequisitoHoras.ClaveNacimientoEsposa, "")),
                     _mesPredicacion);
 
-            var estado =
-                SCCosmos.Sincro.RequisitoHoras.Estado(horas, requisito, _mesPredicacion, DateTime.Today);
+            var adelanto =
+                SCCosmos.Sincro.RequisitoHoras.Diferencia(horas, requisito, _mesPredicacion, DateTime.Today);
 
             LblEstadoHoras.Text =
-                estado.Texto;
+                adelanto.Texto.Length > 0 ? adelanto.Texto + " h" : "";
 
             LblEstadoHoras.TextColor =
-                Color.FromArgb(estado.Atraso ? "#FFB74D" : "#A7AEB8");
+                Color.FromArgb(adelanto.Signo < 0 ? "#FFB74D" : adelanto.Signo > 0 ? "#7ED889" : "#A7AEB8");
         }
         catch
         {

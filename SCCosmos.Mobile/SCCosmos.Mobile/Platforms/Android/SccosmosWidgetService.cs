@@ -271,13 +271,14 @@ public class SccosmosWidgetFactory
                 Color = "#9CC3F5"
             });
 
-            // Debajo de las horas, si se va con atraso (en naranja) o al día.
+            // Junto a las horas, las de adelanto (verde) o atraso (naranja);
+            // el signo lo dice sin el color.
             _filas.Add(new Fila
             {
                 Tipo = TipoPredicacion,
                 Texto = predicacion.Texto,
-                Secundaria = predicacion.Estado,
-                Color = predicacion.Atraso ? "#FFB74D" : "#A7AEB8"
+                Secundaria = predicacion.Diferencia,
+                Color = predicacion.Signo < 0 ? "#FFB74D" : predicacion.Signo > 0 ? "#7ED889" : "#A7AEB8"
             });
 
         }
@@ -686,24 +687,38 @@ public class SccosmosWidgetFactory
                             _contexto.PackageName,
                             Resource.Layout.widget_fila_predicacion);
 
+                    // «25,5 h (−1,7)  ·  3 CBs»: el «(−1,7)», algo más pequeño y con su color.
+                    var texto =
+                        new global::Android.Text.SpannableString(fila.Texto);
+
+                    int inicio =
+                        fila.Secundaria.Length > 0
+                            ? fila.Texto.IndexOf(fila.Secundaria, StringComparison.Ordinal)
+                            : -1;
+
+                    if (inicio >= 0
+                        && !string.IsNullOrWhiteSpace(fila.Color))
+                    {
+                        int fin =
+                            inicio + fila.Secundaria.Length;
+
+                        texto.SetSpan(
+                            new global::Android.Text.Style.ForegroundColorSpan(
+                                global::Android.Graphics.Color.ParseColor(fila.Color)),
+                            inicio,
+                            fin,
+                            global::Android.Text.SpanTypes.ExclusiveExclusive);
+
+                        texto.SetSpan(
+                            new global::Android.Text.Style.RelativeSizeSpan(0.87f),
+                            inicio,
+                            fin,
+                            global::Android.Text.SpanTypes.ExclusiveExclusive);
+                    }
+
                     vistas.SetTextViewText(
                         Resource.Id.fila_predicacion_texto,
-                        fila.Texto);
-
-                    vistas.SetTextViewText(
-                        Resource.Id.fila_predicacion_estado,
-                        fila.Secundaria);
-
-                    vistas.SetViewVisibility(
-                        Resource.Id.fila_predicacion_estado,
-                        string.IsNullOrWhiteSpace(fila.Secundaria) ? ViewStates.Gone : ViewStates.Visible);
-
-                    if (!string.IsNullOrWhiteSpace(fila.Color))
-                    {
-                        vistas.SetTextColor(
-                            Resource.Id.fila_predicacion_estado,
-                            global::Android.Graphics.Color.ParseColor(fila.Color));
-                    }
+                        texto);
 
                     SccosmosWidgetProvider.PonerClicItem(
                         vistas,
