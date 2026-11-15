@@ -4,7 +4,15 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     Title="Tarea"
-    BackgroundColor="{StaticResource FondoPagina}">
+    BackgroundColor="{StaticResource FondoPagina}"
+    SafeAreaEdges="All">
+
+    <!-- Con el teclado abierto la página se encoge por encima de él
+         (SafeAreaEdges), y Guardar también está arriba, en la barra. -->
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Guardar"
+                     Clicked="BtnGuardar_Clicked" />
+    </ContentPage.ToolbarItems>
 
     <Grid RowDefinitions="*,Auto"
           Padding="16,14,16,14"

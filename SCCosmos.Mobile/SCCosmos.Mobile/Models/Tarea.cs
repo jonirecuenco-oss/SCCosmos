@@ -106,15 +106,7 @@ public class Tarea
         AvisoMinutos >= 0;
 
     public string AvisoVisual =>
-        AvisoMinutos switch
-        {
-            0 => "🔔 A la hora",
-            10 => "🔔 10 min antes",
-            30 => "🔔 30 min antes",
-            60 => "🔔 1 hora antes",
-            1440 => "🔔 1 día antes",
-            _ => "🔔 " + AvisoMinutos + " min antes"
-        };
+        "🔔 " + SCCosmos.Sincro.AvisosTarea.Texto(AvisoMinutos);
 
 
     public bool MostrarEstado =>

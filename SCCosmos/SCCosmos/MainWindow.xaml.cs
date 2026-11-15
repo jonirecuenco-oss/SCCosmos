@@ -1064,11 +1064,8 @@ namespace SCCosmos
                         SCCosmos.Sincro.AjustesAvisos.Leer(
                             clave => DatabaseHelper.ObtenerConfiguracion(clave, ""));
 
-                    int diasAtras =
-                        Math.Max(14, ajustes.DiasAlerta("S303") + 7);
-
                     // CORRECCIÓN: Añadidas TipoAsamblea y RepBetelMensajeEnviado a la consulta SQL
-                    cmd.CommandText = $"SELECT FechaMartes, Actividad, Congregacion, SeccionAsamblea, S302Enviado, DocEnviada, RecordatorioEnviado, Tipo, Id, TipoAsamblea, RepBetelMensajeEnviado FROM Semanas WHERE date(FechaMartes) >= date('now', '-{diasAtras} days')";
+                    cmd.CommandText = "SELECT FechaMartes, Actividad, Congregacion, SeccionAsamblea, S302Enviado, DocEnviada, RecordatorioEnviado, Tipo, Id, TipoAsamblea, RepBetelMensajeEnviado FROM Semanas WHERE date(FechaMartes) >= date('now', '-14 days')";
 
                     using (var reader = cmd.ExecuteReader())
                     {
@@ -1164,40 +1161,8 @@ namespace SCCosmos
                                 }
                             }
 
-                            // =========================================================
-                            // ALERTA S-303 PENDIENTE DE ENVÍO
-                            // =========================================================
-                            if (actividad == "Visita" && !string.IsNullOrEmpty(congregacion))
-                            {
-                                bool esSCS = tipoActividad.Contains("SCS", StringComparison.OrdinalIgnoreCase) || tipoActividad.Equals("Visita de SCS", StringComparison.OrdinalIgnoreCase);
-
-                                if (!esSCS)
-                                {
-                                    DateTime domingoVisita = fechaMartes.AddDays(5);
-                                    DateTime limiteEnvio = domingoVisita.AddHours(17);
-
-                                    if (ajustes.AlertaActiva("S303") && DateTime.Now >= limiteEnvio && (DateTime.Now - limiteEnvio).TotalDays <= ajustes.DiasAlerta("S303"))
-                                    {
-                                        string mesRef = fechaMartes.ToString("yyyy-MM");
-                                        string congreCodigo = DatabaseHelper.ObtenerCodigoCongregacion(congregacion);
-
-                                        bool s303Enviado = DatabaseHelper.ObtenerConfiguracion($"S303Enviado_{congreCodigo}_{mesRef}", "0") == "1";
-
-                                        if (!s303Enviado)
-                                        {
-                                            _alertasActuales.Add(new AlertaItem
-                                            {
-                                                Titulo = "S-303 Pendiente de envío",
-                                                Descripcion = $"La visita a {nombreCon} ha concluido. Recuerda completar y enviar el informe S-303.",
-                                                ColorBorde = "#E81123", // Rojo Fuerte
-                                                Dias = -100 + diasFaltantes,
-                                                Identidad = $"S303|{congreCodigo}|{mesRef}",
-                                                TipoAlerta = "S303Pendiente"
-                                            });
-                                        }
-                                    }
-                                }
-                            }
+                            // El S-303 ya no es alerta: lo recuerda el aviso del domingo
+                            // de la página Avisos del móvil.
                         }
                     }
                 }

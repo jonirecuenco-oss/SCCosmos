@@ -13,25 +13,12 @@ namespace SCCosmos
         /// <summary>Categoría con la que se abre una tarea nueva.</summary>
         public string CategoriaInicial { get; set; } = "Personal";
 
+        // Los mismos que en el móvil (SincroCompartido/AvisosTarea.cs): hasta 1 mes antes.
         private static readonly string[] TextosAviso =
-        {
-            "Sin aviso",
-            "A la hora",
-            "10 minutos antes",
-            "30 minutos antes",
-            "1 hora antes",
-            "1 día antes"
-        };
+            SCCosmos.Sincro.AvisosTarea.Textos;
 
         private static readonly int[] MinutosAviso =
-        {
-            -1,
-            0,
-            10,
-            30,
-            60,
-            1440
-        };
+            SCCosmos.Sincro.AvisosTarea.Minutos;
 
         private static readonly string[] Repeticiones =
         {
@@ -51,11 +38,15 @@ namespace SCCosmos
             _esNueva =
                 tarea == null;
 
+            // Las nuevas, a una hora (no de todo el día): la siguiente en punto.
             _tarea =
                 tarea ?? new Tarea
                 {
                     FechaInicio =
                         DateTime.Today.ToString("yyyy-MM-dd"),
+                    TodoElDia = false,
+                    Hora =
+                        new TimeSpan(Math.Min(DateTime.Now.Hour + 1, 23), 0, 0).ToString(@"hh\:mm"),
                     CreadaPor =
                         PerfilAcceso.AccesoCompleto
                             ? "SC"

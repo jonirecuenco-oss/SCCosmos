@@ -22,7 +22,6 @@ public sealed class AjustesAvisos
         {
             ("S302", "S-302 pendiente", 90, "días antes de la visita"),
             ("Documentacion", "Documentación pendiente", 42, "días antes de la visita"),
-            ("S303", "S-303 pendiente", 14, "días después de la visita"),
             ("Recordatorio", "Recordatorio de asamblea", 60, "días antes de la asamblea"),
             ("RepBetel", "Mensaje al representante de Betel (AC-BR)", 30, "días antes de la asamblea"),
             ("JWHub", "Revisión de JW Hub pendiente", 0, "")

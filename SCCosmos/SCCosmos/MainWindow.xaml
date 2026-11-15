@@ -144,7 +144,7 @@
                     <ui:NavigationViewItem x:Name="MenuRuta" Content="Calendario" Icon="{ui:SymbolIcon CalendarLtr24}" TargetPageType="{x:Type local:CalendarioPage}"/>
                     <ui:NavigationViewItem Content="Personas" Icon="{ui:SymbolIcon People24}" TargetPageType="{x:Type local:PersonasPage}"/>
                     <ui:NavigationViewItem x:Name="ItemEscuelas" Content="Escuelas" Icon="{ui:SymbolIcon HatGraduation24}" TargetPageType="{x:Type local:EscuelasPage}"/>
-                    <ui:NavigationViewItem x:Name="ItemRsc" Content="RSC" Icon="{ui:SymbolIcon PeopleTeam24}" TargetPageType="{x:Type local:RscPage}"/>
+                    <ui:NavigationViewItem x:Name="ItemRsc" Content="RSC" Icon="{ui:SymbolIcon Briefcase24}" TargetPageType="{x:Type local:RscPage}"/>
                     <ui:NavigationViewItem x:Name="ItemAsambleas" Content="Asambleas" Icon="{ui:SymbolIcon PeopleAudience24}" TargetPageType="{x:Type local:AsambleasPage}"/>
                     <ui:NavigationViewItem x:Name="ItemArchivo" Content="Archivo del circuito" Icon="{ui:SymbolIcon Archive24}" TargetPageType="{x:Type local:ArchivoCircuitoPage}"/>
                     <ui:NavigationViewItem x:Name="ItemDonaciones" Content="Rendimientos" Icon="{ui:SymbolIcon MoneyHand24}" TargetPageType="{x:Type local:DonacionesPage}"/>

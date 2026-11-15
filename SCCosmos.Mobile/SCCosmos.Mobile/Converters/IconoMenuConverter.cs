@@ -33,6 +33,7 @@ public class IconoMenuConverter : IValueConverter
             : titulo.Contains("escuelas") ? "menu_escuelas"
             : titulo.Contains("rsc") ? "menu_rsc"
             : titulo.Contains("tareas") ? "menu_tareas"
+            : titulo.Contains("avisos") ? "menu_avisos"
             : titulo.Contains("actividad") ? "menu_actividad"
             : titulo.Contains("configuraci") ? "menu_configuracion"
             : null;

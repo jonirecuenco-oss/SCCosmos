@@ -10,25 +10,12 @@ public partial class TareaEdicionPage : ContentPage
 
     private readonly bool _esNueva;
 
+    // Los mismos que en Windows (SincroCompartido/AvisosTarea.cs): hasta 1 mes antes.
     private static readonly string[] TextosAviso =
-    {
-        "Sin aviso",
-        "A la hora",
-        "10 minutos antes",
-        "30 minutos antes",
-        "1 hora antes",
-        "1 día antes"
-    };
+        SCCosmos.Sincro.AvisosTarea.Textos;
 
     private static readonly int[] MinutosAviso =
-    {
-        -1,
-        0,
-        10,
-        30,
-        60,
-        1440
-    };
+        SCCosmos.Sincro.AvisosTarea.Minutos;
 
     private static readonly string[] Repeticiones =
     {
@@ -52,11 +39,15 @@ public partial class TareaEdicionPage : ContentPage
         _esNueva =
             tarea == null;
 
+        // Las nuevas, a una hora (no de todo el día): la siguiente en punto.
         _tarea =
             tarea ?? new Tarea
             {
                 FechaInicio =
                     DateTime.Today.ToString("yyyy-MM-dd"),
+                TodoElDia = false,
+                Hora =
+                    new TimeSpan(Math.Min(DateTime.Now.Hour + 1, 23), 0, 0).ToString(@"hh\:mm"),
                 CreadaPor =
                     PerfilAccesoService.EsHombre
                         ? "SC"
@@ -68,6 +59,13 @@ public partial class TareaEdicionPage : ContentPage
 
         PckRepeticion.ItemsSource =
             Repeticiones;
+
+        // Al tocar la fecha, la hora o un desplegable se quita el teclado,
+        // que tapaba «Guardar» (que también está arriba, en la barra).
+        foreach (View control in new View[] { PckCategoria, PckFecha, PckHora, PckFechaFin, PckAviso, PckRepeticion })
+        {
+            control.Focused += (_, _) => _ = OcultarTecladoAsync();
+        }
 
         string nombreCompartir =
             PerfilAccesoService.EsHombre
@@ -380,6 +378,8 @@ public partial class TareaEdicionPage : ContentPage
     {
         PanelHora.IsVisible =
             !e.Value;
+
+        _ = OcultarTecladoAsync();
     }
 
 
@@ -389,5 +389,73 @@ public partial class TareaEdicionPage : ContentPage
     {
         PanelRango.IsVisible =
             e.Value;
+
+        _ = OcultarTecladoAsync();
+    }
+
+
+    // El modo de teclado de la ventana antes de abrir esta página.
+    private global::Android.Views.SoftInput? _modoTeclado;
+
+
+    // Mientras está abierta, el teclado encoge la página (no la tapa): así
+    // «Guardar» y lo de abajo siguen a la vista. Al salir, como estaba.
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+
+        try
+        {
+            global::Android.Views.Window? ventana =
+                Platform.CurrentActivity?.Window;
+
+            if (ventana?.Attributes is global::Android.Views.WindowManagerLayoutParams atributos)
+            {
+                _modoTeclado ??= atributos.SoftInputMode;
+
+                ventana.SetSoftInputMode(global::Android.Views.SoftInput.AdjustResize);
+            }
+        }
+        catch
+        {
+        }
+    }
+
+
+    protected override void OnDisappearing()
+    {
+        try
+        {
+            if (_modoTeclado is global::Android.Views.SoftInput modo)
+            {
+                Platform.CurrentActivity?.Window?.SetSoftInputMode(modo);
+            }
+        }
+        catch
+        {
+        }
+
+        base.OnDisappearing();
+    }
+
+
+    // Fuera el teclado del título o la descripción.
+    private async Task OcultarTecladoAsync()
+    {
+        try
+        {
+            foreach (InputView campo in new InputView[] { TxtTitulo, TxtDescripcion })
+            {
+                if (campo.IsSoftInputShowing())
+                {
+                    await campo.HideSoftInputAsync(CancellationToken.None);
+                }
+
+                campo.Unfocus();
+            }
+        }
+        catch
+        {
+        }
     }
 }

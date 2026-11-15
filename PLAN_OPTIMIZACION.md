@@ -383,6 +383,15 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - Plazos y activación en la lista de Android (`AlertasMobileService`) y en la campana de Windows (`MainWindow`). Alertas meteorológicas desactivadas: sin notificaciones del tiempo ni avisos rojos en la lista (el tiempo sigue con sus triángulos). Hora de la revisión diaria (Preferences «SCCosmos_HoraAlertas», del móvil; antes no se podía cambiar).
   - Probado en el emulador de punta a punta: visita inventada la semana siguiente y aviso del CCA a los 3 min; llegó «Quedar con el CCA · …» (alarma aproximada: ~1 min de margen) y la siguiente pasó al S-303 del domingo. Su permiso de notificaciones estaba denegado: se concedió para la prueba y se volvió a denegar; base y preferencias restauradas. Sus preferencias están en `com.companyname.sccosmos.mobile_preferences.xml`. 74/74 comprobaciones (5 nuevas).
 - 11/11/2026 · Publicada la v2.1.63.
+- 15/11/2026 · v2.1.64:
+  - Iconos del menú del móvil (`IconoMenuConverter`, SVG con `Capturas Iconos`): «Avisos» = Alert24 (no tenía); RSC = Briefcase24 (era PeopleTeam24, casi igual que PeopleAudience24 de Asambleas), también en Windows.
+  - Fuera la alerta «S-303 pendiente» (Android, campana de Windows y página Avisos; `AjustesAvisos.Alertas` sin S303): lo recuerda el aviso del domingo.
+  - Tareas (móvil y Windows): tarjeta compacta e igual de alta (título y fechas en una línea cada uno; iconos 🔁/👫; sin descripción, aviso ni «Completada»: lo dicen la casilla y la opacidad).
+  - Avisos de tarea compartidos en `SincroCompartido/AvisosTarea.cs` (los dos formularios): + 2 h, 2 días, 1 semana, 2 semanas y 1 mes. Tareas nuevas sin «Todo el día», con la hora en punto siguiente (antes, sin hora se guardaba 00:00).
+  - Móvil, «Guardar» tapado: el teclado (modo Pan de MAUI) tapaba la mitad de abajo; medido en el emulador (los toques caían en el teclado). Solo en `TareaEdicionPage`: `AdjustResize` al aparecer y el modo anterior al salir, `SafeAreaEdges="All"`, «Guardar» también en la barra y el teclado se cierra al tocar fechas, horas, desplegables o interruptores. `SafeAreaEdges` solo no bastaba.
+  - Widget: el desplazamiento horizontal del tiempo no es posible (RemoteViews solo admite colecciones verticales); siguen las flechas. Pendiente de lo que quería añadir el usuario («Los…», mensaje cortado).
+  - 75/75 comprobaciones. Probado en el emulador (base restaurada) y Windows con una copia de la base (borrada).
+- 15/11/2026 · Publicada la v2.1.64.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

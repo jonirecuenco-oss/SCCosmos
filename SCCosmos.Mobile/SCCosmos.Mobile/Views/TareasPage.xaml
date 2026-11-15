@@ -117,7 +117,10 @@
                                     CommandParameter="{Binding .}" />
                             </Border.GestureRecognizers>
 
-                            <Grid ColumnDefinitions="Auto,*"
+                            <!-- Todas igual de altas: título y fechas; a la derecha,
+                                 solo iconos (se repite, compartida). La descripción
+                                 y el aviso se ven al abrirla; completada, la casilla. -->
+                            <Grid ColumnDefinitions="Auto,*,Auto"
                                   ColumnSpacing="10">
 
                                 <CheckBox Grid.Column="0"
@@ -127,83 +130,37 @@
                                           VerticalOptions="Center" />
 
                                 <VerticalStackLayout Grid.Column="1"
-                                                     Spacing="5">
+                                                     Spacing="3"
+                                                     VerticalOptions="Center">
 
                                     <Label Text="{Binding TituloVisual}"
                                            TextColor="{StaticResource TextoPrincipal}"
                                            FontSize="15"
-                                           FontAttributes="Bold" />
+                                           FontAttributes="Bold"
+                                           MaxLines="1"
+                                           LineBreakMode="TailTruncation" />
 
                                     <Label Text="{Binding FechasVisual}"
                                            TextColor="#80C4FF"
-                                           FontSize="13" />
-
-                                    <Label Text="{Binding Descripcion}"
-                                           TextColor="{StaticResource TextoSecundario}"
-                                           FontSize="12"
-                                           LineBreakMode="TailTruncation"
-                                           MaxLines="2" />
-
-                                    <FlexLayout Direction="Row"
-                                                Wrap="Wrap">
-
-                                        <Border IsVisible="{Binding MostrarAviso}"
-                                                BackgroundColor="{StaticResource SuperficieAlta}"
-                                                Padding="8,3"
-                                                Margin="0,0,6,4"
-                                                StrokeThickness="0">
-                                            <Border.StrokeShape>
-                                                <RoundRectangle CornerRadius="6" />
-                                            </Border.StrokeShape>
-                                            <Label Text="{Binding AvisoVisual}"
-                                                   TextColor="#EBCB8B"
-                                                   FontSize="11.5"
-                                                   FontAttributes="Bold" />
-                                        </Border>
-
-                                        <Border IsVisible="{Binding MostrarRepeticion}"
-                                                BackgroundColor="{StaticResource SuperficieAlta}"
-                                                Padding="8,3"
-                                                Margin="0,0,6,4"
-                                                StrokeThickness="0">
-                                            <Border.StrokeShape>
-                                                <RoundRectangle CornerRadius="6" />
-                                            </Border.StrokeShape>
-                                            <Label Text="{Binding RepeticionVisual}"
-                                                   TextColor="#9CC3F5"
-                                                   FontSize="11.5"
-                                                   FontAttributes="Bold" />
-                                        </Border>
-
-                                        <Border IsVisible="{Binding EstaCompartida}"
-                                                BackgroundColor="#243028"
-                                                Padding="8,3"
-                                                Margin="0,0,6,4"
-                                                StrokeThickness="0">
-                                            <Border.StrokeShape>
-                                                <RoundRectangle CornerRadius="6" />
-                                            </Border.StrokeShape>
-                                            <Label Text="👫 Compartida"
-                                                   TextColor="#7ED889"
-                                                   FontSize="11.5"
-                                                   FontAttributes="Bold" />
-                                        </Border>
-
-                                        <Border IsVisible="{Binding MostrarEstado}"
-                                                BackgroundColor="#243028"
-                                                Padding="8,3"
-                                                Margin="0,0,6,4"
-                                                StrokeThickness="0">
-                                            <Border.StrokeShape>
-                                                <RoundRectangle CornerRadius="6" />
-                                            </Border.StrokeShape>
-                                            <Label Text="{Binding EstadoVisual}"
-                                                   TextColor="#7ED889"
-                                                   FontSize="11.5"
-                                                   FontAttributes="Bold" />
-                                        </Border>
-                                    </FlexLayout>
+                                           FontSize="13"
+                                           MaxLines="1"
+                                           LineBreakMode="TailTruncation" />
                                 </VerticalStackLayout>
+
+                                <HorizontalStackLayout Grid.Column="2"
+                                                       Spacing="6"
+                                                       VerticalOptions="Center">
+                                    <Label Text="🔁"
+                                           IsVisible="{Binding MostrarRepeticion}"
+                                           FontSize="16"
+                                           VerticalOptions="Center"
+                                           SemanticProperties.Description="{Binding RepeticionVisual}" />
+                                    <Label Text="👫"
+                                           IsVisible="{Binding EstaCompartida}"
+                                           FontSize="16"
+                                           VerticalOptions="Center"
+                                           SemanticProperties.Description="Compartida" />
+                                </HorizontalStackLayout>
                             </Grid>
                         </Border>
                     </DataTemplate>

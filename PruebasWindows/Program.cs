@@ -331,7 +331,8 @@ internal static class Programa
     private static void AjustesDeAvisos()
     {
         var vacio = AjustesAvisos.Leer(_ => "");
-        Ver("Avisos: sin nada guardado, como siempre", $"{vacio.AlertaActiva("S302")}|{vacio.DiasAlerta("S302")}|{vacio.DiasAlerta("Documentacion")}|{vacio.DiasAlerta("S303")}|{vacio.TiempoActivo}|{vacio.CcaActivo}|{vacio.S303Activo}", "True|90|42|14|True|False|False");
+        Ver("Avisos: sin nada guardado, como siempre", $"{vacio.AlertaActiva("S302")}|{vacio.DiasAlerta("S302")}|{vacio.DiasAlerta("Documentacion")}|{vacio.DiasAlerta("Recordatorio")}|{vacio.TiempoActivo}|{vacio.CcaActivo}|{vacio.S303Activo}", "True|90|42|60|True|False|False");
+        Ver("Avisos: el S-303 pendiente ya no es alerta", AjustesAvisos.Alertas.Any(a => a.Tipo == "S303"), false);
 
         var ajustes = new AjustesAvisos { CcaActivo = true, CcaDia = DayOfWeek.Monday, CcaHora = new TimeSpan(9, 30, 0), S303Activo = true, S303Hora = new TimeSpan(21, 0, 0), TiempoActivo = false };
         ajustes.PonerAlerta("Documentacion", false, 30);

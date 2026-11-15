@@ -110,80 +110,48 @@
                                           Checked="Completada_Checked"
                                           Unchecked="Completada_Checked"/>
 
-                                <StackPanel Grid.Column="1">
+                                <!-- Todas igual de altas: título y fechas (la descripción
+                                     y el aviso se ven al editarla; completada, la casilla) -->
+                                <StackPanel Grid.Column="1"
+                                            VerticalAlignment="Center">
                                     <TextBlock Text="{Binding TituloVisual}"
                                                FontSize="16"
                                                FontWeight="SemiBold"
                                                Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                                               TextWrapping="Wrap"/>
+                                               TextTrimming="CharacterEllipsis"/>
 
                                     <TextBlock Text="{Binding FechasVisual}"
                                                Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"
+                                               TextTrimming="CharacterEllipsis"
                                                Margin="0,3,0,0"/>
-
-                                    <TextBlock Text="{Binding Descripcion}"
-                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                               TextWrapping="Wrap"
-                                               Margin="0,3,0,0"/>
-
-                                    <StackPanel Orientation="Horizontal"
-                                                Margin="0,7,0,0">
-
-                                        <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                                                CornerRadius="6"
-                                                Padding="8,3"
-                                                Margin="0,0,6,0"
-                                                Visibility="{Binding MostrarAviso, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                            <TextBlock Text="{Binding AvisoVisual}"
-                                                       Foreground="#EBCB8B"
-                                                       FontSize="11.5"
-                                                       FontWeight="SemiBold"/>
-                                        </Border>
-
-                                        <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                                                CornerRadius="6"
-                                                Padding="8,3"
-                                                Margin="0,0,6,0"
-                                                Visibility="{Binding MostrarRepeticion, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                            <TextBlock Text="{Binding RepeticionVisual}"
-                                                       Foreground="#9CC3F5"
-                                                       FontSize="11.5"
-                                                       FontWeight="SemiBold"/>
-                                        </Border>
-
-                                        <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                                                CornerRadius="6"
-                                                Padding="8,3"
-                                                Margin="0,0,6,0"
-                                                Visibility="{Binding Compartida, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                            <TextBlock Text="👫 Compartida"
-                                                       Foreground="#7ED889"
-                                                       FontSize="11.5"
-                                                       FontWeight="SemiBold"/>
-                                        </Border>
-
-                                        <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                                                CornerRadius="6"
-                                                Padding="8,3"
-                                                Margin="0,0,6,0"
-                                                Visibility="{Binding MostrarEstado, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                            <TextBlock Text="{Binding EstadoVisual}"
-                                                       Foreground="#7ED889"
-                                                       FontSize="11.5"
-                                                       FontWeight="SemiBold"/>
-                                        </Border>
-                                    </StackPanel>
                                 </StackPanel>
 
-                                <ui:Button Grid.Column="2"
-                                           Icon="{ui:SymbolIcon Edit24}"
-                                           Appearance="Secondary"
-                                           Padding="9"
-                                           Cursor="Hand"
-                                           VerticalAlignment="Top"
-                                           ToolTip="Editar tarea"
-                                           Click="BtnEditar_Click"
-                                           Tag="{Binding .}"/>
+                                <!-- Se repite y está compartida: solo sus iconos, junto a editar -->
+                                <StackPanel Grid.Column="2"
+                                            Orientation="Horizontal"
+                                            VerticalAlignment="Center">
+                                    <TextBlock Text="🔁"
+                                               FontSize="16"
+                                               Margin="10,0,0,0"
+                                               VerticalAlignment="Center"
+                                               ToolTip="{Binding RepeticionVisual}"
+                                               Visibility="{Binding MostrarRepeticion, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                    <TextBlock Text="👫"
+                                               FontSize="16"
+                                               Margin="10,0,0,0"
+                                               VerticalAlignment="Center"
+                                               ToolTip="Compartida"
+                                               Visibility="{Binding Compartida, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                    <ui:Button Icon="{ui:SymbolIcon Edit24}"
+                                               Appearance="Secondary"
+                                               Padding="9"
+                                               Margin="12,0,0,0"
+                                               Cursor="Hand"
+                                               VerticalAlignment="Center"
+                                               ToolTip="Editar tarea"
+                                               Click="BtnEditar_Click"
+                                               Tag="{Binding .}"/>
+                                </StackPanel>
                             </Grid>
                         </Border>
                     </DataTemplate>

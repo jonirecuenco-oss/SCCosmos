@@ -190,7 +190,7 @@ public static class AlertasMobileService
         {
             DateTime desde =
                 martesActual.AddDays(
-                    -Math.Max(semanasAtras * 7, ajustes.DiasAlerta("S303") + 7));
+                    -semanasAtras * 7);
 
             DateTime hasta =
                 martesActual.AddDays(
@@ -314,8 +314,8 @@ public static class AlertasMobileService
             finSemana >= hoy;
 
         // Los mismos plazos que en Windows (página Avisos; sin nada guardado,
-        // el S-302 sale dentro de 90 días, la documentación dentro de 42, el
-        // recordatorio de asamblea dentro de 60 y el S-303 hasta 14 días después).
+        // el S-302 sale dentro de 90 días, la documentación dentro de 42 y el
+        // recordatorio de asamblea dentro de 60).
         int diasFaltantes =
             (semana.FechaMartes.Date - hoy.Date).Days;
 
@@ -371,26 +371,8 @@ public static class AlertasMobileService
                     });
             }
 
-            if (!futura
-                &&
-                (hoy.Date - finSemana.Date).TotalDays <= ajustes.DiasAlerta("S303")
-                &&
-                ajustes.AlertaActiva("S303")
-                &&
-                FaltaS303(semana))
-            {
-                alertas.Add(
-                    new AlertaMobile
-                    {
-                        Tipo = "S303",
-                        Identidad = $"S303|{codigoAlerta}|{mesAlerta}",
-                        Titulo =
-                            $"S-303 pendiente · {semana.Congregacion}",
-                        Descripcion =
-                            $"Visita: {semana.RangoFechas}. Ya " +
-                            "terminó y no hay S-303 guardado."
-                    });
-            }
+            // El S-303 ya no es alerta: lo recuerda el aviso del domingo
+            // de la página Avisos.
         }
 
         if (esAsamblea
@@ -419,38 +401,6 @@ public static class AlertasMobileService
                             ? "."
                             : $" (sección {semana.SeccionAsamblea}).")
                 });
-        }
-    }
-
-    private static bool FaltaS303(
-        SemanaCalendario semana)
-    {
-        try
-        {
-            string codigo =
-                DatabaseHelper
-                    .ObtenerCodigoCongregacion(
-                        semana.Congregacion);
-
-            if (string.IsNullOrWhiteSpace(
-                    codigo))
-            {
-                return false;
-            }
-
-            string mes =
-                $"{semana.FechaMartes.Year:D4}-" +
-                $"{semana.FechaMartes.Month:D2}";
-
-            return DatabaseHelper
-                       .ObtenerS303VisitaMobile(
-                           codigo,
-                           mes)
-                   is null;
-        }
-        catch
-        {
-            return false;
         }
     }
 
