@@ -17,6 +17,12 @@
                      Order="Primary"
                      Priority="1"
                      Clicked="BtnCambiarVista_Clicked" />
+        <!-- Mostrar también las tareas (en la lista, en cada semana; en el mes, en los días) -->
+        <ToolbarItem x:Name="BtnTareas"
+                     Text="☐ Tareas"
+                     Order="Primary"
+                     Priority="2"
+                     Clicked="BtnTareas_Clicked" />
     </ContentPage.ToolbarItems>
 
     <Grid RowDefinitions="Auto,Auto,*,Auto"
@@ -82,7 +88,7 @@
                                     CommandParameter="{Binding .}" />
                             </Border.GestureRecognizers>
 
-                            <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto"
+                            <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
                                   ColumnDefinitions="*,Auto"
                                   RowSpacing="2">
 
@@ -125,8 +131,31 @@
                                        IsVisible="{Binding MostrarDetalleSecundario}"
                                        LineBreakMode="WordWrap" />
 
+                                <!-- TAREAS DE LA SEMANA (botón «Tareas» de la barra); al tocar una, se abre -->
+                                <VerticalStackLayout Grid.Row="4"
+                                                     Grid.ColumnSpan="2"
+                                                     Margin="0,3,0,0"
+                                                     IsVisible="{Binding MostrarTareas}"
+                                                     BindableLayout.ItemsSource="{Binding Tareas}">
+                                    <BindableLayout.ItemTemplate>
+                                        <DataTemplate>
+                                            <Label Text="{Binding Texto}"
+                                                   Opacity="{Binding Opacidad}"
+                                                   TextColor="#EBCB8B"
+                                                   FontSize="13"
+                                                   Padding="0,4"
+                                                   LineBreakMode="TailTruncation">
+                                                <Label.GestureRecognizers>
+                                                    <TapGestureRecognizer Tapped="TareaCalendario_Tapped"
+                                                                          CommandParameter="{Binding .}" />
+                                                </Label.GestureRecognizers>
+                                            </Label>
+                                        </DataTemplate>
+                                    </BindableLayout.ItemTemplate>
+                                </VerticalStackLayout>
+
                                 <!-- ACCIONES (una sola fila compacta abajo) -->
-                                <HorizontalStackLayout Grid.Row="4"
+                                <HorizontalStackLayout Grid.Row="5"
                                                        Grid.ColumnSpan="2"
                                                        Spacing="7"
                                                        Margin="0,3,0,0">
@@ -179,11 +208,11 @@
             </CollectionView>
         </RefreshView>
 
-        <!-- VISTA DE CALENDARIO (MES) -->
-        <VerticalStackLayout x:Name="PanelCalendario"
-                             Grid.Row="2"
-                             IsVisible="False"
-                             Spacing="14">
+        <!-- VISTA DE CALENDARIO (MES); con las tareas puede no caber: se desplaza -->
+        <ScrollView x:Name="PanelCalendario"
+                    Grid.Row="2"
+                    IsVisible="False">
+        <VerticalStackLayout Spacing="14">
 
             <Grid ColumnDefinitions="Auto,*,Auto"
                   ColumnSpacing="8">
@@ -220,6 +249,7 @@
                   RowSpacing="4"/>
 
         </VerticalStackLayout>
+        </ScrollView>
 
         <!-- OVERLAY -->
         <Grid x:Name="OverlayCargando"

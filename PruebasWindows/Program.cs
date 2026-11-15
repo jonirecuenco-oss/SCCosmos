@@ -325,6 +325,19 @@ internal static class Programa
         Ver("Horas: mes pasado con adelanto", RequisitoHoras.Diferencia(52.5, 50, new DateTime(2026, 10, 1), hoy), ("+2,5", 1));
         Ver("Horas: mes futuro, nada", RequisitoHoras.Diferencia(0, 50, new DateTime(2026, 12, 1), hoy).Texto, "");
         Ver("Horas: fecha de nacimiento, ida y vuelta", RequisitoHoras.EscribirNacimiento(RequisitoHoras.LeerNacimiento("1986-11-20")), "1986-11-20");
+
+        // Tareas en el Calendario: los días de cada una dentro de un intervalo.
+        DateTime lunes = new(2026, 11, 9), domingo = new(2026, 11, 15);
+        string Dias(List<DateTime> fechas) => string.Join(",", fechas.Select(f => f.Day));
+        Ver("Tareas: un día dentro", Dias(FechasTarea.EnIntervalo("2026-11-15", "", "Ninguna", lunes, domingo)), "15");
+        Ver("Tareas: un día fuera", FechasTarea.EnIntervalo("2026-11-16", "", "Ninguna", lunes, domingo).Count, 0);
+        Ver("Tareas: varios días, recortados", Dias(FechasTarea.EnIntervalo("2026-11-13", "2026-11-18", "Ninguna", lunes, domingo)), "13,14,15");
+        Ver("Tareas: semanal que empezó antes", Dias(FechasTarea.EnIntervalo("2026-10-01", "", "Semanal", new DateTime(2026, 11, 1), new DateTime(2026, 11, 30))), "5,12,19,26");
+        Ver("Tareas: mensual del 31", Dias(FechasTarea.EnIntervalo("2026-01-31", "", "Mensual", new DateTime(2026, 2, 1), new DateTime(2026, 4, 30))), "28,31,30");
+        Ver("Tareas: se repite hasta la fecha fin", Dias(FechasTarea.EnIntervalo("2026-11-10", "2026-11-12", "Diaria", lunes, domingo)), "10,11,12");
+        Ver("Tareas: texto de la fila", FechasTarea.Texto(false, new[] { domingo }, "17:00", "Llamar a Pedro"), "☐ dom 15 · 17:00 · Llamar a Pedro");
+        Ver("Tareas: varios días, hecha", FechasTarea.Texto(true, new[] { new DateTime(2026, 11, 16), new DateTime(2026, 11, 20) }, "", "Vacaciones"), "☑ lun 16 – vie 20 · Vacaciones");
+        Ver("Tareas: puntos del día", FechasTarea.Puntos(5), "•••");
     }
 
     // Ajustes de la página Avisos: sin nada guardado, lo de siempre; ida y vuelta; el día de quedar con el CCA.

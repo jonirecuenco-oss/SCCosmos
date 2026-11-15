@@ -71,6 +71,8 @@ namespace SCCosmos
             // segundo plano, con el aviso de «Cargando…» ya en pantalla.
             TablaRuta.ItemsSource = _vistaAgrupada;
 
+            PintarBotonTareas();
+
             this.Loaded += CalendarioPage_Loaded;
             this.Unloaded += CalendarioPage_Unloaded;
         }
@@ -643,6 +645,8 @@ namespace SCCosmos
 
                 List<SemanaCalendario> semanas = await ConstruirSemanasAsync();
 
+                PonerTareas(semanas);
+
                 Perf.Registrar("Calendario.DB", reloj.ElapsedMilliseconds);
 
                 if (_cancelarCarga)
@@ -821,6 +825,114 @@ namespace SCCosmos
         }
 
 
+        // «Tareas»: también las tareas (en la lista, bajo cada semana; en el
+        // mes, en los días). Se recuerda mientras la app está abierta.
+        private static bool _mostrarTareas;
+
+        private List<Tarea> _tareasCalendario = new();
+
+
+        private async void BtnTareas_Click(object sender, RoutedEventArgs e)
+        {
+            _mostrarTareas = !_mostrarTareas;
+
+            PintarBotonTareas();
+
+            await CargarCalendarioAsync();
+        }
+
+
+        private void PintarBotonTareas()
+        {
+            BtnTareas.Appearance =
+                _mostrarTareas
+                    ? Wpf.Ui.Controls.ControlAppearance.Primary
+                    : Wpf.Ui.Controls.ControlAppearance.Secondary;
+        }
+
+
+        /// <summary>
+        /// Con «Tareas», cada semana (de lunes a domingo; en la primera fila,
+        /// no en las paralelas) lleva las suyas.
+        /// </summary>
+        private void PonerTareas(List<SemanaCalendario> semanas)
+        {
+            _tareasCalendario = new List<Tarea>();
+
+            if (_mostrarTareas && semanas.Count > 0)
+            {
+                try
+                {
+                    _tareasCalendario = DatabaseHelper.ObtenerTareas().ToList();
+                }
+                catch
+                {
+                }
+            }
+
+            DateTime desde = semanas.Count > 0 ? semanas.Min(s => s.FechaLunes).Date : DateTime.Today;
+            DateTime hasta = semanas.Count > 0 ? semanas.Max(s => s.FechaDomingo).Date : DateTime.Today;
+
+            var conFechas = ConFechas(desde, hasta);
+            var vistas = new HashSet<DateTime>();
+
+            foreach (SemanaCalendario semana in semanas.OrderBy(s => s.FechaMartes).ThenBy(s => s.Id))
+            {
+                semana.TareasSemana =
+                    vistas.Add(semana.FechaMartes.Date)
+                        ? TareasEntre(conFechas, semana.FechaLunes.Date, semana.FechaDomingo.Date)
+                        : new List<TareaCalendarioFila>();
+            }
+        }
+
+
+        // Los días de cada tarea (las leídas con el calendario) en el intervalo.
+        private List<(Tarea Tarea, List<DateTime> Dias)> ConFechas(DateTime desde, DateTime hasta)
+        {
+            return _tareasCalendario
+                .Select(t => (Tarea: t, Dias: SCCosmos.Sincro.FechasTarea.EnIntervalo(t.FechaInicio, t.FechaFin, t.Repeticion, desde, hasta)))
+                .Where(x => x.Dias.Count > 0)
+                .ToList();
+        }
+
+
+        private static List<TareaCalendarioFila> TareasEntre(
+            List<(Tarea Tarea, List<DateTime> Dias)> conFechas,
+            DateTime desde,
+            DateTime hasta)
+        {
+            return conFechas
+                .Select(x => (x.Tarea, Dias: x.Dias.Where(d => d >= desde && d <= hasta).ToList()))
+                .Where(x => x.Dias.Count > 0)
+                .OrderBy(x => x.Dias[0])
+                .ThenBy(x => x.Tarea.TodoElDia ? "" : x.Tarea.Hora)
+                .Select(x => new TareaCalendarioFila(x.Tarea, x.Dias))
+                .ToList();
+        }
+
+
+        // Al pulsar una tarea (en la lista o en el mes) se abre; sin abrir también la semana.
+        private async void TareaCalendario_Click(object sender, MouseButtonEventArgs e)
+        {
+            if ((sender as FrameworkElement)?.Tag is not Tarea tarea)
+            {
+                return;
+            }
+
+            e.Handled = true;
+
+            var ventana = new FormularioTarea(tarea)
+            {
+                Owner = Window.GetWindow(this)
+            };
+
+            if (ventana.ShowDialog() == true)
+            {
+                await CargarCalendarioAsync();
+            }
+        }
+
+
         private void PintarMesCalendario()
         {
             try
@@ -894,6 +1006,9 @@ namespace SCCosmos
                     primero.AddDays(
                         -(((int)primero.DayOfWeek + 6) % 7));
 
+                // Con «Tareas»: puntos en cada día y, junto a cada semana, sus tareas.
+                var tareasMes = ConFechas(inicio, inicio.AddDays(41));
+
                 for (int i = 0; i < 42; i++)
                 {
                     DateTime dia =
@@ -964,6 +1079,36 @@ namespace SCCosmos
                             new Thickness(2);
                     }
 
+                    int tareasDia =
+                        tareasMes.Count(x => x.Dias.Contains(dia.Date));
+
+                    if (tareasDia > 0
+                        && celda.Child is TextBlock numero)
+                    {
+                        celda.Child = null;
+
+                        celda.Child =
+                            new StackPanel
+                            {
+                                VerticalAlignment = VerticalAlignment.Center,
+                                Children =
+                                {
+                                    numero,
+                                    new TextBlock
+                                    {
+                                        Text = SCCosmos.Sincro.FechasTarea.Puntos(tareasDia),
+                                        Foreground =
+                                            new SolidColorBrush(
+                                                (Color)ColorConverter
+                                                    .ConvertFromString("#EBCB8B")),
+                                        FontSize = 10,
+                                        HorizontalAlignment = HorizontalAlignment.Center,
+                                        Margin = new Thickness(0, -3, 0, 0)
+                                    }
+                                }
+                            };
+                    }
+
                     Grid.SetRow(celda, 1 + i / 7);
                     Grid.SetColumn(celda, i % 7);
                     GridMesCalendario.Children.Add(celda);
@@ -978,31 +1123,70 @@ namespace SCCosmos
                     string texto =
                         EventosDeLaSemana(martesFila);
 
-                    if (texto.Length == 0)
+                    List<TareaCalendarioFila> tareasFila =
+                        TareasEntre(
+                            tareasMes,
+                            inicio.AddDays(fila * 7),
+                            inicio.AddDays(fila * 7 + 6));
+
+                    if (texto.Length == 0
+                        && tareasFila.Count == 0)
                     {
                         continue;
                     }
 
-                    var etiqueta =
-                        new TextBlock
+                    var bloque =
+                        new StackPanel
                         {
-                            Text = texto,
-                            Foreground =
-                                new SolidColorBrush(
-                                    (Color)ColorConverter
-                                        .ConvertFromString("#AAB2BC")),
-                            FontSize = 12,
-                            TextTrimming =
-                                TextTrimming.CharacterEllipsis,
                             VerticalAlignment =
                                 VerticalAlignment.Center,
                             Margin =
                                 new Thickness(12, 0, 4, 0)
                         };
 
-                    Grid.SetRow(etiqueta, 1 + fila);
-                    Grid.SetColumn(etiqueta, 7);
-                    GridMesCalendario.Children.Add(etiqueta);
+                    if (texto.Length > 0)
+                    {
+                        bloque.Children.Add(
+                            new TextBlock
+                            {
+                                Text = texto,
+                                Foreground =
+                                    new SolidColorBrush(
+                                        (Color)ColorConverter
+                                            .ConvertFromString("#AAB2BC")),
+                                FontSize = 12,
+                                TextTrimming =
+                                    TextTrimming.CharacterEllipsis
+                            });
+                    }
+
+                    foreach (TareaCalendarioFila tarea in tareasFila)
+                    {
+                        var linea =
+                            new TextBlock
+                            {
+                                Text = tarea.Texto,
+                                Opacity = tarea.Opacidad,
+                                Foreground =
+                                    new SolidColorBrush(
+                                        (Color)ColorConverter
+                                            .ConvertFromString("#EBCB8B")),
+                                FontSize = 12,
+                                Padding = new Thickness(0, 1, 0, 1),
+                                TextTrimming =
+                                    TextTrimming.CharacterEllipsis,
+                                Cursor = Cursors.Hand,
+                                ToolTip = "Abrir la tarea",
+                                Tag = tarea.Tarea
+                            };
+
+                        linea.MouseLeftButtonUp += TareaCalendario_Click;
+                        bloque.Children.Add(linea);
+                    }
+
+                    Grid.SetRow(bloque, 1 + fila);
+                    Grid.SetColumn(bloque, 7);
+                    GridMesCalendario.Children.Add(bloque);
                 }
 
                 TxtMesCalendario.Text =

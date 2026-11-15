@@ -57,6 +57,8 @@ public partial class CalendarioPage : ContentPage, IActualizableMobile
 
         ListaCalendario.ItemsSource =
             _grupos;
+
+        PintarBotonTareas();
     }
 
     protected override async void OnAppearing()
@@ -541,6 +543,9 @@ public partial class CalendarioPage : ContentPage, IActualizableMobile
                 fecha.AddDays(7);
         }
 
+        PonerTareas(
+            resultado);
+
         return resultado;
     }
 
@@ -751,6 +756,126 @@ public partial class CalendarioPage : ContentPage, IActualizableMobile
 
     private bool _vistaCalendario;
 
+    // «Tareas» en la barra: se recuerda; las tareas se leen con el calendario.
+    private const string ClaveMostrarTareas = "Calendario_MostrarTareas";
+
+    private bool _mostrarTareas =
+        Preferences.Default.Get(ClaveMostrarTareas, false);
+
+    private List<Tarea> _tareasCalendario = new();
+
+
+    private async void BtnTareas_Clicked(
+        object sender,
+        EventArgs e)
+    {
+        _mostrarTareas =
+            !_mostrarTareas;
+
+        Preferences.Default.Set(
+            ClaveMostrarTareas,
+            _mostrarTareas);
+
+        PintarBotonTareas();
+
+        await CargarCalendarioAsync(
+            centrarEnActual: false,
+            ancla: _primeraSemanaVisible ?? ObtenerMartesActual());
+    }
+
+
+    private void PintarBotonTareas()
+    {
+        BtnTareas.Text =
+            _mostrarTareas
+                ? "☑ Tareas"
+                : "☐ Tareas";
+    }
+
+
+    /// <summary>
+    /// Con «Tareas», cada semana (la tarjeta principal, no las paralelas)
+    /// lleva las suyas, de lunes a domingo. Va con la carga, en segundo plano.
+    /// </summary>
+    private void PonerTareas(
+        List<CalendarioItem> elementos)
+    {
+        if (!_mostrarTareas
+            || elementos.Count == 0)
+        {
+            _tareasCalendario = new();
+
+            return;
+        }
+
+        try
+        {
+            _tareasCalendario =
+                DatabaseHelper.ObtenerTareasMobile();
+        }
+        catch
+        {
+            _tareasCalendario = new();
+
+            return;
+        }
+
+        DateTime desde =
+            elementos.Min(x => x.Semana.FechaMartes).Date.AddDays(-1);
+
+        DateTime hasta =
+            elementos.Max(x => x.Semana.FechaMartes).Date.AddDays(5);
+
+        var conFechas =
+            _tareasCalendario
+                .Select(t => (Tarea: t, Dias: SCCosmos.Sincro.FechasTarea.EnIntervalo(t.FechaInicio, t.FechaFin, t.Repeticion, desde, hasta)))
+                .Where(x => x.Dias.Count > 0)
+                .ToList();
+
+        foreach (CalendarioItem item in elementos.Where(x => !x.EsActividadParalela))
+        {
+            DateTime lunes =
+                item.Semana.FechaMartes.Date.AddDays(-1);
+
+            item.Tareas =
+                TareasEntre(conFechas, lunes, lunes.AddDays(6));
+        }
+    }
+
+
+    private static List<TareaCalendarioUi> TareasEntre(
+        List<(Tarea Tarea, List<DateTime> Dias)> conFechas,
+        DateTime desde,
+        DateTime hasta)
+    {
+        return conFechas
+            .Select(x => (x.Tarea, Dias: x.Dias.Where(d => d >= desde && d <= hasta).ToList()))
+            .Where(x => x.Dias.Count > 0)
+            .OrderBy(x => x.Dias[0])
+            .ThenBy(x => x.Tarea.TodoElDia ? "" : x.Tarea.Hora)
+            .Select(x => new TareaCalendarioUi(x.Tarea, x.Dias))
+            .ToList();
+    }
+
+
+    private async void TareaCalendario_Tapped(
+        object? sender,
+        TappedEventArgs e)
+    {
+        if (e.Parameter is not TareaCalendarioUi fila)
+        {
+            return;
+        }
+
+        // Al volver, a la misma semana.
+        _anclaSemana =
+            _primeraSemanaVisible ?? _anclaSemana;
+
+        await Navigation.PushAsync(
+            new TareaEdicionPage(fila.Tarea));
+    }
+
+
     private DateTime _mesCalendario =
         new(
             DateTime.Today.Year,
@@ -873,6 +998,15 @@ public partial class CalendarioPage : ContentPage, IActualizableMobile
                 primero.AddDays(
                     -(((int)primero.DayOfWeek + 6) % 7));
 
+            // Con «Tareas»: puntos en cada día y, bajo cada semana, sus tareas.
+            var tareasMes =
+                _mostrarTareas
+                    ? _tareasCalendario
+                        .Select(t => (Tarea: t, Dias: SCCosmos.Sincro.FechasTarea.EnIntervalo(t.FechaInicio, t.FechaFin, t.Repeticion, inicio, inicio.AddDays(41))))
+                        .Where(x => x.Dias.Count > 0)
+                        .ToList()
+                    : new List<(Tarea Tarea, List<DateTime> Dias)>();
+
             for (int i = 0; i < 42; i++)
             {
                 DateTime dia =
@@ -914,8 +1048,28 @@ public partial class CalendarioPage : ContentPage, IActualizableMobile
                             TextAlignment.Center
                     };
 
+                int tareasDia =
+                    tareasMes.Count(x => x.Dias.Contains(dia.Date));
+
                 celda.Content =
-                    numero;
+                    tareasDia == 0
+                        ? numero
+                        : new VerticalStackLayout
+                        {
+                            VerticalOptions = LayoutOptions.Center,
+                            Spacing = -3,
+                            Children =
+                            {
+                                numero,
+                                new Label
+                                {
+                                    Text = SCCosmos.Sincro.FechasTarea.Puntos(tareasDia),
+                                    TextColor = Color.FromArgb("#EBCB8B"),
+                                    FontSize = 11,
+                                    HorizontalTextAlignment = TextAlignment.Center
+                                }
+                            }
+                        };
 
                 if (dia.Month == _mesCalendario.Month)
                 {
@@ -947,28 +1101,71 @@ public partial class CalendarioPage : ContentPage, IActualizableMobile
                 string texto =
                     EventosDeLaSemana(martesFila);
 
-                if (texto.Length == 0)
+                List<TareaCalendarioUi> tareasFila =
+                    TareasEntre(
+                        tareasMes,
+                        inicio.AddDays(fila * 7),
+                        inicio.AddDays(fila * 7 + 6));
+
+                if (texto.Length == 0
+                    && tareasFila.Count == 0)
                 {
                     continue;
                 }
 
-                var etiqueta =
-                    new Label
+                var bloque =
+                    new VerticalStackLayout
                     {
-                        Text = texto,
-                        TextColor =
-                            Color.FromArgb("#AAB2BC"),
-                        FontSize = 11.5,
-                        LineBreakMode =
-                            LineBreakMode.TailTruncation,
                         Margin =
                             new Thickness(2, 0, 2, 4)
                     };
 
-                Grid.SetRow(etiqueta, 2 + fila * 2);
-                Grid.SetColumn(etiqueta, 0);
-                Grid.SetColumnSpan(etiqueta, 7);
-                GridMesCalendario.Children.Add(etiqueta);
+                if (texto.Length > 0)
+                {
+                    bloque.Children.Add(
+                        new Label
+                        {
+                            Text = texto,
+                            TextColor =
+                                Color.FromArgb("#AAB2BC"),
+                            FontSize = 11.5,
+                            LineBreakMode =
+                                LineBreakMode.TailTruncation
+                        });
+                }
+
+                foreach (TareaCalendarioUi tarea in tareasFila)
+                {
+                    var toque =
+                        new TapGestureRecognizer
+                        {
+                            CommandParameter = tarea
+                        };
+
+                    toque.Tapped += TareaCalendario_Tapped;
+
+                    var linea =
+                        new Label
+                        {
+                            Text = tarea.Texto,
+                            Opacity = tarea.Opacidad,
+                            TextColor =
+                                Color.FromArgb("#EBCB8B"),
+                            FontSize = 12,
+                            Padding =
+                                new Thickness(0, 2),
+                            LineBreakMode =
+                                LineBreakMode.TailTruncation
+                        };
+
+                    linea.GestureRecognizers.Add(toque);
+                    bloque.Children.Add(linea);
+                }
+
+                Grid.SetRow(bloque, 2 + fila * 2);
+                Grid.SetColumn(bloque, 0);
+                Grid.SetColumnSpan(bloque, 7);
+                GridMesCalendario.Children.Add(bloque);
             }
 
             LblMesCalendario.Text =
@@ -1707,6 +1904,35 @@ public sealed class CalendarioGrupoMes
 }
 
 
+/// <summary>Una tarea en el Calendario: «☐ dom 15 · 17:00 · Llamar a Pedro».</summary>
+public sealed class TareaCalendarioUi
+{
+    public TareaCalendarioUi(
+        Tarea tarea,
+        List<DateTime> dias)
+    {
+        Tarea = tarea;
+
+        Texto =
+            SCCosmos.Sincro.FechasTarea.Texto(
+                tarea.Completada,
+                dias,
+                tarea.TodoElDia ? "" : tarea.Hora,
+                tarea.Titulo);
+    }
+
+    public Tarea Tarea
+    { get; }
+
+    public string Texto
+    { get; }
+
+    // Las hechas, atenuadas (como en Tareas).
+    public double Opacidad =>
+        Tarea.Completada ? 0.5 : 1;
+}
+
+
 // =============================================================
 // ELEMENTO VISUAL DE SEMANA
 // =============================================================
@@ -1721,6 +1947,13 @@ public sealed class CalendarioItem
 
     public bool EsActual
     { get; }
+
+    /// <summary>Las tareas de la semana (con «Tareas» activado en la barra).</summary>
+    public List<TareaCalendarioUi> Tareas
+    { get; set; } = new();
+
+    public bool MostrarTareas =>
+        Tareas.Count > 0;
 
     public bool EsVisita =>
         string.Equals(

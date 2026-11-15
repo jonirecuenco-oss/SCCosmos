@@ -42,6 +42,16 @@
                                Cursor="Hand"
                                Padding="12,6"
                                Margin="0,0,8,0"/>
+                    <!-- Mostrar también las tareas: en la lista, bajo cada semana; en el mes, en los días -->
+                    <ui:Button x:Name="BtnTareas"
+                               ToolTip="Mostrar también las tareas"
+                               Icon="{ui:SymbolIcon CheckmarkCircle24}"
+                               Content="Tareas"
+                               Appearance="Secondary"
+                               Click="BtnTareas_Click"
+                               Cursor="Hand"
+                               Padding="12,6"
+                               Margin="0,0,8,0"/>
                     <ui:Button x:Name="BtnCiclo"
                                ToolTip="Configurar Ciclo (3 Años)"
                                Icon="{ui:SymbolIcon CalendarSettings24}"
@@ -77,6 +87,7 @@
                   VirtualizingPanel.CacheLength="6,6"
                       ScrollViewer.CanContentScroll="True"
                       ScrollViewer.VerticalScrollBarVisibility="Auto"
+                      RowDetailsVisibilityMode="Visible"
                       RowHeight="34">
 
                 <DataGrid.RowStyle>
@@ -130,6 +141,29 @@
                         </GroupStyle.ContainerStyle>
                     </GroupStyle>
                 </DataGrid.GroupStyle>
+
+                <!-- Tareas de la semana (botón «Tareas»): una fila cada una; al pulsarla, se abre -->
+                <DataGrid.RowDetailsTemplate>
+                    <DataTemplate>
+                        <ItemsControl ItemsSource="{Binding TareasSemana}"
+                                      Visibility="{Binding VisibilidadTareas}"
+                                      Margin="16,0,0,6">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Texto}"
+                                               Opacity="{Binding Opacidad}"
+                                               Foreground="#EBCB8B"
+                                               FontSize="13"
+                                               Padding="0,3"
+                                               Cursor="Hand"
+                                               ToolTip="Abrir la tarea"
+                                               Tag="{Binding Tarea}"
+                                               MouseLeftButtonUp="TareaCalendario_Click"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </DataTemplate>
+                </DataGrid.RowDetailsTemplate>
 
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Semana" Binding="{Binding RangoFechas}" Width="16*">

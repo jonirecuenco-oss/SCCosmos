@@ -404,6 +404,14 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - Ministerio sin «Mes de referencia». Móvil: buscador en la fila del grupo; cada persona tiene una tira de 12 meses (`MesesCuadrosMinisterio`) que se arrastra (ScrollView horizontal: un deslizamiento dentro de la lista vertical se lo quedaba el RecyclerView en cuanto se movía en vertical); 12 cuadros fijos enlazados por posición; el ancho para que quepan 6 se pone tras la maquetación (en mitad de ella no se aplicaba, medido) y la tira empieza al final. `EsInactivo` sigue mirando los 6 últimos. Windows: las personas, siempre del mes de la visita; las flechas solo mueven las 6 columnas (`_mesesAtrasMinisterio`) y la cinta muestra el intervalo.
   - 75/75 comprobaciones. Probado en el emulador con datos de prueba (programa, nombres, tarea; base restaurada) y Windows con una copia de la base (borrada).
 - 15/11/2026 · Publicada la v2.1.66.
+- 15/11/2026 · v2.1.67 (punto 4 de la petición):
+  - Calendario con tareas (móvil y Windows), botón «Tareas». `SincroCompartido/FechasTarea.cs`: días de cada tarea en un intervalo (un día, rango con fecha fin, o repetición diaria/semanal/mensual/anual hasta la fecha fin, contada desde el inicio: la mensual del 31 vuelve al 31) y el texto de la fila («☐ dom 15 · 17:00 · Llamar a Pedro»; varios días, «lun 16 – vie 20»; hecha, ☑ y opacidad 0,5).
+  - Lista: las tareas de cada semana (lunes a domingo; solo la primera fila, no las paralelas). Móvil: fila nueva en la tarjeta de la semana, se rellenan en `CargarElementosDesdeBase` (al volver de editar se recarga solo). Windows: `RowDetailsTemplate` del DataGrid (`SemanaCalendario.TareasSemana`); el clic en la tarea marca `Handled` para no abrir también la semana.
+  - Mes: puntos bajo el número del día y las tareas bajo/junto a los eventos de cada semana; en el móvil, la vista de mes va ahora en un ScrollView. Pulsar una tarea abre su edición en las dos apps.
+  - El botón se recuerda en el móvil (Preferences `Calendario_MostrarTareas`, local); en Windows, estático mientras la app está abierta (no en Configuracion, que se sincroniza).
+  - Capturas: `Pulsar=` admite varios botones con «+» (herramienta local, no versionada).
+  - 84/84 comprobaciones (9 nuevas de FechasTarea). Probado en el emulador (tareas de prueba con el perfil de la esposa; base restaurada) y Windows con una copia de la base (borrada).
+- 15/11/2026 · Publicada la v2.1.67.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

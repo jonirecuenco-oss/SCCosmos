@@ -155,6 +155,10 @@ namespace SCCosmos
         public Visibility VisibilidadVerVisita => (Actividad == "Visita" && TieneDatosImportados) ? Visibility.Visible : Visibility.Collapsed;
         public Visibility EsClonada { get; set; } = Visibility.Collapsed;
 
+        // Tareas de la semana en el Calendario (botón «Tareas»): una fila cada una.
+        public System.Collections.Generic.List<TareaCalendarioFila> TareasSemana { get; set; } = new();
+        public Visibility VisibilidadTareas => TareasSemana.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+
         // Truco visual para mostrar solo al marido con formato "Apellido, Nombre"
         public string AcompananteVisual
         {
