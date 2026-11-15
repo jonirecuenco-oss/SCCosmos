@@ -283,7 +283,7 @@
 
                                 <StackPanel VerticalAlignment="Center">
                                     <TextBlock Text="Programa semanal" FontWeight="SemiBold" FontSize="14"/>
-                                    <TextBlock Text="Puedes añadir actividades manualmente o importar toda la semana desde un archivo JSON."
+                                    <TextBlock Text="Puedes añadir actividades manualmente, importar la semana o mandar a los ancianos el enlace para que la rellenen."
                                                Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12"
                                                Margin="0,2,12,0"
                                                TextWrapping="Wrap"/>
@@ -293,10 +293,31 @@
                                             Orientation="Horizontal"
                                             VerticalAlignment="Center">
 
+                                    <ui:Button Content="Enlace para los ancianos" Icon="{ui:SymbolIcon Link24}" Appearance="Primary" Click="BtnEnlaceProgramaWeb_Click" Margin="0,0,8,0" VerticalAlignment="Center" Cursor="Hand" ToolTip="Copia el enlace del formulario web del programa para enviárselo a los ancianos"/>
+
                                     <ui:Button Content="Programa PDF" Icon="{ui:SymbolIcon DocumentPdf24}" Appearance="Secondary" Click="BtnImportarProgramaPdf_Click" Margin="0,0,8,0" VerticalAlignment="Center" Cursor="Hand" ToolTip="Importar el programa desde el PDF rellenado («Programa para la visita del SC»)"/>
 
                                     <ui:Button Content="Importar JSON" Icon="{ui:SymbolIcon ArrowImport24}" Appearance="Secondary" Click="BtnImportarProgramaJson_Click" VerticalAlignment="Center" Cursor="Hand" ToolTip="Importar actividades de miércoles a domingo"/>
                                 </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Lo que han enviado los ancianos desde el formulario web -->
+                        <Border x:Name="PanelProgramaRecibido" Visibility="Collapsed"
+                                Background="#1C3326" BorderBrush="#2F6B46" BorderThickness="1" CornerRadius="8"
+                                Padding="16,12" Margin="0,0,0,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock x:Name="TxtProgramaRecibido" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                    <TextBlock x:Name="TxtAsuntosRecibidos" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,4,12,0"/>
+                                </StackPanel>
+                                <ui:Button Grid.Column="1" Content="Pasar al programa" Icon="{ui:SymbolIcon ArrowDownload24}" Appearance="Secondary"
+                                           Click="BtnPasarProgramaRecibido_Click" VerticalAlignment="Center" Cursor="Hand"
+                                           ToolTip="Sustituye el programa de la visita por lo que han enviado (antes se muestra un resumen)"/>
                             </Grid>
                         </Border>
 

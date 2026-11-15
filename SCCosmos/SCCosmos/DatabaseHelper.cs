@@ -2503,13 +2503,13 @@ namespace SCCosmos
                         UPDATE ProgramaVisitaV2
                         SET DiaSemana = @Dia, Turno = @Turno, Responsable = @Responsable,
                             TipoActividad = @Tipo, Hora = @Hora, NotasLibro = @Notas,
-                            CompaneroId = 0, Direccion = @Direccion, Latitud = 0, Longitud = 0,
+                            CompaneroId = 0, Direccion = @Direccion, Latitud = @Lat, Longitud = @Lon,
                             Ubicacion = NULL
                         WHERE Id = @Id
                           AND (DiaSemana IS NOT @Dia OR Turno IS NOT @Turno OR Responsable IS NOT @Responsable
                                OR TipoActividad IS NOT @Tipo OR Hora IS NOT @Hora OR NotasLibro IS NOT @Notas
                                OR CompaneroId IS NOT 0 OR Direccion IS NOT @Direccion
-                               OR Latitud IS NOT 0 OR Longitud IS NOT 0 OR Ubicacion IS NOT NULL);"
+                               OR Latitud IS NOT @Lat OR Longitud IS NOT @Lon OR Ubicacion IS NOT NULL);"
                         : @"
                         INSERT INTO ProgramaVisitaV2
                             (CongreCodigo, MesReferencia, DiaSemana, Turno,
@@ -2518,7 +2518,7 @@ namespace SCCosmos
                         VALUES
                             (@Codigo, @Mes, @Dia, @Turno,
                              @Responsable, @Tipo, @Hora, @Notas,
-                             0, @Direccion, 0, 0);";
+                             0, @Direccion, @Lat, @Lon);";
                     cmd.Parameters.AddWithValue("@Codigo", congreCodigo ?? "");
                     cmd.Parameters.AddWithValue("@Mes", mesReferencia ?? "");
                     cmd.Parameters.AddWithValue("@Dia", evento.DiaSemana ?? "");
@@ -2528,6 +2528,8 @@ namespace SCCosmos
                     cmd.Parameters.AddWithValue("@Hora", evento.Hora ?? "");
                     cmd.Parameters.AddWithValue("@Notas", evento.Notas ?? "");
                     cmd.Parameters.AddWithValue("@Direccion", evento.Ubicacion ?? "");
+                    cmd.Parameters.AddWithValue("@Lat", evento.Latitud);
+                    cmd.Parameters.AddWithValue("@Lon", evento.Longitud);
                     if (total < huecos.Count)
                     {
                         cmd.Parameters.AddWithValue("@Id", huecos[total]);

@@ -419,6 +419,13 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - Crédito de los regulares: `RequisitoPrecursor.TextoCreditoComputable` = «(lo que computa)» con el tope de 55 (`HorasComputables` − horas). Windows: columna estrecha junto a «Crédito». Móvil: junto a la casilla del editor del mes y en el resumen de la ficha («Crédito: 20 (15)»).
   - 88/88 comprobaciones (4 nuevas del crédito). Probado en Windows con una copia de la base (borrada) y en el emulador (tarjeta y editor del mes sin guardar; base restaurada). Capturas: `Ventana:FormularioPersonaWindow:Precursor|Id=n[:Pestaña]` (local).
 - 15/11/2026 · Publicada la v2.1.68.
+- 15/11/2026 · v2.1.69 (formulario web del programa, fase 1; el usuario eligió: servido desde su PC, sin nube; OpenStreetMap ahora y Google después; más adelante, Raspberry o el móvil):
+  - `SincroCompartido/ProgramaWeb.cs`: lo enviado (JSON v1: reuniones, comidas, alojamiento, predicación por franja con hasta 2 personas por responsable y faceta/lección, pastoreo hasta 3, asuntos) → `EventoProgramaVisita` como el PDF + asuntos aparte; límites de textos y cantidades. Claves en Configuracion `ProgramaWeb_Codigo|Recibido|Aplicado_{congregación}_{mes}`; código secreto de 128 bits. `EventoProgramaVisita` pasa a su propio archivo (el banco excluye `Importador*.cs` por iText).
+  - `SincroCompartido/ServidorProgramaWeb.cs`: HTTP mínimo sobre TcpListener, solo 127.0.0.1 (portable a Android/Raspberry): GET/POST `/programa/{código}`, lo demás 404; cabeceras ≤16 KB, cuerpo ≤128 KB, un envío cada 3 s por enlace, CSP (solo el propio servidor y photon.komoot.io). `programa_web.html` (recurso incrustado): móvil primero, secciones plegables, autoguardado en localStorage, buscador Photon (OSM) centrado en el salón.
+  - Windows: `ProgramaWebPc` arranca el servidor (puerto 47320) en MainWindow; enlace con la dirección de `tailscale status` (`ProgramaWeb_Direccion`). VisitasPage › Programa: «Enlace para los ancianos», aviso «Programa recibido» (con asuntos) y «Pasar al programa» (resumen + `ReemplazarProgramaMesVisita`; sin lugar, el del salón). `EventoProgramaVisita` y `ReemplazarProgramaMesVisita` guardan ya latitud/longitud.
+  - Alojamiento: solo con «Sin alojamiento» en el calendario no se pregunta. Pastoreo: «Visita de pastoreo», responsable SC.
+  - 103/103 comprobaciones (15 nuevas: conversión y servidor real en un puerto de prueba). Probado en el navegador con un servidor de prueba (Capturas `ServidorProgramaWeb:código:mes`, local) y una copia de la base (borrada). Funnel: falta que el usuario lo active en Tailscale (`tailscale funnel --bg 47320`).
+- 15/11/2026 · Publicada la v2.1.69.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

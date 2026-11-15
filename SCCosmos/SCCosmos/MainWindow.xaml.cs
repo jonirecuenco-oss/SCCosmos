@@ -262,6 +262,10 @@ namespace SCCosmos
 
             Perf.Registrar("Arranque.Sync", relojArranque.ElapsedMilliseconds);
 
+            // Formulario web del programa de la visita (solo en este equipo;
+            // Tailscale Funnel lo publica).
+            ProgramaWebPc.Iniciar();
+
             // Refresco automático de la página abierta cuando llegan
             // cambios de otro dispositivo.
             SincronizacionPaginas.Iniciar(this);

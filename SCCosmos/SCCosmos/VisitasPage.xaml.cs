@@ -100,6 +100,10 @@ namespace SCCosmos
             _timerBusquedaMinisterio.Tick += TimerBusquedaMinisterio_Tick;
 
             this.Loaded += Page_Loaded;
+
+            // Lo que envían los ancianos desde el formulario web, al momento.
+            this.Loaded += (_, _) => ProgramaWebPc.EnvioRecibido += AlRecibirProgramaWeb;
+            this.Unloaded += (_, _) => ProgramaWebPc.EnvioRecibido -= AlRecibirProgramaWeb;
         }
 
         private async void Page_Loaded(object sender, RoutedEventArgs e)
@@ -898,6 +902,148 @@ namespace SCCosmos
         /// («Programa para la visita del SC») y sustituye el programa del
         /// mes por los eventos leídos.
         /// </summary>
+        // =========================================================
+        // FORMULARIO WEB DEL PROGRAMA (LO RELLENAN LOS ANCIANOS)
+        // =========================================================
+
+        private void BtnEnlaceProgramaWeb_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string enlace = ProgramaWebPc.Enlace(_congreCodigo, _mesPrograma.ToString("yyyy-MM"));
+
+                Clipboard.SetText(enlace);
+
+                MessageBox.Show(
+                    "Enlace copiado:\n\n" + enlace +
+                    "\n\nEnvíaselo a los ancianos (por WhatsApp o correo). Mientras lo rellenan, deja el PC encendido " +
+                    "con SCCosmos abierto: lo que envíen aparecerá aquí, en Programa.",
+                    "Enlace para los ancianos",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("No se pudo preparar el enlace:\n" + ex.Message, "Enlace para los ancianos", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // Llega desde el hilo del servidor: si es de esta visita, se pinta el aviso.
+        private void AlRecibirProgramaWeb(string congregacion, string mes)
+        {
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (congregacion == _congreCodigo && mes == _mesPrograma.ToString("yyyy-MM"))
+                {
+                    PintarProgramaRecibido();
+                }
+            }));
+        }
+
+        private void PintarProgramaRecibido()
+        {
+            try
+            {
+                string mes = _mesPrograma.ToString("yyyy-MM");
+
+                if (ProgramaWebPc.Recibido(_congreCodigo, mes) is not { } recibido)
+                {
+                    PanelProgramaRecibido.Visibility = Visibility.Collapsed;
+                    return;
+                }
+
+                DateTime? aplicado = ProgramaWebPc.Aplicado(_congreCodigo, mes);
+                bool yaPasado = aplicado.HasValue && aplicado.Value >= recibido.Cuando;
+
+                TxtProgramaRecibido.Text =
+                    $"Los ancianos enviaron el programa el {recibido.Cuando:dd/MM} a las {recibido.Cuando:HH:mm}."
+                    + (yaPasado ? " Ya está en el programa." : " Revísalo y pásalo al programa.");
+
+                var (_, asuntos) = SCCosmos.Sincro.ProgramaWeb.AEventos(recibido.Json);
+
+                TxtAsuntosRecibidos.Text =
+                    "Asuntos a tratar: " + string.Join("  ·  ", asuntos.Select((a, i) => $"{i + 1}) {a}"));
+                TxtAsuntosRecibidos.Visibility = asuntos.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+                PanelProgramaRecibido.Visibility = Visibility.Visible;
+            }
+            catch
+            {
+                PanelProgramaRecibido.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void BtnPasarProgramaRecibido_Click(object sender, RoutedEventArgs e)
+        {
+            string mes = _mesPrograma.ToString("yyyy-MM");
+
+            if (ProgramaWebPc.Recibido(_congreCodigo, mes) is not { } recibido)
+            {
+                return;
+            }
+
+            var (eventos, _) = SCCosmos.Sincro.ProgramaWeb.AEventos(recibido.Json);
+
+            if (eventos.Count == 0)
+            {
+                MessageBox.Show("Lo que han enviado no trae ninguna actividad con día y hora.", "Programa de los ancianos", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            // Reuniones y salidas sin lugar: el del salón, como con el PDF.
+            string direccionSalon =
+                DatabaseHelper.ObtenerCongregaciones()
+                    .FirstOrDefault(c => string.Equals(c.Codigo, _congreCodigo, StringComparison.OrdinalIgnoreCase))
+                    ?.DireccionSR?.Trim() ?? "";
+
+            if (direccionSalon.Length > 0)
+            {
+                foreach (var evento in eventos.Where(ev =>
+                             string.IsNullOrWhiteSpace(ev.Ubicacion)
+                             && (ev.TipoActividad.StartsWith("Reunión", StringComparison.OrdinalIgnoreCase)
+                                 || ev.TipoActividad == "Predicación")))
+                {
+                    evento.Ubicacion = direccionSalon;
+                }
+            }
+
+            string resumen = string.Join(
+                Environment.NewLine,
+                eventos.Take(14).Select(v =>
+                    "· " + v.DiaSemana + " " + v.Hora + " — " + v.TipoActividad
+                    + (string.IsNullOrWhiteSpace(v.Responsable) ? "" : " (" + v.Responsable + ")")));
+
+            if (eventos.Count > 14)
+            {
+                resumen += Environment.NewLine + $"… y {eventos.Count - 14} más.";
+            }
+
+            if (MessageBox.Show(
+                    $"Han enviado {eventos.Count} actividades:" + Environment.NewLine + Environment.NewLine
+                    + resumen + Environment.NewLine + Environment.NewLine
+                    + "Se sustituirá el programa de este mes por estas actividades. ¿Continuar?",
+                    "Programa de los ancianos",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question) != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            int creados = DatabaseHelper.ReemplazarProgramaMesVisita(_congreCodigo, mes, eventos);
+
+            ProgramaWebPc.MarcarAplicado(_congreCodigo, mes);
+
+            MessageBox.Show($"Pasadas al programa: {creados} actividades.", "Programa de los ancianos", MessageBoxButton.OK, MessageBoxImage.Information);
+
+            try
+            {
+                CargarPrograma(_mesPrograma);
+            }
+            catch
+            {
+            }
+        }
+
         private void BtnImportarProgramaPdf_Click(
             object sender,
             RoutedEventArgs e)
@@ -1055,6 +1201,9 @@ namespace SCCosmos
         private void CargarPrograma(DateTime mesReferencia)
         {
             string mesRefStr = mesReferencia.ToString("yyyy-MM");
+
+            // Lo enviado por los ancianos desde el formulario web, si lo hay.
+            PintarProgramaRecibido();
 
             var actividadesDB =
                 DatabaseHelper.ObtenerActividadesProgramaMes(

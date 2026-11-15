@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Programa de la visita</title>
+<style>
+  :root { --acento:#0b6fc2; --fondo:#f4f6f9; --tarjeta:#fff; --texto:#1c2430; --suave:#5d6875; --borde:#d4dbe4; --ok:#1e7d3a; --error:#b3261e; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background:var(--fondo); color:var(--texto); font-size:17px; line-height:1.4; }
+  main { max-width: 720px; margin: 0 auto; padding: 16px 14px 130px; }
+  h1 { font-size: 24px; margin: 6px 0 2px; }
+  .sub { color: var(--suave); margin: 0 0 12px; }
+  .intro { background:#e6f0fb; border-radius:12px; padding:12px 14px; font-size:15px; }
+  section { background: var(--tarjeta); border-radius: 14px; padding: 14px; margin: 16px 0; box-shadow: 0 1px 3px rgba(0,0,0,.07); }
+  h2 { font-size: 19px; margin: 0 0 4px; display:flex; gap:10px; align-items:center; }
+  .num { background: var(--acento); color:#fff; border-radius: 50%; width: 28px; height: 28px; display:inline-flex; align-items:center; justify-content:center; font-size:15px; flex: none; }
+  .ayuda { color: var(--suave); font-size: 14px; margin: 0 0 6px; }
+  h3 { font-size: 16px; margin: 0; }
+  label { display:block; font-size: 14px; color: var(--suave); margin: 10px 0 4px; }
+  input, select, textarea { width:100%; font: inherit; padding: 10px 12px; border: 1px solid var(--borde); border-radius: 10px; background:#fff; color: var(--texto); }
+  textarea { min-height: 76px; resize: vertical; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--acento); border-color: transparent; }
+  .fila { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .bloque { border: 1px solid var(--borde); border-radius: 12px; padding: 10px 12px; margin: 10px 0; }
+  details.bloque > summary { cursor: pointer; list-style: none; display:flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 30px; }
+  details.bloque > summary::-webkit-details-marker { display:none; }
+  .resumen { color: var(--suave); font-size: 14px; margin-left: auto; text-align: right; }
+  details[open] .resumen { display:none; }
+  .flecha::after { content: "▾"; color: var(--suave); font-size: 18px; }
+  details[open] .flecha::after { content: "▴"; }
+  button { font: inherit; border-radius: 10px; border: 1px solid var(--borde); background:#fff; padding: 9px 12px; cursor:pointer; color: var(--texto); }
+  button.secundario { color: var(--acento); border-color: #b9d3ee; background: #f2f8fe; margin-top: 8px; }
+  button.quitar { border:none; background:none; color: var(--error); font-size: 15px; padding: 4px 6px; }
+  .cab { display:flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .quien { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--borde); }
+  .quien > .titulo { font-weight: 600; }
+  .persona { background:#f7f9fc; border:1px solid var(--borde); border-radius: 10px; padding: 8px 10px; margin: 8px 0; }
+  .facetas { display:flex; gap:6px; }
+  .facetas button { flex: 1; padding: 9px 4px; font-size: 15px; }
+  .facetas button.elegida { background: var(--acento); color:#fff; border-color: var(--acento); }
+  .busca { position: relative; }
+  .sugerencias { position:absolute; left:0; right:0; top: 100%; z-index: 10; background:#fff; border:1px solid var(--borde); border-radius: 10px; margin-top: 4px; box-shadow: 0 6px 16px rgba(0,0,0,.14); overflow:hidden; }
+  .sugerencias div { padding: 11px 12px; border-bottom: 1px solid #eef1f5; font-size: 15px; cursor: pointer; }
+  .sugerencias div:last-child { border-bottom: none; }
+  .sugerencias div:hover, .sugerencias div:active { background:#eaf3fc; }
+  .marcado { font-size: 13px; color: var(--ok); margin-top: 4px; }
+  .barra { position: fixed; left:0; right:0; bottom:0; background: rgba(244,246,249,.97); border-top:1px solid var(--borde); padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); }
+  .barra .dentro { max-width: 720px; margin: 0 auto; }
+  .barra button { width: 100%; background: var(--acento); color:#fff; border:none; padding: 14px; font-size: 18px; font-weight: 600; }
+  .barra button:disabled { opacity: .6; }
+  .estado { font-size: 14px; color: var(--suave); text-align: center; margin-bottom: 6px; }
+  .aviso { border-radius: 12px; padding: 14px; margin-top: 16px; }
+  .aviso.ok { background:#e6f4ea; color: var(--ok); }
+  .aviso.error { background:#fce8e6; color: var(--error); }
+  .oculto { display:none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Programa de la visita</h1>
+  <p class="sub" id="cabecera"></p>
+  <div class="intro">Rellenad lo que ya sepáis: nada es obligatorio. Lo que escribís se va guardando en este dispositivo. Al terminar, pulsad <b>Enviar al superintendente</b>. Si algo cambia, podéis volver a abrir este enlace y enviarlo otra vez.</div>
+
+  <section>
+    <h2><span class="num">1</span>Reuniones</h2>
+    <p class="ayuda">Día, hora y lugar de cada reunión.</p>
+    <div id="reuniones"></div>
+  </section>
+
+  <section>
+    <h2><span class="num">2</span>Hospitalidad</h2>
+    <p class="ayuda">Quién invita a comer cada día. Tocad un día para rellenarlo.</p>
+    <div id="comidas"></div>
+    <div id="alojamiento" class="bloque oculto"></div>
+  </section>
+
+  <section>
+    <h2><span class="num">3</span>Predicación</h2>
+    <p class="ayuda" id="ayuda-predicacion"></p>
+    <div id="salidas"></div>
+  </section>
+
+  <section>
+    <h2><span class="num">4</span>Visitas de pastoreo</h2>
+    <p class="ayuda">Hasta 3 visitas. Rellenad solo las que tengáis.</p>
+    <div id="pastoreo"></div>
+    <button type="button" class="secundario" id="mas-pastoreo">+ Añadir otra visita</button>
+  </section>
+
+  <section>
+    <h2><span class="num">5</span>Asuntos a tratar</h2>
+    <p class="ayuda">Lo que queréis tratar con el superintendente.</p>
+    <div id="asuntos"></div>
+    <button type="button" class="secundario" id="mas-asunto">+ Añadir otro asunto</button>
+  </section>
+
+  <div id="resultado"></div>
+</main>
+
+<div class="barra"><div class="dentro">
+  <div class="estado oculto" id="estado"></div>
+  <button type="button" id="enviar">Enviar al superintendente</button>
+</div></div>
+
+<script>
+window.VISITA = /*VISITA*/null;
+
+(function () {
+  "use strict";
+
+  const V = window.VISITA || {
+    codigo: "ejemplo", congregacion: "Congregación de ejemplo", fechas: "del 10 al 15 de noviembre",
+    dias: {}, alojamiento: true, sc: "el superintendente", esposa: "su esposa", centro: null, envio: null, enviadoEn: 0
+  };
+
+  const DIAS = ["Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+  const DIAS_COMIDA = ["Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+  const FRANJAS = ["Miércoles mañana", "Miércoles tarde", "Jueves mañana", "Jueves tarde",
+                   "Viernes mañana", "Viernes tarde", "Sábado mañana", "Domingo mañana"];
+  const FACETAS = ["Territorio", "Curso bíblico", "Exhibidores"];
+  const REUNIONES = [
+    { clave: "entreSemana", titulo: "Reunión de entre semana", fijo: "Martes" },
+    { clave: "finDeSemana", titulo: "Reunión del fin de semana", dias: ["Sábado", "Domingo"] },
+    { clave: "ancianos", titulo: "Reunión con los ancianos y siervos ministeriales", dias: DIAS },
+    { clave: "predicacionViernes", titulo: "Reunión para la predicación", fijo: "Viernes" }
+  ];
+  const CLAVE = "programa_" + V.codigo;
+  const SC = V.sc || "el superintendente", ESPOSA = V.esposa || "su esposa";
+
+  const $ = s => document.querySelector(s);
+  const el = (etiqueta, props, ...hijos) => {
+    const e = document.createElement(etiqueta);
+    Object.assign(e, props || {});
+    hijos.forEach(h => h != null && e.append(h));
+    return e;
+  };
+  const mayus = t => t ? t[0].toUpperCase() + t.slice(1) : t;
+  const diaTexto = d => (V.dias && V.dias[d]) || d.toLowerCase();
+  // Etiqueta encima y, para lectores de pantalla, el mismo nombre en el control.
+  const campo = (etiqueta, control) => {
+    const objetivo = control.matches("input, select, textarea") ? control : control.querySelector("input, select, textarea");
+    if (objetivo) objetivo.setAttribute("aria-label", etiqueta);
+    return el("div", null, el("label", { textContent: etiqueta }), control);
+  };
+  const texto = (nombre, ayuda) => el("input", { type: "text", name: nombre, placeholder: ayuda || "", autocomplete: "off" });
+  const hora = nombre => el("input", { type: "time", name: nombre });
+  const val = (raiz, nombre) => { const i = raiz.querySelector('[name="' + nombre + '"]'); return i ? i.value.trim() : ""; };
+  const poner = (raiz, nombre, valor) => { const i = raiz.querySelector('[name="' + nombre + '"]'); if (i && valor != null) i.value = valor; };
+
+  function selectorDia(dias) {
+    const s = el("select", { name: "dia" }, el("option", { value: "", textContent: "Elegir día" }));
+    dias.forEach(d => s.append(el("option", { value: d, textContent: mayus(diaTexto(d)) })));
+    return s;
+  }
+
+  // ---- Buscador de lugares (OpenStreetMap) ----
+  function lugar(nombre, ayuda) {
+    const caja = el("div", { className: "busca" });
+    const input = texto(nombre, ayuda || "Escribid y elegid de la lista");
+    const lista = el("div", { className: "sugerencias oculto" });
+    const marca = el("div", { className: "marcado oculto", textContent: "✓ Ubicación encontrada" });
+    caja.append(input, lista, marca);
+
+    let espera = null, ultima = "";
+
+    input.addEventListener("input", () => {
+      input.dataset.lat = ""; input.dataset.lon = "";
+      marca.classList.add("oculto");
+      clearTimeout(espera);
+      const q = input.value.trim();
+      if (q.length < 3) { lista.classList.add("oculto"); return; }
+      espera = setTimeout(() => buscar(q), 400);
+    });
+    input.addEventListener("blur", () => setTimeout(() => lista.classList.add("oculto"), 250));
+
+    async function buscar(q) {
+      ultima = q;
+      let url = "https://photon.komoot.io/api/?limit=5&q=" + encodeURIComponent(q);
+      if (V.centro && V.centro.lat) url += "&lat=" + V.centro.lat + "&lon=" + V.centro.lon;
+      try {
+        const datos = await (await fetch(url)).json();
+        if (q !== ultima) return;
+        lista.replaceChildren();
+        (datos.features || []).forEach(f => {
+          const p = f.properties || {};
+          const calle = [p.street, p.housenumber].filter(Boolean).join(" ");
+          const sitio = [p.postcode, p.city || p.town || p.village].filter(Boolean).join(" ");
+          const nombreSitio = p.name && p.name !== p.street ? p.name : "";
+          const opcionTexto = [nombreSitio, calle, sitio].filter(Boolean).join(", ");
+          if (!opcionTexto) return;
+          const opcion = el("div", { textContent: opcionTexto });
+          opcion.addEventListener("mousedown", e => e.preventDefault());
+          opcion.addEventListener("click", () => {
+            const c = (f.geometry && f.geometry.coordinates) || [];
+            input.value = opcionTexto;
+            input.dataset.lon = c[0] || ""; input.dataset.lat = c[1] || "";
+            lista.classList.add("oculto");
+            marca.classList.remove("oculto");
+            cambio();
+          });
+          lista.append(opcion);
+        });
+        lista.classList.toggle("oculto", lista.children.length === 0);
+      } catch (e) {
+        lista.classList.add("oculto");
+      }
+    }
+    return caja;
+  }
+
+  const leerLugar = (raiz, nombre) => {
+    const i = raiz.querySelector('[name="' + nombre + '"]');
+    return { texto: i.value.trim(), lat: parseFloat(i.dataset.lat) || 0, lon: parseFloat(i.dataset.lon) || 0 };
+  };
+  const ponerLugar = (raiz, nombre, textoLugar, lat, lon) => {
+    const i = raiz.querySelector('[name="' + nombre + '"]');
+    if (!i) return;
+    i.value = textoLugar || "";
+    i.dataset.lat = lat || ""; i.dataset.lon = lon || "";
+    i.parentElement.querySelector(".marcado").classList.toggle("oculto", !(lat && lon));
+  };
+
+  // ---- 1. Reuniones ----
+  const reuniones = $("#reuniones");
+  REUNIONES.forEach((r, n) => {
+    const b = el("div", { className: "bloque" });
+    b.dataset.reunion = r.clave;
+    b.append(el("h3", { textContent: r.titulo + (r.fijo ? " · " + diaTexto(r.fijo) : "") }));
+    const fila = el("div", { className: "fila" });
+    if (r.dias) fila.append(campo("Día", selectorDia(r.dias)));
+    fila.append(campo("Hora", hora("hora")));
+    b.append(fila, campo("Lugar", lugar("lugar", "Salón del Reino, dirección…")));
+    if (n === 0) {
+      const copiar = el("button", { type: "button", className: "secundario", textContent: "Usar este lugar en todas las reuniones" });
+      copiar.addEventListener("click", () => {
+        const l = leerLugar(b, "lugar");
+        if (!l.texto) { alert("Escribid primero el lugar de esta reunión."); return; }
+        reuniones.querySelectorAll("[data-reunion]").forEach(o => ponerLugar(o, "lugar", l.texto, l.lat, l.lon));
+        cambio();
+      });
+      b.append(copiar);
+    }
+    reuniones.append(b);
+  });
+
+  // ---- 2. Hospitalidad ----
+  const comidas = $("#comidas");
+  DIAS_COMIDA.forEach(d => {
+    const b = el("details", { className: "bloque" });
+    b.dataset.comida = d;
+    b.append(el("summary", null, el("h3", { textContent: "Comida del " + diaTexto(d) }),
+                                 el("span", { className: "resumen" }), el("span", { className: "flecha" })));
+    const h = hora("hora"); h.value = "13:30";
+    b.append(campo("Publicador o familia", texto("familia", "Quién invita")),
+             el("div", { className: "fila" }, campo("Teléfono", el("input", { type: "tel", name: "telefono" })), campo("Hora", h)),
+             campo("Dirección", lugar("direccion", "Calle, número, pueblo")));
+    comidas.append(b);
+  });
+
+  const alojamiento = $("#alojamiento");
+  if (V.alojamiento) {
+    alojamiento.classList.remove("oculto");
+    alojamiento.append(el("h3", { textContent: "Alojamiento (todas las noches)" }),
+                       campo("Publicador o familia", texto("familia", "Quién aloja")),
+                       campo("Teléfono", el("input", { type: "tel", name: "telefono" })),
+                       campo("Dirección", lugar("direccion", "Calle, número, pueblo")));
+  }
+
+  // ---- 3. Predicación ----
+  $("#ayuda-predicacion").textContent =
+    "En cada salida, hasta 2 personas con " + SC + " y 2 con " + ESPOSA + ". Tocad una salida para rellenarla.";
+
+  const salidas = $("#salidas");
+  FRANJAS.forEach(fr => {
+    const [d, turno] = fr.split(" ");
+    const b = el("details", { className: "bloque" });
+    b.dataset.franja = fr;
+    b.append(el("summary", null, el("h3", { textContent: mayus(diaTexto(d)) + " · " + turno }),
+                                 el("span", { className: "resumen" }), el("span", { className: "flecha" })));
+    b.append(el("div", { className: "fila" }, campo("Hora de salida", hora("hora")), el("div")),
+             campo("Lugar de salida", lugar("lugar", "Dónde se sale")),
+             grupoPersonas("sc", "Con " + SC),
+             grupoPersonas("esposa", "Con " + ESPOSA));
+    salidas.append(b);
+  });
+
+  function grupoPersonas(quien, titulo) {
+    const g = el("div", { className: "quien" });
+    g.dataset.quien = quien;
+    const lista = el("div", { className: "personas" });
+    const mas = el("button", { type: "button", className: "secundario", textContent: "+ Añadir persona" });
+    mas.addEventListener("click", () => { nuevaPersona(lista, mas); cambio(); });
+    g.append(el("div", { className: "titulo", textContent: titulo }), lista, mas);
+    return g;
+  }
+
+  function nuevaPersona(lista, mas, datos) {
+    if (lista.children.length >= 2) return;
+    const p = el("div", { className: "persona" });
+    const quitar = el("button", { type: "button", className: "quitar", textContent: "Quitar" });
+    quitar.addEventListener("click", () => {
+      p.remove();
+      numerar(lista);
+      mas.classList.remove("oculto");
+      cambio();
+    });
+    const facetas = el("div", { className: "facetas" });
+    FACETAS.forEach(f => {
+      const bf = el("button", { type: "button", textContent: f });
+      bf.dataset.faceta = f;
+      bf.addEventListener("click", () => { elegirFaceta(p, f); cambio(); });
+      facetas.append(bf);
+    });
+    // Sin elegir no hay lección (antes salía la 1 sin querer).
+    const leccion = el("select", { name: "leccion" }, el("option", { value: "", textContent: "Elegir lección" }));
+    for (let n = 1; n <= 60; n++) leccion.append(el("option", { value: n, textContent: "Lección " + n }));
+    const campoLeccion = campo("Lección del curso", leccion);
+    campoLeccion.classList.add("oculto");
+    campoLeccion.dataset.leccion = "1";
+
+    p.append(el("div", { className: "cab" }, el("strong", { className: "n" }), quitar),
+             campo("Nombre", texto("nombre", "Nombre y apellido")),
+             el("label", { textContent: "¿Qué harán?" }), facetas,
+             campoLeccion,
+             campo("Notas", texto("notas", "Opcional")));
+    lista.append(p);
+    numerar(lista);
+    mas.classList.toggle("oculto", lista.children.length >= 2);
+
+    if (datos) {
+      poner(p, "nombre", datos.nombre || "");
+      poner(p, "notas", datos.notas || "");
+      if (datos.faceta) elegirFaceta(p, datos.faceta);
+      if (datos.leccion) leccion.value = datos.leccion;
+    }
+  }
+
+  function numerar(lista) {
+    [...lista.children].forEach((p, i) => p.querySelector(".n").textContent = "Persona " + (i + 1));
+  }
+
+  function elegirFaceta(p, f) {
+    p.dataset.faceta = f;
+    p.querySelectorAll(".facetas button").forEach(b => b.classList.toggle("elegida", b.dataset.faceta === f));
+    p.querySelector("[data-leccion]").classList.toggle("oculto", f !== "Curso bíblico");
+  }
+
+  // ---- 4. Visitas de pastoreo ----
+  const pastoreo = $("#pastoreo"), masPastoreo = $("#mas-pastoreo");
+  function nuevaVisita(datos) {
+    if (pastoreo.children.length >= 3) return;
+    const b = el("div", { className: "bloque" });
+    b.dataset.visita = "1";
+    const cab = el("div", { className: "cab" }, el("h3", { className: "n" }));
+    if (pastoreo.children.length >= 2) {
+      const quitar = el("button", { type: "button", className: "quitar", textContent: "Quitar" });
+      quitar.addEventListener("click", () => { b.remove(); numerarVisitas(); cambio(); });
+      cab.append(quitar);
+    }
+    b.append(cab,
+             campo("Persona o familia", texto("nombre", "A quién se visita")),
+             el("div", { className: "fila" }, campo("Día", selectorDia(DIAS)), campo("Hora", hora("hora"))),
+             campo("Dirección", lugar("direccion", "Calle, número, pueblo")),
+             campo("Descripción (opcional)", el("textarea", { name: "descripcion" })));
+    pastoreo.append(b);
+    numerarVisitas();
+    if (datos) {
+      poner(b, "nombre", datos.nombre); poner(b, "dia", datos.dia); poner(b, "hora", datos.hora);
+      poner(b, "descripcion", datos.descripcion);
+      ponerLugar(b, "direccion", datos.direccion, datos.lat, datos.lon);
+    }
+  }
+  function numerarVisitas() {
+    [...pastoreo.children].forEach((b, i) => b.querySelector(".n").textContent = "Visita " + (i + 1));
+    masPastoreo.classList.toggle("oculto", pastoreo.children.length >= 3);
+  }
+  masPastoreo.addEventListener("click", () => { nuevaVisita(); cambio(); });
+
+  // ---- 5. Asuntos a tratar ----
+  const asuntos = $("#asuntos"), masAsunto = $("#mas-asunto");
+  function nuevoAsunto(valor) {
+    if (asuntos.children.length >= 10) return;
+    const b = el("div", { className: "bloque" });
+    const t = el("textarea", { name: "asunto", placeholder: "Describid el asunto" });
+    t.value = valor || "";
+    if (asuntos.children.length >= 1) {
+      const quitar = el("button", { type: "button", className: "quitar", textContent: "Quitar" });
+      quitar.addEventListener("click", () => { b.remove(); masAsunto.classList.remove("oculto"); cambio(); });
+      b.append(el("div", { className: "cab" }, el("span"), quitar));
+    }
+    b.append(t);
+    asuntos.append(b);
+    masAsunto.classList.toggle("oculto", asuntos.children.length >= 10);
+  }
+  masAsunto.addEventListener("click", () => { nuevoAsunto(); cambio(); });
+
+  // ---- Recoger y rellenar ----
+  function recoger() {
+    const d = { version: 1, reuniones: {}, comidas: [], alojamiento: null, predicacion: [], pastoreo: [], asuntos: [] };
+    reuniones.querySelectorAll("[data-reunion]").forEach(b => {
+      const l = leerLugar(b, "lugar");
+      d.reuniones[b.dataset.reunion] = { dia: val(b, "dia"), hora: val(b, "hora"), lugar: l.texto, lat: l.lat, lon: l.lon };
+    });
+    comidas.querySelectorAll("[data-comida]").forEach(b => {
+      const l = leerLugar(b, "direccion");
+      d.comidas.push({ dia: b.dataset.comida, familia: val(b, "familia"), telefono: val(b, "telefono"), hora: val(b, "hora"), direccion: l.texto, lat: l.lat, lon: l.lon });
+    });
+    if (V.alojamiento) {
+      const l = leerLugar(alojamiento, "direccion");
+      d.alojamiento = { familia: val(alojamiento, "familia"), telefono: val(alojamiento, "telefono"), direccion: l.texto, lat: l.lat, lon: l.lon };
+    }
+    salidas.querySelectorAll("[data-franja]").forEach(b => {
+      const l = leerLugar(b, "lugar");
+      const personas = q => [...b.querySelectorAll('[data-quien="' + q + '"] .persona')].map(p => ({
+        nombre: val(p, "nombre"), faceta: p.dataset.faceta || "",
+        leccion: p.dataset.faceta === "Curso bíblico" ? parseInt(val(p, "leccion"), 10) || 0 : 0,
+        notas: val(p, "notas")
+      })).filter(p => p.nombre);
+      d.predicacion.push({ franja: b.dataset.franja, hora: val(b, "hora"), lugar: l.texto, lat: l.lat, lon: l.lon, sc: personas("sc"), esposa: personas("esposa") });
+    });
+    pastoreo.querySelectorAll("[data-visita]").forEach(b => {
+      const l = leerLugar(b, "direccion");
+      d.pastoreo.push({ nombre: val(b, "nombre"), dia: val(b, "dia"), hora: val(b, "hora"), direccion: l.texto, lat: l.lat, lon: l.lon, descripcion: val(b, "descripcion") });
+    });
+    asuntos.querySelectorAll('[name="asunto"]').forEach(t => t.value.trim() && d.asuntos.push(t.value.trim()));
+    return d;
+  }
+
+  function rellenar(d) {
+    d = d || {};
+    const r = d.reuniones || {};
+    reuniones.querySelectorAll("[data-reunion]").forEach(b => {
+      const x = r[b.dataset.reunion];
+      if (!x) return;
+      poner(b, "dia", x.dia); poner(b, "hora", x.hora);
+      ponerLugar(b, "lugar", x.lugar, x.lat, x.lon);
+    });
+    (d.comidas || []).forEach(c => {
+      const b = comidas.querySelector('[data-comida="' + c.dia + '"]');
+      if (!b) return;
+      poner(b, "familia", c.familia); poner(b, "telefono", c.telefono);
+      if (c.hora) poner(b, "hora", c.hora);
+      ponerLugar(b, "direccion", c.direccion, c.lat, c.lon);
+    });
+    if (V.alojamiento && d.alojamiento) {
+      poner(alojamiento, "familia", d.alojamiento.familia); poner(alojamiento, "telefono", d.alojamiento.telefono);
+      ponerLugar(alojamiento, "direccion", d.alojamiento.direccion, d.alojamiento.lat, d.alojamiento.lon);
+    }
+    (d.predicacion || []).forEach(s => {
+      const b = salidas.querySelector('[data-franja="' + s.franja + '"]');
+      if (!b) return;
+      poner(b, "hora", s.hora);
+      ponerLugar(b, "lugar", s.lugar, s.lat, s.lon);
+      ["sc", "esposa"].forEach(q => {
+        const g = b.querySelector('[data-quien="' + q + '"]');
+        (s[q] || []).slice(0, 2).forEach(p => nuevaPersona(g.querySelector(".personas"), g.querySelector("button.secundario"), p));
+      });
+    });
+    pastoreo.replaceChildren();
+    (d.pastoreo || []).filter(v => v.nombre || v.dia || v.hora || v.direccion || v.descripcion).slice(0, 3).forEach(v => nuevaVisita(v));
+    while (pastoreo.children.length < 2) nuevaVisita();
+    asuntos.replaceChildren();
+    (d.asuntos || []).slice(0, 10).forEach(a => nuevoAsunto(a));
+    if (asuntos.children.length === 0) nuevoAsunto();
+    resumir();
+  }
+
+  function resumir() {
+    comidas.querySelectorAll("[data-comida]").forEach(b => {
+      b.querySelector(".resumen").textContent = val(b, "familia") || "Sin rellenar";
+    });
+    salidas.querySelectorAll("[data-franja]").forEach(b => {
+      const n = [...b.querySelectorAll(".persona")].filter(p => val(p, "nombre")).length;
+      const h = val(b, "hora");
+      b.querySelector(".resumen").textContent =
+        (h ? h + " · " : "") + (n === 0 ? "Sin planes" : n + (n === 1 ? " persona" : " personas"));
+    });
+  }
+
+  // ---- Guardado en este dispositivo ----
+  let esperaGuardar = null;
+  function cambio() {
+    resumir();
+    clearTimeout(esperaGuardar);
+    esperaGuardar = setTimeout(() => {
+      try { localStorage.setItem(CLAVE, JSON.stringify({ guardado: Date.now(), datos: recoger() })); } catch (e) { }
+    }, 300);
+  }
+  document.addEventListener("input", cambio);
+  document.addEventListener("change", cambio);
+
+  let borrador = null;
+  try { borrador = JSON.parse(localStorage.getItem(CLAVE) || "null"); } catch (e) { }
+  const usarEnviado = V.envio && (!borrador || (V.enviadoEn || 0) > (borrador.guardado || 0));
+  rellenar(usarEnviado ? V.envio : (borrador && borrador.datos));
+
+  $("#cabecera").textContent = [V.congregacion, V.fechas].filter(Boolean).join(" · ");
+
+  // ---- Enviar ----
+  const boton = $("#enviar"), estado = $("#estado");
+  function mostrarEstado(t) { estado.textContent = t; estado.classList.toggle("oculto", !t); }
+  function resultado(ok) {
+    const caja = $("#resultado");
+    caja.replaceChildren(el("div", {
+      className: "aviso " + (ok ? "ok" : "error"),
+      textContent: ok
+        ? "¡Enviado! Muchas gracias. Si cambia algo, podéis volver a abrir este enlace y enviarlo de nuevo."
+        : "No se ha podido enviar. Comprobad la conexión y volved a intentarlo; lo escrito sigue guardado en este dispositivo."
+    }));
+    caja.scrollIntoView({ behavior: "smooth" });
+  }
+  boton.addEventListener("click", async () => {
+    boton.disabled = true;
+    mostrarEstado("Enviando…");
+    try {
+      const r = await fetch(location.pathname, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(recoger())
+      });
+      if (r.status === 429) { mostrarEstado("Esperad unos segundos y volved a pulsar."); return; }
+      mostrarEstado("");
+      resultado(r.ok);
+    } catch (e) {
+      mostrarEstado("");
+      resultado(false);
+    } finally {
+      boton.disabled = false;
+    }
+  });
+})();
+</script>
+</body>
+</html>

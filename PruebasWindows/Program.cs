@@ -344,6 +344,54 @@ internal static class Programa
         Ver("Crédito: entero", RequisitoPrecursor.TextoCreditoComputable(30, 10), "(10)");
         Ver("Crédito: con 55 horas no computa", RequisitoPrecursor.TextoCreditoComputable(60, 5), "(0)");
         Ver("Crédito: sin crédito, nada", RequisitoPrecursor.TextoCreditoComputable(20, 0), "");
+
+        // Programa de la visita desde la web: lo enviado → los mismos eventos que el PDF.
+        string envioWeb = """
+        {"version":1,
+         "reuniones":{"entreSemana":{"hora":"19:00","lugar":"Salón del Reino","lat":39.9,"lon":-5.5},
+                      "finDeSemana":{"dia":"Domingo","hora":"11:00","lugar":""},
+                      "ancianos":{"dia":"","hora":"20:00"},
+                      "predicacionViernes":{"hora":"9.30","lugar":"Plaza"}},
+         "comidas":[{"dia":"Miércoles","familia":"Familia García","telefono":"600","hora":"","direccion":"Calle Mayor 1"},{"dia":"Jueves","familia":""}],
+         "alojamiento":{"familia":"Familia Ruiz","telefono":"","direccion":"Calle Sol 2"},
+         "predicacion":[{"franja":"Miércoles mañana","hora":"10:00","lugar":"","sc":[{"nombre":"Juan Pérez","faceta":"Curso bíblico","leccion":12,"notas":"lleva el libro"},{"nombre":"Ana Ruiz","faceta":"Territorio"},{"nombre":"Tercero","faceta":"Territorio"}],"esposa":[]},
+                        {"franja":"Jueves tarde","hora":"17:00","sc":[],"esposa":[]},
+                        {"franja":"Viernes tarde","hora":"","sc":[],"esposa":[]}],
+         "pastoreo":[{"nombre":"Familia López","dia":"Jueves","hora":"18:00","direccion":"Calle Luna 3","descripcion":"Ánimo"},{"nombre":"","dia":"Viernes"}],
+         "asuntos":["Limpieza del salón",""," Grupos "]}
+        """;
+        var (eventosWeb, asuntosWeb) = ProgramaWeb.AEventos(envioWeb);
+        Ver("Web: reuniones (sin día, la de ancianos no cuenta)", string.Join("|", eventosWeb.Where(e => e.TipoActividad.StartsWith("Reunión") || (e.TipoActividad == "Predicación" && e.Turno == "General")).Select(e => $"{e.DiaSemana} {e.Hora} {e.TipoActividad}")), "Martes 19:00 Reunión entre semana|Viernes 09:30 Predicación|Domingo 11:00 Reunión fin de semana");
+        Ver("Web: total de actividades", eventosWeb.Count, 13);
+        Ver("Web: comida (hora por defecto)", eventosWeb.Where(e => e.TipoActividad == "Comida").Select(e => $"{e.DiaSemana} {e.Hora} {e.Notas} @ {e.Ubicacion}").FirstOrDefault(), "Miércoles 13:30 Familia García · 600 @ Calle Mayor 1");
+        Ver("Web: alojamiento, todos los días", eventosWeb.Count(e => e.TipoActividad == "Alojamiento"), 6);
+        Ver("Web: predicación, 2 personas como mucho", eventosWeb.First(e => e.TipoActividad == "Predicación" && e.Responsable == "SC").Notas, "Juan Pérez (Curso bíblico, lección 12) — lleva el libro; Ana Ruiz (Territorio)");
+        Ver("Web: salida con hora y sin nadie", eventosWeb.Count(e => e.TipoActividad == "Predicación" && e.Turno == "Tarde" && e.Responsable == ""), 1);
+        Ver("Web: pastoreo", eventosWeb.Where(e => e.TipoActividad == "Visita de pastoreo").Select(e => $"{e.DiaSemana} {e.Hora} {e.Responsable} {e.Notas}").Single(), "Jueves 18:00 SC Familia López · Ánimo");
+        Ver("Web: coordenadas", eventosWeb.First().Latitud, 39.9);
+        Ver("Web: asuntos", string.Join("|", asuntosWeb), "Limpieza del salón|Grupos");
+        Ver("Web: código del enlace", ProgramaWeb.CodigoValido(ProgramaWeb.NuevoCodigo()) && !ProgramaWeb.CodigoValido("../../etc/passwd"), true);
+
+        // El servidor del formulario: solo /programa/{código}, y solo con un código que exista.
+        string codigoPrueba = ProgramaWeb.NuevoCodigo();
+        string recibidoPrueba = "";
+        using (var servidor = new ServidorProgramaWeb(
+                   47399,
+                   c => c == codigoPrueba ? "{\"codigo\":\"x\"}" : null,
+                   (c, json) => { recibidoPrueba = json; return true; },
+                   "<html><script>window.VISITA = /*VISITA*/null;</script></html>"))
+        {
+            servidor.Iniciar();
+            using var http = new System.Net.Http.HttpClient { BaseAddress = new Uri("http://127.0.0.1:47399") };
+            var pagina = http.GetAsync("/programa/" + codigoPrueba).Result;
+            Ver("Servidor: la página, con los datos de la visita", (int)pagina.StatusCode + " " + pagina.Content.ReadAsStringAsync().Result.Contains("window.VISITA = {\"codigo\":\"x\"};"), "200 True");
+            Ver("Servidor: código que no existe", (int)http.GetAsync("/programa/" + ProgramaWeb.NuevoCodigo()).Result.StatusCode, 404);
+            Ver("Servidor: otra ruta", (int)http.GetAsync("/admin").Result.StatusCode, 404);
+            var envio = http.PostAsync("/programa/" + codigoPrueba, new System.Net.Http.StringContent("{\"version\":1}", System.Text.Encoding.UTF8, "application/json")).Result;
+            Ver("Servidor: envío guardado", (int)envio.StatusCode + " " + recibidoPrueba, "200 {\"version\":1}");
+            var seguido = http.PostAsync("/programa/" + codigoPrueba, new System.Net.Http.StringContent("{\"version\":1}", System.Text.Encoding.UTF8, "application/json")).Result;
+            Ver("Servidor: otro envío seguido, a esperar", (int)seguido.StatusCode, 429);
+        }
     }
 
     // Ajustes de la página Avisos: sin nada guardado, lo de siempre; ida y vuelta; el día de quedar con el CCA.

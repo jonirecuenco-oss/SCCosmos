@@ -20,26 +20,8 @@ namespace SCCosmos.Sincro;
 // como notas (el vínculo con las tarjetas se hace a mano).
 // ============================================================
 
-public sealed class EventoProgramaVisita
-{
-    public string DiaSemana { get; set; } = "";
-
-    /// <summary>Mañana, Tarde o General.</summary>
-    public string Turno { get; set; } = "";
-
-    public string Hora { get; set; } = "";
-
-    public string TipoActividad { get; set; } = "";
-
-    /// <summary>SC, Esposa, Ambos o vacío.</summary>
-    public string Responsable { get; set; } = "";
-
-    public string Notas { get; set; } = "";
-
-    /// <summary>Dirección/ubicación del evento (p. ej. el salón del Reino).</summary>
-    public string Ubicacion { get; set; } = "";
-}
-
+// EventoProgramaVisita está en su propio archivo: también lo usa el
+// formulario web (ProgramaWeb), que no depende del PDF.
 
 public static class ImportadorProgramaVisita
 {
