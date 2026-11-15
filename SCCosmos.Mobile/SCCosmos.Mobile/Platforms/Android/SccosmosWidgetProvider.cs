@@ -1096,6 +1096,40 @@ public class SccosmosWidgetProvider : AppWidgetProvider
     }
 
 
+    /// <summary>
+    /// «Jonatán» o «Rebeca» (los nombres de Configuración) en vez de «SC» o
+    /// «esposa». Otro nombre (un acompañante, «Joni»…), tal cual; sin nombre
+    /// guardado, como antes.
+    /// </summary>
+    private static string NombreResponsable(
+        string responsable)
+    {
+        (bool deSC, bool deEsposa) =
+            ClasificarResponsable(
+                responsable);
+
+        if (deSC == deEsposa)
+        {
+            return responsable;
+        }
+
+        string nombre =
+            DatabaseHelper
+                .ObtenerConfiguracion(
+                    deEsposa
+                        ? "NombreEsposaSC"
+                        : "NombreSC",
+                    "")
+                .Trim();
+
+        return nombre.Length > 0
+            ? nombre
+            : deEsposa
+                ? "esposa"
+                : "SC";
+    }
+
+
     internal static List<(string Texto, string ConsultaMapa, string Descripcion, string Tiempo)>
         ObtenerProgramaDelDia(
             DateTime dia)
@@ -1243,15 +1277,11 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                 {
                     responsable = "";
                 }
-                else if (responsable.Equals(
-                             "SC",
-                             StringComparison.OrdinalIgnoreCase))
-                {
-                    responsable = "SC";
-                }
                 else if (responsable.Length > 0)
                 {
-                    responsable = "esposa";
+                    responsable =
+                        NombreResponsable(
+                            responsable);
                 }
 
                 string linea =

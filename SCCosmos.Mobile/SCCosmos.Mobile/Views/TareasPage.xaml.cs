@@ -172,10 +172,16 @@ public partial class TareasPage : ContentPage, IActualizableMobile
         tarea.Completada =
             e.Value;
 
+        // Y el widget al momento (antes, solo al salir de la app).
         await Task.Run(
-            () => DatabaseHelper.MarcarTareaCompletadaMobile(
-                tarea.Id,
-                e.Value));
+            () =>
+            {
+                DatabaseHelper.MarcarTareaCompletadaMobile(
+                    tarea.Id,
+                    e.Value);
+
+                SCCosmos.Mobile.Platforms.Android.SccosmosWidgetProvider.ActualizarTodos();
+            });
 
         await CargarAsync();
     }

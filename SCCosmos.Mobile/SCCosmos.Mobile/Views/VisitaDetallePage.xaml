@@ -426,10 +426,9 @@
               RowSpacing="12"
               Padding="16,0,16,0">
 
-                <Grid ColumnDefinitions="*,Auto"
-                      RowDefinitions="Auto,Auto"
+                <!-- Grupo y, al lado (donde estaba el selector de mes), el buscador -->
+                <Grid ColumnDefinitions="Auto,*"
                       ColumnSpacing="10"
-                      RowSpacing="8"
                       Margin="0,2,0,0">
 
                     <Picker x:Name="PickerGrupo"
@@ -441,39 +440,9 @@
                             WidthRequest="150"
                             Title="Grupo" />
 
-                    <HorizontalStackLayout x:Name="CintaMesMinisterio"
-                                           Grid.Column="1"
-                                           Spacing="2"
-                                           VerticalOptions="Center">
-                        <Button Text="‹"
-                                Clicked="BtnMesAntMinisterio_Clicked"
-                                BackgroundColor="{StaticResource SuperficieAlta}"
-                                TextColor="{StaticResource TextoPrincipal}"
-                                WidthRequest="34"
-                                HeightRequest="34"
-                                Padding="0" />
-
-                        <Label x:Name="LblMesMinisterio"
-                               TextColor="{StaticResource TextoPrincipal}"
-                               FontAttributes="Bold"
-                               FontSize="13"
-                               WidthRequest="104"
-                               HorizontalTextAlignment="Center"
-                               VerticalTextAlignment="Center" />
-
-                        <Button Text="›"
-                                Clicked="BtnMesSigMinisterio_Clicked"
-                                BackgroundColor="{StaticResource SuperficieAlta}"
-                                TextColor="{StaticResource TextoPrincipal}"
-                                WidthRequest="34"
-                                HeightRequest="34"
-                                Padding="0" />
-                    </HorizontalStackLayout>
-
                     <!-- Buscador: filtra por nombre, nombre común o de JW Hub (sin tildes) -->
                     <SearchBar x:Name="BuscadorMinisterio"
-                               Grid.Row="1"
-                               Grid.ColumnSpan="2"
+                               Grid.Column="1"
                                Placeholder="Buscar persona…"
                                TextChanged="BuscadorMinisterio_TextChanged"
                                BackgroundColor="{StaticResource Superficie}"
@@ -591,96 +560,187 @@
 
                                         </Grid>
 
-                                        <!-- 6 últimos meses de actividad -->
-                                        <Grid Margin="0,2,0,0"
-                                              IsVisible="{Binding MostrarCuadrosHoras}"
-                                              ColumnDefinitions="*,*,*,*,*,*"
-                                              ColumnSpacing="4">
-
-                                        <Border Grid.Column="0"
-                                                BackgroundColor="{Binding Actividad1.Fondo}"
+                                        <!-- Los últimos 12 meses de actividad, en una tira que se arrastra con el
+                                             dedo: a la vista, los 6 últimos (el ancho de cada cuadro lo pone el
+                                             código); hacia la derecha, los anteriores. Cuadros fijos (no una
+                                             lista) para que la fila se reutilice sin rehacerlos. -->
+                                        <ScrollView Orientation="Horizontal"
+                                                    HorizontalScrollBarVisibility="Never"
+                                                    Margin="0,2,0,0"
+                                                    IsVisible="{Binding MostrarCuadrosHoras}"
+                                                    SizeChanged="CuadrosMinisterio_SizeChanged"
+                                                    BindingContextChanged="CuadrosMinisterio_BindingContextChanged">
+                                        <HorizontalStackLayout Spacing="4"
+                                                               SizeChanged="FilaCuadrosMinisterio_SizeChanged">
+                                        <Border WidthRequest="52"
+                                                BackgroundColor="{Binding Actividad[0].Fondo}"
                                                 StrokeThickness="0"
                                                 Padding="3,1,3,0"
                                                 MinimumHeightRequest="45"
                                                 SemanticProperties.Description="Abrir detalle del mes">
                                             <Border.StrokeShape><RoundRectangle CornerRadius="7" /></Border.StrokeShape>
                                             <Border.GestureRecognizers>
-                                                <TapGestureRecognizer CommandParameter="{Binding Actividad1}"
+                                                <TapGestureRecognizer CommandParameter="{Binding Actividad[0]}"
                                                                       Tapped="ActividadMes_Tapped" />
                                             </Border.GestureRecognizers>
-                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><Label Text="{Binding Actividad1.Mes}" TextColor="{StaticResource TextoSecundario}" FontSize="9" HorizontalOptions="Center" VerticalTextAlignment="Center"/><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad1.Valor}" TextColor="{Binding Actividad1.TextoColor}" FontSize="{Binding Actividad1.ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad1.TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad1.Acumulado}" IsVisible="{Binding Actividad1.MostrarAcumulado}" TextColor="{Binding Actividad1.AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
+                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><Label Text="{Binding Actividad[0].Mes}" TextColor="{StaticResource TextoSecundario}" FontSize="9" HorizontalOptions="Center" VerticalTextAlignment="Center"/><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad[0].Valor}" TextColor="{Binding Actividad[0].TextoColor}" FontSize="{Binding Actividad[0].ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad[0].TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad[0].Acumulado}" IsVisible="{Binding Actividad[0].MostrarAcumulado}" TextColor="{Binding Actividad[0].AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
                                         </Border>
 
-                                        <Border Grid.Column="1"
-                                                BackgroundColor="{Binding Actividad2.Fondo}"
+                                        <Border WidthRequest="52"
+                                                BackgroundColor="{Binding Actividad[1].Fondo}"
                                                 StrokeThickness="0"
                                                 Padding="3,1,3,0"
                                                 MinimumHeightRequest="45"
                                                 SemanticProperties.Description="Abrir detalle del mes">
                                             <Border.StrokeShape><RoundRectangle CornerRadius="7" /></Border.StrokeShape>
                                             <Border.GestureRecognizers>
-                                                <TapGestureRecognizer CommandParameter="{Binding Actividad2}"
+                                                <TapGestureRecognizer CommandParameter="{Binding Actividad[1]}"
                                                                       Tapped="ActividadMes_Tapped" />
                                             </Border.GestureRecognizers>
-                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><Label Text="{Binding Actividad2.Mes}" TextColor="{StaticResource TextoSecundario}" FontSize="9" HorizontalOptions="Center" VerticalTextAlignment="Center"/><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad2.Valor}" TextColor="{Binding Actividad2.TextoColor}" FontSize="{Binding Actividad2.ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad2.TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad2.Acumulado}" IsVisible="{Binding Actividad2.MostrarAcumulado}" TextColor="{Binding Actividad2.AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
+                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><Label Text="{Binding Actividad[1].Mes}" TextColor="{StaticResource TextoSecundario}" FontSize="9" HorizontalOptions="Center" VerticalTextAlignment="Center"/><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad[1].Valor}" TextColor="{Binding Actividad[1].TextoColor}" FontSize="{Binding Actividad[1].ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad[1].TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad[1].Acumulado}" IsVisible="{Binding Actividad[1].MostrarAcumulado}" TextColor="{Binding Actividad[1].AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
                                         </Border>
 
-                                        <Border Grid.Column="2"
-                                                BackgroundColor="{Binding Actividad3.Fondo}"
+                                        <Border WidthRequest="52"
+                                                BackgroundColor="{Binding Actividad[2].Fondo}"
                                                 StrokeThickness="0"
                                                 Padding="3,1,3,0"
                                                 MinimumHeightRequest="45"
                                                 SemanticProperties.Description="Abrir detalle del mes">
                                             <Border.StrokeShape><RoundRectangle CornerRadius="7" /></Border.StrokeShape>
                                             <Border.GestureRecognizers>
-                                                <TapGestureRecognizer CommandParameter="{Binding Actividad3}"
+                                                <TapGestureRecognizer CommandParameter="{Binding Actividad[2]}"
                                                                       Tapped="ActividadMes_Tapped" />
                                             </Border.GestureRecognizers>
-                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><Label Text="{Binding Actividad3.Mes}" TextColor="{StaticResource TextoSecundario}" FontSize="9" HorizontalOptions="Center" VerticalTextAlignment="Center"/><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad3.Valor}" TextColor="{Binding Actividad3.TextoColor}" FontSize="{Binding Actividad3.ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad3.TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad3.Acumulado}" IsVisible="{Binding Actividad3.MostrarAcumulado}" TextColor="{Binding Actividad3.AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
+                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><Label Text="{Binding Actividad[2].Mes}" TextColor="{StaticResource TextoSecundario}" FontSize="9" HorizontalOptions="Center" VerticalTextAlignment="Center"/><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad[2].Valor}" TextColor="{Binding Actividad[2].TextoColor}" FontSize="{Binding Actividad[2].ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad[2].TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad[2].Acumulado}" IsVisible="{Binding Actividad[2].MostrarAcumulado}" TextColor="{Binding Actividad[2].AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
                                         </Border>
 
-                                        <Border Grid.Column="3"
-                                                BackgroundColor="{Binding Actividad4.Fondo}"
+                                        <Border WidthRequest="52"
+                                                BackgroundColor="{Binding Actividad[3].Fondo}"
                                                 StrokeThickness="0"
                                                 Padding="3,1,3,0"
                                                 MinimumHeightRequest="45"
                                                 SemanticProperties.Description="Abrir detalle del mes">
                                             <Border.StrokeShape><RoundRectangle CornerRadius="7" /></Border.StrokeShape>
                                             <Border.GestureRecognizers>
-                                                <TapGestureRecognizer CommandParameter="{Binding Actividad4}"
+                                                <TapGestureRecognizer CommandParameter="{Binding Actividad[3]}"
                                                                       Tapped="ActividadMes_Tapped" />
                                             </Border.GestureRecognizers>
-                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><Label Text="{Binding Actividad4.Mes}" TextColor="{StaticResource TextoSecundario}" FontSize="9" HorizontalOptions="Center" VerticalTextAlignment="Center"/><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad4.Valor}" TextColor="{Binding Actividad4.TextoColor}" FontSize="{Binding Actividad4.ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad4.TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad4.Acumulado}" IsVisible="{Binding Actividad4.MostrarAcumulado}" TextColor="{Binding Actividad4.AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
+                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><Label Text="{Binding Actividad[3].Mes}" TextColor="{StaticResource TextoSecundario}" FontSize="9" HorizontalOptions="Center" VerticalTextAlignment="Center"/><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad[3].Valor}" TextColor="{Binding Actividad[3].TextoColor}" FontSize="{Binding Actividad[3].ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad[3].TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad[3].Acumulado}" IsVisible="{Binding Actividad[3].MostrarAcumulado}" TextColor="{Binding Actividad[3].AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
                                         </Border>
 
-                                        <Border Grid.Column="4"
-                                                BackgroundColor="{Binding Actividad5.Fondo}"
+                                        <Border WidthRequest="52"
+                                                BackgroundColor="{Binding Actividad[4].Fondo}"
                                                 StrokeThickness="0"
                                                 Padding="3,1,3,0"
                                                 MinimumHeightRequest="45"
                                                 SemanticProperties.Description="Abrir detalle del mes">
                                             <Border.StrokeShape><RoundRectangle CornerRadius="7" /></Border.StrokeShape>
                                             <Border.GestureRecognizers>
-                                                <TapGestureRecognizer CommandParameter="{Binding Actividad5}"
+                                                <TapGestureRecognizer CommandParameter="{Binding Actividad[4]}"
                                                                       Tapped="ActividadMes_Tapped" />
                                             </Border.GestureRecognizers>
-                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><Label Text="{Binding Actividad5.Mes}" TextColor="{StaticResource TextoSecundario}" FontSize="9" HorizontalOptions="Center" VerticalTextAlignment="Center"/><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad5.Valor}" TextColor="{Binding Actividad5.TextoColor}" FontSize="{Binding Actividad5.ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad5.TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad5.Acumulado}" IsVisible="{Binding Actividad5.MostrarAcumulado}" TextColor="{Binding Actividad5.AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
+                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><Label Text="{Binding Actividad[4].Mes}" TextColor="{StaticResource TextoSecundario}" FontSize="9" HorizontalOptions="Center" VerticalTextAlignment="Center"/><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad[4].Valor}" TextColor="{Binding Actividad[4].TextoColor}" FontSize="{Binding Actividad[4].ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad[4].TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad[4].Acumulado}" IsVisible="{Binding Actividad[4].MostrarAcumulado}" TextColor="{Binding Actividad[4].AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
                                         </Border>
 
-                                        <Border Grid.Column="5"
-                                                BackgroundColor="{Binding Actividad6.Fondo}"
+                                        <Border WidthRequest="52"
+                                                BackgroundColor="{Binding Actividad[5].Fondo}"
                                                 StrokeThickness="0"
                                                 Padding="3,1,3,0"
                                                 MinimumHeightRequest="45"
                                                 SemanticProperties.Description="Abrir detalle del mes">
                                             <Border.StrokeShape><RoundRectangle CornerRadius="7" /></Border.StrokeShape>
                                             <Border.GestureRecognizers>
-                                                <TapGestureRecognizer CommandParameter="{Binding Actividad6}"
+                                                <TapGestureRecognizer CommandParameter="{Binding Actividad[5]}"
                                                                       Tapped="ActividadMes_Tapped" />
                                             </Border.GestureRecognizers>
-                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><Label Text="{Binding Actividad6.Mes}" TextColor="{StaticResource TextoSecundario}" FontSize="9" HorizontalOptions="Center" VerticalTextAlignment="Center"/><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad6.Valor}" TextColor="{Binding Actividad6.TextoColor}" FontSize="{Binding Actividad6.ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad6.TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad6.Acumulado}" IsVisible="{Binding Actividad6.MostrarAcumulado}" TextColor="{Binding Actividad6.AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
+                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><Label Text="{Binding Actividad[5].Mes}" TextColor="{StaticResource TextoSecundario}" FontSize="9" HorizontalOptions="Center" VerticalTextAlignment="Center"/><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad[5].Valor}" TextColor="{Binding Actividad[5].TextoColor}" FontSize="{Binding Actividad[5].ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad[5].TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad[5].Acumulado}" IsVisible="{Binding Actividad[5].MostrarAcumulado}" TextColor="{Binding Actividad[5].AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
                                         </Border>
-                                        </Grid>
+
+                                        <Border WidthRequest="52"
+                                                BackgroundColor="{Binding Actividad[6].Fondo}"
+                                                StrokeThickness="0"
+                                                Padding="3,1,3,0"
+                                                MinimumHeightRequest="45"
+                                                SemanticProperties.Description="Abrir detalle del mes">
+                                            <Border.StrokeShape><RoundRectangle CornerRadius="7" /></Border.StrokeShape>
+                                            <Border.GestureRecognizers>
+                                                <TapGestureRecognizer CommandParameter="{Binding Actividad[6]}"
+                                                                      Tapped="ActividadMes_Tapped" />
+                                            </Border.GestureRecognizers>
+                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><Label Text="{Binding Actividad[6].Mes}" TextColor="{StaticResource TextoSecundario}" FontSize="9" HorizontalOptions="Center" VerticalTextAlignment="Center"/><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad[6].Valor}" TextColor="{Binding Actividad[6].TextoColor}" FontSize="{Binding Actividad[6].ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad[6].TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad[6].Acumulado}" IsVisible="{Binding Actividad[6].MostrarAcumulado}" TextColor="{Binding Actividad[6].AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
+                                        </Border>
+
+                                        <Border WidthRequest="52"
+                                                BackgroundColor="{Binding Actividad[7].Fondo}"
+                                                StrokeThickness="0"
+                                                Padding="3,1,3,0"
+                                                MinimumHeightRequest="45"
+                                                SemanticProperties.Description="Abrir detalle del mes">
+                                            <Border.StrokeShape><RoundRectangle CornerRadius="7" /></Border.StrokeShape>
+                                            <Border.GestureRecognizers>
+                                                <TapGestureRecognizer CommandParameter="{Binding Actividad[7]}"
+                                                                      Tapped="ActividadMes_Tapped" />
+                                            </Border.GestureRecognizers>
+                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><Label Text="{Binding Actividad[7].Mes}" TextColor="{StaticResource TextoSecundario}" FontSize="9" HorizontalOptions="Center" VerticalTextAlignment="Center"/><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad[7].Valor}" TextColor="{Binding Actividad[7].TextoColor}" FontSize="{Binding Actividad[7].ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad[7].TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad[7].Acumulado}" IsVisible="{Binding Actividad[7].MostrarAcumulado}" TextColor="{Binding Actividad[7].AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
+                                        </Border>
+
+                                        <Border WidthRequest="52"
+                                                BackgroundColor="{Binding Actividad[8].Fondo}"
+                                                StrokeThickness="0"
+                                                Padding="3,1,3,0"
+                                                MinimumHeightRequest="45"
+                                                SemanticProperties.Description="Abrir detalle del mes">
+                                            <Border.StrokeShape><RoundRectangle CornerRadius="7" /></Border.StrokeShape>
+                                            <Border.GestureRecognizers>
+                                                <TapGestureRecognizer CommandParameter="{Binding Actividad[8]}"
+                                                                      Tapped="ActividadMes_Tapped" />
+                                            </Border.GestureRecognizers>
+                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><Label Text="{Binding Actividad[8].Mes}" TextColor="{StaticResource TextoSecundario}" FontSize="9" HorizontalOptions="Center" VerticalTextAlignment="Center"/><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad[8].Valor}" TextColor="{Binding Actividad[8].TextoColor}" FontSize="{Binding Actividad[8].ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad[8].TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad[8].Acumulado}" IsVisible="{Binding Actividad[8].MostrarAcumulado}" TextColor="{Binding Actividad[8].AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
+                                        </Border>
+
+                                        <Border WidthRequest="52"
+                                                BackgroundColor="{Binding Actividad[9].Fondo}"
+                                                StrokeThickness="0"
+                                                Padding="3,1,3,0"
+                                                MinimumHeightRequest="45"
+                                                SemanticProperties.Description="Abrir detalle del mes">
+                                            <Border.StrokeShape><RoundRectangle CornerRadius="7" /></Border.StrokeShape>
+                                            <Border.GestureRecognizers>
+                                                <TapGestureRecognizer CommandParameter="{Binding Actividad[9]}"
+                                                                      Tapped="ActividadMes_Tapped" />
+                                            </Border.GestureRecognizers>
+                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><Label Text="{Binding Actividad[9].Mes}" TextColor="{StaticResource TextoSecundario}" FontSize="9" HorizontalOptions="Center" VerticalTextAlignment="Center"/><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad[9].Valor}" TextColor="{Binding Actividad[9].TextoColor}" FontSize="{Binding Actividad[9].ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad[9].TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad[9].Acumulado}" IsVisible="{Binding Actividad[9].MostrarAcumulado}" TextColor="{Binding Actividad[9].AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
+                                        </Border>
+
+                                        <Border WidthRequest="52"
+                                                BackgroundColor="{Binding Actividad[10].Fondo}"
+                                                StrokeThickness="0"
+                                                Padding="3,1,3,0"
+                                                MinimumHeightRequest="45"
+                                                SemanticProperties.Description="Abrir detalle del mes">
+                                            <Border.StrokeShape><RoundRectangle CornerRadius="7" /></Border.StrokeShape>
+                                            <Border.GestureRecognizers>
+                                                <TapGestureRecognizer CommandParameter="{Binding Actividad[10]}"
+                                                                      Tapped="ActividadMes_Tapped" />
+                                            </Border.GestureRecognizers>
+                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><Label Text="{Binding Actividad[10].Mes}" TextColor="{StaticResource TextoSecundario}" FontSize="9" HorizontalOptions="Center" VerticalTextAlignment="Center"/><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad[10].Valor}" TextColor="{Binding Actividad[10].TextoColor}" FontSize="{Binding Actividad[10].ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad[10].TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad[10].Acumulado}" IsVisible="{Binding Actividad[10].MostrarAcumulado}" TextColor="{Binding Actividad[10].AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
+                                        </Border>
+
+                                        <Border WidthRequest="52"
+                                                BackgroundColor="{Binding Actividad[11].Fondo}"
+                                                StrokeThickness="0"
+                                                Padding="3,1,3,0"
+                                                MinimumHeightRequest="45"
+                                                SemanticProperties.Description="Abrir detalle del mes">
+                                            <Border.StrokeShape><RoundRectangle CornerRadius="7" /></Border.StrokeShape>
+                                            <Border.GestureRecognizers>
+                                                <TapGestureRecognizer CommandParameter="{Binding Actividad[11]}"
+                                                                      Tapped="ActividadMes_Tapped" />
+                                            </Border.GestureRecognizers>
+                                            <VerticalStackLayout Spacing="0" HorizontalOptions="Fill"><Label Text="{Binding Actividad[11].Mes}" TextColor="{StaticResource TextoSecundario}" FontSize="9" HorizontalOptions="Center" VerticalTextAlignment="Center"/><HorizontalStackLayout Spacing="1" HorizontalOptions="Center"><Label Text="{Binding Actividad[11].Valor}" TextColor="{Binding Actividad[11].TextoColor}" FontSize="{Binding Actividad[11].ValorFontSize}" FontAttributes="Bold" VerticalTextAlignment="Center"/><Label Text="*" IsVisible="{Binding Actividad[11].TieneNotas}" TextColor="#80C4FF" FontAttributes="Bold" FontSize="13" Margin="1,-2,0,-1" VerticalTextAlignment="Center"/></HorizontalStackLayout><Label Text="{Binding Actividad[11].Acumulado}" IsVisible="{Binding Actividad[11].MostrarAcumulado}" TextColor="{Binding Actividad[11].AcumuladoColor}" FontSize="8.5" HorizontalTextAlignment="Center" Margin="0,-1,0,0"/></VerticalStackLayout>
+                                        </Border>
+                                        </HorizontalStackLayout>
+                                        </ScrollView>
                                     </VerticalStackLayout>
                                 </Grid>
                             </Border>

@@ -105,14 +105,12 @@ public partial class VisitaDetallePage
         BtnContabilidad.IsVisible = false;
         BtnS303.IsVisible = false;
 
-        // Tampoco ve esas pestañas ni el selector de meses.
+        // Tampoco ve esas pestañas.
         TabNotas.IsVisible = false;
         TabTerritorios.IsVisible = false;
         TabMapa.IsVisible = false;
         TabContabilidad.IsVisible = false;
         TabS303.IsVisible = false;
-
-        CintaMesMinisterio.IsVisible = false;
     }
 
 
@@ -191,6 +189,8 @@ public partial class VisitaDetallePage
                 {
                     PintarPrograma();
                 }
+
+                _ = IrAlSiguienteEventoAsync();
                 break;
 
             case "notas":
@@ -409,7 +409,6 @@ public partial class VisitaDetallePage
             }
 
             PintarGrupos();
-            PintarMesMinisterio();
             PintarPersonas();
             PrepararPrograma();
             PrepararTerritorios();
@@ -596,29 +595,6 @@ public partial class VisitaDetallePage
     }
 
 
-    private void PintarMesMinisterio()
-    {
-        // Abreviado para que quepa junto al selector de grupos
-        // («Sept 2026», «Oct 2026»…).
-        LblMesMinisterio.Text =
-            FormatearMesCorto(
-                _mesMinisterio);
-    }
-
-
-    private static string FormatearMesCorto(DateTime fecha)
-    {
-        string texto =
-            fecha.ToString(
-                "MMM yyyy",
-                new CultureInfo("es-ES"));
-
-        return texto.Length == 0
-            ? ""
-            : char.ToUpper(texto[0]) + texto.Substring(1);
-    }
-
-
     private void ActualizarPickerGrupoMinisterio()
     {
         string? seleccionado =
@@ -656,22 +632,8 @@ public partial class VisitaDetallePage
     }
 
 
-    private async void BtnMesAntMinisterio_Clicked(
-        object sender,
-        EventArgs e)
-    {
-        await CambiarMesMinisterioAsync(-1);
-    }
-
-
-    private async void BtnMesSigMinisterio_Clicked(
-        object sender,
-        EventArgs e)
-    {
-        await CambiarMesMinisterioAsync(1);
-    }
-
-
+    // Sin selector de mes: solo se usa para recargar el mismo (al volver de
+    // editar una persona). Los meses se ven arrastrando cada tira de cuadros.
     private async Task CambiarMesMinisterioAsync(
         int desplazamiento)
     {
@@ -699,13 +661,11 @@ public partial class VisitaDetallePage
                         MesFinCuadrosMinisterio()));
 
             _personasMinisterio = personas;
-            PintarMesMinisterio();
             PintarPersonas();
         }
         catch (Exception ex)
         {
             _mesMinisterio = anterior;
-            PintarMesMinisterio();
 
             await DisplayAlert(
                 "Ministerio",
@@ -865,24 +825,18 @@ public partial class VisitaDetallePage
                 .Select(CrearActividadUi)
                 .ToList();
 
-        while (actividad.Count < 6)
+        // Los 12 cuadros de la tira (la plantilla los enlaza por posición).
+        while (actividad.Count < DatabaseHelper.MesesCuadrosMinisterio)
         {
             actividad.Insert(
                 0,
                 ActividadMesUi.Vacia());
         }
 
-        actividad =
+        ui.Actividad =
             actividad
-                .TakeLast(6)
+                .TakeLast(DatabaseHelper.MesesCuadrosMinisterio)
                 .ToList();
-
-        ui.Actividad1 = actividad[0];
-        ui.Actividad2 = actividad[1];
-        ui.Actividad3 = actividad[2];
-        ui.Actividad4 = actividad[3];
-        ui.Actividad5 = actividad[4];
-        ui.Actividad6 = actividad[5];
 
         return ui;
     }
@@ -957,6 +911,96 @@ public partial class VisitaDetallePage
             Fondo = Color.FromArgb(fondo),
             TextoColor = Color.FromArgb(texto)
         };
+    }
+
+
+    // Tira de cuadros de cada persona: caben 6 a lo ancho y empieza por los
+    // últimos meses (a la derecha); arrastrando hacia la derecha, los anteriores.
+    private const int CuadrosVisiblesMinisterio = 6;
+
+
+    // Después de la maquetación en curso: cambiar el ancho en mitad de ella
+    // no se aplicaba.
+    private void CuadrosMinisterio_SizeChanged(
+        object? sender,
+        EventArgs e)
+    {
+        if (sender is ScrollView tira)
+        {
+            tira.Dispatcher.Dispatch(
+                () => AjustarTiraMinisterio(tira));
+        }
+    }
+
+
+    // Una fila que se reutiliza para otra persona vuelve a los últimos meses.
+    private void CuadrosMinisterio_BindingContextChanged(
+        object? sender,
+        EventArgs e)
+    {
+        if (sender is ScrollView tira)
+        {
+            tira.Dispatcher.Dispatch(
+                () => AjustarTiraMinisterio(tira));
+        }
+    }
+
+
+    private void FilaCuadrosMinisterio_SizeChanged(
+        object? sender,
+        EventArgs e)
+    {
+        if (sender is Layout { Parent: ScrollView tira })
+        {
+            IrAlFinalDeLaTira(tira);
+        }
+    }
+
+
+    private static void AjustarTiraMinisterio(
+        ScrollView tira)
+    {
+        if (tira.Width <= 0
+            || tira.Content is not HorizontalStackLayout fila)
+        {
+            return;
+        }
+
+        double ancho =
+            Math.Floor(
+                (tira.Width - fila.Spacing * (CuadrosVisiblesMinisterio - 1))
+                / CuadrosVisiblesMinisterio);
+
+        foreach (View cuadro in fila.Children.OfType<View>())
+        {
+            if (Math.Abs(cuadro.WidthRequest - ancho) > 0.5)
+            {
+                cuadro.WidthRequest = ancho;
+            }
+        }
+
+        IrAlFinalDeLaTira(tira);
+    }
+
+
+    private static void IrAlFinalDeLaTira(
+        ScrollView tira)
+    {
+        try
+        {
+            if (tira.Content is View fila
+                && fila.Width > 0
+                && tira.Width > 0)
+            {
+                _ = tira.ScrollToAsync(
+                    Math.Max(0, fila.Width - tira.Width),
+                    0,
+                    false);
+            }
+        }
+        catch
+        {
+        }
     }
 
 
@@ -1344,6 +1388,126 @@ public partial class VisitaDetallePage
         return m.Success
             ? int.Parse(m.Groups[1].Value) * 60
             : int.MaxValue;
+    }
+
+
+    private bool _resaltandoEvento;
+
+
+    /// <summary>
+    /// En plena visita, al abrir Programa: baja al siguiente evento por la
+    /// hora (el primero de hoy que aún no ha empezado o, si hoy no queda
+    /// ninguno, el de un día siguiente) y lo resalta un segundo en amarillo.
+    /// Sin ninguno por delante, se queda en el día de hoy.
+    /// </summary>
+    private async Task IrAlSiguienteEventoAsync()
+    {
+        if (_resaltandoEvento)
+        {
+            return;
+        }
+
+        _resaltandoEvento = true;
+
+        try
+        {
+            int hoy =
+                (DateTime.Today - _semana.FechaMartes.Date).Days;
+
+            if (hoy < 0
+                || hoy >= DiasPrograma.Length
+                || ListaPrograma.ItemsSource is not List<DiaProgramaUi> grupos)
+            {
+                return;
+            }
+
+            int ahora =
+                DateTime.Now.Hour * 60 + DateTime.Now.Minute;
+
+            ProgramaVisitaUi? siguiente = null;
+
+            for (int dia = hoy; dia < DiasPrograma.Length && siguiente is null; dia++)
+            {
+                siguiente =
+                    grupos
+                        .FirstOrDefault(g => g.Dia == DiasPrograma[dia])?
+                        .FirstOrDefault(p =>
+                        {
+                            int minutos = MinutosHora(p.Original.Hora);
+
+                            return minutos != int.MaxValue
+                                && (dia > hoy || minutos >= ahora);
+                        });
+            }
+
+            object? destino =
+                (object?)siguiente
+                ?? grupos.FirstOrDefault(g => g.Dia == DiasPrograma[hoy]);
+
+            if (destino is null)
+            {
+                return;
+            }
+
+            // La lista va dentro del ScrollView: su posición se saca de la
+            // vista de Android, cuando ya está pintada.
+            for (int intento = 0; intento < 12; intento++)
+            {
+                await Task.Delay(150);
+
+                Border? tarjeta =
+                    ListaPrograma
+                        .GetVisualTreeDescendants()
+                        .OfType<Border>()
+                        .FirstOrDefault(b => ReferenceEquals(b.BindingContext, destino));
+
+                if (tarjeta?.Handler?.PlatformView is not global::Android.Views.View vista
+                    || ScrollContenido2.Handler?.PlatformView is not global::Android.Views.ViewGroup scroll
+                    || vista.Height == 0
+                    || !vista.IsAttachedToWindow)
+                {
+                    continue;
+                }
+
+                var rect =
+                    new global::Android.Graphics.Rect();
+
+                vista.GetDrawingRect(rect);
+                scroll.OffsetDescendantRectToMyCoords(vista, rect);
+
+                double densidad =
+                    vista.Resources?.DisplayMetrics?.Density ?? 1;
+
+                // Con algo de margen arriba, para ver lo anterior.
+                await ScrollContenido2.ScrollToAsync(
+                    0,
+                    Math.Max(0, rect.Top / densidad - 60),
+                    true);
+
+                if (siguiente is not null)
+                {
+                    Color fondo =
+                        tarjeta.BackgroundColor;
+
+                    tarjeta.BackgroundColor =
+                        Color.FromArgb("#8CFFD54F");
+
+                    await Task.Delay(1000);
+
+                    tarjeta.BackgroundColor =
+                        fondo;
+                }
+
+                return;
+            }
+        }
+        catch
+        {
+        }
+        finally
+        {
+            _resaltandoEvento = false;
+        }
     }
 
 
@@ -4047,12 +4211,8 @@ public sealed class PersonaVisitaUi
     public double MetaHoras { get; set; }
     public double DeficitHoras { get; set; }
 
-    public ActividadMesUi Actividad1 { get; set; } = ActividadMesUi.Vacia();
-    public ActividadMesUi Actividad2 { get; set; } = ActividadMesUi.Vacia();
-    public ActividadMesUi Actividad3 { get; set; } = ActividadMesUi.Vacia();
-    public ActividadMesUi Actividad4 { get; set; } = ActividadMesUi.Vacia();
-    public ActividadMesUi Actividad5 { get; set; } = ActividadMesUi.Vacia();
-    public ActividadMesUi Actividad6 { get; set; } = ActividadMesUi.Vacia();
+    /// <summary>Los meses de la tira de cuadros, del más antiguo al último.</summary>
+    public List<ActividadMesUi> Actividad { get; set; } = new();
 }
 
 

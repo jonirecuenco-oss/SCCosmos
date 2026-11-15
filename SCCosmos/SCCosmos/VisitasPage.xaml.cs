@@ -282,18 +282,24 @@ namespace SCCosmos
         }
 
         // --- MINISTERIO ---
+        // Sin «mes de referencia»: las personas son las del mes de la visita y las
+        // flechas solo mueven las 6 columnas de actividad (meses que se han ido atrás).
+        private int _mesesAtrasMinisterio;
+
         private async void ActualizarUI_MesMinisterio()
         {
-            if (TxtMesMinisterio != null) TxtMesMinisterio.Text = FormatearMes(_mesMinisterio);
             if (_cargandoDatos) return;
             _cargandoDatos = true;
             try
             {
                 DateTime maxMesAct = CalcularMaximoMesActividad();
-                DateTime mesFinGrid = (maxMesAct != DateTime.MinValue && _mesMinisterio > maxMesAct) ? maxMesAct : _mesMinisterio;
+                DateTime mesFinGrid = ((maxMesAct != DateTime.MinValue && _mesMinisterio > maxMesAct) ? maxMesAct : _mesMinisterio).AddMonths(-_mesesAtrasMinisterio);
 
                 DateTime[] mesesARenderizar = new DateTime[6];
                 for (int i = 0; i < 6; i++) mesesARenderizar[5 - i] = mesFinGrid.AddMonths(-i);
+
+                if (TxtMesMinisterio != null) TxtMesMinisterio.Text = RangoMeses(mesesARenderizar[0], mesesARenderizar[5]);
+                if (BtnMesSigMinisterio != null) BtnMesSigMinisterio.IsEnabled = _mesesAtrasMinisterio > 0;
 
                 var listadoHermanosHistorico = DatabaseHelper.ObtenerPersonasHistoricasPorMes(_congreCodigo, _mesMinisterio.ToString("yyyy-MM"));
 
@@ -308,8 +314,18 @@ namespace SCCosmos
             finally { _cargandoDatos = false; }
         }
 
-        private void BtnMesAntMinisterio_Click(object sender, RoutedEventArgs e) { _mesMinisterio = _mesMinisterio.AddMonths(-1); ActualizarUI_MesMinisterio(); }
-        private void BtnMesSigMinisterio_Click(object sender, RoutedEventArgs e) { _mesMinisterio = _mesMinisterio.AddMonths(1); ActualizarUI_MesMinisterio(); }
+        private void BtnMesAntMinisterio_Click(object sender, RoutedEventArgs e) { _mesesAtrasMinisterio++; ActualizarUI_MesMinisterio(); }
+        private void BtnMesSigMinisterio_Click(object sender, RoutedEventArgs e) { if (_mesesAtrasMinisterio == 0) return; _mesesAtrasMinisterio--; ActualizarUI_MesMinisterio(); }
+
+        // «Jun – Nov 2026» o, si cambia de año, «Dic 2025 – May 2026».
+        private static string RangoMeses(DateTime desde, DateTime hasta)
+        {
+            var es = new CultureInfo("es-ES");
+            string Mes(DateTime d) { string t = d.ToString("MMM", es).TrimEnd('.'); return char.ToUpper(t[0]) + t.Substring(1); }
+            return desde.Year == hasta.Year
+                ? $"{Mes(desde)} – {Mes(hasta)} {hasta.Year}"
+                : $"{Mes(desde)} {desde.Year} – {Mes(hasta)} {hasta.Year}";
+        }
 
         // --- PROGRAMA ---
         private void ActualizarUI_MesPrograma()

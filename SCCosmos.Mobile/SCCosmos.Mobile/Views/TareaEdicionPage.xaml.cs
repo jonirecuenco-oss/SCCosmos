@@ -326,9 +326,15 @@ public partial class TareaEdicionPage : ContentPage
                         : "Esposa";
             }
 
+            // Y el widget al momento (antes, solo al salir de la app).
             await Task.Run(
-                () => DatabaseHelper.GuardarTareaMobile(
-                    tarea));
+                () =>
+                {
+                    DatabaseHelper.GuardarTareaMobile(
+                        tarea);
+
+                    SCCosmos.Mobile.Platforms.Android.SccosmosWidgetProvider.ActualizarTodos();
+                });
 
             await Navigation.PopAsync();
         }
@@ -365,8 +371,13 @@ public partial class TareaEdicionPage : ContentPage
         }
 
         await Task.Run(
-            () => DatabaseHelper.EliminarTareaMobile(
-                _tarea.Id));
+            () =>
+            {
+                DatabaseHelper.EliminarTareaMobile(
+                    _tarea.Id);
+
+                SCCosmos.Mobile.Platforms.Android.SccosmosWidgetProvider.ActualizarTodos();
+            });
 
         await Navigation.PopAsync();
     }

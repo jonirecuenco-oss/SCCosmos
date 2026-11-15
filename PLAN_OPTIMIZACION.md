@@ -397,6 +397,13 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - Widget: junto a las horas, «30 h (+6,7)  ·  4 CBs» (SpannableString: color y tamaño 0,87); fuera la segunda línea `fila_predicacion_estado`. Tarjetas de Inicio (móvil y Windows): en la línea de debajo («−8,3 h», 14, negrita), porque al lado no cabe (Windows: tarjeta de 308 px; móvil: ~214 dp junto a las flechas). Verde #7ED889, naranja #FFB74D, gris si ±0. Windows: ToolTip con el requisito.
   - 75/75 comprobaciones (las de horas, adaptadas). Probado en el emulador (−23,3, +6,7, −15 y el widget; base restaurada) y en Windows con una copia de la base (borrada).
 - 15/11/2026 · Publicada la v2.1.65.
+- 15/11/2026 · v2.1.66 (puntos 1, 2, 3 y 5 de la petición; el 4, Calendario con tareas, va en la siguiente):
+  - Programa de la visita (móvil): al abrir la pestaña en plena visita, `IrAlSiguienteEventoAsync` baja al primer evento que aún no ha empezado (hoy o, si no queda, un día siguiente; mismo criterio que el widget) y lo pone amarillo 1 s. La lista va dentro de un ScrollView: la posición se saca de la vista de Android (`OffsetDescendantRectToMyCoords`). Sin ninguno por delante, a la cabecera de hoy.
+  - Widget: «(Jonatán)»/«(Rebeca)» (`NombreSC`/`NombreEsposaSC`) en vez de «(SC)»/«(esposa)»; otro nombre (acompañante, «Joni»), tal cual (antes cualquier otro salía «esposa»).
+  - Widget y tareas: `ActualizarTodos` al guardar, borrar o completar una tarea en el móvil y 2 s después de recibir datos de otro dispositivo (antes solo en OnSleep, a medianoche y cada 2 h). Probado en el emulador: tarea completada en la app → fuera del widget.
+  - Ministerio sin «Mes de referencia». Móvil: buscador en la fila del grupo; cada persona tiene una tira de 12 meses (`MesesCuadrosMinisterio`) que se arrastra (ScrollView horizontal: un deslizamiento dentro de la lista vertical se lo quedaba el RecyclerView en cuanto se movía en vertical); 12 cuadros fijos enlazados por posición; el ancho para que quepan 6 se pone tras la maquetación (en mitad de ella no se aplicaba, medido) y la tira empieza al final. `EsInactivo` sigue mirando los 6 últimos. Windows: las personas, siempre del mes de la visita; las flechas solo mueven las 6 columnas (`_mesesAtrasMinisterio`) y la cinta muestra el intervalo.
+  - 75/75 comprobaciones. Probado en el emulador con datos de prueba (programa, nombres, tarea; base restaurada) y Windows con una copia de la base (borrada).
+- 15/11/2026 · Publicada la v2.1.66.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

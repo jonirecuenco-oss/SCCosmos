@@ -151,14 +151,15 @@
                                             ToolTip="Buscar por nombre común, nombre completo o nombre JW Hub"/>
                             </WrapPanel>
 
-                            <!-- CINTA DE MES INDIVIDUAL -->
+                            <!-- MESES DE ACTIVIDAD QUE SE VEN (las 6 columnas): las flechas los mueven;
+                                 las personas son siempre las del mes de la visita -->
                             <StackPanel x:Name="CintaMesMinisterio" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top" Margin="10,0,0,0">
-                                <TextBlock Text="Mes de referencia:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="14" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                <ui:Button Icon="{ui:SymbolIcon ChevronLeft24}" Appearance="Transparent" Padding="4" Margin="0,0,5,0" Cursor="Hand" Click="BtnMesAntMinisterio_Click"/>
-                                <Border Background="{DynamicResource ControlFillColorDefaultBrush}" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="6" Padding="15,6" MinWidth="140">
+                                <ui:Button Icon="{ui:SymbolIcon ChevronLeft24}" Appearance="Transparent" Padding="4" Margin="0,0,5,0" Cursor="Hand" ToolTip="Un mes antes" Click="BtnMesAntMinisterio_Click"/>
+                                <Border Background="{DynamicResource ControlFillColorDefaultBrush}" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="6" Padding="15,6" MinWidth="140"
+                                        ToolTip="Meses de actividad que se ven">
                                     <TextBlock x:Name="TxtMesMinisterio" Text="Mes" FontSize="14" FontWeight="SemiBold" TextAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <ui:Button Icon="{ui:SymbolIcon ChevronRight24}" Appearance="Transparent" Padding="4" Margin="5,0,0,0" Cursor="Hand" Click="BtnMesSigMinisterio_Click"/>
+                                <ui:Button x:Name="BtnMesSigMinisterio" Icon="{ui:SymbolIcon ChevronRight24}" Appearance="Transparent" Padding="4" Margin="5,0,0,0" Cursor="Hand" ToolTip="Un mes después" Click="BtnMesSigMinisterio_Click"/>
                             </StackPanel>
                         </Grid>
 

@@ -107,9 +107,16 @@ public static class ActualizacionPaginasMobile
     {
         try
         {
+            // Y el widget, con lo recibido (antes esperaba a que se
+            // saliera de la app).
             _temporizadorAlertas ??=
                 new System.Threading.Timer(
-                    estado => _ = AlertasNotificacionService.ActualizarAsync(),
+                    estado =>
+                    {
+                        _ = AlertasNotificacionService.ActualizarAsync();
+
+                        SCCosmos.Mobile.Platforms.Android.SccosmosWidgetProvider.ActualizarTodos();
+                    },
                     null,
                     Timeout.Infinite,
                     Timeout.Infinite);

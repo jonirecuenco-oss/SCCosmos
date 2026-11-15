@@ -911,8 +911,17 @@ public static partial class DatabaseHelper
 
 
     // ========================================================================
-    // ACTIVIDAD DE LOS ÚLTIMOS 6 MESES
+    // ACTIVIDAD DE LOS ÚLTIMOS MESES (los cuadros de Ministerio)
     // ========================================================================
+
+    /// <summary>
+    /// Meses de la tira de cuadros de cada persona: se ven 6 y, arrastrando,
+    /// los anteriores. «Inactivo» sigue mirando solo los 6 últimos.
+    /// </summary>
+    public const int MesesCuadrosMinisterio = 12;
+
+    private const int MesesInactividad = 6;
+
 
     private static void
         CargarActividadSeisMesesMobile(
@@ -942,7 +951,7 @@ public static partial class DatabaseHelper
         var meses =
             new List<(DateTime Fecha, string Mes, string Anio)>();
 
-        for (int i = 5;
+        for (int i = MesesCuadrosMinisterio - 1;
              i >= 0;
              i--)
         {
@@ -971,7 +980,7 @@ public static partial class DatabaseHelper
                 ));
         }
 
-        // Inicializamos siempre las 6 celdas por persona.
+        // Inicializamos siempre todas las celdas por persona.
         foreach (
             VistaPersonaVisitaMobile persona
             in personas)
@@ -1218,7 +1227,8 @@ public static partial class DatabaseHelper
             }
         }
 
-        // Se marca quién no ha informado nada en estos 6 meses.
+        // Se marca quién no ha informado nada en los 6 últimos meses (la
+        // tira tiene más, pero inactivo es eso).
         foreach (VistaPersonaVisitaMobile persona
                  in personas)
         {
@@ -1226,7 +1236,7 @@ public static partial class DatabaseHelper
                 persona.TieneHistorial;
 
             bool reporto =
-                persona.Actividad.Any(a =>
+                persona.Actividad.TakeLast(MesesInactividad).Any(a =>
                     a.ExisteRegistro
                     && (a.Participacion
                         || TieneHorasActividad(a.Horas)));
