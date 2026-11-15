@@ -39,6 +39,15 @@ public partial class ActividadMensualEdicionPage : ContentPage
     {
         InitializeComponent();
 
+        void PintarCreditoComputable()
+        {
+            // «(15)»: con el tope de 55 entre horas y crédito; vacío, el de las notas.
+            LblCreditoComputa.Text =
+                SCCosmos.Sincro.RequisitoPrecursor.TextoCreditoComputable(
+                    SCCosmos.Sincro.RequisitoPrecursor.LeerHoras(TxtHoras.Text),
+                    SCCosmos.Sincro.RequisitoPrecursor.CreditoAGuardar(TxtCredito.Text, TxtNotas.Text));
+        }
+
         // Solo los regulares pueden acreditar horas.
         LblCredito.IsVisible =
             DatabaseHelper.EsPrecursorRegularMobile(
@@ -46,6 +55,14 @@ public partial class ActividadMensualEdicionPage : ContentPage
 
         TxtCredito.IsVisible =
             LblCredito.IsVisible;
+
+        FilaCredito.IsVisible =
+            LblCredito.IsVisible;
+
+        // Junto al crédito, lo que computa de verdad, al momento.
+        TxtHoras.TextChanged += (_, _) => PintarCreditoComputable();
+        TxtCredito.TextChanged += (_, _) => PintarCreditoComputable();
+        TxtNotas.TextChanged += (_, _) => PintarCreditoComputable();
 
         _personaId =
             personaId;

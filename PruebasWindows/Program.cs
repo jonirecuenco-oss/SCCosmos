@@ -338,6 +338,12 @@ internal static class Programa
         Ver("Tareas: texto de la fila", FechasTarea.Texto(false, new[] { domingo }, "17:00", "Llamar a Pedro"), "☐ dom 15 · 17:00 · Llamar a Pedro");
         Ver("Tareas: varios días, hecha", FechasTarea.Texto(true, new[] { new DateTime(2026, 11, 16), new DateTime(2026, 11, 20) }, "", "Vacaciones"), "☑ lun 16 – vie 20 · Vacaciones");
         Ver("Tareas: puntos del día", FechasTarea.Puntos(5), "•••");
+
+        // Crédito de los precursores: lo que computa de verdad (tope de 55 con las horas).
+        Ver("Crédito: recortado por el tope", RequisitoPrecursor.TextoCreditoComputable(40, 20), "(15)");
+        Ver("Crédito: entero", RequisitoPrecursor.TextoCreditoComputable(30, 10), "(10)");
+        Ver("Crédito: con 55 horas no computa", RequisitoPrecursor.TextoCreditoComputable(60, 5), "(0)");
+        Ver("Crédito: sin crédito, nada", RequisitoPrecursor.TextoCreditoComputable(20, 0), "");
     }
 
     // Ajustes de la página Avisos: sin nada guardado, lo de siempre; ida y vuelta; el día de quedar con el CCA.

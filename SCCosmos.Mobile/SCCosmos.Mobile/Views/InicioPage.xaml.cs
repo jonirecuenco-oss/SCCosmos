@@ -934,11 +934,16 @@ public partial class InicioPage : ContentPage, IActualizableMobile
             var adelanto =
                 SCCosmos.Sincro.RequisitoHoras.Diferencia(horas, requisito, _mesPredicacion, DateTime.Today);
 
-            LblEstadoHoras.Text =
-                adelanto.Texto.Length > 0 ? adelanto.Texto + " h" : "";
+            // Junto a las horas, como en el widget: «25,5 h (−1,7)  ·  3 CBs».
+            _lineaHoras =
+                (horas.ToString("0.#") + " h",
+                 adelanto.Texto.Length > 0 ? " (" + adelanto.Texto + ")" : "",
+                 "  ·  " + cbs + " CBs",
+                 adelanto.Signo);
 
-            LblEstadoHoras.TextColor =
-                Color.FromArgb(adelanto.Signo < 0 ? "#FFB74D" : adelanto.Signo > 0 ? "#7ED889" : "#A7AEB8");
+            _escalaHoras = 1;
+
+            PintarLineaHoras();
         }
         catch
         {
@@ -949,6 +954,71 @@ public partial class InicioPage : ContentPage, IActualizableMobile
     // Mes que enseña la tarjeta de predicación (con las flechas se ven otros).
     private DateTime _mesPredicacion =
         new(DateTime.Today.Year, DateTime.Today.Month, 1);
+
+
+    // La línea de las horas: horas, adelanto o atraso, CBs y el signo (color).
+    private (string Horas, string Diferencia, string Cbs, int Signo) _lineaHoras =
+        ("0 h", "", "  ·  0 CBs", 0);
+
+    // Lo que se ha reducido la letra para que la línea quepa (1: sin reducir).
+    private double _escalaHoras = 1;
+
+    private const double TamanoHoras = 30;
+
+
+    private void PintarLineaHoras()
+    {
+        double tamano =
+            TamanoHoras * _escalaHoras;
+
+        var linea =
+            new FormattedString();
+
+        linea.Spans.Add(new Span
+        {
+            Text = _lineaHoras.Horas,
+            FontSize = tamano,
+            FontAttributes = FontAttributes.Bold
+        });
+
+        if (_lineaHoras.Diferencia.Length > 0)
+        {
+            linea.Spans.Add(new Span
+            {
+                Text = _lineaHoras.Diferencia,
+                FontSize = tamano * 0.65,
+                FontAttributes = FontAttributes.Bold,
+                TextColor =
+                    Color.FromArgb(_lineaHoras.Signo < 0 ? "#FFB74D" : _lineaHoras.Signo > 0 ? "#7ED889" : "#A7AEB8")
+            });
+        }
+
+        linea.Spans.Add(new Span
+        {
+            Text = _lineaHoras.Cbs,
+            FontSize = tamano,
+            FontAttributes = FontAttributes.Bold
+        });
+
+        LblHorasMes.FormattedText =
+            linea;
+    }
+
+
+    // Si la línea se parte en dos (no cabe), la letra baja un poco y se
+    // vuelve a pintar, hasta que quepa en una.
+    private void LblHorasMes_SizeChanged(
+        object? sender,
+        EventArgs e)
+    {
+        if (LblHorasMes.Height > TamanoHoras * _escalaHoras * 1.9
+            && _escalaHoras > 0.62)
+        {
+            _escalaHoras -= 0.06;
+
+            PintarLineaHoras();
+        }
+    }
 
 
     private void BtnMesPredicacion_Clicked(

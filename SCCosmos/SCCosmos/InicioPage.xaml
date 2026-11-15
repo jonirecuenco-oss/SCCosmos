@@ -101,10 +101,12 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                <TextBlock x:Name="TxtHorasMes" Text="0" FontSize="32" FontWeight="SemiBold"/>
+                                <!-- «15 h (−8,3)  ·  0 CBs»: el adelanto o atraso junto a las horas, como
+                                     en el widget; si no cabe, la línea se encoge en vez de partirse -->
+                                <Viewbox StretchDirection="DownOnly" Stretch="Uniform" HorizontalAlignment="Left" Margin="0,0,10,0">
+                                    <TextBlock x:Name="TxtHorasMes" Text="0" FontSize="32" FontWeight="SemiBold"/>
+                                </Viewbox>
                                 <TextBlock x:Name="TxtHorasMesEtiqueta" Text="" Style="{StaticResource NotaDato}" FontSize="12"/>
-                                <!-- Horas de adelanto (+4 h) o de atraso (−2,5 h) frente al requisito del mes -->
-                                <TextBlock x:Name="TxtEstadoHoras" Text="" FontSize="14" FontWeight="SemiBold" Margin="0,3,0,0" TextWrapping="Wrap"/>
                             </StackPanel>
                             <ui:Button x:Name="BtnSumarHoras" Grid.Column="1" Appearance="Primary" Icon="{ui:SymbolIcon Edit24}"
                                        Padding="10" Cursor="Hand" VerticalAlignment="Center"

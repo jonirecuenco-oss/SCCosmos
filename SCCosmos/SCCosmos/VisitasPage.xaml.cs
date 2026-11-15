@@ -179,8 +179,7 @@ namespace SCCosmos
             TabContabilidad.Visibility = Visibility.Collapsed;
             TabS303.Visibility = Visibility.Collapsed;
 
-            // Tampoco ve el selector de meses del Ministerio.
-            CintaMesMinisterio.Visibility = Visibility.Collapsed;
+            // Tampoco mueve los meses del Ministerio (el arrastre lo comprueba).
         }
 
         private void UIElement_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
@@ -282,13 +281,17 @@ namespace SCCosmos
         }
 
         // --- MINISTERIO ---
-        // Sin «mes de referencia»: las personas son las del mes de la visita y las
-        // flechas solo mueven las 6 columnas de actividad (meses que se han ido atrás).
+        // Sin «mes de referencia»: las personas son las del mes de la visita y, al
+        // arrastrar sobre los meses, solo se mueven las 6 columnas de actividad
+        // (meses que se han ido atrás).
         private int _mesesAtrasMinisterio;
+        private bool _recargarMinisterio;
 
         private async void ActualizarUI_MesMinisterio()
         {
-            if (_cargandoDatos) return;
+            // Si ya se está cargando (al arrastrar llegan pasos seguidos), se
+            // vuelve a cargar al terminar, con los últimos meses.
+            if (_cargandoDatos) { _recargarMinisterio = true; return; }
             _cargandoDatos = true;
             try
             {
@@ -297,9 +300,6 @@ namespace SCCosmos
 
                 DateTime[] mesesARenderizar = new DateTime[6];
                 for (int i = 0; i < 6; i++) mesesARenderizar[5 - i] = mesFinGrid.AddMonths(-i);
-
-                if (TxtMesMinisterio != null) TxtMesMinisterio.Text = RangoMeses(mesesARenderizar[0], mesesARenderizar[5]);
-                if (BtnMesSigMinisterio != null) BtnMesSigMinisterio.IsEnabled = _mesesAtrasMinisterio > 0;
 
                 var listadoHermanosHistorico = DatabaseHelper.ObtenerPersonasHistoricasPorMes(_congreCodigo, _mesMinisterio.ToString("yyyy-MM"));
 
@@ -311,20 +311,94 @@ namespace SCCosmos
 
                 CargarGruposPredicacion(listadoHermanosHistorico);
             }
-            finally { _cargandoDatos = false; }
+            finally
+            {
+                _cargandoDatos = false;
+
+                if (_recargarMinisterio)
+                {
+                    _recargarMinisterio = false;
+                    ActualizarUI_MesMinisterio();
+                }
+            }
         }
 
-        private void BtnMesAntMinisterio_Click(object sender, RoutedEventArgs e) { _mesesAtrasMinisterio++; ActualizarUI_MesMinisterio(); }
-        private void BtnMesSigMinisterio_Click(object sender, RoutedEventArgs e) { if (_mesesAtrasMinisterio == 0) return; _mesesAtrasMinisterio--; ActualizarUI_MesMinisterio(); }
+        // Arrastrar con el ratón sobre los meses de la actividad: hacia la
+        // derecha, meses anteriores; hacia la izquierda, más recientes (un mes
+        // por cada ancho de columna). Al soltar no se abre la ficha.
+        private Point? _inicioArrastreMeses;
+        private bool _arrastrandoMeses;
+        private int _mesesAtrasAlEmpezar;
 
-        // «Jun – Nov 2026» o, si cambia de año, «Dic 2025 – May 2026».
-        private static string RangoMeses(DateTime desde, DateTime hasta)
+        private void TablaVisitas_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            var es = new CultureInfo("es-ES");
-            string Mes(DateTime d) { string t = d.ToString("MMM", es).TrimEnd('.'); return char.ToUpper(t[0]) + t.Substring(1); }
-            return desde.Year == hasta.Year
-                ? $"{Mes(desde)} – {Mes(hasta)} {hasta.Year}"
-                : $"{Mes(desde)} {desde.Year} – {Mes(hasta)} {hasta.Year}";
+            _inicioArrastreMeses = null;
+            _arrastrandoMeses = false;
+
+            // Como antes la cinta de meses: solo con acceso completo.
+            if (!PerfilAcceso.AccesoCompleto) return;
+
+            for (DependencyObject d = e.OriginalSource as DependencyObject; d != null; d = VisualTreeHelper.GetParent(d))
+            {
+                if (d is Button) return;
+
+                if (d is DataGridCell celda)
+                {
+                    // Solo desde una columna de mes (las 6 que siguen al nombre).
+                    int columna = TablaVisitas.Columns.IndexOf(celda.Column);
+
+                    if (columna >= 1 && columna <= 6)
+                    {
+                        _inicioArrastreMeses = e.GetPosition(TablaVisitas);
+                        _mesesAtrasAlEmpezar = _mesesAtrasMinisterio;
+                    }
+
+                    return;
+                }
+            }
+        }
+
+        private void TablaVisitas_PreviewMouseMove(object sender, MouseEventArgs e)
+        {
+            if (_inicioArrastreMeses is not Point inicio || e.LeftButton != MouseButtonState.Pressed) return;
+
+            double dx = e.GetPosition(TablaVisitas).X - inicio.X;
+
+            if (!_arrastrandoMeses)
+            {
+                if (Math.Abs(dx) < 12) return;
+
+                _arrastrandoMeses = true;
+                TablaVisitas.CaptureMouse();
+                Mouse.OverrideCursor = Cursors.SizeWE;
+            }
+
+            e.Handled = true;
+
+            double ancho = TablaVisitas.Columns.Count > 1 ? Math.Max(40, TablaVisitas.Columns[1].ActualWidth) : 80;
+            int atras = Math.Max(0, Math.Min(120, _mesesAtrasAlEmpezar + (int)Math.Round(dx / ancho)));
+
+            if (atras != _mesesAtrasMinisterio)
+            {
+                _mesesAtrasMinisterio = atras;
+                ActualizarUI_MesMinisterio();
+            }
+        }
+
+        private void TablaVisitas_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            bool arrastraba = _arrastrandoMeses;
+
+            _inicioArrastreMeses = null;
+            _arrastrandoMeses = false;
+
+            if (!arrastraba) return;
+
+            TablaVisitas.ReleaseMouseCapture();
+            Mouse.OverrideCursor = null;
+
+            // Era un arrastre, no un clic: que no se abra la ficha de la persona.
+            e.Handled = true;
         }
 
         // --- PROGRAMA ---

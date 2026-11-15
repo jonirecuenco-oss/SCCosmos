@@ -55,10 +55,18 @@ namespace SCCosmos
         {
             private string _diferencia = "";
             private Brush _colorDiferencia = Brushes.Transparent;
+            private string _creditoComputa = "";
 
             public event PropertyChangedEventHandler PropertyChanged;
 
             public string Credito { get; set; } = "";
+
+            // «(15)»: lo que computa de verdad el crédito (tope de 55 con las horas).
+            public string CreditoComputa
+            {
+                get => _creditoComputa;
+                set { _creditoComputa = value; PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CreditoComputa))); }
+            }
 
             public string Diferencia
             {
@@ -1417,8 +1425,71 @@ namespace SCCosmos
 
         private void GridActividad_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
         {
-            // Aún no se ha volcado lo escrito: se calcula justo después.
-            Dispatcher.BeginInvoke(new Action(RecalcularDiferencias), DispatcherPriority.Background);
+            // Aún no se ha volcado lo escrito: se ordena y se calcula justo después.
+            Dispatcher.BeginInvoke(new Action(OrdenarYRecalcular), DispatcherPriority.Background);
+        }
+
+        // El mes se elige en un desplegable que no pasa por la edición de la
+        // celda: al cambiarlo (no al pintarse), se reordena igual.
+        private void CmbMesActividad_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (e.RemovedItems.Count > 0)
+            {
+                Dispatcher.BeginInvoke(new Action(OrdenarYRecalcular), DispatcherPriority.Background);
+            }
+        }
+
+        private void OrdenarYRecalcular()
+        {
+            OrdenarActividad();
+            RecalcularDiferencias();
+        }
+
+        // Meses en el orden del año de servicio (de septiembre a agosto).
+        private static readonly string[] MesesAnioServicio =
+        {
+            "septiembre", "octubre", "noviembre", "diciembre", "enero", "febrero",
+            "marzo", "abril", "mayo", "junio", "julio", "agosto"
+        };
+
+        /// <summary>
+        /// La actividad, siempre por mes y año: del más antiguo al más reciente.
+        /// Mueve las filas (sin rehacer la tabla) y conserva la seleccionada.
+        /// </summary>
+        private void OrdenarActividad()
+        {
+            static int Clave(ActividadEditable a)
+            {
+                int anio = int.TryParse((a.AnioServicio ?? "").Trim(), out int n) ? n : 9999;
+                int mes = Array.IndexOf(MesesAnioServicio, (a.Mes ?? "").Trim().ToLowerInvariant());
+
+                return anio * 12 + (mes < 0 ? 11 : mes);
+            }
+
+            List<ActividadEditable> ordenadas = _actividadEditada.OrderBy(Clave).ToList();
+
+            if (ordenadas.SequenceEqual(_actividadEditada))
+            {
+                return;
+            }
+
+            object seleccionada = GridActividad.SelectedItem;
+
+            for (int i = 0; i < ordenadas.Count; i++)
+            {
+                int actual = _actividadEditada.IndexOf(ordenadas[i]);
+
+                if (actual != i)
+                {
+                    _actividadEditada.Move(actual, i);
+                }
+            }
+
+            if (seleccionada != null)
+            {
+                GridActividad.SelectedItem = seleccionada;
+                GridActividad.ScrollIntoView(seleccionada);
+            }
         }
 
         private string ServicioEnPantalla()
@@ -1452,6 +1523,9 @@ namespace SCCosmos
                 RequisitoPrecursor.EsPrecursorRegular(ServicioEnPantalla())
                     ? Visibility.Visible
                     : Visibility.Collapsed;
+
+            ColCreditoComputa.Visibility =
+                ColCredito.Visibility;
 
             ColAcumulado.Visibility =
                 tieneRequisito ? Visibility.Visible : Visibility.Collapsed;
@@ -1501,6 +1575,11 @@ namespace SCCosmos
                     : diferencia < 0
                         ? new SolidColorBrush(Color.FromRgb(0xFF, 0x9A, 0xA3))
                         : new SolidColorBrush(Color.FromRgb(0x9E, 0xA4, 0xAE));
+
+                HorasDeMes mes = Horas(item);
+
+                item.CreditoComputa =
+                    RequisitoPrecursor.TextoCreditoComputable(mes.Horas, mes.Credito);
             }
         }
 
@@ -1549,6 +1628,7 @@ namespace SCCosmos
                     });
                 }
 
+                OrdenarActividad();
                 GridActividad.ItemsSource = _actividadEditada;
                 ActualizarEstadoActividad();
                 RecalcularDiferencias();
@@ -1591,6 +1671,7 @@ namespace SCCosmos
             };
 
             _actividadEditada.Add(nuevo);
+            OrdenarActividad();
             RecalcularDiferencias();
             GridActividad.SelectedItem = nuevo;
             GridActividad.ScrollIntoView(nuevo);
@@ -1747,7 +1828,7 @@ namespace SCCosmos
                 ? $" · {_actividadEliminada.Count} borrado(s) pendiente(s)"
                 : "";
 
-            TxtEstadoActividad.Text = $"{_actividadEditada.Count} registro(s){pendientes}. Los cambios se guardan con el botón Guardar.";
+            TxtEstadoActividad.Text = $"{_actividadEditada.Count} registro(s){pendientes}.";
         }
 
         private void BuscarPrimeraClaveActividadLibre(ref string mes, ref string anioServicio)

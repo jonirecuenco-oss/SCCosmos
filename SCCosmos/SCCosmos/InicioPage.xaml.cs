@@ -518,16 +518,27 @@ namespace SCCosmos
                 var adelanto =
                     SCCosmos.Sincro.RequisitoHoras.Diferencia(horas, requisito, _mesPredicacion, DateTime.Today);
 
-                TxtEstadoHoras.Text =
-                    adelanto.Texto.Length > 0 ? adelanto.Texto + " h" : "";
-                TxtEstadoHoras.Foreground =
-                    adelanto.Signo < 0 ? Pincel("#FFB74D")
-                    : adelanto.Signo > 0 ? Pincel("#7ED889")
-                    : (System.Windows.Media.Brush)FindResource("TextFillColorSecondaryBrush");
-                TxtEstadoHoras.ToolTip =
-                    diferencia == 0
-                        ? $"Frente a lo que toca hasta hoy del requisito de {requisito} h"
-                        : $"Frente al requisito de {requisito} h";
+                // Junto a las horas, como en el widget: «15 h (−8,3)  ·  0 CBs».
+                TxtHorasMes.Inlines.Clear();
+                TxtHorasMes.Inlines.Add(new System.Windows.Documents.Run(horas.ToString("0.#") + " h"));
+
+                if (adelanto.Texto.Length > 0)
+                {
+                    TxtHorasMes.Inlines.Add(new System.Windows.Documents.Run(" (" + adelanto.Texto + ")")
+                    {
+                        FontSize = 21,
+                        Foreground =
+                            adelanto.Signo < 0 ? Pincel("#FFB74D")
+                            : adelanto.Signo > 0 ? Pincel("#7ED889")
+                            : (System.Windows.Media.Brush)FindResource("TextFillColorSecondaryBrush"),
+                        ToolTip =
+                            diferencia == 0
+                                ? $"Horas de adelanto o de atraso frente a lo que toca hasta hoy del requisito de {requisito} h"
+                                : $"Horas de más o de menos frente al requisito de {requisito} h"
+                    });
+                }
+
+                TxtHorasMes.Inlines.Add(new System.Windows.Documents.Run("  ·  " + cbs + " CBs"));
             }
             catch
             {

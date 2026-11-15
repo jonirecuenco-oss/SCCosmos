@@ -504,26 +504,21 @@
                         Grid.Row="1"
                         Spacing="2">
 
+                        <!-- «25,5 h (−1,7)  ·  3 CBs»: el adelanto o atraso junto a las horas,
+                             como en el widget; si no cabe, la letra baja hasta que quepa -->
                         <Label
                             x:Name="LblHorasMes"
                             Text="0"
                             TextColor="{StaticResource TextoPrincipal}"
                             FontSize="30"
-                            FontAttributes="Bold"/>
+                            FontAttributes="Bold"
+                            SizeChanged="LblHorasMes_SizeChanged"/>
 
                         <Label
                             x:Name="LblHorasMesEtiqueta"
                             Text=""
                             TextColor="{StaticResource TextoTerciario}"
                             FontSize="12"/>
-
-                        <!-- Horas de adelanto (+4 h) o de atraso (−2,5 h) frente al requisito del mes -->
-                        <Label
-                            x:Name="LblEstadoHoras"
-                            Text=""
-                            FontSize="14"
-                            FontAttributes="Bold"
-                            Margin="0,2,0,0"/>
                     </VerticalStackLayout>
 
                     <!-- Editar las horas y CBs de un día del mes que se está viendo -->

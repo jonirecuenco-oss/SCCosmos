@@ -412,6 +412,13 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - Capturas: `Pulsar=` admite varios botones con «+» (herramienta local, no versionada).
   - 84/84 comprobaciones (9 nuevas de FechasTarea). Probado en el emulador (tareas de prueba con el perfil de la esposa; base restaurada) y Windows con una copia de la base (borrada).
 - 15/11/2026 · Publicada la v2.1.67.
+- 15/11/2026 · v2.1.68:
+  - Tarjeta de predicación (Inicio): el adelanto/atraso junto a las horas, como en el widget. Windows: `Run`s en `TxtHorasMes` dentro de un `Viewbox` (DownOnly) con margen antes del botón; fuera `TxtEstadoHoras`. Móvil: `FormattedText` (diferencia al 65 %), fuera `LblEstadoHoras`; si la línea se parte (alto > 1,9 líneas), la letra baja un 6 % por vez (`_escalaHoras`, mínimo ~0,62).
+  - Windows, Ministerio: fuera la cinta de meses (flechas e intervalo de la v2.1.66). Arrastre sobre las columnas de mes (1-6) de `TablaVisitas`: >12 px empieza, un mes por ancho de columna (derecha = anteriores), captura del ratón y cursor SizeWE; al soltar, `Handled` y no se abre la ficha. Recargas encadenadas con `_recargarMinisterio`. Solo con acceso completo. Sin probar con el ratón (la herramienta de capturas no arrastra).
+  - Windows, Editar persona: ventana de 980 de alto con `MaxHeight` = área de trabajo; la columna de datos en un ScrollViewer y las notas de 110. Actividad: ordenada por año de servicio y mes (`OrdenarActividad`, con `Move`, conservando la fila elegida) al cargar, al añadir, al cambiar el mes (desplegable) y al terminar de editar el año; fuera «Los cambios se aplican/guardan…».
+  - Crédito de los regulares: `RequisitoPrecursor.TextoCreditoComputable` = «(lo que computa)» con el tope de 55 (`HorasComputables` − horas). Windows: columna estrecha junto a «Crédito». Móvil: junto a la casilla del editor del mes y en el resumen de la ficha («Crédito: 20 (15)»).
+  - 88/88 comprobaciones (4 nuevas del crédito). Probado en Windows con una copia de la base (borrada) y en el emulador (tarjeta y editor del mes sin guardar; base restaurada). Capturas: `Ventana:FormularioPersonaWindow:Precursor|Id=n[:Pestaña]` (local).
+- 15/11/2026 · Publicada la v2.1.68.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

@@ -381,6 +381,21 @@ public static class RequisitoPrecursor
 
 
     /// <summary>
+    /// Junto al crédito, entre paréntesis, lo que computa de verdad: con el
+    /// tope de 55 entre horas y crédito, 40 h y 20 de crédito dan «(15)».
+    /// Sin crédito, nada.
+    /// </summary>
+    public static string TextoCreditoComputable(
+        double horas,
+        double credito)
+    {
+        return credito > 0
+            ? "(" + (HorasComputables(horas, credito) - horas).ToString("0.##", CultureInfo.CurrentCulture) + ")"
+            : "";
+    }
+
+
+    /// <summary>
     /// Lo que muestra la casilla: vacía si no hay crédito, salvo que las notas
     /// digan otra cosa y alguien lo haya dejado expresamente en 0.
     /// </summary>

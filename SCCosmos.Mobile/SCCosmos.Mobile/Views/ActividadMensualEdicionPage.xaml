@@ -46,9 +46,20 @@
                                Text="Crédito (otras actividades; vacío: lo que digan las notas)"
                                TextColor="{StaticResource TextoTerciario}"
                                FontSize="12" />
-                        <Entry x:Name="TxtCredito"
-                               Keyboard="Numeric"
-                               TextColor="{StaticResource TextoPrincipal}" />
+                        <!-- Al lado, entre paréntesis, lo que computa de verdad (tope de 55 con las horas) -->
+                        <Grid x:Name="FilaCredito"
+                              ColumnDefinitions="*,Auto"
+                              ColumnSpacing="10">
+                            <Entry x:Name="TxtCredito"
+                                   Keyboard="Numeric"
+                                   TextColor="{StaticResource TextoPrincipal}" />
+                            <Label x:Name="LblCreditoComputa"
+                                   Grid.Column="1"
+                                   Text=""
+                                   TextColor="{StaticResource TextoSecundario}"
+                                   FontSize="15"
+                                   VerticalOptions="Center" />
+                        </Grid>
 
                         <Label Text="Cursos bíblicos"
                                TextColor="{StaticResource TextoTerciario}"

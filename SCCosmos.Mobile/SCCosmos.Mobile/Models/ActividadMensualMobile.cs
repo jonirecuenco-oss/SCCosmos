@@ -59,11 +59,17 @@ public class ActividadMensualMobile
                 partes.Add($"Horas: {Horas}");
             }
 
+            // «Crédito: 20 (15)»: al lado, lo que computa de verdad (tope de 55 con las horas).
             if (PuedeAcreditar
                 && !string.IsNullOrWhiteSpace(Credito)
                 && Credito != "0")
             {
-                partes.Add($"Crédito: {Credito}");
+                string computa =
+                    SCCosmos.Sincro.RequisitoPrecursor.TextoCreditoComputable(
+                        SCCosmos.Sincro.RequisitoPrecursor.LeerHoras(Horas),
+                        SCCosmos.Sincro.RequisitoPrecursor.CreditoAGuardar(Credito, Notas));
+
+                partes.Add($"Crédito: {Credito} {computa}".Trim());
             }
 
             if (!string.IsNullOrWhiteSpace(Acumulado))
