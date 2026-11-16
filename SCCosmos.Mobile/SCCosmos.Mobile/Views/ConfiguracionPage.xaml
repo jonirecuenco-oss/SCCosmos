@@ -87,6 +87,17 @@
                            TextColor="{StaticResource TextoTerciario}"
                            FontSize="11"/>
 
+                    <!-- Medio día libre de la semana de visita (formulario de los ancianos) -->
+                    <Label Text="Medio día libre"
+                           TextColor="{StaticResource TextoTerciario}"
+                           FontSize="12"/>
+                    <Picker x:Name="PickerMedioDiaLibre"
+                            Title="Medio día libre"
+                            TextColor="{StaticResource TextoPrincipal}"/>
+                    <Label Text="En el formulario de los ancianos esa salida se puede programar, pero sin asignaros a nadie."
+                           TextColor="{StaticResource TextoTerciario}"
+                           FontSize="11"/>
+
                     <VerticalStackLayout x:Name="PanelDatosSCFinal"
                                          Spacing="10">
 

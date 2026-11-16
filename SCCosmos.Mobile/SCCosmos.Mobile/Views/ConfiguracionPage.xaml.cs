@@ -723,6 +723,13 @@ public partial class ConfiguracionPage : ContentPage
                 SCCosmos.Sincro.RequisitoHoras.LeerNacimiento(
                     DatabaseHelper.ObtenerConfiguracion(SCCosmos.Sincro.RequisitoHoras.ClaveNacimientoEsposa, ""));
 
+            PickerMedioDiaLibre.ItemsSource ??=
+                SCCosmos.Sincro.ProgramaWeb.OpcionesMedioDiaLibre;
+
+            PickerMedioDiaLibre.SelectedItem =
+                SCCosmos.Sincro.ProgramaWeb.MedioDiaLibre(
+                    DatabaseHelper.ObtenerConfiguracion(SCCosmos.Sincro.ProgramaWeb.ClaveMedioDiaLibre, ""));
+
             TxtNumCircuito.Text =
                 DatabaseHelper.ObtenerConfiguracion("NumeroCircuito", "");
 
@@ -847,6 +854,39 @@ public partial class ConfiguracionPage : ContentPage
 
         FechaNacimientoEsposa.DateSelected +=
             (s, e) => GuardarDatosGlobales();
+
+        // El medio día libre solo se guarda al elegirlo: sin elegir vale el
+        // de por defecto y no viaja nada que pise el del otro dispositivo.
+        PickerMedioDiaLibre.SelectedIndexChanged +=
+            (s, e) =>
+            {
+                if (_autoguardando
+                    || PickerMedioDiaLibre.SelectedItem is not string medioDia)
+                {
+                    return;
+                }
+
+                try
+                {
+                    DatabaseHelper.GuardarConfiguracion(
+                        SCCosmos.Sincro.ProgramaWeb.ClaveMedioDiaLibre,
+                        medioDia);
+
+                    LblResultadoGlobal.TextColor =
+                        Colors.LightGreen;
+
+                    LblResultadoGlobal.Text =
+                        "✓ Guardado automáticamente.";
+                }
+                catch (Exception ex)
+                {
+                    LblResultadoGlobal.TextColor =
+                        Colors.OrangeRed;
+
+                    LblResultadoGlobal.Text =
+                        "✗ No se pudo guardar: " + ex.Message;
+                }
+            };
 
         TxtNombreSincro.Unfocused +=
             (s, e) => AplicarSincroAutomatico();

@@ -434,6 +434,13 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - Sin predicación el viernes por la mañana (`ProgramaWeb.Franjas`, 7); de envíos antiguos se salta esa franja sin perder las siguientes y no se repiten franjas. Pastoreo solo de miércoles a domingo (también al convertir). `ProgramaWeb.Hora`/`Dia` públicos.
   - 105/105 comprobaciones (2 nuevas). Probado en el navegador (móvil, tableta y PC) con el servidor de prueba de Capturas (admite ya un 4.º campo con el código) y una copia de la base (borrada). `.openchamber/` excluido en `.git/info/exclude` (capturas del navegador, no se suben).
 - 16/11/2026 · Publicada la v2.1.70.
+- 16/11/2026 · v2.1.70 instalada también en el móvil real (llevaba desde la v2.1.56): arranca en 0,5 s, sin errores nuevos (18 líneas antiguas en `sccosmos_errores.log`).
+- 16/11/2026 · v2.1.71 (medio día libre, pedido por el usuario):
+  - Configuración (Windows y Android, tarjeta global junto a los datos de la esposa): «Medio día libre», de miércoles a viernes, mañana o tarde (`ProgramaWeb.OpcionesMedioDiaLibre`, clave `MedioDiaLibre` en Configuracion, se sincroniza). Sin elegir vale el viernes por la mañana (lo que ya hacía el formulario); la clave solo se escribe al elegir, para que un valor por defecto no pise el del otro dispositivo.
+  - Formulario: vuelven las 8 salidas (también el viernes por la mañana). En la del medio día libre, aviso en Reuniones y en Predicación («se puede programar, pero ellos no estarán»), sin grupos para asignar a nadie; la ayuda de Predicación lo dice.
+  - `ProgramaWeb.AEventos(json, medioDiaLibre)`: en esa franja no se pasa a nadie con el SC ni con su esposa; con hora, la salida queda con la nota «Medio día libre». «Pasar al programa» usa el de Configuración (`ProgramaWebPc.MedioDiaLibre`).
+  - 107/107 comprobaciones (2 nuevas y 1 actualizada). Probado: Configuración de Windows con la herramienta de capturas (`ConfiguracionPage`) y el formulario en PC y móvil, sobre una copia de la base con «Jueves tarde» (borrada).
+- 16/11/2026 · Publicada la v2.1.71.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

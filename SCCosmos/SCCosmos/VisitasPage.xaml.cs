@@ -982,7 +982,8 @@ namespace SCCosmos
                 return;
             }
 
-            var (eventos, _) = SCCosmos.Sincro.ProgramaWeb.AEventos(recibido.Json);
+            // En el medio día libre no se pasa a nadie con vosotros.
+            var (eventos, _) = SCCosmos.Sincro.ProgramaWeb.AEventos(recibido.Json, ProgramaWebPc.MedioDiaLibre());
 
             if (eventos.Count == 0)
             {

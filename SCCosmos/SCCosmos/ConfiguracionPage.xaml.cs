@@ -368,6 +368,8 @@ namespace SCCosmos
             FechaNacimientoEsposa.SelectedDate =
                 SCCosmos.Sincro.RequisitoHoras.LeerNacimiento(
                     DatabaseHelper.ObtenerConfiguracion(SCCosmos.Sincro.RequisitoHoras.ClaveNacimientoEsposa, ""));
+            ComboMedioDiaLibre.ItemsSource ??= SCCosmos.Sincro.ProgramaWeb.OpcionesMedioDiaLibre;
+            ComboMedioDiaLibre.SelectedItem = ProgramaWebPc.MedioDiaLibre();
             TxtNumCircuito.Text = DatabaseHelper.ObtenerConfiguracion("NumeroCircuito", "");
             TxtRutaArchivoCircuito.Text = DatabaseHelper.ObtenerConfiguracion("RutaArchivoCircuito", "");
 
@@ -479,6 +481,16 @@ namespace SCCosmos
             }
 
             FechaNacimientoEsposa.SelectedDateChanged += (s, e) => Autoguardar();
+
+            // El medio día libre solo se guarda al elegirlo: sin elegir vale el
+            // de por defecto y no viaja nada que pise el del otro dispositivo.
+            ComboMedioDiaLibre.SelectionChanged += (s, e) =>
+            {
+                if (!_autoguardando && ComboMedioDiaLibre.SelectedItem is string medioDia)
+                {
+                    DatabaseHelper.GuardarConfiguracion(SCCosmos.Sincro.ProgramaWeb.ClaveMedioDiaLibre, medioDia);
+                }
+            };
 
             ToggleDescargas.Checked += (s, e) => Autoguardar();
             ToggleDescargas.Unchecked += (s, e) => Autoguardar();

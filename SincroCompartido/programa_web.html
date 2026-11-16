@@ -45,6 +45,10 @@
   .salida > input { grid-area: hora; }
   .salida > .busca { grid-area: lugar; }
   .info-salida { color: var(--suave); font-size: 14px; margin-top: 6px; }
+  /* Medio día libre: lo dice el texto; el color solo acompaña. */
+  .aviso-libre { background:#fff4e0; border:1px solid #efc98a; color:#5c3d00; border-radius:10px; padding:8px 12px; font-size:14px; margin-top:8px; }
+  .salida.con-aviso { grid-template-areas: "franja hora" "lugar lugar" "aviso aviso"; }
+  .salida > .aviso-libre { grid-area: aviso; margin-top: 0; }
   .quien { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--borde); }
   .quien > .titulo { font-weight: 600; }
   .persona { background:#f7f9fc; border:1px solid var(--borde); border-radius: 10px; padding: 8px 10px; margin: 8px 0; }
@@ -77,6 +81,7 @@
     .grupos { display:grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
     .salida { grid-template-columns: 13em 8em minmax(0, 1fr); grid-template-areas: "franja hora lugar"; align-items: start; }
     .salida > .franja { padding-top: 11px; }
+    .salida.con-aviso { grid-template-areas: "franja hora lugar" "aviso aviso aviso"; }
     .barra .dentro { max-width: 1000px; }
     .barra button { max-width: 480px; display:block; margin: 0 auto; }
   }
@@ -159,14 +164,13 @@ window.VISITA = /*VISITA*/null;
   const V = window.VISITA || {
     codigo: "ejemplo", congregacion: "Congregación de ejemplo", fechas: "del 10 al 15 de noviembre",
     dias: {}, alojamiento: true, sc: "el superintendente", esposa: "su esposa", centro: null,
-    salon: null, horaEntreSemana: "", diaFinDeSemana: "", horaFinDeSemana: "", envio: null, enviadoEn: 0
+    salon: null, horaEntreSemana: "", diaFinDeSemana: "", horaFinDeSemana: "", medioDiaLibre: "Viernes mañana", envio: null, enviadoEn: 0
   };
 
   const DIAS = ["Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
   const MIE_A_DOM = DIAS.slice(1);
-  // Los viernes por la mañana no hay predicación.
   const FRANJAS = ["Miércoles mañana", "Miércoles tarde", "Jueves mañana", "Jueves tarde",
-                   "Viernes tarde", "Sábado mañana", "Domingo mañana"];
+                   "Viernes mañana", "Viernes tarde", "Sábado mañana", "Domingo mañana"];
   const FACETAS = ["Territorio", "Curso bíblico", "Exhibidores"];
   // Lo que SCCosmos ya sabe de la congregación (horas, día y salón) viene puesto.
   const SALON = V.salon && V.salon.direccion ? V.salon : null;
@@ -180,6 +184,9 @@ window.VISITA = /*VISITA*/null;
   const OTRO_LUGAR = SALON ? "Salón del Reino u otro lugar" : "Dirección o lugar";
   const CLAVE = "programa_" + V.codigo;
   const SC = V.sc || "el superintendente", ESPOSA = V.esposa || "su esposa";
+  // Su medio día libre (Configuración de SCCosmos): esa salida se puede
+  // programar, pero ellos no van, así que no se asigna a nadie con ellos.
+  const LIBRE = FRANJAS.includes(V.medioDiaLibre) ? V.medioDiaLibre : "";
   // En tableta y PC cabe todo: las comidas y las salidas salen desplegadas.
   const ANCHO = window.matchMedia("(min-width: 760px)").matches;
 
@@ -202,6 +209,8 @@ window.VISITA = /*VISITA*/null;
   const hora = nombre => el("input", { type: "time", name: nombre });
   const val = (raiz, nombre) => { const i = raiz.querySelector('[name="' + nombre + '"]'); return i ? i.value.trim() : ""; };
   const poner = (raiz, nombre, valor) => { const i = raiz.querySelector('[name="' + nombre + '"]'); if (i && valor != null) i.value = valor; };
+  const avisoLibre = extra => el("div", { className: "aviso-libre" }, el("b", { textContent: "Medio día libre" }),
+    " de " + SC + " y " + ESPOSA + ": esta salida se puede programar, pero ellos no estarán." + (extra || ""));
 
   function selectorDia(dias) {
     const s = el("select", { name: "dia" }, el("option", { value: "", textContent: "Elegir día" }));
@@ -321,6 +330,7 @@ window.VISITA = /*VISITA*/null;
     h.setAttribute("aria-label", "Hora de salida, " + titulo);
     l.querySelector("input").setAttribute("aria-label", "Lugar de salida, " + titulo);
     f.append(el("div", { className: "franja", textContent: titulo }), h, l);
+    if (fr === LIBRE) { f.classList.add("con-aviso"); f.append(avisoLibre()); }
     horasSalidas.append(f);
   });
   const salidaDe = fr => horasSalidas.querySelector('[data-salida="' + fr + '"]');
@@ -350,7 +360,9 @@ window.VISITA = /*VISITA*/null;
 
   // ---- 3. Predicación: quién va (la hora y el lugar de salida, en Reuniones) ----
   $("#ayuda-predicacion").textContent =
-    "En cada salida, hasta 2 personas con " + SC + " y 2 con " + ESPOSA + "." + (ANCHO ? "" : " Tocad una salida para rellenarla.");
+    "En cada salida, hasta 2 personas con " + SC + " y 2 con " + ESPOSA + "." +
+    (LIBRE ? " El " + diaTexto(LIBRE.split(" ")[0]) + " por la " + LIBRE.split(" ")[1] + " es su medio día libre." : "") +
+    (ANCHO ? "" : " Tocad una salida para rellenarla.");
 
   const salidas = $("#salidas");
   FRANJAS.forEach(fr => {
@@ -360,7 +372,9 @@ window.VISITA = /*VISITA*/null;
     b.append(el("summary", null, el("h3", { textContent: mayus(diaTexto(d)) + " · " + turno }),
                                  el("span", { className: "resumen" }), el("span", { className: "flecha" })),
              el("div", { className: "info-salida" }),
-             el("div", { className: "grupos" }, grupoPersonas("sc", "Con " + SC), grupoPersonas("esposa", "Con " + ESPOSA)));
+             fr === LIBRE
+               ? avisoLibre(" No se asigna a nadie con ellos.")
+               : el("div", { className: "grupos" }, grupoPersonas("sc", "Con " + SC), grupoPersonas("esposa", "Con " + ESPOSA)));
     salidas.append(b);
   });
 
@@ -536,6 +550,7 @@ window.VISITA = /*VISITA*/null;
       ponerLugar(f, "lugar", s.lugar, s.lat, s.lon);
       ["sc", "esposa"].forEach(q => {
         const g = b.querySelector('[data-quien="' + q + '"]');
+        if (!g) return; // medio día libre: no hay a quién asignar
         (s[q] || []).slice(0, 2).forEach(p => nuevaPersona(g.querySelector(".personas"), g.querySelector("button.secundario"), p));
       });
     });
@@ -555,8 +570,8 @@ window.VISITA = /*VISITA*/null;
     salidas.querySelectorAll("[data-franja]").forEach(b => {
       const s = salidaDe(b.dataset.franja), h = val(s, "hora"), l = val(s, "lugar");
       const n = [...b.querySelectorAll(".persona")].filter(p => val(p, "nombre")).length;
-      b.querySelector(".resumen").textContent =
-        (h ? h + " · " : "") + (n === 0 ? "Sin planes" : n + (n === 1 ? " persona" : " personas"));
+      b.querySelector(".resumen").textContent = (h ? h + " · " : "") +
+        (b.dataset.franja === LIBRE ? "Medio día libre" : n === 0 ? "Sin planes" : n + (n === 1 ? " persona" : " personas"));
       b.querySelector(".info-salida").textContent = h
         ? "Salida a las " + h + " · " + (l || (SALON ? "Salón del Reino" : "sin lugar"))
         : "La hora y el lugar de salida se ponen en Reuniones (apartado 1).";

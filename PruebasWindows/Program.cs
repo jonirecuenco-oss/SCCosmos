@@ -372,7 +372,9 @@ internal static class Programa
         Ver("Web: asuntos", string.Join("|", asuntosWeb), "Limpieza del salón|Grupos");
         Ver("Web: código del enlace", ProgramaWeb.CodigoValido(ProgramaWeb.NuevoCodigo()) && !ProgramaWeb.CodigoValido("../../etc/passwd"), true);
         string ochoFranjas = "{\"version\":1,\"predicacion\":[" + string.Join(",", new[] { "Miércoles mañana", "Miércoles tarde", "Jueves mañana", "Jueves tarde", "Viernes mañana", "Viernes tarde", "Sábado mañana", "Domingo mañana", "Domingo mañana" }.Select(f => "{\"franja\":\"" + f + "\",\"hora\":\"10:00\"}")) + "],\"pastoreo\":[{\"nombre\":\"Familia Gil\",\"dia\":\"Martes\",\"hora\":\"18:00\"}]}";
-        Ver("Web: sin viernes por la mañana ni franjas repetidas; pastoreo, no en martes", string.Join("|", ProgramaWeb.AEventos(ochoFranjas).Eventos.Select(e => e.DiaSemana[..2] + e.Turno[0])), "MiM|MiT|JuM|JuT|ViT|SáM|DoM");
+        Ver("Web: las 8 franjas sin repetir; pastoreo, no en martes", string.Join("|", ProgramaWeb.AEventos(ochoFranjas).Eventos.Select(e => e.DiaSemana[..2] + e.Turno[0])), "MiM|MiT|JuM|JuT|ViM|ViT|SáM|DoM");
+        Ver("Web: medio día libre (sin elegir, el viernes por la mañana)", ProgramaWeb.MedioDiaLibre("") + "|" + ProgramaWeb.MedioDiaLibre("jueves tarde") + "|" + ProgramaWeb.MedioDiaLibre("Sábado mañana"), "Viernes mañana|Jueves tarde|Viernes mañana");
+        Ver("Web: en el medio día libre no va nadie con ellos", string.Join("|", ProgramaWeb.AEventos(envioWeb, "Miércoles mañana").Eventos.Where(e => e.DiaSemana == "Miércoles" && e.TipoActividad == "Predicación").Select(e => $"{e.Hora} [{e.Responsable}] {e.Notas}")), "10:00 [] Medio día libre");
         Ver("Web: hora y día de la congregación", ProgramaWeb.Hora("19:30h") + " " + ProgramaWeb.Dia("sabado"), "19:30 Sábado");
 
         // El servidor del formulario: solo /programa/{código}, y solo con un código que exista.

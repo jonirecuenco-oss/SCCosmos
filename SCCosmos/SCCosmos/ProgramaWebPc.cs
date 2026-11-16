@@ -135,6 +135,7 @@ namespace SCCosmos
                 ["horaEntreSemana"] = ProgramaWeb.Hora(datosCongregacion?.HoraEntreSemana ?? ""),
                 ["diaFinDeSemana"] = diaFinDeSemana is "Sábado" or "Domingo" ? diaFinDeSemana : "",
                 ["horaFinDeSemana"] = ProgramaWeb.Hora(datosCongregacion?.HoraFinSemana ?? ""),
+                ["medioDiaLibre"] = MedioDiaLibre(),
                 ["envio"] = envio,
                 ["enviadoEn"] = enviadoEn
             };
@@ -142,6 +143,11 @@ namespace SCCosmos
             // ToJsonString escapa «<», así que puede ir dentro de <script>.
             return datos.ToJsonString();
         }
+
+
+        /// <summary>El medio día libre de Configuración (sin elegir, el viernes por la mañana).</summary>
+        public static string MedioDiaLibre() =>
+            ProgramaWeb.MedioDiaLibre(DatabaseHelper.ObtenerConfiguracion(ProgramaWeb.ClaveMedioDiaLibre, ""));
 
 
         private static bool GuardarEnvio(string codigo, string json)

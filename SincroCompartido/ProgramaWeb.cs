@@ -37,7 +37,8 @@ namespace SCCosmos.Sincro;
 // }
 // Las comidas van sin hora (a las 13:30, como en el PDF). La hora y el
 // lugar de cada salida de predicación se rellenan en Reuniones, pero
-// viajan en su franja de "predicacion".
+// viajan en su franja de "predicacion". En la del medio día libre
+// (Configuración) no va nadie con el SC ni con su esposa.
 // ============================================================
 
 public static class ProgramaWeb
@@ -48,12 +49,12 @@ public static class ProgramaWeb
         "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"
     };
 
-    /// <summary>Las franjas de predicación: las del PDF menos el viernes por la mañana, que no hay.</summary>
+    /// <summary>Las franjas de predicación, las mismas que el PDF.</summary>
     public static readonly string[] Franjas =
     {
         "Miércoles mañana", "Miércoles tarde",
         "Jueves mañana", "Jueves tarde",
-        "Viernes tarde",
+        "Viernes mañana", "Viernes tarde",
         "Sábado mañana", "Domingo mañana"
     };
 
@@ -69,6 +70,26 @@ public static class ProgramaWeb
     public const int MaxAsuntos = 10;
 
     private const int MaxTexto = 300;
+
+
+    // ---- Medio día libre del SC y su esposa (en Configuración) ----
+
+    public const string ClaveMedioDiaLibre = "MedioDiaLibre";
+
+    /// <summary>Lo que se puede elegir como medio día libre.</summary>
+    public static readonly string[] OpcionesMedioDiaLibre =
+    {
+        "Miércoles mañana", "Miércoles tarde",
+        "Jueves mañana", "Jueves tarde",
+        "Viernes mañana", "Viernes tarde"
+    };
+
+    /// <summary>
+    /// El medio día libre guardado o, sin elegir, el viernes por la mañana
+    /// (el que el formulario ya dejaba sin predicación).
+    /// </summary>
+    public static string MedioDiaLibre(string? guardado) =>
+        OpcionesMedioDiaLibre.FirstOrDefault(o => Igual(o, guardado ?? "")) ?? "Viernes mañana";
 
 
     // ---- Claves en Configuracion (por congregación y mes de la visita) ----
@@ -105,10 +126,12 @@ public static class ProgramaWeb
 
     /// <summary>
     /// Lo enviado, convertido en eventos del programa (como el PDF) y la
-    /// lista de asuntos a tratar. Lo que no sea válido se ignora.
+    /// lista de asuntos a tratar. Lo que no sea válido se ignora. En la
+    /// franja del medio día libre no va nadie con el SC ni con su esposa.
     /// </summary>
     public static (List<EventoProgramaVisita> Eventos, List<string> Asuntos) AEventos(
-        string json)
+        string json,
+        string medioDiaLibre = "")
     {
         var eventos = new List<EventoProgramaVisita>();
         var asuntos = new List<string>();
@@ -216,8 +239,8 @@ public static class ProgramaWeb
         }
 
         // ---- Predicación: por franja, hasta 2 personas con cada uno ----
-        // Cada franja, una vez. Las que ya no existen (el viernes por la
-        // mañana de un envío anterior) se saltan sin perder las siguientes.
+        // Cada franja, una vez; una que no valga se salta sin perder las
+        // siguientes.
         var franjasVistas = new HashSet<string>();
 
         foreach (JsonObject salida in Lista(raiz["predicacion"]).Take(2 * Franjas.Length))
@@ -236,8 +259,11 @@ public static class ProgramaWeb
             double lat = Numero(salida, "lat");
             double lon = Numero(salida, "lon");
 
-            string planSc = Personas(salida["sc"]);
-            string planEsposa = Personas(salida["esposa"]);
+            // Medio día libre: la salida se puede programar, pero ellos no van.
+            bool libre = Igual(franja, medioDiaLibre);
+
+            string planSc = libre ? "" : Personas(salida["sc"]);
+            string planEsposa = libre ? "" : Personas(salida["esposa"]);
 
             void Salida(string responsable, string notas) =>
                 eventos.Add(new EventoProgramaVisita
@@ -266,7 +292,7 @@ public static class ProgramaWeb
             // Con hora y sin nadie todavía: la salida queda, como en el PDF.
             if (planEsposa.Length == 0 && planSc.Length == 0 && hora.Length > 0)
             {
-                Salida("", "");
+                Salida("", libre ? "Medio día libre" : "");
             }
         }
 
