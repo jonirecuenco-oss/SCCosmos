@@ -441,6 +441,13 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - `ProgramaWeb.AEventos(json, medioDiaLibre)`: en esa franja no se pasa a nadie con el SC ni con su esposa; con hora, la salida queda con la nota «Medio día libre». «Pasar al programa» usa el de Configuración (`ProgramaWebPc.MedioDiaLibre`).
   - 107/107 comprobaciones (2 nuevas y 1 actualizada). Probado: Configuración de Windows con la herramienta de capturas (`ConfiguracionPage`) y el formulario en PC y móvil, sobre una copia de la base con «Jueves tarde» (borrada).
 - 16/11/2026 · Publicada la v2.1.71.
+- 16/11/2026 · v2.1.71 instalada en el móvil real: sin cierres ni errores nuevos; al mirar estaba delante el escritorio (no se tocó la pantalla).
+- 16/11/2026 · v2.1.72 (formulario web y Configuración, pedidos por el usuario):
+  - Formulario: sin el texto de inicio; A/SM fija en viernes; nueva «Reunión con los precursores» (miércoles o sábado, tipo «Reunión de precursores»); sin la «Reunión para la predicación» del viernes; sin «La hora y el lugar de salida se ponen en Reuniones»; el botón dice «Enviar».
+  - Configuración (Windows y Android): «Comidas con la congregación», un botón por día de miércoles a domingo (☑/☐; en Windows además Primary/Secondary, en Android atenuado). Clave `DiasComida` («Jueves,Sábado»; «Ninguno»; sin guardar, todos), escrita solo al pulsar. En Hospitalidad del formulario solo salen esos días.
+  - `ProgramaWeb.AEventos(json, medioDiaLibre, diasComida)`: A/SM siempre el viernes; precursores solo miércoles o sábado; fin de semana solo sábado o domingo; la reunión del viernes para la predicación se ignora; comidas solo de esos días. «Pasar al programa» usa `ProgramaWebPc.DiasComida()`.
+  - 110/110 comprobaciones (3 nuevas y 1 actualizada). Probado: Configuración de Windows (herramienta de capturas), la del móvil en el emulador (se pinta y se guarda; su base usa WAL: para leerla hay que copiar también `sccosmos.db-wal`) y el formulario en PC sobre una copia de la base con «Jueves,Sábado» (borrada).
+- 16/11/2026 · Publicada la v2.1.72.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

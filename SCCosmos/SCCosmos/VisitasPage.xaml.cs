@@ -982,8 +982,10 @@ namespace SCCosmos
                 return;
             }
 
-            // En el medio día libre no se pasa a nadie con vosotros.
-            var (eventos, _) = SCCosmos.Sincro.ProgramaWeb.AEventos(recibido.Json, ProgramaWebPc.MedioDiaLibre());
+            // En el medio día libre no se pasa a nadie con vosotros, y solo las
+            // comidas de los días que coméis con la congregación.
+            var (eventos, _) = SCCosmos.Sincro.ProgramaWeb.AEventos(
+                recibido.Json, ProgramaWebPc.MedioDiaLibre(), ProgramaWebPc.DiasComida());
 
             if (eventos.Count == 0)
             {

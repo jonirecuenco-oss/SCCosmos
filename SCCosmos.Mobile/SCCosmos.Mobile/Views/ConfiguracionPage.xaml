@@ -98,6 +98,17 @@
                            TextColor="{StaticResource TextoTerciario}"
                            FontSize="11"/>
 
+                    <!-- Días que coméis con la congregación (botones creados en el código) -->
+                    <Label Text="Comidas con la congregación"
+                           TextColor="{StaticResource TextoTerciario}"
+                           FontSize="12"/>
+                    <Grid x:Name="GridDiasComida"
+                          ColumnDefinitions="*,*,*,*,*"
+                          ColumnSpacing="6"/>
+                    <Label Text="Los días desactivados no salen para rellenar en Hospitalidad del formulario de los ancianos."
+                           TextColor="{StaticResource TextoTerciario}"
+                           FontSize="11"/>
+
                     <VerticalStackLayout x:Name="PanelDatosSCFinal"
                                          Spacing="10">
 

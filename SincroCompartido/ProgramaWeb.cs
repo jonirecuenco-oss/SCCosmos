@@ -22,10 +22,10 @@ namespace SCCosmos.Sincro;
 // {
 //   "version": 1,
 //   "reuniones": {
-//     "entreSemana":        { "hora", "lugar", "lat", "lon" },          (martes)
-//     "finDeSemana":        { "dia", "hora", "lugar", "lat", "lon" },
-//     "ancianos":           { "dia", "hora", "lugar", "lat", "lon" },
-//     "predicacionViernes": { "hora", "lugar", "lat", "lon" }
+//     "entreSemana": { "hora", "lugar", "lat", "lon" },          (martes)
+//     "finDeSemana": { "dia", "hora", "lugar", "lat", "lon" },   (sábado o domingo)
+//     "ancianos":    { "hora", "lugar", "lat", "lon" },          (viernes)
+//     "precursores": { "dia", "hora", "lugar", "lat", "lon" }    (miércoles o sábado)
 //   },
 //   "comidas":     [ { "dia", "familia", "telefono", "direccion", "lat", "lon" } ],
 //   "alojamiento": { "familia", "telefono", "direccion", "lat", "lon" },
@@ -38,7 +38,8 @@ namespace SCCosmos.Sincro;
 // Las comidas van sin hora (a las 13:30, como en el PDF). La hora y el
 // lugar de cada salida de predicación se rellenan en Reuniones, pero
 // viajan en su franja de "predicacion". En la del medio día libre
-// (Configuración) no va nadie con el SC ni con su esposa.
+// (Configuración) no va nadie con el SC ni con su esposa, y solo hay
+// comidas los días que se come con la congregación (Configuración).
 // ============================================================
 
 public static class ProgramaWeb
@@ -92,6 +93,44 @@ public static class ProgramaWeb
         OpcionesMedioDiaLibre.FirstOrDefault(o => Igual(o, guardado ?? "")) ?? "Viernes mañana";
 
 
+    // ---- Días que comen con la congregación (en Configuración) ----
+
+    public const string ClaveDiasComida = "DiasComida";
+
+    /// <summary>Los días que puede haber comida con la congregación.</summary>
+    public static readonly string[] DiasComidaPosibles =
+    {
+        "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"
+    };
+
+    /// <summary>
+    /// Los días guardados («Jueves,Sábado»; «Ninguno» si no hay ninguno).
+    /// Sin guardar, todos (lo que ya hacía el formulario).
+    /// </summary>
+    public static string[] DiasComida(string? guardado)
+    {
+        string texto = (guardado ?? "").Trim();
+
+        if (Igual(texto, "Ninguno"))
+        {
+            return Array.Empty<string>();
+        }
+
+        string[] partes = texto.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        string[] dias = DiasComidaPosibles.Where(d => partes.Any(p => Igual(p, d))).ToArray();
+
+        return dias.Length > 0 ? dias : DiasComidaPosibles.ToArray();
+    }
+
+    /// <summary>Lo que se guarda para esos días, en su orden («Ninguno» si no hay).</summary>
+    public static string TextoDiasComida(IEnumerable<string> dias)
+    {
+        List<string> lista = DiasComidaPosibles.Where(d => dias.Any(x => Igual(x, d))).ToList();
+
+        return lista.Count == 0 ? "Ninguno" : string.Join(",", lista);
+    }
+
+
     // ---- Claves en Configuracion (por congregación y mes de la visita) ----
 
     public static string ClaveCodigo(string congregacion, string mes) =>
@@ -127,11 +166,14 @@ public static class ProgramaWeb
     /// <summary>
     /// Lo enviado, convertido en eventos del programa (como el PDF) y la
     /// lista de asuntos a tratar. Lo que no sea válido se ignora. En la
-    /// franja del medio día libre no va nadie con el SC ni con su esposa.
+    /// franja del medio día libre no va nadie con el SC ni con su esposa, y
+    /// las comidas solo cuentan los días de <paramref name="diasComida"/>
+    /// (null: todos).
     /// </summary>
     public static (List<EventoProgramaVisita> Eventos, List<string> Asuntos) AEventos(
         string json,
-        string medioDiaLibre = "")
+        string medioDiaLibre = "",
+        IReadOnlyCollection<string>? diasComida = null)
     {
         var eventos = new List<EventoProgramaVisita>();
         var asuntos = new List<string>();
@@ -152,16 +194,19 @@ public static class ProgramaWeb
             return (eventos, asuntos);
         }
 
-        // ---- Reuniones (las cuatro del PDF) ----
+        // ---- Reuniones ----
+        // La de A/SM, siempre el viernes; la de precursores, el miércoles o
+        // el sábado. (La «reunión para la predicación» del viernes ya no se
+        // pregunta: si un envío anterior la trae, se ignora.)
         if (raiz["reuniones"] is JsonObject reuniones)
         {
-            Reunion(reuniones["entreSemana"], "Martes", "Reunión entre semana", "");
-            Reunion(reuniones["finDeSemana"], null, "Reunión fin de semana", "");
-            Reunion(reuniones["ancianos"], null, "Reunión de A/SM", "");
-            Reunion(reuniones["predicacionViernes"], "Viernes", "Predicación", "Reunión para la predicación");
+            Reunion(reuniones["entreSemana"], "Martes", "Reunión entre semana");
+            Reunion(reuniones["finDeSemana"], null, "Reunión fin de semana", "Sábado", "Domingo");
+            Reunion(reuniones["ancianos"], "Viernes", "Reunión de A/SM");
+            Reunion(reuniones["precursores"], null, "Reunión de precursores", "Miércoles", "Sábado");
         }
 
-        void Reunion(JsonNode? nodo, string? diaFijo, string tipo, string notas)
+        void Reunion(JsonNode? nodo, string? diaFijo, string tipo, params string[] diasValidos)
         {
             if (nodo is not JsonObject r)
             {
@@ -171,7 +216,9 @@ public static class ProgramaWeb
             string dia = diaFijo ?? Dia(Texto(r, "dia"));
             string hora = Hora(Texto(r, "hora"));
 
-            if (dia.Length == 0 || hora.Length == 0)
+            if (dia.Length == 0
+                || hora.Length == 0
+                || (diasValidos.Length > 0 && !diasValidos.Contains(dia)))
             {
                 return;
             }
@@ -183,7 +230,6 @@ public static class ProgramaWeb
                 Hora = hora,
                 TipoActividad = tipo,
                 Responsable = "Ambos",
-                Notas = notas,
                 Ubicacion = Texto(r, "lugar"),
                 Latitud = Numero(r, "lat"),
                 Longitud = Numero(r, "lon")
@@ -196,7 +242,10 @@ public static class ProgramaWeb
             string dia = Dia(Texto(comida, "dia"));
             string familia = Texto(comida, "familia");
 
-            if (dia.Length == 0 || familia.Length == 0)
+            // Solo los días que se come con la congregación.
+            if (dia.Length == 0
+                || familia.Length == 0
+                || (diasComida is not null && !diasComida.Contains(dia)))
             {
                 continue;
             }

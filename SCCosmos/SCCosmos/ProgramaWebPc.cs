@@ -136,6 +136,7 @@ namespace SCCosmos
                 ["diaFinDeSemana"] = diaFinDeSemana is "Sábado" or "Domingo" ? diaFinDeSemana : "",
                 ["horaFinDeSemana"] = ProgramaWeb.Hora(datosCongregacion?.HoraFinSemana ?? ""),
                 ["medioDiaLibre"] = MedioDiaLibre(),
+                ["diasComida"] = new JsonArray(DiasComida().Select(d => (JsonNode)d).ToArray()),
                 ["envio"] = envio,
                 ["enviadoEn"] = enviadoEn
             };
@@ -148,6 +149,11 @@ namespace SCCosmos
         /// <summary>El medio día libre de Configuración (sin elegir, el viernes por la mañana).</summary>
         public static string MedioDiaLibre() =>
             ProgramaWeb.MedioDiaLibre(DatabaseHelper.ObtenerConfiguracion(ProgramaWeb.ClaveMedioDiaLibre, ""));
+
+
+        /// <summary>Los días que coméis con la congregación (Configuración; sin elegir, todos).</summary>
+        public static string[] DiasComida() =>
+            ProgramaWeb.DiasComida(DatabaseHelper.ObtenerConfiguracion(ProgramaWeb.ClaveDiasComida, ""));
 
 
         private static bool GuardarEnvio(string codigo, string json)

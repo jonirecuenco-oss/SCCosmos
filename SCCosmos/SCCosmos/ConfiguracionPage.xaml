@@ -120,6 +120,13 @@
                                 </StackPanel>
                                 <TextBlock Text="En el formulario de los ancianos esa salida se puede programar, pero sin asignaros a nadie." Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="12" VerticalAlignment="Bottom" Margin="15,0,0,6" TextWrapping="Wrap"/>
                             </StackPanel>
+
+                            <!-- Días que coméis con la congregación: los demás no salen en Hospitalidad del formulario (botones creados en el código) -->
+                            <StackPanel Margin="0,15,0,0">
+                                <TextBlock Text="Comidas con la congregación" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+                                <WrapPanel x:Name="PanelDiasComida"/>
+                                <TextBlock Text="Los días desactivados no salen para rellenar en Hospitalidad del formulario de los ancianos." Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
                         </StackPanel>
                     </Grid>
                 </ui:Card>

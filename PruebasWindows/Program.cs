@@ -361,7 +361,7 @@ internal static class Programa
          "asuntos":["Limpieza del salón",""," Grupos "]}
         """;
         var (eventosWeb, asuntosWeb) = ProgramaWeb.AEventos(envioWeb);
-        Ver("Web: reuniones (sin día, la de ancianos no cuenta)", string.Join("|", eventosWeb.Where(e => e.TipoActividad.StartsWith("Reunión") || (e.TipoActividad == "Predicación" && e.Turno == "General")).Select(e => $"{e.DiaSemana} {e.Hora} {e.TipoActividad}")), "Martes 19:00 Reunión entre semana|Viernes 09:30 Predicación|Domingo 11:00 Reunión fin de semana");
+        Ver("Web: reuniones (la de A/SM, siempre el viernes; la del viernes para la predicación ya no)", string.Join("|", eventosWeb.Where(e => e.TipoActividad.StartsWith("Reunión") || (e.TipoActividad == "Predicación" && e.Turno == "General")).Select(e => $"{e.DiaSemana} {e.Hora} {e.TipoActividad}")), "Martes 19:00 Reunión entre semana|Viernes 20:00 Reunión de A/SM|Domingo 11:00 Reunión fin de semana");
         Ver("Web: total de actividades", eventosWeb.Count, 13);
         Ver("Web: comida (hora por defecto)", eventosWeb.Where(e => e.TipoActividad == "Comida").Select(e => $"{e.DiaSemana} {e.Hora} {e.Notas} @ {e.Ubicacion}").FirstOrDefault(), "Miércoles 13:30 Familia García · 600 @ Calle Mayor 1");
         Ver("Web: alojamiento, todos los días", eventosWeb.Count(e => e.TipoActividad == "Alojamiento"), 6);
@@ -374,6 +374,9 @@ internal static class Programa
         string ochoFranjas = "{\"version\":1,\"predicacion\":[" + string.Join(",", new[] { "Miércoles mañana", "Miércoles tarde", "Jueves mañana", "Jueves tarde", "Viernes mañana", "Viernes tarde", "Sábado mañana", "Domingo mañana", "Domingo mañana" }.Select(f => "{\"franja\":\"" + f + "\",\"hora\":\"10:00\"}")) + "],\"pastoreo\":[{\"nombre\":\"Familia Gil\",\"dia\":\"Martes\",\"hora\":\"18:00\"}]}";
         Ver("Web: las 8 franjas sin repetir; pastoreo, no en martes", string.Join("|", ProgramaWeb.AEventos(ochoFranjas).Eventos.Select(e => e.DiaSemana[..2] + e.Turno[0])), "MiM|MiT|JuM|JuT|ViM|ViT|SáM|DoM");
         Ver("Web: medio día libre (sin elegir, el viernes por la mañana)", ProgramaWeb.MedioDiaLibre("") + "|" + ProgramaWeb.MedioDiaLibre("jueves tarde") + "|" + ProgramaWeb.MedioDiaLibre("Sábado mañana"), "Viernes mañana|Jueves tarde|Viernes mañana");
+        Ver("Web: precursores, solo el miércoles o el sábado", string.Join("|", new[] { "Miércoles", "Jueves", "Sábado" }.Select(d => ProgramaWeb.AEventos("{\"version\":1,\"reuniones\":{\"precursores\":{\"dia\":\"" + d + "\",\"hora\":\"10:00\"}}}").Eventos.Count)), "1|0|1");
+        Ver("Web: comidas, solo los días con la congregación", string.Join("|", ProgramaWeb.AEventos("{\"version\":1,\"comidas\":[{\"dia\":\"Jueves\",\"familia\":\"A\"},{\"dia\":\"Sábado\",\"familia\":\"B\"}]}", "", new[] { "Sábado" }).Eventos.Select(e => e.DiaSemana)), "Sábado");
+        Ver("Web: días de comida guardados", string.Join("|", ProgramaWeb.DiasComida("").Length, ProgramaWeb.DiasComida("Ninguno").Length, ProgramaWeb.TextoDiasComida(ProgramaWeb.DiasComida("sabado, Jueves"))), "5|0|Jueves,Sábado");
         Ver("Web: en el medio día libre no va nadie con ellos", string.Join("|", ProgramaWeb.AEventos(envioWeb, "Miércoles mañana").Eventos.Where(e => e.DiaSemana == "Miércoles" && e.TipoActividad == "Predicación").Select(e => $"{e.Hora} [{e.Responsable}] {e.Notas}")), "10:00 [] Medio día libre");
         Ver("Web: hora y día de la congregación", ProgramaWeb.Hora("19:30h") + " " + ProgramaWeb.Dia("sabado"), "19:30 Sábado");
 

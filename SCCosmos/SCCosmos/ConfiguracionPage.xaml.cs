@@ -370,6 +370,7 @@ namespace SCCosmos
                     DatabaseHelper.ObtenerConfiguracion(SCCosmos.Sincro.RequisitoHoras.ClaveNacimientoEsposa, ""));
             ComboMedioDiaLibre.ItemsSource ??= SCCosmos.Sincro.ProgramaWeb.OpcionesMedioDiaLibre;
             ComboMedioDiaLibre.SelectedItem = ProgramaWebPc.MedioDiaLibre();
+            PintarDiasComida(ProgramaWebPc.DiasComida());
             TxtNumCircuito.Text = DatabaseHelper.ObtenerConfiguracion("NumeroCircuito", "");
             TxtRutaArchivoCircuito.Text = DatabaseHelper.ObtenerConfiguracion("RutaArchivoCircuito", "");
 
@@ -502,6 +503,68 @@ namespace SCCosmos
             TxtClaveSincro.LostFocus += (s, e) => GuardarClaveSincro();
             ToggleSincroActivo.Checked += (s, e) => AplicarSincroAutomatico();
             ToggleSincroActivo.Unchecked += (s, e) => AplicarSincroAutomatico();
+        }
+
+        // =========================================================================
+        // DÍAS QUE COMÉIS CON LA CONGREGACIÓN (☑ activado, ☐ no)
+        // Solo se guarda al pulsar un día: sin tocarlos valen todos y no viaja
+        // nada que pise lo del otro dispositivo.
+        // =========================================================================
+
+        private readonly System.Collections.Generic.HashSet<string> _diasComida = new();
+
+        private void PintarDiasComida(System.Collections.Generic.IEnumerable<string> activos)
+        {
+            _diasComida.Clear();
+            _diasComida.UnionWith(activos);
+
+            if (PanelDiasComida.Children.Count == 0)
+            {
+                foreach (string dia in SCCosmos.Sincro.ProgramaWeb.DiasComidaPosibles)
+                {
+                    var boton = new Wpf.Ui.Controls.Button
+                    {
+                        Tag = dia,
+                        Width = 125,
+                        Margin = new System.Windows.Thickness(0, 0, 8, 0),
+                        Cursor = System.Windows.Input.Cursors.Hand
+                    };
+
+                    boton.Click += BtnDiaComida_Click;
+                    PanelDiasComida.Children.Add(boton);
+                }
+            }
+
+            foreach (Wpf.Ui.Controls.Button boton in PanelDiasComida.Children)
+            {
+                bool activo = _diasComida.Contains((string)boton.Tag);
+
+                boton.Content = (activo ? "☑ " : "☐ ") + boton.Tag;
+                boton.Appearance = activo
+                    ? Wpf.Ui.Controls.ControlAppearance.Primary
+                    : Wpf.Ui.Controls.ControlAppearance.Secondary;
+            }
+        }
+
+        private void BtnDiaComida_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Wpf.Ui.Controls.Button { Tag: string dia })
+            {
+                return;
+            }
+
+            if (!_diasComida.Remove(dia))
+            {
+                _diasComida.Add(dia);
+            }
+
+            var activos = new System.Collections.Generic.List<string>(_diasComida);
+
+            PintarDiasComida(activos);
+
+            DatabaseHelper.GuardarConfiguracion(
+                SCCosmos.Sincro.ProgramaWeb.ClaveDiasComida,
+                SCCosmos.Sincro.ProgramaWeb.TextoDiasComida(activos));
         }
 
         // =========================================================================

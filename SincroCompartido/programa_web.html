@@ -13,7 +13,6 @@
   main { max-width: 720px; margin: 0 auto; padding: 16px 14px 130px; }
   h1 { font-size: 24px; margin: 6px 0 2px; }
   .sub { color: var(--suave); margin: 0 0 12px; }
-  .intro { background:#e6f0fb; border-radius:12px; padding:12px 14px; font-size:15px; }
   section { background: var(--tarjeta); border-radius: 14px; padding: 14px; margin: 16px 0; box-shadow: 0 1px 3px rgba(0,0,0,.07); }
   h2 { font-size: 19px; margin: 0 0 4px; display:flex; gap:10px; align-items:center; }
   .num { background: var(--acento); color:#fff; border-radius: 50%; width: 28px; height: 28px; display:inline-flex; align-items:center; justify-content:center; font-size:15px; flex: none; }
@@ -45,6 +44,7 @@
   .salida > input { grid-area: hora; }
   .salida > .busca { grid-area: lugar; }
   .info-salida { color: var(--suave); font-size: 14px; margin-top: 6px; }
+  .info-salida:empty { display:none; }
   /* Medio día libre: lo dice el texto; el color solo acompaña. */
   .aviso-libre { background:#fff4e0; border:1px solid #efc98a; color:#5c3d00; border-radius:10px; padding:8px 12px; font-size:14px; margin-top:8px; }
   .salida.con-aviso { grid-template-areas: "franja hora" "lugar lugar" "aviso aviso"; }
@@ -108,7 +108,6 @@
   <div class="contenido">
   <h1>Programa de la visita</h1>
   <p class="sub" id="cabecera"></p>
-  <div class="intro">Rellenad lo que ya sepáis: nada es obligatorio. Lo que escribís se va guardando en este dispositivo. Al terminar, pulsad <b>Enviar al superintendente</b>. Si algo cambia, podéis volver a abrir este enlace y enviarlo otra vez.</div>
 
   <section id="s-reuniones">
     <h2><span class="num">1</span>Reuniones</h2>
@@ -152,7 +151,7 @@
 
 <div class="barra"><div class="dentro">
   <div class="estado oculto" id="estado"></div>
-  <button type="button" id="enviar">Enviar al superintendente</button>
+  <button type="button" id="enviar">Enviar</button>
 </div></div>
 
 <script>
@@ -164,7 +163,8 @@ window.VISITA = /*VISITA*/null;
   const V = window.VISITA || {
     codigo: "ejemplo", congregacion: "Congregación de ejemplo", fechas: "del 10 al 15 de noviembre",
     dias: {}, alojamiento: true, sc: "el superintendente", esposa: "su esposa", centro: null,
-    salon: null, horaEntreSemana: "", diaFinDeSemana: "", horaFinDeSemana: "", medioDiaLibre: "Viernes mañana", envio: null, enviadoEn: 0
+    salon: null, horaEntreSemana: "", diaFinDeSemana: "", horaFinDeSemana: "", medioDiaLibre: "Viernes mañana",
+    diasComida: ["Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"], envio: null, enviadoEn: 0
   };
 
   const DIAS = ["Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
@@ -178,8 +178,8 @@ window.VISITA = /*VISITA*/null;
   const REUNIONES = [
     { clave: "entreSemana", titulo: "Reunión de entre semana", fijo: "Martes", hora: V.horaEntreSemana, enSalon: true },
     { clave: "finDeSemana", titulo: "Reunión del fin de semana", fijo: FINDE, dias: ["Sábado", "Domingo"], hora: V.horaFinDeSemana, enSalon: true },
-    { clave: "ancianos", titulo: "Reunión con los ancianos y siervos ministeriales", dias: DIAS },
-    { clave: "predicacionViernes", titulo: "Reunión para la predicación", fijo: "Viernes" }
+    { clave: "ancianos", titulo: "Reunión con los ancianos y siervos ministeriales", fijo: "Viernes" },
+    { clave: "precursores", titulo: "Reunión con los precursores", dias: ["Miércoles", "Sábado"] }
   ];
   const OTRO_LUGAR = SALON ? "Salón del Reino u otro lugar" : "Dirección o lugar";
   const CLAVE = "programa_" + V.codigo;
@@ -335,10 +335,12 @@ window.VISITA = /*VISITA*/null;
   });
   const salidaDe = fr => horasSalidas.querySelector('[data-salida="' + fr + '"]');
 
-  // ---- 2. Hospitalidad ----
+  // ---- 2. Hospitalidad (solo los días que comen con la congregación) ----
   const comidas = $("#comidas");
-  if (!ANCHO) $("#ayuda-comidas").textContent += " Tocad un día para rellenarlo.";
-  MIE_A_DOM.forEach(d => {
+  const DIAS_COMIDA = Array.isArray(V.diasComida) ? MIE_A_DOM.filter(d => V.diasComida.includes(d)) : MIE_A_DOM;
+  if (DIAS_COMIDA.length === 0) $("#ayuda-comidas").textContent = "Esta semana no hay comidas con la congregación.";
+  else if (!ANCHO) $("#ayuda-comidas").textContent += " Tocad un día para rellenarlo.";
+  DIAS_COMIDA.forEach(d => {
     const b = el("details", { className: "bloque" });
     b.dataset.comida = d;
     b.append(el("summary", null, el("h3", { textContent: "Comida del " + diaTexto(d) }),
@@ -574,7 +576,7 @@ window.VISITA = /*VISITA*/null;
         (b.dataset.franja === LIBRE ? "Medio día libre" : n === 0 ? "Sin planes" : n + (n === 1 ? " persona" : " personas"));
       b.querySelector(".info-salida").textContent = h
         ? "Salida a las " + h + " · " + (l || (SALON ? "Salón del Reino" : "sin lugar"))
-        : "La hora y el lugar de salida se ponen en Reuniones (apartado 1).";
+        : "";
     });
   }
 

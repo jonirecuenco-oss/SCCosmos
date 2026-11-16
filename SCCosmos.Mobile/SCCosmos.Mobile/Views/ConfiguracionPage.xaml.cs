@@ -730,6 +730,10 @@ public partial class ConfiguracionPage : ContentPage
                 SCCosmos.Sincro.ProgramaWeb.MedioDiaLibre(
                     DatabaseHelper.ObtenerConfiguracion(SCCosmos.Sincro.ProgramaWeb.ClaveMedioDiaLibre, ""));
 
+            PintarDiasComida(
+                SCCosmos.Sincro.ProgramaWeb.DiasComida(
+                    DatabaseHelper.ObtenerConfiguracion(SCCosmos.Sincro.ProgramaWeb.ClaveDiasComida, "")));
+
             TxtNumCircuito.Text =
                 DatabaseHelper.ObtenerConfiguracion("NumeroCircuito", "");
 
@@ -827,6 +831,109 @@ public partial class ConfiguracionPage : ContentPage
 
         GuardarDatosGlobales();
     }
+
+
+    // =========================================================
+    // DÍAS QUE COMÉIS CON LA CONGREGACIÓN (☑ activado, ☐ no)
+    // Solo se guarda al pulsar un día: sin tocarlos valen todos y
+    // no viaja nada que pise lo del otro dispositivo.
+    // =========================================================
+
+    private readonly HashSet<string> _diasComida = new();
+
+    private void PintarDiasComida(
+        IEnumerable<string> activos)
+    {
+        _diasComida.Clear();
+        _diasComida.UnionWith(activos);
+
+        if (GridDiasComida.Children.Count == 0)
+        {
+            string[] dias =
+                SCCosmos.Sincro.ProgramaWeb.DiasComidaPosibles;
+
+            for (int i = 0; i < dias.Length; i++)
+            {
+                var boton = new Button
+                {
+                    ClassId = dias[i],
+                    FontSize = 13,
+                    HeightRequest = 38,
+                    Padding = new Thickness(0),
+                    CornerRadius = 8,
+                    BackgroundColor = ColorDelTema("SuperficieAlta", Colors.DimGray),
+                    TextColor = ColorDelTema("TextoPrincipal", Colors.White)
+                };
+
+                boton.Clicked += BtnDiaComida_Clicked;
+
+                Grid.SetColumn(boton, i);
+                GridDiasComida.Children.Add(boton);
+            }
+        }
+
+        foreach (Button boton in GridDiasComida.Children.OfType<Button>())
+        {
+            bool activo =
+                _diasComida.Contains(boton.ClassId);
+
+            // «☑ Mié» / «☐ Mié»: el símbolo lo dice; el apagado solo acompaña.
+            boton.Text =
+                (activo ? "☑ " : "☐ ") + boton.ClassId[..3];
+
+            boton.Opacity =
+                activo ? 1 : 0.6;
+        }
+    }
+
+    private void BtnDiaComida_Clicked(
+        object? sender,
+        EventArgs e)
+    {
+        if (sender is not Button { ClassId: { Length: > 0 } dia })
+        {
+            return;
+        }
+
+        if (!_diasComida.Remove(dia))
+        {
+            _diasComida.Add(dia);
+        }
+
+        var activos =
+            new List<string>(_diasComida);
+
+        PintarDiasComida(activos);
+
+        try
+        {
+            DatabaseHelper.GuardarConfiguracion(
+                SCCosmos.Sincro.ProgramaWeb.ClaveDiasComida,
+                SCCosmos.Sincro.ProgramaWeb.TextoDiasComida(activos));
+
+            LblResultadoGlobal.TextColor =
+                Colors.LightGreen;
+
+            LblResultadoGlobal.Text =
+                "✓ Guardado automáticamente.";
+        }
+        catch (Exception ex)
+        {
+            LblResultadoGlobal.TextColor =
+                Colors.OrangeRed;
+
+            LblResultadoGlobal.Text =
+                "✗ No se pudo guardar: " + ex.Message;
+        }
+    }
+
+    private static Color ColorDelTema(
+        string clave,
+        Color porDefecto) =>
+        Application.Current?.Resources.TryGetValue(clave, out object? valor) == true
+        && valor is Color color
+            ? color
+            : porDefecto;
 
 
     // =========================================================
