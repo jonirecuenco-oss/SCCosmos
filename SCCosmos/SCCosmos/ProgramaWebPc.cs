@@ -113,6 +113,10 @@ namespace SCCosmos
                 return nombre.Length > 0 ? nombre : porDefecto;
             }
 
+            // Lo que ya se sabe de la congregación: el formulario lo trae puesto.
+            string direccionSalon = datosCongregacion?.DireccionSR?.Trim() ?? "";
+            string diaFinDeSemana = ProgramaWeb.Dia(datosCongregacion?.DiaFinSemana ?? "");
+
             var datos = new JsonObject
             {
                 ["codigo"] = codigo,
@@ -125,6 +129,12 @@ namespace SCCosmos
                 ["centro"] = datosCongregacion is { Latitud: not 0 }
                     ? new JsonObject { ["lat"] = datosCongregacion.Latitud, ["lon"] = datosCongregacion.Longitud }
                     : null,
+                ["salon"] = direccionSalon.Length > 0
+                    ? new JsonObject { ["direccion"] = direccionSalon, ["lat"] = datosCongregacion.Latitud, ["lon"] = datosCongregacion.Longitud }
+                    : null,
+                ["horaEntreSemana"] = ProgramaWeb.Hora(datosCongregacion?.HoraEntreSemana ?? ""),
+                ["diaFinDeSemana"] = diaFinDeSemana is "Sábado" or "Domingo" ? diaFinDeSemana : "",
+                ["horaFinDeSemana"] = ProgramaWeb.Hora(datosCongregacion?.HoraFinSemana ?? ""),
                 ["envio"] = envio,
                 ["enviadoEn"] = enviadoEn
             };

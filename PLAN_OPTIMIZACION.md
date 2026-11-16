@@ -426,6 +426,14 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - Alojamiento: solo con «Sin alojamiento» en el calendario no se pregunta. Pastoreo: «Visita de pastoreo», responsable SC.
   - 103/103 comprobaciones (15 nuevas: conversión y servidor real en un puerto de prueba). Probado en el navegador con un servidor de prueba (Capturas `ServidorProgramaWeb:código:mes`, local) y una copia de la base (borrada). Funnel: falta que el usuario lo active en Tailscale (`tailscale funnel --bg 47320`).
 - 15/11/2026 · Publicada la v2.1.69.
+- 15/11/2026 · Funnel activado por el usuario: `https://desktop-792pf3k.tail34f457.ts.net` → 127.0.0.1:47320 (`tailscale funnel --bg 47320`, queda puesto).
+- 16/11/2026 · v2.1.70 (formulario web: mejoras pedidas por el usuario):
+  - Vista para tableta y PC (`programa_web.html`): desde 760 px, más ancho, reuniones/comidas/pastoreo en dos columnas, salidas en una línea (franja · hora · lugar), «Con Jonatán» y «Con Rebeca» lado a lado y todo desplegado; desde 1180 px, índice fijo de los apartados.
+  - Datos de la congregación ya puestos (`ProgramaWebPc.DatosVisitaJson`: `salon`, `horaEntreSemana`, `diaFinDeSemana`, `horaFinDeSemana`, de `Congregaciones`): horas de las reuniones de entre semana y fin de semana, lugar = dirección del salón (con coordenadas) y día del fin de semana fijo (sin él en la base, se elige sábado/domingo). Lo guardado vacío no pisa estos valores.
+  - Comidas sin hora (13:30 al pasarlas al programa, como el PDF). Predicación solo con las personas: la hora y el lugar de cada salida van en Reuniones («Salidas a predicar»); el JSON no cambia (siguen en su franja). «Usar este lugar en todas las reuniones y salidas».
+  - Sin predicación el viernes por la mañana (`ProgramaWeb.Franjas`, 7); de envíos antiguos se salta esa franja sin perder las siguientes y no se repiten franjas. Pastoreo solo de miércoles a domingo (también al convertir). `ProgramaWeb.Hora`/`Dia` públicos.
+  - 105/105 comprobaciones (2 nuevas). Probado en el navegador (móvil, tableta y PC) con el servidor de prueba de Capturas (admite ya un 4.º campo con el código) y una copia de la base (borrada). `.openchamber/` excluido en `.git/info/exclude` (capturas del navegador, no se suben).
+- 16/11/2026 · Publicada la v2.1.70.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

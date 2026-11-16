@@ -8,6 +8,7 @@
 <style>
   :root { --acento:#0b6fc2; --fondo:#f4f6f9; --tarjeta:#fff; --texto:#1c2430; --suave:#5d6875; --borde:#d4dbe4; --ok:#1e7d3a; --error:#b3261e; }
   * { box-sizing: border-box; }
+  html { scroll-padding-top: 16px; }
   body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background:var(--fondo); color:var(--texto); font-size:17px; line-height:1.4; }
   main { max-width: 720px; margin: 0 auto; padding: 16px 14px 130px; }
   h1 { font-size: 24px; margin: 6px 0 2px; }
@@ -18,12 +19,15 @@
   .num { background: var(--acento); color:#fff; border-radius: 50%; width: 28px; height: 28px; display:inline-flex; align-items:center; justify-content:center; font-size:15px; flex: none; }
   .ayuda { color: var(--suave); font-size: 14px; margin: 0 0 6px; }
   h3 { font-size: 16px; margin: 0; }
+  h3.apartado { margin: 18px 0 2px; }
   label { display:block; font-size: 14px; color: var(--suave); margin: 10px 0 4px; }
   input, select, textarea { width:100%; font: inherit; padding: 10px 12px; border: 1px solid var(--borde); border-radius: 10px; background:#fff; color: var(--texto); }
   textarea { min-height: 76px; resize: vertical; }
   input:focus, select:focus, textarea:focus { outline: 2px solid var(--acento); border-color: transparent; }
   .fila { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .bloque { border: 1px solid var(--borde); border-radius: 12px; padding: 10px 12px; margin: 10px 0; }
+  .rejilla { display:grid; gap: 10px; margin: 10px 0; }
+  .rejilla > .bloque { margin: 0; }
   details.bloque > summary { cursor: pointer; list-style: none; display:flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 30px; }
   details.bloque > summary::-webkit-details-marker { display:none; }
   .resumen { color: var(--suave); font-size: 14px; margin-left: auto; text-align: right; }
@@ -34,6 +38,13 @@
   button.secundario { color: var(--acento); border-color: #b9d3ee; background: #f2f8fe; margin-top: 8px; }
   button.quitar { border:none; background:none; color: var(--error); font-size: 15px; padding: 4px 6px; }
   .cab { display:flex; justify-content: space-between; align-items: center; gap: 8px; }
+  /* Salidas a predicar (en Reuniones): la franja y su hora en una línea, el lugar debajo. */
+  .salida { display:grid; grid-template-columns: minmax(0, 1fr) 7em; grid-template-areas: "franja hora" "lugar lugar"; gap: 8px 10px; align-items: center; padding: 10px 0; border-top: 1px solid #eef1f5; }
+  .salida:first-child { border-top: none; padding-top: 2px; }
+  .salida > .franja { grid-area: franja; font-weight: 600; font-size: 16px; }
+  .salida > input { grid-area: hora; }
+  .salida > .busca { grid-area: lugar; }
+  .info-salida { color: var(--suave); font-size: 14px; margin-top: 6px; }
   .quien { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--borde); }
   .quien > .titulo { font-weight: 600; }
   .persona { background:#f7f9fc; border:1px solid var(--borde); border-radius: 10px; padding: 8px 10px; margin: 8px 0; }
@@ -55,41 +66,75 @@
   .aviso.ok { background:#e6f4ea; color: var(--ok); }
   .aviso.error { background:#fce8e6; color: var(--error); }
   .oculto { display:none !important; }
+  .indice { display:none; }
+
+  /* Tableta y PC: más ancho, en columnas y con todo desplegado. */
+  @media (min-width: 760px) {
+    main { max-width: 1000px; padding: 24px 24px 120px; }
+    h1 { font-size: 28px; }
+    section { padding: 18px 22px; }
+    .rejilla.dos { grid-template-columns: 1fr 1fr; }
+    .grupos { display:grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+    .salida { grid-template-columns: 13em 8em minmax(0, 1fr); grid-template-areas: "franja hora lugar"; align-items: start; }
+    .salida > .franja { padding-top: 11px; }
+    .barra .dentro { max-width: 1000px; }
+    .barra button { max-width: 480px; display:block; margin: 0 auto; }
+  }
+
+  /* PC: índice de los apartados a la izquierda, siempre a la vista. */
+  @media (min-width: 1180px) {
+    main { max-width: 1260px; display:grid; grid-template-columns: 200px minmax(0, 1fr); gap: 0 32px; }
+    .indice { display:flex; flex-direction: column; gap: 2px; position: sticky; top: 24px; align-self: start; margin-top: 12px; }
+    .indice a { display:flex; align-items:center; gap: 10px; padding: 9px 10px; border-radius: 10px; color: var(--texto); text-decoration: none; }
+    .indice a:hover { background:#e6f0fb; }
+  }
 </style>
 </head>
 <body>
 <main>
+  <nav class="indice" aria-label="Apartados">
+    <a href="#s-reuniones"><span class="num">1</span>Reuniones</a>
+    <a href="#s-hospitalidad"><span class="num">2</span>Hospitalidad</a>
+    <a href="#s-predicacion"><span class="num">3</span>Predicación</a>
+    <a href="#s-pastoreo"><span class="num">4</span>Visitas de pastoreo</a>
+    <a href="#s-asuntos"><span class="num">5</span>Asuntos a tratar</a>
+  </nav>
+
+  <div class="contenido">
   <h1>Programa de la visita</h1>
   <p class="sub" id="cabecera"></p>
   <div class="intro">Rellenad lo que ya sepáis: nada es obligatorio. Lo que escribís se va guardando en este dispositivo. Al terminar, pulsad <b>Enviar al superintendente</b>. Si algo cambia, podéis volver a abrir este enlace y enviarlo otra vez.</div>
 
-  <section>
+  <section id="s-reuniones">
     <h2><span class="num">1</span>Reuniones</h2>
-    <p class="ayuda">Día, hora y lugar de cada reunión.</p>
-    <div id="reuniones"></div>
+    <p class="ayuda" id="ayuda-reuniones">Día, hora y lugar de cada reunión.</p>
+    <div id="reuniones" class="rejilla dos"></div>
+    <h3 class="apartado">Salidas a predicar</h3>
+    <p class="ayuda">Hora y lugar de la reunión para la predicación de cada salida.</p>
+    <div id="horas-salidas" class="bloque"></div>
   </section>
 
-  <section>
+  <section id="s-hospitalidad">
     <h2><span class="num">2</span>Hospitalidad</h2>
-    <p class="ayuda">Quién invita a comer cada día. Tocad un día para rellenarlo.</p>
-    <div id="comidas"></div>
+    <p class="ayuda" id="ayuda-comidas">Quién invita a comer cada día.</p>
+    <div id="comidas" class="rejilla dos"></div>
     <div id="alojamiento" class="bloque oculto"></div>
   </section>
 
-  <section>
+  <section id="s-predicacion">
     <h2><span class="num">3</span>Predicación</h2>
     <p class="ayuda" id="ayuda-predicacion"></p>
     <div id="salidas"></div>
   </section>
 
-  <section>
+  <section id="s-pastoreo">
     <h2><span class="num">4</span>Visitas de pastoreo</h2>
-    <p class="ayuda">Hasta 3 visitas. Rellenad solo las que tengáis.</p>
-    <div id="pastoreo"></div>
+    <p class="ayuda">Hasta 3 visitas, de miércoles a domingo. Rellenad solo las que tengáis.</p>
+    <div id="pastoreo" class="rejilla dos"></div>
     <button type="button" class="secundario" id="mas-pastoreo">+ Añadir otra visita</button>
   </section>
 
-  <section>
+  <section id="s-asuntos">
     <h2><span class="num">5</span>Asuntos a tratar</h2>
     <p class="ayuda">Lo que queréis tratar con el superintendente.</p>
     <div id="asuntos"></div>
@@ -97,6 +142,7 @@
   </section>
 
   <div id="resultado"></div>
+  </div>
 </main>
 
 <div class="barra"><div class="dentro">
@@ -112,22 +158,30 @@ window.VISITA = /*VISITA*/null;
 
   const V = window.VISITA || {
     codigo: "ejemplo", congregacion: "Congregación de ejemplo", fechas: "del 10 al 15 de noviembre",
-    dias: {}, alojamiento: true, sc: "el superintendente", esposa: "su esposa", centro: null, envio: null, enviadoEn: 0
+    dias: {}, alojamiento: true, sc: "el superintendente", esposa: "su esposa", centro: null,
+    salon: null, horaEntreSemana: "", diaFinDeSemana: "", horaFinDeSemana: "", envio: null, enviadoEn: 0
   };
 
   const DIAS = ["Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
-  const DIAS_COMIDA = ["Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+  const MIE_A_DOM = DIAS.slice(1);
+  // Los viernes por la mañana no hay predicación.
   const FRANJAS = ["Miércoles mañana", "Miércoles tarde", "Jueves mañana", "Jueves tarde",
-                   "Viernes mañana", "Viernes tarde", "Sábado mañana", "Domingo mañana"];
+                   "Viernes tarde", "Sábado mañana", "Domingo mañana"];
   const FACETAS = ["Territorio", "Curso bíblico", "Exhibidores"];
+  // Lo que SCCosmos ya sabe de la congregación (horas, día y salón) viene puesto.
+  const SALON = V.salon && V.salon.direccion ? V.salon : null;
+  const FINDE = ["Sábado", "Domingo"].includes(V.diaFinDeSemana) ? V.diaFinDeSemana : "";
   const REUNIONES = [
-    { clave: "entreSemana", titulo: "Reunión de entre semana", fijo: "Martes" },
-    { clave: "finDeSemana", titulo: "Reunión del fin de semana", dias: ["Sábado", "Domingo"] },
+    { clave: "entreSemana", titulo: "Reunión de entre semana", fijo: "Martes", hora: V.horaEntreSemana, enSalon: true },
+    { clave: "finDeSemana", titulo: "Reunión del fin de semana", fijo: FINDE, dias: ["Sábado", "Domingo"], hora: V.horaFinDeSemana, enSalon: true },
     { clave: "ancianos", titulo: "Reunión con los ancianos y siervos ministeriales", dias: DIAS },
     { clave: "predicacionViernes", titulo: "Reunión para la predicación", fijo: "Viernes" }
   ];
+  const OTRO_LUGAR = SALON ? "Salón del Reino u otro lugar" : "Dirección o lugar";
   const CLAVE = "programa_" + V.codigo;
   const SC = V.sc || "el superintendente", ESPOSA = V.esposa || "su esposa";
+  // En tableta y PC cabe todo: las comidas y las salidas salen desplegadas.
+  const ANCHO = window.matchMedia("(min-width: 760px)").matches;
 
   const $ = s => document.querySelector(s);
   const el = (etiqueta, props, ...hijos) => {
@@ -161,6 +215,7 @@ window.VISITA = /*VISITA*/null;
     const input = texto(nombre, ayuda || "Escribid y elegid de la lista");
     const lista = el("div", { className: "sugerencias oculto" });
     const marca = el("div", { className: "marcado oculto", textContent: "✓ Ubicación encontrada" });
+    lista.setAttribute("role", "listbox");
     caja.append(input, lista, marca);
 
     let espera = null, ultima = "";
@@ -191,6 +246,7 @@ window.VISITA = /*VISITA*/null;
           const opcionTexto = [nombreSitio, calle, sitio].filter(Boolean).join(", ");
           if (!opcionTexto) return;
           const opcion = el("div", { textContent: opcionTexto });
+          opcion.setAttribute("role", "option");
           opcion.addEventListener("mousedown", e => e.preventDefault());
           opcion.addEventListener("click", () => {
             const c = (f.geometry && f.geometry.coordinates) || [];
@@ -223,21 +279,31 @@ window.VISITA = /*VISITA*/null;
   };
 
   // ---- 1. Reuniones ----
-  const reuniones = $("#reuniones");
+  const reuniones = $("#reuniones"), horasSalidas = $("#horas-salidas");
+  if (V.horaEntreSemana || V.horaFinDeSemana || SALON) {
+    $("#ayuda-reuniones").textContent += " La hora y el lugar de siempre ya vienen puestos: cambiadlos solo si esa semana son otros.";
+  }
+  if (SALON) {
+    $("#ayuda-reuniones").textContent += " Donde no pongáis lugar, será el Salón del Reino.";
+  }
+
   REUNIONES.forEach((r, n) => {
     const b = el("div", { className: "bloque" });
     b.dataset.reunion = r.clave;
+    if (r.fijo) b.dataset.dia = r.fijo;
     b.append(el("h3", { textContent: r.titulo + (r.fijo ? " · " + diaTexto(r.fijo) : "") }));
     const fila = el("div", { className: "fila" });
-    if (r.dias) fila.append(campo("Día", selectorDia(r.dias)));
+    if (!r.fijo) fila.append(campo("Día", selectorDia(r.dias)));
     fila.append(campo("Hora", hora("hora")));
-    b.append(fila, campo("Lugar", lugar("lugar", "Salón del Reino, dirección…")));
+    b.append(fila, campo("Lugar", lugar("lugar", r.enSalon ? "Salón del Reino, dirección…" : OTRO_LUGAR)));
+    if (r.hora) poner(b, "hora", r.hora);
+    if (r.enSalon && SALON) ponerLugar(b, "lugar", SALON.direccion, SALON.lat, SALON.lon);
     if (n === 0) {
-      const copiar = el("button", { type: "button", className: "secundario", textContent: "Usar este lugar en todas las reuniones" });
+      const copiar = el("button", { type: "button", className: "secundario", textContent: "Usar este lugar en todas las reuniones y salidas" });
       copiar.addEventListener("click", () => {
         const l = leerLugar(b, "lugar");
         if (!l.texto) { alert("Escribid primero el lugar de esta reunión."); return; }
-        reuniones.querySelectorAll("[data-reunion]").forEach(o => ponerLugar(o, "lugar", l.texto, l.lat, l.lon));
+        document.querySelectorAll("[data-reunion], [data-salida]").forEach(o => ponerLugar(o, "lugar", l.texto, l.lat, l.lon));
         cambio();
       });
       b.append(copiar);
@@ -245,16 +311,30 @@ window.VISITA = /*VISITA*/null;
     reuniones.append(b);
   });
 
+  // Salidas a predicar: la hora y el lugar de la reunión para la predicación de cada una.
+  FRANJAS.forEach(fr => {
+    const [d, turno] = fr.split(" ");
+    const titulo = mayus(diaTexto(d)) + " · " + turno;
+    const f = el("div", { className: "salida" });
+    f.dataset.salida = fr;
+    const h = hora("hora"), l = lugar("lugar", OTRO_LUGAR);
+    h.setAttribute("aria-label", "Hora de salida, " + titulo);
+    l.querySelector("input").setAttribute("aria-label", "Lugar de salida, " + titulo);
+    f.append(el("div", { className: "franja", textContent: titulo }), h, l);
+    horasSalidas.append(f);
+  });
+  const salidaDe = fr => horasSalidas.querySelector('[data-salida="' + fr + '"]');
+
   // ---- 2. Hospitalidad ----
   const comidas = $("#comidas");
-  DIAS_COMIDA.forEach(d => {
+  if (!ANCHO) $("#ayuda-comidas").textContent += " Tocad un día para rellenarlo.";
+  MIE_A_DOM.forEach(d => {
     const b = el("details", { className: "bloque" });
     b.dataset.comida = d;
     b.append(el("summary", null, el("h3", { textContent: "Comida del " + diaTexto(d) }),
                                  el("span", { className: "resumen" }), el("span", { className: "flecha" })));
-    const h = hora("hora"); h.value = "13:30";
     b.append(campo("Publicador o familia", texto("familia", "Quién invita")),
-             el("div", { className: "fila" }, campo("Teléfono", el("input", { type: "tel", name: "telefono" })), campo("Hora", h)),
+             campo("Teléfono", el("input", { type: "tel", name: "telefono" })),
              campo("Dirección", lugar("direccion", "Calle, número, pueblo")));
     comidas.append(b);
   });
@@ -268,9 +348,9 @@ window.VISITA = /*VISITA*/null;
                        campo("Dirección", lugar("direccion", "Calle, número, pueblo")));
   }
 
-  // ---- 3. Predicación ----
+  // ---- 3. Predicación: quién va (la hora y el lugar de salida, en Reuniones) ----
   $("#ayuda-predicacion").textContent =
-    "En cada salida, hasta 2 personas con " + SC + " y 2 con " + ESPOSA + ". Tocad una salida para rellenarla.";
+    "En cada salida, hasta 2 personas con " + SC + " y 2 con " + ESPOSA + "." + (ANCHO ? "" : " Tocad una salida para rellenarla.");
 
   const salidas = $("#salidas");
   FRANJAS.forEach(fr => {
@@ -278,11 +358,9 @@ window.VISITA = /*VISITA*/null;
     const b = el("details", { className: "bloque" });
     b.dataset.franja = fr;
     b.append(el("summary", null, el("h3", { textContent: mayus(diaTexto(d)) + " · " + turno }),
-                                 el("span", { className: "resumen" }), el("span", { className: "flecha" })));
-    b.append(el("div", { className: "fila" }, campo("Hora de salida", hora("hora")), el("div")),
-             campo("Lugar de salida", lugar("lugar", "Dónde se sale")),
-             grupoPersonas("sc", "Con " + SC),
-             grupoPersonas("esposa", "Con " + ESPOSA));
+                                 el("span", { className: "resumen" }), el("span", { className: "flecha" })),
+             el("div", { className: "info-salida" }),
+             el("div", { className: "grupos" }, grupoPersonas("sc", "Con " + SC), grupoPersonas("esposa", "Con " + ESPOSA)));
     salidas.append(b);
   });
 
@@ -347,7 +425,7 @@ window.VISITA = /*VISITA*/null;
     p.querySelector("[data-leccion]").classList.toggle("oculto", f !== "Curso bíblico");
   }
 
-  // ---- 4. Visitas de pastoreo ----
+  // ---- 4. Visitas de pastoreo (de miércoles a domingo) ----
   const pastoreo = $("#pastoreo"), masPastoreo = $("#mas-pastoreo");
   function nuevaVisita(datos) {
     if (pastoreo.children.length >= 3) return;
@@ -361,7 +439,7 @@ window.VISITA = /*VISITA*/null;
     }
     b.append(cab,
              campo("Persona o familia", texto("nombre", "A quién se visita")),
-             el("div", { className: "fila" }, campo("Día", selectorDia(DIAS)), campo("Hora", hora("hora"))),
+             el("div", { className: "fila" }, campo("Día", selectorDia(MIE_A_DOM)), campo("Hora", hora("hora"))),
              campo("Dirección", lugar("direccion", "Calle, número, pueblo")),
              campo("Descripción (opcional)", el("textarea", { name: "descripcion" })));
     pastoreo.append(b);
@@ -401,24 +479,25 @@ window.VISITA = /*VISITA*/null;
     const d = { version: 1, reuniones: {}, comidas: [], alojamiento: null, predicacion: [], pastoreo: [], asuntos: [] };
     reuniones.querySelectorAll("[data-reunion]").forEach(b => {
       const l = leerLugar(b, "lugar");
-      d.reuniones[b.dataset.reunion] = { dia: val(b, "dia"), hora: val(b, "hora"), lugar: l.texto, lat: l.lat, lon: l.lon };
+      d.reuniones[b.dataset.reunion] = { dia: val(b, "dia") || b.dataset.dia || "", hora: val(b, "hora"), lugar: l.texto, lat: l.lat, lon: l.lon };
     });
     comidas.querySelectorAll("[data-comida]").forEach(b => {
       const l = leerLugar(b, "direccion");
-      d.comidas.push({ dia: b.dataset.comida, familia: val(b, "familia"), telefono: val(b, "telefono"), hora: val(b, "hora"), direccion: l.texto, lat: l.lat, lon: l.lon });
+      d.comidas.push({ dia: b.dataset.comida, familia: val(b, "familia"), telefono: val(b, "telefono"), direccion: l.texto, lat: l.lat, lon: l.lon });
     });
     if (V.alojamiento) {
       const l = leerLugar(alojamiento, "direccion");
       d.alojamiento = { familia: val(alojamiento, "familia"), telefono: val(alojamiento, "telefono"), direccion: l.texto, lat: l.lat, lon: l.lon };
     }
+    // Cada salida: su hora y lugar (en Reuniones) y quién va (en Predicación).
     salidas.querySelectorAll("[data-franja]").forEach(b => {
-      const l = leerLugar(b, "lugar");
+      const s = salidaDe(b.dataset.franja), l = leerLugar(s, "lugar");
       const personas = q => [...b.querySelectorAll('[data-quien="' + q + '"] .persona')].map(p => ({
         nombre: val(p, "nombre"), faceta: p.dataset.faceta || "",
         leccion: p.dataset.faceta === "Curso bíblico" ? parseInt(val(p, "leccion"), 10) || 0 : 0,
         notas: val(p, "notas")
       })).filter(p => p.nombre);
-      d.predicacion.push({ franja: b.dataset.franja, hora: val(b, "hora"), lugar: l.texto, lat: l.lat, lon: l.lon, sc: personas("sc"), esposa: personas("esposa") });
+      d.predicacion.push({ franja: b.dataset.franja, hora: val(s, "hora"), lugar: l.texto, lat: l.lat, lon: l.lon, sc: personas("sc"), esposa: personas("esposa") });
     });
     pastoreo.querySelectorAll("[data-visita]").forEach(b => {
       const l = leerLugar(b, "direccion");
@@ -434,14 +513,15 @@ window.VISITA = /*VISITA*/null;
     reuniones.querySelectorAll("[data-reunion]").forEach(b => {
       const x = r[b.dataset.reunion];
       if (!x) return;
-      poner(b, "dia", x.dia); poner(b, "hora", x.hora);
-      ponerLugar(b, "lugar", x.lugar, x.lat, x.lon);
+      // Solo lo que trae algo: lo vacío se queda con lo de la congregación.
+      if (x.dia) poner(b, "dia", x.dia);
+      if (x.hora) poner(b, "hora", x.hora);
+      if (x.lugar) ponerLugar(b, "lugar", x.lugar, x.lat, x.lon);
     });
     (d.comidas || []).forEach(c => {
       const b = comidas.querySelector('[data-comida="' + c.dia + '"]');
       if (!b) return;
       poner(b, "familia", c.familia); poner(b, "telefono", c.telefono);
-      if (c.hora) poner(b, "hora", c.hora);
       ponerLugar(b, "direccion", c.direccion, c.lat, c.lon);
     });
     if (V.alojamiento && d.alojamiento) {
@@ -451,8 +531,9 @@ window.VISITA = /*VISITA*/null;
     (d.predicacion || []).forEach(s => {
       const b = salidas.querySelector('[data-franja="' + s.franja + '"]');
       if (!b) return;
-      poner(b, "hora", s.hora);
-      ponerLugar(b, "lugar", s.lugar, s.lat, s.lon);
+      const f = salidaDe(s.franja);
+      poner(f, "hora", s.hora);
+      ponerLugar(f, "lugar", s.lugar, s.lat, s.lon);
       ["sc", "esposa"].forEach(q => {
         const g = b.querySelector('[data-quien="' + q + '"]');
         (s[q] || []).slice(0, 2).forEach(p => nuevaPersona(g.querySelector(".personas"), g.querySelector("button.secundario"), p));
@@ -472,10 +553,13 @@ window.VISITA = /*VISITA*/null;
       b.querySelector(".resumen").textContent = val(b, "familia") || "Sin rellenar";
     });
     salidas.querySelectorAll("[data-franja]").forEach(b => {
+      const s = salidaDe(b.dataset.franja), h = val(s, "hora"), l = val(s, "lugar");
       const n = [...b.querySelectorAll(".persona")].filter(p => val(p, "nombre")).length;
-      const h = val(b, "hora");
       b.querySelector(".resumen").textContent =
         (h ? h + " · " : "") + (n === 0 ? "Sin planes" : n + (n === 1 ? " persona" : " personas"));
+      b.querySelector(".info-salida").textContent = h
+        ? "Salida a las " + h + " · " + (l || (SALON ? "Salón del Reino" : "sin lugar"))
+        : "La hora y el lugar de salida se ponen en Reuniones (apartado 1).";
     });
   }
 
@@ -495,6 +579,7 @@ window.VISITA = /*VISITA*/null;
   try { borrador = JSON.parse(localStorage.getItem(CLAVE) || "null"); } catch (e) { }
   const usarEnviado = V.envio && (!borrador || (V.enviadoEn || 0) > (borrador.guardado || 0));
   rellenar(usarEnviado ? V.envio : (borrador && borrador.datos));
+  if (ANCHO) document.querySelectorAll("details.bloque").forEach(x => { x.open = true; });
 
   $("#cabecera").textContent = [V.congregacion, V.fechas].filter(Boolean).join(" · ");
 

@@ -371,6 +371,9 @@ internal static class Programa
         Ver("Web: coordenadas", eventosWeb.First().Latitud, 39.9);
         Ver("Web: asuntos", string.Join("|", asuntosWeb), "Limpieza del salón|Grupos");
         Ver("Web: código del enlace", ProgramaWeb.CodigoValido(ProgramaWeb.NuevoCodigo()) && !ProgramaWeb.CodigoValido("../../etc/passwd"), true);
+        string ochoFranjas = "{\"version\":1,\"predicacion\":[" + string.Join(",", new[] { "Miércoles mañana", "Miércoles tarde", "Jueves mañana", "Jueves tarde", "Viernes mañana", "Viernes tarde", "Sábado mañana", "Domingo mañana", "Domingo mañana" }.Select(f => "{\"franja\":\"" + f + "\",\"hora\":\"10:00\"}")) + "],\"pastoreo\":[{\"nombre\":\"Familia Gil\",\"dia\":\"Martes\",\"hora\":\"18:00\"}]}";
+        Ver("Web: sin viernes por la mañana ni franjas repetidas; pastoreo, no en martes", string.Join("|", ProgramaWeb.AEventos(ochoFranjas).Eventos.Select(e => e.DiaSemana[..2] + e.Turno[0])), "MiM|MiT|JuM|JuT|ViT|SáM|DoM");
+        Ver("Web: hora y día de la congregación", ProgramaWeb.Hora("19:30h") + " " + ProgramaWeb.Dia("sabado"), "19:30 Sábado");
 
         // El servidor del formulario: solo /programa/{código}, y solo con un código que exista.
         string codigoPrueba = ProgramaWeb.NuevoCodigo();

@@ -27,7 +27,7 @@ namespace SCCosmos.Sincro;
 //     "ancianos":           { "dia", "hora", "lugar", "lat", "lon" },
 //     "predicacionViernes": { "hora", "lugar", "lat", "lon" }
 //   },
-//   "comidas":     [ { "dia", "familia", "telefono", "hora", "direccion", "lat", "lon" } ],
+//   "comidas":     [ { "dia", "familia", "telefono", "direccion", "lat", "lon" } ],
 //   "alojamiento": { "familia", "telefono", "direccion", "lat", "lon" },
 //   "predicacion": [ { "franja": "Miércoles mañana", "hora", "lugar", "lat", "lon",
 //                      "sc":     [ { "nombre", "faceta", "leccion", "notas" } ],
@@ -35,6 +35,9 @@ namespace SCCosmos.Sincro;
 //   "pastoreo":    [ { "nombre", "dia", "hora", "direccion", "lat", "lon", "descripcion" } ],
 //   "asuntos":     [ "..." ]
 // }
+// Las comidas van sin hora (a las 13:30, como en el PDF). La hora y el
+// lugar de cada salida de predicación se rellenan en Reuniones, pero
+// viajan en su franja de "predicacion".
 // ============================================================
 
 public static class ProgramaWeb
@@ -45,12 +48,12 @@ public static class ProgramaWeb
         "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"
     };
 
-    /// <summary>Las franjas de predicación, las mismas que el PDF.</summary>
+    /// <summary>Las franjas de predicación: las del PDF menos el viernes por la mañana, que no hay.</summary>
     public static readonly string[] Franjas =
     {
         "Miércoles mañana", "Miércoles tarde",
         "Jueves mañana", "Jueves tarde",
-        "Viernes mañana", "Viernes tarde",
+        "Viernes tarde",
         "Sábado mañana", "Domingo mañana"
     };
 
@@ -213,11 +216,15 @@ public static class ProgramaWeb
         }
 
         // ---- Predicación: por franja, hasta 2 personas con cada uno ----
-        foreach (JsonObject salida in Lista(raiz["predicacion"]).Take(Franjas.Length))
+        // Cada franja, una vez. Las que ya no existen (el viernes por la
+        // mañana de un envío anterior) se saltan sin perder las siguientes.
+        var franjasVistas = new HashSet<string>();
+
+        foreach (JsonObject salida in Lista(raiz["predicacion"]).Take(2 * Franjas.Length))
         {
             string franja = Franjas.FirstOrDefault(f => Igual(f, Texto(salida, "franja"))) ?? "";
 
-            if (franja.Length == 0)
+            if (franja.Length == 0 || !franjasVistas.Add(franja))
             {
                 continue;
             }
@@ -269,7 +276,8 @@ public static class ProgramaWeb
             string nombre = Texto(visita, "nombre");
             string dia = Dia(Texto(visita, "dia"));
 
-            if (nombre.Length == 0 || dia.Length == 0)
+            // De miércoles a domingo: el martes no hay visitas de pastoreo.
+            if (nombre.Length == 0 || dia.Length == 0 || dia == "Martes")
             {
                 continue;
             }
@@ -387,12 +395,13 @@ public static class ProgramaWeb
     }
 
 
-    private static string Dia(string texto) =>
+    /// <summary>«sabado» → «Sábado» (de martes a domingo); lo demás, vacío.</summary>
+    public static string Dia(string texto) =>
         Dias.FirstOrDefault(d => Igual(d, texto)) ?? "";
 
 
-    /// <summary>«9:30», «09.30» o «0930» → «09:30»; lo demás, vacío.</summary>
-    private static string Hora(string texto)
+    /// <summary>«9:30», «09.30», «0930» o «19:30h» → «09:30»/«19:30»; lo demás, vacío.</summary>
+    public static string Hora(string texto)
     {
         string digitos = new string(texto.Where(char.IsAsciiDigit).ToArray());
 
