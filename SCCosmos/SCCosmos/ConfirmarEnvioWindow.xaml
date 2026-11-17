@@ -59,6 +59,19 @@
                 <TextBlock Text="Asunto del correo:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
                 <ui:TextBox x:Name="TxtAsunto" Margin="0,0,0,15" Padding="5"/>
 
+                <!-- Enlace del formulario de los ancianos (al enviar la documentación de una visita) -->
+                <StackPanel x:Name="PanelEnlace" Visibility="Collapsed" Margin="0,0,0,15">
+                    <TextBlock Text="Enlace del formulario para los ancianos:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <ui:TextBox x:Name="TxtEnlace" IsReadOnly="True" Padding="5" Margin="0,0,10,0"/>
+                        <ui:Button Grid.Column="1" Content="Copiar enlace" Icon="{ui:SymbolIcon Copy24}" Click="BtnCopiarEnlace_Click" Cursor="Hand" VerticalAlignment="Center"/>
+                    </Grid>
+                </StackPanel>
+
                 <TextBlock Text="Cuerpo del correo:" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
                 <Border BorderThickness="1" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" CornerRadius="4" Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
                     <StackPanel>

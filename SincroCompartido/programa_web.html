@@ -70,7 +70,6 @@
   .aviso.ok { background:#e6f4ea; color: var(--ok); }
   .aviso.error { background:#fce8e6; color: var(--error); }
   .oculto { display:none !important; }
-  .dos-col { display:grid; gap: 0 10px; }
   .bloque > h3 + .ayuda { margin-top: 4px; }
   /* Archivos: cada uno con su estado (✓ subido, ✗ error, % mientras sube). */
   .archivo-lista { list-style:none; margin: 6px 0 0; padding: 0; }
@@ -82,13 +81,6 @@
   .archivo-lista li.error .estado { color: var(--error); }
   .grupo-s21 { border-top: 1px dashed var(--borde); margin-top: 10px; padding-top: 8px; }
   .grupo-s21 > .cab { font-weight: 600; }
-  /* Preguntas de la S-61: la elegida va rellena y con «✓». */
-  .pregunta { border-top: 1px solid #eef1f5; padding: 12px 0; }
-  .pregunta:first-child { border-top: none; padding-top: 4px; }
-  .texto-pregunta { margin: 0 0 8px; font-size: 15px; }
-  .respuestas { display:flex; gap: 8px; flex-wrap: wrap; }
-  .respuestas button { min-width: 76px; }
-  .respuestas button.elegida { background: var(--acento); color:#fff; border-color: var(--acento); font-weight: 600; }
   .indice { display:none; }
 
   /* Tableta y PC: más ancho, en columnas y con todo desplegado. */
@@ -97,7 +89,6 @@
     h1 { font-size: 28px; }
     section { padding: 18px 22px; }
     .rejilla.dos { grid-template-columns: 1fr 1fr; }
-    .dos-col { grid-template-columns: 1fr 1fr; }
     .grupos { display:grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
     .salida { grid-template-columns: 13em 8em minmax(0, 1fr); grid-template-areas: "franja hora lugar"; align-items: start; }
     .salida > .franja { padding-top: 11px; }
@@ -121,11 +112,9 @@
     <a href="#s-reuniones"><span class="num">1</span>Reuniones</a>
     <a href="#s-hospitalidad"><span class="num">2</span>Hospitalidad</a>
     <a href="#s-predicacion"><span class="num">3</span>Predicación</a>
-    <a href="#s-pastoreo"><span class="num">4</span>Visitas de pastoreo</a>
+    <a href="#s-pastoreo"><span class="num">4</span>Pastoreo</a>
     <a href="#s-asuntos"><span class="num">5</span>Asuntos a tratar</a>
-    <a href="#s-nombramientos"><span class="num">6</span>Nombramientos</a>
-    <a href="#s-archivos"><span class="num">7</span>Archivos</a>
-    <a href="#s-s61"><span class="num">8</span>Preguntas S-61</a>
+    <a href="#s-archivos"><span class="num">6</span>Archivos</a>
   </nav>
 
   <div class="contenido">
@@ -155,7 +144,7 @@
   </section>
 
   <section id="s-pastoreo">
-    <h2><span class="num">4</span>Visitas de pastoreo</h2>
+    <h2><span class="num">4</span>Pastoreo</h2>
     <p class="ayuda">Hasta 3 visitas, de miércoles a domingo. Rellenad solo las que tengáis.</p>
     <div id="pastoreo" class="rejilla dos"></div>
     <button type="button" class="secundario" id="mas-pastoreo">+ Añadir otra visita</button>
@@ -168,23 +157,10 @@
     <button type="button" class="secundario" id="mas-asunto">+ Añadir otro asunto</button>
   </section>
 
-  <section id="s-nombramientos">
-    <h2><span class="num">6</span>Nombramientos y bajas</h2>
-    <p class="ayuda">Hermanos que recomendáis para nombramiento o baja. Si no hay ninguno, dejadlo en blanco.</p>
-    <div id="nombramientos"></div>
-    <button type="button" class="secundario" id="mas-nombramiento">+ Añadir otro hermano</button>
-  </section>
-
   <section id="s-archivos" class="oculto">
-    <h2><span class="num">7</span>Archivos</h2>
-    <p class="ayuda">Los documentos que pide la S-61. Cada archivo se guarda al subirlo (no hace falta pulsar «Enviar») y solo en el ordenador del superintendente. Hasta 50 MB por archivo.</p>
+    <h2><span class="num">6</span>Archivos</h2>
+    <p class="ayuda">La S-61 rellenada y los documentos que pide. Cada archivo se guarda al subirlo (no hace falta pulsar «Enviar») y solo en el ordenador del superintendente. Hasta 50 MB por archivo.</p>
     <div id="archivos"></div>
-  </section>
-
-  <section id="s-s61">
-    <h2><span class="num">8</span>Preguntas de la S-61</h2>
-    <p class="ayuda" id="ayuda-s61">Marcad la respuesta que corresponda.</p>
-    <div id="preguntas"></div>
   </section>
 
   <div id="resultado"></div>
@@ -206,7 +182,7 @@ window.VISITA = /*VISITA*/null;
     codigo: "ejemplo", congregacion: "Congregación de ejemplo", fechas: "del 10 al 15 de noviembre",
     dias: {}, alojamiento: true, sc: "el superintendente", esposa: "su esposa", centro: null,
     salon: null, horaEntreSemana: "", diaFinDeSemana: "", horaFinDeSemana: "", medioDiaLibre: "Viernes mañana",
-    diasComida: ["Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"], tiposNombramiento: [], s61: [], archivos: false,
+    diasComida: ["Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"], archivos: false,
     envio: null, enviadoEn: 0
   };
 
@@ -533,29 +509,10 @@ window.VISITA = /*VISITA*/null;
   }
   masAsunto.addEventListener("click", () => { nuevoAsunto(); cambio(); });
 
-  // ---- 6. Nombramientos y bajas (S-61) ----
-  const nombramientos = $("#nombramientos"), masNombramiento = $("#mas-nombramiento");
-  function nuevoNombramiento(datos) {
-    if (nombramientos.children.length >= 10) return;
-    const b = el("div", { className: "bloque" });
-    b.dataset.nombramiento = "1";
-    const tipo = el("select", { name: "tipo" }, el("option", { value: "", textContent: "Elegir" }));
-    (V.tiposNombramiento || []).forEach(t => tipo.append(el("option", { value: t, textContent: t })));
-    if (nombramientos.children.length >= 1) {
-      const quitar = el("button", { type: "button", className: "quitar", textContent: "Quitar" });
-      quitar.addEventListener("click", () => { b.remove(); masNombramiento.classList.remove("oculto"); cambio(); });
-      b.append(el("div", { className: "cab" }, el("span"), quitar));
-    }
-    b.append(el("div", { className: "dos-col" }, campo("Hermano", texto("nombre", "Nombre y apellidos")), campo("Recomendación", tipo)));
-    nombramientos.append(b);
-    masNombramiento.classList.toggle("oculto", nombramientos.children.length >= 10);
-    if (datos) { poner(b, "nombre", datos.nombre); poner(b, "tipo", datos.tipo); }
-  }
-  masNombramiento.addEventListener("click", () => { nuevoNombramiento(); cambio(); });
-
-  // ---- 7. Archivos: se suben al momento a la carpeta de la visita, en el PC ----
+  // ---- 6. Archivos: se suben al momento a la carpeta de la visita, en el PC ----
   const MAX_ARCHIVO = 50 * 1024 * 1024;
   const ARCHIVOS = [
+    { tipo: "s61", titulo: "Información necesaria para la visita (S-61)", ayuda: "La S-61 rellenada por el coordinador del cuerpo de ancianos." },
     { tipo: "s21", titulo: "Registro de publicador de la congregación (S-21)", ayuda: "Una tarjeta por publicador. Subidlas por grupos: en cada grupo podéis elegir todas sus tarjetas a la vez." },
     { tipo: "s88", titulo: "Registro de asistencia a las reuniones de congregación (S-88)" },
     { tipo: "cuentas", titulo: "Cuentas de la congregación", ayuda: "El archivo actual de las cuentas y el de aprobaciones vigentes, y los dos últimos informes de auditoría." },
@@ -685,31 +642,6 @@ window.VISITA = /*VISITA*/null;
     cargarArchivos();
   }
 
-  // ---- 8. Preguntas de la S-61 (su página 2) ----
-  const preguntas = $("#preguntas");
-  if (!(V.s61 && V.s61.length)) $("#s-s61").classList.add("oculto");
-  (V.s61 || []).forEach(p => {
-    const b = el("div", { className: "pregunta" });
-    b.dataset.pregunta = p.n;
-    const botones = el("div", { className: "respuestas" });
-    (p.na ? ["Sí", "No", "N/A"] : ["Sí", "No"]).forEach(r => {
-      const bt = el("button", { type: "button", textContent: r });
-      bt.dataset.respuesta = r;
-      bt.addEventListener("click", () => { elegirRespuesta(b, b.dataset.elegida === r ? "" : r); cambio(); });
-      botones.append(bt);
-    });
-    b.append(el("p", { className: "texto-pregunta" }, el("b", { textContent: p.n + ". " }), p.texto), botones);
-    preguntas.append(b);
-  });
-  function elegirRespuesta(b, r) {
-    b.dataset.elegida = r;
-    b.querySelectorAll(".respuestas button").forEach(x => {
-      const si = x.dataset.respuesta === r;
-      x.classList.toggle("elegida", si);
-      x.textContent = (si ? "✓ " : "") + x.dataset.respuesta;
-      x.setAttribute("aria-pressed", si ? "true" : "false");
-    });
-  }
 
   // ---- Recoger y rellenar ----
   function recoger() {
@@ -741,11 +673,6 @@ window.VISITA = /*VISITA*/null;
       d.pastoreo.push({ nombre: val(b, "nombre"), dia: val(b, "dia"), hora: val(b, "hora"), direccion: l.texto, lat: l.lat, lon: l.lon, descripcion: val(b, "descripcion") });
     });
     asuntos.querySelectorAll('[name="asunto"]').forEach(t => t.value.trim() && d.asuntos.push(t.value.trim()));
-    d.nombramientos = [...nombramientos.querySelectorAll("[data-nombramiento]")]
-      .map(b => ({ nombre: val(b, "nombre"), tipo: val(b, "tipo") }))
-      .filter(n => n.nombre);
-    d.s61 = {};
-    preguntas.querySelectorAll("[data-pregunta]").forEach(b => { if (b.dataset.elegida) d.s61[b.dataset.pregunta] = b.dataset.elegida; });
     return d;
   }
 
@@ -788,13 +715,6 @@ window.VISITA = /*VISITA*/null;
     asuntos.replaceChildren();
     (d.asuntos || []).slice(0, 10).forEach(a => nuevoAsunto(a));
     if (asuntos.children.length === 0) nuevoAsunto();
-    nombramientos.replaceChildren();
-    (d.nombramientos || []).slice(0, 10).forEach(n => nuevoNombramiento(n));
-    if (nombramientos.children.length === 0) nuevoNombramiento();
-    Object.entries(d.s61 || {}).forEach(([n, r]) => {
-      const b = preguntas.querySelector('[data-pregunta="' + n + '"]');
-      if (b && [...b.querySelectorAll(".respuestas button")].some(x => x.dataset.respuesta === r)) elegirRespuesta(b, r);
-    });
     resumir();
   }
 
@@ -811,11 +731,6 @@ window.VISITA = /*VISITA*/null;
         ? "Salida a las " + h + " · " + (l || (SALON ? "Salón del Reino" : "sin lugar"))
         : "";
     });
-    const total = preguntas.querySelectorAll("[data-pregunta]").length;
-    if (total) {
-      const hechas = preguntas.querySelectorAll("[data-pregunta][data-elegida]:not([data-elegida=''])").length;
-      $("#ayuda-s61").textContent = "Marcad la respuesta que corresponda. Respondidas: " + hechas + " de " + total + ".";
-    }
   }
 
   // ---- Guardado en este dispositivo ----

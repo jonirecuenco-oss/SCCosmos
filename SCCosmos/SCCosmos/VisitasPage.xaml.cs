@@ -912,23 +912,7 @@ namespace SCCosmos
         {
             try
             {
-                string mes = _mesPrograma.ToString("yyyy-MM");
-                string enlace = ProgramaWebPc.Enlace(_congreCodigo, mes);
-
-                Clipboard.SetText(enlace);
-
-                string caduca = ProgramaWebPc.Caducidad(_congreCodigo, mes) is { } hasta
-                    ? $"\n\nEl enlace vale hasta el {hasta:dd/MM/yyyy} ({ProgramaWebPc.DiasTrasLaVisita} días después de la visita)."
-                    : "";
-
-                MessageBox.Show(
-                    "Enlace copiado:\n\n" + enlace +
-                    "\n\nEnvíaselo a los ancianos (por WhatsApp o correo). Mientras lo rellenan, deja el PC encendido " +
-                    "con SCCosmos abierto: lo que envíen aparecerá aquí, en Programa." + caduca +
-                    "\n\nLos archivos que suban (S-21, S-88, cuentas…) se guardarán en:\n" + ProgramaWebPc.CarpetaArchivos(_congreCodigo, mes),
-                    "Enlace para los ancianos",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
+                ProgramaWebPc.CopiarEnlace(ProgramaWebPc.Enlace(_congreCodigo, _mesPrograma.ToString("yyyy-MM")));
             }
             catch (Exception ex)
             {
@@ -972,21 +956,6 @@ namespace SCCosmos
                 TxtAsuntosRecibidos.Text =
                     "Asuntos a tratar: " + string.Join("  ·  ", asuntos.Select((a, i) => $"{i + 1}) {a}"));
                 TxtAsuntosRecibidos.Visibility = asuntos.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-
-                // S-61: hermanos recomendados y preguntas de la página 2.
-                var nombramientos = SCCosmos.Sincro.ProgramaWeb.Nombramientos(recibido.Json);
-
-                TxtNombramientosRecibidos.Text =
-                    "Nombramientos o bajas: " + string.Join("  ·  ", nombramientos.Select(n => n.Tipo.Length > 0 ? $"{n.Nombre} ({n.Tipo})" : n.Nombre));
-                TxtNombramientosRecibidos.Visibility = nombramientos.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-
-                var respuestas = SCCosmos.Sincro.ProgramaWeb.RespuestasS61(recibido.Json);
-                int noes = respuestas.Count(r => r.Value == "No");
-
-                TxtS61Recibida.Text =
-                    $"S-61: {respuestas.Count} de {SCCosmos.Sincro.ProgramaWeb.PreguntasS61.Length} preguntas respondidas"
-                    + (noes > 0 ? $" · {noes} con «No»" : "");
-                PanelS61Recibida.Visibility = respuestas.Count > 0 || nombramientos.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
                 PanelProgramaRecibido.Visibility = Visibility.Visible;
             }
@@ -1034,62 +1003,6 @@ namespace SCCosmos
             {
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", "\"" + carpeta + "\"") { UseShellExecute = true });
             }
-        }
-
-        // Las preguntas de la S-61 con lo respondido (y los hermanos recomendados).
-        private void BtnVerS61_Click(object sender, RoutedEventArgs e)
-        {
-            if (ProgramaWebPc.Recibido(_congreCodigo, _mesPrograma.ToString("yyyy-MM")) is not { } recibido)
-            {
-                return;
-            }
-
-            var respuestas = SCCosmos.Sincro.ProgramaWeb.RespuestasS61(recibido.Json);
-            var gris = new SolidColorBrush(Color.FromRgb(170, 170, 170));
-            var lista = new StackPanel { Margin = new Thickness(22) };
-
-            foreach (var pregunta in SCCosmos.Sincro.ProgramaWeb.PreguntasS61)
-            {
-                // «✗ No» con su símbolo: no se fía solo del color.
-                string respuesta = respuestas.TryGetValue(pregunta.Numero, out string r)
-                    ? (r == "No" ? "✗ No" : r == "Sí" ? "✓ Sí" : r)
-                    : "Sin responder";
-
-                lista.Children.Add(new TextBlock { Text = $"{pregunta.Numero}. {pregunta.Texto}", TextWrapping = TextWrapping.Wrap, Foreground = Brushes.White });
-                lista.Children.Add(new TextBlock
-                {
-                    Text = respuesta,
-                    FontWeight = FontWeights.SemiBold,
-                    Foreground = r == "No" ? new SolidColorBrush(Color.FromRgb(255, 183, 77)) : r is null ? gris : Brushes.White,
-                    Margin = new Thickness(18, 2, 0, 12)
-                });
-            }
-
-            var nombramientos = SCCosmos.Sincro.ProgramaWeb.Nombramientos(recibido.Json);
-
-            lista.Children.Add(new TextBlock { Text = "Hermanos recomendados para nombramiento o baja", FontWeight = FontWeights.SemiBold, Foreground = Brushes.White, Margin = new Thickness(0, 6, 0, 2) });
-            lista.Children.Add(new TextBlock
-            {
-                Text = nombramientos.Count == 0
-                    ? "Ninguno"
-                    : string.Join(Environment.NewLine, nombramientos.Select(n => "· " + n.Nombre + (n.Tipo.Length > 0 ? " — " + n.Tipo : ""))),
-                TextWrapping = TextWrapping.Wrap,
-                Foreground = nombramientos.Count == 0 ? gris : Brushes.White,
-                Margin = new Thickness(18, 0, 0, 0)
-            });
-
-            new Window
-            {
-                Title = $"S-61 de los ancianos · enviada el {recibido.Cuando:dd/MM} a las {recibido.Cuando:HH:mm}",
-                Owner = Window.GetWindow(this),
-                WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                Width = 760,
-                Height = 640,
-                Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)),
-                Foreground = Brushes.White,
-                ShowInTaskbar = false,
-                Content = new ScrollViewer { Content = lista, VerticalScrollBarVisibility = ScrollBarVisibility.Auto }
-            }.ShowDialog();
         }
 
         private void BtnPasarProgramaRecibido_Click(object sender, RoutedEventArgs e)

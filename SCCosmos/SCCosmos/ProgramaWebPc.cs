@@ -20,7 +20,7 @@ namespace SCCosmos
     {
         public const int Puerto = 47320;
 
-        private const string ClaveDireccion = "ProgramaWeb_Direccion";
+        private const string ClaveDireccion = ProgramaWeb.ClaveDireccion;
 
         private static ServidorProgramaWeb _servidor;
 
@@ -220,10 +220,6 @@ namespace SCCosmos
                 ["horaFinDeSemana"] = ProgramaWeb.Hora(datosCongregacion?.HoraFinSemana ?? ""),
                 ["medioDiaLibre"] = MedioDiaLibre(),
                 ["diasComida"] = new JsonArray(DiasComida().Select(d => (JsonNode)d).ToArray()),
-                ["tiposNombramiento"] = new JsonArray(ProgramaWeb.TiposNombramiento.Select(t => (JsonNode)t).ToArray()),
-                ["s61"] = new JsonArray(ProgramaWeb.PreguntasS61
-                    .Select(p => (JsonNode)new JsonObject { ["n"] = p.Numero, ["texto"] = p.Texto, ["na"] = p.ConNoAplica })
-                    .ToArray()),
                 ["archivos"] = true,
                 ["extensiones"] = new JsonArray(ArchivosProgramaWeb.Extensiones.Select(x => (JsonNode)x).ToArray()),
                 ["envio"] = envio,
@@ -344,7 +340,26 @@ namespace SCCosmos
                 DatabaseHelper.GuardarConfiguracion(clave, codigo);
             }
 
-            return DireccionPublica() + "/programa/" + codigo;
+            return ProgramaWeb.Enlace(DireccionPublica(), codigo);
+        }
+
+
+        /// <summary>El enlace de la visita de una semana del calendario (null si no se encuentra la congregación).</summary>
+        public static string EnlaceDeSemana(string nombreCongregacion, DateTime fechaMartes)
+        {
+            string codigo = DatabaseHelper.ObtenerCodigoCongregacion(nombreCongregacion);
+
+            return string.IsNullOrWhiteSpace(codigo)
+                ? null
+                : Enlace(codigo, fechaMartes.ToString("yyyy-MM"));
+        }
+
+
+        /// <summary>Copia el enlace y solo avisa de eso.</summary>
+        public static void CopiarEnlace(string enlace)
+        {
+            System.Windows.Clipboard.SetText(enlace);
+            System.Windows.MessageBox.Show("Enlace copiado en el portapapeles");
         }
 
 

@@ -1849,6 +1849,32 @@ namespace SCCosmos
             }
         }
 
+        // El enlace del formulario de los ancianos de esa visita (el mismo que va en la documentación).
+        private void BtnCopiarEnlace_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as FrameworkElement)?.DataContext is not SemanaCalendario semana)
+            {
+                return;
+            }
+
+            try
+            {
+                string enlace = ProgramaWebPc.EnlaceDeSemana(semana.Congregacion, semana.FechaMartes);
+
+                if (string.IsNullOrEmpty(enlace))
+                {
+                    MessageBox.Show($"No se encuentra el código de la congregación «{semana.Congregacion}».", "Copiar enlace", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                ProgramaWebPc.CopiarEnlace(enlace);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("No se pudo preparar el enlace:\n" + ex.Message, "Copiar enlace", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private async void BtnEnviarDoc_Click(object sender, RoutedEventArgs e)
         {
             var boton = sender as FrameworkElement;
@@ -1993,8 +2019,28 @@ namespace SCCosmos
             asuntoEmailDoc = asuntoEmailDoc.Replace("[Congregacion]", semanaSeleccionada.Congregacion);
             mensajeHtmlDoc = mensajeHtmlDoc.Replace("[Congregacion]", semanaSeleccionada.Congregacion);
 
+            // El enlace del formulario de los ancianos: se crea (o se reutiliza)
+            // al enviar la documentación y va donde la plantilla tenga $_ENLACEDOCU.
+            string enlaceAncianos = "";
+
+            try
+            {
+                enlaceAncianos = ProgramaWebPc.EnlaceDeSemana(semanaSeleccionada.Congregacion, semanaSeleccionada.FechaMartes) ?? "";
+            }
+            catch (Exception ex)
+            {
+                RegistroErrores.AnotarSilencioso(ex, "ProgramaWeb.EnlaceDocumentacion");
+            }
+
+            string variableEnlace = SCCosmos.Sincro.ProgramaWeb.VariableEnlace;
+
+            asuntoEmailDoc = asuntoEmailDoc.Replace(variableEnlace, enlaceAncianos);
+            mensajeHtmlDoc = mensajeHtmlDoc.Replace(
+                variableEnlace,
+                enlaceAncianos.Length > 0 ? SCCosmos.Sincro.ProgramaWeb.EnlaceHtml(enlaceAncianos) : "");
+
             // PASAMOS LOS DATOS A LA VENTANA
-            var popup = new ConfirmarEnvioWindow($"Doc: {semanaSeleccionada.Congregacion}", semanaSeleccionada.DocEnviada, archivosProcesados, asuntoEmailDoc, mensajeHtmlDoc);
+            var popup = new ConfirmarEnvioWindow($"Doc: {semanaSeleccionada.Congregacion}", semanaSeleccionada.DocEnviada, archivosProcesados, asuntoEmailDoc, mensajeHtmlDoc, enlaceAncianos);
             popup.Owner = Window.GetWindow(this);
 
             bool? procederEnvio = popup.ShowDialog();

@@ -33,11 +33,9 @@ namespace SCCosmos.Sincro;
 //                      "sc":     [ { "nombre", "faceta", "leccion", "notas" } ],
 //                      "esposa": [ ... ] } ],
 //   "pastoreo":    [ { "nombre", "dia", "hora", "direccion", "lat", "lon", "descripcion" } ],
-//   "asuntos":     [ "..." ],
-//   "nombramientos": [ { "nombre", "tipo" } ],          (S-61: recomendados para nombramiento o baja)
-//   "s61":         { "1": "Sí" | "No" | "N/A", … }      (S-61, página 2)
+//   "asuntos":     [ "..." ]
 // }
-// Los archivos (S-21, S-88…) no van aquí: se suben aparte
+// Los archivos (S-61, S-21, S-88…) no van aquí: se suben aparte
 // (ServidorProgramaWeb, ArchivosProgramaWeb).
 // Las comidas van sin hora (a las 13:30, como en el PDF). La hora y el
 // lugar de cada salida de predicación se rellenan en Reuniones, pero
@@ -135,97 +133,20 @@ public static class ProgramaWeb
     }
 
 
-    // ---- S-61 (Información necesaria para la visita) ----
-    // La página 1 la cubren los apartados del formulario y los archivos;
-    // aquí, los hermanos recomendados y las preguntas de la página 2.
+    // ---- El enlace del formulario (lo sirve el PC con Tailscale Funnel) ----
 
-    public sealed record PreguntaS61(int Numero, string Texto, bool ConNoAplica);
+    /// <summary>La dirección pública del PC («https://equipo.red.ts.net»); la guarda el PC al crear un enlace.</summary>
+    public const string ClaveDireccion = "ProgramaWeb_Direccion";
 
-    public static readonly PreguntaS61[] PreguntasS61 =
-    {
-        new(1, "¿Están actualizados los datos de contacto del coordinador del cuerpo de ancianos y del secretario que aparecen en JW Hub?", false),
-        new(2, "¿Hay una resolución aprobada por la congregación para contribuir mensualmente a la obra mundial?", false),
-        new(3, "¿Se llevan los registros personales de la congregación según las Instrucciones para el uso de JW Hub en la congregación (S-135)? (sfg cap. 14 párrs. 3, 4). Esto es especialmente importante cuando se decide que un publicador ya no está autorizado para enviar solicitudes.", true),
-        new(4, "¿Se han notificado a la sucursal todas las bajas, cambios de nombres y cambios de congregación de los precursores regulares?", true),
-        new(5, "Si desde la última visita alguien ha sido sacado o se ha desasociado, ¿se ha notificado a la sucursal?", true),
-        new(6, "¿Se han notificado a la sucursal las readmisiones o fallecimientos de personas sacadas o desasociadas?", true),
-        new(7, "Si hay publicadores con restricciones impuestas por un comité de ancianos, ¿se está dando seguimiento de cerca a su progreso espiritual?", true),
-        new(8, "Si desde la última visita alguien con uno de los privilegios de servicio mencionados en Pastoreen, capítulo 6, párrafos 12 y 13, fue acusado de cometer un pecado grave o lo confesó, ¿se ha contactado con el Departamento de Servicio o la Oficina de Betel para saber cómo proceder?", true),
-        new(9, "¿Se han enviado cartas de presentación de todos los publicadores que se han mudado de la congregación?", true),
-        new(10, "¿Se siguen las instrucciones sobre el archivo de la congregación y la retención de registros de Pastoreen, capítulo 17, párrafos 2-6 y 13-15, y del Apéndice a “Pastoreen” (sfga)?", false),
-        new(11, "¿Se ha notificado a la sucursal cualquier cambio en el grupo para las publicaciones?", true),
-        new(12, "¿Sigue el cuerpo de ancianos las últimas instrucciones sobre preparación para desastres, lo que incluye mantener una lista actualizada de los datos de contacto y los datos de contacto en caso de emergencia de todos los publicadores? (sfg cap. 11 párr. 3).", false),
-        new(13, "Si desde la última visita se envió a la sucursal alguna Notificación de incidente de riesgo (TO-5), ¿se han tomado todas las medidas necesarias para evitar que la situación se repita? (sfg cap. 13 párr. 13).", true),
-        new(14, "Si se sabe de algún publicador encarcelado que no esté recibiendo ayuda espiritual, ¿se ha informado a la congregación de contacto que corresponda?", true),
-        new(15, "¿Se han tomado medidas para ayudar a todos los publicadores que vivan en lugares alejados?", true)
-    };
+    /// <summary>La variable de las plantillas de correo que se cambia por el enlace.</summary>
+    public const string VariableEnlace = "$_ENLACEDOCU";
 
-    public static readonly string[] TiposNombramiento =
-    {
-        "Nombramiento de anciano", "Nombramiento de siervo ministerial",
-        "Baja de anciano", "Baja de siervo ministerial"
-    };
+    public static string Enlace(string direccion, string codigo) =>
+        direccion.TrimEnd('/') + "/programa/" + codigo;
 
-    public const int MaxNombramientos = 10;
-
-
-    /// <summary>Las respuestas válidas de lo enviado, en orden (número → «Sí», «No» o «N/A»).</summary>
-    public static Dictionary<int, string> RespuestasS61(string json)
-    {
-        var respuestas = new Dictionary<int, string>();
-
-        if (Raiz(json)?["s61"] is not JsonObject s61)
-        {
-            return respuestas;
-        }
-
-        foreach (PreguntaS61 pregunta in PreguntasS61)
-        {
-            string respuesta =
-                s61[pregunta.Numero.ToString(CultureInfo.InvariantCulture)] is JsonValue v && v.TryGetValue(out string? s)
-                    ? s
-                    : "";
-
-            if (respuesta is "Sí" or "No" || (respuesta == "N/A" && pregunta.ConNoAplica))
-            {
-                respuestas[pregunta.Numero] = respuesta;
-            }
-        }
-
-        return respuestas;
-    }
-
-
-    /// <summary>Los hermanos recomendados para nombramiento o baja (nombre y recomendación).</summary>
-    public static List<(string Nombre, string Tipo)> Nombramientos(string json)
-    {
-        var lista = new List<(string, string)>();
-
-        foreach (JsonObject n in Lista(Raiz(json)?["nombramientos"]).Take(MaxNombramientos))
-        {
-            string nombre = Texto(n, "nombre");
-
-            if (nombre.Length > 0)
-            {
-                lista.Add((nombre, TiposNombramiento.FirstOrDefault(t => Igual(t, Texto(n, "tipo"))) ?? ""));
-            }
-        }
-
-        return lista;
-    }
-
-
-    private static JsonObject? Raiz(string json)
-    {
-        try
-        {
-            return JsonNode.Parse(json) as JsonObject;
-        }
-        catch
-        {
-            return null;
-        }
-    }
+    /// <summary>El enlace, para el cuerpo HTML de un correo.</summary>
+    public static string EnlaceHtml(string enlace) =>
+        $"<a href=\"{enlace}\">{enlace}</a>";
 
 
     // ---- Claves en Configuracion (por congregación y mes de la visita) ----

@@ -456,6 +456,12 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - 123/123 comprobaciones (15 nuevas). Probado: subidas reales al servidor de prueba (cada una en su carpeta; `.exe` → 415), el formulario en PC y la pestaña Programa de SCCosmos sobre una copia de la base con un Archivo del circuito temporal (borrada). Herramienta de capturas: la pestaña se pide por su x:Name (`TabPrograma`).
   - Pendiente, a decidir con el usuario: rellenar la S-61 oficial en PDF (es rellenable: 55 casillas `900_1…900_55`, 14 en la página 1 y 41 en la 2) y guardar en `Documentos\2 - ESP-BA-01\1 - Congregaciones\Visita N\{orden} - {congregación}` en vez de en el ARCH.
 - 17/11/2026 · Publicada la v2.1.73.
+- 17/11/2026 · v2.1.74 (pedido por el usuario):
+  - Formulario: la S-61 pasa a ser un archivo más («s61», carpeta `S-61`, primero en Archivos); fuera «Nombramientos y bajas» y «Preguntas de la S-61» con su código (`PreguntasS61`, `RespuestasS61`, `Nombramientos`: el texto de las preguntas ya no está en el repositorio). «Visitas de pastoreo» → «Pastoreo»; «Archivos» es el apartado 6.
+  - Enlace desde el Calendario: «Enviar documentación» crea (o reutiliza) el enlace y cambia `$_ENLACEDOCU` en el asunto y en el cuerpo (en el cuerpo como `<a href>`, `ProgramaWeb.EnlaceHtml`); `ConfirmarEnvioWindow` lo muestra con «Copiar enlace». Botón 🔗 en las semanas de visita con la documentación ya enviada (`SemanaCalendario.VisibilidadCopiarEnlace`). Al copiar (Calendario, ventana de envío o Programa de la visita) solo sale «Enlace copiado en el portapapeles» (`ProgramaWebPc.CopiarEnlace`).
+  - Móvil: «Enviar documentación» (Acciones de la visita) también cambia `$_ENLACEDOCU`, con el código de Configuración (o uno nuevo, que llega al PC al sincronizar) y la dirección que guardó el PC (`ProgramaWeb.ClaveDireccion`, ahora compartida); si aún no la sabe, pregunta «Enviar sin enlace / Cancelar».
+  - 122/122 comprobaciones (3 de la S-61 quitadas, 2 nuevas). Probado: la ventana de envío y el Calendario con la herramienta de capturas, el formulario en PC y una S-61 subida al servidor de prueba (va a `S-61`).
+- 17/11/2026 · Publicada la v2.1.74.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

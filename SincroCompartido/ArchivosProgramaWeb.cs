@@ -49,6 +49,7 @@ public static class ArchivosProgramaWeb
     private static readonly (string Tipo, string Carpeta, string Etiqueta)[] Tipos =
     {
         ("s21", "S-21", "S-21"),
+        ("s61", "S-61", "S-61"),
         ("s88", "S-88", "S-88"),
         ("cuentas", "Cuentas de la congregación", "Cuentas"),
         ("mantenimiento", "Cuentas de mantenimiento", "Cuentas de mantenimiento"),
@@ -239,7 +240,7 @@ public static class ArchivosProgramaWeb
             partes.Add($"S-21: {s21.Count}" + (grupos > 0 ? $" ({grupos} {(grupos == 1 ? "grupo" : "grupos")})" : ""));
         }
 
-        foreach (var t in Tipos.Skip(1))
+        foreach (var t in Tipos.Where(t => t.Tipo != "s21"))
         {
             int cuantos = subidos.Count(s => s.Tipo == t.Tipo);
 

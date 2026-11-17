@@ -314,12 +314,6 @@
                                 <StackPanel VerticalAlignment="Center">
                                     <TextBlock x:Name="TxtProgramaRecibido" FontWeight="SemiBold" TextWrapping="Wrap"/>
                                     <TextBlock x:Name="TxtAsuntosRecibidos" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,4,12,0"/>
-                                    <TextBlock x:Name="TxtNombramientosRecibidos" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,4,12,0"/>
-                                    <StackPanel x:Name="PanelS61Recibida" Orientation="Horizontal" Margin="0,4,0,0">
-                                        <TextBlock x:Name="TxtS61Recibida" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" VerticalAlignment="Center"/>
-                                        <ui:Button Content="Ver respuestas" Appearance="Secondary" FontSize="12" Padding="10,3" Margin="10,0,0,0"
-                                                   Click="BtnVerS61_Click" Cursor="Hand" ToolTip="Las preguntas de la S-61 con lo que han respondido"/>
-                                    </StackPanel>
                                 </StackPanel>
                                 <ui:Button Grid.Column="1" Content="Pasar al programa" Icon="{ui:SymbolIcon ArrowDownload24}" Appearance="Secondary"
                                            Click="BtnPasarProgramaRecibido_Click" VerticalAlignment="Center" Cursor="Hand"

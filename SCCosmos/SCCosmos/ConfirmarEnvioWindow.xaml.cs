@@ -15,10 +15,17 @@ namespace SCCosmos
         public string AsuntoFinal { get; private set; }
         public string CuerpoFinal { get; private set; }
 
-        public ConfirmarEnvioWindow(string titulo, bool yaEnviado, List<ArchivoDocumento> archivos, string asunto = "", string cuerpoHTML = "")
+        public ConfirmarEnvioWindow(string titulo, bool yaEnviado, List<ArchivoDocumento> archivos, string asunto = "", string cuerpoHTML = "", string enlace = "")
         {
             InitializeComponent();
             TxtTitulo.Text = titulo;
+
+            // El enlace del formulario de los ancianos, para copiarlo (documentación de una visita).
+            if (!string.IsNullOrEmpty(enlace))
+            {
+                TxtEnlace.Text = enlace;
+                PanelEnlace.Visibility = Visibility.Visible;
+            }
 
             // Marcamos la casilla automáticamente si la BD dice que ya se envió
             ChkEnviado.IsChecked = yaEnviado;
@@ -41,6 +48,11 @@ namespace SCCosmos
                 // Si viene vacío (ej: botón de enviar recordatorio), cargamos el motor visual base para poder escribir en blanco
                 WbEditorHelper.SetHtml(WbEditorConfirmacion, "");
             }
+        }
+
+        private void BtnCopiarEnlace_Click(object sender, RoutedEventArgs e)
+        {
+            ProgramaWebPc.CopiarEnlace(TxtEnlace.Text);
         }
 
         private void ChkEnviado_Click(object sender, RoutedEventArgs e)

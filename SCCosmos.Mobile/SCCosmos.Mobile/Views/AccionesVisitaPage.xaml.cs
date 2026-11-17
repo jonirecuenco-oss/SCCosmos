@@ -480,6 +480,40 @@ public partial class AccionesVisitaPage : ContentPage
                     "Queridos hermanos,<br><br>" +
                     "Adjuntamos la documentación.");
 
+        // El enlace del formulario de los ancianos (lo sirve el PC) donde
+        // la plantilla tenga $_ENLACEDOCU.
+        string variableEnlace =
+            SCCosmos.Sincro.ProgramaWeb.VariableEnlace;
+
+        if (cuerpo.Contains(variableEnlace)
+            || asunto.Contains(variableEnlace))
+        {
+            string enlace =
+                EnlaceFormularioAncianos();
+
+            if (enlace.Length == 0
+                && !await DisplayAlert(
+                    "Enlace para los ancianos",
+                    "Este móvil aún no sabe la dirección del formulario. " +
+                    "Créalo una vez en SCCosmos del PC (Calendario › Enviar documentación) " +
+                    "y, cuando se sincronice, ya irá en el correo.",
+                    "Enviar sin enlace",
+                    "Cancelar"))
+            {
+                return;
+            }
+
+            asunto =
+                asunto.Replace(variableEnlace, enlace);
+
+            cuerpo =
+                cuerpo.Replace(
+                    variableEnlace,
+                    enlace.Length > 0
+                        ? SCCosmos.Sincro.ProgramaWeb.EnlaceHtml(enlace)
+                        : "");
+        }
+
         // Adjuntamos el S-303 si existe y el S-302 si ya se generó.
         var adjuntos =
             new List<string>();
@@ -509,6 +543,60 @@ public partial class AccionesVisitaPage : ContentPage
                 ? adjuntos
                 : null,
             esS302: false);
+    }
+
+    // El enlace del formulario de los ancianos de esta visita. El código va
+    // en Configuración (llega al PC al sincronizar) y la dirección es la que
+    // guardó el PC al crear su primer enlace. Vacío si aún no se sabe.
+    private string EnlaceFormularioAncianos()
+    {
+        try
+        {
+            string congregacion =
+                DatabaseHelper.ObtenerCodigoCongregacion(
+                    _semana.Congregacion);
+
+            string direccion =
+                DatabaseHelper.ObtenerConfiguracion(
+                    SCCosmos.Sincro.ProgramaWeb.ClaveDireccion,
+                    "").Trim();
+
+            if (string.IsNullOrWhiteSpace(congregacion)
+                || direccion.Length == 0)
+            {
+                return "";
+            }
+
+            string mes =
+                $"{_semana.FechaMartes.Year:D4}-" +
+                $"{_semana.FechaMartes.Month:D2}";
+
+            string clave =
+                SCCosmos.Sincro.ProgramaWeb.ClaveCodigo(
+                    congregacion,
+                    mes);
+
+            string codigo =
+                DatabaseHelper.ObtenerConfiguracion(clave, "");
+
+            if (!SCCosmos.Sincro.ProgramaWeb.CodigoValido(codigo))
+            {
+                codigo =
+                    SCCosmos.Sincro.ProgramaWeb.NuevoCodigo();
+
+                DatabaseHelper.GuardarConfiguracion(
+                    clave,
+                    codigo);
+            }
+
+            return SCCosmos.Sincro.ProgramaWeb.Enlace(
+                direccion,
+                codigo);
+        }
+        catch
+        {
+            return "";
+        }
     }
 
     private string? ObtenerRutaS303()

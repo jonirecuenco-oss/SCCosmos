@@ -151,6 +151,9 @@ namespace SCCosmos
 
         // Trucos visuales controlados desde C# para la visibilidad de los botones
         public Visibility VisibilidadVisita => (PerfilAcceso.AccesoCompleto && Actividad == "Visita") ? Visibility.Visible : Visibility.Collapsed;
+
+        // «Copiar enlace» (formulario de los ancianos): cuando ya se envió la documentación.
+        public Visibility VisibilidadCopiarEnlace => DocEnviada ? VisibilidadVisita : Visibility.Collapsed;
         public Visibility VisibilidadAsamblea => (PerfilAcceso.AccesoCompleto && Actividad == "Asamblea de circuito") ? Visibility.Visible : Visibility.Collapsed;
         public Visibility VisibilidadVerVisita => (Actividad == "Visita" && TieneDatosImportados) ? Visibility.Visible : Visibility.Collapsed;
         public Visibility EsClonada { get; set; } = Visibility.Collapsed;
