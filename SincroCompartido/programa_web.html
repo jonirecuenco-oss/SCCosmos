@@ -70,6 +70,25 @@
   .aviso.ok { background:#e6f4ea; color: var(--ok); }
   .aviso.error { background:#fce8e6; color: var(--error); }
   .oculto { display:none !important; }
+  .dos-col { display:grid; gap: 0 10px; }
+  .bloque > h3 + .ayuda { margin-top: 4px; }
+  /* Archivos: cada uno con su estado (✓ subido, ✗ error, % mientras sube). */
+  .archivo-lista { list-style:none; margin: 6px 0 0; padding: 0; }
+  .archivo-lista li { display:flex; align-items:center; gap: 8px; padding: 6px 0; border-top: 1px solid #eef1f5; font-size: 15px; }
+  .archivo-lista li:first-child { border-top: none; }
+  .archivo-lista .nombre { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .archivo-lista .estado { color: var(--suave); font-size: 13px; white-space: nowrap; }
+  .archivo-lista li.ok .estado { color: var(--ok); }
+  .archivo-lista li.error .estado { color: var(--error); }
+  .grupo-s21 { border-top: 1px dashed var(--borde); margin-top: 10px; padding-top: 8px; }
+  .grupo-s21 > .cab { font-weight: 600; }
+  /* Preguntas de la S-61: la elegida va rellena y con «✓». */
+  .pregunta { border-top: 1px solid #eef1f5; padding: 12px 0; }
+  .pregunta:first-child { border-top: none; padding-top: 4px; }
+  .texto-pregunta { margin: 0 0 8px; font-size: 15px; }
+  .respuestas { display:flex; gap: 8px; flex-wrap: wrap; }
+  .respuestas button { min-width: 76px; }
+  .respuestas button.elegida { background: var(--acento); color:#fff; border-color: var(--acento); font-weight: 600; }
   .indice { display:none; }
 
   /* Tableta y PC: más ancho, en columnas y con todo desplegado. */
@@ -78,6 +97,7 @@
     h1 { font-size: 28px; }
     section { padding: 18px 22px; }
     .rejilla.dos { grid-template-columns: 1fr 1fr; }
+    .dos-col { grid-template-columns: 1fr 1fr; }
     .grupos { display:grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
     .salida { grid-template-columns: 13em 8em minmax(0, 1fr); grid-template-areas: "franja hora lugar"; align-items: start; }
     .salida > .franja { padding-top: 11px; }
@@ -103,6 +123,9 @@
     <a href="#s-predicacion"><span class="num">3</span>Predicación</a>
     <a href="#s-pastoreo"><span class="num">4</span>Visitas de pastoreo</a>
     <a href="#s-asuntos"><span class="num">5</span>Asuntos a tratar</a>
+    <a href="#s-nombramientos"><span class="num">6</span>Nombramientos</a>
+    <a href="#s-archivos"><span class="num">7</span>Archivos</a>
+    <a href="#s-s61"><span class="num">8</span>Preguntas S-61</a>
   </nav>
 
   <div class="contenido">
@@ -145,6 +168,25 @@
     <button type="button" class="secundario" id="mas-asunto">+ Añadir otro asunto</button>
   </section>
 
+  <section id="s-nombramientos">
+    <h2><span class="num">6</span>Nombramientos y bajas</h2>
+    <p class="ayuda">Hermanos que recomendáis para nombramiento o baja. Si no hay ninguno, dejadlo en blanco.</p>
+    <div id="nombramientos"></div>
+    <button type="button" class="secundario" id="mas-nombramiento">+ Añadir otro hermano</button>
+  </section>
+
+  <section id="s-archivos" class="oculto">
+    <h2><span class="num">7</span>Archivos</h2>
+    <p class="ayuda">Los documentos que pide la S-61. Cada archivo se guarda al subirlo (no hace falta pulsar «Enviar») y solo en el ordenador del superintendente. Hasta 50 MB por archivo.</p>
+    <div id="archivos"></div>
+  </section>
+
+  <section id="s-s61">
+    <h2><span class="num">8</span>Preguntas de la S-61</h2>
+    <p class="ayuda" id="ayuda-s61">Marcad la respuesta que corresponda.</p>
+    <div id="preguntas"></div>
+  </section>
+
   <div id="resultado"></div>
   </div>
 </main>
@@ -164,7 +206,8 @@ window.VISITA = /*VISITA*/null;
     codigo: "ejemplo", congregacion: "Congregación de ejemplo", fechas: "del 10 al 15 de noviembre",
     dias: {}, alojamiento: true, sc: "el superintendente", esposa: "su esposa", centro: null,
     salon: null, horaEntreSemana: "", diaFinDeSemana: "", horaFinDeSemana: "", medioDiaLibre: "Viernes mañana",
-    diasComida: ["Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"], envio: null, enviadoEn: 0
+    diasComida: ["Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"], tiposNombramiento: [], s61: [], archivos: false,
+    envio: null, enviadoEn: 0
   };
 
   const DIAS = ["Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
@@ -490,6 +533,184 @@ window.VISITA = /*VISITA*/null;
   }
   masAsunto.addEventListener("click", () => { nuevoAsunto(); cambio(); });
 
+  // ---- 6. Nombramientos y bajas (S-61) ----
+  const nombramientos = $("#nombramientos"), masNombramiento = $("#mas-nombramiento");
+  function nuevoNombramiento(datos) {
+    if (nombramientos.children.length >= 10) return;
+    const b = el("div", { className: "bloque" });
+    b.dataset.nombramiento = "1";
+    const tipo = el("select", { name: "tipo" }, el("option", { value: "", textContent: "Elegir" }));
+    (V.tiposNombramiento || []).forEach(t => tipo.append(el("option", { value: t, textContent: t })));
+    if (nombramientos.children.length >= 1) {
+      const quitar = el("button", { type: "button", className: "quitar", textContent: "Quitar" });
+      quitar.addEventListener("click", () => { b.remove(); masNombramiento.classList.remove("oculto"); cambio(); });
+      b.append(el("div", { className: "cab" }, el("span"), quitar));
+    }
+    b.append(el("div", { className: "dos-col" }, campo("Hermano", texto("nombre", "Nombre y apellidos")), campo("Recomendación", tipo)));
+    nombramientos.append(b);
+    masNombramiento.classList.toggle("oculto", nombramientos.children.length >= 10);
+    if (datos) { poner(b, "nombre", datos.nombre); poner(b, "tipo", datos.tipo); }
+  }
+  masNombramiento.addEventListener("click", () => { nuevoNombramiento(); cambio(); });
+
+  // ---- 7. Archivos: se suben al momento a la carpeta de la visita, en el PC ----
+  const MAX_ARCHIVO = 50 * 1024 * 1024;
+  const ARCHIVOS = [
+    { tipo: "s21", titulo: "Registro de publicador de la congregación (S-21)", ayuda: "Una tarjeta por publicador. Subidlas por grupos: en cada grupo podéis elegir todas sus tarjetas a la vez." },
+    { tipo: "s88", titulo: "Registro de asistencia a las reuniones de congregación (S-88)" },
+    { tipo: "cuentas", titulo: "Cuentas de la congregación", ayuda: "El archivo actual de las cuentas y el de aprobaciones vigentes, y los dos últimos informes de auditoría." },
+    { tipo: "mantenimiento", titulo: "Cuentas del Comité de Mantenimiento del Salón del Reino", ayuda: "Solo si dos o más congregaciones usan el salón y la vuestra es la de contacto: las cuentas, las aprobaciones vigentes y los dos últimos informes de auditoría." },
+    { tipo: "contactos", titulo: "Datos de contacto de todos los publicadores" },
+    { tipo: "s13", titulo: "Registro de asignación de territorio (S-13)" },
+    { tipo: "s28", titulo: "Movimiento mensual de publicaciones (S-28)", ayuda: "Solo si sois la congregación coordinadora de idioma. Si informáis el inventario por JW Hub, el informe que se imprime desde JW Hub." },
+    { tipo: "territorios", titulo: "Territorios variados para predicar durante la semana de la visita" },
+    { tipo: "exhibidores", titulo: "Predicación pública con exhibidores", ayuda: "Lugares y horarios aprobados, y los hermanos aprobados para participar." },
+    { tipo: "otros", titulo: "Otros archivos" }
+  ];
+  const listas = {};
+  let gruposS21 = null, masGrupo = null;
+  const tamanoTexto = b => b >= 1048576 ? (b / 1048576).toFixed(1).replace(".", ",") + " MB" : Math.max(1, Math.round(b / 1024)) + " KB";
+  const urlArchivo = (tipo, nombre) => location.pathname + "/archivos/" + tipo + "/" + encodeURIComponent(nombre);
+
+  // Lista de un tipo con su botón «Elegir archivos» (se pueden elegir varios a la vez).
+  function subida(tipo) {
+    const ul = el("ul", { className: "archivo-lista" });
+    const input = el("input", { type: "file", multiple: true, className: "oculto" });
+    const elegir = el("button", { type: "button", className: "secundario", textContent: "Elegir archivos" });
+    elegir.addEventListener("click", () => input.click());
+    input.addEventListener("change", () => { encolar(tipo, [...input.files], ul); input.value = ""; });
+    listas[tipo] = ul;
+    return el("div", null, ul, elegir, input);
+  }
+
+  function nuevoGrupoS21() {
+    const n = gruposS21.children.length + 1;
+    if (n > 20) return;
+    gruposS21.append(el("div", { className: "grupo-s21" }, el("div", { className: "cab", textContent: "Grupo " + n }), subida("s21-g" + n)));
+    masGrupo.classList.toggle("oculto", n >= 20);
+  }
+
+  function filaArchivo(ul, tipo, nombre, estado, texto) {
+    const li = el("li", { className: estado });
+    const quitar = el("button", { type: "button", className: "quitar", textContent: "Quitar" });
+    quitar.addEventListener("click", async () => {
+      if (!li.dataset.nombre) { li.remove(); return; }
+      if (!confirm("¿Quitar «" + li.dataset.nombre + "»?")) return;
+      try {
+        const r = await fetch(urlArchivo(tipo, li.dataset.nombre), { method: "DELETE" });
+        if (r.ok) li.remove();
+      } catch (e) { }
+    });
+    li.append(el("span", { className: "nombre", textContent: nombre }), el("span", { className: "estado", textContent: texto }), quitar);
+    if (estado === "ok") li.dataset.nombre = nombre;
+    ul.append(li);
+    return li;
+  }
+
+  // De uno en uno, con su porcentaje.
+  const cola = [];
+  let subiendo = false;
+  function encolar(tipo, elegidos, ul) {
+    const extensiones = V.extensiones || [];
+    elegidos.forEach(f => {
+      const punto = f.name.lastIndexOf(".");
+      const ext = punto >= 0 ? f.name.slice(punto).toLowerCase() : "";
+      if (extensiones.length && !extensiones.includes(ext)) { filaArchivo(ul, tipo, f.name, "error", "✗ Tipo de archivo no admitido"); return; }
+      if (f.size > MAX_ARCHIVO) { filaArchivo(ul, tipo, f.name, "error", "✗ Pasa de 50 MB"); return; }
+      cola.push({ tipo, f, li: filaArchivo(ul, tipo, f.name, "", "En espera…") });
+    });
+    siguiente();
+  }
+  function siguiente() {
+    if (subiendo) return;
+    let t;
+    do { t = cola.shift(); } while (t && !t.li.isConnected);
+    if (!t) return;
+    subiendo = true;
+    const { tipo, f, li } = t;
+    const estado = li.querySelector(".estado");
+    const fin = (ok, textoEstado, nombre) => {
+      li.className = ok ? "ok" : "error";
+      if (ok) { li.dataset.nombre = nombre; li.querySelector(".nombre").textContent = nombre; }
+      estado.textContent = textoEstado;
+      subiendo = false;
+      siguiente();
+    };
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", urlArchivo(tipo, f.name));
+    xhr.upload.onprogress = e => { if (e.lengthComputable) estado.textContent = "Subiendo… " + Math.round(e.loaded * 100 / e.total) + " %"; };
+    xhr.onload = () => {
+      let r = {};
+      try { r = JSON.parse(xhr.responseText); } catch (e) { }
+      if (xhr.status === 200 && r.ok) fin(true, "✓ " + tamanoTexto(f.size), r.nombre || f.name);
+      else fin(false, "✗ " + (xhr.status === 415 ? "Tipo de archivo no admitido"
+                           : xhr.status === 413 ? "Demasiado grande o sin espacio"
+                           : xhr.status === 404 ? "El enlace ha caducado"
+                           : "No se ha podido subir"));
+    };
+    xhr.onerror = () => fin(false, "✗ No se ha podido subir; volved a intentarlo");
+    xhr.send(f);
+  }
+  window.addEventListener("beforeunload", e => { if (subiendo || cola.length) { e.preventDefault(); e.returnValue = ""; } });
+
+  async function cargarArchivos() {
+    try {
+      const subidos = await (await fetch(location.pathname + "/archivos")).json();
+      subidos.forEach(a => {
+        const m = /^s21-g(\d+)$/.exec(a.tipo);
+        if (m) while (gruposS21.children.length < Math.min(20, +m[1])) nuevoGrupoS21();
+        if (listas[a.tipo]) filaArchivo(listas[a.tipo], a.tipo, a.nombre, "ok", "✓ " + tamanoTexto(a.tamano));
+      });
+    } catch (e) { }
+  }
+
+  if (V.archivos) {
+    $("#s-archivos").classList.remove("oculto");
+    const archivos = $("#archivos");
+    ARCHIVOS.forEach(a => {
+      const b = el("div", { className: "bloque" }, el("h3", { textContent: a.titulo }));
+      if (a.ayuda) b.append(el("p", { className: "ayuda", textContent: a.ayuda }));
+      if (a.tipo === "s21") {
+        gruposS21 = el("div");
+        masGrupo = el("button", { type: "button", className: "secundario", textContent: "+ Añadir grupo" });
+        masGrupo.addEventListener("click", () => nuevoGrupoS21());
+        b.append(gruposS21, masGrupo,
+                 el("div", { className: "grupo-s21" }, el("div", { className: "cab", textContent: "Todas juntas, o en un ZIP o RAR" }), subida("s21")));
+        nuevoGrupoS21();
+      } else {
+        b.append(subida(a.tipo));
+      }
+      archivos.append(b);
+    });
+    cargarArchivos();
+  }
+
+  // ---- 8. Preguntas de la S-61 (su página 2) ----
+  const preguntas = $("#preguntas");
+  if (!(V.s61 && V.s61.length)) $("#s-s61").classList.add("oculto");
+  (V.s61 || []).forEach(p => {
+    const b = el("div", { className: "pregunta" });
+    b.dataset.pregunta = p.n;
+    const botones = el("div", { className: "respuestas" });
+    (p.na ? ["Sí", "No", "N/A"] : ["Sí", "No"]).forEach(r => {
+      const bt = el("button", { type: "button", textContent: r });
+      bt.dataset.respuesta = r;
+      bt.addEventListener("click", () => { elegirRespuesta(b, b.dataset.elegida === r ? "" : r); cambio(); });
+      botones.append(bt);
+    });
+    b.append(el("p", { className: "texto-pregunta" }, el("b", { textContent: p.n + ". " }), p.texto), botones);
+    preguntas.append(b);
+  });
+  function elegirRespuesta(b, r) {
+    b.dataset.elegida = r;
+    b.querySelectorAll(".respuestas button").forEach(x => {
+      const si = x.dataset.respuesta === r;
+      x.classList.toggle("elegida", si);
+      x.textContent = (si ? "✓ " : "") + x.dataset.respuesta;
+      x.setAttribute("aria-pressed", si ? "true" : "false");
+    });
+  }
+
   // ---- Recoger y rellenar ----
   function recoger() {
     const d = { version: 1, reuniones: {}, comidas: [], alojamiento: null, predicacion: [], pastoreo: [], asuntos: [] };
@@ -520,6 +741,11 @@ window.VISITA = /*VISITA*/null;
       d.pastoreo.push({ nombre: val(b, "nombre"), dia: val(b, "dia"), hora: val(b, "hora"), direccion: l.texto, lat: l.lat, lon: l.lon, descripcion: val(b, "descripcion") });
     });
     asuntos.querySelectorAll('[name="asunto"]').forEach(t => t.value.trim() && d.asuntos.push(t.value.trim()));
+    d.nombramientos = [...nombramientos.querySelectorAll("[data-nombramiento]")]
+      .map(b => ({ nombre: val(b, "nombre"), tipo: val(b, "tipo") }))
+      .filter(n => n.nombre);
+    d.s61 = {};
+    preguntas.querySelectorAll("[data-pregunta]").forEach(b => { if (b.dataset.elegida) d.s61[b.dataset.pregunta] = b.dataset.elegida; });
     return d;
   }
 
@@ -562,6 +788,13 @@ window.VISITA = /*VISITA*/null;
     asuntos.replaceChildren();
     (d.asuntos || []).slice(0, 10).forEach(a => nuevoAsunto(a));
     if (asuntos.children.length === 0) nuevoAsunto();
+    nombramientos.replaceChildren();
+    (d.nombramientos || []).slice(0, 10).forEach(n => nuevoNombramiento(n));
+    if (nombramientos.children.length === 0) nuevoNombramiento();
+    Object.entries(d.s61 || {}).forEach(([n, r]) => {
+      const b = preguntas.querySelector('[data-pregunta="' + n + '"]');
+      if (b && [...b.querySelectorAll(".respuestas button")].some(x => x.dataset.respuesta === r)) elegirRespuesta(b, r);
+    });
     resumir();
   }
 
@@ -578,6 +811,11 @@ window.VISITA = /*VISITA*/null;
         ? "Salida a las " + h + " · " + (l || (SALON ? "Salón del Reino" : "sin lugar"))
         : "";
     });
+    const total = preguntas.querySelectorAll("[data-pregunta]").length;
+    if (total) {
+      const hechas = preguntas.querySelectorAll("[data-pregunta][data-elegida]:not([data-elegida=''])").length;
+      $("#ayuda-s61").textContent = "Marcad la respuesta que corresponda. Respondidas: " + hechas + " de " + total + ".";
+    }
   }
 
   // ---- Guardado en este dispositivo ----

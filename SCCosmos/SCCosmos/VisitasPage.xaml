@@ -314,10 +314,32 @@
                                 <StackPanel VerticalAlignment="Center">
                                     <TextBlock x:Name="TxtProgramaRecibido" FontWeight="SemiBold" TextWrapping="Wrap"/>
                                     <TextBlock x:Name="TxtAsuntosRecibidos" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,4,12,0"/>
+                                    <TextBlock x:Name="TxtNombramientosRecibidos" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,4,12,0"/>
+                                    <StackPanel x:Name="PanelS61Recibida" Orientation="Horizontal" Margin="0,4,0,0">
+                                        <TextBlock x:Name="TxtS61Recibida" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" VerticalAlignment="Center"/>
+                                        <ui:Button Content="Ver respuestas" Appearance="Secondary" FontSize="12" Padding="10,3" Margin="10,0,0,0"
+                                                   Click="BtnVerS61_Click" Cursor="Hand" ToolTip="Las preguntas de la S-61 con lo que han respondido"/>
+                                    </StackPanel>
                                 </StackPanel>
                                 <ui:Button Grid.Column="1" Content="Pasar al programa" Icon="{ui:SymbolIcon ArrowDownload24}" Appearance="Secondary"
                                            Click="BtnPasarProgramaRecibido_Click" VerticalAlignment="Center" Cursor="Hand"
                                            ToolTip="Sustituye el programa de la visita por lo que han enviado (antes se muestra un resumen)"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Los archivos que han subido los ancianos (S-21, S-88, cuentas…) -->
+                        <Border x:Name="PanelArchivosRecibidos" Visibility="Collapsed" Style="{StaticResource PanelTarjeta}" Padding="16,12" Margin="0,0,0,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="Archivos de los ancianos" FontWeight="SemiBold"/>
+                                    <TextBlock x:Name="TxtArchivosRecibidos" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,2,12,0"/>
+                                </StackPanel>
+                                <ui:Button Grid.Column="1" Content="Abrir carpeta" Icon="{ui:SymbolIcon FolderOpen24}" Appearance="Secondary"
+                                           Click="BtnAbrirArchivosRecibidos_Click" VerticalAlignment="Center" Cursor="Hand"/>
                             </Grid>
                         </Border>
 

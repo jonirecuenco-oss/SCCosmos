@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using SCCosmos.Sincro;
 
 namespace SCCosmos
@@ -26,6 +27,14 @@ namespace SCCosmos
         /// <summary>Ha llegado un envío (código de congregación y mes). Llega desde otro hilo.</summary>
         public static event Action<string, string> EnvioRecibido;
 
+        /// <summary>Han subido o quitado archivos de una visita (congregación y mes). Llega desde otro hilo.</summary>
+        public static event Action<string, string> ArchivosRecibidos;
+
+        /// <summary>El enlace vale hasta estos días después del domingo de la visita.</summary>
+        public const int DiasTrasLaVisita = 15;
+
+        private static readonly CultureInfo Es = CultureInfo.GetCultureInfo("es-ES");
+
 
         public static void Iniciar()
         {
@@ -36,7 +45,14 @@ namespace SCCosmos
 
             try
             {
-                _servidor = new ServidorProgramaWeb(Puerto, DatosVisita, GuardarEnvio, LeerPagina());
+                _servidor = new ServidorProgramaWeb(Puerto, DatosVisita, GuardarEnvio, LeerPagina(), CarpetaParaCodigo);
+                _servidor.ArchivosCambiados += codigo =>
+                {
+                    if (DatabaseHelper.BuscarVisitaProgramaWeb(codigo) is { } visita)
+                    {
+                        ArchivosRecibidos?.Invoke(visita.Congregacion, visita.Mes);
+                    }
+                };
                 _servidor.Iniciar();
             }
             catch (Exception ex)
@@ -60,9 +76,76 @@ namespace SCCosmos
 
 
         private static string DatosVisita(string codigo) =>
-            DatabaseHelper.BuscarVisitaProgramaWeb(codigo) is { } visita
+            DatabaseHelper.BuscarVisitaProgramaWeb(codigo) is { } visita && !Caducado(visita.Congregacion, visita.Mes)
                 ? DatosVisitaJson(codigo, visita.Congregacion, visita.Mes)
                 : null;
+
+
+        private static string CarpetaParaCodigo(string codigo) =>
+            DatabaseHelper.BuscarVisitaProgramaWeb(codigo) is { } visita && !Caducado(visita.Congregacion, visita.Mes)
+                ? CarpetaArchivos(visita.Congregacion, visita.Mes)
+                : null;
+
+
+        /// <summary>Hasta cuándo vale el enlace: 15 días después del domingo de la visita (null si no está en el calendario).</summary>
+        public static DateTime? Caducidad(string congregacion, string mes) =>
+            DatabaseHelper.ObtenerVisitaProgramaWeb(congregacion, mes) is { } visita
+                ? visita.Martes.AddDays(5 + DiasTrasLaVisita)
+                : null;
+
+
+        public static bool Caducado(string congregacion, string mes) =>
+            Caducidad(congregacion, mes) is { } hasta && DateTime.Today > hasta;
+
+
+        /// <summary>
+        /// Dónde se guardan los archivos que suben los ancianos para esa visita:
+        /// en el Archivo del circuito, «1 - 2 - S-303 y S-2 › {n} - {congregación} ›
+        /// Archivos de los ancianos › {Mes año}». Sin Archivo del circuito, en los
+        /// datos de SCCosmos. No la crea: se crea al llegar el primer archivo.
+        /// </summary>
+        public static string CarpetaArchivos(string congregacion, string mes)
+        {
+            string nombre =
+                DatabaseHelper.ObtenerCongregaciones().FirstOrDefault(c => c.Codigo == congregacion)?.Nombre?.Trim() ?? "";
+
+            nombre = string.Concat(
+                (nombre.Length > 0 ? nombre : congregacion)
+                    .Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c));
+
+            string mesTexto =
+                DateTime.TryParseExact(mes + "-01", "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime primero)
+                    ? primero.ToString("MMMM yyyy", Es)
+                    : mes;
+
+            mesTexto = char.ToUpper(mesTexto[0], Es) + mesTexto.Substring(1);
+
+            string s303 = Path.Combine(
+                DatabaseHelper.ObtenerConfiguracion("RutaArchivoCircuito", "").Trim(),
+                "1 - 2 - S-303 y S-2");
+
+            if (Path.IsPathRooted(s303) && Directory.Exists(s303))
+            {
+                // «10 - Navalmoral de la Mata»: la de la congregación, con su número delante.
+                string carpetaCongregacion =
+                    Directory.EnumerateDirectories(s303)
+                        .FirstOrDefault(d => MismoNombre(Regex.Replace(Path.GetFileName(d), @"^\d+\s*-\s*", ""), nombre))
+                    ?? Path.Combine(s303, nombre);
+
+                return Path.Combine(carpetaCongregacion, "Archivos de los ancianos", mesTexto);
+            }
+
+            return Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "SCCosmos",
+                "Archivos de los ancianos",
+                nombre,
+                mesTexto);
+        }
+
+
+        private static bool MismoNombre(string a, string b) =>
+            string.Compare(a.Trim(), b.Trim(), CultureInfo.InvariantCulture, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0;
 
 
         /// <summary>Lo que la página necesita de la visita (y lo ya enviado, para corregirlo).</summary>
@@ -137,6 +220,12 @@ namespace SCCosmos
                 ["horaFinDeSemana"] = ProgramaWeb.Hora(datosCongregacion?.HoraFinSemana ?? ""),
                 ["medioDiaLibre"] = MedioDiaLibre(),
                 ["diasComida"] = new JsonArray(DiasComida().Select(d => (JsonNode)d).ToArray()),
+                ["tiposNombramiento"] = new JsonArray(ProgramaWeb.TiposNombramiento.Select(t => (JsonNode)t).ToArray()),
+                ["s61"] = new JsonArray(ProgramaWeb.PreguntasS61
+                    .Select(p => (JsonNode)new JsonObject { ["n"] = p.Numero, ["texto"] = p.Texto, ["na"] = p.ConNoAplica })
+                    .ToArray()),
+                ["archivos"] = true,
+                ["extensiones"] = new JsonArray(ArchivosProgramaWeb.Extensiones.Select(x => (JsonNode)x).ToArray()),
                 ["envio"] = envio,
                 ["enviadoEn"] = enviadoEn
             };

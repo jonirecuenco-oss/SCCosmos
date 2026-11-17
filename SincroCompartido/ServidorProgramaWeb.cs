@@ -6,6 +6,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -16,9 +17,12 @@ namespace SCCosmos.Sincro;
 //
 // Un servidor HTTP mínimo que solo escucha en el propio equipo
 // (127.0.0.1): Tailscale Funnel lo publica con su dirección https.
-// Solo sirve dos cosas, y solo con un código de visita válido:
-//   GET  /programa/{código}  → la página, con los datos de la visita
-//   POST /programa/{código}  → lo que envían los ancianos
+// Solo sirve esto, y solo con un código de visita válido:
+//   GET    /programa/{código}                          → la página, con los datos de la visita
+//   POST   /programa/{código}                          → lo que envían los ancianos
+//   GET    /programa/{código}/archivos                 → los archivos ya subidos
+//   PUT    /programa/{código}/archivos/{tipo}/{nombre} → subir un archivo (ArchivosProgramaWeb)
+//   DELETE /programa/{código}/archivos/{tipo}/{nombre} → quitarlo
 // Todo lo demás, 404. Está en el código compartido para poder
 // llevarlo más adelante al móvil o a una Raspberry.
 // ============================================================
@@ -31,11 +35,18 @@ public sealed class ServidorProgramaWeb : IDisposable
 
     private static readonly TimeSpan EsperaEntreEnvios = TimeSpan.FromSeconds(3);
 
+    private static readonly TimeSpan EsperaPeticion = TimeSpan.FromSeconds(20);
+
+    // Un archivo grande desde un móvil tarda: más margen que para lo demás.
+    private static readonly TimeSpan EsperaSubida = TimeSpan.FromMinutes(15);
+
     private readonly int _puerto;
 
     private readonly Func<string, string?> _datosVisita;
 
     private readonly Func<string, string, bool> _guardarEnvio;
+
+    private readonly Func<string, string?>? _carpetaArchivos;
 
     private readonly string _pagina;
 
@@ -46,19 +57,26 @@ public sealed class ServidorProgramaWeb : IDisposable
     private CancellationTokenSource? _cancelacion;
 
 
+    /// <summary>Han subido o quitado un archivo (código del enlace). Llega desde otro hilo.</summary>
+    public event Action<string>? ArchivosCambiados;
+
+
     /// <param name="datosVisita">Código → JSON con los datos de la visita para la página (null si no existe).</param>
     /// <param name="guardarEnvio">Código y JSON enviado → si se ha guardado.</param>
     /// <param name="pagina">La página; «/*VISITA*/null» se sustituye por los datos de la visita.</param>
+    /// <param name="carpetaArchivos">Código → carpeta para los archivos de esa visita (null: no se admiten).</param>
     public ServidorProgramaWeb(
         int puerto,
         Func<string, string?> datosVisita,
         Func<string, string, bool> guardarEnvio,
-        string pagina)
+        string pagina,
+        Func<string, string?>? carpetaArchivos = null)
     {
         _puerto = puerto;
         _datosVisita = datosVisita;
         _guardarEnvio = guardarEnvio;
         _pagina = pagina;
+        _carpetaArchivos = carpetaArchivos;
     }
 
 
@@ -109,7 +127,7 @@ public sealed class ServidorProgramaWeb : IDisposable
             try
             {
                 using var limite = CancellationTokenSource.CreateLinkedTokenSource(token);
-                limite.CancelAfter(TimeSpan.FromSeconds(20));
+                limite.CancelAfter(EsperaPeticion);
 
                 NetworkStream red = cliente.GetStream();
 
@@ -122,7 +140,7 @@ public sealed class ServidorProgramaWeb : IDisposable
                     return;
                 }
 
-                await ProcesarAsync(red, p.metodo, p.ruta, p.largo, p.sobrante, limite.Token);
+                await ProcesarAsync(red, p.metodo, p.ruta, p.largo, p.sobrante, limite);
             }
             catch
             {
@@ -200,26 +218,35 @@ public sealed class ServidorProgramaWeb : IDisposable
     }
 
 
-    private async Task ProcesarAsync(NetworkStream red, string metodo, string ruta, int largo, byte[] sobrante, CancellationToken token)
+    private async Task ProcesarAsync(NetworkStream red, string metodo, string ruta, int largo, byte[] sobrante, CancellationTokenSource limite)
     {
-        // Solo /programa/{código} (sin consulta ni nada más).
+        CancellationToken token = limite.Token;
+
+        // /programa/{código} y /programa/{código}/archivos[/{tipo}/{nombre}] (sin consulta).
         string camino = ruta.Split('?')[0];
         string[] partes = camino.Trim('/').Split('/');
 
-        if (partes.Length != 2
+        if (partes.Length is < 2 or > 5
             || partes[0] != "programa"
             || !ProgramaWeb.CodigoValido(partes[1]))
         {
-            await ResponderAsync(red, 404, "text/plain", "No existe", token);
+            await RechazarAsync(red, 404, "text/plain", "No existe", largo, sobrante, token);
             return;
         }
 
         string codigo = partes[1];
+
+        if (partes.Length > 2)
+        {
+            await ArchivosAsync(red, metodo, codigo, partes, largo, sobrante, limite);
+            return;
+        }
+
         string? datos = _datosVisita(codigo);
 
         if (datos is null)
         {
-            await ResponderAsync(red, 404, "text/plain", "Este enlace no es válido o ha caducado.", token);
+            await RechazarAsync(red, 404, "text/plain", "Este enlace no es válido o ha caducado.", largo, sobrante, token);
             return;
         }
 
@@ -233,13 +260,13 @@ public sealed class ServidorProgramaWeb : IDisposable
 
         if (metodo != "POST")
         {
-            await ResponderAsync(red, 405, "text/plain", "Método no permitido", token);
+            await RechazarAsync(red, 405, "text/plain", "Método no permitido", largo, sobrante, token);
             return;
         }
 
         if (largo <= 0 || largo > MaxCuerpo)
         {
-            await ResponderAsync(red, 413, "application/json", "{\"ok\":false,\"error\":\"tamaño\"}", token);
+            await RechazarAsync(red, 413, "application/json", "{\"ok\":false,\"error\":\"tamaño\"}", largo, sobrante, token);
             return;
         }
 
@@ -295,6 +322,176 @@ public sealed class ServidorProgramaWeb : IDisposable
     }
 
 
+    // ---- Archivos: listar, subir y quitar, solo dentro de la carpeta de la visita ----
+    private async Task ArchivosAsync(NetworkStream red, string metodo, string codigo, string[] partes, int largo, byte[] sobrante, CancellationTokenSource limite)
+    {
+        CancellationToken token = limite.Token;
+
+        string? carpeta = partes[2] == "archivos" ? _carpetaArchivos?.Invoke(codigo) : null;
+
+        if (carpeta is null)
+        {
+            await RechazarAsync(red, 404, "text/plain", "Este enlace no es válido o ha caducado.", largo, sobrante, token);
+            return;
+        }
+
+        if (partes.Length == 3)
+        {
+            if (metodo != "GET")
+            {
+                await RechazarAsync(red, 405, "text/plain", "Método no permitido", largo, sobrante, token);
+                return;
+            }
+
+            await ResponderAsync(red, 200, "application/json", ArchivosProgramaWeb.ListaJson(carpeta), token);
+            return;
+        }
+
+        string? subcarpeta = partes.Length == 5 ? ArchivosProgramaWeb.Carpeta(partes[3]) : null;
+
+        if (subcarpeta is null)
+        {
+            await RechazarAsync(red, 404, "text/plain", "No existe", largo, sobrante, token);
+            return;
+        }
+
+        string? nombre = ArchivosProgramaWeb.NombreSeguro(Uri.UnescapeDataString(partes[4]));
+
+        if (nombre is null)
+        {
+            await RechazarAsync(red, 415, "application/json", "{\"ok\":false,\"error\":\"tipo\"}", largo, sobrante, token);
+            return;
+        }
+
+        string destino = Path.Combine(carpeta, subcarpeta);
+
+        if (metodo == "DELETE")
+        {
+            string ruta = Path.Combine(destino, nombre);
+            bool quitado = File.Exists(ruta);
+
+            if (quitado)
+            {
+                File.Delete(ruta);
+                Avisar(codigo);
+            }
+
+            await ResponderAsync(red, 200, "application/json", quitado ? "{\"ok\":true}" : "{\"ok\":false}", token);
+            return;
+        }
+
+        if (metodo != "PUT")
+        {
+            await RechazarAsync(red, 405, "text/plain", "Método no permitido", largo, sobrante, token);
+            return;
+        }
+
+        if (largo <= 0
+            || largo > ArchivosProgramaWeb.MaxBytesArchivo
+            || ArchivosProgramaWeb.Ocupado(carpeta) + largo > ArchivosProgramaWeb.MaxBytesVisita)
+        {
+            await RechazarAsync(red, 413, "application/json", "{\"ok\":false,\"error\":\"tamaño\"}", largo, sobrante, token);
+            return;
+        }
+
+        limite.CancelAfter(EsperaSubida);
+
+        // Se escribe a disco según llega (no se guarda entero en memoria) y,
+        // completo, se le pone su nombre; si se corta, no queda nada.
+        Directory.CreateDirectory(destino);
+
+        string temporal = ArchivosProgramaWeb.RutaTemporal(destino);
+
+        try
+        {
+            await using (var archivo = new FileStream(temporal, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, useAsync: true))
+            {
+                int copiados = Math.Min(sobrante.Length, largo);
+
+                await archivo.WriteAsync(sobrante.AsMemory(0, copiados), token);
+
+                byte[] trozo = new byte[81920];
+
+                while (copiados < largo)
+                {
+                    int leidos = await red.ReadAsync(trozo.AsMemory(0, Math.Min(trozo.Length, largo - copiados)), token);
+
+                    if (leidos == 0)
+                    {
+                        throw new IOException("La conexión se cortó a medias.");
+                    }
+
+                    await archivo.WriteAsync(trozo.AsMemory(0, leidos), token);
+                    copiados += leidos;
+                }
+            }
+
+            string final = ArchivosProgramaWeb.NombreLibre(destino, nombre);
+
+            File.Move(temporal, Path.Combine(destino, final));
+            Avisar(codigo);
+
+            var respuesta = new JsonObject { ["ok"] = true, ["nombre"] = final, ["tamano"] = largo };
+
+            await ResponderAsync(red, 200, "application/json", respuesta.ToJsonString(), token);
+        }
+        finally
+        {
+            if (File.Exists(temporal))
+            {
+                try
+                {
+                    File.Delete(temporal);
+                }
+                catch
+                {
+                }
+            }
+        }
+    }
+
+
+    // Antes de rechazar una petición con un cuerpo pequeño, se lee entero:
+    // si se cierra con datos sin leer, el navegador ve un corte y no la
+    // respuesta (y no puede decir «tipo no admitido» o «ha caducado»).
+    private const int MaxDescartar = 1024 * 1024;
+
+    private static async Task RechazarAsync(NetworkStream red, int estado, string tipo, string texto, int largo, byte[] sobrante, CancellationToken token)
+    {
+        if (largo > 0 && largo <= MaxDescartar)
+        {
+            int pendientes = largo - Math.Min(sobrante.Length, largo);
+            byte[] trozo = new byte[16384];
+
+            while (pendientes > 0)
+            {
+                int leidos = await red.ReadAsync(trozo.AsMemory(0, Math.Min(trozo.Length, pendientes)), token);
+
+                if (leidos == 0)
+                {
+                    break;
+                }
+
+                pendientes -= leidos;
+            }
+        }
+
+        await ResponderAsync(red, estado, tipo, texto, token);
+    }
+
+
+    private void Avisar(string codigo)
+    {
+        try
+        {
+            ArchivosCambiados?.Invoke(codigo);
+        }
+        catch
+        {
+        }
+    }
+
+
     private static async Task ResponderAsync(NetworkStream red, int estado, string tipo, string texto, CancellationToken token)
     {
         byte[] cuerpo = Encoding.UTF8.GetBytes(texto);
@@ -306,6 +503,7 @@ public sealed class ServidorProgramaWeb : IDisposable
             404 => "Not Found",
             405 => "Method Not Allowed",
             413 => "Payload Too Large",
+            415 => "Unsupported Media Type",
             429 => "Too Many Requests",
             _ => "Error"
         };

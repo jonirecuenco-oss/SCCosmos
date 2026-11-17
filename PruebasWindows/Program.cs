@@ -376,6 +376,11 @@ internal static class Programa
         Ver("Web: medio día libre (sin elegir, el viernes por la mañana)", ProgramaWeb.MedioDiaLibre("") + "|" + ProgramaWeb.MedioDiaLibre("jueves tarde") + "|" + ProgramaWeb.MedioDiaLibre("Sábado mañana"), "Viernes mañana|Jueves tarde|Viernes mañana");
         Ver("Web: precursores, solo el miércoles o el sábado", string.Join("|", new[] { "Miércoles", "Jueves", "Sábado" }.Select(d => ProgramaWeb.AEventos("{\"version\":1,\"reuniones\":{\"precursores\":{\"dia\":\"" + d + "\",\"hora\":\"10:00\"}}}").Eventos.Count)), "1|0|1");
         Ver("Web: comidas, solo los días con la congregación", string.Join("|", ProgramaWeb.AEventos("{\"version\":1,\"comidas\":[{\"dia\":\"Jueves\",\"familia\":\"A\"},{\"dia\":\"Sábado\",\"familia\":\"B\"}]}", "", new[] { "Sábado" }).Eventos.Select(e => e.DiaSemana)), "Sábado");
+        Ver("Archivos: nombres seguros", string.Join("|", ArchivosProgramaWeb.NombreSeguro("CON.pdf"), ArchivosProgramaWeb.NombreSeguro("a<b>:c.PDF"), ArchivosProgramaWeb.NombreSeguro("virus.exe") ?? "no", ArchivosProgramaWeb.NombreSeguro("C:\\x\\..\\S-21 G1.zip")), "archivo.pdf|a_b__c.pdf|no|S-21 G1.zip");
+        Ver("Archivos: carpetas por tipo", string.Join("|", ArchivosProgramaWeb.Carpeta("s21-g3"), ArchivosProgramaWeb.Carpeta("s21-g03") ?? "no", ArchivosProgramaWeb.Carpeta("../x") ?? "no", ArchivosProgramaWeb.Carpeta("s88")), System.IO.Path.Combine("S-21", "G3") + "|no|no|S-88");
+        Ver("S-61: solo respuestas válidas", string.Join("|", ProgramaWeb.RespuestasS61("{\"s61\":{\"1\":\"Sí\",\"2\":\"N/A\",\"3\":\"N/A\",\"99\":\"Sí\",\"4\":\"Quizá\"}}").Select(r => r.Key + "=" + r.Value)), "1=Sí|3=N/A");
+        Ver("S-61: hermanos recomendados", string.Join("|", ProgramaWeb.Nombramientos("{\"nombramientos\":[{\"nombre\":\"Juan Pérez\",\"tipo\":\"nombramiento de anciano\"},{\"nombre\":\"\"},{\"nombre\":\"Luis\",\"tipo\":\"Otra cosa\"}]}").Select(n => n.Nombre + ":" + n.Tipo)), "Juan Pérez:Nombramiento de anciano|Luis:");
+        Ver("S-61: 15 preguntas, 4 sin N/A", ProgramaWeb.PreguntasS61.Length + " " + ProgramaWeb.PreguntasS61.Count(p => !p.ConNoAplica), "15 4");
         Ver("Web: días de comida guardados", string.Join("|", ProgramaWeb.DiasComida("").Length, ProgramaWeb.DiasComida("Ninguno").Length, ProgramaWeb.TextoDiasComida(ProgramaWeb.DiasComida("sabado, Jueves"))), "5|0|Jueves,Sábado");
         Ver("Web: en el medio día libre no va nadie con ellos", string.Join("|", ProgramaWeb.AEventos(envioWeb, "Miércoles mañana").Eventos.Where(e => e.DiaSemana == "Miércoles" && e.TipoActividad == "Predicación").Select(e => $"{e.Hora} [{e.Responsable}] {e.Notas}")), "10:00 [] Medio día libre");
         Ver("Web: hora y día de la congregación", ProgramaWeb.Hora("19:30h") + " " + ProgramaWeb.Dia("sabado"), "19:30 Sábado");
@@ -383,11 +388,13 @@ internal static class Programa
         // El servidor del formulario: solo /programa/{código}, y solo con un código que exista.
         string codigoPrueba = ProgramaWeb.NuevoCodigo();
         string recibidoPrueba = "";
+        string carpetaPrueba = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "sccosmos_archivos_" + Guid.NewGuid().ToString("N"));
         using (var servidor = new ServidorProgramaWeb(
                    47399,
                    c => c == codigoPrueba ? "{\"codigo\":\"x\"}" : null,
                    (c, json) => { recibidoPrueba = json; return true; },
-                   "<html><script>window.VISITA = /*VISITA*/null;</script></html>"))
+                   "<html><script>window.VISITA = /*VISITA*/null;</script></html>",
+                   c => c == codigoPrueba ? carpetaPrueba : null))
         {
             servidor.Iniciar();
             using var http = new System.Net.Http.HttpClient { BaseAddress = new Uri("http://127.0.0.1:47399") };
@@ -399,7 +406,26 @@ internal static class Programa
             Ver("Servidor: envío guardado", (int)envio.StatusCode + " " + recibidoPrueba, "200 {\"version\":1}");
             var seguido = http.PostAsync("/programa/" + codigoPrueba, new System.Net.Http.StringContent("{\"version\":1}", System.Text.Encoding.UTF8, "application/json")).Result;
             Ver("Servidor: otro envío seguido, a esperar", (int)seguido.StatusCode, 429);
+
+            // Archivos: cada tipo a su carpeta (la S-21, por grupos), solo documentos y sin salir de la carpeta.
+            string baseArchivos = "/programa/" + codigoPrueba + "/archivos/";
+            string tarjeta = System.IO.Path.Combine(carpetaPrueba, "S-21", "G2", "Tarjeta Pérez.pdf");
+            var subida = http.PutAsync(baseArchivos + "s21-g2/" + Uri.EscapeDataString("Tarjeta Pérez.pdf"), new System.Net.Http.ByteArrayContent(System.Text.Encoding.ASCII.GetBytes("%PDF-1.4 prueba"))).Result;
+            Ver("Servidor: archivo subido a su grupo", (int)subida.StatusCode + " " + System.IO.File.Exists(tarjeta), "200 True");
+            http.PutAsync(baseArchivos + "s21-g2/" + Uri.EscapeDataString("Tarjeta Pérez.pdf"), new System.Net.Http.ByteArrayContent(new byte[] { 37, 80 })).Wait();
+            Ver("Servidor: mismo nombre, no se pisa", System.IO.File.Exists(System.IO.Path.Combine(carpetaPrueba, "S-21", "G2", "Tarjeta Pérez (2).pdf")), true);
+            string listaSubidos = http.GetStringAsync(baseArchivos.TrimEnd('/')).Result;
+            Ver("Servidor: lista de lo subido", listaSubidos.Contains("\"tipo\":\"s21-g2\"") && listaSubidos.Contains("(2).pdf"), true);
+            Ver("Servidor: tipo de archivo no admitido", (int)http.PutAsync(baseArchivos + "otros/virus.exe", new System.Net.Http.ByteArrayContent(new byte[] { 1 })).Result.StatusCode, 415);
+            var fuera = http.PutAsync(baseArchivos + "otros/" + Uri.EscapeDataString("../../fuera.pdf"), new System.Net.Http.ByteArrayContent(new byte[] { 1 })).Result;
+            Ver("Servidor: nombre con ruta, dentro de su carpeta", (int)fuera.StatusCode + " " + System.IO.File.Exists(System.IO.Path.Combine(carpetaPrueba, "Otros", "fuera.pdf")), "200 True");
+            Ver("Servidor: tipo inventado", (int)http.PutAsync(baseArchivos + "s21-g99/x.pdf", new System.Net.Http.ByteArrayContent(new byte[] { 1 })).Result.StatusCode, 404);
+            var quitada = http.DeleteAsync(baseArchivos + "s21-g2/" + Uri.EscapeDataString("Tarjeta Pérez.pdf")).Result;
+            Ver("Servidor: quitar un archivo", (int)quitada.StatusCode + " " + System.IO.File.Exists(tarjeta), "200 False");
+            Ver("Servidor: archivos de un código que no existe", (int)http.GetAsync("/programa/" + ProgramaWeb.NuevoCodigo() + "/archivos").Result.StatusCode, 404);
         }
+
+        try { System.IO.Directory.Delete(carpetaPrueba, true); } catch { }
     }
 
     // Ajustes de la página Avisos: sin nada guardado, lo de siempre; ida y vuelta; el día de quedar con el CCA.
