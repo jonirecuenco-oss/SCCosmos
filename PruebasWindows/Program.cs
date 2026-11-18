@@ -530,6 +530,16 @@ internal static class Programa
         string Filas() => Texto("SELECT COUNT(*) FROM ProgramaVisitaV2 WHERE CongreCodigo = 'WEB1' AND MesReferencia = '2026-12'");
         string HoraAsm() => Texto("SELECT Hora FROM ProgramaVisitaV2 WHERE CongreCodigo = 'WEB1' AND TipoActividad = 'Reunión de A/SM'");
 
+        // Los archivos de los ancianos, siempre en los datos de SCCosmos (nunca en el Archivo del circuito, aunque exista).
+        string archivoCircuito = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "sccosmos_arch_" + Guid.NewGuid().ToString("N"));
+        System.IO.Directory.CreateDirectory(System.IO.Path.Combine(archivoCircuito, "1 - 2 - S-303 y S-2", "7 - Congregación Web"));
+        DatabaseHelper.GuardarConfiguracion("RutaArchivoCircuito", archivoCircuito);
+        Ver("Archivos de los ancianos: en %LocalAppData%\\SCCosmos, no en el Archivo del circuito",
+            ProgramaWebPc.CarpetaArchivos("WEB1", "2026-12"),
+            System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SCCosmos", "Archivos de los ancianos", "Congregación Web", "Diciembre 2026"));
+        DatabaseHelper.GuardarConfiguracion("RutaArchivoCircuito", "");
+        try { System.IO.Directory.Delete(archivoCircuito, true); } catch { }
+
         string Enviado() => DatabaseHelper.ObtenerConfiguracion(ProgramaWeb.ClaveEnviado("WEB1", "2026-12"), "");
         Ver("Web recibido: el borrador se guarda y no toca el programa",
             $"{ProgramaWebPc.Recibir(codigo, borrador)} {ProgramaWebPc.Recibido("WEB1", "2026-12")?.Completo} {Filas()} [{Enviado()}]", "True False 0 []");

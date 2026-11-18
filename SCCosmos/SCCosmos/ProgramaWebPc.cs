@@ -5,7 +5,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.Json.Nodes;
-using System.Text.RegularExpressions;
 using SCCosmos.Sincro;
 
 namespace SCCosmos
@@ -131,9 +130,9 @@ namespace SCCosmos
 
         /// <summary>
         /// Dónde se guardan los archivos que suben los ancianos para esa visita:
-        /// en el Archivo del circuito, «1 - 2 - S-303 y S-2 › {n} - {congregación} ›
-        /// Archivos de los ancianos › {Mes año}». Sin Archivo del circuito, en los
-        /// datos de SCCosmos. No la crea: se crea al llegar el primer archivo.
+        /// siempre en los datos de SCCosmos de este PC, «%LocalAppData%\SCCosmos ›
+        /// Archivos de los ancianos › {congregación} › {Mes año}» (nunca en el
+        /// Archivo del circuito). No la crea: se crea al llegar el primer archivo.
         /// </summary>
         public static string CarpetaArchivos(string congregacion, string mes)
         {
@@ -151,21 +150,6 @@ namespace SCCosmos
 
             mesTexto = char.ToUpper(mesTexto[0], Es) + mesTexto.Substring(1);
 
-            string s303 = Path.Combine(
-                DatabaseHelper.ObtenerConfiguracion("RutaArchivoCircuito", "").Trim(),
-                "1 - 2 - S-303 y S-2");
-
-            if (Path.IsPathRooted(s303) && Directory.Exists(s303))
-            {
-                // «10 - Navalmoral de la Mata»: la de la congregación, con su número delante.
-                string carpetaCongregacion =
-                    Directory.EnumerateDirectories(s303)
-                        .FirstOrDefault(d => MismoNombre(Regex.Replace(Path.GetFileName(d), @"^\d+\s*-\s*", ""), nombre))
-                    ?? Path.Combine(s303, nombre);
-
-                return Path.Combine(carpetaCongregacion, "Archivos de los ancianos", mesTexto);
-            }
-
             return Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "SCCosmos",
@@ -173,10 +157,6 @@ namespace SCCosmos
                 nombre,
                 mesTexto);
         }
-
-
-        private static bool MismoNombre(string a, string b) =>
-            string.Compare(a.Trim(), b.Trim(), CultureInfo.InvariantCulture, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0;
 
 
         /// <summary>Lo que la página necesita de la visita (y lo ya enviado, para corregirlo).</summary>
