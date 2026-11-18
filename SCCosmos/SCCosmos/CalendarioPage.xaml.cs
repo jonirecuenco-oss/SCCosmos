@@ -646,6 +646,7 @@ namespace SCCosmos
                 List<SemanaCalendario> semanas = await ConstruirSemanasAsync();
 
                 PonerTareas(semanas);
+                PonerEnlaces(semanas);
 
                 Perf.Registrar("Calendario.DB", reloj.ElapsedMilliseconds);
 
@@ -848,6 +849,47 @@ namespace SCCosmos
                 _mostrarTareas
                     ? Wpf.Ui.Controls.ControlAppearance.Primary
                     : Wpf.Ui.Controls.ControlAppearance.Secondary;
+        }
+
+
+        /// <summary>
+        /// Las visitas que ya tienen enlace del formulario de los ancianos: su
+        /// botón va en verde, como el de la documentación enviada.
+        /// </summary>
+        private static void PonerEnlaces(List<SemanaCalendario> semanas)
+        {
+            try
+            {
+                var conEnlace = DatabaseHelper.VisitasConEnlaceProgramaWeb();
+
+                if (conEnlace.Count == 0)
+                {
+                    return;
+                }
+
+                // Por el nombre de la congregación, como al crear el enlace (ObtenerCodigoCongregacion).
+                var codigos = new Dictionary<string, string>(StringComparer.Ordinal);
+
+                foreach (var congregacion in DatabaseHelper.ObtenerCongregaciones())
+                {
+                    if (!string.IsNullOrEmpty(congregacion.Nombre))
+                    {
+                        codigos.TryAdd(congregacion.Nombre, congregacion.Codigo ?? "");
+                    }
+                }
+
+                foreach (SemanaCalendario semana in semanas)
+                {
+                    semana.EnlaceGenerado =
+                        semana.Actividad == "Visita"
+                        && codigos.TryGetValue(semana.Congregacion ?? "", out string codigo)
+                        && conEnlace.Contains(codigo + "_" + semana.FechaMartes.ToString("yyyy-MM"));
+                }
+            }
+            catch (Exception ex)
+            {
+                RegistroErrores.AnotarSilencioso(ex, "Calendario.Enlaces");
+            }
         }
 
 
@@ -1868,6 +1910,13 @@ namespace SCCosmos
                 }
 
                 ProgramaWebPc.CopiarEnlace(enlace);
+
+                // Si se acaba de crear, su botón pasa a verde.
+                if (!semana.EnlaceGenerado)
+                {
+                    semana.EnlaceGenerado = true;
+                    _vistaAgrupada.Refresh();
+                }
             }
             catch (Exception ex)
             {
@@ -2030,6 +2079,13 @@ namespace SCCosmos
             catch (Exception ex)
             {
                 RegistroErrores.AnotarSilencioso(ex, "ProgramaWeb.EnlaceDocumentacion");
+            }
+
+            // Al preparar la documentación se crea el enlace: su botón pasa a verde.
+            if (enlaceAncianos.Length > 0 && !semanaSeleccionada.EnlaceGenerado)
+            {
+                semanaSeleccionada.EnlaceGenerado = true;
+                _vistaAgrupada.Refresh();
             }
 
             string variableEnlace = SCCosmos.Sincro.ProgramaWeb.VariableEnlace;

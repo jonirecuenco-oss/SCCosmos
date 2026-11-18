@@ -91,7 +91,8 @@ namespace SCCosmos.Mobile
 
                 try
                 {
-                    // Tiempo de AEMET: revisión cada 2 horas (avisos y widget).
+                    // Revisión cada 30 minutos: tiempo de AEMET (avisos y widget) y
+                    // envíos del formulario del programa de los ancianos.
                     SCCosmos.Mobile.Platforms.Android.TiempoAvisosAndroid.ProgramarRevision();
                 }
                 catch
@@ -111,10 +112,24 @@ namespace SCCosmos.Mobile
                 try
                 {
                     SincronizacionMobile.Iniciar();
+
+                    // Si llega por sincronización que los ancianos han enviado el
+                    // formulario del programa, se avisa al momento.
+                    SincronizacionMobile.DatosRecibidos += recibidos =>
+                    {
+                        if (recibidos > 0)
+                        {
+                            _ = SCCosmos.Mobile.Platforms.Android.ProgramaWebAvisosAndroid.RevisarAsync(
+                                preguntarServidor: false);
+                        }
+                    };
                 }
                 catch
                 {
                 }
+
+                // Tailscale (si está instalado): conectado, para sincronizar fuera de casa.
+                SCCosmos.Mobile.Platforms.Android.TailscaleAndroid.Asegurar();
 
                 Perf.Registrar(
                     "Arranque.SyncDiferido",
@@ -240,6 +255,9 @@ namespace SCCosmos.Mobile
         protected override void OnResume()
         {
             Perf.EstablecerPrimerPlano(true);
+
+            // Al volver a la app, si Tailscale se ha desconectado, que se conecte.
+            SCCosmos.Mobile.Platforms.Android.TailscaleAndroid.Asegurar();
 
             base.OnResume();
         }

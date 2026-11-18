@@ -129,6 +129,9 @@ namespace SCCosmos
 
         public bool S302Enviado { get; set; }
         public bool DocEnviada { get; set; }
+
+        // Ya hay enlace del formulario de los ancianos para esta visita (se mira al cargar el calendario).
+        public bool EnlaceGenerado { get; set; }
         public string TipoAsamblea { get; set; }
         public string RepBetelNombre { get; set; }
         public string RepBetelTelefono { get; set; }
@@ -146,14 +149,16 @@ namespace SCCosmos
         public string ColorBotonRecordatorio => RecordatorioEnviado ? "#10893E" : "Transparent";
         public string ColorBotonS302 => S302Enviado ? "#10893E" : "Transparent";
         public string ColorBotonDoc => DocEnviada ? "#10893E" : "Transparent";
+        public string ColorBotonEnlace => EnlaceGenerado ? "#10893E" : "Transparent";
+        public string ColorBotonImportar => TieneDatosImportados ? "#10893E" : "Transparent";
 
         public Visibility VisibilidadAccionesSoloSC => PerfilAcceso.AccesoCompleto ? Visibility.Visible : Visibility.Collapsed;
 
         // Trucos visuales controlados desde C# para la visibilidad de los botones
         public Visibility VisibilidadVisita => (PerfilAcceso.AccesoCompleto && Actividad == "Visita") ? Visibility.Visible : Visibility.Collapsed;
 
-        // «Copiar enlace» (formulario de los ancianos): cuando ya se envió la documentación.
-        public Visibility VisibilidadCopiarEnlace => DocEnviada ? VisibilidadVisita : Visibility.Collapsed;
+        // «Copiar enlace» (formulario de los ancianos): cuando ya se envió la documentación o ya hay enlace.
+        public Visibility VisibilidadCopiarEnlace => DocEnviada || EnlaceGenerado ? VisibilidadVisita : Visibility.Collapsed;
         public Visibility VisibilidadAsamblea => (PerfilAcceso.AccesoCompleto && Actividad == "Asamblea de circuito") ? Visibility.Visible : Visibility.Collapsed;
         public Visibility VisibilidadVerVisita => (Actividad == "Visita" && TieneDatosImportados) ? Visibility.Visible : Visibility.Collapsed;
         public Visibility EsClonada { get; set; } = Visibility.Collapsed;

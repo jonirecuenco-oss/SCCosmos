@@ -495,8 +495,8 @@ public partial class AccionesVisitaPage : ContentPage
                 && !await DisplayAlert(
                     "Enlace para los ancianos",
                     "Este móvil aún no sabe la dirección del formulario. " +
-                    "Créalo una vez en SCCosmos del PC (Calendario › Enviar documentación) " +
-                    "y, cuando se sincronice, ya irá en el correo.",
+                    "Elige el servidor en Configuración (Servidor del formulario de los ancianos) " +
+                    "o crea un enlace una vez en SCCosmos del PC y, cuando se sincronice, ya irá en el correo.",
                     "Enviar sin enlace",
                     "Cancelar"))
             {
@@ -546,8 +546,9 @@ public partial class AccionesVisitaPage : ContentPage
     }
 
     // El enlace del formulario de los ancianos de esta visita. El código va
-    // en Configuración (llega al PC al sincronizar) y la dirección es la que
-    // guardó el PC al crear su primer enlace. Vacío si aún no se sabe.
+    // en Configuración (llega al PC al sincronizar) y la dirección es la del
+    // servidor elegido en Configuración o, sin elegir, la que guardó el último
+    // PC que creó un enlace. Vacío si aún no se sabe.
     private string EnlaceFormularioAncianos()
     {
         try
@@ -557,9 +558,8 @@ public partial class AccionesVisitaPage : ContentPage
                     _semana.Congregacion);
 
             string direccion =
-                DatabaseHelper.ObtenerConfiguracion(
-                    SCCosmos.Sincro.ProgramaWeb.ClaveDireccion,
-                    "").Trim();
+                SCCosmos.Sincro.ProgramaWeb.DireccionEnlaces(
+                    clave => DatabaseHelper.ObtenerConfiguracion(clave, ""));
 
             if (string.IsNullOrWhiteSpace(congregacion)
                 || direccion.Length == 0)

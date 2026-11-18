@@ -247,7 +247,7 @@
                                     </ContentControl>
 
                                     <ContentControl Margin="0,0,5,0" Visibility="{Binding VisibilidadCopiarEnlace}">
-                                        <ui:Button Icon="{ui:SymbolIcon Link24}" Appearance="Secondary" Padding="6" Cursor="Hand" Click="BtnCopiarEnlace_Click" ToolTip="Copiar enlace (formulario de los ancianos)"/>
+                                        <ui:Button Icon="{ui:SymbolIcon Link24}" Appearance="Secondary" Padding="6" Cursor="Hand" Click="BtnCopiarEnlace_Click" ToolTip="Copiar enlace (formulario de los ancianos)" Background="{Binding ColorBotonEnlace}"/>
                                     </ContentControl>
                                     <!-- 
                                     <ContentControl Margin="0,0,5,0" Visibility="{Binding VisibilidadVisita}">
@@ -261,7 +261,7 @@
 
                                     <!-- Botones de HERRAMIENTAS: Importar -->
                                     <ContentControl Margin="0,0,5,0" Visibility="{Binding VisibilidadVisita}">
-                                        <ui:Button Icon="{ui:SymbolIcon ArrowImport24}" Appearance="Secondary" Padding="6" Cursor="Hand" Click="BtnImportar_Click" ToolTip="Importar archivos (S-21 / Territorios)"/>
+                                        <ui:Button Icon="{ui:SymbolIcon ArrowUpload24}" Appearance="Secondary" Padding="6" Cursor="Hand" Click="BtnImportar_Click" ToolTip="Importar archivos (S-21 / Territorios)" Background="{Binding ColorBotonImportar}"/>
                                     </ContentControl>
 
                                     <!-- BOTÓN DEL OJO -->

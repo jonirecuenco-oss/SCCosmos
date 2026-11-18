@@ -125,7 +125,19 @@
                             <StackPanel Margin="0,15,0,0">
                                 <TextBlock Text="Comidas con la congregación" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
                                 <WrapPanel x:Name="PanelDiasComida"/>
-                                <TextBlock Text="Los días desactivados no salen para rellenar en Hospitalidad del formulario de los ancianos." Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                                <TextBlock Text="Los días desactivados no salen para rellenar en Hospitalidad del formulario de los ancianos. Son los de todas las congregaciones; en Circuito, columna «Comidas», puedes cambiarlos para una." Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
+
+                            <!-- Servidor del formulario de los ancianos: todos los enlaces, de este PC o del móvil, van a él -->
+                            <StackPanel Margin="0,15,0,0">
+                                <TextBlock Text="Servidor del formulario de los ancianos" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:TextBox x:Name="TxtServidorFormulario" Width="360" PlaceholderText="https://mi-pc.tailxxxx.ts.net"/>
+                                    <ui:Button Content="Usar este PC" Icon="{ui:SymbolIcon Desktop24}" Appearance="Secondary" Margin="8,0,0,0" Cursor="Hand" Click="BtnServidorEstePc_Click"
+                                               ToolTip="Pone la dirección de Tailscale de este PC"/>
+                                    <ui:Button Content="Guardar" Icon="{ui:SymbolIcon Save24}" Appearance="Primary" Margin="8,0,0,0" Cursor="Hand" Click="BtnGuardarServidor_Click"/>
+                                </StackPanel>
+                                <TextBlock x:Name="TxtEstadoServidor" Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap"/>
                             </StackPanel>
                         </StackPanel>
                     </Grid>

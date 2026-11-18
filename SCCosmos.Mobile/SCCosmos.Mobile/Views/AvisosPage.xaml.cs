@@ -8,8 +8,9 @@ namespace SCCosmos.Mobile.Views;
 
 /// <summary>
 /// Qué avisa la app y cuándo: quedar con el CCA (día y hora de la semana
-/// antes de una visita), el S-303 del domingo, las alertas meteorológicas y
-/// las alertas de Inicio (activas y con su plazo). Se guarda al momento en
+/// antes de una visita), el S-303 del domingo, el programa enviado por los
+/// ancianos, las alertas meteorológicas y las alertas de Inicio (activas y
+/// con su plazo). Se guarda al momento en
 /// Configuracion (SincroCompartido/AjustesAvisos.cs), que se sincroniza.
 /// </summary>
 public partial class AvisosPage : ContentPage
@@ -47,6 +48,7 @@ public partial class AvisosPage : ContentPage
         SwCca.Toggled += (_, _) => Guardar();
         SwS303.Toggled += (_, _) => Guardar();
         SwTiempo.Toggled += (_, _) => Guardar();
+        SwProgramaWeb.Toggled += (_, _) => Guardar();
         PickerDiaCca.SelectedIndexChanged += (_, _) => Guardar();
         HoraCca.PropertyChanged += Hora_PropertyChanged;
         HoraS303.PropertyChanged += Hora_PropertyChanged;
@@ -79,6 +81,8 @@ public partial class AvisosPage : ContentPage
             HoraS303.Time = _ajustes.S303Hora;
 
             SwTiempo.IsToggled = _ajustes.TiempoActivo;
+
+            SwProgramaWeb.IsToggled = _ajustes.ProgramaWebActivo;
 
             foreach (var (tipo, fila) in _alertas)
             {
@@ -119,6 +123,8 @@ public partial class AvisosPage : ContentPage
             _ajustes.S303Hora = HoraS303.Time ?? new TimeSpan(20, 0, 0);
 
             _ajustes.TiempoActivo = SwTiempo.IsToggled;
+
+            _ajustes.ProgramaWebActivo = SwProgramaWeb.IsToggled;
 
             foreach (var (tipo, fila) in _alertas)
             {

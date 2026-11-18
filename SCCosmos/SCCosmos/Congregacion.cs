@@ -21,6 +21,11 @@
     public string IdZoom { get; set; }
     public string ClaveZoom { get; set; }
     public string EmailAV { get; set; }
+
+    // Solo para la tabla de Circuito (se guardan en Configuracion, no aquí):
+    // días que coméis con la congregación y si son los de Configuración.
+    public string TextoComidas { get; set; } = "";
+    public bool ComidasPorDefecto { get; set; } = true;
 }
 
 public class ElementoMapa

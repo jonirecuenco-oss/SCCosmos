@@ -11,7 +11,8 @@ namespace SCCosmos.Sincro;
 /// Qué avisos están activos y cuándo (se editan en la página Avisos del
 /// móvil). Van en Configuracion, que se sincroniza: la campana de Windows
 /// usa los mismos plazos. Sin nada guardado, como estaba: las alertas
-/// activas con sus plazos de siempre, el tiempo activo y los recordatorios
+/// activas con sus plazos de siempre, el tiempo y el aviso del formulario
+/// de los ancianos activos, y los recordatorios
 /// con hora (quedar con el CCA, el S-303 del domingo) apagados.
 /// </summary>
 public sealed class AjustesAvisos
@@ -36,6 +37,9 @@ public sealed class AjustesAvisos
     // «1» o «0».
     private const string ClaveTiempo = "Avisos_Tiempo";
 
+    // «1» o «0»: cuando los ancianos envían el formulario del programa.
+    private const string ClaveProgramaWeb = "Avisos_ProgramaWeb";
+
     // + tipo: «1|90», activa y días.
     private const string PrefijoAlerta = "Avisos_Alerta_";
 
@@ -53,6 +57,9 @@ public sealed class AjustesAvisos
     public TimeSpan S303Hora { get; set; } = new(20, 0, 0);
 
     public bool TiempoActivo { get; set; } = true;
+
+    /// <summary>Notificar en el móvil cuando los ancianos pulsan «Enviar» en el formulario del programa.</summary>
+    public bool ProgramaWebActivo { get; set; } = true;
 
 
     public bool AlertaActiva(string tipo) =>
@@ -102,6 +109,7 @@ public sealed class AjustesAvisos
         }
 
         ajustes.TiempoActivo = leer(ClaveTiempo) != "0";
+        ajustes.ProgramaWebActivo = leer(ClaveProgramaWeb) != "0";
 
         foreach (var alerta in Alertas)
         {
@@ -126,6 +134,7 @@ public sealed class AjustesAvisos
         yield return (ClaveCca, $"{(CcaActivo ? 1 : 0)}|{(int)CcaDia}|{Hora(CcaHora)}");
         yield return (ClaveS303, $"{(S303Activo ? 1 : 0)}|{Hora(S303Hora)}");
         yield return (ClaveTiempo, TiempoActivo ? "1" : "0");
+        yield return (ClaveProgramaWeb, ProgramaWebActivo ? "1" : "0");
 
         foreach (var alerta in Alertas)
         {

@@ -63,6 +63,10 @@
       <data android:mimeType="message/rfc822" />
     </intent>
     <package android:name="com.google.android.gm" />
+
+    <!-- Tailscale: para saber si está instalada y pedirle que se conecte
+         (com.tailscale.ipn.CONNECT_VPN) si no hay ninguna VPN activa. -->
+    <package android:name="com.tailscale.ipn" />
   </queries>
 
 </manifest>

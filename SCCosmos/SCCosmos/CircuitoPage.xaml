@@ -205,6 +205,30 @@
                                     <DataGridTextColumn Header="Latitud" Binding="{Binding Latitud}" Width="70"/>
                                     <DataGridTextColumn Header="Longitud" Binding="{Binding Longitud}" Width="70"/>
 
+                                    <!-- Días que coméis con la congregación (formulario de los ancianos). En cursiva, los de Configuración -->
+                                    <DataGridTemplateColumn Header="Comidas" Width="125" IsReadOnly="True">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <ui:Button Appearance="Transparent" Padding="6,4" HorizontalAlignment="Left" Cursor="Hand" Click="BtnComidasCongregacion_Click" Tag="{Binding}"
+                                                           ToolTip="Días que coméis con esta congregación: solo esos salen en Hospitalidad del formulario de los ancianos. En cursiva, los de Configuración. Pulsa para cambiarlos.">
+                                                    <TextBlock Text="{Binding TextoComidas}" TextTrimming="CharacterEllipsis">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding ComidasPorDefecto}" Value="True">
+                                                                        <Setter Property="Foreground" Value="{DynamicResource TextFillColorTertiaryBrush}"/>
+                                                                        <Setter Property="FontStyle" Value="Italic"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </ui:Button>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
                                     <DataGridTemplateColumn Header="Acciones" Width="100" IsReadOnly="True">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>

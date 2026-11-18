@@ -66,6 +66,7 @@
   .barra button { width: 100%; background: var(--acento); color:#fff; border:none; padding: 14px; font-size: 18px; font-weight: 600; }
   .barra button:disabled { opacity: .6; }
   .estado { font-size: 14px; color: var(--suave); text-align: center; margin-bottom: 6px; }
+  .guardado { font-size: 13px; color: var(--suave); text-align: center; margin-bottom: 6px; }
   .aviso { border-radius: 12px; padding: 14px; margin-top: 16px; }
   .aviso.ok { background:#e6f4ea; color: var(--ok); }
   .aviso.error { background:#fce8e6; color: var(--error); }
@@ -80,7 +81,21 @@
   .archivo-lista li.ok .estado { color: var(--ok); }
   .archivo-lista li.error .estado { color: var(--error); }
   .grupo-s21 { border-top: 1px dashed var(--borde); margin-top: 10px; padding-top: 8px; }
-  .grupo-s21 > .cab { font-weight: 600; }
+  /* Archivos: el botón «Subir archivos» a la derecha del nombre del tipo (o del grupo). */
+  .cab > h3 { min-width: 0; }
+  .cab button.secundario { margin-top: 0; flex: none; white-space: nowrap; }
+  .acciones { display:flex; align-items:center; gap: 4px; flex: none; }
+  /* Comprobación al enviar: lo que falta, en rojo y con el motivo debajo. */
+  input.invalido, select.invalido, textarea.invalido { border-color: var(--error); box-shadow: 0 0 0 1px var(--error); }
+  .facetas.invalido button { border-color: var(--error); }
+  .bloque.invalido { border-color: var(--error); }
+  .grupo-s21.invalido > .cab strong { color: var(--error); }
+  .error-campo { color: var(--error); font-size: 14px; margin-top: 4px; }
+  .salida > .error-campo { grid-column: 1 / -1; margin-top: -4px; }
+  .error-seccion { background:#fce8e6; color: var(--error); border-radius: 10px; padding: 8px 12px; font-size: 14px; margin: 8px 0; }
+  .aviso ul { margin: 8px 0 0; padding-left: 20px; }
+  .aviso li { margin: 3px 0; }
+  .aviso a { color: inherit; }
   .indice { display:none; }
 
   /* Tableta y PC: más ancho, en columnas y con todo desplegado. */
@@ -123,7 +138,6 @@
 
   <section id="s-reuniones">
     <h2><span class="num">1</span>Reuniones</h2>
-    <p class="ayuda" id="ayuda-reuniones">Día, hora y lugar de cada reunión.</p>
     <div id="reuniones" class="rejilla dos"></div>
     <h3 class="apartado">Salidas a predicar</h3>
     <p class="ayuda">Hora y lugar de la reunión para la predicación de cada salida.</p>
@@ -132,7 +146,7 @@
 
   <section id="s-hospitalidad">
     <h2><span class="num">2</span>Hospitalidad</h2>
-    <p class="ayuda" id="ayuda-comidas">Quién invita a comer cada día.</p>
+    <p class="ayuda oculto" id="ayuda-comidas">Esta semana no hay comidas con la congregación.</p>
     <div id="comidas" class="rejilla dos"></div>
     <div id="alojamiento" class="bloque oculto"></div>
   </section>
@@ -140,26 +154,26 @@
   <section id="s-predicacion">
     <h2><span class="num">3</span>Predicación</h2>
     <p class="ayuda" id="ayuda-predicacion"></p>
+    <p class="error-seccion oculto" id="error-exhibidores"></p>
     <div id="salidas"></div>
   </section>
 
   <section id="s-pastoreo">
     <h2><span class="num">4</span>Pastoreo</h2>
-    <p class="ayuda">Hasta 3 visitas, de miércoles a domingo. Rellenad solo las que tengáis.</p>
+    <p class="ayuda">Hasta 3 visitas, de miércoles a domingo.</p>
     <div id="pastoreo" class="rejilla dos"></div>
     <button type="button" class="secundario" id="mas-pastoreo">+ Añadir otra visita</button>
   </section>
 
   <section id="s-asuntos">
     <h2><span class="num">5</span>Asuntos a tratar</h2>
-    <p class="ayuda">Lo que queréis tratar con el superintendente.</p>
     <div id="asuntos"></div>
     <button type="button" class="secundario" id="mas-asunto">+ Añadir otro asunto</button>
   </section>
 
   <section id="s-archivos" class="oculto">
     <h2><span class="num">6</span>Archivos</h2>
-    <p class="ayuda">La S-61 rellenada y los documentos que pide. Cada archivo se guarda al subirlo (no hace falta pulsar «Enviar») y solo en el ordenador del superintendente. Hasta 50 MB por archivo.</p>
+    <p class="ayuda">La S-61 rellenada y los documentos que pide. Cada archivo se guarda al subirlo (no hace falta pulsar «Enviar») y no se suben a Internet. Hasta 50 MB por archivo.</p>
     <div id="archivos"></div>
   </section>
 
@@ -169,6 +183,7 @@
 
 <div class="barra"><div class="dentro">
   <div class="estado oculto" id="estado"></div>
+  <div class="guardado oculto" id="guardado"></div>
   <button type="button" id="enviar">Enviar</button>
 </div></div>
 
@@ -197,10 +212,9 @@ window.VISITA = /*VISITA*/null;
   const REUNIONES = [
     { clave: "entreSemana", titulo: "Reunión de entre semana", fijo: "Martes", hora: V.horaEntreSemana, enSalon: true },
     { clave: "finDeSemana", titulo: "Reunión del fin de semana", fijo: FINDE, dias: ["Sábado", "Domingo"], hora: V.horaFinDeSemana, enSalon: true },
-    { clave: "ancianos", titulo: "Reunión con los ancianos y siervos ministeriales", fijo: "Viernes" },
+    { clave: "ancianos", titulo: "Reunión con los A/SM", fijo: "Viernes" },
     { clave: "precursores", titulo: "Reunión con los precursores", dias: ["Miércoles", "Sábado"] }
   ];
-  const OTRO_LUGAR = SALON ? "Salón del Reino u otro lugar" : "Dirección o lugar";
   const CLAVE = "programa_" + V.codigo;
   const SC = V.sc || "el superintendente", ESPOSA = V.esposa || "su esposa";
   // Su medio día libre (Configuración de SCCosmos): esa salida se puede
@@ -237,10 +251,10 @@ window.VISITA = /*VISITA*/null;
     return s;
   }
 
-  // ---- Buscador de lugares (OpenStreetMap) ----
-  function lugar(nombre, ayuda) {
+  // ---- Buscador de lugares (OpenStreetMap): una dirección solo vale si se elige de la lista ----
+  function lugar(nombre) {
     const caja = el("div", { className: "busca" });
-    const input = texto(nombre, ayuda || "Escribid y elegid de la lista");
+    const input = texto(nombre, "Dirección");
     const lista = el("div", { className: "sugerencias oculto" });
     const marca = el("div", { className: "marcado oculto", textContent: "✓ Ubicación encontrada" });
     lista.setAttribute("role", "listbox");
@@ -308,12 +322,6 @@ window.VISITA = /*VISITA*/null;
 
   // ---- 1. Reuniones ----
   const reuniones = $("#reuniones"), horasSalidas = $("#horas-salidas");
-  if (V.horaEntreSemana || V.horaFinDeSemana || SALON) {
-    $("#ayuda-reuniones").textContent += " La hora y el lugar de siempre ya vienen puestos: cambiadlos solo si esa semana son otros.";
-  }
-  if (SALON) {
-    $("#ayuda-reuniones").textContent += " Donde no pongáis lugar, será el Salón del Reino.";
-  }
 
   REUNIONES.forEach((r, n) => {
     const b = el("div", { className: "bloque" });
@@ -323,14 +331,14 @@ window.VISITA = /*VISITA*/null;
     const fila = el("div", { className: "fila" });
     if (!r.fijo) fila.append(campo("Día", selectorDia(r.dias)));
     fila.append(campo("Hora", hora("hora")));
-    b.append(fila, campo("Lugar", lugar("lugar", r.enSalon ? "Salón del Reino, dirección…" : OTRO_LUGAR)));
+    b.append(fila, campo("Lugar", lugar("lugar")));
     if (r.hora) poner(b, "hora", r.hora);
     if (r.enSalon && SALON) ponerLugar(b, "lugar", SALON.direccion, SALON.lat, SALON.lon);
     if (n === 0) {
       const copiar = el("button", { type: "button", className: "secundario", textContent: "Usar este lugar en todas las reuniones y salidas" });
       copiar.addEventListener("click", () => {
         const l = leerLugar(b, "lugar");
-        if (!l.texto) { alert("Escribid primero el lugar de esta reunión."); return; }
+        if (!l.lat || !l.lon) { alert("Elegid primero de la lista el lugar de esta reunión."); return; }
         document.querySelectorAll("[data-reunion], [data-salida]").forEach(o => ponerLugar(o, "lugar", l.texto, l.lat, l.lon));
         cambio();
       });
@@ -345,7 +353,7 @@ window.VISITA = /*VISITA*/null;
     const titulo = mayus(diaTexto(d)) + " · " + turno;
     const f = el("div", { className: "salida" });
     f.dataset.salida = fr;
-    const h = hora("hora"), l = lugar("lugar", OTRO_LUGAR);
+    const h = hora("hora"), l = lugar("lugar");
     h.setAttribute("aria-label", "Hora de salida, " + titulo);
     l.querySelector("input").setAttribute("aria-label", "Lugar de salida, " + titulo);
     f.append(el("div", { className: "franja", textContent: titulo }), h, l);
@@ -357,26 +365,25 @@ window.VISITA = /*VISITA*/null;
   // ---- 2. Hospitalidad (solo los días que comen con la congregación) ----
   const comidas = $("#comidas");
   const DIAS_COMIDA = Array.isArray(V.diasComida) ? MIE_A_DOM.filter(d => V.diasComida.includes(d)) : MIE_A_DOM;
-  if (DIAS_COMIDA.length === 0) $("#ayuda-comidas").textContent = "Esta semana no hay comidas con la congregación.";
-  else if (!ANCHO) $("#ayuda-comidas").textContent += " Tocad un día para rellenarlo.";
+  if (DIAS_COMIDA.length === 0) $("#ayuda-comidas").classList.remove("oculto");
   DIAS_COMIDA.forEach(d => {
     const b = el("details", { className: "bloque" });
     b.dataset.comida = d;
     b.append(el("summary", null, el("h3", { textContent: "Comida del " + diaTexto(d) }),
                                  el("span", { className: "resumen" }), el("span", { className: "flecha" })));
-    b.append(campo("Publicador o familia", texto("familia", "Quién invita")),
+    b.append(campo("Publicador o familia", texto("familia")),
              campo("Teléfono", el("input", { type: "tel", name: "telefono" })),
-             campo("Dirección", lugar("direccion", "Calle, número, pueblo")));
+             campo("Dirección", lugar("direccion")));
     comidas.append(b);
   });
 
   const alojamiento = $("#alojamiento");
   if (V.alojamiento) {
     alojamiento.classList.remove("oculto");
-    alojamiento.append(el("h3", { textContent: "Alojamiento (todas las noches)" }),
-                       campo("Publicador o familia", texto("familia", "Quién aloja")),
+    alojamiento.append(el("h3", { textContent: "Alojamiento" }),
+                       campo("Publicador o familia", texto("familia")),
                        campo("Teléfono", el("input", { type: "tel", name: "telefono" })),
-                       campo("Dirección", lugar("direccion", "Calle, número, pueblo")));
+                       campo("Dirección", lugar("direccion")));
   }
 
   // ---- 3. Predicación: quién va (la hora y el lugar de salida, en Reuniones) ----
@@ -451,7 +458,7 @@ window.VISITA = /*VISITA*/null;
   }
 
   function numerar(lista) {
-    [...lista.children].forEach((p, i) => p.querySelector(".n").textContent = "Persona " + (i + 1));
+    [...lista.children].forEach((p, i) => p.querySelector(".n").textContent = "Publicador " + (i + 1));
   }
 
   function elegirFaceta(p, f) {
@@ -473,9 +480,9 @@ window.VISITA = /*VISITA*/null;
       cab.append(quitar);
     }
     b.append(cab,
-             campo("Persona o familia", texto("nombre", "A quién se visita")),
+             campo("Persona o familia", texto("nombre")),
              el("div", { className: "fila" }, campo("Día", selectorDia(MIE_A_DOM)), campo("Hora", hora("hora"))),
-             campo("Dirección", lugar("direccion", "Calle, número, pueblo")),
+             campo("Dirección", lugar("direccion")),
              campo("Descripción (opcional)", el("textarea", { name: "descripcion" })));
     pastoreo.append(b);
     numerarVisitas();
@@ -511,51 +518,92 @@ window.VISITA = /*VISITA*/null;
 
   // ---- 6. Archivos: se suben al momento a la carpeta de la visita, en el PC ----
   const MAX_ARCHIVO = 50 * 1024 * 1024;
+  // Todos son obligatorios menos los marcados como opcionales.
   const ARCHIVOS = [
-    { tipo: "s61", titulo: "Información necesaria para la visita (S-61)", ayuda: "La S-61 rellenada por el coordinador del cuerpo de ancianos." },
-    { tipo: "s21", titulo: "Registro de publicador de la congregación (S-21)", ayuda: "Una tarjeta por publicador. Subidlas por grupos: en cada grupo podéis elegir todas sus tarjetas a la vez." },
+    { tipo: "s61", titulo: "Información necesaria para la visita (S-61)" },
+    { tipo: "s21", titulo: "Registro de publicador de la congregación (S-21)" },
     { tipo: "s88", titulo: "Registro de asistencia a las reuniones de congregación (S-88)" },
-    { tipo: "cuentas", titulo: "Cuentas de la congregación", ayuda: "El archivo actual de las cuentas y el de aprobaciones vigentes, y los dos últimos informes de auditoría." },
-    { tipo: "mantenimiento", titulo: "Cuentas del Comité de Mantenimiento del Salón del Reino", ayuda: "Solo si dos o más congregaciones usan el salón y la vuestra es la de contacto: las cuentas, las aprobaciones vigentes y los dos últimos informes de auditoría." },
+    { tipo: "cuentas", titulo: "Cuentas de la congregación" },
+    { tipo: "mantenimiento", titulo: "Cuentas del Comité de Mantenimiento del Salón del Reino", opcional: true },
     { tipo: "contactos", titulo: "Datos de contacto de todos los publicadores" },
     { tipo: "s13", titulo: "Registro de asignación de territorio (S-13)" },
-    { tipo: "s28", titulo: "Movimiento mensual de publicaciones (S-28)", ayuda: "Solo si sois la congregación coordinadora de idioma. Si informáis el inventario por JW Hub, el informe que se imprime desde JW Hub." },
+    { tipo: "s28", titulo: "Movimiento mensual de publicaciones (S-28)", opcional: true },
     { tipo: "territorios", titulo: "Territorios variados para predicar durante la semana de la visita" },
-    { tipo: "exhibidores", titulo: "Predicación pública con exhibidores", ayuda: "Lugares y horarios aprobados, y los hermanos aprobados para participar." },
-    { tipo: "otros", titulo: "Otros archivos" }
+    { tipo: "exhibidores", titulo: "Predicación pública con exhibidores" },
+    { tipo: "otros", titulo: "Otros archivos", opcional: true }
   ];
   const listas = {};
   let gruposS21 = null, masGrupo = null;
   const tamanoTexto = b => b >= 1048576 ? (b / 1048576).toFixed(1).replace(".", ",") + " MB" : Math.max(1, Math.round(b / 1024)) + " KB";
   const urlArchivo = (tipo, nombre) => location.pathname + "/archivos/" + tipo + "/" + encodeURIComponent(nombre);
 
-  // Lista de un tipo con su botón «Elegir archivos» (se pueden elegir varios a la vez).
+  // Un tipo: su botón «Subir archivos» (se pueden elegir varios a la vez) y su lista.
   function subida(tipo) {
     const ul = el("ul", { className: "archivo-lista" });
     const input = el("input", { type: "file", multiple: true, className: "oculto" });
-    const elegir = el("button", { type: "button", className: "secundario", textContent: "Elegir archivos" });
-    elegir.addEventListener("click", () => input.click());
+    const subir = el("button", { type: "button", className: "secundario", textContent: "Subir archivos" });
+    subir.addEventListener("click", () => input.click());
     input.addEventListener("change", () => { encolar(tipo, [...input.files], ul); input.value = ""; });
     listas[tipo] = ul;
-    return el("div", null, ul, elegir, input);
+    return { subir, ul, input };
   }
 
+  // S-21 por grupos, en las carpetas G1, G2… Su número es el del grupo al importarlas
+  // en SCCosmos, así que no se renumeran: solo se puede quitar el último.
   function nuevoGrupoS21() {
     const n = gruposS21.children.length + 1;
     if (n > 20) return;
-    gruposS21.append(el("div", { className: "grupo-s21" }, el("div", { className: "cab", textContent: "Grupo " + n }), subida("s21-g" + n)));
-    masGrupo.classList.toggle("oculto", n >= 20);
+    const tipo = "s21-g" + n, s = subida(tipo);
+    const g = el("div", { className: "grupo-s21" });
+    const quitar = el("button", { type: "button", className: "quitar quitar-grupo", textContent: "Quitar" });
+    quitar.addEventListener("click", () => quitarGrupoS21(g, tipo, n, quitar));
+    g.append(el("div", { className: "cab" }, el("strong", { textContent: "Grupo " + n }),
+                                             el("span", { className: "acciones" }, s.subir, quitar)),
+             s.ul, s.input);
+    gruposS21.append(g);
+    ordenarGrupos();
+  }
+
+  function ordenarGrupos() {
+    const grupos = [...gruposS21.children];
+    grupos.forEach((g, i) => g.querySelector(".quitar-grupo").classList.toggle("oculto", i === 0 || i < grupos.length - 1));
+    masGrupo.classList.toggle("oculto", grupos.length >= 20);
+  }
+
+  // Quitar un grupo quita también lo que ya se había subido a él.
+  async function quitarGrupoS21(g, tipo, n, boton) {
+    const filas = [...listas[tipo].children];
+    if (filas.some(li => !li.className)) { alert("Esperad a que terminen de subirse los archivos del grupo " + n + "."); return; }
+    const subidos = filas.filter(li => li.dataset.nombre);
+    if (subidos.length && !confirm("¿Quitar el grupo " + n + " y " + (subidos.length === 1 ? "su archivo" : "sus " + subidos.length + " archivos") + "?")) return;
+    boton.disabled = true;
+    for (const li of subidos) {
+      try {
+        const r = await fetch(urlArchivo(tipo, li.dataset.nombre), { method: "DELETE" });
+        if (!r.ok) throw new Error(String(r.status));
+        li.remove();
+      } catch (e) {
+        boton.disabled = false;
+        alert("No se ha podido quitar «" + li.dataset.nombre + "». Volved a intentarlo.");
+        return;
+      }
+    }
+    delete listas[tipo];
+    g.remove();
+    ordenarGrupos();
+    cambio();
   }
 
   function filaArchivo(ul, tipo, nombre, estado, texto) {
     const li = el("li", { className: estado });
     const quitar = el("button", { type: "button", className: "quitar", textContent: "Quitar" });
     quitar.addEventListener("click", async () => {
-      if (!li.dataset.nombre) { li.remove(); return; }
+      // En espera o subiéndose: se cancela y no llega a guardarse en el PC.
+      if (!li.dataset.nombre) { if (li.subida) li.subida.abort(); li.remove(); revalidar(); return; }
       if (!confirm("¿Quitar «" + li.dataset.nombre + "»?")) return;
       try {
         const r = await fetch(urlArchivo(tipo, li.dataset.nombre), { method: "DELETE" });
-        if (r.ok) li.remove();
+        if (r.ok) { li.remove(); revalidar(); }
       } catch (e) { }
     });
     li.append(el("span", { className: "nombre", textContent: nombre }), el("span", { className: "estado", textContent: texto }), quitar);
@@ -592,8 +640,13 @@ window.VISITA = /*VISITA*/null;
       estado.textContent = textoEstado;
       subiendo = false;
       siguiente();
+      if (!subiendo && $("#estado").textContent === ESPERAD) mostrarEstado("");
+      revalidar();
     };
     const xhr = new XMLHttpRequest();
+    li.subida = xhr;
+    xhr.onloadend = () => { li.subida = null; };
+    xhr.onabort = () => fin(false, "Cancelado");
     xhr.open("PUT", urlArchivo(tipo, f.name));
     xhr.upload.onprogress = e => { if (e.lengthComputable) estado.textContent = "Subiendo… " + Math.round(e.loaded * 100 / e.total) + " %"; };
     xhr.onload = () => {
@@ -625,17 +678,17 @@ window.VISITA = /*VISITA*/null;
     $("#s-archivos").classList.remove("oculto");
     const archivos = $("#archivos");
     ARCHIVOS.forEach(a => {
-      const b = el("div", { className: "bloque" }, el("h3", { textContent: a.titulo }));
-      if (a.ayuda) b.append(el("p", { className: "ayuda", textContent: a.ayuda }));
+      const b = el("div", { className: "bloque" });
+      const titulo = el("h3", { textContent: a.titulo + (a.opcional ? " (opcional)" : "") });
       if (a.tipo === "s21") {
         gruposS21 = el("div");
         masGrupo = el("button", { type: "button", className: "secundario", textContent: "+ Añadir grupo" });
-        masGrupo.addEventListener("click", () => nuevoGrupoS21());
-        b.append(gruposS21, masGrupo,
-                 el("div", { className: "grupo-s21" }, el("div", { className: "cab", textContent: "Todas juntas, o en un ZIP o RAR" }), subida("s21")));
+        masGrupo.addEventListener("click", () => { nuevoGrupoS21(); cambio(); });
+        b.append(titulo, gruposS21, masGrupo);
         nuevoGrupoS21();
       } else {
-        b.append(subida(a.tipo));
+        const s = subida(a.tipo);
+        b.append(el("div", { className: "cab" }, titulo, s.subir), s.ul, s.input);
       }
       archivos.append(b);
     });
@@ -733,13 +786,186 @@ window.VISITA = /*VISITA*/null;
     });
   }
 
-  // ---- Guardado en este dispositivo ----
+  // ---- Comprobación antes de enviar ----
+  // Tras el primer intento se repite con cada cambio, para ir quitando lo marcado.
+  const avisoExhibidores = $("#error-exhibidores");
+  let intentado = false;
+  // Una dirección solo vale si se ha elegido de la lista (trae sus coordenadas).
+  const elegida = i => !!(parseFloat(i.dataset.lat) && parseFloat(i.dataset.lon));
+
+  function comprobar() {
+    const errores = [];
+    const falta = (control, texto, donde) => errores.push({ control, texto, donde });
+    const obligatorio = (raiz, nombre, texto, donde) => {
+      const i = raiz.querySelector('[name="' + nombre + '"]');
+      if (i && !i.value.trim()) falta(i, texto, donde);
+    };
+    // Vacía solo es un error si es obligatoria; escrita sin elegirla de la lista, siempre.
+    const direccion = (raiz, nombre, donde, obligatoria) => {
+      const i = raiz.querySelector('[name="' + nombre + '"]');
+      if (!i) return;
+      if (!i.value.trim()) { if (obligatoria) falta(i, "Falta la dirección", donde); }
+      else if (!elegida(i)) falta(i, "Elegid la dirección de la lista", donde);
+    };
+
+    // Reuniones y salidas, todas (la del medio día libre se puede dejar sin programar).
+    reuniones.querySelectorAll("[data-reunion]").forEach(b => {
+      const donde = b.querySelector("h3").textContent;
+      obligatorio(b, "dia", "Falta el día", donde);
+      obligatorio(b, "hora", "Falta la hora", donde);
+      direccion(b, "lugar", donde, true);
+    });
+    horasSalidas.querySelectorAll("[data-salida]").forEach(s => {
+      const donde = "Salida del " + s.querySelector(".franja").textContent.toLowerCase();
+      const libre = s.dataset.salida === LIBRE;
+      if (!libre) obligatorio(s, "hora", "Falta la hora", donde);
+      direccion(s, "lugar", donde, !libre);
+    });
+
+    // Comidas y alojamiento: todos sus datos.
+    comidas.querySelectorAll("[data-comida]").forEach(b => {
+      const donde = b.querySelector("h3").textContent;
+      obligatorio(b, "familia", "Falta el publicador o la familia", donde);
+      obligatorio(b, "telefono", "Falta el teléfono", donde);
+      direccion(b, "direccion", donde, true);
+    });
+    if (V.alojamiento) {
+      obligatorio(alojamiento, "familia", "Falta el publicador o la familia", "Alojamiento");
+      obligatorio(alojamiento, "telefono", "Falta el teléfono", "Alojamiento");
+      direccion(alojamiento, "direccion", "Alojamiento", true);
+    }
+
+    // Quien se añade para predicar: nombre, qué harán y, si es un curso bíblico, la lección.
+    salidas.querySelectorAll(".persona").forEach(p => {
+      const donde = [p.closest("[data-franja]").querySelector("h3").textContent,
+                     p.closest("[data-quien]").querySelector(".titulo").textContent,
+                     p.querySelector(".n").textContent].join(" · ");
+      obligatorio(p, "nombre", "Falta el nombre", donde);
+      if (!p.dataset.faceta) falta(p.querySelector(".facetas"), "Elegid qué harán", donde);
+      else if (p.dataset.faceta === "Curso bíblico") obligatorio(p, "leccion", "Elegid la lección", donde);
+    });
+
+    // Exhibidores, al menos un día, con cada uno.
+    const sinExhibidores = [["sc", SC], ["esposa", ESPOSA]]
+      .filter(([q]) => ![...salidas.querySelectorAll('[data-quien="' + q + '"] .persona')].some(p => p.dataset.faceta === "Exhibidores"))
+      .map(([, nombre]) => nombre);
+    if (sinExhibidores.length) {
+      falta(avisoExhibidores, "Añadid predicación con exhibidores, al menos un día, con " + sinExhibidores.join(" y con ") + ".", "Predicación");
+    }
+
+    // El pastoreo no es obligatorio, pero sus direcciones también se eligen de la lista.
+    pastoreo.querySelectorAll("[data-visita]").forEach(b => direccion(b, "direccion", "Pastoreo · " + b.querySelector(".n").textContent, false));
+
+    // Archivos: todos menos los opcionales; de la S-21, cada grupo.
+    if (V.archivos) {
+      ARCHIVOS.filter(a => !a.opcional).forEach(a => {
+        if (a.tipo === "s21") {
+          [...gruposS21.children].forEach((g, i, grupos) => {
+            if (g.querySelector("li.ok")) return;
+            falta(g, i > 0 && i === grupos.length - 1 ? "Faltan las S-21 de este grupo (si sobra, quitadlo)" : "Faltan las S-21 de este grupo",
+                  "S-21 · " + g.querySelector("strong").textContent);
+          });
+        } else if (!listas[a.tipo].querySelector("li.ok")) {
+          falta(listas[a.tipo].closest(".bloque"), "Falta subir este archivo", a.titulo);
+        }
+      });
+    }
+    return errores;
+  }
+
+  // Cada error, en rojo junto a su campo; abajo, la lista para ir a cada uno.
+  function mostrarErrores(errores, alEnviar) {
+    document.querySelectorAll(".error-campo").forEach(x => x.remove());
+    document.querySelectorAll(".invalido").forEach(x => x.classList.remove("invalido"));
+    avisoExhibidores.classList.add("oculto");
+    errores.forEach(e => {
+      const c = e.control;
+      if (c === avisoExhibidores) { c.textContent = e.texto; c.classList.remove("oculto"); return; }
+      c.classList.add("invalido");
+      const m = el("div", { className: "error-campo", textContent: e.texto });
+      if (c.matches(".bloque, .grupo-s21")) c.append(m);
+      else (c.closest(".busca") || c).after(m);
+    });
+
+    const caja = $("#resultado");
+    if (!errores.length) {
+      if (caja.dataset.tipo === "faltan") { caja.replaceChildren(); delete caja.dataset.tipo; mostrarEstado(""); }
+      return;
+    }
+    mostrarEstado(errores.length === 1 ? "Falta 1 dato por completar" : "Faltan " + errores.length + " datos por completar");
+    const lista = el("ul");
+    errores.slice(0, 12).forEach(e => {
+      const enlace = el("a", { href: "#", textContent: e.donde + ": " + e.texto[0].toLowerCase() + e.texto.slice(1) });
+      enlace.addEventListener("click", ev => { ev.preventDefault(); irA(e.control); });
+      lista.append(el("li", null, enlace));
+    });
+    if (errores.length > 12) lista.append(el("li", { textContent: "y " + (errores.length - 12) + " más" }));
+    caja.dataset.tipo = "faltan";
+    caja.replaceChildren(el("div", { className: "aviso error" }, el("strong", { textContent: "Aún no se ha enviado." }), " Falta por completar:", lista));
+    if (alEnviar) {
+      errores.forEach(e => { const d = e.control.closest("details"); if (d) d.open = true; });
+      irA(errores[0].control);
+    }
+  }
+
+  function irA(c) {
+    const d = c.closest("details");
+    if (d) d.open = true;
+    c.scrollIntoView({ behavior: "smooth", block: "center" });
+    const foco = c.matches("input, select, textarea") ? c : c.querySelector("input:not([type=file]), select, textarea, button");
+    if (foco) setTimeout(() => foco.focus({ preventScroll: true }), 400);
+  }
+
+  function revalidar() {
+    if (intentado) mostrarErrores(comprobar(), false);
+  }
+
+  // ---- Guardado: en este dispositivo y, como borrador, en el PC del superintendente ----
+  // Lo rellenado se guarda solo mientras se escribe, así se puede seguir otro día o
+  // desde otro dispositivo; «Enviar» lo da por terminado (y entonces se comprueba todo).
+  // El servidor admite un envío cada 3 s por enlace: se respeta ese margen.
+  const MARGEN = 3200;
+  const avisoGuardado = $("#guardado");
+  let ultimoPost = 0, esperaBorrador = null, borradorPendiente = false, borradorEnCurso = null, ultimoBorrador = "";
+  const horaActual = () => new Date().toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+  const textoBorrador = () => JSON.stringify(Object.assign(recoger(), { borrador: true }));
+  function mostrarGuardado(t) { avisoGuardado.textContent = t; avisoGuardado.classList.remove("oculto"); }
+
+  function programarBorrador(espera) {
+    borradorPendiente = true;
+    clearTimeout(esperaBorrador);
+    esperaBorrador = setTimeout(() => guardarBorrador(false), Math.max(espera || 2500, ultimoPost + MARGEN - Date.now()));
+  }
+
+  // alSalir: la página se cierra o pasa a segundo plano; se manda ya, sin esperar al margen.
+  function guardarBorrador(alSalir) {
+    clearTimeout(esperaBorrador);
+    if (!borradorPendiente) return;
+    const cuerpo = textoBorrador();
+    if (cuerpo === ultimoBorrador) { borradorPendiente = false; return; }
+    if (!alSalir && (borradorEnCurso || Date.now() - ultimoPost < MARGEN)) { programarBorrador(); return; }
+    borradorPendiente = false;
+    ultimoPost = Date.now();
+    borradorEnCurso = fetch(location.pathname, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: cuerpo, keepalive: alSalir
+    }).then(r => {
+      if (r.ok) { ultimoBorrador = cuerpo; mostrarGuardado("Guardado a las " + horaActual()); }
+      else if (r.status === 429) programarBorrador(MARGEN);
+      // Otro error (el enlace ha caducado…): no se insiste; sigue en este dispositivo.
+    }).catch(() => programarBorrador(15000)) // sin conexión: se vuelve a intentar
+      .finally(() => { borradorEnCurso = null; });
+  }
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") guardarBorrador(true); });
+  window.addEventListener("pagehide", () => guardarBorrador(true));
+
   let esperaGuardar = null;
   function cambio() {
     resumir();
     clearTimeout(esperaGuardar);
     esperaGuardar = setTimeout(() => {
       try { localStorage.setItem(CLAVE, JSON.stringify({ guardado: Date.now(), datos: recoger() })); } catch (e) { }
+      revalidar();
+      programarBorrador();
     }, 300);
   }
   document.addEventListener("input", cambio);
@@ -750,14 +976,20 @@ window.VISITA = /*VISITA*/null;
   const usarEnviado = V.envio && (!borrador || (V.enviadoEn || 0) > (borrador.guardado || 0));
   rellenar(usarEnviado ? V.envio : (borrador && borrador.datos));
   if (ANCHO) document.querySelectorAll("details.bloque").forEach(x => { x.open = true; });
+  // Lo que ya tiene el PC no se vuelve a mandar; lo de este dispositivo que sea más
+  // nuevo (rellenado sin conexión, por ejemplo), sí.
+  if (borrador && !usarEnviado) programarBorrador();
+  else ultimoBorrador = textoBorrador();
 
   $("#cabecera").textContent = [V.congregacion, V.fechas].filter(Boolean).join(" · ");
 
   // ---- Enviar ----
   const boton = $("#enviar"), estado = $("#estado");
+  const ESPERAD = "Esperad a que terminen de subirse los archivos.";
   function mostrarEstado(t) { estado.textContent = t; estado.classList.toggle("oculto", !t); }
   function resultado(ok) {
     const caja = $("#resultado");
+    delete caja.dataset.tipo;
     caja.replaceChildren(el("div", {
       className: "aviso " + (ok ? "ok" : "error"),
       textContent: ok
@@ -767,14 +999,33 @@ window.VISITA = /*VISITA*/null;
     caja.scrollIntoView({ behavior: "smooth" });
   }
   boton.addEventListener("click", async () => {
+    if (subiendo || cola.some(t => t.li.isConnected)) { mostrarEstado(ESPERAD); return; }
+    intentado = true;
+    const errores = comprobar();
+    mostrarErrores(errores, true);
+    if (errores.length) return;
     boton.disabled = true;
     mostrarEstado("Enviando…");
+    // Va después del último borrador, con el margen que pide el servidor.
+    clearTimeout(esperaBorrador);
+    borradorPendiente = false;
+    if (borradorEnCurso) await borradorEnCurso;
+    const falta = ultimoPost + MARGEN - Date.now();
+    if (falta > 0) await new Promise(listo => setTimeout(listo, falta));
+    ultimoPost = Date.now();
     try {
+      // Sin la marca de borrador: está terminado y el PC lo pasa al programa.
       const r = await fetch(location.pathname, {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(recoger())
       });
       if (r.status === 429) { mostrarEstado("Esperad unos segundos y volved a pulsar."); return; }
       mostrarEstado("");
+      if (r.ok) {
+        // Ya está en el PC: lo guardado en este dispositivo sobra.
+        ultimoBorrador = textoBorrador();
+        try { localStorage.removeItem(CLAVE); } catch (e) { }
+        mostrarGuardado("Enviado a las " + horaActual());
+      }
       resultado(r.ok);
     } catch (e) {
       mostrarEstado("");

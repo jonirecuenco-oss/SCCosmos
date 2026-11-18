@@ -60,6 +60,20 @@ public sealed class ServidorProgramaWeb : IDisposable
     /// <summary>Han subido o quitado un archivo (código del enlace). Llega desde otro hilo.</summary>
     public event Action<string>? ArchivosCambiados;
 
+    /// <summary>
+    /// Dirección por la que llegó la petición (cabecera Host) → servidor al que
+    /// mandar la página («https://…»), o null para servirla aquí. Sirve para que
+    /// los enlaces enviados con una dirección anterior lleven al servidor elegido.
+    /// </summary>
+    public Func<string, string?>? Redireccion { get; set; }
+
+    /// <summary>
+    /// Código → cuándo se envió («{"enviado":"…"}»), o null si el enlace no vale.
+    /// Lo pregunta el móvil cada media hora (GET /programa/{código}/estado) para
+    /// avisar aunque la app esté cerrada. Solo lo sabe quien tiene el enlace.
+    /// </summary>
+    public Func<string, string?>? Estado { get; set; }
+
 
     /// <param name="datosVisita">Código → JSON con los datos de la visita para la página (null si no existe).</param>
     /// <param name="guardarEnvio">Código y JSON enviado → si se ha guardado.</param>
@@ -131,7 +145,7 @@ public sealed class ServidorProgramaWeb : IDisposable
 
                 NetworkStream red = cliente.GetStream();
 
-                (string metodo, string ruta, int largo, byte[] sobrante)? peticion =
+                (string metodo, string ruta, int largo, byte[] sobrante, string host)? peticion =
                     await LeerCabecerasAsync(red, limite.Token);
 
                 if (peticion is not { } p)
@@ -140,7 +154,7 @@ public sealed class ServidorProgramaWeb : IDisposable
                     return;
                 }
 
-                await ProcesarAsync(red, p.metodo, p.ruta, p.largo, p.sobrante, limite);
+                await ProcesarAsync(red, p.metodo, p.ruta, p.largo, p.sobrante, p.host, limite);
             }
             catch
             {
@@ -149,9 +163,9 @@ public sealed class ServidorProgramaWeb : IDisposable
     }
 
 
-    // Método, ruta, largo del cuerpo y lo que se leyó de más al buscar el
-    // final de las cabeceras (el principio del cuerpo).
-    private static async Task<(string, string, int, byte[])?> LeerCabecerasAsync(NetworkStream red, CancellationToken token)
+    // Método, ruta, largo del cuerpo, lo que se leyó de más al buscar el
+    // final de las cabeceras (el principio del cuerpo) y la cabecera Host.
+    private static async Task<(string, string, int, byte[], string)?> LeerCabecerasAsync(NetworkStream red, CancellationToken token)
     {
         var acumulado = new MemoryStream();
         byte[] trozo = new byte[4096];
@@ -187,6 +201,7 @@ public sealed class ServidorProgramaWeb : IDisposable
             }
 
             int largo = 0;
+            string host = "";
 
             foreach (string linea in lineas)
             {
@@ -195,9 +210,14 @@ public sealed class ServidorProgramaWeb : IDisposable
                 {
                     return null;
                 }
+
+                if (linea.StartsWith("Host:", StringComparison.OrdinalIgnoreCase))
+                {
+                    host = linea.Substring("Host:".Length).Trim();
+                }
             }
 
-            return (primera[0].ToUpperInvariant(), primera[1], largo, sobrante);
+            return (primera[0].ToUpperInvariant(), primera[1], largo, sobrante, host);
         }
 
         return null;
@@ -218,7 +238,7 @@ public sealed class ServidorProgramaWeb : IDisposable
     }
 
 
-    private async Task ProcesarAsync(NetworkStream red, string metodo, string ruta, int largo, byte[] sobrante, CancellationTokenSource limite)
+    private async Task ProcesarAsync(NetworkStream red, string metodo, string ruta, int largo, byte[] sobrante, string host, CancellationTokenSource limite)
     {
         CancellationToken token = limite.Token;
 
@@ -235,6 +255,29 @@ public sealed class ServidorProgramaWeb : IDisposable
         }
 
         string codigo = partes[1];
+
+        // Un enlace con otra dirección (la de un servidor anterior): la página se
+        // abre en el servidor elegido. Lo demás (envíos y archivos de una página
+        // que ya estaba abierta) se sigue atendiendo aquí: llega por sincronización.
+        if (partes.Length == 2 && metodo == "GET" && Redireccion?.Invoke(host) is { Length: > 0 } destino)
+        {
+            await RedirigirAsync(red, destino.TrimEnd('/') + "/programa/" + codigo, token);
+            return;
+        }
+
+        if (partes.Length == 3 && partes[2] == "estado")
+        {
+            string? estado = metodo == "GET" ? Estado?.Invoke(codigo) : null;
+
+            if (estado is null)
+            {
+                await RechazarAsync(red, 404, "text/plain", "No existe", largo, sobrante, token);
+                return;
+            }
+
+            await ResponderAsync(red, 200, "application/json", estado, token);
+            return;
+        }
 
         if (partes.Length > 2)
         {
@@ -489,6 +532,22 @@ public sealed class ServidorProgramaWeb : IDisposable
         catch
         {
         }
+    }
+
+
+    // Temporal (302, sin guardar en caché): si el servidor vuelve a cambiar, el enlace sigue al nuevo.
+    private static async Task RedirigirAsync(NetworkStream red, string destino, CancellationToken token)
+    {
+        string cabeceras =
+            "HTTP/1.1 302 Found\r\n" +
+            $"Location: {destino}\r\n" +
+            "Content-Length: 0\r\n" +
+            "Cache-Control: no-store\r\n" +
+            "Referrer-Policy: no-referrer\r\n" +
+            "Connection: close\r\n\r\n";
+
+        await red.WriteAsync(Encoding.ASCII.GetBytes(cabeceras), token);
+        await red.FlushAsync(token);
     }
 
 

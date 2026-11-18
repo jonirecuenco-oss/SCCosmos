@@ -337,7 +337,10 @@ public static class TiempoAvisosAndroid
 }
 
 
-/// <summary>Revisión del tiempo cada 30 minutos, aunque la app esté cerrada.</summary>
+/// <summary>
+/// Revisión cada 30 minutos, aunque la app esté cerrada: el tiempo y si los
+/// ancianos han enviado el formulario del programa.
+/// </summary>
 [BroadcastReceiver(
     Enabled = true,
     Exported = false)]
@@ -357,10 +360,26 @@ public class TiempoAlarmReceiver : BroadcastReceiver
                 using var limite =
                     new CancellationTokenSource(TimeSpan.FromSeconds(50));
 
-                await TiempoAemetService.ActualizarEnSegundoPlanoAsync(
-                    limite.Token);
+                Task tiempo = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await TiempoAemetService.ActualizarEnSegundoPlanoAsync(
+                            limite.Token);
 
-                SccosmosWidgetProvider.ActualizarTodos();
+                        SccosmosWidgetProvider.ActualizarTodos();
+                    }
+                    catch
+                    {
+                    }
+                });
+
+                Task programa =
+                    ProgramaWebAvisosAndroid.RevisarAsync(
+                        preguntarServidor: true,
+                        limite.Token);
+
+                await Task.WhenAll(tiempo, programa);
             }
             catch
             {

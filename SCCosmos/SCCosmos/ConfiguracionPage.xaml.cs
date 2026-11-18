@@ -371,6 +371,7 @@ namespace SCCosmos
             ComboMedioDiaLibre.ItemsSource ??= SCCosmos.Sincro.ProgramaWeb.OpcionesMedioDiaLibre;
             ComboMedioDiaLibre.SelectedItem = ProgramaWebPc.MedioDiaLibre();
             PintarDiasComida(ProgramaWebPc.DiasComida());
+            PintarServidorFormulario(ProgramaWebPc.ServidorElegido());
             TxtNumCircuito.Text = DatabaseHelper.ObtenerConfiguracion("NumeroCircuito", "");
             TxtRutaArchivoCircuito.Text = DatabaseHelper.ObtenerConfiguracion("RutaArchivoCircuito", "");
 
@@ -565,6 +566,148 @@ namespace SCCosmos
             DatabaseHelper.GuardarConfiguracion(
                 SCCosmos.Sincro.ProgramaWeb.ClaveDiasComida,
                 SCCosmos.Sincro.ProgramaWeb.TextoDiasComida(activos));
+        }
+
+        // =========================================================================
+        // SERVIDOR DEL FORMULARIO DE LOS ANCIANOS
+        // Se guarda solo al pulsar «Guardar» o «Usar este PC»: cambia los enlaces
+        // de todos los dispositivos, así que no se guarda al salir del campo.
+        // =========================================================================
+
+        private void PintarServidorFormulario(string elegido)
+        {
+            TxtServidorFormulario.Text = elegido;
+
+            if (elegido.Length == 0)
+            {
+                string ultimo = SCCosmos.Sincro.ProgramaWeb.NormalizarDireccion(
+                    DatabaseHelper.ObtenerConfiguracion(SCCosmos.Sincro.ProgramaWeb.ClaveDireccion, ""));
+
+                TxtEstadoServidor.Text =
+                    "Sin elegir: cada PC pone su dirección de Tailscale al crear un enlace"
+                    + (ultimo.Length > 0 ? $" (ahora, {ultimo})." : ".")
+                    + " Elige uno para que los enlaces, se creen donde se creen, vayan siempre a él.";
+                return;
+            }
+
+            string texto =
+                "Los enlaces, se creen en este PC o en el móvil, llevan a esta dirección."
+                + " Ese equipo tiene que tener SCCosmos abierto y estar publicado en Internet (por ejemplo, con Tailscale Funnel).";
+
+            TxtEstadoServidor.Text = texto;
+
+            // Si es este PC se dice, sin esperar a Tailscale (arranca un proceso).
+            System.Threading.Tasks.Task.Run(ProgramaWebPc.DireccionTailscale).ContinueWith(
+                propia =>
+                {
+                    if (propia.Result == elegido && TxtEstadoServidor.Text == texto)
+                    {
+                        TxtEstadoServidor.Text = texto + " Es este PC.";
+                    }
+                },
+                System.Threading.Tasks.TaskScheduler.FromCurrentSynchronizationContext());
+        }
+
+        private void BtnServidorEstePc_Click(object sender, RoutedEventArgs e)
+        {
+            string propia = ProgramaWebPc.DireccionTailscale();
+
+            if (propia.Length == 0)
+            {
+                MessageBox.Show(
+                    "No se encuentra Tailscale en este PC (o no está conectado).\n\n"
+                    + "Escribe la dirección con la que lo publicas en Internet (por ejemplo, la de Cloudflare Tunnel o tu dominio) y pulsa «Guardar».",
+                    "Servidor del formulario", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            CambiarServidor(propia);
+        }
+
+        // Guarda el servidor y, si cambia la dirección de los enlaces, avisa de los que ya se enviaron.
+        private void CambiarServidor(string direccion)
+        {
+            string antes = DireccionEnlacesActual();
+
+            PintarServidorFormulario(ProgramaWebPc.ElegirServidor(direccion));
+
+            string ahora = DireccionEnlacesActual();
+
+            if (antes.Length > 0 && ahora.Length > 0 && !string.Equals(antes, ahora, StringComparison.OrdinalIgnoreCase))
+            {
+                AvisarEnlacesActivos(antes, ahora);
+            }
+        }
+
+        private static string DireccionEnlacesActual() =>
+            SCCosmos.Sincro.ProgramaWeb.DireccionEnlaces(clave => DatabaseHelper.ObtenerConfiguracion(clave, ""));
+
+        // Los enlaces enviados llevan la dirección anterior: ese equipo los manda al
+        // servidor nuevo mientras tenga SCCosmos abierto. Por si se va a apagar,
+        // se ofrecen los enlaces nuevos para reenviarlos.
+        private static void AvisarEnlacesActivos(string antes, string ahora)
+        {
+            var activos = ProgramaWebPc.EnlacesActivos();
+
+            if (activos.Count == 0)
+            {
+                return;
+            }
+
+            var nombres = DatabaseHelper.ObtenerCongregaciones()
+                .GroupBy(c => c.Codigo ?? "")
+                .ToDictionary(g => g.Key, g => g.First().Nombre ?? g.Key);
+
+            var es = System.Globalization.CultureInfo.GetCultureInfo("es-ES");
+
+            string Visita(string congregacion, string mes)
+            {
+                string nombre = nombres.TryGetValue(congregacion, out string? n) && !string.IsNullOrWhiteSpace(n) ? n.Trim() : congregacion;
+
+                return DateTime.TryParseExact(mes + "-01", "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture,
+                           System.Globalization.DateTimeStyles.None, out DateTime primero)
+                    ? $"{nombre} ({primero.ToString("MMMM 'de' yyyy", es)})"
+                    : $"{nombre} ({mes})";
+            }
+
+            string lista = string.Join("\n", activos.Select(a => "• " + Visita(a.Congregacion, a.Mes)));
+
+            string mensaje =
+                (activos.Count == 1 ? "Hay 1 enlace del formulario que todavía vale:" : $"Hay {activos.Count} enlaces del formulario que todavía valen:")
+                + "\n\n" + lista + "\n\n"
+                + $"Los que ya enviaste llevan a {antes}. Seguirán funcionando mientras ese equipo tenga SCCosmos abierto: "
+                + $"los manda solos a {ahora}. Si ese equipo se va a apagar, envía a los ancianos los enlaces nuevos.\n\n"
+                + "¿Copiar los enlaces nuevos al portapapeles?";
+
+            if (MessageBox.Show(mensaje, "Servidor del formulario", MessageBoxButton.YesNo, MessageBoxImage.Information) != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            try
+            {
+                Clipboard.SetText(string.Join("\n", activos.Select(a => $"{Visita(a.Congregacion, a.Mes)}: {a.Enlace}")));
+                MessageBox.Show("Enlaces copiados en el portapapeles");
+            }
+            catch (Exception ex)
+            {
+                RegistroErrores.AnotarSilencioso(ex, "ProgramaWeb.CopiarEnlaces");
+            }
+        }
+
+        private void BtnGuardarServidor_Click(object sender, RoutedEventArgs e)
+        {
+            string escrito = TxtServidorFormulario.Text.Trim();
+
+            if (escrito.Length > 0 && SCCosmos.Sincro.ProgramaWeb.NormalizarDireccion(escrito).Length == 0)
+            {
+                MessageBox.Show(
+                    "Escribe solo la dirección del servidor, sin rutas. Por ejemplo: https://mi-pc.tailxxxx.ts.net",
+                    "Servidor del formulario", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            CambiarServidor(escrito);
         }
 
         // =========================================================================

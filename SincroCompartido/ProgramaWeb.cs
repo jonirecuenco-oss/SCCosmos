@@ -132,11 +132,112 @@ public static class ProgramaWeb
         return lista.Count == 0 ? "Ninguno" : string.Join(",", lista);
     }
 
+    /// <summary>
+    /// Los días de comida propios de una congregación (página Circuito). Vacía:
+    /// los de Configuración. Se sincroniza como el resto de Configuracion.
+    /// </summary>
+    public static string ClaveDiasComidaCongregacion(string congregacion) =>
+        $"ProgramaWeb_DiasComida_{congregacion}";
 
-    // ---- El enlace del formulario (lo sirve el PC con Tailscale Funnel) ----
+    /// <summary>Los días que coméis con esa congregación: los suyos o, sin elegir, los de Configuración.</summary>
+    public static string[] DiasComidaDe(string? congregacion, Func<string, string> leerConfiguracion)
+    {
+        string propios = string.IsNullOrWhiteSpace(congregacion)
+            ? ""
+            : (leerConfiguracion(ClaveDiasComidaCongregacion(congregacion.Trim())) ?? "").Trim();
 
-    /// <summary>La dirección pública del PC («https://equipo.red.ts.net»); la guarda el PC al crear un enlace.</summary>
+        return DiasComida(propios.Length > 0 ? propios : leerConfiguracion(ClaveDiasComida));
+    }
+
+    /// <summary>Resumen corto para una tabla: «Todos», «Ninguno» o «Jue, Sáb».</summary>
+    public static string ResumenDiasComida(IReadOnlyCollection<string> dias) =>
+        dias.Count == 0 ? "Ninguno"
+        : dias.Count == DiasComidaPosibles.Length ? "Todos"
+        : string.Join(", ", DiasComidaPosibles.Where(d => dias.Any(x => Igual(x, d))).Select(d => d.Substring(0, 3)));
+
+
+    // ---- El enlace del formulario (lo sirve un PC con SCCosmos abierto y publicado en Internet) ----
+
+    /// <summary>
+    /// La dirección para los enlaces que leen todas las versiones. Sin servidor
+    /// elegido, la del último PC que creó un enlace (su dirección de Tailscale);
+    /// con servidor elegido, la de ese servidor.
+    /// </summary>
     public const string ClaveDireccion = "ProgramaWeb_Direccion";
+
+    /// <summary>
+    /// El servidor del formulario elegido en Configuración («https://mi-pc.red.ts.net»).
+    /// Con él puesto, todos los enlaces van a esa dirección, se creen en el PC o en
+    /// el móvil, y ningún equipo la cambia por su cuenta. Se sincroniza.
+    /// </summary>
+    public const string ClaveServidor = "ProgramaWeb_Servidor";
+
+    /// <summary>
+    /// La dirección para los enlaces: la del servidor elegido; sin elegir, la del
+    /// último PC que creó un enlace (como hasta ahora). «» si aún no se sabe.
+    /// </summary>
+    public static string DireccionEnlaces(Func<string, string> leerConfiguracion)
+    {
+        string servidor = NormalizarDireccion(leerConfiguracion(ClaveServidor));
+
+        return servidor.Length > 0
+            ? servidor
+            : NormalizarDireccion(leerConfiguracion(ClaveDireccion));
+    }
+
+    /// <summary>
+    /// «https://mi-pc.red.ts.net»: con «https://» si no lo lleva y sin «/» al final.
+    /// «» si no es la dirección de un servidor web (sin rutas, consultas ni usuario).
+    /// </summary>
+    public static string NormalizarDireccion(string? texto)
+    {
+        string direccion = (texto ?? "").Trim().TrimEnd('/');
+
+        if (direccion.Length == 0)
+        {
+            return "";
+        }
+
+        if (!direccion.Contains("://", StringComparison.Ordinal))
+        {
+            direccion = "https://" + direccion;
+        }
+
+        return Uri.TryCreate(direccion, UriKind.Absolute, out Uri? uri)
+               && (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp)
+               && uri.Host.Length > 0
+               && uri.AbsolutePath == "/"
+               && uri.Query.Length == 0
+               && uri.Fragment.Length == 0
+               && uri.UserInfo.Length == 0
+            ? uri.GetLeftPart(UriPartial.Authority)
+            : "";
+    }
+
+    /// <summary>
+    /// Adónde mandar la página pedida con la dirección «host» (cabecera Host):
+    /// al servidor elegido, si llegó por otra dirección (un enlace enviado antes
+    /// de cambiar de servidor). null: servirla aquí. Nunca redirige desde el
+    /// propio servidor elegido («propia», su dirección) ni lo pedido en el
+    /// propio equipo, así que no puede dar vueltas.
+    /// </summary>
+    public static string? DestinoRedireccion(string? host, string? servidor, string? propia)
+    {
+        string elegido = NormalizarDireccion(servidor);
+
+        if (elegido.Length == 0
+            || string.IsNullOrWhiteSpace(host)
+            || !Uri.TryCreate("http://" + host.Trim(), UriKind.Absolute, out Uri? llegada)
+            || llegada.IsLoopback
+            || string.Equals(NormalizarDireccion(propia), elegido, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        return string.Equals(llegada.Host.TrimEnd('.'), new Uri(elegido).Host, StringComparison.OrdinalIgnoreCase)
+            ? null
+            : elegido;
+    }
 
     /// <summary>La variable de las plantillas de correo que se cambia por el enlace.</summary>
     public const string VariableEnlace = "$_ENLACEDOCU";
@@ -160,7 +261,57 @@ public static class ProgramaWeb
     public static string ClaveAplicado(string congregacion, string mes) =>
         $"ProgramaWeb_Aplicado_{congregacion}_{mes}";
 
+    /// <summary>Cómo quedó el programa del mes al pasar lo recibido (si cambia, alguien lo ha tocado).</summary>
+    public static string ClaveHuella(string congregacion, string mes) =>
+        $"ProgramaWeb_Huella_{congregacion}_{mes}";
+
     public const string PrefijoClaveCodigo = "ProgramaWeb_Codigo_";
+
+    /// <summary>
+    /// La última vez que pulsaron «Enviar» y cuántos archivos había subidos
+    /// («2026-11-18T10:30:00|5»). Los borradores posteriores no la cambian.
+    /// Con ella el móvil avisa de cada envío.
+    /// </summary>
+    public static string ClaveEnviado(string congregacion, string mes) =>
+        $"ProgramaWeb_Enviado_{congregacion}_{mes}";
+
+    public static string TextoEnviado(DateTime cuando, int archivos) =>
+        cuando.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture) + "|" + Math.Max(0, archivos);
+
+    /// <summary>Lo guardado con TextoEnviado (null si no hay o no se entiende).</summary>
+    public static (DateTime Cuando, int Archivos)? LeerEnviado(string? valor)
+    {
+        string[] partes = (valor ?? "").Trim().Split('|');
+
+        if (!DateTime.TryParseExact(partes[0], "yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime cuando))
+        {
+            return null;
+        }
+
+        int archivos = partes.Length > 1 && int.TryParse(partes[1], out int n) ? Math.Max(0, n) : 0;
+
+        return (cuando, archivos);
+    }
+
+    private static readonly string[] Meses =
+    {
+        "enero", "febrero", "marzo", "abril", "mayo", "junio",
+        "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+    };
+
+    /// <summary>«diciembre de 2026» para «2026-12» (sin depender del idioma del equipo).</summary>
+    public static string TextoMes(string mes) =>
+        DateTime.TryParseExact(mes + "-01", "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime primero)
+            ? $"{Meses[primero.Month - 1]} de {primero.Year}"
+            : mes;
+
+    /// <summary>La notificación de un envío del formulario (otraVez: ya lo habían enviado antes).</summary>
+    public static (string Titulo, string Texto) AvisoEnviado(string congregacion, string mes, int archivos, bool otraVez) =>
+        ($"Programa recibido: {congregacion}",
+         (otraVez ? "Los ancianos han vuelto a enviar" : "Los ancianos han enviado")
+         + $" el programa de la visita de {TextoMes(mes)}"
+         + (archivos switch { 0 => "", 1 => ", con 1 archivo", _ => $", con {archivos} archivos" })
+         + ".");
 
 
     /// <summary>Código secreto del enlace de una visita (128 bits, sin «+/=»).</summary>

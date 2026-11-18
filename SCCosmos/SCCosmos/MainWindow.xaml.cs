@@ -266,6 +266,10 @@ namespace SCCosmos
             // Tailscale Funnel lo publica).
             ProgramaWebPc.Iniciar();
 
+            // Tailscale (si está instalado): que esté conectado; si se
+            // desconecta, se vuelve a conectar solo.
+            TailscalePc.Iniciar();
+
             // Refresco automático de la página abierta cuando llegan
             // cambios de otro dispositivo.
             SincronizacionPaginas.Iniciar(this);
@@ -275,6 +279,8 @@ namespace SCCosmos
             this.Closed += (s, e) =>
             {
                 SincronizacionRed.Detener();
+
+                TailscalePc.Detener();
 
                 AvisosWindows.Cerrar();
             };
@@ -966,6 +972,11 @@ namespace SCCosmos
                 PopupAlertas.IsOpen = false;
                 MenuPrincipal.Navigate(typeof(TareasPage));
             }
+            else if (tipoAlerta == "Tailscale")
+            {
+                PopupAlertas.IsOpen = false;
+                TailscalePc.AbrirAplicacion();
+            }
         }
 
         private void VerificarAlertas(bool soloSilencioso = false)
@@ -1010,6 +1021,20 @@ namespace SCCosmos
                     Dias = -1,
                     Identidad = "Descargas",
                     TipoAlerta = "DescargaJW"
+                });
+            }
+
+            // 2a. Tailscale: lo que no se arregla solo (si solo estaba desconectado, ya se ha reconectado).
+            if (TailscalePc.Problema.Length > 0)
+            {
+                _alertasActuales.Add(new AlertaItem
+                {
+                    Titulo = "Tailscale no está conectado",
+                    Descripcion = TailscalePc.Problema + " Haz clic aquí para abrirlo.",
+                    ColorBorde = "#E3A008", // Ámbar
+                    Dias = -3,
+                    Identidad = "Tailscale",
+                    TipoAlerta = "Tailscale"
                 });
             }
 

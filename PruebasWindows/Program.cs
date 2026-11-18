@@ -47,6 +47,11 @@ internal static class Programa
             PueblosDelTerritorio();
             RequisitoDeHoras();
             AjustesDeAvisos();
+            ProgramaWebRecibido();
+            Ver("Tailscale: qué hacer según su estado (conectado, desconectado, sin sesión, sin servicio)",
+                string.Join("|", new[] { "{\"BackendState\":\"Running\"}", "{\"BackendState\":\"Stopped\"}", "{\"BackendState\":\"NeedsLogin\"}", "failed to connect to local tailscaled" }
+                    .Select(s => TailscalePc.Interpretar(s).Accion)),
+                "Nada|Conectar|Avisar|Avisar");
             Ver("sin motor de sincronización", SincronizacionRed.Config is null, true);
             string log = Path.Combine(carpeta, "errores.log");
             Ver("sin errores anotados", File.Exists(log) ? File.ReadLines(log).First() : "", "");
@@ -383,6 +388,41 @@ internal static class Programa
         Ver("Web: días de comida guardados", string.Join("|", ProgramaWeb.DiasComida("").Length, ProgramaWeb.DiasComida("Ninguno").Length, ProgramaWeb.TextoDiasComida(ProgramaWeb.DiasComida("sabado, Jueves"))), "5|0|Jueves,Sábado");
         Ver("Web: en el medio día libre no va nadie con ellos", string.Join("|", ProgramaWeb.AEventos(envioWeb, "Miércoles mañana").Eventos.Where(e => e.DiaSemana == "Miércoles" && e.TipoActividad == "Predicación").Select(e => $"{e.Hora} [{e.Responsable}] {e.Notas}")), "10:00 [] Medio día libre");
         Ver("Web: hora y día de la congregación", ProgramaWeb.Hora("19:30h") + " " + ProgramaWeb.Dia("sabado"), "19:30 Sábado");
+        Ver("Comidas: resumen para la tabla de Circuito",
+            string.Join("|", new[] { "", "Ninguno", "sabado,Jueves" }.Select(g => ProgramaWeb.ResumenDiasComida(ProgramaWeb.DiasComida(g)))),
+            "Todos|Ninguno|Jue, Sáb");
+        Ver("Comidas: las de la congregación o, sin elegir, las de Configuración",
+            string.Join("|",
+                string.Join(",", ProgramaWeb.DiasComidaDe("C1", c => c == ProgramaWeb.ClaveDiasComida ? "Jueves" : "")),
+                string.Join(",", ProgramaWeb.DiasComidaDe("C1", c => c == ProgramaWeb.ClaveDiasComida ? "Jueves" : c == ProgramaWeb.ClaveDiasComidaCongregacion("C1") ? "Viernes,Domingo" : "")),
+                ProgramaWeb.DiasComidaDe("C1", c => c == ProgramaWeb.ClaveDiasComida ? "Jueves" : "Ninguno").Length),
+            "Jueves|Viernes,Domingo|0");
+
+        // Aviso en el móvil al pulsar «Enviar»: cuándo y con cuántos archivos; el texto de la notificación.
+        Ver("Enviado: ida y vuelta (y lo que no se entiende)",
+            $"{ProgramaWeb.LeerEnviado(ProgramaWeb.TextoEnviado(new DateTime(2026, 11, 18, 10, 30, 5), 5))} {ProgramaWeb.LeerEnviado("2026-11-18T10:30:05")?.Archivos} {ProgramaWeb.LeerEnviado("") is null} {ProgramaWeb.LeerEnviado("ayer|3") is null}",
+            $"{(new DateTime(2026, 11, 18, 10, 30, 5), 5)} 0 True True");
+        Ver("Enviado: la notificación",
+            string.Join(" / ",
+                ProgramaWeb.AvisoEnviado("Navalmoral", "2026-12", 5, false).Titulo,
+                ProgramaWeb.AvisoEnviado("Navalmoral", "2026-12", 5, false).Texto,
+                ProgramaWeb.AvisoEnviado("Navalmoral", "2027-01", 1, true).Texto,
+                ProgramaWeb.AvisoEnviado("Navalmoral", "2027-01", 0, false).Texto),
+            "Programa recibido: Navalmoral / Los ancianos han enviado el programa de la visita de diciembre de 2026, con 5 archivos."
+            + " / Los ancianos han vuelto a enviar el programa de la visita de enero de 2027, con 1 archivo."
+            + " / Los ancianos han enviado el programa de la visita de enero de 2027.");
+
+        // Enlaces enviados con la dirección de un servidor anterior: a la página del servidor elegido.
+        Ver("Redirección: solo lo que llega por otra dirección, nunca en el propio servidor ni sin servidor elegido",
+            string.Join("|",
+                ProgramaWeb.DestinoRedireccion("pc-viejo.tail.ts.net", "https://pc-nuevo.tail.ts.net", "https://pc-viejo.tail.ts.net") ?? "aquí",
+                ProgramaWeb.DestinoRedireccion("PC-NUEVO.tail.ts.net:443", "https://pc-nuevo.tail.ts.net", "") ?? "aquí",
+                ProgramaWeb.DestinoRedireccion("localhost:47320", "https://pc-nuevo.tail.ts.net", "") ?? "aquí",
+                ProgramaWeb.DestinoRedireccion("127.0.0.1:47320", "https://pc-nuevo.tail.ts.net", "") ?? "aquí",
+                ProgramaWeb.DestinoRedireccion("pc-viejo.tail.ts.net", "", "") ?? "aquí",
+                ProgramaWeb.DestinoRedireccion("otro.dominio.es", "https://pc-nuevo.tail.ts.net", "https://pc-nuevo.tail.ts.net") ?? "aquí",
+                ProgramaWeb.DestinoRedireccion("", "https://pc-nuevo.tail.ts.net", "") ?? "aquí"),
+            "https://pc-nuevo.tail.ts.net|aquí|aquí|aquí|aquí|aquí|aquí");
 
         // El servidor del formulario: solo /programa/{código}, y solo con un código que exista.
         string codigoPrueba = ProgramaWeb.NuevoCodigo();
@@ -395,11 +435,25 @@ internal static class Programa
                    "<html><script>window.VISITA = /*VISITA*/null;</script></html>",
                    c => c == codigoPrueba ? carpetaPrueba : null))
         {
+            servidor.Redireccion = host => ProgramaWeb.DestinoRedireccion(host, "https://pc-nuevo.tail.ts.net", "");
+            servidor.Estado = c => c == codigoPrueba ? "{\"enviado\":\"2026-11-18T10:30:00|2\"}" : null;
             servidor.Iniciar();
             using var http = new System.Net.Http.HttpClient { BaseAddress = new Uri("http://127.0.0.1:47399") };
+
+            using var sinSeguir = new System.Net.Http.HttpClient(new System.Net.Http.HttpClientHandler { AllowAutoRedirect = false }) { BaseAddress = new Uri("http://127.0.0.1:47399") };
+            using var antigua = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Get, "/programa/" + codigoPrueba);
+            antigua.Headers.Host = "pc-viejo.tail.ts.net";
+            var redirigida = sinSeguir.SendAsync(antigua).Result;
+            Ver("Servidor: enlace con la dirección antigua, al servidor elegido",
+                $"{(int)redirigida.StatusCode} {redirigida.Headers.Location} {redirigida.Headers.CacheControl?.NoStore}",
+                $"302 https://pc-nuevo.tail.ts.net/programa/{codigoPrueba} True");
             var pagina = http.GetAsync("/programa/" + codigoPrueba).Result;
             Ver("Servidor: la página, con los datos de la visita", (int)pagina.StatusCode + " " + pagina.Content.ReadAsStringAsync().Result.Contains("window.VISITA = {\"codigo\":\"x\"};"), "200 True");
             Ver("Servidor: código que no existe", (int)http.GetAsync("/programa/" + ProgramaWeb.NuevoCodigo()).Result.StatusCode, 404);
+            var estadoEnvio = http.GetAsync("/programa/" + codigoPrueba + "/estado").Result;
+            Ver("Servidor: cuándo se envió, para el móvil (y nada con otro código)",
+                $"{(int)estadoEnvio.StatusCode} {estadoEnvio.Content.ReadAsStringAsync().Result} {(int)http.GetAsync("/programa/" + ProgramaWeb.NuevoCodigo() + "/estado").Result.StatusCode}",
+                "200 {\"enviado\":\"2026-11-18T10:30:00|2\"} 404");
             Ver("Servidor: otra ruta", (int)http.GetAsync("/admin").Result.StatusCode, 404);
             var envio = http.PostAsync("/programa/" + codigoPrueba, new System.Net.Http.StringContent("{\"version\":1}", System.Text.Encoding.UTF8, "application/json")).Result;
             Ver("Servidor: envío guardado", (int)envio.StatusCode + " " + recibidoPrueba, "200 {\"version\":1}");
@@ -433,6 +487,10 @@ internal static class Programa
         var vacio = AjustesAvisos.Leer(_ => "");
         Ver("Avisos: sin nada guardado, como siempre", $"{vacio.AlertaActiva("S302")}|{vacio.DiasAlerta("S302")}|{vacio.DiasAlerta("Documentacion")}|{vacio.DiasAlerta("Recordatorio")}|{vacio.TiempoActivo}|{vacio.CcaActivo}|{vacio.S303Activo}", "True|90|42|60|True|False|False");
         Ver("Avisos: el S-303 pendiente ya no es alerta", AjustesAvisos.Alertas.Any(a => a.Tipo == "S303"), false);
+        var sinFormulario = new AjustesAvisos { ProgramaWebActivo = false }.Valores().ToDictionary(v => v.Clave, v => v.Valor);
+        Ver("Avisos: el del formulario de los ancianos, activo sin nada guardado; se puede apagar",
+            $"{vacio.ProgramaWebActivo} {AjustesAvisos.Leer(c => sinFormulario.TryGetValue(c, out string v) ? v : "").ProgramaWebActivo}",
+            "True False");
 
         var ajustes = new AjustesAvisos { CcaActivo = true, CcaDia = DayOfWeek.Monday, CcaHora = new TimeSpan(9, 30, 0), S303Activo = true, S303Hora = new TimeSpan(21, 0, 0), TiempoActivo = false };
         ajustes.PonerAlerta("Documentacion", false, 30);
@@ -444,6 +502,92 @@ internal static class Programa
         Ver("Avisos: CCA el jueves de antes", AjustesAvisos.DiaCca(martes, DayOfWeek.Thursday), new DateTime(2026, 11, 12));
         Ver("Avisos: CCA el lunes de antes", AjustesAvisos.DiaCca(martes, DayOfWeek.Monday), new DateTime(2026, 11, 16));
         Ver("Avisos: CCA en martes, el de la semana antes", AjustesAvisos.DiaCca(martes, DayOfWeek.Tuesday), new DateTime(2026, 11, 10));
+    }
+
+    // Lo que llega del formulario web: el borrador se guarda sin tocar el programa; lo enviado
+    // completo pasa solo al programa, también al reenviarlo, salvo que se haya cambiado a mano.
+    private static void ProgramaWebRecibido()
+    {
+        // Las bases reales tienen Ubicacion (EsquemaBase); la de pruebas, creada por Windows, no.
+        if (Texto("SELECT COUNT(*) FROM pragma_table_info('ProgramaVisitaV2') WHERE name = 'Ubicacion'") == "0")
+        {
+            Exec("ALTER TABLE ProgramaVisitaV2 ADD COLUMN Ubicacion TEXT");
+        }
+
+        Exec("INSERT INTO Congregaciones (Codigo, Nombre, DireccionSR) VALUES ('WEB1', 'Congregación Web', 'Calle del Salón 1')");
+        Exec("INSERT INTO Semanas (FechaMartes, Actividad, Congregacion) VALUES ('2026-12-01', 'Visita', 'Congregación Web')");
+        string codigo = ProgramaWeb.NuevoCodigo();
+        DatabaseHelper.GuardarConfiguracion(ProgramaWeb.ClaveCodigo("WEB1", "2026-12"), codigo);
+        Ver("Enlace: ya creado para esa visita, no para otra (y sin crearlo al mirar)",
+            $"{ProgramaWebPc.TieneEnlace("WEB1", "2026-12")} {ProgramaWebPc.TieneEnlace("WEB1", "2027-01")} {DatabaseHelper.VisitasConEnlaceProgramaWeb().Contains("WEB1_2026-12")} {ProgramaWebPc.TieneEnlace("WEB1", "2027-01")}",
+            "True False True False");
+        Ver("Calendario: enlace creado e importación hecha, en verde",
+            $"{new SemanaCalendario { EnlaceGenerado = true }.ColorBotonEnlace} {new SemanaCalendario().ColorBotonEnlace} {new SemanaCalendario { TieneDatosImportados = true }.ColorBotonImportar}",
+            "#10893E Transparent #10893E");
+
+        string envio = """{"version":1,"reuniones":{"entreSemana":{"hora":"19:00","lugar":""},"ancianos":{"hora":"20:00","lugar":"Calle A 1","lat":39.9,"lon":-6.1}}}""";
+        string borrador = envio.Replace("{\"version\":1,", "{\"version\":1,\"borrador\":true,");
+        string Filas() => Texto("SELECT COUNT(*) FROM ProgramaVisitaV2 WHERE CongreCodigo = 'WEB1' AND MesReferencia = '2026-12'");
+        string HoraAsm() => Texto("SELECT Hora FROM ProgramaVisitaV2 WHERE CongreCodigo = 'WEB1' AND TipoActividad = 'Reunión de A/SM'");
+
+        string Enviado() => DatabaseHelper.ObtenerConfiguracion(ProgramaWeb.ClaveEnviado("WEB1", "2026-12"), "");
+        Ver("Web recibido: el borrador se guarda y no toca el programa",
+            $"{ProgramaWebPc.Recibir(codigo, borrador)} {ProgramaWebPc.Recibido("WEB1", "2026-12")?.Completo} {Filas()} [{Enviado()}]", "True False 0 []");
+        Ver("Web recibido: lo enviado pasa solo al programa",
+            $"{ProgramaWebPc.Recibir(codigo, envio)} {ProgramaWebPc.Recibido("WEB1", "2026-12")?.Completo} {Filas()} {ProgramaWebPc.Aplicado("WEB1", "2026-12").HasValue}", "True True 2 True");
+        string enviadoAntes = Enviado();
+        Ver("Web recibido: al pulsar «Enviar» se apunta cuándo (para avisar en el móvil)",
+            $"{ProgramaWeb.LeerEnviado(enviadoAntes)?.Cuando.Date == DateTime.Today} {ProgramaWebPc.EstadoJson(codigo) == "{\"enviado\":\"" + enviadoAntes + "\"}"} {ProgramaWebPc.EstadoJson(ProgramaWeb.NuevoCodigo()) is null}",
+            "True True True");
+        System.Threading.Thread.Sleep(1100);
+        ProgramaWebPc.Recibir(codigo, borrador);
+        Ver("Web recibido: lo que siguen escribiendo después no cambia cuándo se envió", Enviado(), enviadoAntes);
+        Ver("Web recibido: sin lugar, el del salón",
+            Texto("SELECT Direccion FROM ProgramaVisitaV2 WHERE CongreCodigo = 'WEB1' AND TipoActividad = 'Reunión entre semana'"), "Calle del Salón 1");
+        ProgramaWebPc.Recibir(codigo, envio.Replace("20:00", "20:30"));
+        Ver("Web recibido: al reenviarlo, el programa se actualiza", HoraAsm(), "20:30");
+        Exec("UPDATE ProgramaVisitaV2 SET Hora = '21:00' WHERE CongreCodigo = 'WEB1' AND TipoActividad = 'Reunión de A/SM'");
+        ProgramaWebPc.Recibir(codigo, envio);
+        Ver("Web recibido: con cambios a mano, no se pisa", $"{HoraAsm()} {ProgramaWebPc.ProgramaSinTocar("WEB1", "2026-12")}", "21:00 False");
+        DatabaseHelper.GuardarConfiguracion(ProgramaWeb.ClaveRecibido("WEB1", "2026-12"), "{\"recibido\":\"2026-11-17T10:00:00\",\"datos\":{\"version\":1}}");
+        Ver("Web recibido: lo guardado antes de los borradores cuenta como enviado", ProgramaWebPc.Recibido("WEB1", "2026-12")?.Completo, true);
+
+        // Servidor del formulario elegido en Configuración: todos los enlaces van a él y nadie lo cambia.
+        Ver("Servidor: direcciones aceptadas",
+            string.Join("|", ProgramaWeb.NormalizarDireccion("mi-pc.tail.ts.net/"), ProgramaWeb.NormalizarDireccion(" http://192.168.1.5:47320 "),
+                ProgramaWeb.NormalizarDireccion("https://x.es/ruta"), ProgramaWeb.NormalizarDireccion("no es una dirección")),
+            "https://mi-pc.tail.ts.net|http://192.168.1.5:47320||");
+        DatabaseHelper.GuardarConfiguracion(ProgramaWeb.ClaveDireccion, "https://otro-pc.ts.net");
+        ProgramaWebPc.ElegirServidor("servidor.ejemplo.org");
+        Ver("Servidor elegido: los enlaces van a él (también en la clave que leen las versiones anteriores)",
+            $"{ProgramaWebPc.DireccionPublica()} {ProgramaWebPc.Enlace("WEB1", "2026-12")} {DatabaseHelper.ObtenerConfiguracion(ProgramaWeb.ClaveDireccion, "")} {ProgramaWeb.DireccionEnlaces(c => DatabaseHelper.ObtenerConfiguracion(c, ""))}",
+            $"https://servidor.ejemplo.org https://servidor.ejemplo.org/programa/{codigo} https://servidor.ejemplo.org https://servidor.ejemplo.org");
+        Ver("Cambio de servidor: los enlaces que aún valen, con la dirección nueva",
+            string.Join("|", ProgramaWebPc.EnlacesActivos().Select(a => $"{a.Congregacion} {a.Mes} {a.Enlace}")),
+            $"WEB1 2026-12 https://servidor.ejemplo.org/programa/{codigo}");
+        Ver("Cambio de servidor: este PC manda los enlaces antiguos al elegido (lo de dentro del PC, no)",
+            $"{ProgramaWebPc.DestinoRedireccion("pc-viejo.tail.ts.net") ?? "aquí"} {ProgramaWebPc.DestinoRedireccion("servidor.ejemplo.org") ?? "aquí"} {ProgramaWebPc.DestinoRedireccion("localhost:47320") ?? "aquí"}",
+            "https://servidor.ejemplo.org aquí aquí");
+        ProgramaWebPc.ElegirServidor("");
+        Ver("Servidor sin elegir: vuelve a ser automático", ProgramaWebPc.ServidorElegido(), "");
+        Ver("Servidor sin elegir: no se redirige nada", ProgramaWebPc.DestinoRedireccion("pc-viejo.tail.ts.net") ?? "aquí", "aquí");
+
+        // Comidas con la congregación: las de Configuración, salvo que la congregación tenga las suyas (Circuito).
+        DatabaseHelper.GuardarConfiguracion(ProgramaWeb.ClaveDiasComida, "Jueves,Viernes");
+        string ComidasWeb1() => string.Join(",", ProgramaWebPc.DiasComida("WEB1")) + " " + ProgramaWebPc.TieneDiasComidaPropios("WEB1");
+        Ver("Comidas: sin elegir en la congregación, las de Configuración", ComidasWeb1(), "Jueves,Viernes False");
+        ProgramaWebPc.GuardarDiasComida("WEB1", new[] { "Domingo", "Viernes" });
+        Ver("Comidas: las propias de la congregación, también en el enlace",
+            $"{ComidasWeb1()} {ProgramaWebPc.DatosVisitaJson(codigo, "WEB1", "2026-12").Contains("\"diasComida\":[\"Viernes\",\"Domingo\"]")}",
+            "Viernes,Domingo True True");
+        Ver("Comidas: al recibirlo, solo las de los días de esa congregación",
+            string.Join(",", ProgramaWebPc.EventosRecibidos("WEB1", "{\"version\":1,\"comidas\":[{\"dia\":\"Jueves\",\"familia\":\"A\"},{\"dia\":\"Viernes\",\"familia\":\"B\"}]}").Select(e => e.DiaSemana)),
+            "Viernes");
+        ProgramaWebPc.GuardarDiasComida("WEB1", Array.Empty<string>());
+        Ver("Comidas: ningún día con esa congregación", $"{ComidasWeb1()} {ProgramaWebPc.DatosVisitaJson(codigo, "WEB1", "2026-12").Contains("\"diasComida\":[]")}", " True True");
+        ProgramaWebPc.GuardarDiasComida("WEB1", null);
+        Ver("Comidas: «Como en Configuración» vuelve a las generales", ComidasWeb1(), "Jueves,Viernes False");
+        DatabaseHelper.GuardarConfiguracion(ProgramaWeb.ClaveDiasComida, "");
     }
 
     private static void Ver(string que, object obtenido, object esperado)

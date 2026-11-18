@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -12,9 +13,10 @@ namespace SCCosmos
     /// <summary>
     /// El formulario web del programa de la visita, servido desde este PC:
     /// el servidor solo escucha en el propio equipo y Tailscale Funnel lo
-    /// publica con la dirección https del PC. Lo que envían los ancianos se
-    /// guarda en Configuracion (llega al móvil con la sincronización) y se
-    /// pasa al programa desde la pestaña Programa de la visita.
+    /// publica con la dirección https del PC. Lo que van rellenando los
+    /// ancianos se guarda en Configuracion (llega al móvil con la
+    /// sincronización); al enviarlo completo, se pasa solo al programa de la
+    /// visita, salvo que ese programa tenga cambios hechos a mano.
     /// </summary>
     public static class ProgramaWebPc
     {
@@ -24,8 +26,11 @@ namespace SCCosmos
 
         private static ServidorProgramaWeb _servidor;
 
-        /// <summary>Ha llegado un envío (código de congregación y mes). Llega desde otro hilo.</summary>
+        /// <summary>Ha llegado algo del formulario, borrador o envío (código de congregación y mes). Llega desde otro hilo.</summary>
         public static event Action<string, string> EnvioRecibido;
+
+        /// <summary>Lo enviado ya está en el programa de la visita (congregación y mes). Llega desde otro hilo.</summary>
+        public static event Action<string, string> ProgramaPasado;
 
         /// <summary>Han subido o quitado archivos de una visita (congregación y mes). Llega desde otro hilo.</summary>
         public static event Action<string, string> ArchivosRecibidos;
@@ -45,7 +50,7 @@ namespace SCCosmos
 
             try
             {
-                _servidor = new ServidorProgramaWeb(Puerto, DatosVisita, GuardarEnvio, LeerPagina(), CarpetaParaCodigo);
+                _servidor = new ServidorProgramaWeb(Puerto, DatosVisita, Recibir, LeerPagina(), CarpetaParaCodigo);
                 _servidor.ArchivosCambiados += codigo =>
                 {
                     if (DatabaseHelper.BuscarVisitaProgramaWeb(codigo) is { } visita)
@@ -53,6 +58,8 @@ namespace SCCosmos
                         ArchivosRecibidos?.Invoke(visita.Congregacion, visita.Mes);
                     }
                 };
+                _servidor.Redireccion = DestinoRedireccion;
+                _servidor.Estado = EstadoJson;
                 _servidor.Iniciar();
             }
             catch (Exception ex)
@@ -79,6 +86,30 @@ namespace SCCosmos
             DatabaseHelper.BuscarVisitaProgramaWeb(codigo) is { } visita && !Caducado(visita.Congregacion, visita.Mes)
                 ? DatosVisitaJson(codigo, visita.Congregacion, visita.Mes)
                 : null;
+
+
+        /// <summary>Cuándo pulsaron «Enviar» por última vez («» si aún no), para el móvil.</summary>
+        public static string? EstadoJson(string codigo) =>
+            DatabaseHelper.BuscarVisitaProgramaWeb(codigo) is { } visita && !Caducado(visita.Congregacion, visita.Mes)
+                ? new JsonObject
+                {
+                    ["enviado"] = DatabaseHelper.ObtenerConfiguracion(ProgramaWeb.ClaveEnviado(visita.Congregacion, visita.Mes), "")
+                }.ToJsonString()
+                : null;
+
+
+        private static int ArchivosSubidos(string congregacion, string mes)
+        {
+            try
+            {
+                return ArchivosProgramaWeb.Subidos(CarpetaArchivos(congregacion, mes)).Count;
+            }
+            catch (Exception ex)
+            {
+                RegistroErrores.AnotarSilencioso(ex, "ProgramaWeb.ArchivosSubidos");
+                return 0;
+            }
+        }
 
 
         private static string CarpetaParaCodigo(string codigo) =>
@@ -219,7 +250,7 @@ namespace SCCosmos
                 ["diaFinDeSemana"] = diaFinDeSemana is "Sábado" or "Domingo" ? diaFinDeSemana : "",
                 ["horaFinDeSemana"] = ProgramaWeb.Hora(datosCongregacion?.HoraFinSemana ?? ""),
                 ["medioDiaLibre"] = MedioDiaLibre(),
-                ["diasComida"] = new JsonArray(DiasComida().Select(d => (JsonNode)d).ToArray()),
+                ["diasComida"] = new JsonArray(DiasComida(congregacion).Select(d => (JsonNode)d).ToArray()),
                 ["archivos"] = true,
                 ["extensiones"] = new JsonArray(ArchivosProgramaWeb.Extensiones.Select(x => (JsonNode)x).ToArray()),
                 ["envio"] = envio,
@@ -241,7 +272,30 @@ namespace SCCosmos
             ProgramaWeb.DiasComida(DatabaseHelper.ObtenerConfiguracion(ProgramaWeb.ClaveDiasComida, ""));
 
 
-        private static bool GuardarEnvio(string codigo, string json)
+        /// <summary>Los días que coméis con esa congregación: los elegidos en Circuito o, si no, los de Configuración.</summary>
+        public static string[] DiasComida(string congregacion) =>
+            ProgramaWeb.DiasComidaDe(congregacion, clave => DatabaseHelper.ObtenerConfiguracion(clave, ""));
+
+
+        /// <summary>Si la congregación tiene sus propios días de comida (si no, valen los de Configuración).</summary>
+        public static bool TieneDiasComidaPropios(string congregacion) =>
+            !string.IsNullOrWhiteSpace(congregacion)
+            && DatabaseHelper.ObtenerConfiguracion(ProgramaWeb.ClaveDiasComidaCongregacion(congregacion.Trim()), "").Trim().Length > 0;
+
+
+        /// <summary>Guarda los días de comida de la congregación (null: vuelve a los de Configuración).</summary>
+        public static void GuardarDiasComida(string congregacion, IEnumerable<string>? dias) =>
+            DatabaseHelper.GuardarConfiguracion(
+                ProgramaWeb.ClaveDiasComidaCongregacion(congregacion.Trim()),
+                dias is null ? "" : ProgramaWeb.TextoDiasComida(dias));
+
+
+        /// <summary>
+        /// Lo que llega del formulario. Mientras lo rellenan llega como borrador
+        /// («borrador»: true) y se guarda, para seguir otro día o desde otro
+        /// dispositivo. Al enviarlo completo, se pasa solo al programa de la visita.
+        /// </summary>
+        public static bool Recibir(string codigo, string json)
         {
             if (DatabaseHelper.BuscarVisitaProgramaWeb(codigo) is not { } visita)
             {
@@ -264,9 +318,14 @@ namespace SCCosmos
                 return false;
             }
 
+            // Sin la marca de borrador (como los envíos de antes), está completo.
+            bool completo = !(datos["borrador"] is JsonValue marca && marca.TryGetValue(out bool esBorrador) && esBorrador);
+            datos.Remove("borrador");
+
             var guardado = new JsonObject
             {
                 ["recibido"] = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture),
+                ["completo"] = completo,
                 ["datos"] = datos
             };
 
@@ -274,14 +333,108 @@ namespace SCCosmos
                 ProgramaWeb.ClaveRecibido(visita.Congregacion, visita.Mes),
                 guardado.ToJsonString());
 
+            if (completo)
+            {
+                // Han pulsado «Enviar»: lo ve el móvil (sincronizado o preguntando) y avisa.
+                DatabaseHelper.GuardarConfiguracion(
+                    ProgramaWeb.ClaveEnviado(visita.Congregacion, visita.Mes),
+                    ProgramaWeb.TextoEnviado(DateTime.Now, ArchivosSubidos(visita.Congregacion, visita.Mes)));
+
+                PasarSolo(visita.Congregacion, visita.Mes, datos.ToJsonString());
+            }
+
             EnvioRecibido?.Invoke(visita.Congregacion, visita.Mes);
 
             return true;
         }
 
 
-        /// <summary>Lo último que enviaron los ancianos para esa visita (null si nada).</summary>
-        public static (DateTime Cuando, string Json)? Recibido(string congregacion, string mes)
+        // Lo enviado pasa solo al programa si el del mes está vacío o tal como
+        // quedó la última vez; si alguien lo ha cambiado a mano, no se pisa
+        // (se pasa desde la pestaña Programa, con «Pasar al programa»).
+        private static void PasarSolo(string congregacion, string mes, string json)
+        {
+            try
+            {
+                if (!ProgramaSinTocar(congregacion, mes))
+                {
+                    return;
+                }
+
+                List<EventoProgramaVisita> eventos = EventosRecibidos(congregacion, json);
+
+                if (eventos.Count > 0)
+                {
+                    PasarAlPrograma(congregacion, mes, eventos);
+                    ProgramaPasado?.Invoke(congregacion, mes);
+                }
+            }
+            catch (Exception ex)
+            {
+                RegistroErrores.AnotarSilencioso(ex, "ProgramaWeb.PasarSolo");
+            }
+        }
+
+
+        /// <summary>Si el programa del mes está vacío o igual que cuando se pasó lo recibido por última vez.</summary>
+        public static bool ProgramaSinTocar(string congregacion, string mes)
+        {
+            string actual = DatabaseHelper.HuellaProgramaMes(congregacion, mes);
+
+            return actual.Length == 0
+                || actual == DatabaseHelper.ObtenerConfiguracion(ProgramaWeb.ClaveHuella(congregacion, mes), "");
+        }
+
+
+        /// <summary>
+        /// Lo recibido, como actividades del programa: en el medio día libre no va
+        /// nadie con vosotros, solo cuentan las comidas de los días que coméis con
+        /// la congregación y, en reuniones y salidas sin lugar, el del salón (como con el PDF).
+        /// </summary>
+        public static List<EventoProgramaVisita> EventosRecibidos(string congregacion, string json)
+        {
+            var (eventos, _) = ProgramaWeb.AEventos(json, MedioDiaLibre(), DiasComida(congregacion));
+
+            string direccionSalon =
+                DatabaseHelper.ObtenerCongregaciones()
+                    .FirstOrDefault(c => string.Equals(c.Codigo, congregacion, StringComparison.OrdinalIgnoreCase))
+                    ?.DireccionSR?.Trim() ?? "";
+
+            if (direccionSalon.Length > 0)
+            {
+                foreach (var evento in eventos.Where(ev =>
+                             string.IsNullOrWhiteSpace(ev.Ubicacion)
+                             && (ev.TipoActividad.StartsWith("Reunión", StringComparison.OrdinalIgnoreCase)
+                                 || ev.TipoActividad == "Predicación")))
+                {
+                    evento.Ubicacion = direccionSalon;
+                }
+            }
+
+            return eventos;
+        }
+
+
+        /// <summary>Sustituye el programa del mes por esas actividades y apunta cómo quedó.</summary>
+        public static int PasarAlPrograma(string congregacion, string mes, List<EventoProgramaVisita> eventos)
+        {
+            int creados = DatabaseHelper.ReemplazarProgramaMesVisita(congregacion, mes, eventos);
+
+            MarcarAplicado(congregacion, mes);
+
+            DatabaseHelper.GuardarConfiguracion(
+                ProgramaWeb.ClaveHuella(congregacion, mes),
+                DatabaseHelper.HuellaProgramaMes(congregacion, mes));
+
+            return creados;
+        }
+
+
+        /// <summary>
+        /// Lo último que llegó del formulario para esa visita (null si nada) y si
+        /// lo enviaron completo o es un borrador a medias.
+        /// </summary>
+        public static (DateTime Cuando, string Json, bool Completo)? Recibido(string congregacion, string mes)
         {
             string texto = DatabaseHelper.ObtenerConfiguracion(ProgramaWeb.ClaveRecibido(congregacion, mes), "");
 
@@ -299,8 +452,13 @@ namespace SCCosmos
                     "yyyy-MM-ddTHH:mm:ss",
                     CultureInfo.InvariantCulture);
 
+                // Lo guardado antes de los borradores no trae «completo»: lo estaba.
+                bool completo = guardado?["completo"] is not JsonValue marca
+                    || !marca.TryGetValue(out bool esCompleto)
+                    || esCompleto;
+
                 return guardado?["datos"] is JsonObject datos
-                    ? (cuando, datos.ToJsonString())
+                    ? (cuando, datos.ToJsonString(), completo)
                     : null;
             }
             catch
@@ -326,6 +484,11 @@ namespace SCCosmos
             DatabaseHelper.GuardarConfiguracion(
                 ProgramaWeb.ClaveAplicado(congregacion, mes),
                 DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture));
+
+
+        /// <summary>Si ya se ha creado el enlace de esa visita (sin crearlo).</summary>
+        public static bool TieneEnlace(string congregacion, string mes) =>
+            ProgramaWeb.CodigoValido(DatabaseHelper.ObtenerConfiguracion(ProgramaWeb.ClaveCodigo(congregacion, mes), ""));
 
 
         /// <summary>El enlace de la visita para los ancianos (con su código; se crea la primera vez).</summary>
@@ -363,11 +526,138 @@ namespace SCCosmos
         }
 
 
-        /// <summary>«https://equipo.red.ts.net»: la dirección de Tailscale de este PC (Funnel la publica).</summary>
+        /// <summary>
+        /// La dirección para los enlaces. Con un servidor elegido en Configuración,
+        /// siempre la suya. Sin elegir, la de Tailscale de este PC (Funnel la publica),
+        /// que se guarda para el móvil, como hasta ahora.
+        /// </summary>
         public static string DireccionPublica()
         {
-            string guardada = DatabaseHelper.ObtenerConfiguracion(ClaveDireccion, "");
+            string elegido = ServidorElegido();
 
+            if (elegido.Length > 0)
+            {
+                return elegido;
+            }
+
+            string guardada = DatabaseHelper.ObtenerConfiguracion(ClaveDireccion, "");
+            string propia = DireccionTailscale();
+
+            if (propia.Length > 0)
+            {
+                if (propia != guardada)
+                {
+                    DatabaseHelper.GuardarConfiguracion(ClaveDireccion, propia);
+                }
+
+                return propia;
+            }
+
+            return guardada.Length > 0 ? guardada : "http://localhost:" + Puerto;
+        }
+
+
+        /// <summary>El servidor del formulario elegido en Configuración («» si no se ha elegido).</summary>
+        public static string ServidorElegido() =>
+            ProgramaWeb.NormalizarDireccion(DatabaseHelper.ObtenerConfiguracion(ProgramaWeb.ClaveServidor, ""));
+
+
+        /// <summary>
+        /// Elige el servidor del formulario para todos los dispositivos («» lo quita y
+        /// vuelve a ser automático). Devuelve la dirección guardada.
+        /// </summary>
+        public static string ElegirServidor(string direccion)
+        {
+            string normalizada = ProgramaWeb.NormalizarDireccion(direccion);
+
+            DatabaseHelper.GuardarConfiguracion(ProgramaWeb.ClaveServidor, normalizada);
+
+            // Los equipos aún sin actualizar leen esta otra: que también lleve al servidor elegido.
+            if (normalizada.Length > 0)
+            {
+                DatabaseHelper.GuardarConfiguracion(ClaveDireccion, normalizada);
+            }
+
+            return normalizada;
+        }
+
+
+        /// <summary>
+        /// Los enlaces enviados antes de cambiar de servidor siguen funcionando:
+        /// si este PC recibe la página por otra dirección que la del servidor
+        /// elegido, la manda allí (mientras este PC esté encendido).
+        /// </summary>
+        public static string? DestinoRedireccion(string host)
+        {
+            try
+            {
+                return ProgramaWeb.DestinoRedireccion(host, ServidorElegido(), DireccionTailscaleReciente());
+            }
+            catch (Exception ex)
+            {
+                RegistroErrores.AnotarSilencioso(ex, "ProgramaWeb.Redireccion");
+                return null;
+            }
+        }
+
+
+        private static string _direccionTailscale = "";
+        private static DateTime _direccionTailscaleHasta = DateTime.MinValue;
+
+        // La de Tailscale, sin preguntarle en cada visita a la página.
+        private static string DireccionTailscaleReciente()
+        {
+            if (DateTime.UtcNow > _direccionTailscaleHasta)
+            {
+                _direccionTailscale = DireccionTailscale();
+                _direccionTailscaleHasta = DateTime.UtcNow.AddMinutes(10);
+            }
+
+            return _direccionTailscale;
+        }
+
+
+        /// <summary>
+        /// Los enlaces que aún valen (la visita está en el calendario y no ha
+        /// caducado), con la dirección actual: congregación, mes y enlace.
+        /// </summary>
+        public static List<(string Congregacion, string Mes, string Enlace)> EnlacesActivos()
+        {
+            var activos = new List<(string, string, string)>();
+            string? direccion = null;
+
+            foreach (string visita in DatabaseHelper.VisitasConEnlaceProgramaWeb().OrderBy(v => v.Substring(v.LastIndexOf('_') + 1)))
+            {
+                // «{congregación}_{yyyy-MM}» (el código de congregación puede llevar «_»).
+                int separador = visita.LastIndexOf('_');
+
+                if (separador <= 0)
+                {
+                    continue;
+                }
+
+                string congregacion = visita.Substring(0, separador);
+                string mes = visita.Substring(separador + 1);
+
+                if (Caducidad(congregacion, mes) is not { } hasta || DateTime.Today > hasta)
+                {
+                    continue;
+                }
+
+                direccion ??= DireccionPublica();
+
+                activos.Add((congregacion, mes, ProgramaWeb.Enlace(
+                    direccion,
+                    DatabaseHelper.ObtenerConfiguracion(ProgramaWeb.ClaveCodigo(congregacion, mes), ""))));
+            }
+
+            return activos;
+        }
+
+
+        /// <summary>«https://equipo.red.ts.net»: la dirección de Tailscale de este PC («» si no tiene Tailscale).</summary>
+        public static string DireccionTailscale()
+        {
             try
             {
                 string tailscale = Path.Combine(
@@ -375,39 +665,37 @@ namespace SCCosmos
                     "Tailscale",
                     "tailscale.exe");
 
-                if (File.Exists(tailscale))
+                if (!File.Exists(tailscale))
                 {
-                    var inicio = new ProcessStartInfo(tailscale, "status --json")
-                    {
-                        RedirectStandardOutput = true,
-                        UseShellExecute = false,
-                        CreateNoWindow = true
-                    };
-
-                    using Process proceso = Process.Start(inicio);
-                    string salida = proceso?.StandardOutput.ReadToEnd() ?? "";
-                    proceso?.WaitForExit(5000);
-
-                    string dns = JsonNode.Parse(salida)?["Self"]?["DNSName"]?.GetValue<string>()?.TrimEnd('.') ?? "";
-
-                    if (dns.Length > 0)
-                    {
-                        string direccion = "https://" + dns;
-
-                        if (direccion != guardada)
-                        {
-                            DatabaseHelper.GuardarConfiguracion(ClaveDireccion, direccion);
-                        }
-
-                        return direccion;
-                    }
+                    return "";
                 }
-            }
-            catch
-            {
-            }
 
-            return guardada.Length > 0 ? guardada : "http://localhost:" + Puerto;
+                var inicio = new ProcessStartInfo(tailscale, "status --json")
+                {
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+
+                using Process proceso = Process.Start(inicio);
+                string salida = proceso?.StandardOutput.ReadToEnd() ?? "";
+                proceso?.WaitForExit(5000);
+
+                // Tailscale parado o sin sesión: no contesta con JSON.
+                if (!salida.TrimStart().StartsWith("{", StringComparison.Ordinal))
+                {
+                    return "";
+                }
+
+                string dns = JsonNode.Parse(salida)?["Self"]?["DNSName"]?.GetValue<string>()?.TrimEnd('.') ?? "";
+
+                return dns.Length > 0 ? "https://" + dns : "";
+            }
+            catch (Exception ex)
+            {
+                RegistroErrores.AnotarSilencioso(ex, "ProgramaWeb.Tailscale");
+                return "";
+            }
         }
     }
 }

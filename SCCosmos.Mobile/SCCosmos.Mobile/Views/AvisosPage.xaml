@@ -67,6 +67,24 @@
                 </VerticalStackLayout>
             </Border>
 
+            <!-- PROGRAMA ENVIADO: los ancianos pulsan «Enviar» en el formulario -->
+            <Border Style="{StaticResource Tarjeta}">
+                <VerticalStackLayout Spacing="6">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Text="Programa enviado por los ancianos"
+                               FontSize="15"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource TextoPrincipal}"
+                               VerticalOptions="Center" />
+                        <Switch x:Name="SwProgramaWeb"
+                                Grid.Column="1"
+                                OnColor="{StaticResource AcentoFuerte}" />
+                    </Grid>
+                    <Label Text="Cuando pulsan «Enviar» en el formulario del programa de la visita (también si lo vuelven a enviar). Con la app abierta llega al momento; cerrada, en menos de media hora, si el PC que hace de servidor está encendido."
+                           Style="{StaticResource TextoNota}" />
+                </VerticalStackLayout>
+            </Border>
+
             <!-- ALERTAS METEOROLÓGICAS -->
             <Border Style="{StaticResource Tarjeta}">
                 <VerticalStackLayout Spacing="6">

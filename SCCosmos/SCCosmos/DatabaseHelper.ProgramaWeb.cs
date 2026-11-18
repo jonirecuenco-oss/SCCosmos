@@ -1,5 +1,7 @@
 using System;
 using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.Data.Sqlite;
 using SCCosmos.Sincro;
 
@@ -46,6 +48,35 @@ namespace SCCosmos
         }
 
 
+        /// <summary>Las visitas que ya tienen enlace del formulario: «{congregación}_{yyyy-MM}».</summary>
+        public static System.Collections.Generic.HashSet<string> VisitasConEnlaceProgramaWeb()
+        {
+            var visitas = new System.Collections.Generic.HashSet<string>(StringComparer.Ordinal);
+
+            using var connection = new SqliteConnection(ConnectionString);
+            connection.Open();
+
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = "SELECT Clave, Valor FROM Configuracion WHERE Clave LIKE $prefijo;";
+            cmd.Parameters.AddWithValue("$prefijo", ProgramaWeb.PrefijoClaveCodigo + "%");
+
+            using var lector = cmd.ExecuteReader();
+
+            while (lector.Read())
+            {
+                string clave = lector.GetString(0);
+
+                if (clave.StartsWith(ProgramaWeb.PrefijoClaveCodigo, StringComparison.Ordinal)
+                    && ProgramaWeb.CodigoValido(lector.IsDBNull(1) ? "" : lector.GetString(1)))
+                {
+                    visitas.Add(clave.Substring(ProgramaWeb.PrefijoClaveCodigo.Length));
+                }
+            }
+
+            return visitas;
+        }
+
+
         /// <summary>El martes de la visita de ese mes y si es con alojamiento (null si no hay visita).</summary>
         public static (DateTime Martes, bool ConAlojamiento)? ObtenerVisitaProgramaWeb(string congregacionCodigo, string mes)
         {
@@ -77,6 +108,44 @@ namespace SCCosmos
                 !lector.GetString(1).Trim().StartsWith("Sin", StringComparison.OrdinalIgnoreCase);
 
             return (martes.Date, conAlojamiento);
+        }
+
+
+        /// <summary>
+        /// Huella del programa de la visita de un mes («» si no tiene nada).
+        /// Cambia con cualquier cambio en sus actividades: así se sabe si
+        /// alguien lo ha tocado desde que se pasó lo que enviaron los ancianos.
+        /// </summary>
+        public static string HuellaProgramaMes(string congregacionCodigo, string mes)
+        {
+            using var connection = new SqliteConnection(ConnectionString);
+            connection.Open();
+
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = @"
+                SELECT COALESCE(DiaSemana, '') || char(31) || COALESCE(Turno, '') || char(31) || COALESCE(Responsable, '')
+                       || char(31) || COALESCE(TipoActividad, '') || char(31) || COALESCE(Hora, '') || char(31) || COALESCE(NotasLibro, '')
+                       || char(31) || COALESCE(CompaneroId, 0) || char(31) || COALESCE(Direccion, '')
+                       || char(31) || COALESCE(Latitud, 0) || char(31) || COALESCE(Longitud, 0)
+                FROM ProgramaVisitaV2
+                WHERE CongreCodigo = $codigo AND MesReferencia = $mes
+                ORDER BY Id;";
+            cmd.Parameters.AddWithValue("$codigo", congregacionCodigo ?? "");
+            cmd.Parameters.AddWithValue("$mes", mes ?? "");
+
+            var filas = new StringBuilder();
+
+            using (var lector = cmd.ExecuteReader())
+            {
+                while (lector.Read())
+                {
+                    filas.Append(lector.GetString(0)).Append('\n');
+                }
+            }
+
+            return filas.Length == 0
+                ? ""
+                : Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(filas.ToString())));
         }
     }
 }

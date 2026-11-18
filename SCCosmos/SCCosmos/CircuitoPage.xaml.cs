@@ -51,7 +51,108 @@ namespace SCCosmos
             TablaSecciones.ItemsSource = ListaSecciones;
 
             ListaCongregaciones = new ObservableCollection<Congregacion>(DatabaseHelper.ObtenerCongregaciones());
+
+            string diasComidaGenerales = DatabaseHelper.ObtenerConfiguracion(SCCosmos.Sincro.ProgramaWeb.ClaveDiasComida, "");
+
+            foreach (Congregacion congregacion in ListaCongregaciones)
+            {
+                PonerTextoComidas(congregacion, diasComidaGenerales);
+            }
+
             TablaCongregaciones.ItemsSource = ListaCongregaciones;
+        }
+
+        // ========================================================
+        // COMIDAS CON LA CONGREGACIÓN: los días de Configuración o los
+        // propios de cada congregación. El formulario de los ancianos
+        // solo pide esos días en Hospitalidad.
+        // ========================================================
+
+        private static void PonerTextoComidas(Congregacion congregacion, string diasComidaGenerales)
+        {
+            string codigo = congregacion.Codigo?.Trim() ?? "";
+            string propios = codigo.Length == 0
+                ? ""
+                : DatabaseHelper.ObtenerConfiguracion(SCCosmos.Sincro.ProgramaWeb.ClaveDiasComidaCongregacion(codigo), "").Trim();
+
+            congregacion.ComidasPorDefecto = propios.Length == 0;
+            congregacion.TextoComidas = SCCosmos.Sincro.ProgramaWeb.ResumenDiasComida(
+                SCCosmos.Sincro.ProgramaWeb.DiasComida(propios.Length > 0 ? propios : diasComidaGenerales));
+        }
+
+        private void BtnComidasCongregacion_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement boton
+                || boton.Tag is not Congregacion congregacion
+                || string.IsNullOrWhiteSpace(congregacion.Codigo))
+            {
+                return;
+            }
+
+            string codigo = congregacion.Codigo.Trim();
+            var elegidos = new HashSet<string>(ProgramaWebPc.DiasComida(codigo));
+            bool cambiado = false;
+
+            var menu = new ContextMenu
+            {
+                PlacementTarget = boton,
+                Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom
+            };
+
+            string textoPorDefecto =
+                "Como en Configuración (" + SCCosmos.Sincro.ProgramaWeb.ResumenDiasComida(ProgramaWebPc.DiasComida()) + ")";
+
+            var porDefecto = new MenuItem
+            {
+                Header = (ProgramaWebPc.TieneDiasComidaPropios(codigo) ? "☐  " : "☑  ") + textoPorDefecto
+            };
+
+            foreach (string dia in SCCosmos.Sincro.ProgramaWeb.DiasComidaPosibles)
+            {
+                var opcion = new MenuItem
+                {
+                    Header = (elegidos.Contains(dia) ? "☑  " : "☐  ") + dia,
+                    StaysOpenOnClick = true
+                };
+
+                // Cada día se guarda al pulsarlo (desde entonces, días propios de la congregación).
+                opcion.Click += (s, a) =>
+                {
+                    if (!elegidos.Remove(dia))
+                    {
+                        elegidos.Add(dia);
+                    }
+
+                    opcion.Header = (elegidos.Contains(dia) ? "☑  " : "☐  ") + dia;
+                    porDefecto.Header = "☐  " + textoPorDefecto;
+
+                    ProgramaWebPc.GuardarDiasComida(codigo, elegidos);
+                    cambiado = true;
+                };
+
+                menu.Items.Add(opcion);
+            }
+
+            menu.Items.Add(new Separator());
+
+            porDefecto.Click += (s, a) =>
+            {
+                ProgramaWebPc.GuardarDiasComida(codigo, null);
+                cambiado = true;
+            };
+
+            menu.Items.Add(porDefecto);
+
+            menu.Closed += (s, a) =>
+            {
+                if (cambiado)
+                {
+                    PonerTextoComidas(congregacion, DatabaseHelper.ObtenerConfiguracion(SCCosmos.Sincro.ProgramaWeb.ClaveDiasComida, ""));
+                    TablaCongregaciones.Items.Refresh();
+                }
+            };
+
+            menu.IsOpen = true;
         }
 
         private string TraducirDia(string diaIngles)

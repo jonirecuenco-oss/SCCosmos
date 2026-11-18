@@ -734,6 +734,10 @@ public partial class ConfiguracionPage : ContentPage
                 SCCosmos.Sincro.ProgramaWeb.DiasComida(
                     DatabaseHelper.ObtenerConfiguracion(SCCosmos.Sincro.ProgramaWeb.ClaveDiasComida, "")));
 
+            PintarServidorFormulario(
+                SCCosmos.Sincro.ProgramaWeb.NormalizarDireccion(
+                    DatabaseHelper.ObtenerConfiguracion(SCCosmos.Sincro.ProgramaWeb.ClaveServidor, "")));
+
             TxtNumCircuito.Text =
                 DatabaseHelper.ObtenerConfiguracion("NumeroCircuito", "");
 
@@ -840,6 +844,96 @@ public partial class ConfiguracionPage : ContentPage
     // =========================================================
 
     private readonly HashSet<string> _diasComida = new();
+
+    // Servidor del formulario de los ancianos: se guarda solo al pulsar «Guardar»,
+    // porque cambia los enlaces de todos los dispositivos.
+    private void PintarServidorFormulario(
+        string elegido)
+    {
+        TxtServidorFormulario.Text =
+            elegido;
+
+        if (elegido.Length > 0)
+        {
+            LblEstadoServidor.Text =
+                "Los enlaces, se creen en este móvil o en el PC, llevan a esta dirección. " +
+                "Ese equipo tiene que tener SCCosmos abierto y estar publicado en Internet.";
+
+            return;
+        }
+
+        string ultimo =
+            SCCosmos.Sincro.ProgramaWeb.NormalizarDireccion(
+                DatabaseHelper.ObtenerConfiguracion(SCCosmos.Sincro.ProgramaWeb.ClaveDireccion, ""));
+
+        LblEstadoServidor.Text =
+            "Sin elegir: se usa el último PC que creó un enlace" +
+            (ultimo.Length > 0 ? $" ({ultimo})." : " (todavía ninguno).");
+    }
+
+    private static string DireccionEnlacesActual() =>
+        SCCosmos.Sincro.ProgramaWeb.DireccionEnlaces(
+            clave => DatabaseHelper.ObtenerConfiguracion(clave, ""));
+
+    private void BtnGuardarServidor_Clicked(
+        object sender,
+        EventArgs e)
+    {
+        string escrito =
+            (TxtServidorFormulario.Text ?? "").Trim();
+
+        string normalizada =
+            SCCosmos.Sincro.ProgramaWeb.NormalizarDireccion(escrito);
+
+        if (escrito.Length > 0
+            && normalizada.Length == 0)
+        {
+            LblEstadoServidor.Text =
+                "✗ Escribe solo la dirección del servidor, sin rutas. Por ejemplo: https://mi-pc.tailxxxx.ts.net";
+
+            return;
+        }
+
+        try
+        {
+            string antes =
+                DireccionEnlacesActual();
+
+            DatabaseHelper.GuardarConfiguracion(
+                SCCosmos.Sincro.ProgramaWeb.ClaveServidor,
+                normalizada);
+
+            // Los equipos aún sin actualizar leen esta otra: que también lleve al servidor elegido.
+            if (normalizada.Length > 0)
+            {
+                DatabaseHelper.GuardarConfiguracion(
+                    SCCosmos.Sincro.ProgramaWeb.ClaveDireccion,
+                    normalizada);
+            }
+
+            PintarServidorFormulario(
+                normalizada);
+
+            string ahora =
+                DireccionEnlacesActual();
+
+            // Los enlaces ya enviados llevan la dirección anterior: ese equipo los
+            // reenvía al servidor nuevo mientras tenga SCCosmos abierto.
+            if (antes.Length > 0
+                && ahora.Length > 0
+                && !string.Equals(antes, ahora, StringComparison.OrdinalIgnoreCase))
+            {
+                LblEstadoServidor.Text +=
+                    $"\n\nLos enlaces ya enviados (con {antes}) siguen valiendo mientras ese equipo tenga SCCosmos abierto: " +
+                    "los manda solos al servidor nuevo. Si se va a apagar, reenvía los enlaces a los ancianos.";
+            }
+        }
+        catch (Exception ex)
+        {
+            LblEstadoServidor.Text =
+                "✗ No se pudo guardar: " + ex.Message;
+        }
+    }
 
     private void PintarDiasComida(
         IEnumerable<string> activos)
