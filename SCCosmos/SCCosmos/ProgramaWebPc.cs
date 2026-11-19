@@ -4,7 +4,10 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text.Json.Nodes;
+using System.Threading;
+using System.Threading.Tasks;
 using SCCosmos.Sincro;
 
 namespace SCCosmos
@@ -59,6 +62,8 @@ namespace SCCosmos
                 };
                 _servidor.Redireccion = DestinoRedireccion;
                 _servidor.Estado = EstadoJson;
+                _servidor.Lugares = SugerenciasAsync;
+                _servidor.Lugar = LugarGoogleAsync;
                 _servidor.Iniciar();
             }
             catch (Exception ex)
@@ -85,6 +90,160 @@ namespace SCCosmos
             DatabaseHelper.BuscarVisitaProgramaWeb(codigo) is { } visita && !Caducado(visita.Congregacion, visita.Mes)
                 ? DatosVisitaJson(codigo, visita.Congregacion, visita.Mes)
                 : null;
+
+
+        // =========================================================
+        // BUSCADOR DE DIRECCIONES DEL FORMULARIO: Google Maps si hay su
+        // clave (LugaresGoogle); si no, o si falla, TomTom (LugaresTomTom);
+        // sin ninguno, la página busca con OpenStreetMap. Lo pide la página
+        // a este PC, así las claves no salen. Topes diarios para no salir
+        // nunca de lo gratuito (Google: 10.000 al mes de cada tipo; TomTom:
+        // 2.500 al día, que también usa el móvil para los tiempos de viaje).
+        // =========================================================
+
+        public const int MaxSugerenciasGoogleDia = 300;
+
+        public const int MaxLugaresGoogleDia = 200;
+
+        public const int MaxSugerenciasTomTomDia = 1000;
+
+        private static readonly HttpClient HttpLugares = new() { Timeout = TimeSpan.FromSeconds(8) };
+
+        private static readonly object CandadoConsultas = new();
+
+        private static DateTime _diaConsultas = DateTime.MinValue;
+
+        private static readonly Dictionary<string, int> _consultasHoy = new();
+
+
+        /// <summary>La clave de Google Maps de Configuración («»: sin Google).</summary>
+        public static string ClaveGoogle() =>
+            DatabaseHelper.ObtenerConfiguracion(LugaresGoogle.ClaveApi, "").Trim();
+
+
+        /// <summary>La clave de TomTom de Configuración (la misma del móvil; «»: sin TomTom).</summary>
+        public static string ClaveTomTom() =>
+            DatabaseHelper.ObtenerConfiguracion(LugaresTomTom.ClaveApi, "").Trim();
+
+
+        /// <summary>Con qué busca el formulario: «google», «tomtom» o «» (OpenStreetMap, desde la página).</summary>
+        public static string Buscador() =>
+            ClaveGoogle().Length > 0 ? "google"
+            : ClaveTomTom().Length > 0 ? "tomtom"
+            : "";
+
+
+        // Cuenta la consulta («google», «google-lugar», «tomtom») si aún quedan hoy.
+        private static bool QuedanConsultas(string tipo, int maximo)
+        {
+            lock (CandadoConsultas)
+            {
+                if (_diaConsultas != DateTime.Today)
+                {
+                    _diaConsultas = DateTime.Today;
+                    _consultasHoy.Clear();
+                }
+
+                int hechas = _consultasHoy.GetValueOrDefault(tipo);
+
+                if (hechas >= maximo)
+                {
+                    return false;
+                }
+
+                _consultasHoy[tipo] = hechas + 1;
+
+                return true;
+            }
+        }
+
+
+        // Solo con el enlace de una visita que aún vale: nadie más gasta las consultas.
+        private static (string Congregacion, string Mes)? VisitaVigente(string codigo) =>
+            DatabaseHelper.BuscarVisitaProgramaWeb(codigo) is { } visita && !Caducado(visita.Congregacion, visita.Mes)
+                ? visita
+                : null;
+
+
+        /// <summary>
+        /// Sugerencias para lo escrito en el formulario: «{"fuente","lugares"}» (las de
+        /// Google traen «id» y piden las coordenadas al elegir; las de TomTom ya las
+        /// traen). null: que la página busque con OpenStreetMap.
+        /// </summary>
+        public static async Task<string?> SugerenciasAsync(string codigo, string texto, string sesion, CancellationToken token)
+        {
+            texto = (texto ?? "").Trim();
+
+            if (texto.Length < 3 || VisitaVigente(codigo) is not { } visita)
+            {
+                return null;
+            }
+
+            Congregacion? congregacion =
+                DatabaseHelper.ObtenerCongregaciones().FirstOrDefault(c => c.Codigo == visita.Congregacion);
+
+            (double, double)? centro =
+                congregacion is { Latitud: not 0 } ? (congregacion.Latitud, congregacion.Longitud) : null;
+
+            string claveGoogle = ClaveGoogle();
+
+            if (claveGoogle.Length > 0
+                && LugaresGoogle.SesionValidaTexto(sesion)
+                && QuedanConsultas("google", MaxSugerenciasGoogleDia)
+                && await LugaresGoogle.SugerenciasAsync(HttpLugares, claveGoogle, texto, sesion, centro, token) is { } deGoogle)
+            {
+                return $"{{\"fuente\":\"Google Maps\",\"lugares\":{deGoogle}}}";
+            }
+
+            string claveTomTom = ClaveTomTom();
+
+            if (claveTomTom.Length > 0
+                && QuedanConsultas("tomtom", MaxSugerenciasTomTomDia)
+                && await LugaresTomTom.SugerenciasAsync(HttpLugares, claveTomTom, texto, centro, token) is { } deTomTom)
+            {
+                return $"{{\"fuente\":\"TomTom\",\"lugares\":{deTomTom}}}";
+            }
+
+            return null;
+        }
+
+
+        /// <summary>Las coordenadas de la dirección elegida entre las de Google (null si no se pueden dar).</summary>
+        public static Task<string?> LugarGoogleAsync(string codigo, string id, string sesion, CancellationToken token)
+        {
+            string clave = ClaveGoogle();
+
+            if (clave.Length == 0
+                || !LugaresGoogle.IdLugarValido(id)
+                || !LugaresGoogle.SesionValidaTexto(sesion)
+                || VisitaVigente(codigo) is null
+                || !QuedanConsultas("google-lugar", MaxLugaresGoogleDia))
+            {
+                return Task.FromResult<string?>(null);
+            }
+
+            return LugaresGoogle.LugarAsync(HttpLugares, clave, id, sesion, token);
+        }
+
+
+        /// <summary>Prueba una clave de Google (Configuración): cuántas sugerencias da para «Azuaga»; null si no funciona.</summary>
+        public static async Task<int?> ProbarClaveGoogleAsync(string clave)
+        {
+            string? sugerencias = await LugaresGoogle.SugerenciasAsync(
+                HttpLugares, clave.Trim(), "Azuaga", Guid.NewGuid().ToString("N"), null, CancellationToken.None);
+
+            return sugerencias is null ? null : JsonNode.Parse(sugerencias)?.AsArray().Count;
+        }
+
+
+        /// <summary>Prueba una clave de TomTom: cuántas sugerencias da para «Azuaga»; null si no funciona.</summary>
+        public static async Task<int?> ProbarClaveTomTomAsync(string clave)
+        {
+            string? sugerencias = await LugaresTomTom.SugerenciasAsync(
+                HttpLugares, clave.Trim(), "Azuaga", null, CancellationToken.None);
+
+            return sugerencias is null ? null : JsonNode.Parse(sugerencias)?.AsArray().Count;
+        }
 
 
         /// <summary>Cuándo pulsaron «Enviar» por última vez («» si aún no), para el móvil.</summary>
@@ -231,6 +390,8 @@ namespace SCCosmos
                 ["horaFinDeSemana"] = ProgramaWeb.Hora(datosCongregacion?.HoraFinSemana ?? ""),
                 ["medioDiaLibre"] = MedioDiaLibre(),
                 ["diasComida"] = new JsonArray(DiasComida(congregacion).Select(d => (JsonNode)d).ToArray()),
+                // Con clave de Google Maps o de TomTom, el buscador de direcciones la usa (a través de este PC).
+                ["buscador"] = Buscador(),
                 ["archivos"] = true,
                 ["extensiones"] = new JsonArray(ArchivosProgramaWeb.Extensiones.Select(x => (JsonNode)x).ToArray()),
                 ["envio"] = envio,

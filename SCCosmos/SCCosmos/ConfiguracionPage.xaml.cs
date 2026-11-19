@@ -372,6 +372,9 @@ namespace SCCosmos
             ComboMedioDiaLibre.SelectedItem = ProgramaWebPc.MedioDiaLibre();
             PintarDiasComida(ProgramaWebPc.DiasComida());
             PintarServidorFormulario(ProgramaWebPc.ServidorElegido());
+            TxtClaveGoogle.Password = ProgramaWebPc.ClaveGoogle();
+            TxtClaveTomTom.Password = ProgramaWebPc.ClaveTomTom();
+            PintarEstadoGoogle();
             TxtNumCircuito.Text = DatabaseHelper.ObtenerConfiguracion("NumeroCircuito", "");
             TxtRutaArchivoCircuito.Text = DatabaseHelper.ObtenerConfiguracion("RutaArchivoCircuito", "");
 
@@ -708,6 +711,85 @@ namespace SCCosmos
             }
 
             CambiarServidor(escrito);
+        }
+
+        // =========================================================================
+        // BUSCADOR DE DIRECCIONES DEL FORMULARIO (ProgramaWebPc, LugaresGoogle,
+        // LugaresTomTom): Google Maps si hay su clave; si no, TomTom; si no,
+        // OpenStreetMap. Cada clave se prueba antes de guardarla.
+        // =========================================================================
+
+        private void PintarEstadoGoogle()
+        {
+            TxtEstadoGoogle.Text = ProgramaWebPc.Buscador() switch
+            {
+                "google" =>
+                    "El formulario busca las direcciones en Google Maps, a través del PC servidor (las claves no salen en la página). "
+                    + $"Como mucho {ProgramaWebPc.MaxSugerenciasGoogleDia} búsquedas y {ProgramaWebPc.MaxLugaresGoogleDia} direcciones elegidas al día, muy por debajo de lo gratuito; "
+                    + "si se llega o falla, sigue con TomTom (si tiene clave) y si no con OpenStreetMap.",
+                "tomtom" =>
+                    "El formulario busca las direcciones con TomTom, a través del PC servidor (la clave no sale en la página). "
+                    + $"Como mucho {ProgramaWebPc.MaxSugerenciasTomTomDia} búsquedas al día de las 2.500 gratuitas (el móvil usa otras para los tiempos de viaje); "
+                    + "si se llega o falla, sigue con OpenStreetMap. Con clave de Google Maps, se usaría Google.",
+                _ =>
+                    "Sin clave: el formulario busca las direcciones con OpenStreetMap. Con la clave de TomTom (gratis, sin tarjeta; la misma de los tiempos de viaje del móvil) "
+                    + "o la de Google Maps (Places API (New)), son más precisas."
+            };
+        }
+
+        private async void BtnGuardarClaveTomTom_Click(object sender, RoutedEventArgs e)
+        {
+            string clave = TxtClaveTomTom.Password.Trim();
+
+            if (clave.Length == 0)
+            {
+                DatabaseHelper.GuardarConfiguracion(SCCosmos.Sincro.LugaresTomTom.ClaveApi, "");
+                PintarEstadoGoogle();
+                return;
+            }
+
+            TxtEstadoGoogle.Text = "Probando la clave con TomTom…";
+
+            int? sugerencias = await ProgramaWebPc.ProbarClaveTomTomAsync(clave);
+
+            if (sugerencias is null)
+            {
+                TxtEstadoGoogle.Text = "✗ TomTom no acepta la clave y no se ha guardado. Comprueba que esté bien copiada.";
+                return;
+            }
+
+            // La misma clave que usa el móvil para los tiempos de viaje: le llega por sincronización.
+            DatabaseHelper.GuardarConfiguracion(SCCosmos.Sincro.LugaresTomTom.ClaveApi, clave);
+            PintarEstadoGoogle();
+            TxtEstadoGoogle.Text = $"✓ TomTom funciona ({sugerencias} sugerencias para «Azuaga»). " + TxtEstadoGoogle.Text;
+        }
+
+        private async void BtnGuardarClaveGoogle_Click(object sender, RoutedEventArgs e)
+        {
+            string clave = TxtClaveGoogle.Password.Trim();
+
+            if (clave.Length == 0)
+            {
+                DatabaseHelper.GuardarConfiguracion(SCCosmos.Sincro.LugaresGoogle.ClaveApi, "");
+                PintarEstadoGoogle();
+                return;
+            }
+
+            TxtEstadoGoogle.Text = "Probando la clave con Google…";
+
+            int? sugerencias = await ProgramaWebPc.ProbarClaveGoogleAsync(clave);
+
+            if (sugerencias is null)
+            {
+                TxtEstadoGoogle.Text =
+                    "✗ Google no acepta la clave y no se ha guardado. Comprueba que esté bien copiada y que en tu proyecto de Google Cloud "
+                    + "esté activada «Places API (New)».";
+                return;
+            }
+
+            DatabaseHelper.GuardarConfiguracion(SCCosmos.Sincro.LugaresGoogle.ClaveApi, clave);
+            PintarEstadoGoogle();
+            TxtEstadoGoogle.Text = $"✓ Google Maps funciona ({sugerencias} sugerencias para «Azuaga»). " + TxtEstadoGoogle.Text;
         }
 
         // =========================================================================

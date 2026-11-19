@@ -48,6 +48,7 @@ internal static class Programa
             RequisitoDeHoras();
             AjustesDeAvisos();
             ProgramaWebRecibido();
+            DireccionesGoogle();
             Ver("Tailscale: qué hacer según su estado (conectado, desconectado, sin sesión, sin servicio)",
                 string.Join("|", new[] { "{\"BackendState\":\"Running\"}", "{\"BackendState\":\"Stopped\"}", "{\"BackendState\":\"NeedsLogin\"}", "failed to connect to local tailscaled" }
                     .Select(s => TailscalePc.Interpretar(s).Accion)),
@@ -437,6 +438,8 @@ internal static class Programa
         {
             servidor.Redireccion = host => ProgramaWeb.DestinoRedireccion(host, "https://pc-nuevo.tail.ts.net", "");
             servidor.Estado = c => c == codigoPrueba ? "{\"enviado\":\"2026-11-18T10:30:00|2\"}" : null;
+            servidor.Lugares = (c, q, s, _) => Task.FromResult<string?>(c == codigoPrueba && q != "nada" ? $"[{{\"id\":\"x\",\"texto\":\"{q}|{s}\"}}]" : null);
+            servidor.Lugar = (c, id, s, _) => Task.FromResult<string?>(c == codigoPrueba ? $"{{\"lat\":1,\"lon\":2,\"direccion\":\"{id}|{s}\"}}" : null);
             servidor.Iniciar();
             using var http = new System.Net.Http.HttpClient { BaseAddress = new Uri("http://127.0.0.1:47399") };
 
@@ -450,6 +453,13 @@ internal static class Programa
             var pagina = http.GetAsync("/programa/" + codigoPrueba).Result;
             Ver("Servidor: la página, con los datos de la visita", (int)pagina.StatusCode + " " + pagina.Content.ReadAsStringAsync().Result.Contains("window.VISITA = {\"codigo\":\"x\"};"), "200 True");
             Ver("Servidor: código que no existe", (int)http.GetAsync("/programa/" + ProgramaWeb.NuevoCodigo()).Result.StatusCode, 404);
+            Ver("Servidor: direcciones con Google a través del PC (lo escrito y la sesión, decodificados)",
+                $"{http.GetStringAsync("/programa/" + codigoPrueba + "/lugares?q=" + Uri.EscapeDataString("calle la dehesa 4") + "&s=sesion-1234").Result} "
+                + $"{http.GetStringAsync("/programa/" + codigoPrueba + "/lugar?id=ChIJ_abc&s=sesion-1234").Result}",
+                "[{\"id\":\"x\",\"texto\":\"calle la dehesa 4|sesion-1234\"}] {\"lat\":1,\"lon\":2,\"direccion\":\"ChIJ_abc|sesion-1234\"}");
+            Ver("Servidor: sin respuesta de Google, 503 (la página sigue con OpenStreetMap)",
+                $"{(int)http.GetAsync("/programa/" + codigoPrueba + "/lugares?q=nada&s=sesion-1234").Result.StatusCode} {(int)http.GetAsync("/programa/" + ProgramaWeb.NuevoCodigo() + "/lugar?id=ChIJ_abc&s=sesion-1234").Result.StatusCode}",
+                "503 503");
             var estadoEnvio = http.GetAsync("/programa/" + codigoPrueba + "/estado").Result;
             Ver("Servidor: cuándo se envió, para el móvil (y nada con otro código)",
                 $"{(int)estadoEnvio.StatusCode} {estadoEnvio.Content.ReadAsStringAsync().Result} {(int)http.GetAsync("/programa/" + ProgramaWeb.NuevoCodigo() + "/estado").Result.StatusCode}",
@@ -598,6 +608,83 @@ internal static class Programa
         ProgramaWebPc.GuardarDiasComida("WEB1", null);
         Ver("Comidas: «Como en Configuración» vuelve a las generales", ComidasWeb1(), "Jueves,Viernes False");
         DatabaseHelper.GuardarConfiguracion(ProgramaWeb.ClaveDiasComida, "");
+    }
+
+    // Direcciones con Google Maps, sin red: lo que se le pide a Google y cómo se lee lo que contesta.
+    private static void DireccionesGoogle()
+    {
+        var sugerencias = new GoogleFalso(200,
+            """{"suggestions":[{"placePrediction":{"placeId":"ChIJ_dehesa_4_azuaga","text":{"text":"Calle la Dehesa, 4, Azuaga, España"}}},{"placePrediction":{"placeId":"mal/id","text":{"text":"Otro"}}}]}""");
+        string? lista = LugaresGoogle.SugerenciasAsync(new System.Net.Http.HttpClient(sugerencias), "CLAVE", "calle la dehesa 4", "sesion-1234", (38.26, -5.68), CancellationToken.None).Result;
+        Ver("Google: sugerencias (sin «España» y sin ids raros)", lista, """[{"id":"ChIJ_dehesa_4_azuaga","texto":"Calle la Dehesa, 4, Azuaga"}]""");
+        Ver("Google: lo que se le pide (clave en cabecera, sesión, España y cerca de la congregación)",
+            $"{sugerencias.Ultima?.RequestUri} {string.Join("", sugerencias.Ultima?.Headers.GetValues("X-Goog-Api-Key") ?? [])} "
+            + $"{sugerencias.Cuerpo.Contains("\"input\":\"calle la dehesa 4\"")} {sugerencias.Cuerpo.Contains("\"sessionToken\":\"sesion-1234\"")} "
+            + $"{sugerencias.Cuerpo.Contains("\"includedRegionCodes\":[\"es\"]")} {sugerencias.Cuerpo.Contains("\"latitude\":38.26")}",
+            "https://places.googleapis.com/v1/places:autocomplete CLAVE True True True True");
+
+        var lugar = new GoogleFalso(200, """{"formattedAddress":"C. la Dehesa, 4, 06920 Azuaga, Badajoz, España","location":{"latitude":38.2655,"longitude":-5.6841}}""");
+        string? coordenadas = LugaresGoogle.LugarAsync(new System.Net.Http.HttpClient(lugar), "CLAVE", "ChIJ_dehesa_4_azuaga", "sesion-1234", CancellationToken.None).Result;
+        Ver("Google: coordenadas de la elegida (solo los campos básicos, misma sesión)",
+            $"{coordenadas} {lugar.Ultima?.RequestUri?.AbsolutePath} {lugar.Ultima?.RequestUri?.Query.Contains("sessionToken=sesion-1234")} {string.Join("", lugar.Ultima?.Headers.GetValues("X-Goog-FieldMask") ?? [])}",
+            """{"lat":38.2655,"lon":-5.6841,"direccion":"C. la Dehesa, 4, 06920 Azuaga, Badajoz"} /v1/places/ChIJ_dehesa_4_azuaga True location,formattedAddress""");
+
+        var rechazo = new GoogleFalso(403, """{"error":{"code":403}}""");
+        Ver("Google: clave mala, id raro o sesión rara → nada (la página sigue con OpenStreetMap)",
+            $"{LugaresGoogle.SugerenciasAsync(new System.Net.Http.HttpClient(rechazo), "MALA", "azuaga", "sesion-1234", null, CancellationToken.None).Result is null} "
+            + $"{LugaresGoogle.LugarAsync(new System.Net.Http.HttpClient(lugar), "CLAVE", "../otra/cosa", "sesion-1234", CancellationToken.None).Result is null} "
+            + $"{LugaresGoogle.SugerenciasAsync(new System.Net.Http.HttpClient(sugerencias), "CLAVE", "azuaga", "x", null, CancellationToken.None).Result is null}",
+            "True True True");
+
+        // TomTom: cada sugerencia ya trae sus coordenadas; los sitios, con su nombre delante.
+        var tomtom = new GoogleFalso(200,
+            """{"results":[{"type":"Point Address","address":{"freeformAddress":"Calle de la Dehesa Vieja, 4, 06920 Azuaga"},"position":{"lat":38.266082,"lon":-5.684563}},"""
+            + """{"type":"POI","poi":{"name":"La Dehesa"},"address":{"freeformAddress":"Calle del Padre Tena, 59, 06920 Azuaga"},"position":{"lat":38.2615,"lon":-5.6773}},"""
+            + """{"type":"Street","address":{"freeformAddress":"Sin posición"}}]}""");
+        Ver("TomTom: sugerencias con sus coordenadas (sin las que no tienen)",
+            LugaresTomTom.SugerenciasAsync(new System.Net.Http.HttpClient(tomtom), "CLAVE", "calle la dehesa 4", (38.26, -5.68), CancellationToken.None).Result,
+            """[{"texto":"Calle de la Dehesa Vieja, 4, 06920 Azuaga","lat":38.266082,"lon":-5.684563},{"texto":"La Dehesa, Calle del Padre Tena, 59, 06920 Azuaga","lat":38.2615,"lon":-5.6773}]""");
+        Ver("TomTom: lo que se le pide (España, en español, mientras se escribe, cerca de la congregación)",
+            tomtom.Ultima?.RequestUri?.AbsoluteUri,
+            "https://api.tomtom.com/search/2/search/calle%20la%20dehesa%204.json?key=CLAVE&countrySet=ES&language=es-ES&limit=5&typeahead=true&lat=38.26&lon=-5.68");
+        LugaresTomTom.SugerenciasAsync(new System.Net.Http.HttpClient(tomtom), "CLAVE", "calle 1/2 azuaga", null, CancellationToken.None).Wait();
+        Ver("TomTom: una barra en lo escrito no cambia la ruta; clave mala → nada",
+            $"{tomtom.Ultima?.RequestUri?.AbsolutePath} {LugaresTomTom.SugerenciasAsync(new System.Net.Http.HttpClient(rechazo), "MALA", "azuaga", null, CancellationToken.None).Result is null}",
+            "/search/2/search/calle%201%202%20azuaga.json True");
+
+        // En el PC: Google si tiene su clave; si no, TomTom; si no, la página busca con OpenStreetMap.
+        string codigo = DatabaseHelper.ObtenerConfiguracion(ProgramaWeb.ClaveCodigo("WEB1", "2026-12"), "");
+        string Buscador() => System.Text.RegularExpressions.Regex.Match(ProgramaWebPc.DatosVisitaJson(codigo, "WEB1", "2026-12"), "\"buscador\":\"([a-z]*)\"").Groups[1].Value;
+        Ver("Buscador: sin claves, OpenStreetMap (el PC no pregunta a nadie)",
+            $"[{Buscador()}] {ProgramaWebPc.SugerenciasAsync(codigo, "azuaga", "sesion-1234", CancellationToken.None).Result is null}",
+            "[] True");
+        DatabaseHelper.GuardarConfiguracion(LugaresTomTom.ClaveApi, "CLAVE-TOMTOM");
+        string conTomTom = Buscador();
+        DatabaseHelper.GuardarConfiguracion(LugaresGoogle.ClaveApi, "CLAVE-GOOGLE");
+        Ver("Buscador: con clave de TomTom, TomTom; con la de Google también, Google",
+            $"{conTomTom} {Buscador()}",
+            "tomtom google");
+        Ver("Buscador: con un enlace que no es de ninguna visita o un id raro, nada",
+            $"{ProgramaWebPc.SugerenciasAsync(ProgramaWeb.NuevoCodigo(), "azuaga", "sesion-1234", CancellationToken.None).Result is null} {ProgramaWebPc.LugarGoogleAsync(codigo, "../x", "sesion-1234", CancellationToken.None).Result is null}",
+            "True True");
+        DatabaseHelper.GuardarConfiguracion(LugaresGoogle.ClaveApi, "");
+        DatabaseHelper.GuardarConfiguracion(LugaresTomTom.ClaveApi, "");
+    }
+
+    // Google de mentira: apunta lo que se le pide y contesta lo que se le diga.
+    private sealed class GoogleFalso(int estado, string respuesta) : System.Net.Http.HttpMessageHandler
+    {
+        public System.Net.Http.HttpRequestMessage? Ultima { get; private set; }
+
+        public string Cuerpo { get; private set; } = "";
+
+        protected override async Task<System.Net.Http.HttpResponseMessage> SendAsync(System.Net.Http.HttpRequestMessage peticion, CancellationToken token)
+        {
+            Ultima = peticion;
+            Cuerpo = peticion.Content is null ? "" : await peticion.Content.ReadAsStringAsync(token);
+
+            return new System.Net.Http.HttpResponseMessage((System.Net.HttpStatusCode)estado) { Content = new System.Net.Http.StringContent(respuesta) };
+        }
     }
 
     private static void Ver(string que, object obtenido, object esperado)

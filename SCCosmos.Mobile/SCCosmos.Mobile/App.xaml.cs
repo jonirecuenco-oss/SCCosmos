@@ -109,6 +109,10 @@ namespace SCCosmos.Mobile
                 {
                 }
 
+                // La clave de TomTom, también en Configuración (sincronizada): el
+                // PC la usa para el buscador de direcciones del formulario.
+                TiempoViajeService.CompartirClaveTomTom();
+
                 try
                 {
                     SincronizacionMobile.Iniciar();

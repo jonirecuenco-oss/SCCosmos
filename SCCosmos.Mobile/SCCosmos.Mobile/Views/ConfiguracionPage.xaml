@@ -472,7 +472,7 @@
                         FontSize="15"/>
 
                     <Label
-                        Text="Inicio y el widget muestran cuánto se tarda en coche hasta cada evento, con tu ubicación actual. Necesita una clave de TomTom (plan gratuito, recomendada) o de Google Maps: si hay clave de TomTom se usa TomTom; si solo hay de Google, se usa Google. Sin ninguna clave no se muestra el tiempo ni se pide la ubicación."
+                        Text="Inicio y el widget muestran cuánto se tarda en coche hasta cada evento, con tu ubicación actual. Necesita una clave de TomTom (plan gratuito, recomendada) o de Google Maps: si hay clave de TomTom se usa TomTom; si solo hay de Google, se usa Google. Sin ninguna clave no se muestra el tiempo ni se pide la ubicación. La de TomTom se sincroniza: el PC la usa también para el buscador de direcciones del formulario de los ancianos."
                         TextColor="{StaticResource TextoSecundario}"
                         FontSize="12.5"
                         LineBreakMode="WordWrap"/>

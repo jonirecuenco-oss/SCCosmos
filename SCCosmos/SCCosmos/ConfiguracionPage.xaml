@@ -139,6 +139,29 @@
                                 </StackPanel>
                                 <TextBlock x:Name="TxtEstadoServidor" Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap"/>
                             </StackPanel>
+
+                            <!-- Buscador de direcciones del formulario: Google Maps (si hay clave), si no TomTom, si no OpenStreetMap (a través del PC servidor) -->
+                            <StackPanel Margin="0,15,0,0">
+                                <TextBlock Text="Buscador de direcciones del formulario" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="110"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Text="TomTom" VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                                    <PasswordBox x:Name="TxtClaveTomTom" Grid.Column="1" Width="360" Padding="6" VerticalContentAlignment="Center"/>
+                                    <ui:Button Grid.Column="2" Content="Guardar y probar" Icon="{ui:SymbolIcon Save24}" Appearance="Primary" Margin="8,0,0,0" Cursor="Hand" Click="BtnGuardarClaveTomTom_Click"/>
+                                    <TextBlock Grid.Row="1" Text="Google Maps" VerticalAlignment="Center" Margin="0,8,0,0" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                                    <PasswordBox x:Name="TxtClaveGoogle" Grid.Row="1" Grid.Column="1" Width="360" Padding="6" Margin="0,8,0,0" VerticalContentAlignment="Center"/>
+                                    <ui:Button Grid.Row="1" Grid.Column="2" Content="Guardar y probar" Icon="{ui:SymbolIcon Save24}" Appearance="Secondary" Margin="8,8,0,0" Cursor="Hand" Click="BtnGuardarClaveGoogle_Click"/>
+                                </Grid>
+                                <TextBlock x:Name="TxtEstadoGoogle" Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
                         </StackPanel>
                     </Grid>
                 </ui:Card>

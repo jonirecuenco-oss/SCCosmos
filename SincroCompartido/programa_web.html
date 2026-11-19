@@ -60,6 +60,8 @@
   .sugerencias div { padding: 11px 12px; border-bottom: 1px solid #eef1f5; font-size: 15px; cursor: pointer; }
   .sugerencias div:last-child { border-bottom: none; }
   .sugerencias div:hover, .sugerencias div:active { background:#eaf3fc; }
+  /* De dónde vienen las sugerencias («Google Maps», como piden sus normas, o «TomTom»): no se elige. */
+  .sugerencias div.atribucion, .sugerencias div.atribucion:hover { cursor: default; background:#fff; text-align: right; padding: 6px 12px; font-family: Roboto, sans-serif; font-weight: 400; font-size: 12px; color: #5e5e5e; white-space: nowrap; }
   .marcado { font-size: 13px; color: var(--ok); margin-top: 4px; }
   .barra { position: fixed; left:0; right:0; bottom:0; background: rgba(244,246,249,.97); border-top:1px solid var(--borde); padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); }
   .barra .dentro { max-width: 720px; margin: 0 auto; }
@@ -260,7 +262,8 @@ window.VISITA = /*VISITA*/null;
     lista.setAttribute("role", "listbox");
     caja.append(input, lista, marca);
 
-    let espera = null, ultima = "";
+    // sesion: agrupa lo que se escribe hasta elegir una dirección (Google la cobra como una sola consulta).
+    let espera = null, ultima = "", sesion = "";
 
     input.addEventListener("input", () => {
       input.dataset.lat = ""; input.dataset.lon = "";
@@ -270,43 +273,92 @@ window.VISITA = /*VISITA*/null;
       if (q.length < 3) { lista.classList.add("oculto"); return; }
       espera = setTimeout(() => buscar(q), 400);
     });
-    input.addEventListener("blur", () => setTimeout(() => lista.classList.add("oculto"), 250));
+    input.addEventListener("blur", () => { sesion = ""; setTimeout(() => lista.classList.add("oculto"), 250); });
 
+    // Con el buscador del PC (Google Maps o TomTom, si tiene clave) y, si no contesta, con OpenStreetMap (Photon).
     async function buscar(q) {
       ultima = q;
+      if (V.buscador && !sinBuscadorPc) {
+        if (!sesion) sesion = nuevaSesion();
+        try {
+          const r = await fetch(location.pathname + "/lugares?q=" + encodeURIComponent(q) + "&s=" + sesion);
+          if (r.ok) {
+            const datos = await r.json();
+            if (q !== ultima) return;
+            mostrar((datos.lugares || []).map(d => ({ texto: d.texto, google: d.id, lat: d.lat, lon: d.lon })), datos.fuente);
+            return;
+          }
+          sinBuscadorPc = true; // límite del día o sin clave: el resto, con OpenStreetMap
+        } catch (e) { }
+      }
       let url = "https://photon.komoot.io/api/?limit=5&q=" + encodeURIComponent(q);
       if (V.centro && V.centro.lat) url += "&lat=" + V.centro.lat + "&lon=" + V.centro.lon;
       try {
         const datos = await (await fetch(url)).json();
         if (q !== ultima) return;
-        lista.replaceChildren();
-        (datos.features || []).forEach(f => {
+        mostrar((datos.features || []).map(f => {
           const p = f.properties || {};
+          const c = (f.geometry && f.geometry.coordinates) || [];
           const calle = [p.street, p.housenumber].filter(Boolean).join(" ");
           const sitio = [p.postcode, p.city || p.town || p.village].filter(Boolean).join(" ");
           const nombreSitio = p.name && p.name !== p.street ? p.name : "";
-          const opcionTexto = [nombreSitio, calle, sitio].filter(Boolean).join(", ");
-          if (!opcionTexto) return;
-          const opcion = el("div", { textContent: opcionTexto });
-          opcion.setAttribute("role", "option");
-          opcion.addEventListener("mousedown", e => e.preventDefault());
-          opcion.addEventListener("click", () => {
-            const c = (f.geometry && f.geometry.coordinates) || [];
-            input.value = opcionTexto;
-            input.dataset.lon = c[0] || ""; input.dataset.lat = c[1] || "";
-            lista.classList.add("oculto");
-            marca.classList.remove("oculto");
-            cambio();
-          });
-          lista.append(opcion);
-        });
-        lista.classList.toggle("oculto", lista.children.length === 0);
+          return { texto: [nombreSitio, calle, sitio].filter(Boolean).join(", "), lat: c[1], lon: c[0] };
+        }), "");
       } catch (e) {
         lista.classList.add("oculto");
       }
     }
+
+    // fuente: de dónde vienen («Google Maps», «TomTom»); se dice debajo (Google lo exige).
+    function mostrar(opciones, fuente) {
+      lista.replaceChildren();
+      opciones.forEach(o => {
+        if (!o.texto) return;
+        const opcion = el("div", { textContent: o.texto });
+        opcion.setAttribute("role", "option");
+        opcion.addEventListener("mousedown", e => e.preventDefault());
+        opcion.addEventListener("click", () => elegir(o));
+        lista.append(opcion);
+      });
+      if (fuente && lista.children.length) {
+        const atribucion = el("div", { className: "atribucion", textContent: fuente });
+        atribucion.setAttribute("translate", "no");
+        atribucion.addEventListener("mousedown", e => e.preventDefault());
+        lista.append(atribucion);
+      }
+      lista.classList.toggle("oculto", lista.children.length === 0);
+    }
+
+    async function elegir(o) {
+      lista.classList.add("oculto");
+      input.value = o.texto;
+      input.dataset.lat = ""; input.dataset.lon = "";
+      marca.classList.add("oculto");
+      if (o.google) {
+        // Las coordenadas de la elegida; con esto termina la sesión.
+        const s = sesion || nuevaSesion();
+        sesion = "";
+        try {
+          const r = await fetch(location.pathname + "/lugar?id=" + encodeURIComponent(o.google) + "&s=" + s);
+          if (r.ok && input.value === o.texto) {
+            const d = await r.json();
+            input.dataset.lat = d.lat || ""; input.dataset.lon = d.lon || "";
+          }
+        } catch (e) { }
+      } else {
+        input.dataset.lat = o.lat || ""; input.dataset.lon = o.lon || "";
+      }
+      marca.classList.toggle("oculto", !(input.dataset.lat && input.dataset.lon));
+      cambio();
+    }
     return caja;
   }
+
+  // El buscador del PC no ha contestado (límite del día, sin clave…): esta vez, solo OpenStreetMap.
+  let sinBuscadorPc = false;
+  const nuevaSesion = () =>
+    (window.crypto && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2))
+      .replace(/[^A-Za-z0-9-]/g, "");
 
   const leerLugar = (raiz, nombre) => {
     const i = raiz.querySelector('[name="' + nombre + '"]');

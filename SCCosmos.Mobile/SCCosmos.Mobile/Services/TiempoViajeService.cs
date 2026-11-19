@@ -62,12 +62,60 @@ public static class TiempoViajeService
     // CLAVES (TomTom o Google Maps)
     // =========================================================
 
-    /// <summary>Clave de TomTom (si está puesta, se usa TomTom).</summary>
-    public static string ObtenerClaveTomTom() =>
-        (Preferences.Get(ClaveTomTom, "") ?? "").Trim();
+    /// <summary>
+    /// Clave de TomTom (si está puesta, se usa TomTom). Va en Configuración, que se
+    /// sincroniza: el PC la usa para el buscador de direcciones del formulario de
+    /// los ancianos. Las versiones anteriores la guardaban solo en este móvil.
+    /// </summary>
+    public static string ObtenerClaveTomTom()
+    {
+        try
+        {
+            string compartida =
+                SCCosmos.Mobile.Data.DatabaseHelper.ObtenerConfiguracion(SCCosmos.Sincro.LugaresTomTom.ClaveApi, "").Trim();
 
-    public static void GuardarClaveTomTom(string clave) =>
-        Preferences.Set(ClaveTomTom, (clave ?? "").Trim());
+            if (compartida.Length > 0)
+            {
+                return compartida;
+            }
+        }
+        catch
+        {
+            // Sin base todavía: la de este móvil.
+        }
+
+        return (Preferences.Get(ClaveTomTom, "") ?? "").Trim();
+    }
+
+    public static void GuardarClaveTomTom(string clave)
+    {
+        clave = (clave ?? "").Trim();
+
+        Preferences.Set(ClaveTomTom, clave);
+
+        SCCosmos.Mobile.Data.DatabaseHelper.GuardarConfiguracion(SCCosmos.Sincro.LugaresTomTom.ClaveApi, clave);
+    }
+
+    /// <summary>
+    /// Una vez: la clave guardada solo en este móvil (versiones anteriores) pasa a
+    /// Configuración, para que el PC también la tenga.
+    /// </summary>
+    public static void CompartirClaveTomTom()
+    {
+        try
+        {
+            string local = (Preferences.Get(ClaveTomTom, "") ?? "").Trim();
+
+            if (local.Length > 0
+                && SCCosmos.Mobile.Data.DatabaseHelper.ObtenerConfiguracion(SCCosmos.Sincro.LugaresTomTom.ClaveApi, "").Trim().Length == 0)
+            {
+                SCCosmos.Mobile.Data.DatabaseHelper.GuardarConfiguracion(SCCosmos.Sincro.LugaresTomTom.ClaveApi, local);
+            }
+        }
+        catch
+        {
+        }
+    }
 
     public static string ObtenerClaveGoogle() =>
         (Preferences.Get(ClaveGoogleMaps, "") ?? "").Trim();

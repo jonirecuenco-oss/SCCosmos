@@ -23,6 +23,9 @@ namespace SCCosmos.Sincro;
 //   GET    /programa/{código}/archivos                 → los archivos ya subidos
 //   PUT    /programa/{código}/archivos/{tipo}/{nombre} → subir un archivo (ArchivosProgramaWeb)
 //   DELETE /programa/{código}/archivos/{tipo}/{nombre} → quitarlo
+//   GET    /programa/{código}/estado                   → cuándo lo enviaron (para el móvil)
+//   GET    /programa/{código}/lugares?q=…&s=…          → sugerencias de direcciones (Google Maps o TomTom)
+//   GET    /programa/{código}/lugar?id=…&s=…           → las coordenadas de la elegida (las de Google)
 // Todo lo demás, 404. Está en el código compartido para poder
 // llevarlo más adelante al móvil o a una Raspberry.
 // ============================================================
@@ -73,6 +76,15 @@ public sealed class ServidorProgramaWeb : IDisposable
     /// avisar aunque la app esté cerrada. Solo lo sabe quien tiene el enlace.
     /// </summary>
     public Func<string, string?>? Estado { get; set; }
+
+    /// <summary>
+    /// Código, lo escrito y token de sesión → sugerencias de direcciones (JSON), o
+    /// null si no hay (sin Google, límite del día…): la página busca entonces con OpenStreetMap.
+    /// </summary>
+    public Func<string, string, string, CancellationToken, Task<string?>>? Lugares { get; set; }
+
+    /// <summary>Código, id del lugar elegido y token de sesión → sus coordenadas (JSON), o null.</summary>
+    public Func<string, string, string, CancellationToken, Task<string?>>? Lugar { get; set; }
 
 
     /// <param name="datosVisita">Código → JSON con los datos de la visita para la página (null si no existe).</param>
@@ -276,6 +288,35 @@ public sealed class ServidorProgramaWeb : IDisposable
             }
 
             await ResponderAsync(red, 200, "application/json", estado, token);
+            return;
+        }
+
+        // Direcciones con Google Maps o TomTom: las pide el PC (las claves no salen de aquí).
+        if (partes.Length == 3 && partes[2] is "lugares" or "lugar")
+        {
+            bool sugerencias = partes[2] == "lugares";
+            Func<string, string, string, CancellationToken, Task<string?>>? buscar = sugerencias ? Lugares : Lugar;
+            string? resultado = null;
+
+            if (metodo == "GET" && buscar is not null)
+            {
+                try
+                {
+                    resultado = await buscar(codigo, Parametro(ruta, sugerencias ? "q" : "id"), Parametro(ruta, "s"), token);
+                }
+                catch
+                {
+                    resultado = null;
+                }
+            }
+
+            if (resultado is null)
+            {
+                await RechazarAsync(red, 503, "application/json", "{\"ok\":false}", largo, sobrante, token);
+                return;
+            }
+
+            await ResponderAsync(red, 200, "application/json", resultado, token);
             return;
         }
 
@@ -535,6 +576,37 @@ public sealed class ServidorProgramaWeb : IDisposable
     }
 
 
+    // Un parámetro de la consulta («?q=…&s=…»), ya decodificado («» si no está).
+    private static string Parametro(string ruta, string nombre)
+    {
+        int interrogacion = ruta.IndexOf('?');
+
+        if (interrogacion < 0)
+        {
+            return "";
+        }
+
+        foreach (string par in ruta[(interrogacion + 1)..].Split('&'))
+        {
+            int igual = par.IndexOf('=');
+
+            if ((igual < 0 ? par : par[..igual]) == nombre)
+            {
+                try
+                {
+                    return Uri.UnescapeDataString((igual < 0 ? "" : par[(igual + 1)..]).Replace('+', ' '));
+                }
+                catch (UriFormatException)
+                {
+                    return "";
+                }
+            }
+        }
+
+        return "";
+    }
+
+
     // Temporal (302, sin guardar en caché): si el servidor vuelve a cambiar, el enlace sigue al nuevo.
     private static async Task RedirigirAsync(NetworkStream red, string destino, CancellationToken token)
     {
@@ -564,6 +636,7 @@ public sealed class ServidorProgramaWeb : IDisposable
             413 => "Payload Too Large",
             415 => "Unsupported Media Type",
             429 => "Too Many Requests",
+            503 => "Service Unavailable",
             _ => "Error"
         };
 
