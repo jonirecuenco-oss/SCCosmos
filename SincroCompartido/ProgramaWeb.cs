@@ -37,7 +37,8 @@ namespace SCCosmos.Sincro;
 // }
 // Los archivos (S-61, S-21, S-88…) no van aquí: se suben aparte
 // (ServidorProgramaWeb, ArchivosProgramaWeb).
-// Las comidas van sin hora (a las 13:30, como en el PDF). La hora y el
+// Las comidas van siempre a las 13:30 y el alojamiento a las 22:00, como en
+// el PDF; las visitas de pastoreo llevan su acompañante («acompanante»). La hora y el
 // lugar de cada salida de predicación se rellenan en Reuniones, pero
 // viajan en su franja de "predicacion". En la del medio día libre
 // (Configuración) no va nadie con el SC ni con su esposa, y solo hay
@@ -419,13 +420,12 @@ public static class ProgramaWeb
                 continue;
             }
 
-            string hora = Hora(Texto(comida, "hora"));
-
+            // Siempre a las 13:30 (como el PDF), aunque llegue otra hora.
             eventos.Add(new EventoProgramaVisita
             {
                 DiaSemana = dia,
                 Turno = "General",
-                Hora = hora.Length > 0 ? hora : "13:30",
+                Hora = "13:30",
                 TipoActividad = "Comida",
                 Responsable = "Ambos",
                 Notas = Juntar(familia, Texto(comida, "telefono")),
@@ -445,7 +445,7 @@ public static class ProgramaWeb
                 {
                     DiaSemana = dia,
                     Turno = "General",
-                    Hora = "",
+                    Hora = "22:00",
                     TipoActividad = "Alojamiento",
                     Responsable = "Ambos",
                     Notas = Juntar(familiaAlojamiento, Texto(alojamiento, "telefono")),
@@ -533,7 +533,10 @@ public static class ProgramaWeb
                 Hora = Hora(Texto(visita, "hora")),
                 TipoActividad = "Visita de pastoreo",
                 Responsable = "SC",
-                Notas = Juntar(nombre, Texto(visita, "descripcion")),
+                // Quién visita, con quién va (como los publicadores de una salida) y la descripción.
+                Notas = Juntar(
+                    Juntar(nombre, Texto(visita, "acompanante") is { Length: > 0 } acompanante ? "Acompañante: " + acompanante : ""),
+                    Texto(visita, "descripcion")),
                 Ubicacion = Texto(visita, "direccion"),
                 Latitud = Numero(visita, "lat"),
                 Longitud = Numero(visita, "lon")

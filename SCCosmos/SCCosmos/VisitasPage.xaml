@@ -313,7 +313,6 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel VerticalAlignment="Center">
                                     <TextBlock x:Name="TxtProgramaRecibido" FontWeight="SemiBold" TextWrapping="Wrap"/>
-                                    <TextBlock x:Name="TxtAsuntosRecibidos" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,4,12,0"/>
                                 </StackPanel>
                                 <ui:Button Grid.Column="1" Content="Pasar al programa" Icon="{ui:SymbolIcon ArrowDownload24}" Appearance="Secondary"
                                            Click="BtnPasarProgramaRecibido_Click" VerticalAlignment="Center" Cursor="Hand"
@@ -448,6 +447,19 @@
                 </TabItem>
 
                 <!-- NOTAS PERSONALES -->
+                <!-- Los puntos a tratar que han escrito los ancianos en el formulario web -->
+                <TabItem x:Name="TabAgenda" Header="Agenda">
+                    <StackPanel Margin="0,16,0,0">
+                        <Border Style="{StaticResource PanelTarjeta}" Padding="16,12" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="Puntos a tratar" FontWeight="SemiBold" FontSize="14"/>
+                                <TextBlock x:Name="TxtAgendaOrigen" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+                        <StackPanel x:Name="ListaAgenda"/>
+                    </StackPanel>
+                </TabItem>
+
                 <TabItem x:Name="TabNotas" Header="Notas" RequestBringIntoView="TabNotas_RequestBringIntoView">
                     <Grid x:Name="PanelNotas" Margin="0,16,0,0">
                         <Grid.Resources>

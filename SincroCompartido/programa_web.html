@@ -162,7 +162,7 @@
 
   <section id="s-pastoreo">
     <h2><span class="num">4</span>Pastoreo</h2>
-    <p class="ayuda">Hasta 3 visitas, de miércoles a domingo.</p>
+    <p class="ayuda">Hasta 3 visitas, de miércoles a domingo. Cada visita que añadáis, con su día, hora y dirección.</p>
     <div id="pastoreo" class="rejilla dos"></div>
     <button type="button" class="secundario" id="mas-pastoreo">+ Añadir otra visita</button>
   </section>
@@ -533,13 +533,14 @@ window.VISITA = /*VISITA*/null;
     }
     b.append(cab,
              campo("Persona o familia", texto("nombre")),
+             campo("Acompañante (opcional)", texto("acompanante", "Anciano o siervo ministerial que le acompaña")),
              el("div", { className: "fila" }, campo("Día", selectorDia(MIE_A_DOM)), campo("Hora", hora("hora"))),
              campo("Dirección", lugar("direccion")),
              campo("Descripción (opcional)", el("textarea", { name: "descripcion" })));
     pastoreo.append(b);
     numerarVisitas();
     if (datos) {
-      poner(b, "nombre", datos.nombre); poner(b, "dia", datos.dia); poner(b, "hora", datos.hora);
+      poner(b, "nombre", datos.nombre); poner(b, "acompanante", datos.acompanante); poner(b, "dia", datos.dia); poner(b, "hora", datos.hora);
       poner(b, "descripcion", datos.descripcion);
       ponerLugar(b, "direccion", datos.direccion, datos.lat, datos.lon);
     }
@@ -775,7 +776,7 @@ window.VISITA = /*VISITA*/null;
     });
     pastoreo.querySelectorAll("[data-visita]").forEach(b => {
       const l = leerLugar(b, "direccion");
-      d.pastoreo.push({ nombre: val(b, "nombre"), dia: val(b, "dia"), hora: val(b, "hora"), direccion: l.texto, lat: l.lat, lon: l.lon, descripcion: val(b, "descripcion") });
+      d.pastoreo.push({ nombre: val(b, "nombre"), acompanante: val(b, "acompanante"), dia: val(b, "dia"), hora: val(b, "hora"), direccion: l.texto, lat: l.lat, lon: l.lon, descripcion: val(b, "descripcion") });
     });
     asuntos.querySelectorAll('[name="asunto"]').forEach(t => t.value.trim() && d.asuntos.push(t.value.trim()));
     return d;
@@ -815,7 +816,7 @@ window.VISITA = /*VISITA*/null;
       });
     });
     pastoreo.replaceChildren();
-    (d.pastoreo || []).filter(v => v.nombre || v.dia || v.hora || v.direccion || v.descripcion).slice(0, 3).forEach(v => nuevaVisita(v));
+    (d.pastoreo || []).filter(v => v.nombre || v.acompanante || v.dia || v.hora || v.direccion || v.descripcion).slice(0, 3).forEach(v => nuevaVisita(v));
     while (pastoreo.children.length < 2) nuevaVisita();
     asuntos.replaceChildren();
     (d.asuntos || []).slice(0, 10).forEach(a => nuevoAsunto(a));
@@ -897,6 +898,15 @@ window.VISITA = /*VISITA*/null;
       else if (p.dataset.faceta === "Curso bíblico") obligatorio(p, "leccion", "Elegid la lección", donde);
     });
 
+    // En cada salida, al menos un publicador con cada uno (el medio día libre no tiene grupos).
+    salidas.querySelectorAll("[data-franja]").forEach(b => {
+      b.querySelectorAll("[data-quien]").forEach(g => {
+        if (g.querySelector(".persona")) return;
+        falta(g.querySelector("button.secundario"), "Añadid al menos un publicador",
+              b.querySelector("h3").textContent + " · " + g.querySelector(".titulo").textContent);
+      });
+    });
+
     // Exhibidores, al menos un día, con cada uno.
     const sinExhibidores = [["sc", SC], ["esposa", ESPOSA]]
       .filter(([q]) => ![...salidas.querySelectorAll('[data-quien="' + q + '"] .persona')].some(p => p.dataset.faceta === "Exhibidores"))
@@ -905,8 +915,16 @@ window.VISITA = /*VISITA*/null;
       falta(avisoExhibidores, "Añadid predicación con exhibidores, al menos un día, con " + sinExhibidores.join(" y con ") + ".", "Predicación");
     }
 
-    // El pastoreo no es obligatorio, pero sus direcciones también se eligen de la lista.
-    pastoreo.querySelectorAll("[data-visita]").forEach(b => direccion(b, "direccion", "Pastoreo · " + b.querySelector(".n").textContent, false));
+    // El pastoreo no es obligatorio, pero la visita que se empiece va entera (sin día ni
+    // hora no se puede poner en el programa); el acompañante y la descripción, opcionales.
+    pastoreo.querySelectorAll("[data-visita]").forEach(b => {
+      if (!["nombre", "acompanante", "dia", "hora", "direccion", "descripcion"].some(n => val(b, n))) return;
+      const donde = "Pastoreo · " + b.querySelector(".n").textContent;
+      obligatorio(b, "nombre", "Falta la persona o familia", donde);
+      obligatorio(b, "dia", "Falta el día", donde);
+      obligatorio(b, "hora", "Falta la hora", donde);
+      direccion(b, "direccion", donde, true);
+    });
 
     // Archivos: todos menos los opcionales; de la S-21, cada grupo.
     if (V.archivos) {

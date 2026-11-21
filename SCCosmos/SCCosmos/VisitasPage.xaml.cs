@@ -998,8 +998,12 @@ namespace SCCosmos
                 if (ProgramaWebPc.Recibido(_congreCodigo, mes) is not { } recibido)
                 {
                     PanelProgramaRecibido.Visibility = Visibility.Collapsed;
+                    PintarAgenda(null, null, false);
                     return;
                 }
+
+                // Los puntos a tratar van en la pestaña Agenda.
+                PintarAgenda(recibido.Json, recibido.Cuando, recibido.Completo);
 
                 DateTime? aplicado = ProgramaWebPc.Aplicado(_congreCodigo, mes);
                 bool yaPasado = aplicado.HasValue && aplicado.Value >= recibido.Cuando;
@@ -1014,17 +1018,50 @@ namespace SCCosmos
                           ? " Ya está en el programa."
                           : " No se ha pasado solo porque el programa de este mes tiene cambios: revísalo y pásalo.");
 
-                var (_, asuntos) = SCCosmos.Sincro.ProgramaWeb.AEventos(recibido.Json);
-
-                TxtAsuntosRecibidos.Text =
-                    "Asuntos a tratar: " + string.Join("  ·  ", asuntos.Select((a, i) => $"{i + 1}) {a}"));
-                TxtAsuntosRecibidos.Visibility = asuntos.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-
                 PanelProgramaRecibido.Visibility = Visibility.Visible;
             }
             catch
             {
                 PanelProgramaRecibido.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        // Agenda: los puntos a tratar que han escrito los ancianos en el formulario.
+        private void PintarAgenda(string json, DateTime? cuando, bool completo)
+        {
+            ListaAgenda.Children.Clear();
+
+            List<string> asuntos =
+                json is null ? new List<string>() : SCCosmos.Sincro.ProgramaWeb.AEventos(json).Asuntos;
+
+            TxtAgendaOrigen.Text = cuando is not { } c
+                ? "Aquí saldrán los puntos que los ancianos escriban en el formulario."
+                : !completo
+                    ? $"Lo que llevan escrito los ancianos (el {c:dd/MM} a las {c:HH:mm}); aún no han enviado el formulario."
+                    : asuntos.Count == 0
+                        ? $"Los ancianos enviaron el formulario el {c:dd/MM} a las {c:HH:mm}, sin puntos a tratar."
+                        : $"Los que enviaron los ancianos en el formulario el {c:dd/MM} a las {c:HH:mm}.";
+
+            for (int i = 0; i < asuntos.Count; i++)
+            {
+                var fila = new Grid();
+                fila.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                fila.ColumnDefinitions.Add(new ColumnDefinition());
+
+                var numero = new TextBlock { Text = (i + 1) + ".", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 10, 0) };
+                var texto = new TextBlock { Text = asuntos[i], TextWrapping = TextWrapping.Wrap };
+                Grid.SetColumn(texto, 1);
+
+                fila.Children.Add(numero);
+                fila.Children.Add(texto);
+
+                ListaAgenda.Children.Add(new Border
+                {
+                    Style = (Style)FindResource("PanelTarjeta"),
+                    Padding = new Thickness(16, 12, 16, 12),
+                    Margin = new Thickness(0, 0, 0, 8),
+                    Child = fila
+                });
             }
         }
 

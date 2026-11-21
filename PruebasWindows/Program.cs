@@ -374,6 +374,8 @@ internal static class Programa
         Ver("Web: predicación, 2 personas como mucho", eventosWeb.First(e => e.TipoActividad == "Predicación" && e.Responsable == "SC").Notas, "Juan Pérez (Curso bíblico, lección 12) — lleva el libro; Ana Ruiz (Territorio)");
         Ver("Web: salida con hora y sin nadie", eventosWeb.Count(e => e.TipoActividad == "Predicación" && e.Turno == "Tarde" && e.Responsable == ""), 1);
         Ver("Web: pastoreo", eventosWeb.Where(e => e.TipoActividad == "Visita de pastoreo").Select(e => $"{e.DiaSemana} {e.Hora} {e.Responsable} {e.Notas}").Single(), "Jueves 18:00 SC Familia López · Ánimo");
+        Ver("Web: alojamiento a las 22:00 y comida siempre a las 13:30", string.Join("|", ProgramaWeb.AEventos("{\"version\":1,\"alojamiento\":{\"familia\":\"Familia Ruiz\"},\"comidas\":[{\"dia\":\"Jueves\",\"familia\":\"Familia Gil\",\"hora\":\"14:15\"}]}").Eventos.Where(e => e.DiaSemana == "Jueves").Select(e => e.TipoActividad + " " + e.Hora)), "Comida 13:30|Alojamiento 22:00");
+        Ver("Web: pastoreo con acompañante", ProgramaWeb.AEventos("{\"version\":1,\"pastoreo\":[{\"nombre\":\"Familia Sanz\",\"acompanante\":\"Juan Pérez\",\"dia\":\"Viernes\",\"hora\":\"17:00\",\"descripcion\":\"Ánimo\"}]}").Eventos.Single().Notas, "Familia Sanz · Acompañante: Juan Pérez · Ánimo");
         Ver("Web: coordenadas", eventosWeb.First().Latitud, 39.9);
         Ver("Web: asuntos", string.Join("|", asuntosWeb), "Limpieza del salón|Grupos");
         Ver("Web: código del enlace", ProgramaWeb.CodigoValido(ProgramaWeb.NuevoCodigo()) && !ProgramaWeb.CodigoValido("../../etc/passwd"), true);

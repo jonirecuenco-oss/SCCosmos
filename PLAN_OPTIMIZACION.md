@@ -462,6 +462,13 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - Móvil: «Enviar documentación» (Acciones de la visita) también cambia `$_ENLACEDOCU`, con el código de Configuración (o uno nuevo, que llega al PC al sincronizar) y la dirección que guardó el PC (`ProgramaWeb.ClaveDireccion`, ahora compartida); si aún no la sabe, pregunta «Enviar sin enlace / Cancelar».
   - 122/122 comprobaciones (3 de la S-61 quitadas, 2 nuevas). Probado: la ventana de envío y el Calendario con la herramienta de capturas, el formulario en PC y una S-61 subida al servidor de prueba (va a `S-61`).
 - 17/11/2026 · Publicada la v2.1.74.
+- 18-19/11/2026 · Desde otro PC (commits 9956a9d, b2f77c2 y 7164bfe, sin versión publicada; traídos a este PC el 21/11 sin conflictos): comidas por congregación (columna «Comidas» en Circuito), servidor del formulario elegible (los enlaces antiguos van al nuevo con 302), lo enviado pasa solo al programa salvo cambios a mano (huella del programa), borrador en el PC mientras rellenan, aviso en el móvil al enviar, Tailscale vigilado (PC y móvil), archivos de los ancianos siempre en `%LocalAppData%\SCCosmos`, buscador de direcciones con Google Maps (Places API New) o TomTom a través del PC (topes diarios) y comprobaciones en el formulario (todo obligatorio salvo lo marcado como opcional). 165 comprobaciones.
+- 21/11/2026 · v2.1.75 (pedido por el usuario):
+  - Visitas: pestaña «Agenda» (tras Programa) con los puntos a tratar del formulario, numerados y con cuándo se enviaron (o si aún es borrador); salen del aviso verde de Programa.
+  - Formulario: «Acompañante (opcional)» en cada visita de pastoreo; la visita que se empiece pide persona, día, hora y dirección (sin día se perdía al pasar al programa); en cada salida (no en el medio día libre), al menos un publicador con cada uno («Añadid al menos un publicador»).
+  - Paso al programa (`ProgramaWeb.AEventos`): alojamiento a las 22:00 (como el PDF; antes sin hora), comidas siempre a las 13:30 y, en el pastoreo, «Acompañante: …» en las notas.
+  - 167/167 comprobaciones (2 nuevas). Probado: la Agenda con la herramienta de capturas y las comprobaciones del formulario en PC, sobre una copia de la base con un envío de prueba (borrada).
+- 21/11/2026 · Publicada la v2.1.75.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 
