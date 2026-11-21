@@ -460,6 +460,19 @@
                     </StackPanel>
                 </TabItem>
 
+                <!-- Asistencia a las reuniones: pendiente de programar -->
+                <TabItem x:Name="TabReuniones" Header="Reuniones">
+                    <StackPanel Margin="0,16,0,0">
+                        <Border Style="{StaticResource PanelTarjeta}" Padding="16,12">
+                            <StackPanel>
+                                <TextBlock Text="Asistencia a las reuniones" FontWeight="SemiBold" FontSize="14"/>
+                                <TextBlock Text="Aquí se rellenarán los datos de asistencia a las reuniones. Pendiente de programar."
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </TabItem>
+
                 <TabItem x:Name="TabNotas" Header="Notas" RequestBringIntoView="TabNotas_RequestBringIntoView">
                     <Grid x:Name="PanelNotas" Margin="0,16,0,0">
                         <Grid.Resources>

@@ -162,7 +162,7 @@
 
   <section id="s-pastoreo">
     <h2><span class="num">4</span>Pastoreo</h2>
-    <p class="ayuda">Hasta 3 visitas, de miércoles a domingo. Cada visita que añadáis, con su día, hora y dirección.</p>
+    <p class="ayuda">Hasta 3 visitas, de miércoles a domingo. Cada visita que añadáis, con su acompañante, día, hora y dirección.</p>
     <div id="pastoreo" class="rejilla dos"></div>
     <button type="button" class="secundario" id="mas-pastoreo">+ Añadir otra visita</button>
   </section>
@@ -533,7 +533,7 @@ window.VISITA = /*VISITA*/null;
     }
     b.append(cab,
              campo("Persona o familia", texto("nombre")),
-             campo("Acompañante (opcional)", texto("acompanante", "Anciano o siervo ministerial que le acompaña")),
+             campo("Acompañante", texto("acompanante", "Anciano o siervo ministerial que le acompaña")),
              el("div", { className: "fila" }, campo("Día", selectorDia(MIE_A_DOM)), campo("Hora", hora("hora"))),
              campo("Dirección", lugar("direccion")),
              campo("Descripción (opcional)", el("textarea", { name: "descripcion" })));
@@ -916,11 +916,12 @@ window.VISITA = /*VISITA*/null;
     }
 
     // El pastoreo no es obligatorio, pero la visita que se empiece va entera (sin día ni
-    // hora no se puede poner en el programa); el acompañante y la descripción, opcionales.
+    // hora no se puede poner en el programa); solo la descripción es opcional.
     pastoreo.querySelectorAll("[data-visita]").forEach(b => {
       if (!["nombre", "acompanante", "dia", "hora", "direccion", "descripcion"].some(n => val(b, n))) return;
       const donde = "Pastoreo · " + b.querySelector(".n").textContent;
       obligatorio(b, "nombre", "Falta la persona o familia", donde);
+      obligatorio(b, "acompanante", "Falta el acompañante", donde);
       obligatorio(b, "dia", "Falta el día", donde);
       obligatorio(b, "hora", "Falta la hora", donde);
       direccion(b, "direccion", donde, true);

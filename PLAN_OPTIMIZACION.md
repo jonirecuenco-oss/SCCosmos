@@ -469,6 +469,8 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - Paso al programa (`ProgramaWeb.AEventos`): alojamiento a las 22:00 (como el PDF; antes sin hora), comidas siempre a las 13:30 y, en el pastoreo, «Acompañante: …» en las notas.
   - 167/167 comprobaciones (2 nuevas). Probado: la Agenda con la herramienta de capturas y las comprobaciones del formulario en PC, sobre una copia de la base con un envío de prueba (borrada).
 - 21/11/2026 · Publicada la v2.1.75.
+- 21/11/2026 · v2.1.76 (pedido por el usuario): el acompañante de cada visita de pastoreo es obligatorio («Falta el acompañante»; solo la descripción es opcional) y Visitas tiene una pestaña «Reuniones» (tras Agenda) para la asistencia a las reuniones, de momento vacía («Pendiente de programar»). 167/167 comprobaciones; probado con la herramienta de capturas y en el navegador.
+- 21/11/2026 · Publicada la v2.1.76.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 
