@@ -214,6 +214,19 @@
                            Text=""
                            TextColor="{StaticResource TextoSecundario}"
                            FontSize="13"/>
+
+                    <!-- Si el cónyuge puede ver mis tareas no compartidas: cada uno lo decide en su dispositivo -->
+                    <Button x:Name="BtnPermitirTareas"
+                            FontSize="13"
+                            HeightRequest="40"
+                            CornerRadius="8"
+                            Margin="0,6,0,0"
+                            BackgroundColor="{StaticResource SuperficieAlta}"
+                            TextColor="{StaticResource TextoPrincipal}"
+                            Clicked="BtnPermitirTareas_Clicked"/>
+                    <Label x:Name="LblPermitirTareas"
+                           TextColor="{StaticResource TextoTerciario}"
+                           FontSize="11"/>
                 </VerticalStackLayout>
             </Border>
 

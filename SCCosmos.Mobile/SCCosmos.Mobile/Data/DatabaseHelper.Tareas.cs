@@ -126,7 +126,43 @@ public static partial class DatabaseHelper
     }
 
 
-    public static List<Tarea> ObtenerTareasMobile()
+    /// <summary>«SC» o «Esposa»: de quién son las tareas que se crean en este móvil.</summary>
+    public static string UsuarioTareas() =>
+        SCCosmos.Mobile.Services.PerfilAccesoService.EsHombre
+            ? SCCosmos.Sincro.TareasConyuge.SC
+            : SCCosmos.Sincro.TareasConyuge.Esposa;
+
+
+    /// <summary>El nombre del cónyuge («Solo para Rebeca», «Ver las tareas de Jonatán»).</summary>
+    public static string NombreConyugeTareas()
+    {
+        bool esHombre =
+            SCCosmos.Mobile.Services.PerfilAccesoService.EsHombre;
+
+        string nombre =
+            ObtenerConfiguracion(esHombre ? "NombreEsposaSC" : "NombreSC", "");
+
+        return string.IsNullOrWhiteSpace(nombre)
+            ? esHombre ? "mi esposa" : "el SC"
+            : nombre.Trim();
+    }
+
+
+    /// <summary>Si el cónyuge deja ver sus tareas (lo marca en su Configuración).</summary>
+    public static bool ConyugePermiteVerTareas() =>
+        SCCosmos.Sincro.TareasConyuge.Permite(
+            ObtenerConfiguracion(
+                SCCosmos.Sincro.TareasConyuge.ClavePermiso(
+                    SCCosmos.Sincro.TareasConyuge.Conyuge(UsuarioTareas())),
+                ""));
+
+
+    /// <summary>
+    /// Las tareas que ve este usuario; con «delConyuge», las que ve su cónyuge
+    /// (solo si lo permite). Los avisos y el widget usan siempre las propias.
+    /// </summary>
+    public static List<Tarea> ObtenerTareasMobile(
+        bool delConyuge = false)
     {
         var lista =
             new List<Tarea>();
@@ -190,19 +226,21 @@ public static partial class DatabaseHelper
         // Las tareas son de quien las crea: cada usuario ve las suyas y
         // las compartidas (las antiguas sin creador las ven todos).
         string usuario =
-            SCCosmos.Mobile.Services
-                .PerfilAccesoService.EsHombre
-                ? "SC"
-                : "Esposa";
+            UsuarioTareas();
+
+        if (delConyuge
+            && ConyugePermiteVerTareas())
+        {
+            usuario =
+                SCCosmos.Sincro.TareasConyuge.Conyuge(usuario);
+        }
 
         return lista
             .Where(t =>
-                t.Compartida
-                || string.IsNullOrWhiteSpace(t.CreadaPor)
-                || string.Equals(
-                    t.CreadaPor.Trim(),
-                    usuario,
-                    StringComparison.OrdinalIgnoreCase))
+                SCCosmos.Sincro.TareasConyuge.Visible(
+                    t.Compartida,
+                    t.CreadaPor,
+                    usuario))
             .ToList();
     }
 

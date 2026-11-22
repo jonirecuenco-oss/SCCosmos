@@ -1,5 +1,6 @@
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -37,7 +38,62 @@ public static class AvisosTarea
         Opciones.Select(o => o.Minutos).ToArray();
 
 
-    /// <summary>«1 semana antes»; uno que no esté en la lista, en días, horas o minutos.</summary>
+    /// <summary>La última opción de los desplegables: cualquier antelación.</summary>
+    public const string TextoPersonalizado = "Personalizado…";
+
+    /// <summary>Lo más que se puede adelantar un aviso personalizado: un año.</summary>
+    public const int MaxMinutos = 365 * 1440;
+
+    /// <summary>Las unidades del aviso personalizado, de menor a mayor.</summary>
+    public static readonly IReadOnlyList<(string Plural, string Singular, int Minutos)> Unidades =
+        new[]
+        {
+            ("minutos", "minuto", 1),
+            ("horas", "hora", 60),
+            ("días", "día", 1440),
+            ("semanas", "semana", 10080)
+        };
+
+
+    public static string[] TextosUnidades =>
+        Unidades.Select(u => u.Plural).ToArray();
+
+
+    /// <summary>Si está en la lista; si no (y hay aviso), es personalizado.</summary>
+    public static bool EsDeLaLista(int minutos) =>
+        Opciones.Any(o => o.Minutos == minutos);
+
+
+    /// <summary>En la unidad más grande que lo divide: 4320 → (3, días); 90 → (90, minutos).</summary>
+    public static (int Cantidad, int Unidad) Descomponer(int minutos)
+    {
+        for (int i = Unidades.Count - 1; i > 0; i--)
+        {
+            if (minutos > 0 && minutos % Unidades[i].Minutos == 0)
+            {
+                return (minutos / Unidades[i].Minutos, i);
+            }
+        }
+
+        return (Math.Max(minutos, 1), 0);
+    }
+
+
+    /// <summary>Los minutos de «3 días»; -1 si no vale (de 1 minuto a 1 año).</summary>
+    public static int MinutosDe(int cantidad, int unidad)
+    {
+        if (cantidad < 1 || unidad < 0 || unidad >= Unidades.Count)
+        {
+            return -1;
+        }
+
+        long minutos = (long)cantidad * Unidades[unidad].Minutos;
+
+        return minutos <= MaxMinutos ? (int)minutos : -1;
+    }
+
+
+    /// <summary>«1 semana antes»; uno que no esté en la lista, en semanas, días, horas o minutos.</summary>
     public static string Texto(int minutos)
     {
         foreach (var opcion in Opciones)
@@ -48,8 +104,14 @@ public static class AvisosTarea
             }
         }
 
-        return minutos % 1440 == 0 ? $"{minutos / 1440} días antes"
-            : minutos % 60 == 0 ? $"{minutos / 60} horas antes"
-            : $"{minutos} minutos antes";
+        // Sin aviso es -1, pero cualquier negativo se trata igual al avisar.
+        if (minutos < 0)
+        {
+            return Opciones[0].Texto;
+        }
+
+        var (cantidad, unidad) = Descomponer(minutos);
+
+        return $"{cantidad} {(cantidad == 1 ? Unidades[unidad].Singular : Unidades[unidad].Plural)} antes";
     }
 }

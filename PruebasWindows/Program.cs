@@ -388,6 +388,19 @@ internal static class Programa
         Ver("Archivos: carpetas por tipo", string.Join("|", ArchivosProgramaWeb.Carpeta("s21-g3"), ArchivosProgramaWeb.Carpeta("s21-g03") ?? "no", ArchivosProgramaWeb.Carpeta("../x") ?? "no", ArchivosProgramaWeb.Carpeta("s88")), System.IO.Path.Combine("S-21", "G3") + "|no|no|S-88");
         Ver("Archivos: la S-61 es un tipo más", ArchivosProgramaWeb.Carpeta("s61") + " | " + ArchivosProgramaWeb.Resumen(new (string, string, long)[] { ("s21-g1", "a.pdf", 1), ("s21-g2", "b.pdf", 1), ("s61", "S-61.pdf", 1) }), "S-61 | S-21: 2 (2 grupos) · S-61: 1");
         Ver("Archivos: grupos de predicación", ArchivosProgramaWeb.Carpeta("grupos") + " | " + ArchivosProgramaWeb.Resumen(new (string, string, long)[] { ("grupos", "Grupos.pdf", 1), ("s61", "S-61.pdf", 1) }), "Grupos de predicación | S-61: 1 · Grupos de predicación: 1");
+        Ver("Tareas: quién las ve y para quién son",
+            string.Join("|",
+                TareasConyuge.Visible(false, "Esposa", "SC"), TareasConyuge.Visible(true, "Esposa", "SC"), TareasConyuge.Visible(false, "", "Esposa"),
+                TareasConyuge.ParaDe(false, "Esposa", "SC"), TareasConyuge.ParaDe(true, "SC", "SC"),
+                TareasConyuge.Aplicar(TareasConyuge.Para.Conyuge, "SC", "SC"), TareasConyuge.Aplicar(TareasConyuge.Para.LosDos, "SC", "Esposa"), TareasConyuge.Aplicar(TareasConyuge.Para.Mi, "Esposa", "SC"),
+                TareasConyuge.ClavePermiso("Esposa"), TareasConyuge.Permite(""), TareasConyuge.Permite("1")),
+            "False|True|True|Conyuge|LosDos|(Esposa, False)|(Esposa, True)|(Esposa, False)|TareasVisiblesConyuge_Esposa|False|True");
+        Ver("Tareas: aviso personalizado",
+            string.Join("|",
+                AvisosTarea.Texto(45), AvisosTarea.Texto(30240), AvisosTarea.Texto(1), AvisosTarea.Texto(4320), AvisosTarea.Texto(1440), AvisosTarea.Texto(-5),
+                AvisosTarea.MinutosDe(3, 2), AvisosTarea.MinutosDe(0, 1), AvisosTarea.MinutosDe(53, 3), AvisosTarea.MinutosDe(52, 3),
+                AvisosTarea.Descomponer(4320), AvisosTarea.Descomponer(90), AvisosTarea.EsDeLaLista(60), AvisosTarea.EsDeLaLista(45)),
+            "45 minutos antes|3 semanas antes|1 minuto antes|3 días antes|1 día antes|Sin aviso|4320|-1|-1|524160|(3, 2)|(90, 0)|True|False");
         Ver("Enlace: dirección, código y versión para el correo", ProgramaWeb.Enlace("https://pc.ts.net/", "abc") + " " + ProgramaWeb.EnlaceHtml("https://pc.ts.net/programa/abc"), "https://pc.ts.net/programa/abc <a href=\"https://pc.ts.net/programa/abc\">https://pc.ts.net/programa/abc</a>");
         Ver("Web: días de comida guardados", string.Join("|", ProgramaWeb.DiasComida("").Length, ProgramaWeb.DiasComida("Ninguno").Length, ProgramaWeb.TextoDiasComida(ProgramaWeb.DiasComida("sabado, Jueves"))), "5|0|Jueves,Sábado");
         Ver("Web: en el medio día libre no va nadie con ellos", string.Join("|", ProgramaWeb.AEventos(envioWeb, "Miércoles mañana").Eventos.Where(e => e.DiaSemana == "Miércoles" && e.TipoActividad == "Predicación").Select(e => $"{e.Hora} [{e.Responsable}] {e.Notas}")), "10:00 [] Medio día libre");

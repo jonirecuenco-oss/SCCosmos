@@ -10,8 +10,19 @@ namespace SCCosmos
 
         private readonly bool _esNueva;
 
+        // «SC» o «Esposa», y el nombre del otro («Solo para Rebeca»).
+        private readonly string _usuario =
+            DatabaseHelper.UsuarioTareas();
+
+        private readonly string _nombreConyuge =
+            DatabaseHelper.NombreConyugeTareas();
+
         /// <summary>Categoría con la que se abre una tarea nueva.</summary>
         public string CategoriaInicial { get; set; } = "Personal";
+
+        /// <summary>Para quién es una tarea nueva (desde «Ver las tareas de …», para el cónyuge).</summary>
+        public SCCosmos.Sincro.TareasConyuge.Para ParaInicial { get; set; } =
+            SCCosmos.Sincro.TareasConyuge.Para.Mi;
 
         // Los mismos que en el móvil (SincroCompartido/AvisosTarea.cs): hasta 1 mes antes.
         private static readonly string[] TextosAviso =
@@ -48,28 +59,24 @@ namespace SCCosmos
                     Hora =
                         new TimeSpan(Math.Min(DateTime.Now.Hour + 1, 23), 0, 0).ToString(@"hh\:mm"),
                     CreadaPor =
-                        PerfilAcceso.AccesoCompleto
-                            ? "SC"
-                            : "Esposa"
+                        _usuario
                 };
 
+            // La lista de siempre y, al final, «Personalizado…».
             PckAviso.ItemsSource =
-                TextosAviso;
+                new System.Collections.Generic.List<string>(TextosAviso)
+                {
+                    SCCosmos.Sincro.AvisosTarea.TextoPersonalizado
+                };
+
+            PckAvisoUnidad.ItemsSource =
+                SCCosmos.Sincro.AvisosTarea.TextosUnidades;
 
             PckRepeticion.ItemsSource =
                 Repeticiones;
 
-            string nombreCompartir =
-                PerfilAcceso.AccesoCompleto
-                    ? DatabaseHelper.ObtenerConfiguracion(
-                        "NombreEsposaSC",
-                        "mi esposa")
-                    : DatabaseHelper.ObtenerConfiguracion(
-                        "NombreSC",
-                        "el SC");
-
-            ChkCompartir.Content =
-                "Compartir con " + nombreCompartir;
+            PckPara.ItemsSource =
+                SCCosmos.Sincro.TareasConyuge.TextosPara(_nombreConyuge);
 
             TxtCabecera.Text =
                 _esNueva
@@ -89,6 +96,9 @@ namespace SCCosmos
                 if (_esNueva)
                 {
                     SeleccionarCategoria(CategoriaInicial);
+
+                    PckPara.SelectedIndex =
+                        (int)ParaInicial;
                 }
             };
         }
@@ -190,6 +200,29 @@ namespace SCCosmos
                     MinutosAviso,
                     _tarea.AvisoMinutos);
 
+            // Uno que no está en la lista: «Personalizado…», con su cantidad y unidad.
+            if (indiceAviso < 0
+                && _tarea.AvisoMinutos > 0)
+            {
+                var (cantidad, unidad) =
+                    SCCosmos.Sincro.AvisosTarea.Descomponer(
+                        _tarea.AvisoMinutos);
+
+                TxtAvisoCantidad.Text =
+                    cantidad.ToString();
+
+                PckAvisoUnidad.SelectedIndex =
+                    unidad;
+
+                indiceAviso =
+                    MinutosAviso.Length;
+            }
+            else
+            {
+                PckAvisoUnidad.SelectedIndex =
+                    0;
+            }
+
             PckAviso.SelectedIndex =
                 indiceAviso >= 0
                     ? indiceAviso
@@ -205,8 +238,56 @@ namespace SCCosmos
                     ? indiceRepeticion
                     : 0;
 
-            ChkCompartir.IsChecked =
-                _tarea.Compartida;
+            PckPara.SelectedIndex =
+                (int)SCCosmos.Sincro.TareasConyuge.ParaDe(
+                    _tarea.Compartida,
+                    _tarea.CreadaPor,
+                    _usuario);
+        }
+
+
+        private void PckAviso_SelectionChanged(
+            object sender,
+            SelectionChangedEventArgs e)
+        {
+            if (PanelAvisoPersonalizado == null)
+            {
+                return;
+            }
+
+            PanelAvisoPersonalizado.Visibility =
+                PckAviso.SelectedIndex == MinutosAviso.Length
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+        }
+
+
+        // «Solo para Rebeca»: la tarea pasa a ser suya, y después solo se ve
+        // aquí si ella deja ver sus tareas.
+        private void PckPara_SelectionChanged(
+            object sender,
+            SelectionChangedEventArgs e)
+        {
+            if (TxtPara == null)
+            {
+                return;
+            }
+
+            bool delConyuge =
+                PckPara.SelectedIndex == (int)SCCosmos.Sincro.TareasConyuge.Para.Conyuge;
+
+            TxtPara.Visibility =
+                delConyuge
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+
+            if (delConyuge)
+            {
+                TxtPara.Text =
+                    DatabaseHelper.ConyugePermiteVerTareas()
+                        ? $"Será de {_nombreConyuge}. La verás en «Ver las tareas de {_nombreConyuge}»."
+                        : $"Será de {_nombreConyuge}: solo la verás si te deja ver sus tareas.";
+            }
         }
 
 
@@ -285,6 +366,38 @@ namespace SCCosmos
                         fin.ToString("yyyy-MM-dd");
                 }
 
+                int indiceAviso =
+                    PckAviso.SelectedIndex;
+
+                int avisoMinutos =
+                    indiceAviso >= 0
+                    && indiceAviso < MinutosAviso.Length
+                        ? MinutosAviso[indiceAviso]
+                        : -1;
+
+                if (indiceAviso == MinutosAviso.Length)
+                {
+                    avisoMinutos =
+                        int.TryParse(
+                            (TxtAvisoCantidad.Text ?? "").Trim(),
+                            out int cantidad)
+                            ? SCCosmos.Sincro.AvisosTarea.MinutosDe(
+                                cantidad,
+                                PckAvisoUnidad.SelectedIndex)
+                            : -1;
+
+                    if (avisoMinutos < 0)
+                    {
+                        MessageBox.Show(
+                            "El aviso personalizado tiene que ser de 1 minuto a 1 año antes.",
+                            "Tareas",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Warning);
+
+                        return;
+                    }
+                }
+
                 _tarea.Titulo =
                     titulo;
                 _tarea.Descripcion =
@@ -298,14 +411,8 @@ namespace SCCosmos
                 _tarea.Hora =
                     hora;
 
-                int indiceAviso =
-                    PckAviso.SelectedIndex;
-
                 _tarea.AvisoMinutos =
-                    indiceAviso >= 0
-                    && indiceAviso < MinutosAviso.Length
-                        ? MinutosAviso[indiceAviso]
-                        : -1;
+                    avisoMinutos;
 
                 int indiceRepeticion =
                     PckRepeticion.SelectedIndex;
@@ -316,22 +423,25 @@ namespace SCCosmos
                         ? Repeticiones[indiceRepeticion]
                         : "Ninguna";
 
-                _tarea.Compartida =
-                    ChkCompartir.IsChecked == true;
+                var para =
+                    PckPara.SelectedIndex >= 0
+                        ? (SCCosmos.Sincro.TareasConyuge.Para)PckPara.SelectedIndex
+                        : SCCosmos.Sincro.TareasConyuge.Para.Mi;
 
-                // La esposa siempre guarda tareas personales.
+                (_tarea.CreadaPor, _tarea.Compartida) =
+                    SCCosmos.Sincro.TareasConyuge.Aplicar(
+                        para,
+                        _usuario,
+                        _tarea.CreadaPor);
+
+                // La esposa no elige categoría: las suyas son personales, pero
+                // las de él que edite (compartidas o vistas) conservan la suya.
                 _tarea.Categoria =
                     PerfilAcceso.AccesoCompleto
                         ? CategoriaSeleccionada()
-                        : "Personal";
-
-                if (string.IsNullOrWhiteSpace(_tarea.CreadaPor))
-                {
-                    _tarea.CreadaPor =
-                        PerfilAcceso.AccesoCompleto
-                            ? "SC"
-                            : "Esposa";
-                }
+                        : _esNueva
+                            ? "Personal"
+                            : _tarea.Categoria;
 
                 DatabaseHelper.GuardarTarea(_tarea);
 

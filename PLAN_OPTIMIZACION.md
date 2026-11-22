@@ -473,6 +473,14 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
 - 21/11/2026 · Publicada la v2.1.76.
 - 22/11/2026 · v2.1.77 (pedido por el usuario): los archivos del formulario van separados por quién los prepara: Coordinador (S-61, grupos de predicación y otros archivos), Secretario (S-21 por grupos, S-88, cuentas de la congregación y del comité de mantenimiento, datos de contacto) y Superintendente de servicio (S-13, S-28, territorios variados y exhibidores). «Grupos de predicación» es un tipo nuevo y obligatorio (carpeta «Grupos de predicación»). Esa separación y ese archivo no estaban en ninguna versión de GitHub. Se quita la comprobación de la v2.1.75 de al menos un publicador con cada uno en cada salida: «grupos de predicación obligatorios» se refería a este archivo. 168/168 comprobaciones (1 nueva); probado en el navegador con una copia de la base (borrada).
 - 22/11/2026 · Publicada la v2.1.77.
+- 22/11/2026 · v2.1.78 (pedido por el usuario):
+  - Tareas, en el móvil y en el PC: «Para» en lugar de «Compartir con…»: «Para mí», «Para los dos» o «Solo para Rebeca/Jonatán». Esta última deja la tarea a nombre del cónyuge, sin compartir, con las columnas de siempre (CreadaPor y Compartida): la ven y la avisan también las versiones antiguas. Regla en `SincroCompartido/TareasConyuge.cs`.
+  - Botón «☐/☑ Ver las tareas de …» en Tareas, solo si el cónyuge lo permite en Configuración («☑ Permitir que … vea mis tareas»; claves `TareasVisiblesConyuge_SC` y `_Esposa`, sincronizadas; sin marcar, no se ven). Enseña lo que ve el otro (sus tareas y las compartidas); se pueden editar. Los avisos, el widget y el calendario siguen con las propias y las compartidas. Las tareas siguen llegando a los dos móviles, como antes: el permiso decide lo que enseña la app.
+  - La esposa ya no cambia a «Personal» la categoría de las tareas de él que edite (compartidas o vistas).
+  - Aviso personalizado: «Personalizado…» al final de la lista, con número y unidad (minutos, horas, días o semanas; de 1 minuto a 1 año), en el mismo campo AvisoMinutos (las versiones antiguas lo enseñan igual). En las de todo el día sigue contando desde las 00:00.
+  - Android: los botones «Cancelar» y «Aceptar» de los selectores de hora y fecha no se veían (el tema oscuro forzado los pintaba con colorPrimary #101216 sobre fondo oscuro); ahora se pintan de #4BA3E3 (`Platforms/Android/SelectoresFechaHora.cs`). Comprobado en el emulador antes y después.
+  - 170/170 comprobaciones (2 nuevas). Probado en el emulador (perfil de esposa; la tarea y el permiso de prueba, deshechos) y con la herramienta de capturas sobre una copia de la base con tareas de prueba (borrada).
+- 22/11/2026 · Publicada la v2.1.78.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

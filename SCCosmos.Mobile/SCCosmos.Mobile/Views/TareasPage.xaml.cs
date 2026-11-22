@@ -11,6 +11,9 @@ public partial class TareasPage : ContentPage, IActualizableMobile
     // La esposa no tiene pestañas: todas sus tareas son personales.
     private string? _categoria = "Personal";
 
+    // «Ver las tareas de …»: las del cónyuge, si lo permite.
+    private bool _verConyuge;
+
 
     public TareasPage()
     {
@@ -72,18 +75,51 @@ public partial class TareasPage : ContentPage, IActualizableMobile
     {
         try
         {
+            // El botón solo sale si el cónyuge lo permite; si lo quita, se
+            // vuelve a las propias.
+            bool permitido =
+                await Task.Run(
+                    () => DatabaseHelper.ConyugePermiteVerTareas());
+
+            if (!permitido)
+            {
+                _verConyuge = false;
+            }
+
+            string nombre =
+                DatabaseHelper.NombreConyugeTareas();
+
+            BtnVerConyuge.IsVisible =
+                permitido;
+
+            BtnVerConyuge.Text =
+                (_verConyuge ? "☑ " : "☐ ") + "Ver las tareas de " + nombre;
+
+            BtnVerConyuge.BackgroundColor =
+                Color.FromArgb(_verConyuge ? "#0B6FC2" : "#242830");
+
+            PanelCategorias.IsVisible =
+                SCCosmos.Mobile.Services.PerfilAccesoService.AccesoCompleto
+                && !_verConyuge;
+
+            // Las del cónyuge, todas juntas (como las ve en su app).
+            string? categoria =
+                _verConyuge
+                    ? null
+                    : _categoria;
+
             List<Tarea> tareas =
                 await Task.Run(
-                    () => DatabaseHelper.ObtenerTareasMobile());
+                    () => DatabaseHelper.ObtenerTareasMobile(_verConyuge));
 
             _tareas =
                 tareas
-                    .Where(t => string.IsNullOrWhiteSpace(_categoria)
+                    .Where(t => string.IsNullOrWhiteSpace(categoria)
                         || string.Equals(
                             string.IsNullOrWhiteSpace(t.Categoria)
                                 ? "Personal"
                                 : t.Categoria.Trim(),
-                            _categoria,
+                            categoria,
                             StringComparison.OrdinalIgnoreCase))
                     .OrderBy(t => t.Completada)
                     .ThenBy(t => t.FechaInicio)
@@ -98,12 +134,19 @@ public partial class TareasPage : ContentPage, IActualizableMobile
             int pendientes =
                 _tareas.Count(t => !t.Completada);
 
+            string de =
+                _verConyuge
+                    ? " de " + nombre
+                    : "";
+
             LblResumen.Text =
                 _tareas.Count == 0
-                    ? "Programa tareas, eventos y avisos"
+                    ? _verConyuge
+                        ? nombre + " no tiene tareas"
+                        : "Programa tareas, eventos y avisos"
                     : pendientes == 1
-                        ? "1 tarea pendiente"
-                        : $"{pendientes} tareas pendientes";
+                        ? "1 tarea pendiente" + de
+                        : $"{pendientes} tareas pendientes" + de;
         }
         catch (Exception ex)
         {
@@ -120,13 +163,28 @@ public partial class TareasPage : ContentPage, IActualizableMobile
         object sender,
         EventArgs e)
     {
+        // Viendo las del cónyuge, la nueva es para él o ella.
         await Navigation.PushAsync(
             new TareaEdicionPage(null)
             {
-                CategoriaInicial = string.IsNullOrWhiteSpace(_categoria)
+                CategoriaInicial = _verConyuge || string.IsNullOrWhiteSpace(_categoria)
                     ? "Personal"
-                    : _categoria
+                    : _categoria,
+                ParaInicial = _verConyuge
+                    ? SCCosmos.Sincro.TareasConyuge.Para.Conyuge
+                    : SCCosmos.Sincro.TareasConyuge.Para.Mi
             });
+    }
+
+
+    private async void BtnVerConyuge_Clicked(
+        object sender,
+        EventArgs e)
+    {
+        _verConyuge =
+            !_verConyuge;
+
+        await CargarAsync();
     }
 
 

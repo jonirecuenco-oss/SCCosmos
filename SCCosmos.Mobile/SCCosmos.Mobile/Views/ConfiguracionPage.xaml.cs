@@ -628,6 +628,63 @@ public partial class ConfiguracionPage : ContentPage
                   "Configuración.";
 
         AplicarPerfilAccesoConfiguracion();
+
+        // El permiso es de quien usa el dispositivo: cambia con el perfil.
+        PintarPermisoTareas();
+    }
+
+
+    // Si el cónyuge puede ver mis tareas no compartidas. Se sincroniza para
+    // que su app sepa si puede enseñarlas; lo suyo lo decide en su móvil.
+    private void PintarPermisoTareas()
+    {
+        string clave =
+            SCCosmos.Sincro.TareasConyuge.ClavePermiso(
+                DatabaseHelper.UsuarioTareas());
+
+        bool permite =
+            SCCosmos.Sincro.TareasConyuge.Permite(
+                DatabaseHelper.ObtenerConfiguracion(clave, ""));
+
+        string nombre =
+            DatabaseHelper.NombreConyugeTareas();
+
+        // «☑ Permitir…» / «☐ Permitir…»: el símbolo lo dice; el apagado solo acompaña.
+        BtnPermitirTareas.Text =
+            (permite ? "☑ " : "☐ ") + "Permitir que " + nombre + " vea mis tareas";
+
+        BtnPermitirTareas.Opacity =
+            permite ? 1 : 0.6;
+
+        LblPermitirTareas.Text =
+            permite
+                ? "Puede ver todas tus tareas desde su app."
+                : "Solo ve las compartidas.";
+    }
+
+    private void BtnPermitirTareas_Clicked(
+        object? sender,
+        EventArgs e)
+    {
+        string clave =
+            SCCosmos.Sincro.TareasConyuge.ClavePermiso(
+                DatabaseHelper.UsuarioTareas());
+
+        bool permite =
+            SCCosmos.Sincro.TareasConyuge.Permite(
+                DatabaseHelper.ObtenerConfiguracion(clave, ""));
+
+        try
+        {
+            DatabaseHelper.GuardarConfiguracion(
+                clave,
+                SCCosmos.Sincro.TareasConyuge.ValorPermiso(!permite));
+        }
+        catch
+        {
+        }
+
+        PintarPermisoTareas();
     }
 
 

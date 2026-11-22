@@ -119,7 +119,30 @@
                            Style="{StaticResource TextoNota}" />
                     <Picker x:Name="PckAviso"
                             TextColor="{StaticResource TextoPrincipal}"
-                            BackgroundColor="{StaticResource Superficie}" />
+                            BackgroundColor="{StaticResource Superficie}"
+                            SelectedIndexChanged="PckAviso_SelectedIndexChanged" />
+                    <!-- «Personalizado…»: cualquier antelación, de 1 minuto a 1 año -->
+                    <Grid x:Name="PanelAvisoPersonalizado"
+                          ColumnDefinitions="90,*,Auto"
+                          ColumnSpacing="10"
+                          IsVisible="False">
+                        <Entry x:Name="TxtAvisoCantidad"
+                               Keyboard="Numeric"
+                               MaxLength="3"
+                               Placeholder="Nº"
+                               PlaceholderColor="{StaticResource TextoTerciario}"
+                               HorizontalTextAlignment="Center"
+                               TextColor="{StaticResource TextoPrincipal}"
+                               BackgroundColor="{StaticResource Superficie}" />
+                        <Picker x:Name="PckAvisoUnidad"
+                                Grid.Column="1"
+                                TextColor="{StaticResource TextoPrincipal}"
+                                BackgroundColor="{StaticResource Superficie}" />
+                        <Label Grid.Column="2"
+                               Text="antes"
+                               TextColor="{StaticResource TextoPrincipal}"
+                               VerticalOptions="Center" />
+                    </Grid>
                 </VerticalStackLayout>
 
                 <VerticalStackLayout Spacing="4">
@@ -130,15 +153,18 @@
                             BackgroundColor="{StaticResource Superficie}" />
                 </VerticalStackLayout>
 
-                <HorizontalStackLayout Spacing="10">
-                    <Switch x:Name="SwCompartir"
-                            OnColor="#0B6FC2"
-                            VerticalOptions="Center" />
-                    <Label x:Name="LblCompartir"
-                           Text="Compartir con mi esposa"
-                           TextColor="{StaticResource TextoPrincipal}"
-                           VerticalOptions="Center" />
-                </HorizontalStackLayout>
+                <!-- Para mí, para los dos (compartida) o solo para el cónyuge -->
+                <VerticalStackLayout Spacing="4">
+                    <Label Text="Para"
+                           Style="{StaticResource TextoNota}" />
+                    <Picker x:Name="PckPara"
+                            TextColor="{StaticResource TextoPrincipal}"
+                            BackgroundColor="{StaticResource Superficie}"
+                            SelectedIndexChanged="PckPara_SelectedIndexChanged" />
+                    <Label x:Name="LblPara"
+                           Style="{StaticResource TextoNota}"
+                           IsVisible="False" />
+                </VerticalStackLayout>
 
                 <Label Text="El aviso aparecerá en la campana y como notificación de la app."
                        Style="{StaticResource TextoNota}" />

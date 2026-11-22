@@ -25,6 +25,7 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
             <StackPanel>
@@ -34,7 +35,18 @@
                            Margin="0,4,0,0"/>
             </StackPanel>
 
-            <ui:Button Grid.Column="1"
+            <!-- Las tareas del cónyuge: solo si lo permite en su Configuración -->
+            <ui:Button x:Name="BtnVerConyuge"
+                       Grid.Column="1"
+                       Appearance="Secondary"
+                       Padding="14,8"
+                       Margin="0,0,10,0"
+                       Cursor="Hand"
+                       VerticalAlignment="Center"
+                       Visibility="Collapsed"
+                       Click="BtnVerConyuge_Click"/>
+
+            <ui:Button Grid.Column="2"
                        Content="Nueva tarea"
                        Icon="{ui:SymbolIcon AddCircle24}"
                        Appearance="Primary"

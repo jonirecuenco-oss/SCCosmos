@@ -10,6 +10,13 @@ public partial class TareaEdicionPage : ContentPage
 
     private readonly bool _esNueva;
 
+    // «SC» o «Esposa», y el nombre del otro («Solo para Rebeca»).
+    private readonly string _usuario =
+        DatabaseHelper.UsuarioTareas();
+
+    private readonly string _nombreConyuge =
+        DatabaseHelper.NombreConyugeTareas();
+
     // Los mismos que en Windows (SincroCompartido/AvisosTarea.cs): hasta 1 mes antes.
     private static readonly string[] TextosAviso =
         SCCosmos.Sincro.AvisosTarea.Textos;
@@ -30,6 +37,10 @@ public partial class TareaEdicionPage : ContentPage
     /// <summary>Categoría con la que se abre una tarea nueva.</summary>
     public string CategoriaInicial { get; set; } = "Personal";
 
+    /// <summary>Para quién es una tarea nueva (desde «Ver las tareas de …», para el cónyuge).</summary>
+    public SCCosmos.Sincro.TareasConyuge.Para ParaInicial { get; set; } =
+        SCCosmos.Sincro.TareasConyuge.Para.Mi;
+
 
     public TareaEdicionPage(
         Tarea? tarea)
@@ -49,35 +60,30 @@ public partial class TareaEdicionPage : ContentPage
                 Hora =
                     new TimeSpan(Math.Min(DateTime.Now.Hour + 1, 23), 0, 0).ToString(@"hh\:mm"),
                 CreadaPor =
-                    PerfilAccesoService.EsHombre
-                        ? "SC"
-                        : "Esposa"
+                    _usuario
             };
 
+        // La lista de siempre y, al final, «Personalizado…».
         PckAviso.ItemsSource =
-            TextosAviso;
+            TextosAviso
+                .Append(SCCosmos.Sincro.AvisosTarea.TextoPersonalizado)
+                .ToList();
+
+        PckAvisoUnidad.ItemsSource =
+            SCCosmos.Sincro.AvisosTarea.TextosUnidades;
+
+        PckPara.ItemsSource =
+            SCCosmos.Sincro.TareasConyuge.TextosPara(_nombreConyuge);
 
         PckRepeticion.ItemsSource =
             Repeticiones;
 
         // Al tocar la fecha, la hora o un desplegable se quita el teclado,
         // que tapaba «Guardar» (que también está arriba, en la barra).
-        foreach (View control in new View[] { PckCategoria, PckFecha, PckHora, PckFechaFin, PckAviso, PckRepeticion })
+        foreach (View control in new View[] { PckCategoria, PckFecha, PckHora, PckFechaFin, PckAviso, PckAvisoUnidad, PckRepeticion, PckPara })
         {
             control.Focused += (_, _) => _ = OcultarTecladoAsync();
         }
-
-        string nombreCompartir =
-            PerfilAccesoService.EsHombre
-                ? DatabaseHelper.ObtenerConfiguracion(
-                    "NombreEsposaSC",
-                    "mi esposa")
-                : DatabaseHelper.ObtenerConfiguracion(
-                    "NombreSC",
-                    "el SC");
-
-        LblCompartir.Text =
-            "Compartir con " + nombreCompartir;
 
         LblCabecera.Text =
             _esNueva
@@ -101,6 +107,9 @@ public partial class TareaEdicionPage : ContentPage
             if (_esNueva)
             {
                 SeleccionarCategoria(CategoriaInicial);
+
+                PckPara.SelectedIndex =
+                    (int)ParaInicial;
             }
         };
     }
@@ -197,6 +206,29 @@ public partial class TareaEdicionPage : ContentPage
                 MinutosAviso,
                 _tarea.AvisoMinutos);
 
+        // Uno que no está en la lista: «Personalizado…», con su cantidad y unidad.
+        if (indiceAviso < 0
+            && _tarea.AvisoMinutos > 0)
+        {
+            var (cantidad, unidad) =
+                SCCosmos.Sincro.AvisosTarea.Descomponer(
+                    _tarea.AvisoMinutos);
+
+            TxtAvisoCantidad.Text =
+                cantidad.ToString();
+
+            PckAvisoUnidad.SelectedIndex =
+                unidad;
+
+            indiceAviso =
+                MinutosAviso.Length;
+        }
+        else
+        {
+            PckAvisoUnidad.SelectedIndex =
+                0;
+        }
+
         PckAviso.SelectedIndex =
             indiceAviso >= 0
                 ? indiceAviso
@@ -212,8 +244,42 @@ public partial class TareaEdicionPage : ContentPage
                 ? indiceRepeticion
                 : 0;
 
-        SwCompartir.IsToggled =
-            _tarea.Compartida;
+        PckPara.SelectedIndex =
+            (int)SCCosmos.Sincro.TareasConyuge.ParaDe(
+                _tarea.Compartida,
+                _tarea.CreadaPor,
+                _usuario);
+    }
+
+
+    private void PckAviso_SelectedIndexChanged(
+        object? sender,
+        EventArgs e)
+    {
+        PanelAvisoPersonalizado.IsVisible =
+            PckAviso.SelectedIndex == MinutosAviso.Length;
+    }
+
+
+    // «Solo para Rebeca»: la tarea pasa a ser suya, y después solo se ve
+    // aquí si ella deja ver sus tareas.
+    private void PckPara_SelectedIndexChanged(
+        object? sender,
+        EventArgs e)
+    {
+        bool delConyuge =
+            PckPara.SelectedIndex == (int)SCCosmos.Sincro.TareasConyuge.Para.Conyuge;
+
+        LblPara.IsVisible =
+            delConyuge;
+
+        if (delConyuge)
+        {
+            LblPara.Text =
+                DatabaseHelper.ConyugePermiteVerTareas()
+                    ? $"Será de {_nombreConyuge}. La verás en «Ver las tareas de {_nombreConyuge}»."
+                    : $"Será de {_nombreConyuge}: solo la verás si te deja ver sus tareas.";
+        }
     }
 
 
@@ -295,11 +361,38 @@ public partial class TareaEdicionPage : ContentPage
             int indiceAviso =
                 PckAviso.SelectedIndex;
 
-            tarea.AvisoMinutos =
-                indiceAviso >= 0
-                && indiceAviso < MinutosAviso.Length
-                    ? MinutosAviso[indiceAviso]
-                    : -1;
+            if (indiceAviso == MinutosAviso.Length)
+            {
+                int minutos =
+                    int.TryParse(
+                        (TxtAvisoCantidad.Text ?? "").Trim(),
+                        out int cantidad)
+                        ? SCCosmos.Sincro.AvisosTarea.MinutosDe(
+                            cantidad,
+                            PckAvisoUnidad.SelectedIndex)
+                        : -1;
+
+                if (minutos < 0)
+                {
+                    await DisplayAlert(
+                        "Tareas",
+                        "El aviso personalizado tiene que ser de 1 minuto a 1 año antes.",
+                        "Aceptar");
+
+                    return;
+                }
+
+                tarea.AvisoMinutos =
+                    minutos;
+            }
+            else
+            {
+                tarea.AvisoMinutos =
+                    indiceAviso >= 0
+                    && indiceAviso < MinutosAviso.Length
+                        ? MinutosAviso[indiceAviso]
+                        : -1;
+            }
 
             int indiceRepeticion =
                 PckRepeticion.SelectedIndex;
@@ -310,21 +403,25 @@ public partial class TareaEdicionPage : ContentPage
                     ? Repeticiones[indiceRepeticion]
                     : "Ninguna";
 
-            tarea.Compartida =
-                SwCompartir.IsToggled;
+            var para =
+                PckPara.SelectedIndex >= 0
+                    ? (SCCosmos.Sincro.TareasConyuge.Para)PckPara.SelectedIndex
+                    : SCCosmos.Sincro.TareasConyuge.Para.Mi;
 
+            (tarea.CreadaPor, tarea.Compartida) =
+                SCCosmos.Sincro.TareasConyuge.Aplicar(
+                    para,
+                    _usuario,
+                    tarea.CreadaPor);
+
+            // La esposa no elige categoría: las suyas son personales, pero
+            // las de él que edite (compartidas o vistas) conservan la suya.
             tarea.Categoria =
                 PerfilAccesoService.EsHombre
                     ? CategoriaSeleccionada()
-                    : "Personal";
-
-            if (string.IsNullOrWhiteSpace(tarea.CreadaPor))
-            {
-                tarea.CreadaPor =
-                    PerfilAccesoService.EsHombre
-                        ? "SC"
-                        : "Esposa";
-            }
+                    : _esNueva
+                        ? "Personal"
+                        : tarea.Categoria;
 
             // Y el widget al momento (antes, solo al salir de la app).
             await Task.Run(

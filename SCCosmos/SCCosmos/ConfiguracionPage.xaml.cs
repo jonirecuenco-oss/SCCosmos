@@ -371,6 +371,7 @@ namespace SCCosmos
             ComboMedioDiaLibre.ItemsSource ??= SCCosmos.Sincro.ProgramaWeb.OpcionesMedioDiaLibre;
             ComboMedioDiaLibre.SelectedItem = ProgramaWebPc.MedioDiaLibre();
             PintarDiasComida(ProgramaWebPc.DiasComida());
+            PintarPermisoTareas();
             PintarServidorFormulario(ProgramaWebPc.ServidorElegido());
             TxtClaveGoogle.Password = ProgramaWebPc.ClaveGoogle();
             TxtClaveTomTom.Password = ProgramaWebPc.ClaveTomTom();
@@ -569,6 +570,43 @@ namespace SCCosmos
             DatabaseHelper.GuardarConfiguracion(
                 SCCosmos.Sincro.ProgramaWeb.ClaveDiasComida,
                 SCCosmos.Sincro.ProgramaWeb.TextoDiasComida(activos));
+        }
+
+        // =========================================================================
+        // TAREAS: si el cónyuge puede ver mis tareas no compartidas. Se guarda al
+        // pulsar y se sincroniza, para que su app sepa si puede enseñarlas; lo
+        // suyo lo decide en su móvil.
+        // =========================================================================
+
+        private void PintarPermisoTareas()
+        {
+            bool permite =
+                SCCosmos.Sincro.TareasConyuge.Permite(
+                    DatabaseHelper.ObtenerConfiguracion(
+                        SCCosmos.Sincro.TareasConyuge.ClavePermiso(DatabaseHelper.UsuarioTareas()),
+                        ""));
+
+            string nombre = DatabaseHelper.NombreConyugeTareas();
+
+            BtnPermitirTareas.Content = (permite ? "☑ " : "☐ ") + "Permitir que " + nombre + " vea mis tareas";
+            BtnPermitirTareas.Appearance = permite
+                ? Wpf.Ui.Controls.ControlAppearance.Primary
+                : Wpf.Ui.Controls.ControlAppearance.Secondary;
+
+            TxtPermitirTareas.Text = permite
+                ? "Puede ver todas tus tareas desde su app."
+                : "Solo ve las compartidas.";
+        }
+
+        private void BtnPermitirTareas_Click(object sender, RoutedEventArgs e)
+        {
+            string clave = SCCosmos.Sincro.TareasConyuge.ClavePermiso(DatabaseHelper.UsuarioTareas());
+
+            bool permite = SCCosmos.Sincro.TareasConyuge.Permite(DatabaseHelper.ObtenerConfiguracion(clave, ""));
+
+            DatabaseHelper.GuardarConfiguracion(clave, SCCosmos.Sincro.TareasConyuge.ValorPermiso(!permite));
+
+            PintarPermisoTareas();
         }
 
         // =========================================================================

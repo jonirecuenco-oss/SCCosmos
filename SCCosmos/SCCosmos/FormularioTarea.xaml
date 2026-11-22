@@ -117,7 +117,27 @@
                 <ComboBox x:Name="PckAviso"
                           Foreground="Black"
                           Padding="8,6"
-                          Margin="0,0,0,12"/>
+                          Margin="0,0,0,12"
+                          SelectionChanged="PckAviso_SelectionChanged"/>
+
+                <!-- «Personalizado…»: cualquier antelación, de 1 minuto a 1 año -->
+                <StackPanel x:Name="PanelAvisoPersonalizado"
+                            Orientation="Horizontal"
+                            Margin="0,-4,0,12"
+                            Visibility="Collapsed">
+                    <TextBox x:Name="TxtAvisoCantidad"
+                             Width="70"
+                             Padding="8,6"
+                             MaxLength="3"/>
+                    <ComboBox x:Name="PckAvisoUnidad"
+                              Width="140"
+                              Foreground="Black"
+                              Padding="8,6"
+                              Margin="8,0,0,0"/>
+                    <TextBlock Text="antes"
+                               VerticalAlignment="Center"
+                               Margin="8,0,0,0"/>
+                </StackPanel>
 
                 <TextBlock Text="Repetición"
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
@@ -127,9 +147,21 @@
                           Padding="8,6"
                           Margin="0,0,0,12"/>
 
-                <CheckBox x:Name="ChkCompartir"
-                          Cursor="Hand"
-                          Margin="0,0,0,4"/>
+                <!-- Para mí, para los dos (compartida) o solo para el cónyuge -->
+                <TextBlock Text="Para"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                           Margin="0,0,0,4"/>
+                <ComboBox x:Name="PckPara"
+                          Foreground="Black"
+                          Padding="8,6"
+                          Margin="0,0,0,4"
+                          SelectionChanged="PckPara_SelectionChanged"/>
+                <TextBlock x:Name="TxtPara"
+                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                           FontSize="12"
+                           TextWrapping="Wrap"
+                           Margin="0,0,0,4"
+                           Visibility="Collapsed"/>
 
                 <TextBlock Text="El aviso aparecerá en la campana de la app al llegar el momento."
                            Foreground="{DynamicResource TextFillColorTertiaryBrush}"

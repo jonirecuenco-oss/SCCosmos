@@ -13,7 +13,7 @@
         <!-- CABECERA -->
         <Grid Grid.Row="0"
               ColumnDefinitions="*,Auto"
-              RowDefinitions="Auto,Auto"
+              RowDefinitions="Auto,Auto,Auto"
               ColumnSpacing="10"
               RowSpacing="10">
 
@@ -74,6 +74,19 @@
                         Padding="12,6"
                         FontSize="12" />
             </HorizontalStackLayout>
+
+            <!-- Las tareas del cónyuge: solo si lo permite en su Configuración -->
+            <Button x:Name="BtnVerConyuge"
+                    Grid.Row="2"
+                    Grid.ColumnSpan="2"
+                    IsVisible="False"
+                    HorizontalOptions="Start"
+                    Clicked="BtnVerConyuge_Clicked"
+                    BackgroundColor="{StaticResource SuperficieAlta}"
+                    TextColor="{StaticResource TextoPrincipal}"
+                    CornerRadius="9"
+                    Padding="12,6"
+                    FontSize="12" />
         </Grid>
 
         <!-- LISTA -->

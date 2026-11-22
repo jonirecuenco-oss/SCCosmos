@@ -128,6 +128,13 @@
                                 <TextBlock Text="Los días desactivados no salen para rellenar en Hospitalidad del formulario de los ancianos. Son los de todas las congregaciones; en Circuito, columna «Comidas», puedes cambiarlos para una." Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap"/>
                             </StackPanel>
 
+                            <!-- Si tu esposa puede ver tus tareas no compartidas: ella decide lo suyo en su móvil -->
+                            <StackPanel Margin="0,15,0,0">
+                                <TextBlock Text="Tareas" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
+                                <ui:Button x:Name="BtnPermitirTareas" Cursor="Hand" Click="BtnPermitirTareas_Click"/>
+                                <TextBlock x:Name="TxtPermitirTareas" Foreground="{DynamicResource TextFillColorTertiaryBrush}" FontSize="12" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
+
                             <!-- Servidor del formulario de los ancianos: todos los enlaces, de este PC o del móvil, van a él -->
                             <StackPanel Margin="0,15,0,0">
                                 <TextBlock Text="Servidor del formulario de los ancianos" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,5"/>
