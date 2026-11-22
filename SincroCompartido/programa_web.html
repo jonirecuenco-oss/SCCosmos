@@ -571,19 +571,20 @@ window.VISITA = /*VISITA*/null;
 
   // ---- 6. Archivos: se suben al momento a la carpeta de la visita, en el PC ----
   const MAX_ARCHIVO = 50 * 1024 * 1024;
-  // Todos son obligatorios menos los marcados como opcionales.
+  // Por quién los prepara. Todos son obligatorios menos los marcados como opcionales.
   const ARCHIVOS = [
-    { tipo: "s61", titulo: "Información necesaria para la visita (S-61)" },
-    { tipo: "s21", titulo: "Registro de publicador de la congregación (S-21)" },
-    { tipo: "s88", titulo: "Registro de asistencia a las reuniones de congregación (S-88)" },
-    { tipo: "cuentas", titulo: "Cuentas de la congregación" },
-    { tipo: "mantenimiento", titulo: "Cuentas del Comité de Mantenimiento del Salón del Reino", opcional: true },
-    { tipo: "contactos", titulo: "Datos de contacto de todos los publicadores" },
-    { tipo: "s13", titulo: "Registro de asignación de territorio (S-13)" },
-    { tipo: "s28", titulo: "Movimiento mensual de publicaciones (S-28)", opcional: true },
-    { tipo: "territorios", titulo: "Territorios variados para predicar durante la semana de la visita" },
-    { tipo: "exhibidores", titulo: "Predicación pública con exhibidores" },
-    { tipo: "otros", titulo: "Otros archivos", opcional: true }
+    { cargo: "Coordinador", tipo: "s61", titulo: "Información necesaria para la visita (S-61)" },
+    { cargo: "Coordinador", tipo: "grupos", titulo: "Grupos de predicación" },
+    { cargo: "Coordinador", tipo: "otros", titulo: "Otros archivos", opcional: true },
+    { cargo: "Secretario", tipo: "s21", titulo: "Registro de publicador de la congregación (S-21)" },
+    { cargo: "Secretario", tipo: "s88", titulo: "Registro de asistencia a las reuniones de congregación (S-88)" },
+    { cargo: "Secretario", tipo: "cuentas", titulo: "Cuentas de la congregación" },
+    { cargo: "Secretario", tipo: "mantenimiento", titulo: "Cuentas del Comité de Mantenimiento del Salón del Reino", opcional: true },
+    { cargo: "Secretario", tipo: "contactos", titulo: "Datos de contacto de todos los publicadores" },
+    { cargo: "Superintendente de servicio", tipo: "s13", titulo: "Registro de asignación de territorio (S-13)" },
+    { cargo: "Superintendente de servicio", tipo: "s28", titulo: "Movimiento mensual de publicaciones (S-28)", opcional: true },
+    { cargo: "Superintendente de servicio", tipo: "territorios", titulo: "Territorios variados para predicar durante la semana de la visita" },
+    { cargo: "Superintendente de servicio", tipo: "exhibidores", titulo: "Predicación pública con exhibidores" }
   ];
   const listas = {};
   let gruposS21 = null, masGrupo = null;
@@ -730,7 +731,8 @@ window.VISITA = /*VISITA*/null;
   if (V.archivos) {
     $("#s-archivos").classList.remove("oculto");
     const archivos = $("#archivos");
-    ARCHIVOS.forEach(a => {
+    ARCHIVOS.forEach((a, i) => {
+      if (i === 0 || a.cargo !== ARCHIVOS[i - 1].cargo) archivos.append(el("h3", { className: "apartado", textContent: a.cargo }));
       const b = el("div", { className: "bloque" });
       const titulo = el("h3", { textContent: a.titulo + (a.opcional ? " (opcional)" : "") });
       if (a.tipo === "s21") {
@@ -896,15 +898,6 @@ window.VISITA = /*VISITA*/null;
       obligatorio(p, "nombre", "Falta el nombre", donde);
       if (!p.dataset.faceta) falta(p.querySelector(".facetas"), "Elegid qué harán", donde);
       else if (p.dataset.faceta === "Curso bíblico") obligatorio(p, "leccion", "Elegid la lección", donde);
-    });
-
-    // En cada salida, al menos un publicador con cada uno (el medio día libre no tiene grupos).
-    salidas.querySelectorAll("[data-franja]").forEach(b => {
-      b.querySelectorAll("[data-quien]").forEach(g => {
-        if (g.querySelector(".persona")) return;
-        falta(g.querySelector("button.secundario"), "Añadid al menos un publicador",
-              b.querySelector("h3").textContent + " · " + g.querySelector(".titulo").textContent);
-      });
     });
 
     // Exhibidores, al menos un día, con cada uno.

@@ -471,6 +471,8 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
 - 21/11/2026 · Publicada la v2.1.75.
 - 21/11/2026 · v2.1.76 (pedido por el usuario): el acompañante de cada visita de pastoreo es obligatorio («Falta el acompañante»; solo la descripción es opcional) y Visitas tiene una pestaña «Reuniones» (tras Agenda) para la asistencia a las reuniones, de momento vacía («Pendiente de programar»). 167/167 comprobaciones; probado con la herramienta de capturas y en el navegador.
 - 21/11/2026 · Publicada la v2.1.76.
+- 22/11/2026 · v2.1.77 (pedido por el usuario): los archivos del formulario van separados por quién los prepara: Coordinador (S-61, grupos de predicación y otros archivos), Secretario (S-21 por grupos, S-88, cuentas de la congregación y del comité de mantenimiento, datos de contacto) y Superintendente de servicio (S-13, S-28, territorios variados y exhibidores). «Grupos de predicación» es un tipo nuevo y obligatorio (carpeta «Grupos de predicación»). Esa separación y ese archivo no estaban en ninguna versión de GitHub. Se quita la comprobación de la v2.1.75 de al menos un publicador con cada uno en cada salida: «grupos de predicación obligatorios» se refería a este archivo. 168/168 comprobaciones (1 nueva); probado en el navegador con una copia de la base (borrada).
+- 22/11/2026 · Publicada la v2.1.77.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

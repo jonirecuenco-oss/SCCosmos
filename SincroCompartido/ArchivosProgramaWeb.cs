@@ -50,6 +50,7 @@ public static class ArchivosProgramaWeb
     {
         ("s21", "S-21", "S-21"),
         ("s61", "S-61", "S-61"),
+        ("grupos", "Grupos de predicación", "Grupos de predicación"),
         ("s88", "S-88", "S-88"),
         ("cuentas", "Cuentas de la congregación", "Cuentas"),
         ("mantenimiento", "Cuentas de mantenimiento", "Cuentas de mantenimiento"),
