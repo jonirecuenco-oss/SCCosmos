@@ -489,6 +489,12 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - Direcciones: solo salen las que tienen calle o son un sitio concreto: Google por sus tipos (se piden en la máscara de campos), TomTom sin «Geography» y Photon con calle. Un pueblo solo ya no se puede elegir.
   - 173/173 comprobaciones (3 nuevas). Probado en el navegador con una copia de la base (nombres de prueba en los ancianos; borrada) y el Calendario con la herramienta de capturas (un archivo de prueba en `%LocalAppData%\SCCosmos\Archivos de los ancianos`, que no existía; borrado).
 - 22/11/2026 · Publicada la v2.1.79.
+- 22/11/2026 · v2.1.80 (pedido por el usuario): los archivos de los ancianos se pueden descargar desde cualquier PC, aunque estén en el que sirvió el formulario (que tiene que estar encendido y con SCCosmos abierto). Siguen guardándose solo en `%LocalAppData%\SCCosmos` de ese PC, nunca en el Archivo del circuito.
+  - El PC servidor anota en Configuración (clave `ProgramaWeb_Archivos_{congregación}_{mes}`, sincronizada) cuántos archivos tiene y su dirección de Tailscale, al cambiar y al arrancar. En los demás PC, el Calendario enseña con eso el botón de descarga.
+  - Nueva petición del servidor del formulario: `GET /programa/{código}/archivos/{tipo}/{nombre}?h=…&f=…`, firmada con HMAC-SHA256 de la clave de sincronización (la que ya comparten los dispositivos; nada nuevo que configurar). Vale 5 minutos y solo para ese archivo. Sin firma o con otra clave, 403; a los 10 fallos en 10 minutos, 429 un rato. La lista de archivos ya se daba con el enlace.
+  - Avisos: si el otro PC no contesta («tiene que estar encendido y con SCCosmos abierto») o no acepta la clave.
+  - 174/174 comprobaciones (1 nueva: descarga de ida y vuelta con el servidor de prueba: sin firma, con la clave, repetida, con otra clave y caducada).
+- 22/11/2026 · Publicada la v2.1.80.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

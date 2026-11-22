@@ -57,6 +57,7 @@ namespace SCCosmos
                 {
                     if (DatabaseHelper.BuscarVisitaProgramaWeb(codigo) is { } visita)
                     {
+                        AnotarArchivos(visita.Congregacion, visita.Mes);
                         ArchivosRecibidos?.Invoke(visita.Congregacion, visita.Mes);
                     }
                 };
@@ -64,7 +65,23 @@ namespace SCCosmos
                 _servidor.Estado = EstadoJson;
                 _servidor.Lugares = SugerenciasAsync;
                 _servidor.Lugar = LugarGoogleAsync;
+                // Los demás PC del usuario descargan los archivos con la clave de sincronización.
+                _servidor.ClaveDescarga = () => SincronizacionRed.Config?.Clave;
                 _servidor.Iniciar();
+
+                // Lo que ya tenía este PC (de antes de anotarlo), para que lo vean los demás.
+                _ = Task.Run(() =>
+                {
+                    foreach (string visita in DatabaseHelper.VisitasConEnlaceProgramaWeb())
+                    {
+                        int separador = visita.LastIndexOf('_');
+
+                        if (separador > 0)
+                        {
+                            AnotarArchivos(visita.Substring(0, separador), visita.Substring(separador + 1));
+                        }
+                    }
+                });
             }
             catch (Exception ex)
             {
@@ -274,6 +291,87 @@ namespace SCCosmos
                     ["enviado"] = DatabaseHelper.ObtenerConfiguracion(ProgramaWeb.ClaveEnviado(visita.Congregacion, visita.Mes), "")
                 }.ToJsonString()
                 : null;
+
+
+        /// <summary>
+        /// Anota (se sincroniza) cuántos archivos de esa visita tiene este PC y su
+        /// dirección de Tailscale, para que los demás PC puedan descargarlos de él.
+        /// Sin archivos, solo si la anotación era de este PC (para dejarla en 0).
+        /// </summary>
+        public static void AnotarArchivos(string congregacion, string mes)
+        {
+            try
+            {
+                int numero = ArchivosSubidos(congregacion, mes);
+                string propia = ProgramaWeb.NormalizarDireccion(DireccionTailscaleReciente());
+                string clave = ProgramaWeb.ClaveArchivos(congregacion, mes);
+
+                if (numero == 0 && LeerArchivosAnotados(clave).Direccion != propia)
+                {
+                    return;
+                }
+
+                DatabaseHelper.GuardarConfiguracion(clave, new JsonObject { ["n"] = numero, ["en"] = propia }.ToJsonString());
+            }
+            catch (Exception ex)
+            {
+                RegistroErrores.AnotarSilencioso(ex, "ProgramaWeb.AnotarArchivos");
+            }
+        }
+
+
+        private static (int Numero, string Direccion) LeerArchivosAnotados(string clave)
+        {
+            try
+            {
+                string texto = DatabaseHelper.ObtenerConfiguracion(clave, "");
+                JsonNode anotado = texto.Length > 0 ? JsonNode.Parse(texto) : null;
+
+                return (anotado?["n"]?.GetValue<int>() ?? 0, ProgramaWeb.NormalizarDireccion(anotado?["en"]?.GetValue<string>() ?? ""));
+            }
+            catch
+            {
+                return (0, "");
+            }
+        }
+
+
+        /// <summary>Los archivos de esa visita que están en otro PC: cuántos y su dirección; null si no hay.</summary>
+        public static (int Numero, string Direccion)? ArchivosEnOtroPc(string congregacion, string mes)
+        {
+            var (numero, direccion) = LeerArchivosAnotados(ProgramaWeb.ClaveArchivos(congregacion, mes));
+
+            return numero > 0 && direccion.Length > 0 && direccion != ProgramaWeb.NormalizarDireccion(DireccionTailscaleReciente())
+                ? (numero, direccion)
+                : null;
+        }
+
+
+        // Las descargas de otro PC pueden ser grandes (hasta 1 GB por visita).
+        private static readonly HttpClient HttpDescargas = new() { Timeout = TimeSpan.FromMinutes(30) };
+
+
+        /// <summary>
+        /// Descarga del PC que los tiene los archivos de esa visita, a la carpeta elegida,
+        /// firmando con la clave de sincronización de este PC.
+        /// </summary>
+        public static Task<(int Copiados, int Iguales)> DescargarDeOtroPcAsync(string congregacion, string mes, string direccion, string destino)
+        {
+            string clave = SincronizacionRed.Config?.Clave ?? "";
+
+            if (clave.Length == 0)
+            {
+                throw new UnauthorizedAccessException("Este PC no tiene puesta la clave de sincronización.");
+            }
+
+            return ArchivosProgramaWeb.DescargarAsync(
+                HttpDescargas,
+                direccion,
+                DatabaseHelper.ObtenerConfiguracion(ProgramaWeb.ClaveCodigo(congregacion, mes), ""),
+                clave,
+                destino,
+                CancellationToken.None);
+        }
 
 
         /// <summary>Cuántos archivos han subido los ancianos para esa visita (0 si ninguno).</summary>

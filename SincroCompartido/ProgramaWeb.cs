@@ -276,6 +276,14 @@ public static class ProgramaWeb
     public static string ClaveEnviado(string congregacion, string mes) =>
         $"ProgramaWeb_Enviado_{congregacion}_{mes}";
 
+    /// <summary>
+    /// Cuántos archivos han subido los ancianos y en qué PC están
+    /// («{"n":5,"en":"https://pc.red.ts.net"}»). Lo anota el PC que sirve el
+    /// formulario y se sincroniza: así los demás pueden descargarlos de él.
+    /// </summary>
+    public static string ClaveArchivos(string congregacion, string mes) =>
+        $"ProgramaWeb_Archivos_{congregacion}_{mes}";
+
     public static string TextoEnviado(DateTime cuando, int archivos) =>
         cuando.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture) + "|" + Math.Max(0, archivos);
 

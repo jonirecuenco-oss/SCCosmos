@@ -133,8 +133,10 @@ namespace SCCosmos
         // Ya hay enlace del formulario de los ancianos para esta visita (se mira al cargar el calendario).
         public bool EnlaceGenerado { get; set; }
 
-        // Archivos que han subido los ancianos con el formulario (se mira al cargar el calendario).
+        // Archivos que han subido los ancianos con el formulario (se mira al cargar el calendario):
+        // en este PC o, si están en otro, la dirección de ese PC para descargarlos de él.
         public int ArchivosAncianos { get; set; }
+        public string DireccionArchivosAncianos { get; set; } = "";
         public string TipoAsamblea { get; set; }
         public string RepBetelNombre { get; set; }
         public string RepBetelTelefono { get; set; }

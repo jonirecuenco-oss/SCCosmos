@@ -520,6 +520,31 @@ internal static class Programa
             var quitada = http.DeleteAsync(baseArchivos + "s21-g2/" + Uri.EscapeDataString("Tarjeta Pérez.pdf")).Result;
             Ver("Servidor: quitar un archivo", (int)quitada.StatusCode + " " + System.IO.File.Exists(tarjeta), "200 False");
             Ver("Servidor: archivos de un código que no existe", (int)http.GetAsync("/programa/" + ProgramaWeb.NuevoCodigo() + "/archivos").Result.StatusCode, 404);
+
+            // Descarga desde otro PC del usuario: solo firmada con la clave de sincronización.
+            servidor.ClaveDescarga = () => "clave-de-sincronizacion";
+            var sinFirma = http.GetAsync(baseArchivos + "otros/fuera.pdf").Result;
+            string destinoDescarga = carpetaPrueba + "_descarga";
+            var primeraDeOtroPc = ArchivosProgramaWeb.DescargarAsync(http, "http://127.0.0.1:47399", codigoPrueba, "clave-de-sincronizacion", destinoDescarga, CancellationToken.None).Result;
+            var segundaDeOtroPc = ArchivosProgramaWeb.DescargarAsync(http, "http://127.0.0.1:47399", codigoPrueba, "clave-de-sincronizacion", destinoDescarga, CancellationToken.None).Result;
+            string conOtraClave;
+            try
+            {
+                ArchivosProgramaWeb.DescargarAsync(http, "http://127.0.0.1:47399", codigoPrueba, "otra-clave", carpetaPrueba + "_mala", CancellationToken.None).Wait();
+                conOtraClave = "descargó";
+            }
+            catch (AggregateException ex)
+            {
+                conOtraClave = ex.InnerException?.GetType().Name ?? "?";
+            }
+            long haceDiezMinutos = DateTimeOffset.UtcNow.AddMinutes(-10).ToUnixTimeSeconds();
+            var caducada = http.GetAsync(baseArchivos + "otros/fuera.pdf?h=" + haceDiezMinutos + "&f="
+                + ArchivosProgramaWeb.FirmaDescarga("clave-de-sincronizacion", codigoPrueba, "otros", "fuera.pdf", haceDiezMinutos)).Result;
+            Ver("Servidor: descargar desde otro PC (sin firma, con la clave, otra vez, con otra clave y caducada)",
+                $"{(int)sinFirma.StatusCode} {primeraDeOtroPc} {segundaDeOtroPc} {conOtraClave} {(int)caducada.StatusCode} "
+                + $"{System.IO.File.Exists(System.IO.Path.Combine(destinoDescarga, "Otros", "fuera.pdf"))} {System.IO.File.Exists(System.IO.Path.Combine(destinoDescarga, "S-21", "G2", "Tarjeta Pérez (2).pdf"))}",
+                "403 (2, 0) (0, 2) UnauthorizedAccessException 403 True True");
+            try { System.IO.Directory.Delete(destinoDescarga, true); } catch { }
         }
 
         try { System.IO.Directory.Delete(carpetaPrueba, true); } catch { }

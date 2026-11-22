@@ -887,11 +887,17 @@ namespace SCCosmos
                         && codigos.TryGetValue(semana.Congregacion ?? "", out codigo)
                         && conEnlace.Contains(codigo + "_" + mes);
 
-                    // Lo que han subido los ancianos, para su botón de descarga.
-                    semana.ArchivosAncianos =
-                        semana.EnlaceGenerado
-                            ? ProgramaWebPc.ArchivosSubidos(codigo, mes)
-                            : 0;
+                    // Lo que han subido los ancianos, para su botón de descarga: aquí o en otro PC.
+                    semana.ArchivosAncianos = semana.EnlaceGenerado ? ProgramaWebPc.ArchivosSubidos(codigo, mes) : 0;
+                    semana.DireccionArchivosAncianos = "";
+
+                    if (semana.EnlaceGenerado
+                        && semana.ArchivosAncianos == 0
+                        && ProgramaWebPc.ArchivosEnOtroPc(codigo, mes) is { } enOtroPc)
+                    {
+                        semana.ArchivosAncianos = enOtroPc.Numero;
+                        semana.DireccionArchivosAncianos = enOtroPc.Direccion;
+                    }
                 }
             }
             catch (Exception ex)
@@ -1933,8 +1939,9 @@ namespace SCCosmos
         }
 
         // Los archivos que han subido los ancianos con el formulario: una copia en la
-        // carpeta que se elija (se propone la de la congregación en Documentos).
-        private void BtnDescargarArchivos_Click(object sender, RoutedEventArgs e)
+        // carpeta que se elija (se propone la de la congregación en Documentos). Si
+        // están en el PC que sirvió el formulario, se descargan de él (encendido).
+        private async void BtnDescargarArchivos_Click(object sender, RoutedEventArgs e)
         {
             if ((sender as FrameworkElement)?.DataContext is not SemanaCalendario semana)
             {
@@ -1946,9 +1953,12 @@ namespace SCCosmos
                 string codigo = DatabaseHelper.ObtenerCongregaciones()
                     .FirstOrDefault(c => c.Nombre == semana.Congregacion)?.Codigo ?? "";
 
-                string origen = ProgramaWebPc.CarpetaArchivos(codigo, semana.FechaMartes.ToString("yyyy-MM"));
+                string mes = semana.FechaMartes.ToString("yyyy-MM");
+                string origen = ProgramaWebPc.CarpetaArchivos(codigo, mes);
+                bool aqui = codigo.Length > 0 && ProgramaWebPc.ArchivosSubidos(codigo, mes) > 0;
+                var enOtroPc = aqui || codigo.Length == 0 ? null : ProgramaWebPc.ArchivosEnOtroPc(codigo, mes);
 
-                if (codigo.Length == 0 || !System.IO.Directory.Exists(origen))
+                if (!aqui && enOtroPc is null)
                 {
                     MessageBox.Show("No hay archivos de los ancianos para esta visita.", "Archivos de los ancianos", MessageBoxButton.OK, MessageBoxImage.Information);
                     return;
@@ -1969,7 +1979,36 @@ namespace SCCosmos
                 // En una subcarpeta, con las suyas (S-21\G1, S-61…); lo ya descargado igual no se repite.
                 string destino = System.IO.Path.Combine(dialogo.FolderName, "Archivos de los ancianos");
 
-                SCCosmos.Sincro.ArchivosProgramaWeb.Copiar(origen, destino);
+                if (aqui)
+                {
+                    SCCosmos.Sincro.ArchivosProgramaWeb.Copiar(origen, destino);
+                }
+                else
+                {
+                    string otroPc = new Uri(enOtroPc.Value.Direccion).Host.Split('.')[0];
+
+                    OverlayCargando.Visibility = Visibility.Visible;
+
+                    try
+                    {
+                        await ProgramaWebPc.DescargarDeOtroPcAsync(codigo, mes, enOtroPc.Value.Direccion, destino);
+                    }
+                    catch (Exception ex) when (ex is System.Net.Http.HttpRequestException or TaskCanceledException)
+                    {
+                        MessageBox.Show($"Los archivos están en «{otroPc}», y no contesta. Tiene que estar encendido y con SCCosmos abierto.", "Archivos de los ancianos", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+                    catch (UnauthorizedAccessException ex)
+                    {
+                        MessageBox.Show($"{ex.Message} Los archivos están en «{otroPc}»: la clave de sincronización tiene que ser la misma en los dos PC.", "Archivos de los ancianos", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+                    finally
+                    {
+                        OverlayCargando.Visibility = Visibility.Collapsed;
+                    }
+                }
+
                 System.IO.Directory.CreateDirectory(destino);
 
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = destino, UseShellExecute = true });

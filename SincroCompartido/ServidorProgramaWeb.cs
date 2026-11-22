@@ -23,6 +23,8 @@ namespace SCCosmos.Sincro;
 //   GET    /programa/{código}/archivos                 → los archivos ya subidos
 //   PUT    /programa/{código}/archivos/{tipo}/{nombre} → subir un archivo (ArchivosProgramaWeb)
 //   DELETE /programa/{código}/archivos/{tipo}/{nombre} → quitarlo
+//   GET    /programa/{código}/archivos/{tipo}/{nombre}?h=…&f=… → descargarlo desde otro PC
+//          del usuario (firmado con la clave de sincronización; el enlace solo no basta)
 //   GET    /programa/{código}/estado                   → cuándo lo enviaron (para el móvil)
 //   GET    /programa/{código}/lugares?q=…&s=…          → sugerencias de direcciones (Google Maps o TomTom)
 //   GET    /programa/{código}/lugar?id=…&s=…           → las coordenadas de la elegida (las de Google)
@@ -85,6 +87,20 @@ public sealed class ServidorProgramaWeb : IDisposable
 
     /// <summary>Código, id del lugar elegido y token de sesión → sus coordenadas (JSON), o null.</summary>
     public Func<string, string, string, CancellationToken, Task<string?>>? Lugar { get; set; }
+
+    /// <summary>
+    /// La clave de sincronización de este equipo: con ella firman los demás PC
+    /// del usuario la descarga de un archivo. Sin clave, no se descarga nada.
+    /// </summary>
+    public Func<string?>? ClaveDescarga { get; set; }
+
+    // Firmas malas por enlace: a la décima en 10 minutos, se deja de atender ese
+    // enlace un rato (así no se puede ir probando claves).
+    private const int MaxFallosDescarga = 10;
+
+    private static readonly TimeSpan VentanaFallosDescarga = TimeSpan.FromMinutes(10);
+
+    private readonly ConcurrentDictionary<string, (int Fallos, DateTime Desde)> _fallosDescarga = new();
 
 
     /// <param name="datosVisita">Código → JSON con los datos de la visita para la página (null si no existe).</param>
@@ -322,7 +338,7 @@ public sealed class ServidorProgramaWeb : IDisposable
 
         if (partes.Length > 2)
         {
-            await ArchivosAsync(red, metodo, codigo, partes, largo, sobrante, limite);
+            await ArchivosAsync(red, metodo, codigo, partes, ruta, largo, sobrante, limite);
             return;
         }
 
@@ -407,7 +423,7 @@ public sealed class ServidorProgramaWeb : IDisposable
 
 
     // ---- Archivos: listar, subir y quitar, solo dentro de la carpeta de la visita ----
-    private async Task ArchivosAsync(NetworkStream red, string metodo, string codigo, string[] partes, int largo, byte[] sobrante, CancellationTokenSource limite)
+    private async Task ArchivosAsync(NetworkStream red, string metodo, string codigo, string[] partes, string rutaPeticion, int largo, byte[] sobrante, CancellationTokenSource limite)
     {
         CancellationToken token = limite.Token;
 
@@ -448,6 +464,12 @@ public sealed class ServidorProgramaWeb : IDisposable
         }
 
         string destino = Path.Combine(carpeta, subcarpeta);
+
+        if (metodo == "GET")
+        {
+            await DescargarAsync(red, codigo, partes[3], nombre, Path.Combine(destino, nombre), rutaPeticion, largo, sobrante, limite);
+            return;
+        }
 
         if (metodo == "DELETE")
         {
@@ -532,6 +554,56 @@ public sealed class ServidorProgramaWeb : IDisposable
                 }
             }
         }
+    }
+
+
+    // Un archivo para otro PC del usuario: solo con la firma de la clave de sincronización.
+    private async Task DescargarAsync(NetworkStream red, string codigo, string tipo, string nombre, string archivo, string ruta, int largo, byte[] sobrante, CancellationTokenSource limite)
+    {
+        CancellationToken token = limite.Token;
+        DateTime ahora = DateTime.UtcNow;
+
+        if (_fallosDescarga.TryGetValue(codigo, out var fallos)
+            && fallos.Fallos >= MaxFallosDescarga
+            && ahora - fallos.Desde < VentanaFallosDescarga)
+        {
+            await RechazarAsync(red, 429, "text/plain", "Demasiados intentos", largo, sobrante, token);
+            return;
+        }
+
+        if (!ArchivosProgramaWeb.DescargaValida(ClaveDescarga?.Invoke(), codigo, tipo, nombre, Parametro(ruta, "h"), Parametro(ruta, "f"), DateTimeOffset.UtcNow))
+        {
+            _fallosDescarga.AddOrUpdate(
+                codigo,
+                (1, ahora),
+                (_, f) => ahora - f.Desde < VentanaFallosDescarga ? (f.Fallos + 1, f.Desde) : (1, ahora));
+
+            await RechazarAsync(red, 403, "text/plain", "No permitido", largo, sobrante, token);
+            return;
+        }
+
+        if (!File.Exists(archivo))
+        {
+            await RechazarAsync(red, 404, "text/plain", "No existe", largo, sobrante, token);
+            return;
+        }
+
+        // Un archivo grande por datos móviles tarda: el mismo margen que para subirlo.
+        limite.CancelAfter(EsperaSubida);
+
+        await using var lectura = new FileStream(archivo, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, useAsync: true);
+
+        string cabeceras =
+            "HTTP/1.1 200 OK\r\n" +
+            "Content-Type: application/octet-stream\r\n" +
+            $"Content-Length: {lectura.Length}\r\n" +
+            "Cache-Control: no-store\r\n" +
+            "X-Content-Type-Options: nosniff\r\n" +
+            "Connection: close\r\n\r\n";
+
+        await red.WriteAsync(Encoding.ASCII.GetBytes(cabeceras), token);
+        await lectura.CopyToAsync(red, 81920, token);
+        await red.FlushAsync(token);
     }
 
 
@@ -631,6 +703,7 @@ public sealed class ServidorProgramaWeb : IDisposable
         {
             200 => "OK",
             400 => "Bad Request",
+            403 => "Forbidden",
             404 => "Not Found",
             405 => "Method Not Allowed",
             413 => "Payload Too Large",
