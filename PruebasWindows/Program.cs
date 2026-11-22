@@ -388,6 +388,24 @@ internal static class Programa
         Ver("Archivos: carpetas por tipo", string.Join("|", ArchivosProgramaWeb.Carpeta("s21-g3"), ArchivosProgramaWeb.Carpeta("s21-g03") ?? "no", ArchivosProgramaWeb.Carpeta("../x") ?? "no", ArchivosProgramaWeb.Carpeta("s88")), System.IO.Path.Combine("S-21", "G3") + "|no|no|S-88");
         Ver("Archivos: la S-61 es un tipo más", ArchivosProgramaWeb.Carpeta("s61") + " | " + ArchivosProgramaWeb.Resumen(new (string, string, long)[] { ("s21-g1", "a.pdf", 1), ("s21-g2", "b.pdf", 1), ("s61", "S-61.pdf", 1) }), "S-61 | S-21: 2 (2 grupos) · S-61: 1");
         Ver("Archivos: grupos de predicación", ArchivosProgramaWeb.Carpeta("grupos") + " | " + ArchivosProgramaWeb.Resumen(new (string, string, long)[] { ("grupos", "Grupos.pdf", 1), ("s61", "S-61.pdf", 1) }), "Grupos de predicación | S-61: 1 · Grupos de predicación: 1");
+        string origenArchivos = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "sccosmos_copiar_" + Guid.NewGuid().ToString("N"));
+        string destinoArchivos = origenArchivos + "_destino";
+        System.IO.Directory.CreateDirectory(System.IO.Path.Combine(origenArchivos, "S-21", "G1"));
+        System.IO.Directory.CreateDirectory(System.IO.Path.Combine(origenArchivos, "S-61"));
+        System.IO.File.WriteAllText(System.IO.Path.Combine(origenArchivos, "S-21", "G1", "a.pdf"), "aaa");
+        System.IO.File.WriteAllText(System.IO.Path.Combine(origenArchivos, "S-61", "S-61.pdf"), "s61");
+        System.IO.File.WriteAllText(System.IO.Path.Combine(origenArchivos, "S-61", "llegando.subiendo"), "a medias");
+        var primeraDescarga = ArchivosProgramaWeb.Copiar(origenArchivos, destinoArchivos);
+        var segundaDescarga = ArchivosProgramaWeb.Copiar(origenArchivos, destinoArchivos);
+        System.IO.File.WriteAllText(System.IO.Path.Combine(origenArchivos, "S-61", "S-61.pdf"), "otra versión");
+        var terceraDescarga = ArchivosProgramaWeb.Copiar(origenArchivos, destinoArchivos);
+        string descargados = string.Join(",", System.IO.Directory.GetFiles(destinoArchivos, "*", System.IO.SearchOption.AllDirectories)
+            .Select(f => System.IO.Path.GetRelativePath(destinoArchivos, f)).OrderBy(f => f, StringComparer.Ordinal));
+        System.IO.Directory.Delete(origenArchivos, true);
+        System.IO.Directory.Delete(destinoArchivos, true);
+        Ver("Archivos: descargar (con sus carpetas, sin lo que se está subiendo ni repetir lo igual)",
+            $"{primeraDescarga} {segundaDescarga} {terceraDescarga} {descargados}",
+            "(2, 0) (0, 2) (1, 1) " + string.Join(",", System.IO.Path.Combine("S-21", "G1", "a.pdf"), System.IO.Path.Combine("S-61", "S-61 (2).pdf"), System.IO.Path.Combine("S-61", "S-61.pdf")));
         Ver("Tareas: quién las ve y para quién son",
             string.Join("|",
                 TareasConyuge.Visible(false, "Esposa", "SC"), TareasConyuge.Visible(true, "Esposa", "SC"), TareasConyuge.Visible(false, "", "Esposa"),
@@ -630,9 +648,13 @@ internal static class Programa
     private static void DireccionesGoogle()
     {
         var sugerencias = new GoogleFalso(200,
-            """{"suggestions":[{"placePrediction":{"placeId":"ChIJ_dehesa_4_azuaga","text":{"text":"Calle la Dehesa, 4, Azuaga, España"}}},{"placePrediction":{"placeId":"mal/id","text":{"text":"Otro"}}}]}""");
+            """{"suggestions":[{"placePrediction":{"placeId":"ChIJ_dehesa_4_azuaga","text":{"text":"Calle la Dehesa, 4, Azuaga, España"},"types":["street_address","geocode"]}},{"placePrediction":{"placeId":"mal/id","text":{"text":"Otro"}}},"""
+            + """{"placePrediction":{"placeId":"ChIJ_solo_el_pueblo","text":{"text":"Azuaga, Badajoz, España"},"types":["locality","political","geocode"]}}]}""");
         string? lista = LugaresGoogle.SugerenciasAsync(new System.Net.Http.HttpClient(sugerencias), "CLAVE", "calle la dehesa 4", "sesion-1234", (38.26, -5.68), CancellationToken.None).Result;
-        Ver("Google: sugerencias (sin «España» y sin ids raros)", lista, """[{"id":"ChIJ_dehesa_4_azuaga","texto":"Calle la Dehesa, 4, Azuaga"}]""");
+        Ver("Google: sugerencias (sin «España», sin ids raros y sin pueblos solos)", lista, """[{"id":"ChIJ_dehesa_4_azuaga","texto":"Calle la Dehesa, 4, Azuaga"}]""");
+        Ver("Google: pide los tipos de cada sugerencia (para quitar los pueblos)",
+            string.Join("", sugerencias.Ultima?.Headers.GetValues("X-Goog-FieldMask") ?? []).Contains("suggestions.placePrediction.types"),
+            true);
         Ver("Google: lo que se le pide (clave en cabecera, sesión, España y cerca de la congregación)",
             $"{sugerencias.Ultima?.RequestUri} {string.Join("", sugerencias.Ultima?.Headers.GetValues("X-Goog-Api-Key") ?? [])} "
             + $"{sugerencias.Cuerpo.Contains("\"input\":\"calle la dehesa 4\"")} {sugerencias.Cuerpo.Contains("\"sessionToken\":\"sesion-1234\"")} "
@@ -656,8 +678,9 @@ internal static class Programa
         var tomtom = new GoogleFalso(200,
             """{"results":[{"type":"Point Address","address":{"freeformAddress":"Calle de la Dehesa Vieja, 4, 06920 Azuaga"},"position":{"lat":38.266082,"lon":-5.684563}},"""
             + """{"type":"POI","poi":{"name":"La Dehesa"},"address":{"freeformAddress":"Calle del Padre Tena, 59, 06920 Azuaga"},"position":{"lat":38.2615,"lon":-5.6773}},"""
-            + """{"type":"Street","address":{"freeformAddress":"Sin posición"}}]}""");
-        Ver("TomTom: sugerencias con sus coordenadas (sin las que no tienen)",
+            + """{"type":"Street","address":{"freeformAddress":"Sin posición"}},"""
+            + """{"type":"Geography","entityType":"Municipality","address":{"freeformAddress":"Azuaga"},"position":{"lat":38.26,"lon":-5.68}}]}""");
+        Ver("TomTom: sugerencias con sus coordenadas (sin las que no tienen ni los pueblos solos)",
             LugaresTomTom.SugerenciasAsync(new System.Net.Http.HttpClient(tomtom), "CLAVE", "calle la dehesa 4", (38.26, -5.68), CancellationToken.None).Result,
             """[{"texto":"Calle de la Dehesa Vieja, 4, 06920 Azuaga","lat":38.266082,"lon":-5.684563},{"texto":"La Dehesa, Calle del Padre Tena, 59, 06920 Azuaga","lat":38.2615,"lon":-5.6773}]""");
         Ver("TomTom: lo que se le pide (España, en español, mientras se escribe, cerca de la congregación)",
@@ -683,8 +706,34 @@ internal static class Programa
         Ver("Buscador: con un enlace que no es de ninguna visita o un id raro, nada",
             $"{ProgramaWebPc.SugerenciasAsync(ProgramaWeb.NuevoCodigo(), "azuaga", "sesion-1234", CancellationToken.None).Result is null} {ProgramaWebPc.LugarGoogleAsync(codigo, "../x", "sesion-1234", CancellationToken.None).Result is null}",
             "True True");
+
+        // Si Google no encuentra nada con calle, TomTom; si tampoco, la página prueba con OpenStreetMap.
+        var http = ProgramaWebPc.HttpLugares;
+        const string soloPuebloGoogle = """{"suggestions":[{"placePrediction":{"placeId":"ChIJ_solo_el_pueblo","text":{"text":"Azuaga, Badajoz, España"},"types":["locality","political"]}}]}""";
+        ProgramaWebPc.HttpLugares = new System.Net.Http.HttpClient(new FalsoPorServidor(new() {
+            ["places.googleapis.com"] = soloPuebloGoogle,
+            ["api.tomtom.com"] = """{"results":[{"type":"Point Address","address":{"freeformAddress":"Calle Mayor, 1, 06920 Azuaga"},"position":{"lat":38.26,"lon":-5.68}}]}""" }));
+        string deTomTom = ProgramaWebPc.SugerenciasAsync(codigo, "calle mayor 1", "sesion-1234", CancellationToken.None).Result ?? "null";
+        ProgramaWebPc.HttpLugares = new System.Net.Http.HttpClient(new FalsoPorServidor(new() {
+            ["places.googleapis.com"] = soloPuebloGoogle,
+            ["api.tomtom.com"] = """{"results":[{"type":"Geography","address":{"freeformAddress":"Azuaga"},"position":{"lat":38.26,"lon":-5.68}}]}""" }));
+        string deNadie = ProgramaWebPc.SugerenciasAsync(codigo, "azuaga", "sesion-1234", CancellationToken.None).Result ?? "null";
+        ProgramaWebPc.HttpLugares = http;
+        Ver("Buscador: Google sin calle → TomTom; ninguno → lista vacía (la página sigue con OpenStreetMap)",
+            deTomTom + " " + deNadie,
+            """{"fuente":"TomTom","lugares":[{"texto":"Calle Mayor, 1, 06920 Azuaga","lat":38.26,"lon":-5.68}]} {"fuente":"","lugares":[]}""");
         DatabaseHelper.GuardarConfiguracion(LugaresGoogle.ClaveApi, "");
         DatabaseHelper.GuardarConfiguracion(LugaresTomTom.ClaveApi, "");
+    }
+
+    // Google y TomTom de mentira a la vez: contesta según a qué servidor se pregunte.
+    private sealed class FalsoPorServidor(Dictionary<string, string> respuestas) : System.Net.Http.HttpMessageHandler
+    {
+        protected override Task<System.Net.Http.HttpResponseMessage> SendAsync(System.Net.Http.HttpRequestMessage peticion, CancellationToken token) =>
+            Task.FromResult(new System.Net.Http.HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new System.Net.Http.StringContent(respuestas.TryGetValue(peticion.RequestUri?.Host ?? "", out string? r) ? r : "{}")
+            });
     }
 
     // Google de mentira: apunta lo que se le pide y contesta lo que se le diga.

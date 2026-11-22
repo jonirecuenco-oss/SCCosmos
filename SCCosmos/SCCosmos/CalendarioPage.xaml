@@ -249,6 +249,11 @@
                                     <ContentControl Margin="0,0,5,0" Visibility="{Binding VisibilidadCopiarEnlace}">
                                         <ui:Button Icon="{ui:SymbolIcon Link24}" Appearance="Secondary" Padding="6" Cursor="Hand" Click="BtnCopiarEnlace_Click" ToolTip="Copiar enlace (formulario de los ancianos)" Background="{Binding ColorBotonEnlace}"/>
                                     </ContentControl>
+
+                                    <!-- Los archivos que han subido los ancianos con el formulario -->
+                                    <ContentControl Margin="0,0,5,0" Visibility="{Binding VisibilidadArchivosAncianos}">
+                                        <ui:Button Icon="{ui:SymbolIcon ArrowDownload24}" Appearance="Secondary" Padding="6" Cursor="Hand" Click="BtnDescargarArchivos_Click" ToolTip="{Binding TooltipArchivosAncianos}"/>
+                                    </ContentControl>
                                     <!-- 
                                     <ContentControl Margin="0,0,5,0" Visibility="{Binding VisibilidadVisita}">
                                         <ui:Button Icon="{ui:SymbolIcon Chat24}" Appearance="Primary" Background="#25D366" BorderThickness="0" Padding="6" Cursor="Hand" Click="BtnWhatsAppCoordinador_Click" ToolTip="WhatsApp al Coordinador"/>

@@ -222,6 +222,37 @@ public static class ArchivosProgramaWeb
     }
 
 
+    /// <summary>
+    /// Copia lo subido a otra carpeta (para descargarlo desde el Calendario),
+    /// con sus subcarpetas (S-21\G1…) y sin lo que aún se está subiendo. Lo que
+    /// ya está allí igual no se repite; si hay otro con el mismo nombre, el
+    /// nuevo va como «nombre (2).pdf».
+    /// </summary>
+    public static (int Copiados, int Iguales) Copiar(string origen, string destino)
+    {
+        int copiados = 0, iguales = 0;
+
+        foreach (var (tipo, nombre, tamano) in Subidos(origen))
+        {
+            string subcarpeta = Carpeta(tipo)!;
+            string carpetaDestino = Path.Combine(destino, subcarpeta);
+            string hacia = Path.Combine(carpetaDestino, nombre);
+
+            if (File.Exists(hacia) && new FileInfo(hacia).Length == tamano)
+            {
+                iguales++;
+                continue;
+            }
+
+            Directory.CreateDirectory(carpetaDestino);
+            File.Copy(Path.Combine(origen, subcarpeta, nombre), Path.Combine(carpetaDestino, NombreLibre(carpetaDestino, nombre)));
+            copiados++;
+        }
+
+        return (copiados, iguales);
+    }
+
+
     /// <summary>Dónde se va escribiendo un archivo mientras llega.</summary>
     public static string RutaTemporal(string carpeta) =>
         Path.Combine(carpeta, Guid.NewGuid().ToString("N") + Temporal);

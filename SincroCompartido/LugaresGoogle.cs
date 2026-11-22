@@ -21,8 +21,10 @@ namespace SCCosmos.Sincro;
 // sugerencias (Autocomplete); al elegir una, sus coordenadas (Place
 // Details, solo «location» y «formattedAddress»: el nivel Essentials).
 // Las dos peticiones llevan el mismo token de sesión: Google cobra la
-// sesión como una sola consulta de detalles. Sin clave o si Google
-// falla, TomTom (LugaresTomTom) y, si tampoco, OpenStreetMap (Photon).
+// sesión como una sola consulta de detalles. Sin clave, si Google
+// falla o si no encuentra nada, TomTom (LugaresTomTom) y, si tampoco,
+// OpenStreetMap (Photon). Solo valen direcciones con calle (o un sitio
+// concreto): un pueblo, una provincia o un código postal, no.
 // ============================================================
 
 public static class LugaresGoogle
@@ -45,6 +47,19 @@ public static class LugaresGoogle
     public static bool IdLugarValido(string? id) => id is not null && IdValido.IsMatch(id);
 
     public static bool SesionValidaTexto(string? sesion) => sesion is not null && SesionValida.IsMatch(sesion);
+
+
+    // Lo que tiene al menos una calle: una dirección, una calle, un cruce,
+    // un edificio o un sitio (bar, salón…). Un pueblo o una zona, no.
+    private static readonly string[] TiposConCalle =
+    {
+        "street_address", "route", "intersection", "premise", "subpremise", "establishment", "point_of_interest"
+    };
+
+
+    /// <summary>Si una sugerencia tiene calle, por sus tipos (sin tipos, se da por buena).</summary>
+    public static bool ConCalle(string[] tipos) =>
+        tipos.Length == 0 || tipos.Any(t => TiposConCalle.Contains(t));
 
 
     /// <summary>
@@ -93,7 +108,7 @@ public static class LugaresGoogle
         };
 
         peticion.Headers.Add("X-Goog-Api-Key", clave);
-        peticion.Headers.Add("X-Goog-FieldMask", "suggestions.placePrediction.placeId,suggestions.placePrediction.text.text");
+        peticion.Headers.Add("X-Goog-FieldMask", "suggestions.placePrediction.placeId,suggestions.placePrediction.text.text,suggestions.placePrediction.types");
 
         JsonNode? respuesta = await PedirAsync(http, peticion, token);
 
@@ -108,8 +123,11 @@ public static class LugaresGoogle
         {
             string id = sugerencia?["placePrediction"]?["placeId"]?.GetValue<string>() ?? "";
             string nombre = SinPais(sugerencia?["placePrediction"]?["text"]?["text"]?.GetValue<string>() ?? "");
+            string[] tipos = (sugerencia?["placePrediction"]?["types"] as JsonArray ?? new JsonArray())
+                .Select(t => t?.ToString() ?? "")
+                .ToArray();
 
-            if (IdLugarValido(id) && nombre.Length > 0)
+            if (IdLugarValido(id) && nombre.Length > 0 && ConCalle(tipos))
             {
                 lista.Add(new JsonObject { ["id"] = id, ["texto"] = nombre });
             }

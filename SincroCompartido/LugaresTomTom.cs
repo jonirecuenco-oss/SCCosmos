@@ -81,6 +81,12 @@ public static class LugaresTomTom
 
         foreach (JsonNode? resultado in respuesta?["results"]?.AsArray() ?? new JsonArray())
         {
+            // Un pueblo, una provincia o un código postal («Geography») no son una dirección: falta la calle.
+            if (string.Equals(resultado?["type"]?.ToString(), "Geography", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
             string direccion = resultado?["address"]?["freeformAddress"]?.GetValue<string>()?.Trim() ?? "";
             string nombre = resultado?["poi"]?["name"]?.GetValue<string>()?.Trim() ?? "";
             double lat = Numero(resultado?["position"]?["lat"]);

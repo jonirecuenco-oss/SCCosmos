@@ -481,6 +481,14 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - Android: los botones «Cancelar» y «Aceptar» de los selectores de hora y fecha no se veían (el tema oscuro forzado los pintaba con colorPrimary #101216 sobre fondo oscuro); ahora se pintan de #4BA3E3 (`Platforms/Android/SelectoresFechaHora.cs`). Comprobado en el emulador antes y después.
   - 170/170 comprobaciones (2 nuevas). Probado en el emulador (perfil de esposa; la tarea y el permiso de prueba, deshechos) y con la herramienta de capturas sobre una copia de la base con tareas de prueba (borrada).
 - 22/11/2026 · Publicada la v2.1.78.
+- 22/11/2026 · v2.1.79 (pedido por el usuario):
+  - Calendario (PC): botón «Descargar los archivos de los ancianos» (flecha abajo, junto al 🔗) en las visitas con archivos recibidos. Copia lo subido, con sus subcarpetas (S-21\G1, S-61…), a «Archivos de los ancianos» dentro de la carpeta que se elija; propone la de la congregación en la última «Visita N» de Documentos › … › 1 - Congregaciones. Lo ya descargado igual no se repite (`ArchivosProgramaWeb.Copiar`).
+  - Formulario: «Coordinador», «Secretario» y «Superintendente de servicio» en azul (#0b6fc2).
+  - Formulario, pastoreo: hora de 10:00 a 20:00 («La hora, de 10:00 a 20:00»). El acompañante se elige en un desplegable con los ancianos y siervos ministeriales de la congregación que tiene SCCosmos (sin bajas; los ancianos primero). Si no hubiera ninguno, se escribe como antes.
+  - Direcciones: Google Maps; si no encuentra nada con calle, TomTom; si tampoco, OpenStreetMap (antes, si Google contestaba sin resultados, la lista se quedaba vacía). Sin claves o sin consultas del día, OpenStreetMap como antes. `ProgramaWebPc.HttpLugares` se puede cambiar en las pruebas.
+  - Direcciones: solo salen las que tienen calle o son un sitio concreto: Google por sus tipos (se piden en la máscara de campos), TomTom sin «Geography» y Photon con calle. Un pueblo solo ya no se puede elegir.
+  - 173/173 comprobaciones (3 nuevas). Probado en el navegador con una copia de la base (nombres de prueba en los ancianos; borrada) y el Calendario con la herramienta de capturas (un archivo de prueba en `%LocalAppData%\SCCosmos\Archivos de los ancianos`, que no existía; borrado).
+- 22/11/2026 · Publicada la v2.1.79.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

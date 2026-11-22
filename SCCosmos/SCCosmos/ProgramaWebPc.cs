@@ -107,7 +107,8 @@ namespace SCCosmos
 
         public const int MaxSugerenciasTomTomDia = 1000;
 
-        private static readonly HttpClient HttpLugares = new() { Timeout = TimeSpan.FromSeconds(8) };
+        // Las pruebas ponen uno de mentira.
+        public static HttpClient HttpLugares { get; set; } = new() { Timeout = TimeSpan.FromSeconds(8) };
 
         private static readonly object CandadoConsultas = new();
 
@@ -168,7 +169,9 @@ namespace SCCosmos
         /// <summary>
         /// Sugerencias para lo escrito en el formulario: «{"fuente","lugares"}» (las de
         /// Google traen «id» y piden las coordenadas al elegir; las de TomTom ya las
-        /// traen). null: que la página busque con OpenStreetMap.
+        /// traen). Primero Google; si no encuentra nada con calle, TomTom; si tampoco,
+        /// «lugares» vacío para que la página pruebe con OpenStreetMap. null: sin
+        /// claves o sin consultas, que la página siga ya solo con OpenStreetMap.
         /// </summary>
         public static async Task<string?> SugerenciasAsync(string codigo, string texto, string sesion, CancellationToken token)
         {
@@ -186,13 +189,19 @@ namespace SCCosmos
                 congregacion is { Latitud: not 0 } ? (congregacion.Latitud, congregacion.Longitud) : null;
 
             string claveGoogle = ClaveGoogle();
+            bool contestaron = false;
 
             if (claveGoogle.Length > 0
                 && LugaresGoogle.SesionValidaTexto(sesion)
                 && QuedanConsultas("google", MaxSugerenciasGoogleDia)
                 && await LugaresGoogle.SugerenciasAsync(HttpLugares, claveGoogle, texto, sesion, centro, token) is { } deGoogle)
             {
-                return $"{{\"fuente\":\"Google Maps\",\"lugares\":{deGoogle}}}";
+                if (HayLugares(deGoogle))
+                {
+                    return $"{{\"fuente\":\"Google Maps\",\"lugares\":{deGoogle}}}";
+                }
+
+                contestaron = true;
             }
 
             string claveTomTom = ClaveTomTom();
@@ -201,11 +210,22 @@ namespace SCCosmos
                 && QuedanConsultas("tomtom", MaxSugerenciasTomTomDia)
                 && await LugaresTomTom.SugerenciasAsync(HttpLugares, claveTomTom, texto, centro, token) is { } deTomTom)
             {
-                return $"{{\"fuente\":\"TomTom\",\"lugares\":{deTomTom}}}";
+                if (HayLugares(deTomTom))
+                {
+                    return $"{{\"fuente\":\"TomTom\",\"lugares\":{deTomTom}}}";
+                }
+
+                contestaron = true;
             }
 
-            return null;
+            return contestaron
+                ? "{\"fuente\":\"\",\"lugares\":[]}"
+                : null;
         }
+
+
+        private static bool HayLugares(string lista) =>
+            JsonNode.Parse(lista) is JsonArray { Count: > 0 };
 
 
         /// <summary>Las coordenadas de la dirección elegida entre las de Google (null si no se pueden dar).</summary>
@@ -256,7 +276,8 @@ namespace SCCosmos
                 : null;
 
 
-        private static int ArchivosSubidos(string congregacion, string mes)
+        /// <summary>Cuántos archivos han subido los ancianos para esa visita (0 si ninguno).</summary>
+        public static int ArchivosSubidos(string congregacion, string mes)
         {
             try
             {
@@ -390,6 +411,10 @@ namespace SCCosmos
                 ["horaFinDeSemana"] = ProgramaWeb.Hora(datosCongregacion?.HoraFinSemana ?? ""),
                 ["medioDiaLibre"] = MedioDiaLibre(),
                 ["diasComida"] = new JsonArray(DiasComida(congregacion).Select(d => (JsonNode)d).ToArray()),
+                // Para elegir el acompañante de cada visita de pastoreo.
+                ["acompanantes"] = new JsonArray(Acompanantes(congregacion)
+                    .Select(a => (JsonNode)new JsonObject { ["nombre"] = a.Nombre, ["cargo"] = a.Cargo })
+                    .ToArray()),
                 // Con clave de Google Maps o de TomTom, el buscador de direcciones la usa (a través de este PC).
                 ["buscador"] = Buscador(),
                 ["archivos"] = true,
@@ -400,6 +425,91 @@ namespace SCCosmos
 
             // ToJsonString escapa «<», así que puede ir dentro de <script>.
             return datos.ToJsonString();
+        }
+
+
+        /// <summary>
+        /// Los ancianos y siervos ministeriales de la congregación (sin las bajas),
+        /// los primeros los ancianos: entre ellos se elige el acompañante de cada
+        /// visita de pastoreo.
+        /// </summary>
+        public static List<(string Nombre, string Cargo)> Acompanantes(string congregacion)
+        {
+            try
+            {
+                return DatabaseHelper.ObtenerPersonas()
+                    .Where(p => p.CongregacionCodigo == congregacion && string.IsNullOrWhiteSpace(p.FechaEliminacion))
+                    .Select(p => (
+                        Nombre: (p.Nombre ?? "").Trim(),
+                        Cargo: (p.Nombramiento ?? "").Contains("Anciano", StringComparison.OrdinalIgnoreCase) ? "Anciano"
+                            : (p.Nombramiento ?? "").Contains("Siervo ministerial", StringComparison.OrdinalIgnoreCase) ? "Siervo ministerial"
+                            : ""))
+                    .Where(a => a.Nombre.Length > 0 && a.Cargo.Length > 0)
+                    .Distinct()
+                    .OrderBy(a => a.Cargo == "Anciano" ? 0 : 1)
+                    .ThenBy(a => a.Nombre, StringComparer.Create(Es, true))
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                RegistroErrores.AnotarSilencioso(ex, "ProgramaWeb.Acompanantes");
+                return new List<(string, string)>();
+            }
+        }
+
+
+        /// <summary>
+        /// La carpeta de la congregación en la última «Visita N» de Documentos
+        /// («… › 1 - Congregaciones › Visita 3 › 2 - Castuera»), para proponerla al
+        /// descargar los archivos de los ancianos; null si no se encuentra.
+        /// </summary>
+        public static string? CarpetaVisitaEnDocumentos(string nombreCongregacion)
+        {
+            string buscada = (nombreCongregacion ?? "").Trim();
+
+            // «2 - Castuera» → «Castuera»; «4 - Cáceres - Norte» → «Cáceres - Norte».
+            static string SinOrden(string carpeta)
+            {
+                int guion = carpeta.IndexOf(" - ", StringComparison.Ordinal);
+                return guion > 0 && carpeta.Substring(0, guion).Trim().All(char.IsDigit)
+                    ? carpeta.Substring(guion + 3).Trim()
+                    : carpeta.Trim();
+            }
+
+            static int Numero(string carpeta) =>
+                int.TryParse(Path.GetFileName(carpeta).Substring("Visita".Length).Trim(), out int n) ? n : 0;
+
+            try
+            {
+                string documentos = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
+                foreach (string raiz in Directory.EnumerateDirectories(documentos))
+                {
+                    string congregaciones = Path.Combine(raiz, "1 - Congregaciones");
+
+                    if (buscada.Length == 0 || !Directory.Exists(congregaciones))
+                    {
+                        continue;
+                    }
+
+                    foreach (string visita in Directory.EnumerateDirectories(congregaciones, "Visita *").OrderByDescending(Numero))
+                    {
+                        string? encontrada = Directory.EnumerateDirectories(visita)
+                            .FirstOrDefault(d => string.Equals(SinOrden(Path.GetFileName(d)), buscada, StringComparison.CurrentCultureIgnoreCase));
+
+                        if (encontrada is not null)
+                        {
+                            return encontrada;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                RegistroErrores.AnotarSilencioso(ex, "ProgramaWeb.CarpetaVisitaEnDocumentos");
+            }
+
+            return null;
         }
 
 

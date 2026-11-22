@@ -880,10 +880,18 @@ namespace SCCosmos
 
                 foreach (SemanaCalendario semana in semanas)
                 {
+                    string codigo = "", mes = semana.FechaMartes.ToString("yyyy-MM");
+
                     semana.EnlaceGenerado =
                         semana.Actividad == "Visita"
-                        && codigos.TryGetValue(semana.Congregacion ?? "", out string codigo)
-                        && conEnlace.Contains(codigo + "_" + semana.FechaMartes.ToString("yyyy-MM"));
+                        && codigos.TryGetValue(semana.Congregacion ?? "", out codigo)
+                        && conEnlace.Contains(codigo + "_" + mes);
+
+                    // Lo que han subido los ancianos, para su botón de descarga.
+                    semana.ArchivosAncianos =
+                        semana.EnlaceGenerado
+                            ? ProgramaWebPc.ArchivosSubidos(codigo, mes)
+                            : 0;
                 }
             }
             catch (Exception ex)
@@ -1921,6 +1929,54 @@ namespace SCCosmos
             catch (Exception ex)
             {
                 MessageBox.Show("No se pudo preparar el enlace:\n" + ex.Message, "Copiar enlace", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        // Los archivos que han subido los ancianos con el formulario: una copia en la
+        // carpeta que se elija (se propone la de la congregación en Documentos).
+        private void BtnDescargarArchivos_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as FrameworkElement)?.DataContext is not SemanaCalendario semana)
+            {
+                return;
+            }
+
+            try
+            {
+                string codigo = DatabaseHelper.ObtenerCongregaciones()
+                    .FirstOrDefault(c => c.Nombre == semana.Congregacion)?.Codigo ?? "";
+
+                string origen = ProgramaWebPc.CarpetaArchivos(codigo, semana.FechaMartes.ToString("yyyy-MM"));
+
+                if (codigo.Length == 0 || !System.IO.Directory.Exists(origen))
+                {
+                    MessageBox.Show("No hay archivos de los ancianos para esta visita.", "Archivos de los ancianos", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                var dialogo = new Microsoft.Win32.OpenFolderDialog
+                {
+                    Title = "Carpeta donde guardar los archivos de los ancianos",
+                    InitialDirectory = ProgramaWebPc.CarpetaVisitaEnDocumentos(semana.Congregacion)
+                        ?? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+                };
+
+                if (dialogo.ShowDialog(Window.GetWindow(this)) != true)
+                {
+                    return;
+                }
+
+                // En una subcarpeta, con las suyas (S-21\G1, S-61…); lo ya descargado igual no se repite.
+                string destino = System.IO.Path.Combine(dialogo.FolderName, "Archivos de los ancianos");
+
+                SCCosmos.Sincro.ArchivosProgramaWeb.Copiar(origen, destino);
+                System.IO.Directory.CreateDirectory(destino);
+
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo { FileName = destino, UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("No se pudieron descargar los archivos:\n" + ex.Message, "Archivos de los ancianos", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

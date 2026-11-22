@@ -132,6 +132,9 @@ namespace SCCosmos
 
         // Ya hay enlace del formulario de los ancianos para esta visita (se mira al cargar el calendario).
         public bool EnlaceGenerado { get; set; }
+
+        // Archivos que han subido los ancianos con el formulario (se mira al cargar el calendario).
+        public int ArchivosAncianos { get; set; }
         public string TipoAsamblea { get; set; }
         public string RepBetelNombre { get; set; }
         public string RepBetelTelefono { get; set; }
@@ -159,6 +162,11 @@ namespace SCCosmos
 
         // «Copiar enlace» (formulario de los ancianos): cuando ya se envió la documentación o ya hay enlace.
         public Visibility VisibilidadCopiarEnlace => DocEnviada || EnlaceGenerado ? VisibilidadVisita : Visibility.Collapsed;
+
+        // «Descargar los archivos de los ancianos»: cuando ya han subido alguno.
+        public Visibility VisibilidadArchivosAncianos => ArchivosAncianos > 0 ? VisibilidadVisita : Visibility.Collapsed;
+        public string TooltipArchivosAncianos =>
+            ArchivosAncianos == 1 ? "Descargar el archivo de los ancianos" : $"Descargar los {ArchivosAncianos} archivos de los ancianos";
         public Visibility VisibilidadAsamblea => (PerfilAcceso.AccesoCompleto && Actividad == "Asamblea de circuito") ? Visibility.Visible : Visibility.Collapsed;
         public Visibility VisibilidadVerVisita => (Actividad == "Visita" && TieneDatosImportados) ? Visibility.Visible : Visibility.Collapsed;
         public Visibility EsClonada { get; set; } = Visibility.Collapsed;

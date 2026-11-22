@@ -19,6 +19,7 @@
   .ayuda { color: var(--suave); font-size: 14px; margin: 0 0 6px; }
   h3 { font-size: 16px; margin: 0; }
   h3.apartado { margin: 18px 0 2px; }
+  h3.cargo { color: var(--acento); }
   label { display:block; font-size: 14px; color: var(--suave); margin: 10px 0 4px; }
   input, select, textarea { width:100%; font: inherit; padding: 10px 12px; border: 1px solid var(--borde); border-radius: 10px; background:#fff; color: var(--texto); }
   textarea { min-height: 76px; resize: vertical; }
@@ -162,7 +163,7 @@
 
   <section id="s-pastoreo">
     <h2><span class="num">4</span>Pastoreo</h2>
-    <p class="ayuda">Hasta 3 visitas, de miércoles a domingo. Cada visita que añadáis, con su acompañante, día, hora y dirección.</p>
+    <p class="ayuda">Hasta 3 visitas, de miércoles a domingo y de 10:00 a 20:00. Cada visita que añadáis, con su acompañante, día, hora y dirección.</p>
     <div id="pastoreo" class="rejilla dos"></div>
     <button type="button" class="secundario" id="mas-pastoreo">+ Añadir otra visita</button>
   </section>
@@ -253,7 +254,27 @@ window.VISITA = /*VISITA*/null;
     return s;
   }
 
-  // ---- Buscador de lugares (OpenStreetMap): una dirección solo vale si se elige de la lista ----
+  // Acompañante del pastoreo: uno de los ancianos o siervos ministeriales de la
+  // congregación que tiene SCCosmos (vienen de JW Hub). Si no tuviera ninguno, se escribe.
+  const ACOMPANANTES = V.acompanantes || [];
+  function selectorAcompanante() {
+    if (!ACOMPANANTES.length) return texto("acompanante", "Anciano o siervo ministerial que le acompaña");
+    const s = el("select", { name: "acompanante" }, el("option", { value: "", textContent: "Elegir anciano o siervo ministerial" }));
+    [["Anciano", "Ancianos"], ["Siervo ministerial", "Siervos ministeriales"]].forEach(([cargo, titulo]) => {
+      const de = ACOMPANANTES.filter(a => a.cargo === cargo);
+      if (!de.length) return;
+      const grupo = el("optgroup", { label: titulo });
+      de.forEach(a => grupo.append(el("option", { value: a.nombre, textContent: a.nombre })));
+      s.append(grupo);
+    });
+    return s;
+  }
+
+  // Las visitas de pastoreo, de 10:00 a 20:00.
+  const horaVisita = () => el("input", { type: "time", name: "hora", min: "10:00", max: "20:00" });
+
+  // ---- Buscador de lugares: una dirección solo vale si se elige de la lista, y en la lista
+  //      solo salen las que tienen calle (un pueblo solo, no) ----
   function lugar(nombre) {
     const caja = el("div", { className: "busca" });
     const input = texto(nombre, "Dirección");
@@ -275,7 +296,8 @@ window.VISITA = /*VISITA*/null;
     });
     input.addEventListener("blur", () => { sesion = ""; setTimeout(() => lista.classList.add("oculto"), 250); });
 
-    // Con el buscador del PC (Google Maps o TomTom, si tiene clave) y, si no contesta, con OpenStreetMap (Photon).
+    // Con el buscador del PC (Google Maps y, si no la encuentra, TomTom) y, si tampoco, con
+    // OpenStreetMap (Photon).
     async function buscar(q) {
       ultima = q;
       if (V.buscador && !sinBuscadorPc) {
@@ -285,18 +307,24 @@ window.VISITA = /*VISITA*/null;
           if (r.ok) {
             const datos = await r.json();
             if (q !== ultima) return;
-            mostrar((datos.lugares || []).map(d => ({ texto: d.texto, google: d.id, lat: d.lat, lon: d.lon })), datos.fuente);
-            return;
+            const lugares = (datos.lugares || []).map(d => ({ texto: d.texto, google: d.id, lat: d.lat, lon: d.lon }));
+            if (lugares.length) { mostrar(lugares, datos.fuente); return; }
+            // Ni Google ni TomTom la encuentran: esta vez, OpenStreetMap.
+          } else {
+            sinBuscadorPc = true; // límite del día o sin clave: el resto, con OpenStreetMap
           }
-          sinBuscadorPc = true; // límite del día o sin clave: el resto, con OpenStreetMap
         } catch (e) { }
       }
-      let url = "https://photon.komoot.io/api/?limit=5&q=" + encodeURIComponent(q);
+      // Se piden más porque los pueblos solos se quitan.
+      let url = "https://photon.komoot.io/api/?limit=10&q=" + encodeURIComponent(q);
       if (V.centro && V.centro.lat) url += "&lat=" + V.centro.lat + "&lon=" + V.centro.lon;
       try {
         const datos = await (await fetch(url)).json();
         if (q !== ultima) return;
-        mostrar((datos.features || []).map(f => {
+        mostrar((datos.features || []).filter(f => {
+          const p = f.properties || {};
+          return p.street || p.type === "street";
+        }).slice(0, 5).map(f => {
           const p = f.properties || {};
           const c = (f.geometry && f.geometry.coordinates) || [];
           const calle = [p.street, p.housenumber].filter(Boolean).join(" ");
@@ -533,8 +561,8 @@ window.VISITA = /*VISITA*/null;
     }
     b.append(cab,
              campo("Persona o familia", texto("nombre")),
-             campo("Acompañante", texto("acompanante", "Anciano o siervo ministerial que le acompaña")),
-             el("div", { className: "fila" }, campo("Día", selectorDia(MIE_A_DOM)), campo("Hora", hora("hora"))),
+             campo("Acompañante", selectorAcompanante()),
+             el("div", { className: "fila" }, campo("Día", selectorDia(MIE_A_DOM)), campo("Hora", horaVisita())),
              campo("Dirección", lugar("direccion")),
              campo("Descripción (opcional)", el("textarea", { name: "descripcion" })));
     pastoreo.append(b);
@@ -732,7 +760,7 @@ window.VISITA = /*VISITA*/null;
     $("#s-archivos").classList.remove("oculto");
     const archivos = $("#archivos");
     ARCHIVOS.forEach((a, i) => {
-      if (i === 0 || a.cargo !== ARCHIVOS[i - 1].cargo) archivos.append(el("h3", { className: "apartado", textContent: a.cargo }));
+      if (i === 0 || a.cargo !== ARCHIVOS[i - 1].cargo) archivos.append(el("h3", { className: "apartado cargo", textContent: a.cargo }));
       const b = el("div", { className: "bloque" });
       const titulo = el("h3", { textContent: a.titulo + (a.opcional ? " (opcional)" : "") });
       if (a.tipo === "s21") {
@@ -917,6 +945,8 @@ window.VISITA = /*VISITA*/null;
       obligatorio(b, "acompanante", "Falta el acompañante", donde);
       obligatorio(b, "dia", "Falta el día", donde);
       obligatorio(b, "hora", "Falta la hora", donde);
+      const horaPuesta = val(b, "hora");
+      if (horaPuesta && (horaPuesta < "10:00" || horaPuesta > "20:00")) falta(b.querySelector('[name="hora"]'), "La hora, de 10:00 a 20:00", donde);
       direccion(b, "direccion", donde, true);
     });
 
