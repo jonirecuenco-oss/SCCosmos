@@ -134,6 +134,21 @@ namespace SCCosmos
             nombramientos.RecargarArchivos();
             listaVisitas.Add(nombramientos);
 
+            // La agenda de la reunión con los ancianos: se abre y se edita en Visitas → Agenda.
+            var agenda = new CategoriaVista
+            {
+                Titulo = "Agenda",
+                Descripcion = "La agenda de la reunión con los ancianos y siervos ministeriales (Word, .docx). Se abre y se edita en Visitas → Agenda, con estas variables ya sustituidas: "
+                    + "$_CONGREGACION (nombre de la congregación), $_CODIGO (su número), $_FECHA, $_HORA y $_DIRECCION (de la reunión con los A/SM del programa).",
+                VisibilidadSimple = Visibility.Visible,
+                VisibilidadColumnas = Visibility.Collapsed,
+                VisibilidadAlojamientoEspecial = Visibility.Collapsed
+            };
+            agenda.AsuntoEmail = DatabaseHelper.ObtenerConfiguracion("Asunto_" + agenda.Titulo, "Agenda de la reunión con los ancianos");
+            agenda.PlantillaEmail = DatabaseHelper.ObtenerConfiguracion("Email_" + agenda.Titulo, "Queridos hermanos,<br><br>Os adjunto la agenda de nuestra reunión.<br><br>Un fuerte abrazo.");
+            agenda.RecargarArchivos();
+            listaVisitas.Add(agenda);
+
             var envioS303 = new CategoriaVista
             {
                 Titulo = "Envío de S-303",

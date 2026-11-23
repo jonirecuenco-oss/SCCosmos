@@ -446,20 +446,6 @@
                     </StackPanel>
                 </TabItem>
 
-                <!-- NOTAS PERSONALES -->
-                <!-- Los puntos a tratar que han escrito los ancianos en el formulario web -->
-                <TabItem x:Name="TabAgenda" Header="Agenda">
-                    <StackPanel Margin="0,16,0,0">
-                        <Border Style="{StaticResource PanelTarjeta}" Padding="16,12" Margin="0,0,0,12">
-                            <StackPanel>
-                                <TextBlock Text="Puntos a tratar" FontWeight="SemiBold" FontSize="14"/>
-                                <TextBlock x:Name="TxtAgendaOrigen" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" Margin="0,2,0,0" TextWrapping="Wrap"/>
-                            </StackPanel>
-                        </Border>
-                        <StackPanel x:Name="ListaAgenda"/>
-                    </StackPanel>
-                </TabItem>
-
                 <!-- Asistencia a las reuniones: pendiente de programar -->
                 <TabItem x:Name="TabReuniones" Header="Reuniones">
                     <StackPanel Margin="0,16,0,0">
@@ -473,6 +459,7 @@
                     </StackPanel>
                 </TabItem>
 
+                <!-- NOTAS PERSONALES -->
                 <TabItem x:Name="TabNotas" Header="Notas" RequestBringIntoView="TabNotas_RequestBringIntoView">
                     <Grid x:Name="PanelNotas" Margin="0,16,0,0">
                         <Grid.Resources>
@@ -1384,6 +1371,47 @@
                     </StackPanel>
                 </TabItem>
 
+                <!-- AGENDA DE LA REUNIÓN CON LOS ANCIANOS: la de Correspondencia → Visitas a congregaciones →
+                     Agenda, con sus variables puestas; los puntos que escriben los ancianos en el formulario
+                     (se pueden cambiar) y las recomendaciones pendientes de la congregación -->
+                <TabItem x:Name="TabAgenda" Header="Agenda">
+                    <StackPanel Margin="0,16,0,0">
+                        <Border Style="{StaticResource PanelTarjeta}" Padding="16,12" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="Agenda de la reunión con los ancianos" FontWeight="SemiBold" FontSize="14"/>
+                                <TextBlock x:Name="TxtAgendaDatos" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" Margin="0,2,0,10" TextWrapping="Wrap"/>
+                                <WrapPanel>
+                                    <ui:Button Content="Abrir / editar agenda" Icon="{ui:SymbolIcon DocumentEdit24}" Appearance="Primary" Click="BtnAbrirAgenda_Click" Cursor="Hand" Margin="0,0,8,0"/>
+                                    <ui:Button Content="Regenerar desde plantilla" Icon="{ui:SymbolIcon ArrowSync24}" Appearance="Secondary" Click="BtnRegenerarAgenda_Click" Cursor="Hand"/>
+                                </WrapPanel>
+                                <TextBlock x:Name="TxtEstadoAgenda" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="11" Margin="0,9,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource PanelTarjeta}" Padding="16,12" Margin="0,0,0,12">
+                            <StackPanel>
+                                <Grid>
+                                    <TextBlock Text="Puntos a tratar" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center"/>
+                                    <ui:Button x:Name="BtnRecuperarPuntosAgenda" Content="Volver a los de los ancianos" Icon="{ui:SymbolIcon ArrowUndo24}" Appearance="Transparent"
+                                               HorizontalAlignment="Right" Padding="8,3" FontSize="12" Cursor="Hand" Visibility="Collapsed" Click="BtnRecuperarPuntosAgenda_Click"/>
+                                </Grid>
+                                <TextBlock x:Name="TxtAgendaOrigen" Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                <StackPanel x:Name="ListaAgenda" Margin="0,10,0,0"/>
+                                <ui:Button Content="Añadir punto" Icon="{ui:SymbolIcon Add24}" Appearance="Secondary" Click="BtnAnadirPuntoAgenda_Click" Cursor="Hand" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource PanelTarjeta}" Padding="16,12">
+                            <StackPanel>
+                                <TextBlock Text="Recomendaciones de esta semana" FontWeight="SemiBold" FontSize="14"/>
+                                <TextBlock x:Name="TxtAgendaSinRecomendaciones" Text="No hay recomendaciones ni bajas pendientes en JW Hub para esta congregación."
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                <StackPanel x:Name="ListaAgendaRecomendaciones" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </TabItem>
+
                 <!-- S-303 Y S-2 -->
                 <TabItem x:Name="TabS303" Header="S-303">
                     <StackPanel Margin="0,16,0,0">
@@ -1451,8 +1479,9 @@
                                 <TextBlock x:Name="TxtSinS2" Text="No hay recomendaciones ni bajas pendientes en JW Hub para esta congregación." Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontStyle="Italic" Visibility="Collapsed"/>
 
                                 <!-- La carta se genera sobre una COPIA del DOCX guardado en Documentación.
-                                     Los cambios manuales de esa copia se conservan hasta el envío. -->
-                                <Border Margin="0,14,0,0" Padding="12,11" Background="{DynamicResource ControlFillColorDefaultBrush}" CornerRadius="6"
+                                     Los cambios manuales de esa copia se conservan hasta el envío.
+                                     Sin recomendaciones no sale (no hay carta que hacer). -->
+                                <Border x:Name="PanelCartaNombramientos" Margin="0,14,0,0" Padding="12,11" Background="{DynamicResource ControlFillColorDefaultBrush}" CornerRadius="6"
                                         BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" BorderThickness="1">
                                     <StackPanel>
                                         <TextBlock Text="Carta de nombramientos" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>

@@ -501,6 +501,13 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - Grupos: además de «G1», «Grupo 1» y, justo dentro de la carpeta S-21, «1», «2», «3» (como las de Azuaga).
   - 176/176 comprobaciones (2 nuevas, con una tarjeta inventada de ese formato hecha con iText y Segoe UI Symbol). Probado con una copia de las 76 de Azuaga (borrada): grupos 24/25/27, sin descartes y dos tarjetas comparadas mes a mes con su PDF.
 - 23/11/2026 · Publicada la v2.1.81.
+- 23/11/2026 · v2.1.82 (pedido por el usuario):
+  - Correspondencia → Visitas a congregaciones: nuevo apartado «Agenda» (Word, .docx) para la agenda de la reunión con los ancianos. En el archivo se pueden usar $_CONGREGACION, $_CODIGO, $_FECHA, $_HORA y $_DIRECCION. Las tres últimas son de la «Reunión de A/SM» del programa; si aún no está, de lo que enviaron los ancianos; sin nada, el viernes. Tiene asunto y cuerpo de correo como los demás apartados, aún sin botón de envío.
+  - Visitas: la pestaña «Agenda» va ahora antes de «S-303». «Abrir / editar agenda» hace una copia de la plantilla con las variables puestas, una por visita, en `%LocalAppData%\SCCosmos\Agendas`; lo editado en Word se queda. «Regenerar desde plantilla» pide confirmación. Si la plantilla no se puede leer, no se deja la copia a medias.
+  - En la misma pestaña, los puntos a tratar van en campos de texto: los de los ancianos o, si se cambian, los cambiados (clave `ProgramaWeb_AgendaPuntos_{congregación}_{mes}`, sincronizada; «Volver a los de los ancianos»). Al repintar no se guarda nada. Debajo, las recomendaciones pendientes de la congregación (las mismas de S-303).
+  - S-303: sin recomendaciones no sale «Carta de nombramientos».
+  - 176/176 comprobaciones. Probado con la herramienta de capturas sobre una copia de la base (borrada), con puntos, una recomendación y una plantilla de prueba. La agenda sale con «miércoles 11 de noviembre de 2026 a las 20:00 en …» y la carta no aparece sin recomendaciones.
+- 23/11/2026 · Publicada la v2.1.82.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

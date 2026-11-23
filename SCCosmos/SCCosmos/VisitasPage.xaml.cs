@@ -1026,42 +1026,362 @@ namespace SCCosmos
             }
         }
 
-        // Agenda: los puntos a tratar que han escrito los ancianos en el formulario.
+        // ---- Agenda ----
+        // Los puntos a tratar, en campos de texto: los que escriben los ancianos en el
+        // formulario o, si se cambian aquí, los cambiados (se guardan por visita).
+
+        private List<string> _puntosDeLosAncianos = new List<string>();
+        private DateTime? _puntosRecibidosEl;
+        private bool _puntosEnviados;
+
+        // Al repintar, el campo que tenía el foco lo pierde al quitarlo: no se guarda nada.
+        private bool _pintandoAgenda;
+
         private void PintarAgenda(string json, DateTime? cuando, bool completo)
         {
-            ListaAgenda.Children.Clear();
+            PintarDatosAgenda();
 
-            List<string> asuntos =
-                json is null ? new List<string>() : SCCosmos.Sincro.ProgramaWeb.AEventos(json).Asuntos;
+            _puntosDeLosAncianos = json is null ? new List<string>() : ProgramaWeb.AEventos(json).Asuntos;
+            _puntosRecibidosEl = cuando;
+            _puntosEnviados = completo;
 
-            TxtAgendaOrigen.Text = cuando is not { } c
-                ? "Aquí saldrán los puntos que los ancianos escriban en el formulario."
-                : !completo
-                    ? $"Lo que llevan escrito los ancianos (el {c:dd/MM} a las {c:HH:mm}); aún no han enviado el formulario."
-                    : asuntos.Count == 0
-                        ? $"Los ancianos enviaron el formulario el {c:dd/MM} a las {c:HH:mm}, sin puntos a tratar."
-                        : $"Los que enviaron los ancianos en el formulario el {c:dd/MM} a las {c:HH:mm}.";
+            List<string> cambiados = LeerPuntosAgendaCambiados();
 
-            for (int i = 0; i < asuntos.Count; i++)
+            PintarPuntosAgenda(cambiados ?? _puntosDeLosAncianos);
+            PintarOrigenPuntosAgenda(cambiados != null);
+        }
+
+        private void PintarPuntosAgenda(List<string> puntos)
+        {
+            _pintandoAgenda = true;
+
+            try
             {
-                var fila = new Grid();
-                fila.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-                fila.ColumnDefinitions.Add(new ColumnDefinition());
+                ListaAgenda.Children.Clear();
 
-                var numero = new TextBlock { Text = (i + 1) + ".", FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 10, 0) };
-                var texto = new TextBlock { Text = asuntos[i], TextWrapping = TextWrapping.Wrap };
-                Grid.SetColumn(texto, 1);
-
-                fila.Children.Add(numero);
-                fila.Children.Add(texto);
-
-                ListaAgenda.Children.Add(new Border
+                foreach (string punto in puntos)
                 {
-                    Style = (Style)FindResource("PanelTarjeta"),
-                    Padding = new Thickness(16, 12, 16, 12),
-                    Margin = new Thickness(0, 0, 0, 8),
-                    Child = fila
+                    AnadirPuntoAgenda(punto);
+                }
+            }
+            finally
+            {
+                _pintandoAgenda = false;
+            }
+        }
+
+        private void PintarOrigenPuntosAgenda(bool cambiados)
+        {
+            BtnRecuperarPuntosAgenda.Visibility = cambiados ? Visibility.Visible : Visibility.Collapsed;
+
+            TxtAgendaOrigen.Text = cambiados
+                ? "Los has cambiado aquí" + (_puntosRecibidosEl is { } e ? $"; los ancianos los enviaron el {e:dd/MM} a las {e:HH:mm}." : ".")
+                : _puntosRecibidosEl is not { } c
+                    ? "Aquí saldrán los puntos que los ancianos escriban en el formulario. También puedes añadirlos tú."
+                    : !_puntosEnviados
+                        ? $"Lo que llevan escrito los ancianos (el {c:dd/MM} a las {c:HH:mm}); aún no han enviado el formulario."
+                        : _puntosDeLosAncianos.Count == 0
+                            ? $"Los ancianos enviaron el formulario el {c:dd/MM} a las {c:HH:mm}, sin puntos a tratar."
+                            : $"Los que enviaron los ancianos en el formulario el {c:dd/MM} a las {c:HH:mm}. Puedes cambiarlos.";
+        }
+
+        private List<string> LeerPuntosAgendaCambiados()
+        {
+            string guardado = DatabaseHelper.ObtenerConfiguracion(
+                ProgramaWeb.ClaveAgendaPuntos(_congreCodigo, _mesPrograma.ToString("yyyy-MM")), "");
+
+            if (string.IsNullOrWhiteSpace(guardado))
+            {
+                return null;
+            }
+
+            try
+            {
+                return JsonSerializer.Deserialize<List<string>>(guardado);
+            }
+            catch (JsonException)
+            {
+                return null;
+            }
+        }
+
+        private TextBox AnadirPuntoAgenda(string texto)
+        {
+            var fila = new Grid { Margin = new Thickness(0, 0, 0, 8) };
+            fila.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            fila.ColumnDefinitions.Add(new ColumnDefinition());
+            fila.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            var numero = new TextBlock { FontWeight = FontWeights.SemiBold, MinWidth = 22, Margin = new Thickness(0, 7, 6, 0) };
+            var campo = new TextBox { Text = texto ?? "", TextWrapping = TextWrapping.Wrap, AcceptsReturn = true, MinHeight = 34 };
+            var quitar = new Button { Content = "Quitar", Margin = new Thickness(8, 0, 0, 0), Padding = new Thickness(10, 4, 10, 4), VerticalAlignment = VerticalAlignment.Top, Cursor = Cursors.Hand };
+
+            campo.LostFocus += (_, _) => GuardarPuntosAgenda();
+            quitar.Click += (_, _) =>
+            {
+                ListaAgenda.Children.Remove(fila);
+                GuardarPuntosAgenda();
+            };
+
+            Grid.SetColumn(campo, 1);
+            Grid.SetColumn(quitar, 2);
+            fila.Children.Add(numero);
+            fila.Children.Add(campo);
+            fila.Children.Add(quitar);
+            ListaAgenda.Children.Add(fila);
+
+            NumerarPuntosAgenda();
+
+            return campo;
+        }
+
+        private void NumerarPuntosAgenda()
+        {
+            int n = 0;
+
+            foreach (Grid fila in ListaAgenda.Children.OfType<Grid>())
+            {
+                fila.Children.OfType<TextBlock>().First().Text = ++n + ".";
+            }
+        }
+
+        // Si quedan como los de los ancianos, no se guardan (y siguen llegando los suyos).
+        private void GuardarPuntosAgenda()
+        {
+            if (_pintandoAgenda)
+            {
+                return;
+            }
+
+            NumerarPuntosAgenda();
+
+            var puntos = ListaAgenda.Children.OfType<Grid>()
+                .Select(f => f.Children.OfType<TextBox>().First().Text.Trim())
+                .Where(t => t.Length > 0)
+                .ToList();
+
+            bool cambiados = !puntos.SequenceEqual(_puntosDeLosAncianos);
+
+            DatabaseHelper.GuardarConfiguracion(
+                ProgramaWeb.ClaveAgendaPuntos(_congreCodigo, _mesPrograma.ToString("yyyy-MM")),
+                cambiados ? JsonSerializer.Serialize(puntos) : "");
+
+            PintarOrigenPuntosAgenda(cambiados);
+        }
+
+        private void BtnAnadirPuntoAgenda_Click(object sender, RoutedEventArgs e)
+        {
+            AnadirPuntoAgenda("").Focus();
+        }
+
+        private void BtnRecuperarPuntosAgenda_Click(object sender, RoutedEventArgs e)
+        {
+            DatabaseHelper.GuardarConfiguracion(ProgramaWeb.ClaveAgendaPuntos(_congreCodigo, _mesPrograma.ToString("yyyy-MM")), "");
+
+            PintarPuntosAgenda(_puntosDeLosAncianos);
+            PintarOrigenPuntosAgenda(false);
+        }
+
+        // Las recomendaciones pendientes de la congregación (las mismas de S-303).
+        private void PintarRecomendacionesAgenda(List<RecomendacionS2UI> recomendaciones)
+        {
+            ListaAgendaRecomendaciones.Children.Clear();
+            TxtAgendaSinRecomendaciones.Visibility = recomendaciones.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+
+            foreach (var recomendacion in recomendaciones)
+            {
+                string como = (recomendacion.RecomendadoComo ?? "").Trim();
+
+                ListaAgendaRecomendaciones.Children.Add(new TextBlock
+                {
+                    Text = $"• {recomendacion.Hermano}: {recomendacion.Tipo}" + (como.Length > 0 ? $" ({como})" : ""),
+                    TextWrapping = TextWrapping.Wrap,
+                    Margin = new Thickness(0, 2, 0, 2)
                 });
+            }
+        }
+
+        // La agenda (Word) de Correspondencia → Visitas a congregaciones → Agenda, con las
+        // variables de esta visita. La copia de cada visita se guarda en los datos de
+        // SCCosmos, así que lo que se edite en Word se queda.
+        private const string CategoriaAgenda = "Agenda";
+
+        private static ArchivoDocumento ObtenerPlantillaAgenda() =>
+            DatabaseHelper.ObtenerDocumentos(CategoriaAgenda)
+                .Where(d => string.Equals(Path.GetExtension(d.NombreArchivo ?? ""), ".docx", StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(d => d.Id)
+                .FirstOrDefault();
+
+        // La reunión con los ancianos y siervos ministeriales de esta visita: del programa
+        // o, si aún no está, de lo que enviaron los ancianos (sin nada, el viernes).
+        private (DateTime? Fecha, string Hora, string Direccion) ReunionConLosAncianos()
+        {
+            string mes = _mesPrograma.ToString("yyyy-MM");
+            const string tipo = "Reunión de A/SM";
+
+            var enPrograma = DatabaseHelper.ObtenerActividadesProgramaMes(_congreCodigo, mes)
+                .FirstOrDefault(a => a.TipoActividad == tipo);
+
+            string dia = enPrograma?.DiaSemana ?? "";
+            string hora = enPrograma?.Hora ?? "";
+            string direccion = enPrograma?.Direccion ?? "";
+
+            if (enPrograma == null
+                && ProgramaWebPc.Recibido(_congreCodigo, mes) is { } recibido
+                && ProgramaWebPc.EventosRecibidos(_congreCodigo, recibido.Json).FirstOrDefault(ev => ev.TipoActividad == tipo) is { } enviada)
+            {
+                dia = enviada.DiaSemana ?? "";
+                hora = enviada.Hora ?? "";
+                direccion = enviada.Ubicacion ?? "";
+            }
+
+            int indice = Array.IndexOf(ProgramaWeb.Dias, dia.Length > 0 ? dia : "Viernes");
+
+            DateTime? fecha = DatabaseHelper.ObtenerVisitaProgramaWeb(_congreCodigo, mes) is { } visita && indice >= 0
+                ? visita.Martes.AddDays(indice)
+                : null;
+
+            return (fecha, hora.Trim(), direccion.Trim());
+        }
+
+        private Dictionary<string, string> VariablesAgenda()
+        {
+            var (fecha, hora, direccion) = ReunionConLosAncianos();
+
+            return new Dictionary<string, string>
+            {
+                ["$_CONGREGACION"] = (_congreNombre ?? "").Trim(),
+                ["$_CODIGO"] = (_congreCodigo ?? "").Trim(),
+                ["$_FECHA"] = fecha?.ToString("dddd d 'de' MMMM 'de' yyyy", new CultureInfo("es-ES")) ?? "",
+                ["$_HORA"] = hora,
+                ["$_DIRECCION"] = direccion
+            };
+        }
+
+        private string RutaAgenda()
+        {
+            string nombre = string.Concat(
+                ((_congreNombre ?? _congreCodigo ?? "") + " - " + _mesPrograma.ToString("MMMM yyyy", new CultureInfo("es-ES")))
+                    .Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c));
+
+            string carpeta = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SCCosmos", "Agendas");
+            Directory.CreateDirectory(carpeta);
+
+            return Path.Combine(carpeta, "Agenda - " + nombre + ".docx");
+        }
+
+        private string PrepararAgenda(bool rehacer)
+        {
+            string ruta = RutaAgenda();
+
+            if (!rehacer && File.Exists(ruta))
+            {
+                return ruta;
+            }
+
+            ArchivoDocumento plantilla = ObtenerPlantillaAgenda()
+                ?? throw new FileNotFoundException("No hay ninguna agenda en Word (.docx) en Correspondencia → Visitas a congregaciones → Agenda.");
+
+            string origen = DatabaseHelper.ExtraerDocumentoDesdeBD(plantilla.Id, plantilla.NombreArchivo);
+
+            if (string.IsNullOrWhiteSpace(origen) || !File.Exists(origen))
+            {
+                throw new IOException("La agenda no tiene contenido accesible en la base de datos.");
+            }
+
+            File.Copy(origen, ruta, true);
+
+            // Si la plantilla no se puede leer, no se deja la copia a medias (se abriría así la próxima vez).
+            try
+            {
+                using (var documento = Xceed.Words.NET.DocX.Load(ruta))
+                {
+                    foreach (var kv in VariablesAgenda().OrderByDescending(kv => kv.Key.Length))
+                    {
+                        documento.ReplaceText(kv.Key, kv.Value ?? "");
+                    }
+
+                    documento.Save();
+                }
+            }
+            catch (Exception ex) when (ex is not IOException)
+            {
+                File.Delete(ruta);
+                throw new InvalidDataException("No se ha podido leer la agenda subida en Correspondencia (¿es un Word .docx?): " + ex.Message, ex);
+            }
+
+            return ruta;
+        }
+
+        private void PintarDatosAgenda()
+        {
+            try
+            {
+                var (fecha, hora, direccion) = ReunionConLosAncianos();
+
+                string reunion = fecha is { } f
+                    ? f.ToString("dddd d 'de' MMMM", new CultureInfo("es-ES"))
+                      + (hora.Length > 0 ? " a las " + hora : "")
+                      + (direccion.Length > 0 ? ", en " + direccion : "")
+                    : "sin fecha todavía";
+
+                TxtAgendaDatos.Text = ObtenerPlantillaAgenda() is null
+                    ? "Sube la agenda (Word) en Correspondencia → Visitas a congregaciones → Agenda."
+                    : $"Con los datos de esta visita: {_congreNombre} ({_congreCodigo}); reunión con los ancianos y siervos ministeriales el {reunion}.";
+
+                TxtEstadoAgenda.Text = File.Exists(RutaAgenda())
+                    ? "Esta visita ya tiene su agenda: al abrirla, salen tus cambios."
+                    : "";
+            }
+            catch (Exception ex)
+            {
+                RegistroErrores.AnotarSilencioso(ex, "Visitas.Agenda");
+            }
+        }
+
+        private void BtnAbrirAgenda_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                bool yaEstaba = File.Exists(RutaAgenda());
+                string ruta = PrepararAgenda(false);
+
+                Process.Start(new ProcessStartInfo(ruta) { UseShellExecute = true });
+
+                TxtEstadoAgenda.Text = yaEstaba
+                    ? "Abierta la agenda de esta visita, con tus cambios. Guárdala en Word al terminar."
+                    : "Agenda preparada con los datos de esta visita. Edítala y guárdala en Word: los cambios se quedan.";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Agenda", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        private void BtnRegenerarAgenda_Click(object sender, RoutedEventArgs e)
+        {
+            if (File.Exists(RutaAgenda())
+                && MessageBox.Show("Se vuelve a hacer desde la plantilla y se pierden los cambios hechos en la agenda de esta visita. ¿Seguir?",
+                       "Agenda", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            try
+            {
+                string ruta = PrepararAgenda(true);
+
+                Process.Start(new ProcessStartInfo(ruta) { UseShellExecute = true });
+
+                TxtEstadoAgenda.Text = "Agenda rehecha desde la plantilla, con los datos de esta visita.";
+            }
+            catch (IOException ex) when (ex is not FileNotFoundException)
+            {
+                MessageBox.Show("No se puede rehacer: cierra la agenda en Word y vuelve a probar.\n\n" + ex.Message, "Agenda", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Agenda", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 
@@ -6006,6 +6326,11 @@ namespace SCCosmos
                 TablaS2.Visibility = Visibility.Collapsed;
                 TxtSinS2.Visibility = Visibility.Visible;
             }
+
+            // Sin recomendaciones no hay carta de nombramientos que hacer.
+            PanelCartaNombramientos.Visibility = recomendaciones.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+            PintarRecomendacionesAgenda(recomendaciones);
 
         }
 

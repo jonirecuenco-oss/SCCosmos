@@ -284,6 +284,13 @@ public static class ProgramaWeb
     public static string ClaveArchivos(string congregacion, string mes) =>
         $"ProgramaWeb_Archivos_{congregacion}_{mes}";
 
+    /// <summary>
+    /// Los puntos a tratar de la agenda (JSON con la lista) cuando el
+    /// superintendente los cambia; sin ella, los que enviaron los ancianos.
+    /// </summary>
+    public static string ClaveAgendaPuntos(string congregacion, string mes) =>
+        $"ProgramaWeb_AgendaPuntos_{congregacion}_{mes}";
+
     public static string TextoEnviado(DateTime cuando, int archivos) =>
         cuando.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture) + "|" + Math.Max(0, archivos);
 
