@@ -392,7 +392,9 @@ public static class ConvertidorS21
                 sinteticos,
                 marcasSinteticas);
 
-            var impresa = TarjetaImpresa(contenido, anioServicio);
+            // Primero la de casillas de texto (☐/☒): las oficiales no las usan.
+            var impresa = TarjetaCasillasTexto(contenido, anioServicio)
+                ?? TarjetaImpresa(contenido, anioServicio);
 
             if (impresa == null)
             {
@@ -2896,6 +2898,300 @@ public static class ConvertidorS21
     }
 
 
+    // ========================================================
+    // FORMATO 4: «REGISTRO DE PUBLICADOR» CON CASILLAS DE TEXTO
+    //
+    // Las que sacan algunos programas de congregación (mPDF, en A5):
+    // sin campos, con las casillas escritas como caracteres «☐» y «☒»,
+    // fechas «dd-mm-aaaa», el año «25/26» y, delante del nombre, algo
+    // entre paréntesis. La tabla empieza más arriba que en la oficial y
+    // la casilla de auxiliar sale pegada a las horas, así que se lee por
+    // caracteres, con las columnas sacadas de sus cabeceras.
+    // ========================================================
+
+    private static bool EsCasillaTexto(string texto) => texto is "☐" or "☒" or "☑";
+
+    private static bool MarcadaTexto(string texto) => texto is "☒" or "☑";
+
+
+    private static TarjetaS21 TarjetaCasillasTexto(
+        ContenidoPagina contenido,
+        int anioDefecto)
+    {
+        // Las 9 de la cabecera (sexo, esperanza y nombramientos) siempre; las de
+        // los meses, solo en los que tienen algo.
+        var casillas = contenido.Caracteres
+            .Where(c => EsCasillaTexto(c.Texto))
+            .ToList();
+
+        if (casillas.Count < 9
+            || !contenido.Palabras.Any(p => p.Texto.Trim().Equals("registro", StringComparison.OrdinalIgnoreCase)))
+        {
+            return null;
+        }
+
+        // Filas de los meses: el nombre del mes a la izquierda.
+        var filas = contenido.Palabras
+            .Where(p => p.X0 < 60 && Meses.Contains(p.Texto.Trim().ToLowerInvariant()))
+            .Select(p => (Mes: p.Texto.Trim().ToLowerInvariant(), Y: p.CentroY))
+            .OrderBy(f => f.Y)
+            .ToList();
+
+        if (filas.Count != 12 || filas.Select(f => f.Mes).Distinct().Count() != 12)
+        {
+            return null;
+        }
+
+        float primeraFila = filas[0].Y;
+
+        PalabraPdf Cabecera(params string[] textos) =>
+            contenido.Palabras
+                .Where(p => p.CentroY < primeraFila
+                            && textos.Any(t => p.Texto.Trim().TrimEnd(':').Equals(t, StringComparison.OrdinalIgnoreCase)))
+                .OrderByDescending(p => p.CentroY)
+                .FirstOrDefault();
+
+        float? Centro(params string[] textos) =>
+            Cabecera(textos) is { } palabra ? (palabra.X0 + palabra.X1) / 2 : null;
+
+        // Columnas de la tabla, por sus cabeceras.
+        float? participacionX = Centro("ministerio", "participación", "participacion");
+        float? cursosX = Centro("bíblicos", "biblicos", "cursos");
+        float? auxiliarX = Centro("auxiliar");
+        float? horasX = Centro("horas");
+        float? notasX = Cabecera("notas")?.X0;
+
+        if (participacionX is not { } partX || auxiliarX is not { } auxX || horasX is not { } horX)
+        {
+            return null;
+        }
+
+        // A medio camino entre las horas y las notas empiezan las notas.
+        float inicioNotas = notasX is { } notX ? (horX + notX) / 2 : horX + 40;
+
+        // Cabecera: cada casilla marcada, por la etiqueta que tiene a su derecha
+        // (pegada o no: «☒ Mujer» o «☒Mujer»). Solo por la posición de la casilla:
+        // el ancho calculado con los vecinos sale mal junto a los espacios.
+        string sexo = "", esperanza = "", nombramiento = "", servicio = "";
+
+        foreach (var casilla in casillas.Where(c => c.Y < primeraFila - 12 && MarcadaTexto(c.Texto)))
+        {
+            var etiqueta = contenido.Palabras
+                .Where(p => Math.Abs(p.CentroY - casilla.Y) <= 4 && p.X0 > casilla.X - 0.5f)
+                .OrderBy(p => p.X0)
+                .Select(p => new string(p.Texto.Trim()
+                        .SkipWhile(c => EsCasillaTexto(c.ToString()) || char.IsWhiteSpace(c))
+                        .ToArray())
+                    .ToLowerInvariant())
+                .Where(t => t.Length > 0)
+                .Take(2)
+                .ToList();
+
+            string primera = etiqueta.Count > 0 ? etiqueta[0] : "";
+            string segunda = etiqueta.Count > 1 ? etiqueta[1] : "";
+
+            switch (primera)
+            {
+                case "hombre": sexo = "Hombre"; break;
+                case "mujer": sexo = "Mujer"; break;
+                case "otras": esperanza = "Otras ovejas"; break;
+                case "ungido": esperanza = "Ungido"; break;
+                case "anciano": nombramiento = "Anciano"; break;
+                case "siervo": nombramiento = "Siervo ministerial"; break;
+                case "misionero": servicio = "Misionero"; break;
+                case "precursor" when segunda == "regular": servicio = "Precursor regular"; break;
+                case "precursor" when segunda == "especial": servicio = "Precursor especial"; break;
+            }
+        }
+
+        // Hay programas que solo marcan «Mujer»; un anciano o siervo ministerial, seguro que es hombre.
+        if (sexo.Length == 0 && nombramiento.Length > 0)
+        {
+            sexo = "Hombre";
+        }
+
+        // «Nombre: (Hermano) Pérez García, Juan»: lo de delante entre paréntesis no es del nombre.
+        var etiquetaNombre = contenido.Palabras.FirstOrDefault(p =>
+            p.CentroY < primeraFila && p.Texto.Trim().StartsWith("nombre", StringComparison.OrdinalIgnoreCase));
+
+        if (etiquetaNombre == null)
+        {
+            return null;
+        }
+
+        string nombre = LimpiarEspacios(Regex.Replace(
+            string.Join(" ", contenido.Palabras
+                .Where(p => p.X0 > etiquetaNombre.X1 - 1 && Math.Abs(p.CentroY - etiquetaNombre.CentroY) <= 4)
+                .OrderBy(p => p.X0)
+                .Select(p => p.Texto)),
+            @"^\s*\([^)]*\)",
+            ""));
+
+        if (!NombreValido(nombre))
+        {
+            return null;
+        }
+
+        string FechaDe(string etiqueta)
+        {
+            var palabra = Cabecera(etiqueta);
+
+            var fecha = palabra == null
+                ? null
+                : contenido.Palabras
+                    .Where(p => Math.Abs(p.CentroY - palabra.CentroY) <= 4
+                                && p.X0 > palabra.X1
+                                && Regex.IsMatch(p.Texto.Trim(), @"^\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}$"))
+                    .OrderBy(p => p.X0)
+                    .FirstOrDefault();
+
+            return fecha == null ? "" : FechaFormulario(fecha.Texto.Trim().Replace('.', '-'));
+        }
+
+        // «25/26» (o «2025/2026») es el año de servicio que termina en 2026.
+        string anio = anioDefecto.ToString(CultureInfo.InvariantCulture);
+
+        foreach (var palabra in contenido.Palabras.Where(p => p.CentroY < primeraFila))
+        {
+            var ciclo = Regex.Match(palabra.Texto.Trim(), @"^(\d{2}|\d{4})\s*/\s*(\d{2}|\d{4})$");
+
+            if (ciclo.Success)
+            {
+                string fin = ciclo.Groups[2].Value;
+                anio = fin.Length == 2 ? "20" + fin : fin;
+                break;
+            }
+        }
+
+        var informe = new List<InformeS21>();
+
+        foreach (var (mes, y) in filas)
+        {
+            var enFila = contenido.Caracteres
+                .Where(c => Math.Abs(c.Y - y) <= 4)
+                .ToList();
+
+            bool participa = false, auxiliar = false;
+
+            foreach (var casilla in enFila.Where(c => EsCasillaTexto(c.Texto) && MarcadaTexto(c.Texto)))
+            {
+                float centro = casilla.X + Math.Max(casilla.AnchoItext, 1f) / 2;
+
+                if (Math.Abs(centro - auxX) < Math.Abs(centro - partX))
+                {
+                    auxiliar = true;
+                }
+                else
+                {
+                    participa = true;
+                }
+            }
+
+            object cursos = "", horas = "";
+
+            foreach (var (numero, centro) in NumerosDeFila(enFila.Where(c => c.X < inicioNotas)))
+            {
+                if (cursosX is { } cursX && Math.Abs(centro - cursX) < Math.Abs(centro - horX))
+                {
+                    cursos = Numero(numero);
+                }
+                else
+                {
+                    horas = Numero(numero);
+                }
+            }
+
+            string notas = LimpiarEspacios(string.Join(" ", contenido.Palabras
+                .Where(p => Math.Abs(p.CentroY - y) <= 4 && p.X0 >= inicioNotas)
+                .OrderBy(p => p.X0)
+                .Select(p => p.Texto)));
+
+            informe.Add(new InformeS21
+            {
+                Mes = mes,
+                Participacion = participa,
+                CursosBiblicos = cursos,
+                PrecursorAuxiliar = auxiliar,
+                Horas = horas,
+                Notas = notas,
+            });
+        }
+
+        var porMes = informe.ToDictionary(i => i.Mes, i => i);
+
+        return new TarjetaS21
+        {
+            Nombre = nombre,
+            FechaNacimiento = FechaDe("nacimiento"),
+            Sexo = sexo,
+            FechaBautismo = FechaDe("bautismo"),
+            Esperanza = esperanza,
+            Nombramiento = nombramiento,
+            Servicio = servicio,
+            AnioServicio = anio,
+            Informe = Meses.Select(m => porMes.TryGetValue(m, out var i)
+                ? i
+                : new InformeS21 { Mes = m }).ToList(),
+        };
+    }
+
+
+    /// <summary>Las cifras seguidas de una fila («12», «2,5»), con el centro de cada número.</summary>
+    private static List<(string Numero, float Centro)> NumerosDeFila(IEnumerable<CaracterPdf> caracteres)
+    {
+        var numeros = new List<(string, float)>();
+        var actual = new StringBuilder();
+        float inicio = 0, fin = 0;
+
+        void Cerrar()
+        {
+            string texto = actual.ToString().TrimEnd(',', '.');
+
+            if (texto.Length > 0)
+            {
+                numeros.Add((texto, (inicio + fin) / 2));
+            }
+
+            actual.Clear();
+        }
+
+        // Con el ancho del carácter en la fuente (el calculado con los vecinos
+        // no es fiable al lado de las casillas).
+        foreach (var caracter in caracteres.OrderBy(c => c.X))
+        {
+            float ancho = Math.Max(caracter.AnchoItext, 0.5f);
+            bool cifra = caracter.Texto.Length == 1 && char.IsDigit(caracter.Texto[0]);
+            bool separador = caracter.Texto is "," or "." && actual.Length > 0;
+            bool pegado = actual.Length == 0 || caracter.X - fin <= Math.Max(1.5f, ancho * 0.6f);
+
+            if ((cifra || separador) && pegado)
+            {
+                if (actual.Length == 0)
+                {
+                    inicio = caracter.X;
+                }
+
+                actual.Append(caracter.Texto);
+                fin = caracter.X + ancho;
+                continue;
+            }
+
+            Cerrar();
+
+            if (cifra)
+            {
+                inicio = caracter.X;
+                actual.Append(caracter.Texto);
+                fin = caracter.X + ancho;
+            }
+        }
+
+        Cerrar();
+
+        return numeros;
+    }
+
+
     private static List<List<(float X, float Y)>> AgruparFilas(
         List<(float X, float Y)> puntos,
         float tolerancia)
@@ -3154,7 +3450,14 @@ public static class ConvertidorS21
         {
             string nombre = Path.GetFileName(carpeta);
 
-            var coincidencia = Regex.Match(nombre, @"^[Gg](\d{1,2})$");
+            // «G1», «Grupo 1» o, justo dentro de la carpeta S-21, «1».
+            var coincidencia = Regex.Match(nombre, @"^(?:[Gg]|[Gg]rupo\s*)(\d{1,2})$");
+
+            if (!coincidencia.Success
+                && Regex.IsMatch(Path.GetFileName(Path.GetDirectoryName(carpeta) ?? ""), @"S-?21", RegexOptions.IgnoreCase))
+            {
+                coincidencia = Regex.Match(nombre, @"^(\d{1,2})$");
+            }
 
             if (coincidencia.Success)
             {

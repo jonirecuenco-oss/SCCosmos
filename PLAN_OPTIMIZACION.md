@@ -495,6 +495,12 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - Avisos: si el otro PC no contesta («tiene que estar encendido y con SCCosmos abierto») o no acepta la clave.
   - 174/174 comprobaciones (1 nueva: descarga de ida y vuelta con el servidor de prueba: sin firma, con la clave, repetida, con otra clave y caducada).
 - 22/11/2026 · Publicada la v2.1.80.
+- 23/11/2026 · v2.1.81 (pedido por el usuario): ya se leen las tarjetas S-21 de Azuaga (76 de 76; antes, ninguna). Las saca otro programa (mPDF, A5): sin campos, con las casillas escritas como «☐»/«☒» (DejaVuSans), fechas «dd-mm-aaaa», año «25/26» y algo entre paréntesis delante del nombre. El conversor no las reconocía: las casillas no eran dibujos ni Dingbats y los meses se buscaban más abajo, como en la A4 oficial.
+  - Nuevo formato 4 en `ConvertidorS21` (`TarjetaCasillasTexto`, antes que los demás). La cabecera se lee por la etiqueta de cada casilla marcada, pegada o no. Las columnas salen de sus cabeceras y la tabla se lee carácter a carácter, porque la casilla de auxiliar sale pegada a las horas. Se usa el ancho del carácter en la fuente: el calculado con los vecinos sale mal junto a los espacios. «25/26» es el año de servicio 2026, y se quita el paréntesis de delante del nombre.
+  - Ese programa solo marca «Mujer». A un anciano o siervo ministerial sin marcar se le pone «Hombre»; a los demás, vacío (el importador no pisa el sexo con vacío).
+  - Grupos: además de «G1», «Grupo 1» y, justo dentro de la carpeta S-21, «1», «2», «3» (como las de Azuaga).
+  - 176/176 comprobaciones (2 nuevas, con una tarjeta inventada de ese formato hecha con iText y Segoe UI Symbol). Probado con una copia de las 76 de Azuaga (borrada): grupos 24/25/27, sin descartes y dos tarjetas comparadas mes a mes con su PDF.
+- 23/11/2026 · Publicada la v2.1.81.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

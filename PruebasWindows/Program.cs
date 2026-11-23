@@ -49,6 +49,7 @@ internal static class Programa
             AjustesDeAvisos();
             ProgramaWebRecibido();
             DireccionesGoogle();
+            TarjetaS21CasillasDeTexto();
             Ver("Tailscale: qué hacer según su estado (conectado, desconectado, sin sesión, sin servicio)",
                 string.Join("|", new[] { "{\"BackendState\":\"Running\"}", "{\"BackendState\":\"Stopped\"}", "{\"BackendState\":\"NeedsLogin\"}", "failed to connect to local tailscaled" }
                     .Select(s => TailscalePc.Interpretar(s).Accion)),
@@ -667,6 +668,92 @@ internal static class Programa
         ProgramaWebPc.GuardarDiasComida("WEB1", null);
         Ver("Comidas: «Como en Configuración» vuelve a las generales", ComidasWeb1(), "Jueves,Viernes False");
         DatabaseHelper.GuardarConfiguracion(ProgramaWeb.ClaveDiasComida, "");
+    }
+
+    // Tarjeta S-21 «Registro de publicador» con las casillas escritas como «☐» y «☒», como las
+    // que sacan algunos programas de congregación (mPDF, A5): inventada, con el reparto de las de Azuaga.
+    private static void TarjetaS21CasillasDeTexto()
+    {
+        string fuenteSimbolos = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Fonts), "seguisym.ttf");
+
+        if (!File.Exists(fuenteSimbolos))
+        {
+            Ver("S-21 con casillas de texto (este Windows no tiene Segoe UI Symbol)", true, true);
+            return;
+        }
+
+        string raiz = Path.Combine(Path.GetTempPath(), "sccosmos_s21_" + Guid.NewGuid().ToString("N"));
+        string carpetaGrupo = Path.Combine(raiz, "S-21", "1");
+        Directory.CreateDirectory(carpetaGrupo);
+
+        using (var escritor = new iText.Kernel.Pdf.PdfWriter(Path.Combine(carpetaGrupo, "Tarjeta de prueba - 25_26.pdf")))
+        using (var documento = new iText.Kernel.Pdf.PdfDocument(escritor))
+        {
+            var pagina = documento.AddNewPage(iText.Kernel.Geom.PageSize.A5);
+            float alto = pagina.GetPageSize().GetHeight();
+            var fuente = iText.Kernel.Font.PdfFontFactory.CreateFont(fuenteSimbolos, iText.IO.Font.PdfEncodings.IDENTITY_H, iText.Kernel.Font.PdfFontFactory.EmbeddingStrategy.PREFER_EMBEDDED);
+            var lienzo = new iText.Kernel.Pdf.Canvas.PdfCanvas(pagina);
+
+            void Texto(float x, float y, string texto, float tamano = 6) =>
+                lienzo.BeginText().SetFontAndSize(fuente, tamano).MoveText(x, alto - y).ShowText(texto).EndText();
+
+            Texto(80, 25, "REGISTRO DE PUBLICADOR DE LA CONGREGACIÓN", 9);
+            Texto(17, 37, "Nombre:"); Texto(165, 37, "(Hermano) Prueba Ejemplo, Juan");
+            Texto(17, 48, "Fecha de nacimiento:"); Texto(164, 48, "05-03-1980");
+            Texto(300, 48, "☐", 8); Texto(310, 48, "Hombre"); Texto(357, 48, "☐", 8); Texto(366, 48, "Mujer");
+            Texto(17, 59, "Fecha de bautismo:"); Texto(160, 59, "10-06-1995");
+            Texto(300, 59, "☒", 8); Texto(310, 59, "Otras ovejas"); Texto(357, 59, "☐", 8); Texto(366, 59, "Ungido");
+            Texto(17, 70, "☒", 8); Texto(26, 70, "Anciano"); Texto(59, 70, "☐", 8); Texto(69, 70, "Siervo ministerial");
+            Texto(135, 70, "☒", 8); Texto(144, 70, "Precursor regular"); Texto(210, 70, "☐", 8); Texto(219, 70, "Precursor especial");
+            Texto(288, 70, "☐", 8); Texto(297, 70, "Misionero que sirve en el campo");
+            Texto(29, 80, "Año de servicio:"); Texto(92, 80, "Participación en el"); Texto(172, 80, "Cursos"); Texto(217, 80, "Precursor");
+            Texto(266, 84, "Horas"); Texto(348, 84, "Notas");
+            Texto(44, 88, "25/26"); Texto(105, 88, "ministerio"); Texto(170, 88, "bíblicos"); Texto(220, 88, "Auxiliar");
+
+            string[] meses = { "Septiembre", "Octubre", "Noviembre", "Diciembre", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto" };
+
+            for (int i = 0; i < 12; i++)
+            {
+                float y = 98 + i * 12.75f;
+                Texto(17, y, meses[i]);
+
+                if (i == 7)
+                {
+                    continue; // abril, sin nada
+                }
+
+                Texto(116, y, "☒", 8);
+                Texto(228, y, i == 1 ? "☒" : "☐", 8);
+                Texto(268, y, (50 + i).ToString(CultureInfo.InvariantCulture));
+
+                if (i == 2)
+                {
+                    Texto(181, y, "3");
+                }
+
+                if (i == 11)
+                {
+                    Texto(320, y, "55 HORAS - 5 CRÉDITO");
+                }
+            }
+
+            Texto(229, 251, "Total"); Texto(269, 251, "600");
+        }
+
+        var tarjeta = ConvertidorS21.ConvertirCarpeta(Path.Combine(raiz, "S-21"), 2025).Tarjetas.FirstOrDefault();
+        string Mes(string mes) =>
+            tarjeta?.Informe.FirstOrDefault(i => i.Mes == mes) is { } m
+                ? $"{(m.Participacion ? "P" : "-")}{(m.PrecursorAuxiliar ? "A" : "-")} {m.CursosBiblicos}/{m.Horas}/{m.Notas}"
+                : "?";
+
+        Ver("S-21 con casillas de texto (☐/☒): la cabecera (sin el paréntesis, el año «25/26» y un anciano sin el sexo marcado)",
+            tarjeta is null ? "no la lee" : $"{tarjeta.Nombre} | {tarjeta.Grupo} | {tarjeta.Sexo} | {tarjeta.Esperanza} | {tarjeta.Nombramiento} | {tarjeta.Servicio} | {tarjeta.AnioServicio} | {tarjeta.FechaNacimiento} | {tarjeta.FechaBautismo}",
+            "Prueba Ejemplo, Juan | 1 | Hombre | Otras ovejas | Anciano | Precursor regular | 2026 | 05-03-1980 | 10-06-1995");
+        Ver("S-21 con casillas de texto: los meses (participó, auxiliar, cursos, horas y notas)",
+            string.Join(" · ", new[] { "septiembre", "octubre", "noviembre", "abril", "agosto" }.Select(Mes)),
+            "P- /50/ · PA /51/ · P- 3/52/ · -- // · P- /61/55 HORAS - 5 CRÉDITO");
+
+        try { Directory.Delete(raiz, true); } catch (IOException) { }
     }
 
     // Direcciones con Google Maps, sin red: lo que se le pide a Google y cómo se lee lo que contesta.
