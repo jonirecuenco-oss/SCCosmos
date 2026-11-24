@@ -445,6 +445,45 @@
             </VerticalStackLayout>
 
 
+            <!-- COCHE (OBDLink): la última lectura del combustible y los km, si hay -->
+            <Border
+                x:Name="TarjetaCoche"
+                IsVisible="False"
+                BackgroundColor="{StaticResource Superficie}"
+                Stroke="{StaticResource Borde}"
+                StrokeThickness="1"
+                Padding="16,14">
+
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="18"/>
+                </Border.StrokeShape>
+
+                <VerticalStackLayout Spacing="4">
+
+                    <Label
+                        Text="COCHE"
+                        TextColor="{StaticResource TextoTerciario}"
+                        FontSize="12"
+                        FontAttributes="Bold"
+                        CharacterSpacing="1.5"/>
+
+                    <Label
+                        x:Name="LblCocheDatos"
+                        TextColor="{StaticResource TextoPrincipal}"
+                        FontSize="16"
+                        FontAttributes="Bold"
+                        LineBreakMode="WordWrap"/>
+
+                    <Label
+                        x:Name="LblCocheCuando"
+                        TextColor="{StaticResource TextoSecundario}"
+                        FontSize="12.5"
+                        LineBreakMode="WordWrap"/>
+
+                </VerticalStackLayout>
+            </Border>
+
+
             <!-- HORAS PREDICADAS -->
             <Border
                 BackgroundColor="{StaticResource Superficie}"

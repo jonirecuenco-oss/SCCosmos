@@ -51,6 +51,11 @@
   <uses-permission
       android:name="android.permission.BLUETOOTH_CONNECT" />
 
+  <!-- Coche: mientras el móvil está conectado al Bluetooth del coche, un servicio
+       en primer plano lee el OBDLink cada 2 minutos (ServicioCoche). -->
+  <uses-permission
+      android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+
   <!-- Permite abrir el instalador de Android para actualizar la app. -->
   <uses-permission
       android:name="android.permission.REQUEST_INSTALL_PACKAGES" />

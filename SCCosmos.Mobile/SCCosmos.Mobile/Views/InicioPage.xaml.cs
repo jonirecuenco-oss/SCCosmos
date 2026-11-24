@@ -160,6 +160,8 @@ public partial class InicioPage : ContentPage, IActualizableMobile
             PanelCampana.IsVisible =
                 PerfilAccesoService.AccesoCompleto;
 
+            PintarCoche();
+
             // La campana se pinta según las alertas pendientes: gris si
             // no hay ninguna, dorada con el número si las hay.
             try
@@ -845,6 +847,34 @@ public partial class InicioPage : ContentPage, IActualizableMobile
     // =========================================================
 
     private bool _suscritoHorasDialog;
+
+    // El coche (OBDLink): la última lectura del combustible y los km, si hay.
+    private void PintarCoche()
+    {
+        try
+        {
+            if (SCCosmos.Sincro.Coche.LecturaDe(DatabaseHelper.ObtenerConfiguracion(SCCosmos.Sincro.Coche.ClaveLectura, "")) is not { } lectura)
+            {
+                TarjetaCoche.IsVisible = false;
+                return;
+            }
+
+            var (datos, cuando) = SCCosmos.Sincro.Coche.Texto(
+                lectura,
+                DateTime.Now,
+                DatabaseHelper.ObtenerConfiguracion("NombreSC", ""),
+                DatabaseHelper.ObtenerConfiguracion("NombreEsposaSC", ""));
+
+            LblCocheDatos.Text = datos;
+            LblCocheCuando.Text = cuando;
+            TarjetaCoche.IsVisible = true;
+        }
+        catch
+        {
+            TarjetaCoche.IsVisible = false;
+        }
+    }
+
 
     private void CargarHorasMes()
     {

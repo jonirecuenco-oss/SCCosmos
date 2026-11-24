@@ -528,6 +528,13 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
 - 24/11/2026 · Publicada la v2.1.84.
 - 24/11/2026 · v2.1.85 (pedido por el usuario): formulario de los ancianos sin las descripciones de los apartados: «Hora y lugar de la reunión para la predicación de cada salida», la de Predicación («En cada salida, hasta 2 personas…», con el medio día libre y «Tocad una salida…»; se quitó también su línea del JavaScript), la de Pastoreo («Hasta 3 visitas…») y la de Archivos («La S-61 rellenada…»). Quedan las notas del SC, los avisos de «Medio día libre» de cada salida y «Esta semana no hay comidas…» (solo sale sin comidas). Probado en el navegador a tamaño móvil: carga entero y sin errores.
 - 24/11/2026 · Publicada la v2.1.85.
+- 24/11/2026 · v2.1.86 (pedido por el usuario): el coche en la app (paso 2). La prueba en el coche dio: combustible 01 2F sí (64 %); cuentakilómetros, ninguno; contador 01 31 sí (36.344 km).
+  - Compartido (Coche.cs): última lectura en Configuración (Coche_Lectura, sincronizada). Km = los puestos a mano (Coche_KmPuestos, valen desde la siguiente lectura) + lo que avanza el contador 01 31 (Coche_Base). Si el contador baja (averías borradas), se sigue desde los km anteriores; en 65.535 se para y el texto lo dice. JSON con JsonObject (sin reflexión). PruebaCoche.DatosDe.
+  - Android: ReceptorCoche (ACL_CONNECTED/DISCONNECTED del Bluetooth del coche elegido en Configuración; cada móvil, el suyo, en Preferences) arranca ServicioCoche (primer plano, connectedDevice; permiso FOREGROUND_SERVICE_CONNECTED_DEVICE). Conecta con el OBDLink (6 intentos en 2 min) y lee 01 2F y 01 31 al empezar y cada 2 min. Para al desconectarse el coche, tras 3 lecturas sin datos o a las 8 h. Si Android no deja arrancarlo desde segundo plano, una lectura suelta (goAsync). Sin el permiso de «Dispositivos cercanos» no se arranca (Android 14 cerraría la app).
+  - Configuración del móvil: elegir el Bluetooth del coche, km del cuentakilómetros, «Leer ahora» y la última lectura; sigue «Probar el coche».
+  - Inicio (móvil y PC): tarjeta «Coche» («64 % de combustible · 187.512 km» y «Leído hoy a las 16:02 (Jonatán)»), solo si hay lectura.
+  - 180/180 comprobaciones (2 nuevas). PC: Inicio con una lectura en una copia de la base (borrada). Emulador: Inicio y Configuración con una lectura metida en su base (luego restaurada idéntica y emulador cerrado); «Guardar km», «Elegir el Bluetooth» y «Leer ahora» avisan sin cerrarse (sin coche ni Bluetooth). Falta probarlo en el coche.
+- 24/11/2026 · Publicada la v2.1.86.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

@@ -106,6 +106,24 @@ public static class PruebaCoche
         return rechazo ?? new(false, "respuesta que no se entiende");
     }
 
+    /// <summary>Los datos de la respuesta buena a una petición (sin el modo ni lo pedido); null si no la hay.</summary>
+    public static byte[]? DatosDe(string peticion, string? recibido)
+    {
+        byte[] orden = Bytes(peticion);
+
+        foreach (byte[] datos in Tramas(Limpiar(recibido)))
+        {
+            if (datos.Length >= orden.Length
+                && datos[0] == orden[0] + 0x40
+                && datos.Skip(1).Take(orden.Length - 1).SequenceEqual(orden.Skip(1)))
+            {
+                return datos[orden.Length..];
+            }
+        }
+
+        return null;
+    }
+
     /// <summary>Una línea del informe: ✓ o ✗, la orden, lo que da y lo que respondió tal cual.</summary>
     public static string Linea(Orden orden, string? recibido)
     {

@@ -425,6 +425,27 @@ internal static class Programa
                 AvisosTarea.MinutosDe(3, 2), AvisosTarea.MinutosDe(0, 1), AvisosTarea.MinutosDe(53, 3), AvisosTarea.MinutosDe(52, 3),
                 AvisosTarea.Descomponer(4320), AvisosTarea.Descomponer(90), AvisosTarea.EsDeLaLista(60), AvisosTarea.EsDeLaLista(45)),
             "45 minutos antes|3 semanas antes|1 minuto antes|3 días antes|1 día antes|Sin aviso|4320|-1|-1|524160|(3, 2)|(90, 0)|True|False");
+        var t0 = new DateTime(2026, 11, 24, 16, 0, 0);
+        var (cocheL1, cocheB1) = SCCosmos.Sincro.Coche.Aplicar(t0.AddMinutes(2), "SC", 64, 36344, null, null, new SCCosmos.Sincro.Coche.KmPuestos(187500, t0));
+        var (cocheL2, cocheB2) = SCCosmos.Sincro.Coche.Aplicar(t0.AddMinutes(30), "SC", 60, 36400, cocheL1, cocheB1, new SCCosmos.Sincro.Coche.KmPuestos(187500, t0));
+        var (cocheL3, cocheB3) = SCCosmos.Sincro.Coche.Aplicar(t0.AddDays(1), "Esposa", 58, 12, cocheL2, cocheB2, new SCCosmos.Sincro.Coche.KmPuestos(187500, t0));
+        var (cocheL4, _) = SCCosmos.Sincro.Coche.Aplicar(t0.AddDays(2), "SC", null, 20, cocheL3, cocheB3, new SCCosmos.Sincro.Coche.KmPuestos(190000, t0.AddDays(1).AddHours(5)));
+        var (cocheSinKm, _) = SCCosmos.Sincro.Coche.Aplicar(t0, "SC", 50, 100, null, null, null);
+        Ver("Coche: km con el contador (puestos, avanza, averías borradas, puestos otra vez; sin km) y datos de las respuestas",
+            $"{cocheL1.Km} {cocheL2.Km} {cocheL3.Km} {cocheL4.Km} {cocheL4.Combustible} {cocheSinKm.Km?.ToString() ?? "-"} "
+            + $"{SCCosmos.Sincro.Coche.ContadorDe("7E8 04 41 31 8D F8")} {SCCosmos.Sincro.Coche.CombustibleDe("7E8 03 41 2F A4\r\r>")} {SCCosmos.Sincro.Coche.ContadorDe("NO DATA")?.ToString() ?? "-"}",
+            "187500 187556 187568 190000 58 - 36344 64 -");
+        Ver("Coche: en Configuración (JSON) y el texto de Inicio",
+            string.Join("|",
+                SCCosmos.Sincro.Coche.LecturaDe(SCCosmos.Sincro.Coche.Json(cocheL2)) == cocheL2,
+                SCCosmos.Sincro.Coche.BaseDe(SCCosmos.Sincro.Coche.Json(cocheB3!)) == cocheB3,
+                SCCosmos.Sincro.Coche.KmPuestosDe("{\"km\":190000,\"cuando\":\"2026-11-25T21:00:00\"}") == new SCCosmos.Sincro.Coche.KmPuestos(190000, t0.AddDays(1).AddHours(5)),
+                SCCosmos.Sincro.Coche.LecturaDe("basura") is null,
+                SCCosmos.Sincro.Coche.Texto(cocheL2, t0.AddHours(3), "Jonatán", "Rebeca"),
+                SCCosmos.Sincro.Coche.Texto(cocheL3, t0.AddDays(2), "Jonatán", "Rebeca"),
+                SCCosmos.Sincro.Coche.Texto(cocheSinKm with { Contador = 65535 }, t0, "Jonatán", "")),
+            "True|True|True|True|(60 % de combustible · 187.556 km, Leído hoy a las 16:30 (Jonatán))|(58 % de combustible · 187.568 km, Leído ayer a las 16:00 (Rebeca))"
+            + "|(50 % de combustible · faltan los km del cuentakilómetros (el contador del coche ha llegado a su tope: vuelve a poner los km), Leído hoy a las 16:00 (Jonatán))");
         string Coche(string peticion, string recibido) =>
             PruebaCoche.Leer(PruebaCoche.Ordenes.First(o => o.Peticion == peticion), recibido).Texto;
         Ver("Coche: lo que responde por el OBDLink",

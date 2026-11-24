@@ -215,6 +215,17 @@
             </ui:Card>
             </Grid>
 
+            <!-- COCHE (OBDLink, lo leen los móviles): la última lectura del combustible y los km, si hay -->
+            <Grid HorizontalAlignment="Left">
+            <ui:Card x:Name="TarjetaCoche" Width="844" Padding="20,16" Margin="0,0,0,16" Visibility="Collapsed">
+                <StackPanel>
+                    <TextBlock Text="COCHE" Style="{StaticResource Rotulo}" Margin="0,0,0,6"/>
+                    <TextBlock x:Name="TxtCocheDatos" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="TxtCocheCuando" Style="{StaticResource NotaDato}" FontSize="13" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                </StackPanel>
+            </ui:Card>
+            </Grid>
+
             <!-- RESUMEN DEL CIRCUITO -->
             <TextBlock Text="Resumen del circuito" FontSize="20" FontWeight="SemiBold" Margin="0,16,0,2"/>
 

@@ -56,6 +56,7 @@ namespace SCCosmos
             TxtSaludo.Text = $"¡Hola, {nombre}!";
 
             CargarSemanaActual();
+            PintarCoche();
             _ = CargarEstadisticasAsync();
 
             Perf.Registrar("Inicio", reloj.ElapsedMilliseconds);
@@ -69,11 +70,41 @@ namespace SCCosmos
             try
             {
                 CargarSemanaActual();
+                PintarCoche();
 
                 _ = CargarEstadisticasAsync();
             }
             catch
             {
+            }
+        }
+
+
+        // COCHE (OBDLink, lo leen los móviles): la última lectura, si hay.
+        private void PintarCoche()
+        {
+            try
+            {
+                if (SCCosmos.Sincro.Coche.LecturaDe(DatabaseHelper.ObtenerConfiguracion(SCCosmos.Sincro.Coche.ClaveLectura, "")) is not { } lectura)
+                {
+                    TarjetaCoche.Visibility = Visibility.Collapsed;
+                    return;
+                }
+
+                var (datos, cuando) = SCCosmos.Sincro.Coche.Texto(
+                    lectura,
+                    DateTime.Now,
+                    DatabaseHelper.ObtenerConfiguracion("NombreSC", ""),
+                    DatabaseHelper.ObtenerConfiguracion("NombreEsposaSC", ""));
+
+                TxtCocheDatos.Text = datos;
+                TxtCocheCuando.Text = cuando;
+                TarjetaCoche.Visibility = Visibility.Visible;
+            }
+            catch (Exception ex)
+            {
+                TarjetaCoche.Visibility = Visibility.Collapsed;
+                RegistroErrores.AnotarSilencioso(ex, "Inicio.Coche");
             }
         }
 

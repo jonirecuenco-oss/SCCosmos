@@ -21,6 +21,7 @@ public partial class ConfiguracionPage : ContentPage
         CargarConfiguracionJwHub();
         CargarDatosGlobales();
         CargarPerfil();
+        PintarCoche();
 
         // Claves opcionales para los tiempos de viaje (TomTom/Google).
         TxtTomTomKey.Text =
@@ -89,6 +90,142 @@ public partial class ConfiguracionPage : ContentPage
     private async void BtnProbarCoche_Clicked(object? sender, EventArgs e)
     {
         await Navigation.PushAsync(new PruebaCochePage());
+    }
+
+    // ---- Coche (OBDLink): el Bluetooth del coche, los km puestos y la última lectura ----
+
+    private void PintarCoche()
+    {
+        try
+        {
+            string nombre = CocheAndroid.NombreCoche;
+
+            BtnBluetoothCoche.Text = nombre.Length > 0
+                ? "Bluetooth del coche: " + nombre
+                : "Elegir el Bluetooth del coche";
+
+            if (SCCosmos.Sincro.Coche.LecturaDe(DatabaseHelper.ObtenerConfiguracion(SCCosmos.Sincro.Coche.ClaveLectura, "")) is not { } lectura)
+            {
+                LblCoche.Text = nombre.Length > 0 ? "Todavía no hay ninguna lectura del coche." : "";
+                return;
+            }
+
+            var (datos, cuando) = SCCosmos.Sincro.Coche.Texto(
+                lectura,
+                DateTime.Now,
+                DatabaseHelper.ObtenerConfiguracion("NombreSC", ""),
+                DatabaseHelper.ObtenerConfiguracion("NombreEsposaSC", ""));
+
+            LblCoche.Text = datos + "\n" + cuando;
+        }
+        catch (Exception ex)
+        {
+            RegistroErrores.Anotar(ex, "Configuracion.Coche");
+        }
+    }
+
+    private async void BtnBluetoothCoche_Clicked(object? sender, EventArgs e)
+    {
+        try
+        {
+            if (await Permissions.RequestAsync<PermisoBluetoothObd>() != PermissionStatus.Granted)
+            {
+                LblCoche.Text = "Sin el permiso de «Dispositivos cercanos» no se puede leer el coche.";
+                return;
+            }
+
+            var emparejados = CocheAndroid.Emparejados();
+
+            if (emparejados.Count == 0)
+            {
+                LblCoche.Text = "No hay dispositivos Bluetooth emparejados (¿está encendido el Bluetooth?).";
+                return;
+            }
+
+            const string ninguno = "Ninguno (no leer el coche solo)";
+
+            string? elegido = await DisplayActionSheetAsync(
+                "Bluetooth del coche (la radio o el manos libres)",
+                "Cancelar",
+                null,
+                new[] { ninguno }.Concat(emparejados.Select(d => d.Nombre)).ToArray());
+
+            if (elegido is null || elegido == "Cancelar")
+            {
+                return;
+            }
+
+            if (elegido == ninguno)
+            {
+                CocheAndroid.ElegirCoche("", "");
+            }
+            else
+            {
+                var coche = emparejados.First(d => d.Nombre == elegido);
+                CocheAndroid.ElegirCoche(coche.Direccion, coche.Nombre);
+            }
+
+            PintarCoche();
+        }
+        catch (Exception ex)
+        {
+            RegistroErrores.Anotar(ex, "Configuracion.BluetoothCoche");
+        }
+    }
+
+    private void BtnGuardarKmCoche_Clicked(object? sender, EventArgs e)
+    {
+        // Sin puntos ni espacios: «187.512» vale igual que «187512».
+        string cifras = new((TxtKmCoche.Text ?? "").Where(char.IsDigit).ToArray());
+
+        if (!long.TryParse(cifras, out long km) || km <= 0 || km > 2_000_000)
+        {
+            LblCoche.Text = "Pon los km tal como los marca el cuentakilómetros.";
+            return;
+        }
+
+        DatabaseHelper.GuardarConfiguracion(
+            SCCosmos.Sincro.Coche.ClaveKmPuestos,
+            SCCosmos.Sincro.Coche.Json(new SCCosmos.Sincro.Coche.KmPuestos(km, DateTime.Now)));
+
+        TxtKmCoche.Text = "";
+        TxtKmCoche.Unfocus();
+
+        LblCoche.Text = $"Guardados: {SCCosmos.Sincro.Coche.Km(km)}. Valen desde la siguiente lectura del coche.";
+    }
+
+    private async void BtnLeerCoche_Clicked(object? sender, EventArgs e)
+    {
+        BtnLeerCoche.IsEnabled = false;
+
+        try
+        {
+            if (await Permissions.RequestAsync<PermisoBluetoothObd>() != PermissionStatus.Granted)
+            {
+                LblCoche.Text = "Sin el permiso de «Dispositivos cercanos» no se puede leer el coche.";
+                return;
+            }
+
+            LblCoche.Text = "Leyendo el coche…";
+
+            string error = await Task.Run(CocheAndroid.LeerUnaVez);
+
+            PintarCoche();
+
+            if (error.Length > 0)
+            {
+                LblCoche.Text = error;
+            }
+        }
+        catch (Exception ex)
+        {
+            RegistroErrores.Anotar(ex, "Configuracion.LeerCoche");
+            LblCoche.Text = "No se ha podido leer el coche: " + ex.Message;
+        }
+        finally
+        {
+            BtnLeerCoche.IsEnabled = true;
+        }
     }
 
     private async void BtnBuscarActualizacion_Clicked(
