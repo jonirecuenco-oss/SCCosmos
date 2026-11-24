@@ -17,6 +17,11 @@
   h2 { font-size: 19px; margin: 0 0 4px; display:flex; gap:10px; align-items:center; }
   .num { background: var(--acento); color:#fff; border-radius: 50%; width: 28px; height: 28px; display:inline-flex; align-items:center; justify-content:center; font-size:15px; flex: none; }
   .ayuda { color: var(--suave); font-size: 14px; margin: 0 0 6px; }
+  /* Notas del superintendente: solo informan. El icono y el borde acompañan al texto. */
+  .nota { display:flex; gap:10px; align-items:flex-start; background:#f1f7fd; border:1px solid #d3e5f7; border-left:4px solid var(--acento); border-radius:10px; padding:9px 12px; margin:8px 0 10px; font-size:14px; line-height:1.45; color:#23415e; }
+  .nota::before { content:"i"; flex:none; width:20px; height:20px; margin-top:1px; border-radius:50%; background:var(--acento); color:#fff; font:italic 700 13px/20px Georgia, "Times New Roman", serif; text-align:center; }
+  .nota p { margin:0; }
+  .nota p + p { margin-top:5px; }
   h3 { font-size: 16px; margin: 0; }
   h3.apartado { margin: 18px 0 2px; }
   h3.cargo { color: var(--acento); }
@@ -157,6 +162,12 @@
   <section id="s-predicacion">
     <h2><span class="num">3</span>Predicación</h2>
     <p class="ayuda" id="ayuda-predicacion"></p>
+    <div class="nota"><div>
+      <p>Decidles a los hermanos que no hace falta que tengan CBs o revisitas para apuntarse a predicar.</p>
+      <p>Dado que queremos salir sobre todo de casa en casa, os pedimos que seáis razonables a la hora de asignarnos CBs.</p>
+      <p>También nos gustaría participar en la predicación con exhibidores.</p>
+      <p>No hace falta rellenar todos los horarios del programa.</p>
+    </div></div>
     <p class="error-seccion oculto" id="error-exhibidores"></p>
     <div id="salidas"></div>
   </section>
@@ -164,6 +175,10 @@
   <section id="s-pastoreo">
     <h2><span class="num">4</span>Pastoreo</h2>
     <p class="ayuda">Hasta 3 visitas, de miércoles a domingo y de 10:00 a 20:00. Cada visita que añadáis, con su acompañante, día, hora y dirección.</p>
+    <div class="nota"><div>
+      <p>Podéis programar 2 o 3 visitas.</p>
+      <p>Sería ideal hacerlas antes o después de predicar, si es posible.</p>
+    </div></div>
     <div id="pastoreo" class="rejilla dos"></div>
     <button type="button" class="secundario" id="mas-pastoreo">+ Añadir otra visita</button>
   </section>
@@ -215,8 +230,13 @@ window.VISITA = /*VISITA*/null;
   const REUNIONES = [
     { clave: "entreSemana", titulo: "Reunión de entre semana", fijo: "Martes", hora: V.horaEntreSemana, enSalon: true },
     { clave: "finDeSemana", titulo: "Reunión del fin de semana", fijo: FINDE, dias: ["Sábado", "Domingo"], hora: V.horaFinDeSemana, enSalon: true },
-    { clave: "ancianos", titulo: "Reunión con los A/SM", fijo: "Viernes" },
-    { clave: "precursores", titulo: "Reunión con los precursores", dias: ["Miércoles", "Sábado"] }
+    { clave: "ancianos", titulo: "Reunión con los A/SM", fijo: "Viernes",
+      nota: ["Será el viernes tarde, a una hora conveniente para todos. Quizás estaría bien empezar sobre las 19.00.",
+             "A esta reunión solo se puede asistir en persona."] },
+    { clave: "precursores", titulo: "Reunión con los precursores", dias: ["Miércoles", "Sábado"],
+      nota: ["Los mayores o enfermos que no puedan venir, podrán conectarse por Zoom.",
+             "A esta reunión solo pueden asistir los precursores.",
+             V.casado !== false ? (n => n[0].toUpperCase() + n.slice(1))(V.esposa || "su esposa") + " estará encantada de quedarse con los hijos de hermanos para atenderles si es necesario." : null] }
   ];
   const CLAVE = "programa_" + V.codigo;
   const SC = V.sc || "el superintendente", ESPOSA = V.esposa || "su esposa";
@@ -245,6 +265,8 @@ window.VISITA = /*VISITA*/null;
   const hora = nombre => el("input", { type: "time", name: nombre });
   const val = (raiz, nombre) => { const i = raiz.querySelector('[name="' + nombre + '"]'); return i ? i.value.trim() : ""; };
   const poner = (raiz, nombre, valor) => { const i = raiz.querySelector('[name="' + nombre + '"]'); if (i && valor != null) i.value = valor; };
+  // Una nota del superintendente (solo informa): una línea por frase.
+  const nota = lineas => el("div", { className: "nota" }, el("div", null, ...lineas.filter(Boolean).map(t => el("p", { textContent: t }))));
   const avisoLibre = extra => el("div", { className: "aviso-libre" }, el("b", { textContent: "Medio día libre" }),
     " de " + SC + " y " + ESPOSA + ": esta salida se puede programar, pero ellos no estarán." + (extra || ""));
 
@@ -408,6 +430,7 @@ window.VISITA = /*VISITA*/null;
     b.dataset.reunion = r.clave;
     if (r.fijo) b.dataset.dia = r.fijo;
     b.append(el("h3", { textContent: r.titulo + (r.fijo ? " · " + diaTexto(r.fijo) : "") }));
+    if (r.nota) b.append(nota(r.nota));
     const fila = el("div", { className: "fila" });
     if (!r.fijo) fila.append(campo("Día", selectorDia(r.dias)));
     fila.append(campo("Hora", hora("hora")));

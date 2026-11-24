@@ -8,8 +8,8 @@ namespace SCCosmos.Mobile.Services;
 /// <summary>
 /// Tiempo en coche hasta un destino (coordenadas o dirección) desde la
 /// ubicación actual del dispositivo. Solo se calcula cuando hay una clave
-/// configurada: TomTom (plan gratuito; tiene prioridad) o Google Maps.
-/// Sin ninguna clave no se calcula ni se muestra nada.
+/// configurada: Google Maps (tiene prioridad) o, si Google no responde,
+/// TomTom (plan gratuito). Sin ninguna clave no se calcula ni se muestra nada.
 /// </summary>
 public static class TiempoViajeService
 {
@@ -35,6 +35,12 @@ public static class TiempoViajeService
     private static readonly Dictionary<string, DateTime> CacheFallos = new();
 
     private const int MinutosEsperaTrasFallo = 30;
+
+    // Hasta cuándo se va directamente a TomTom porque Google ha fallado.
+    private static DateTime _sinGoogleHasta = DateTime.MinValue;
+
+    /// <summary>Google acaba de fallar: durante un rato se usa TomTom.</summary>
+    public static bool GoogleNoResponde => DateTime.UtcNow < _sinGoogleHasta;
 
     private static bool _calculando;
 
@@ -117,8 +123,34 @@ public static class TiempoViajeService
         }
     }
 
-    public static string ObtenerClaveGoogle() =>
+    /// <summary>La clave de Google Maps puesta en este móvil (Configuración).</summary>
+    public static string ObtenerClaveGoogleDeEsteMovil() =>
         (Preferences.Get(ClaveGoogleMaps, "") ?? "").Trim();
+
+    /// <summary>
+    /// La clave de Google Maps que se usa: la de este móvil o, si no hay, la del PC
+    /// (Configuración, que se sincroniza; la usa el buscador de direcciones del
+    /// formulario de los ancianos). Solo se lee: la del móvil no pisa la del PC.
+    /// </summary>
+    public static string ObtenerClaveGoogle()
+    {
+        string local = ObtenerClaveGoogleDeEsteMovil();
+
+        if (local.Length > 0)
+        {
+            return local;
+        }
+
+        try
+        {
+            return SCCosmos.Mobile.Data.DatabaseHelper.ObtenerConfiguracion(SCCosmos.Sincro.LugaresGoogle.ClaveApi, "").Trim();
+        }
+        catch
+        {
+            // Sin base todavía.
+            return "";
+        }
+    }
 
     public static void GuardarClaveGoogle(string clave) =>
         Preferences.Set(ClaveGoogleMaps, (clave ?? "").Trim());
@@ -479,10 +511,10 @@ public static class TiempoViajeService
 
         foreach (string consulta in CrearConsultasGeocodificacion(direccionTexto))
         {
+            // Primero Google Maps; si no hay clave o no lo encuentra, TomTom.
             (double Lat, double Lng)? resultado =
-                claveTomTom.Length > 0
-                    ? await GeocodificarConTomTomAsync(claveTomTom, consulta)
-                    : await GeocodificarConGoogleAsync(claveGoogle, consulta);
+                (claveGoogle.Length > 0 ? await GeocodificarConGoogleAsync(claveGoogle, consulta) : null)
+                ?? (claveTomTom.Length > 0 ? await GeocodificarConTomTomAsync(claveTomTom, consulta) : null);
 
             if (resultado is { } punto)
             {
@@ -619,17 +651,26 @@ public static class TiempoViajeService
         (double Lat, double Lng) origen,
         (double Lat, double Lng) destino)
     {
-        string claveTomTom = ObtenerClaveTomTom();
+        // Primero Google Maps; si no hay clave o no responde, TomTom. Si Google
+        // falla (por ejemplo, la clave sin la Routes API), una hora con TomTom
+        // directamente, sin preguntarle en balde cada vez.
+        string claveGoogle = ObtenerClaveGoogle();
 
-        if (claveTomTom.Length > 0)
+        if (claveGoogle.Length > 0 && DateTime.UtcNow >= _sinGoogleHasta)
         {
-            return await RutaConTomTomAsync(claveTomTom, origen, destino);
+            if (await RutaConGoogleAsync(claveGoogle, origen, destino) is int minutos)
+            {
+                return minutos;
+            }
+
+            _sinGoogleHasta = DateTime.UtcNow.AddHours(1);
         }
 
-        return await RutaConGoogleAsync(
-            ObtenerClaveGoogle(),
-            origen,
-            destino);
+        string claveTomTom = ObtenerClaveTomTom();
+
+        return claveTomTom.Length > 0
+            ? await RutaConTomTomAsync(claveTomTom, origen, destino)
+            : null;
     }
 
 
@@ -676,7 +717,71 @@ public static class TiempoViajeService
     }
 
 
+    /// <summary>
+    /// Ruta con Google Maps, con tráfico: la Routes API (la actual) y, si la
+    /// clave no la tiene activada, la Directions API (la antigua).
+    /// </summary>
     private static async Task<int?> RutaConGoogleAsync(
+        string clave,
+        (double Lat, double Lng) origen,
+        (double Lat, double Lng) destino) =>
+        await RutaConGoogleRoutesAsync(clave, origen, destino)
+        ?? await RutaConGoogleDirectionsAsync(clave, origen, destino);
+
+
+    private static async Task<int?> RutaConGoogleRoutesAsync(
+        string clave,
+        (double Lat, double Lng) origen,
+        (double Lat, double Lng) destino)
+    {
+        try
+        {
+            string cuerpo =
+                "{\"origin\":{\"location\":{\"latLng\":{\"latitude\":" + Numero(origen.Lat) + ",\"longitude\":" + Numero(origen.Lng) + "}}},"
+                + "\"destination\":{\"location\":{\"latLng\":{\"latitude\":" + Numero(destino.Lat) + ",\"longitude\":" + Numero(destino.Lng) + "}}},"
+                + "\"travelMode\":\"DRIVE\",\"routingPreference\":\"TRAFFIC_AWARE\",\"languageCode\":\"es\"}";
+
+            using var peticion = new HttpRequestMessage(HttpMethod.Post, "https://routes.googleapis.com/directions/v2:computeRoutes")
+            {
+                Content = new StringContent(cuerpo, System.Text.Encoding.UTF8, "application/json")
+            };
+
+            peticion.Headers.Add("X-Goog-Api-Key", clave);
+            peticion.Headers.Add("X-Goog-FieldMask", "routes.duration");
+
+            using HttpResponseMessage respuesta = await Cliente.SendAsync(peticion);
+
+            if (!respuesta.IsSuccessStatusCode)
+            {
+                return null;
+            }
+
+            using JsonDocument json =
+                JsonDocument.Parse(
+                    await respuesta.Content.ReadAsStringAsync());
+
+            // «duration» llega como texto: «1234s».
+            if (json.RootElement.TryGetProperty("routes", out JsonElement rutas)
+                && rutas.GetArrayLength() > 0
+                && rutas[0].TryGetProperty("duration", out JsonElement duracion)
+                && double.TryParse(
+                    duracion.GetString()?.TrimEnd('s'),
+                    System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out double segundos))
+            {
+                return (int)Math.Ceiling(segundos / 60.0);
+            }
+        }
+        catch
+        {
+        }
+
+        return null;
+    }
+
+
+    private static async Task<int?> RutaConGoogleDirectionsAsync(
         string clave,
         (double Lat, double Lng) origen,
         (double Lat, double Lng) destino)

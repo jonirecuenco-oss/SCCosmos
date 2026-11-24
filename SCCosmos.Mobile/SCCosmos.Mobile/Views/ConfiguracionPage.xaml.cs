@@ -27,7 +27,7 @@ public partial class ConfiguracionPage : ContentPage
             TiempoViajeService.ObtenerClaveTomTom();
 
         TxtGmapsKey.Text =
-            TiempoViajeService.ObtenerClaveGoogle();
+            TiempoViajeService.ObtenerClaveGoogleDeEsteMovil();
 
         ActualizarMensajeClavesViaje();
 
@@ -592,28 +592,25 @@ public partial class ConfiguracionPage : ContentPage
     }
 
 
+    // Qué se usa: Google Maps (la clave del móvil o la del PC) y, si no responde, TomTom.
     private void ActualizarMensajeClavesViaje()
     {
-        if (!string.IsNullOrWhiteSpace(
-                TiempoViajeService.ObtenerClaveTomTom()))
-        {
-            LblGmapsGuardada.Text =
-                "Clave de TomTom guardada: los tiempos " +
-                "incluirán el tráfico.";
-            return;
-        }
+        bool google = TiempoViajeService.ObtenerClaveGoogle().Length > 0;
+        bool tomTom = TiempoViajeService.ObtenerClaveTomTom().Length > 0;
 
-        if (!string.IsNullOrWhiteSpace(
-                TiempoViajeService.ObtenerClaveGoogle()))
-        {
-            LblGmapsGuardada.Text =
-                "Clave de Google guardada: los tiempos " +
-                "incluirán el tráfico.";
-            return;
-        }
+        string delPc =
+            TiempoViajeService.ObtenerClaveGoogleDeEsteMovil().Length > 0
+                ? ""
+                : " (con la clave del PC)";
 
         LblGmapsGuardada.Text =
-            "Sin clave: el tiempo de viaje no se mostrará.";
+            google && tomTom && TiempoViajeService.GoogleNoResponde
+                ? $"Google Maps{delPc} no responde (¿la clave sin la Routes API activada?): ahora se usa TomTom, con tráfico."
+            : google
+                ? $"Se usa Google Maps{delPc}, con tráfico" + (tomTom ? "; si no responde, TomTom." : ".")
+                : tomTom
+                    ? "Se usa TomTom, con tráfico."
+                    : "Sin clave: el tiempo de viaje no se mostrará.";
     }
 
 

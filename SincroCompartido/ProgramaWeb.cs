@@ -353,12 +353,14 @@ public static class ProgramaWeb
     /// lista de asuntos a tratar. Lo que no sea válido se ignora. En la
     /// franja del medio día libre no va nadie con el SC ni con su esposa, y
     /// las comidas solo cuentan los días de <paramref name="diasComida"/>
-    /// (null: todos).
+    /// (null: todos). Cada salida a predicar programada va para el SC y, si
+    /// está casado, para su esposa, aunque todavía no vaya nadie con ellos.
     /// </summary>
     public static (List<EventoProgramaVisita> Eventos, List<string> Asuntos) AEventos(
         string json,
         string medioDiaLibre = "",
-        IReadOnlyCollection<string>? diasComida = null)
+        IReadOnlyCollection<string>? diasComida = null,
+        bool casado = true)
     {
         var eventos = new List<EventoProgramaVisita>();
         var asuntos = new List<string>();
@@ -512,20 +514,29 @@ public static class ProgramaWeb
                     Longitud = lon
                 });
 
-            if (planEsposa.Length > 0)
+            // Programada: con hora o con alguien que va.
+            if (hora.Length == 0 && planSc.Length == 0 && planEsposa.Length == 0)
+            {
+                continue;
+            }
+
+            // Medio día libre: la salida queda, pero ellos no van.
+            if (libre)
+            {
+                Salida("", "Medio día libre");
+                continue;
+            }
+
+            // Para los dos, aunque todavía no vaya nadie con ellos. Sin esposa,
+            // quien se hubiera puesto con ella va en la del SC.
+            if (casado)
             {
                 Salida("Esposa", planEsposa);
-            }
-
-            if (planSc.Length > 0)
-            {
                 Salida("SC", planSc);
             }
-
-            // Con hora y sin nadie todavía: la salida queda, como en el PDF.
-            if (planEsposa.Length == 0 && planSc.Length == 0 && hora.Length > 0)
+            else
             {
-                Salida("", libre ? "Medio día libre" : "");
+                Salida("SC", Juntar(planSc, planEsposa));
             }
         }
 

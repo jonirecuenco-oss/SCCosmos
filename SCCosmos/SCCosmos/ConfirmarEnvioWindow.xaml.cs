@@ -35,6 +35,12 @@ namespace SCCosmos
 
             ListaArchivos.ItemsSource = archivos;
 
+            // Sin adjuntos también se puede enviar: va solo el correo.
+            if (archivos == null || archivos.Count == 0)
+            {
+                TxtArchivos.Text = "Sin archivos adjuntos.";
+            }
+
             // Cargamos los datos del email en el editor
             TxtAsunto.Text = asunto;
 

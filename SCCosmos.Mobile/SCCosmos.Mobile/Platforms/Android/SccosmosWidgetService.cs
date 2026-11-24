@@ -598,15 +598,25 @@ public class SccosmosWidgetFactory
                     List<HoraTiempo> lista =
                         fila.Horas ?? new List<HoraTiempo>();
 
+                    // Cada casilla, un sexto del ancho: con menos de 6 (los tramos de
+                    // otros días), centradas y las demás en blanco. Una sola («Todo el
+                    // día») va a todo lo ancho.
+                    int cuantas = Math.Min(lista.Count, celdas.Length);
+                    int desde = cuantas is > 1 and < 6 ? (celdas.Length - cuantas) / 2 : 0;
+
                     for (int i = 0; i < celdas.Length; i++)
                     {
-                        if (i >= lista.Count)
+                        if (i < desde || i >= desde + cuantas)
                         {
-                            vistas.SetViewVisibility(celdas[i], ViewStates.Gone);
+                            vistas.SetViewVisibility(celdas[i], cuantas > 1 ? ViewStates.Invisible : ViewStates.Gone);
                             continue;
                         }
 
-                        HoraTiempo hora = lista[i];
+                        // Visible cada vez: la lista reutiliza las vistas, y una casilla que
+                        // otra fila había ocultado seguía oculta (menos horas y más anchas).
+                        vistas.SetViewVisibility(celdas[i], ViewStates.Visible);
+
+                        HoraTiempo hora = lista[i - desde];
 
                         // La hora actual, resaltada como en Inicio (las demás, sin fondo:
                         // la lista reutiliza las vistas).

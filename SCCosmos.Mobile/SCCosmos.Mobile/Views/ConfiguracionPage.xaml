@@ -485,7 +485,7 @@
                         FontSize="15"/>
 
                     <Label
-                        Text="Inicio y el widget muestran cuánto se tarda en coche hasta cada evento, con tu ubicación actual. Necesita una clave de TomTom (plan gratuito, recomendada) o de Google Maps: si hay clave de TomTom se usa TomTom; si solo hay de Google, se usa Google. Sin ninguna clave no se muestra el tiempo ni se pide la ubicación. La de TomTom se sincroniza: el PC la usa también para el buscador de direcciones del formulario de los ancianos."
+                        Text="Inicio y el widget muestran cuánto se tarda en coche hasta cada evento, con tu ubicación actual. Se calcula con Google Maps si hay clave (la de este móvil o, si no, la del PC) y, si Google no responde, con TomTom (plan gratuito). Sin ninguna clave no se muestra el tiempo ni se pide la ubicación. La de TomTom se sincroniza: el PC la usa también para el buscador de direcciones del formulario de los ancianos."
                         TextColor="{StaticResource TextoSecundario}"
                         FontSize="12.5"
                         LineBreakMode="WordWrap"/>
@@ -500,7 +500,7 @@
 
                     <Entry
                         x:Name="TxtGmapsKey"
-                        Placeholder="Clave de Google Maps (opcional)"
+                        Placeholder="Clave de Google Maps (si no, la del PC)"
                         TextColor="{StaticResource TextoPrincipal}"
                         PlaceholderColor="{StaticResource TextoTerciario}"
                         BackgroundColor="{StaticResource SuperficieAlta}"

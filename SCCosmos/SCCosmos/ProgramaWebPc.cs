@@ -498,6 +498,7 @@ namespace SCCosmos
                 ["alojamiento"] = conAlojamiento,
                 ["sc"] = Nombre("NombreSC", "el superintendente"),
                 ["esposa"] = Nombre("NombreEsposaSC", "su esposa"),
+                ["casado"] = Casado(),
                 ["centro"] = datosCongregacion is { Latitud: not 0 }
                     ? new JsonObject { ["lat"] = datosCongregacion.Latitud, ["lon"] = datosCongregacion.Longitud }
                     : null,
@@ -614,6 +615,11 @@ namespace SCCosmos
         /// <summary>El medio día libre de Configuración (sin elegir, el viernes por la mañana).</summary>
         public static string MedioDiaLibre() =>
             ProgramaWeb.MedioDiaLibre(DatabaseHelper.ObtenerConfiguracion(ProgramaWeb.ClaveMedioDiaLibre, ""));
+
+
+        /// <summary>Si el SC está casado: tiene puesto en Configuración el nombre de su esposa.</summary>
+        public static bool Casado() =>
+            DatabaseHelper.ObtenerConfiguracion("NombreEsposaSC", "").Trim().Length > 0;
 
 
         /// <summary>Los días que coméis con la congregación (Configuración; sin elegir, todos).</summary>
@@ -742,7 +748,7 @@ namespace SCCosmos
         /// </summary>
         public static List<EventoProgramaVisita> EventosRecibidos(string congregacion, string json)
         {
-            var (eventos, _) = ProgramaWeb.AEventos(json, MedioDiaLibre(), DiasComida(congregacion));
+            var (eventos, _) = ProgramaWeb.AEventos(json, MedioDiaLibre(), DiasComida(congregacion), Casado());
 
             string direccionSalon =
                 DatabaseHelper.ObtenerCongregaciones()

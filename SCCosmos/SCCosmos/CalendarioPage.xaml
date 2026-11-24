@@ -242,7 +242,7 @@
                                         <ui:Button Icon="{ui:SymbolIcon SendClock24}" Appearance="Secondary" Padding="6" Cursor="Hand" Click="BtnEnviarS302_Click" ToolTip="Enviar S-302" Background="{Binding ColorBotonS302}"/>
                                     </ContentControl>
 
-                                    <ContentControl Margin="0,0,5,0" Visibility="{Binding VisibilidadVisita}">
+                                    <ContentControl Margin="0,0,5,0" Visibility="{Binding VisibilidadEnviarDoc}">
                                         <ui:Button Icon="{ui:SymbolIcon DocumentArrowRight24}" Appearance="Secondary" Padding="6" Cursor="Hand" Click="BtnEnviarDoc_Click" ToolTip="Enviar documentación de la visita" Background="{Binding ColorBotonDoc}"/>
                                     </ContentControl>
 

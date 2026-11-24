@@ -516,6 +516,16 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - 177/177 comprobaciones. En el emulador pide el permiso y avisa sin cerrarse con el Bluetooth apagado y sin OBDLink emparejado. Falta la prueba en el coche.
   - Fuera de esta versión: el cambio sin confirmar de `FormularioCongregacion.xaml` (alto 780 → 880), que no es mío; se apartó para publicar y se dejó como estaba.
 - 24/11/2026 · Publicada la v2.1.83.
+- 24/11/2026 · v2.1.84 (pedido por el usuario):
+  - Windows, «Congregación» (FormularioCongregacion): el cambio sin confirmar del usuario (alto 780 → 880) no bastaba (el contenido pide unos 930). Ahora se ajusta a lo que tiene (SizeToContent, como mucho la zona de trabajo de la pantalla) y con barra si la pantalla es más baja.
+  - Windows, enviar la documentación (Calendario): sin documentos subidos también se envía (el correo, sin adjuntos; ya no sale «Faltan documentos»). Los Word van tal cual: se quitó ConvertirAPdfSiEsWord de este envío (sigue en los demás). Confirmar envío se ajusta a lo que tiene (los adjuntos ya no quedan aplastados; cuerpo de 200) y sin adjuntos dice «Sin archivos adjuntos.».
+  - Windows: en las visitas «Visita (con SCS)» no sale el botón de enviar la documentación (SemanaCalendario.VisibilidadEnviarDoc).
+  - Formulario de los ancianos: notas del SC (clase .nota, icono «i» y borde azul; solo informan) en la reunión con los A/SM, la de precursores (la frase de la esposa, con su nombre y solo si está casado: nuevo dato «casado» = NombreEsposaSC puesto), Predicación y Pastoreo, con los textos del usuario.
+  - Formulario → programa (ProgramaWeb.AEventos, nuevo parámetro casado): cada salida programada (con hora o con alguien) va para el SC y para su esposa aunque no vaya nadie; sin esposa, solo el SC (con quien se hubiera puesto con ella). El medio día libre sigue igual (sin responsable, «Medio día libre»).
+  - Android, widget: las casillas del tiempo se reciclaban ocultas (una fila por tramos ocultaba las sobrantes y una fila por horas reutilizada no las volvía a mostrar: menos horas y más anchas). Ahora cada casilla se marca visible; con menos de 6, centradas y con el mismo ancho; una sola («Todo el día»), a todo lo ancho.
+  - Android, tiempo en coche: primero Google Maps (Routes API, con tráfico; si no, la Directions antigua) y, si falla, TomTom (y una hora con TomTom directamente). Clave de Google: la del móvil o, si no, la del PC (GoogleMaps_ClaveApi, sincronizada; solo se lee). Geocodificación: Google y luego TomTom. Probado con la clave del PC: Routes, Directions y Geocoding la rechazan (sin activar en su proyecto), así que de momento sigue TomTom.
+  - 178/178 comprobaciones (tres de la predicación adaptadas y una nueva sin esposa). Capturas de las dos ventanas con la herramienta (copia de la base, borrada) y del formulario en el navegador (tamaño móvil).
+- 24/11/2026 · Publicada la v2.1.84.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

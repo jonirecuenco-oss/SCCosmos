@@ -2060,11 +2060,8 @@ namespace SCCosmos
                 archivosOriginales = DatabaseHelper.ObtenerDocumentos(tagBusqueda);
             }
 
-            if (archivosOriginales == null || archivosOriginales.Count == 0)
-            {
-                MessageBox.Show($"Faltan documentos en:\n- {categoriaBase}\n- {subCategoria}\n\nSúbelos en el apartado CORRESPONDENCIA > Visitas a las congregaciones.", "Faltan documentos", MessageBoxButton.OK, MessageBoxImage.Stop);
-                return;
-            }
+            // Sin documentos subidos también se envía: el correo va sin adjuntos.
+            archivosOriginales ??= new List<ArchivoDocumento>();
 
             string nombrePrincipal = "";
             string apellidoPrincipal = "";
@@ -2144,7 +2141,7 @@ namespace SCCosmos
                     }
                 }
 
-                rutaNueva = DocumentoHelper.ConvertirAPdfSiEsWord(rutaNueva);
+                // Los Word van tal cual, sin pasarlos a PDF.
                 string nombreFinalArchivo = Path.GetFileName(rutaNueva);
 
                 archivosProcesados.Add(new ArchivoDocumento
@@ -2271,38 +2268,42 @@ namespace SCCosmos
                             ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].focus(); arguments[0].click();", inputAsunto);
                             inputAsunto.SendKeys(asuntoEmailDoc);
 
-                            IWebElement inputArchivo = wait.Until(d => {
-                                var inputs = d.FindElements(By.XPath("//input[@type='file']"));
-                                return inputs.Count > 0 ? inputs[0] : null;
-                            });
-
-                            string rutasUnidas = string.Join("\n", archivosProcesados.Select(a => a.RutaLocal));
-                            inputArchivo.SendKeys(rutasUnidas);
-
-                            System.Threading.Thread.Sleep(1000 * archivosProcesados.Count);
-
-                            WebDriverWait waitSubida = new WebDriverWait(driver, TimeSpan.FromSeconds(90));
-
-                            foreach (var arch in archivosProcesados)
+                            // Sin documentos, el correo va sin adjuntos.
+                            if (archivosProcesados.Count > 0)
                             {
-                                string nombreCorto = Path.GetFileNameWithoutExtension(arch.NombreArchivo);
-                                if (nombreCorto.Length > 15) nombreCorto = nombreCorto.Substring(0, 15);
-                                try { waitSubida.Until(d => d.PageSource.Contains(nombreCorto)); } catch { }
-                            }
-
-                            try
-                            {
-                                waitSubida.Until(d => {
-                                    var spinners = d.FindElements(By.XPath("//div[contains(@class, 'spinnerAnimation')]"));
-                                    if (spinners.Count == 0)
-                                    {
-                                        System.Threading.Thread.Sleep(1000);
-                                        return d.FindElements(By.XPath("//div[contains(@class, 'spinnerAnimation')]")).Count == 0;
-                                    }
-                                    return false;
+                                IWebElement inputArchivo = wait.Until(d => {
+                                    var inputs = d.FindElements(By.XPath("//input[@type='file']"));
+                                    return inputs.Count > 0 ? inputs[0] : null;
                                 });
+
+                                string rutasUnidas = string.Join("\n", archivosProcesados.Select(a => a.RutaLocal));
+                                inputArchivo.SendKeys(rutasUnidas);
+
+                                System.Threading.Thread.Sleep(1000 * archivosProcesados.Count);
+
+                                WebDriverWait waitSubida = new WebDriverWait(driver, TimeSpan.FromSeconds(90));
+
+                                foreach (var arch in archivosProcesados)
+                                {
+                                    string nombreCorto = Path.GetFileNameWithoutExtension(arch.NombreArchivo);
+                                    if (nombreCorto.Length > 15) nombreCorto = nombreCorto.Substring(0, 15);
+                                    try { waitSubida.Until(d => d.PageSource.Contains(nombreCorto)); } catch { }
+                                }
+
+                                try
+                                {
+                                    waitSubida.Until(d => {
+                                        var spinners = d.FindElements(By.XPath("//div[contains(@class, 'spinnerAnimation')]"));
+                                        if (spinners.Count == 0)
+                                        {
+                                            System.Threading.Thread.Sleep(1000);
+                                            return d.FindElements(By.XPath("//div[contains(@class, 'spinnerAnimation')]")).Count == 0;
+                                        }
+                                        return false;
+                                    });
+                                }
+                                catch { }
                             }
-                            catch { }
 
                             System.Threading.Thread.Sleep(2000);
 
