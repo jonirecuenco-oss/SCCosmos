@@ -508,6 +508,14 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - S-303: sin recomendaciones no sale «Carta de nombramientos».
   - 176/176 comprobaciones. Probado con la herramienta de capturas sobre una copia de la base (borrada), con puntos, una recomendación y una plantilla de prueba. La agenda sale con «miércoles 11 de noviembre de 2026 a las 20:00 en …» y la carta no aparece sin recomendaciones.
 - 23/11/2026 · Publicada la v2.1.82.
+- 24/11/2026 · v2.1.83 (pedido por el usuario): primer paso para ver en la app el combustible y los kilómetros del coche (OBDLink MX+, Opel Astra K de 2016).
+  - Móvil → Configuración → «Coche (OBDLink)» → «Probar el coche». Se conecta al OBDLink emparejado (Bluetooth clásico, puerto serie). Solo admite una conexión: la app de OBDLink tiene que estar cerrada. Lo prepara (ATWS, ATE0, ATL0, ATS1, ATH1, ATSP0) y al terminar lo deja con ATD.
+  - Solo lecturas (modos 01 y 22) y solo al motor (7DF, 7E0). Combustible: 01 2F, 22 F42F y las de Opel 22 0227, 22 A043 y 22 040F. Kilómetros: 01 A6, 22 F4A6 y las de Opel 22 03BC y 22 043B. También velocidad, km desde que se borraron las averías, tipo de combustible y qué PID estándar da el coche. Las de Opel son de la base abierta OBDb (VauxhallOpel), sin comprobar en el Astra 2015–2022.
+  - El informe (✓/✗, valor y respuesta tal cual) se enseña, se puede copiar y se añade a `prueba_coche.txt` (carpeta externa de la app). Permisos nuevos: BLUETOOTH (hasta Android 11) y BLUETOOTH_CONNECT («Dispositivos cercanos», se pide al empezar).
+  - Interpretación en `SincroCompartido/PruebaCoche.cs` (comprobada en PruebasWindows); conexión en `Platforms/Android/ConexionObd.cs` y `PruebaCocheAndroid.cs`.
+  - 177/177 comprobaciones. En el emulador pide el permiso y avisa sin cerrarse con el Bluetooth apagado y sin OBDLink emparejado. Falta la prueba en el coche.
+  - Fuera de esta versión: el cambio sin confirmar de `FormularioCongregacion.xaml` (alto 780 → 880), que no es mío; se apartó para publicar y se dejó como estaba.
+- 24/11/2026 · Publicada la v2.1.83.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

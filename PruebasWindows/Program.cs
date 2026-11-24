@@ -420,6 +420,17 @@ internal static class Programa
                 AvisosTarea.MinutosDe(3, 2), AvisosTarea.MinutosDe(0, 1), AvisosTarea.MinutosDe(53, 3), AvisosTarea.MinutosDe(52, 3),
                 AvisosTarea.Descomponer(4320), AvisosTarea.Descomponer(90), AvisosTarea.EsDeLaLista(60), AvisosTarea.EsDeLaLista(45)),
             "45 minutos antes|3 semanas antes|1 minuto antes|3 días antes|1 día antes|Sin aviso|4320|-1|-1|524160|(3, 2)|(90, 0)|True|False");
+        string Coche(string peticion, string recibido) =>
+            PruebaCoche.Leer(PruebaCoche.Ordenes.First(o => o.Peticion == peticion), recibido).Texto;
+        Ver("Coche: lo que responde por el OBDLink",
+            string.Join("|",
+                Coche("012F", "7E8 03 41 2F 9E \r\r>"), Coche("01A6", "SEARCHING...\r7E8 06 41 A6 00 12 D6 87\r\r>"),
+                Coche("2203BC", "7E8 07 62 03 BC 07 5B CD 15"), Coche("22043B", "7E8 05 62 04 3B 00 7D"), Coche("22040F", "7E8 05 62 04 0F 00 3E"),
+                Coche("220227", "7E8 03 7F 22 31"), Coche("22F4A6", "NO DATA\r\r>"), Coche("012F", "UNABLE TO CONNECT\r\r>"), Coche("01A6", "7E8 03 41 A6 00"),
+                Coche("012F", "7E9 03 7F 01 12\r7E8 03 41 2F FF"), Coche("012F", "41 2F 80"), Coche("012F", "18 DA F1 10 03 41 2F 9E"),
+                PruebaCoche.TextoPids(PruebaCoche.PidsSoportados("0120", "7E8 06 41 20 80 02 00 01")), PruebaCoche.Protocolo("A6\r\r>"),
+                PruebaCoche.Linea(PruebaCoche.Ordenes[0], "7E8 03 41 2F 9E\r7E9 03 7F 01 12")),
+            "62 %|123.456,7 km|123.456,8 km|1.648 km|35,3 l|no lo tiene|nadie responde|error de comunicación (UNABLE TO CONNECT)|respuesta corta|100 %|50 %|62 %|21 2F|A6 (CAN 11 bits a 500 kbit/s)|✓ Estándar (01 2F): 62 % [7E8 03 41 2F 9E | 7E9 03 7F 01 12]");
         Ver("Enlace: dirección, código y versión para el correo", ProgramaWeb.Enlace("https://pc.ts.net/", "abc") + " " + ProgramaWeb.EnlaceHtml("https://pc.ts.net/programa/abc"), "https://pc.ts.net/programa/abc <a href=\"https://pc.ts.net/programa/abc\">https://pc.ts.net/programa/abc</a>");
         Ver("Web: días de comida guardados", string.Join("|", ProgramaWeb.DiasComida("").Length, ProgramaWeb.DiasComida("Ninguno").Length, ProgramaWeb.TextoDiasComida(ProgramaWeb.DiasComida("sabado, Jueves"))), "5|0|Jueves,Sábado");
         Ver("Web: en el medio día libre no va nadie con ellos", string.Join("|", ProgramaWeb.AEventos(envioWeb, "Miércoles mañana").Eventos.Where(e => e.DiaSemana == "Miércoles" && e.TipoActividad == "Predicación").Select(e => $"{e.Hora} [{e.Responsable}] {e.Notas}")), "10:00 [] Medio día libre");

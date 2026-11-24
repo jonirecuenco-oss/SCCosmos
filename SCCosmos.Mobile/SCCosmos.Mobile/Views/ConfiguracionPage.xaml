@@ -517,6 +517,42 @@
 
             <!-- VERSIÓN Y ACTUALIZACIONES -->
 
+            <!-- Prueba del coche por el OBDLink: qué datos de combustible y kilómetros da. -->
+            <Border
+                BackgroundColor="{StaticResource Superficie}"
+                Stroke="{StaticResource Borde}"
+                StrokeThickness="1"
+                Padding="14">
+
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="12"/>
+                </Border.StrokeShape>
+
+                <VerticalStackLayout Spacing="10">
+
+                    <Label
+                        Text="Coche (OBDLink)"
+                        TextColor="{StaticResource TextoPrincipal}"
+                        FontAttributes="Bold"
+                        FontSize="15"/>
+
+                    <Label
+                        Text="Comprueba qué datos da el coche por el OBDLink: el combustible y los kilómetros."
+                        TextColor="{StaticResource TextoSecundario}"
+                        FontSize="12.5"
+                        LineBreakMode="WordWrap"/>
+
+                    <Button
+                        Text="Probar el coche"
+                        Clicked="BtnProbarCoche_Clicked"
+                        BackgroundColor="{StaticResource SuperficieAlta}"
+                        TextColor="{StaticResource TextoPrincipal}"
+                        CornerRadius="9"
+                        Padding="10,7"/>
+
+                </VerticalStackLayout>
+            </Border>
+
             <Border
                 BackgroundColor="{StaticResource Superficie}"
                 Stroke="{StaticResource Borde}"

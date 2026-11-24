@@ -42,6 +42,15 @@
   <uses-permission
       android:name="android.permission.WAKE_LOCK" />
 
+  <!-- Prueba del coche: hablar con el OBDLink por Bluetooth. Hasta
+       Android 11, el de Bluetooth; desde Android 12, «Dispositivos cercanos». -->
+  <uses-permission
+      android:name="android.permission.BLUETOOTH"
+      android:maxSdkVersion="30" />
+
+  <uses-permission
+      android:name="android.permission.BLUETOOTH_CONNECT" />
+
   <!-- Permite abrir el instalador de Android para actualizar la app. -->
   <uses-permission
       android:name="android.permission.REQUEST_INSTALL_PACKAGES" />

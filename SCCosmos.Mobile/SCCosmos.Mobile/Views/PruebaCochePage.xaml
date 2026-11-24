@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="SCCosmos.Mobile.Views.PruebaCochePage"
+    Title="Prueba del coche"
+    BackgroundColor="{StaticResource FondoPagina}">
+
+    <ScrollView>
+
+        <VerticalStackLayout
+            Padding="20"
+            Spacing="14">
+
+            <Label
+                Text="Prueba del coche"
+                TextColor="{StaticResource TextoPrincipal}"
+                FontSize="22"
+                FontAttributes="Bold"/>
+
+            <Label
+                Text="Comprueba qué datos da el coche por el OBDLink: el combustible y los kilómetros. Solo se leen datos; no se cambia nada del coche."
+                TextColor="{StaticResource TextoSecundario}"
+                FontSize="13"
+                LineBreakMode="WordWrap"/>
+
+            <Label
+                Text="Antes de empezar: el coche parado, con el contacto puesto o el motor en marcha, y la app de OBDLink cerrada, porque el OBDLink solo admite una conexión a la vez."
+                TextColor="{StaticResource TextoSecundario}"
+                FontSize="13"
+                LineBreakMode="WordWrap"/>
+
+            <Button
+                x:Name="BtnEmpezar"
+                Text="Empezar la prueba"
+                Clicked="BtnEmpezar_Clicked"
+                BackgroundColor="{StaticResource SuperficieAlta}"
+                TextColor="{StaticResource TextoPrincipal}"
+                CornerRadius="9"
+                Padding="10,7"/>
+
+            <Label
+                x:Name="LblEstado"
+                Text=""
+                TextColor="{StaticResource TextoSecundario}"
+                FontSize="12.5"
+                LineBreakMode="WordWrap"/>
+
+            <Border
+                x:Name="PanelResultado"
+                IsVisible="False"
+                BackgroundColor="{StaticResource Superficie}"
+                Stroke="{StaticResource Borde}"
+                StrokeThickness="1"
+                Padding="14">
+
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="12"/>
+                </Border.StrokeShape>
+
+                <VerticalStackLayout Spacing="10">
+
+                    <Label
+                        x:Name="LblResultado"
+                        Text=""
+                        TextColor="{StaticResource TextoPrincipal}"
+                        FontSize="12.5"
+                        LineBreakMode="WordWrap"/>
+
+                    <Button
+                        Text="Copiar el resultado"
+                        Clicked="BtnCopiar_Clicked"
+                        BackgroundColor="{StaticResource SuperficieAlta}"
+                        TextColor="{StaticResource TextoPrincipal}"
+                        CornerRadius="9"
+                        Padding="10,7"/>
+
+                </VerticalStackLayout>
+            </Border>
+
+        </VerticalStackLayout>
+
+    </ScrollView>
+
+</ContentPage>

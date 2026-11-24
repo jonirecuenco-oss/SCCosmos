@@ -85,6 +85,12 @@ public partial class ConfiguracionPage : ContentPage
     }
 
 
+    // Prueba del coche por el OBDLink (combustible y kilómetros).
+    private async void BtnProbarCoche_Clicked(object? sender, EventArgs e)
+    {
+        await Navigation.PushAsync(new PruebaCochePage());
+    }
+
     private async void BtnBuscarActualizacion_Clicked(
         object sender,
         EventArgs e)
