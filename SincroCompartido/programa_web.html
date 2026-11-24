@@ -148,7 +148,6 @@
     <h2><span class="num">1</span>Reuniones</h2>
     <div id="reuniones" class="rejilla dos"></div>
     <h3 class="apartado">Salidas a predicar</h3>
-    <p class="ayuda">Hora y lugar de la reunión para la predicación de cada salida.</p>
     <div id="horas-salidas" class="bloque"></div>
   </section>
 
@@ -161,7 +160,6 @@
 
   <section id="s-predicacion">
     <h2><span class="num">3</span>Predicación</h2>
-    <p class="ayuda" id="ayuda-predicacion"></p>
     <div class="nota"><div>
       <p>Decidles a los hermanos que no hace falta que tengan CBs o revisitas para apuntarse a predicar.</p>
       <p>Dado que queremos salir sobre todo de casa en casa, os pedimos que seáis razonables a la hora de asignarnos CBs.</p>
@@ -174,7 +172,6 @@
 
   <section id="s-pastoreo">
     <h2><span class="num">4</span>Pastoreo</h2>
-    <p class="ayuda">Hasta 3 visitas, de miércoles a domingo y de 10:00 a 20:00. Cada visita que añadáis, con su acompañante, día, hora y dirección.</p>
     <div class="nota"><div>
       <p>Podéis programar 2 o 3 visitas.</p>
       <p>Sería ideal hacerlas antes o después de predicar, si es posible.</p>
@@ -191,7 +188,6 @@
 
   <section id="s-archivos" class="oculto">
     <h2><span class="num">6</span>Archivos</h2>
-    <p class="ayuda">La S-61 rellenada y los documentos que pide. Cada archivo se guarda al subirlo (no hace falta pulsar «Enviar») y no se suben a Internet. Hasta 50 MB por archivo.</p>
     <div id="archivos"></div>
   </section>
 
@@ -490,11 +486,6 @@ window.VISITA = /*VISITA*/null;
   }
 
   // ---- 3. Predicación: quién va (la hora y el lugar de salida, en Reuniones) ----
-  $("#ayuda-predicacion").textContent =
-    "En cada salida, hasta 2 personas con " + SC + " y 2 con " + ESPOSA + "." +
-    (LIBRE ? " El " + diaTexto(LIBRE.split(" ")[0]) + " por la " + LIBRE.split(" ")[1] + " es su medio día libre." : "") +
-    (ANCHO ? "" : " Tocad una salida para rellenarla.");
-
   const salidas = $("#salidas");
   FRANJAS.forEach(fr => {
     const [d, turno] = fr.split(" ");

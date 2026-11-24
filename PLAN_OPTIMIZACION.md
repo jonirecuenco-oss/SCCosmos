@@ -526,6 +526,8 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - Android, tiempo en coche: primero Google Maps (Routes API, con tráfico; si no, la Directions antigua) y, si falla, TomTom (y una hora con TomTom directamente). Clave de Google: la del móvil o, si no, la del PC (GoogleMaps_ClaveApi, sincronizada; solo se lee). Geocodificación: Google y luego TomTom. Probado con la clave del PC: Routes, Directions y Geocoding la rechazan (sin activar en su proyecto), así que de momento sigue TomTom.
   - 178/178 comprobaciones (tres de la predicación adaptadas y una nueva sin esposa). Capturas de las dos ventanas con la herramienta (copia de la base, borrada) y del formulario en el navegador (tamaño móvil).
 - 24/11/2026 · Publicada la v2.1.84.
+- 24/11/2026 · v2.1.85 (pedido por el usuario): formulario de los ancianos sin las descripciones de los apartados: «Hora y lugar de la reunión para la predicación de cada salida», la de Predicación («En cada salida, hasta 2 personas…», con el medio día libre y «Tocad una salida…»; se quitó también su línea del JavaScript), la de Pastoreo («Hasta 3 visitas…») y la de Archivos («La S-61 rellenada…»). Quedan las notas del SC, los avisos de «Medio día libre» de cada salida y «Esta semana no hay comidas…» (solo sale sin comidas). Probado en el navegador a tamaño móvil: carga entero y sin errores.
+- 24/11/2026 · Publicada la v2.1.85.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 
