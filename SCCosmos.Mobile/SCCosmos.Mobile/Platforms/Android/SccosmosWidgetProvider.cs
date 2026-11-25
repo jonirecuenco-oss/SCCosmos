@@ -641,6 +641,81 @@ public class SccosmosWidgetProvider : AppWidgetProvider
         }
     }
 
+    /// <summary>
+    /// Solo la línea del coche de la cabecera, sin recargar la lista: tras cada
+    /// lectura del OBDLink (cada 2 minutos mientras se conduce).
+    /// </summary>
+    public static void ActualizarCoche()
+    {
+        try
+        {
+            Context contexto =
+                global::Android.App.Application.Context;
+
+            AppWidgetManager? gestor =
+                AppWidgetManager.GetInstance(
+                    contexto);
+
+            int[]? ids =
+                gestor?.GetAppWidgetIds(
+                    new ComponentName(
+                        contexto,
+                        Java.Lang.Class.FromType(
+                            typeof(SccosmosWidgetProvider))));
+
+            if (gestor is null || ids is null)
+            {
+                return;
+            }
+
+            foreach (int id in ids)
+            {
+                var vistas =
+                    new RemoteViews(
+                        contexto.PackageName,
+                        Resource.Layout.widget_sccosmos);
+
+                PintarCoche(vistas);
+
+                gestor.PartiallyUpdateAppWidget(
+                    id,
+                    vistas);
+            }
+        }
+        catch
+        {
+        }
+    }
+
+    // Combustible y km de la última lectura (en claro) y cuándo (apagado); sin
+    // lectura, la línea no sale.
+    private static void PintarCoche(RemoteViews vistas)
+    {
+        try
+        {
+            if (SCCosmos.Sincro.Coche.LecturaDe(
+                    SCCosmos.Mobile.Data.DatabaseHelper.ObtenerConfiguracion(SCCosmos.Sincro.Coche.ClaveLectura, ""))
+                is not { } lectura)
+            {
+                vistas.SetViewVisibility(Resource.Id.widget_coche, global::Android.Views.ViewStates.Gone);
+                return;
+            }
+
+            var (datos, cuando) =
+                SCCosmos.Sincro.Coche.TextoWidget(
+                    lectura,
+                    DateTime.Now);
+
+            vistas.SetTextViewText(Resource.Id.widget_coche_datos, datos);
+            vistas.SetTextViewText(Resource.Id.widget_coche_cuando, cuando);
+            vistas.SetViewVisibility(Resource.Id.widget_coche, global::Android.Views.ViewStates.Visible);
+        }
+        catch
+        {
+            vistas.SetViewVisibility(Resource.Id.widget_coche, global::Android.Views.ViewStates.Gone);
+        }
+    }
+
     /// <summary>Actualiza todos los widgets puestos en el escritorio.</summary>
     public static void ActualizarTodos()
     {
@@ -760,6 +835,16 @@ public class SccosmosWidgetProvider : AppWidgetProvider
             vistas.SetTextViewText(
                 Resource.Id.widget_fecha_larga,
                 fechaLarga);
+
+            // El coche (OBDLink), debajo: la última lectura. Al tocarla, la app.
+            PintarCoche(vistas);
+
+            if (abrir is not null)
+            {
+                vistas.SetOnClickPendingIntent(
+                    Resource.Id.widget_coche,
+                    abrir);
+            }
 
             // Flechas para moverse de día.
             vistas.SetOnClickPendingIntent(

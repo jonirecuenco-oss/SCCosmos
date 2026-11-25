@@ -443,9 +443,12 @@ internal static class Programa
                 SCCosmos.Sincro.Coche.LecturaDe("basura") is null,
                 SCCosmos.Sincro.Coche.Texto(cocheL2, t0.AddHours(3), "Jonatán", "Rebeca"),
                 SCCosmos.Sincro.Coche.Texto(cocheL3, t0.AddDays(2), "Jonatán", "Rebeca"),
-                SCCosmos.Sincro.Coche.Texto(cocheSinKm with { Contador = 65535 }, t0, "Jonatán", "")),
+                SCCosmos.Sincro.Coche.Texto(cocheSinKm with { Contador = 65535 }, t0, "Jonatán", ""),
+                SCCosmos.Sincro.Coche.TextoWidget(cocheL2, t0.AddHours(3)),
+                SCCosmos.Sincro.Coche.TextoWidget(cocheSinKm with { Cuando = t0.AddHours(-7) }, t0.AddDays(5))),
             "True|True|True|True|(60 % de combustible · 187.556 km, Leído hoy a las 16:30 (Jonatán))|(58 % de combustible · 187.568 km, Leído ayer a las 16:00 (Rebeca))"
-            + "|(50 % de combustible · faltan los km del cuentakilómetros (el contador del coche ha llegado a su tope: vuelve a poner los km), Leído hoy a las 16:00 (Jonatán))");
+            + "|(50 % de combustible · faltan los km del cuentakilómetros (el contador del coche ha llegado a su tope: vuelve a poner los km), Leído hoy a las 16:00 (Jonatán))"
+            + "|(60 % · 187.556 km, hoy, 16:30)|(50 % · faltan los km, 24/11, 9:00)");
         string Coche(string peticion, string recibido) =>
             PruebaCoche.Leer(PruebaCoche.Ordenes.First(o => o.Peticion == peticion), recibido).Texto;
         Ver("Coche: lo que responde por el OBDLink",

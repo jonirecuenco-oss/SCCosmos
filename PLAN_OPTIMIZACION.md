@@ -535,6 +535,10 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - Inicio (móvil y PC): tarjeta «Coche» («64 % de combustible · 187.512 km» y «Leído hoy a las 16:02 (Jonatán)»), solo si hay lectura.
   - 180/180 comprobaciones (2 nuevas). PC: Inicio con una lectura en una copia de la base (borrada). Emulador: Inicio y Configuración con una lectura metida en su base (luego restaurada idéntica y emulador cerrado); «Guardar km», «Elegir el Bluetooth» y «Leer ahora» avisan sin cerrarse (sin coche ni Bluetooth). Falta probarlo en el coche.
 - 24/11/2026 · Publicada la v2.1.86.
+- 25/11/2026 · El usuario confirma que la lectura del coche (v2.1.86) funciona perfectamente.
+- 25/11/2026 · v2.1.87 (pedido por el usuario): el coche también en el widget. En la cabecera fija, bajo el día: surtidor (widget_combustible, vectorial, #A7AEB8) bajo el icono de la app, «64 % · 187.578 km» en negrita alineado con «Hoy» y «hoy, 8:45» apagado (Coche.TextoWidget). Sin lectura no sale; al tocarla, la app. Tras cada lectura, CocheAndroid llama a SccosmosWidgetProvider.ActualizarCoche (PartiallyUpdateAppWidget: solo esa línea, sin recargar la lista).
+  - 180/180 comprobaciones (TextoWidget, en la del coche). Emulador: widget del escritorio con una lectura metida en su base (luego restaurada idéntica y emulador cerrado).
+- 25/11/2026 · Publicada la v2.1.87.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

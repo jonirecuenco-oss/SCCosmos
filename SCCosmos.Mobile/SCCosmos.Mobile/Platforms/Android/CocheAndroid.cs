@@ -99,6 +99,9 @@ public static class CocheAndroid
                 DatabaseHelper.GuardarConfiguracion(Coche.ClaveBase, Coche.Json(nuevaBase));
             }
         }
+
+        // La línea del coche del widget, al día.
+        SccosmosWidgetProvider.ActualizarCoche();
     }
 
     /// <summary>

@@ -107,6 +107,22 @@ public static class Coche
             $"Leído {dia} a las {lectura.Cuando.ToString("HH:mm", CultureInfo.InvariantCulture)}" + (quien.Length > 0 ? $" ({quien})" : ""));
     }
 
+    /// <summary>
+    /// Para el widget, en una línea: «64 % · 187.512 km» y, aparte, cuándo
+    /// («hoy, 16:02», «ayer, 18:30» o «22/11, 9:15»).
+    /// </summary>
+    public static (string Datos, string Cuando) TextoWidget(Lectura lectura, DateTime ahora)
+    {
+        string combustible = lectura.Combustible is int c ? $"{c} %" : "–";
+        string km = lectura.Km is long k ? Km(k) : "faltan los km";
+
+        string dia = lectura.Cuando.Date == ahora.Date ? "hoy"
+            : lectura.Cuando.Date == ahora.Date.AddDays(-1) ? "ayer"
+            : lectura.Cuando.ToString("dd/MM", CultureInfo.InvariantCulture);
+
+        return ($"{combustible} · {km}", $"{dia}, {lectura.Cuando.ToString("H:mm", CultureInfo.InvariantCulture)}");
+    }
+
     private static readonly NumberFormatInfo Numeros = new() { NumberGroupSeparator = "." };
 
     /// <summary>«187.512 km», con punto aunque el móvil esté en otro idioma.</summary>

@@ -84,6 +84,49 @@
             android:contentDescription="Día siguiente" />
     </LinearLayout>
 
+    <!-- COCHE (OBDLink): combustible y km de la última lectura, si hay. El surtidor,
+         bajo el icono de la app; el texto, alineado con el día -->
+
+    <LinearLayout
+        android:id="@+id/widget_coche"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <ImageView
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_marginLeft="6dp"
+            android:layout_marginRight="18dp"
+            android:src="@drawable/widget_combustible"
+            android:contentDescription="Coche" />
+
+        <TextView
+            android:id="@+id/widget_coche_datos"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textColor="#E3E7EC"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:maxLines="1" />
+
+        <TextView
+            android:id="@+id/widget_coche_cuando"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginLeft="8dp"
+            android:text=""
+            android:textColor="#7C8591"
+            android:textSize="12sp"
+            android:maxLines="1"
+            android:ellipsize="end" />
+    </LinearLayout>
+
     <!-- Línea bajo la cabecera (FrameLayout: View no se admite en un widget) -->
 
     <FrameLayout
