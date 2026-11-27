@@ -43,6 +43,9 @@ public sealed class AjustesAvisos
     // + tipo: «1|90», activa y días.
     private const string PrefijoAlerta = "Avisos_Alerta_";
 
+    // «1|15»: avisar del combustible bajo del coche y por debajo de qué porcentaje.
+    private const string ClaveCombustible = "Avisos_Combustible";
+
     private readonly Dictionary<string, (bool Activa, int Dias)> _alertas =
         Alertas.ToDictionary(a => a.Tipo, a => (true, a.Dias));
 
@@ -60,6 +63,12 @@ public sealed class AjustesAvisos
 
     /// <summary>Notificar en el móvil cuando los ancianos pulsan «Enviar» en el formulario del programa.</summary>
     public bool ProgramaWebActivo { get; set; } = true;
+
+    /// <summary>Notificar en el móvil cuando el combustible del coche baja de <see cref="CombustibleMinimo"/>.</summary>
+    public bool CombustibleActivo { get; set; } = true;
+
+    /// <summary>Por debajo de este porcentaje, el coche está en reserva: aviso y surtidor en rojo.</summary>
+    public int CombustibleMinimo { get; set; } = 15;
 
 
     public bool AlertaActiva(string tipo) =>
@@ -111,6 +120,18 @@ public sealed class AjustesAvisos
         ajustes.TiempoActivo = leer(ClaveTiempo) != "0";
         ajustes.ProgramaWebActivo = leer(ClaveProgramaWeb) != "0";
 
+        string[] combustible = (leer(ClaveCombustible) ?? "").Split('|');
+
+        if (combustible.Length == 2)
+        {
+            ajustes.CombustibleActivo = combustible[0] != "0";
+
+            if (int.TryParse(combustible[1], out int minimo))
+            {
+                ajustes.CombustibleMinimo = Math.Clamp(minimo, 1, 99);
+            }
+        }
+
         foreach (var alerta in Alertas)
         {
             string[] valor = (leer(PrefijoAlerta + alerta.Tipo) ?? "").Split('|');
@@ -135,6 +156,7 @@ public sealed class AjustesAvisos
         yield return (ClaveS303, $"{(S303Activo ? 1 : 0)}|{Hora(S303Hora)}");
         yield return (ClaveTiempo, TiempoActivo ? "1" : "0");
         yield return (ClaveProgramaWeb, ProgramaWebActivo ? "1" : "0");
+        yield return (ClaveCombustible, $"{(CombustibleActivo ? 1 : 0)}|{CombustibleMinimo}");
 
         foreach (var alerta in Alertas)
         {

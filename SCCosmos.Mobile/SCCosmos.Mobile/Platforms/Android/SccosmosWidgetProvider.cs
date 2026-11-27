@@ -701,10 +701,22 @@ public class SccosmosWidgetProvider : AppWidgetProvider
                 return;
             }
 
+            // En reserva (por debajo del mínimo de Avisos): el surtidor en rojo y «reserva».
+            int minimo =
+                SCCosmos.Sincro.AjustesAvisos.Leer(
+                    clave => SCCosmos.Mobile.Data.DatabaseHelper.ObtenerConfiguracion(clave, "")).CombustibleMinimo;
+
             var (datos, cuando) =
                 SCCosmos.Sincro.Coche.TextoWidget(
                     lectura,
-                    DateTime.Now);
+                    DateTime.Now,
+                    minimo);
+
+            vistas.SetImageViewResource(
+                Resource.Id.widget_coche_icono,
+                SCCosmos.Sincro.Coche.EnReserva(lectura, minimo)
+                    ? Resource.Drawable.widget_combustible_bajo
+                    : Resource.Drawable.widget_combustible);
 
             vistas.SetTextViewText(Resource.Id.widget_coche_datos, datos);
             vistas.SetTextViewText(Resource.Id.widget_coche_cuando, cuando);

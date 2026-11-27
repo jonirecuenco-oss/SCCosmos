@@ -125,12 +125,18 @@ namespace SCCosmos.Mobile
                         {
                             _ = SCCosmos.Mobile.Platforms.Android.ProgramaWebAvisosAndroid.RevisarAsync(
                                 preguntarServidor: false);
+
+                            // Una lectura del coche en reserva tomada por el otro móvil: el aviso.
+                            SCCosmos.Mobile.Platforms.Android.CocheAndroid.RevisarAvisoCombustible();
                         }
                     };
                 }
                 catch
                 {
                 }
+
+                // El coche en reserva sin avisar todavía (por ejemplo, lo leyó el otro móvil).
+                SCCosmos.Mobile.Platforms.Android.CocheAndroid.RevisarAvisoCombustible();
 
                 // Tailscale (si está instalado): conectado, para sincronizar fuera de casa.
                 SCCosmos.Mobile.Platforms.Android.TailscaleAndroid.Asegurar();

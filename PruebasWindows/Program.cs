@@ -448,6 +448,16 @@ internal static class Programa
             + $"{SCCosmos.Sincro.Coche.Aplicar(t0.AddMinutes(40), "Esposa", 59, 36420, cocheL2, cocheB2, null).Lectura.Km} "
             + $"{SCCosmos.Sincro.Coche.Ultima(clave => cocheConfig.TryGetValue(clave, out string? valor) ? valor : "")?.Km}",
             "187576 187576 187576 187556");
+        var ajustesCoche = AjustesAvisos.Leer(clave => clave == "Avisos_Combustible" ? "0|20" : "");
+        Ver("Coche: reserva (por debajo del mínimo de Avisos) y sus ajustes",
+            string.Join("|",
+                SCCosmos.Sincro.Coche.EnReserva(cocheL2, 61), SCCosmos.Sincro.Coche.EnReserva(cocheL2, 60),
+                SCCosmos.Sincro.Coche.TextoWidget(cocheL2, t0.AddHours(3), 61).Datos,
+                SCCosmos.Sincro.Coche.Texto(cocheL2, t0.AddHours(3), "Jonatán", "Rebeca", 61).Datos,
+                $"{ajustesCoche.CombustibleActivo} {ajustesCoche.CombustibleMinimo}",
+                $"{new AjustesAvisos().CombustibleActivo} {new AjustesAvisos().CombustibleMinimo}",
+                ajustesCoche.Valores().First(v => v.Clave == "Avisos_Combustible").Valor),
+            "True|False|60 % (reserva) · 187.556 km|60 % de combustible (reserva) · 187.556 km|False 20|True 15|0|20");
         Ver("Coche: en Configuración (JSON) y el texto de Inicio",
             string.Join("|",
                 SCCosmos.Sincro.Coche.LecturaDe(SCCosmos.Sincro.Coche.Json(cocheL2)) == cocheL2,

@@ -100,8 +100,101 @@ public static class CocheAndroid
             }
         }
 
-        // La línea del coche del widget, al día.
+        // La línea del coche del widget, al día, y el aviso si ha entrado en reserva.
         SccosmosWidgetProvider.ActualizarCoche();
+        RevisarAvisoCombustible();
+    }
+
+    // ---- Aviso de combustible bajo (página Avisos) ----
+
+    private const string ClaveAvisado = "Coche_AvisoCombustibleEnviado";
+    private const string CanalCombustible = "sccosmos_combustible";
+    private const int IdAvisoCombustible = 47320;
+
+    /// <summary>
+    /// Si la última lectura (la de este móvil o la que ha llegado del otro) está por
+    /// debajo del mínimo de Avisos, una notificación: una vez cada vez que baja, y
+    /// otra después de repostar (cuando ha subido 5 puntos por encima). Como los
+    /// demás avisos, solo en el móvil del SC.
+    /// </summary>
+    public static void RevisarAvisoCombustible()
+    {
+        try
+        {
+            if (Coche.Ultima(clave => DatabaseHelper.ObtenerConfiguracion(clave, "")) is not { Combustible: int combustible } lectura)
+            {
+                return;
+            }
+
+            var ajustes = AjustesAvisos.Leer(clave => DatabaseHelper.ObtenerConfiguracion(clave, ""));
+            bool avisado = Preferences.Get(ClaveAvisado, false);
+
+            if (combustible >= ajustes.CombustibleMinimo + 5)
+            {
+                if (avisado)
+                {
+                    Preferences.Set(ClaveAvisado, false);
+                }
+
+                return;
+            }
+
+            if (avisado
+                || !Coche.EnReserva(lectura, ajustes.CombustibleMinimo)
+                || !ajustes.CombustibleActivo
+                || !PerfilAccesoService.EsHombre)
+            {
+                return;
+            }
+
+            NotificarCombustible(lectura, ajustes.CombustibleMinimo);
+            Preferences.Set(ClaveAvisado, true);
+        }
+        catch (Exception ex)
+        {
+            RegistroErrores.Anotar(ex, "Coche.AvisoCombustible");
+        }
+    }
+
+    private static void NotificarCombustible(Coche.Lectura lectura, int minimo)
+    {
+        Context contexto = global::Android.App.Application.Context;
+
+        if (OperatingSystem.IsAndroidVersionAtLeast(26))
+        {
+            (contexto.GetSystemService(Context.NotificationService) as global::Android.App.NotificationManager)
+                ?.CreateNotificationChannel(
+                    new global::Android.App.NotificationChannel(CanalCombustible, "Combustible del coche", global::Android.App.NotificationImportance.High)
+                    {
+                        Description = "Cuando el combustible del coche baja del mínimo de Avisos"
+                    });
+        }
+
+        string texto = $"Queda un {lectura.Combustible} % de combustible (avisa por debajo del {minimo} %)."
+            + (lectura.Km is long km ? $" El coche marca {Coche.Km(km)}." : "");
+
+        var notificacion = new AndroidX.Core.App.NotificationCompat.Builder(contexto, CanalCombustible);
+        notificacion.SetSmallIcon(contexto.ApplicationInfo?.Icon ?? 0);
+        notificacion.SetContentTitle("Combustible bajo: reserva");
+        notificacion.SetContentText(texto);
+        notificacion.SetStyle(new AndroidX.Core.App.NotificationCompat.BigTextStyle().BigText(texto));
+        notificacion.SetPriority(AndroidX.Core.App.NotificationCompat.PriorityHigh);
+        notificacion.SetAutoCancel(true);
+
+        Intent? abrir = contexto.PackageManager?.GetLaunchIntentForPackage(contexto.PackageName ?? "");
+
+        if (abrir is not null
+            && global::Android.App.PendingIntent.GetActivity(
+                   contexto,
+                   IdAvisoCombustible,
+                   abrir,
+                   global::Android.App.PendingIntentFlags.Immutable | global::Android.App.PendingIntentFlags.UpdateCurrent)
+               is { } alPulsar)
+        {
+            notificacion.SetContentIntent(alPulsar);
+        }
+
+        AndroidX.Core.App.NotificationManagerCompat.From(contexto)?.Notify(IdAvisoCombustible, notificacion.Build()!);
     }
 
     /// <summary>

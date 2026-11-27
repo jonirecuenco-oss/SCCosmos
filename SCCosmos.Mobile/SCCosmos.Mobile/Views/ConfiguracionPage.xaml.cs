@@ -114,7 +114,8 @@ public partial class ConfiguracionPage : ContentPage
                 lectura,
                 DateTime.Now,
                 DatabaseHelper.ObtenerConfiguracion("NombreSC", ""),
-                DatabaseHelper.ObtenerConfiguracion("NombreEsposaSC", ""));
+                DatabaseHelper.ObtenerConfiguracion("NombreEsposaSC", ""),
+                SCCosmos.Sincro.AjustesAvisos.Leer(clave => DatabaseHelper.ObtenerConfiguracion(clave, "")).CombustibleMinimo);
 
             LblCoche.Text = datos + "\n" + cuando;
         }

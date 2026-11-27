@@ -848,6 +848,9 @@ public partial class InicioPage : ContentPage, IActualizableMobile
 
     private bool _suscritoHorasDialog;
 
+    // El color normal de los datos del coche (en reserva van en rojo).
+    private Color? _colorCocheDatos;
+
     // El coche (OBDLink): la última lectura del combustible y los km, si hay.
     private void PintarCoche()
     {
@@ -859,11 +862,20 @@ public partial class InicioPage : ContentPage, IActualizableMobile
                 return;
             }
 
+            int minimo = SCCosmos.Sincro.AjustesAvisos.Leer(clave => DatabaseHelper.ObtenerConfiguracion(clave, "")).CombustibleMinimo;
+
             var (datos, cuando) = SCCosmos.Sincro.Coche.Texto(
                 lectura,
                 DateTime.Now,
                 DatabaseHelper.ObtenerConfiguracion("NombreSC", ""),
-                DatabaseHelper.ObtenerConfiguracion("NombreEsposaSC", ""));
+                DatabaseHelper.ObtenerConfiguracion("NombreEsposaSC", ""),
+                minimo);
+
+            // En reserva, en rojo (y el texto lo dice: «reserva»).
+            _colorCocheDatos ??= LblCocheDatos.TextColor;
+            LblCocheDatos.TextColor = SCCosmos.Sincro.Coche.EnReserva(lectura, minimo)
+                ? Color.FromArgb("#FF5A52")
+                : _colorCocheDatos;
 
             LblCocheDatos.Text = datos;
             LblCocheCuando.Text = cuando;

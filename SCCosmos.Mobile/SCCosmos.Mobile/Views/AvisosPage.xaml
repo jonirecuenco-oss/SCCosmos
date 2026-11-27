@@ -103,6 +103,35 @@
                 </VerticalStackLayout>
             </Border>
 
+            <!-- COMBUSTIBLE DEL COCHE: por debajo del porcentaje, aviso y surtidor en rojo -->
+            <Border Style="{StaticResource Tarjeta}">
+                <VerticalStackLayout Spacing="6">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Text="Combustible del coche"
+                               FontSize="15"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource TextoPrincipal}"
+                               VerticalOptions="Center" />
+                        <Switch x:Name="SwCombustible"
+                                Grid.Column="1"
+                                OnColor="{StaticResource AcentoFuerte}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Text="Avisar si baja del"
+                               FontSize="14"
+                               TextColor="{StaticResource TextoSecundario}"
+                               VerticalOptions="Center" />
+                        <Picker x:Name="PickerCombustible"
+                                Grid.Column="1"
+                                WidthRequest="96"
+                                HorizontalTextAlignment="Center"
+                                TextColor="{StaticResource TextoPrincipal}" />
+                    </Grid>
+                    <Label Text="Cuando el coche está por debajo de ese porcentaje, tu móvil avisa una vez (y otra después de repostar), también si lo ha leído el móvil de tu esposa. El surtidor del widget se pone en rojo y pone «reserva», aunque el aviso esté desactivado."
+                           Style="{StaticResource TextoNota}" />
+                </VerticalStackLayout>
+            </Border>
+
             <!-- LOS DE INICIO: activos y con cuánta antelación -->
             <Border Style="{StaticResource Tarjeta}">
                 <VerticalStackLayout Spacing="10">

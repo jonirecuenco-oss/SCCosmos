@@ -545,6 +545,12 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
   - Coche.Ultima: una lectura sin km se completa con la base de este dispositivo al enseñarla (Inicio del móvil y del PC, Configuración y widget).
   - 181/181 comprobaciones (una nueva con el caso del otro móvil). La primera compilación falló por falta de memoria del PC (una pestaña de Firefox del usuario con 18 GB); la cerró él.
 - 27/11/2026 · Publicada la v2.1.88.
+- 27/11/2026 · v2.1.89 (pedido por el usuario): coche en reserva.
+  - AjustesAvisos: CombustibleActivo y CombustibleMinimo (clave Avisos_Combustible «1|15», sincronizada; de partida, activo y 15 %). Avisos (móvil): tarjeta «Combustible del coche» con interruptor y porcentaje (5 a 50 %, de 5 en 5).
+  - Por debajo del mínimo (Coche.EnReserva): widget con el surtidor rojo (widget_combustible_bajo) y «(reserva)» en el texto (no solo el color); Inicio del móvil y del PC con el dato en rojo y «(reserva)»; Configuración, «(reserva)». Aunque el aviso esté desactivado.
+  - Aviso (CocheAndroid.RevisarAvisoCombustible): una notificación (canal sccosmos_combustible) cuando la última lectura está por debajo del mínimo; una vez por bajada (Preferences Coche_AvisoCombustibleEnviado) y se rearma al subir 5 puntos (repostar). Como los demás avisos, solo en el móvil del SC (EsHombre). Se revisa tras cada lectura propia, al llegar datos por sincronización (lectura del móvil de su esposa) y al abrir la app; también al cambiar el porcentaje.
+  - 182/182 comprobaciones (una nueva: reserva y ajustes). Emulador con una lectura del 12 % (su base, restaurada idéntica; emulador cerrado): Inicio en rojo con «(reserva)», widget con el surtidor rojo y «(reserva)», tarjeta en Avisos. La notificación no se pudo ver: el emulador no tiene perfil de SC.
+- 27/11/2026 · Publicada la v2.1.89.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

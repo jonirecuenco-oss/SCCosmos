@@ -91,11 +91,24 @@ namespace SCCosmos
                     return;
                 }
 
+                int minimo = SCCosmos.Sincro.AjustesAvisos.Leer(clave => DatabaseHelper.ObtenerConfiguracion(clave, "")).CombustibleMinimo;
+
                 var (datos, cuando) = SCCosmos.Sincro.Coche.Texto(
                     lectura,
                     DateTime.Now,
                     DatabaseHelper.ObtenerConfiguracion("NombreSC", ""),
-                    DatabaseHelper.ObtenerConfiguracion("NombreEsposaSC", ""));
+                    DatabaseHelper.ObtenerConfiguracion("NombreEsposaSC", ""),
+                    minimo);
+
+                // En reserva, en rojo (y el texto lo dice: «reserva»).
+                if (SCCosmos.Sincro.Coche.EnReserva(lectura, minimo))
+                {
+                    TxtCocheDatos.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0xFF, 0x5A, 0x52));
+                }
+                else
+                {
+                    TxtCocheDatos.ClearValue(System.Windows.Controls.TextBlock.ForegroundProperty);
+                }
 
                 TxtCocheDatos.Text = datos;
                 TxtCocheCuando.Text = cuando;

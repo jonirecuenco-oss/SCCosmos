@@ -25,6 +25,9 @@ public partial class AvisosPage : ContentPage
     private static readonly string[] NombresDias =
         { "domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado" };
 
+    // El combustible del coche: avisar si baja de uno de estos porcentajes.
+    private static readonly int[] PorcentajesCombustible = { 5, 10, 15, 20, 25, 30, 35, 40, 45, 50 };
+
     // Cada alerta de Inicio: su interruptor y los días (sin días, la de JW Hub).
     private readonly Dictionary<string, (Switch Activa, Entry? Dias)> _alertas = new();
 
@@ -50,6 +53,10 @@ public partial class AvisosPage : ContentPage
         SwTiempo.Toggled += (_, _) => Guardar();
         SwProgramaWeb.Toggled += (_, _) => Guardar();
         PickerDiaCca.SelectedIndexChanged += (_, _) => Guardar();
+
+        PickerCombustible.ItemsSource = PorcentajesCombustible.Select(p => $"{p} %").ToList();
+        SwCombustible.Toggled += (_, _) => Guardar();
+        PickerCombustible.SelectedIndexChanged += (_, _) => Guardar();
         HoraCca.PropertyChanged += Hora_PropertyChanged;
         HoraS303.PropertyChanged += Hora_PropertyChanged;
         HoraRevision.PropertyChanged += HoraRevision_PropertyChanged;
@@ -83,6 +90,10 @@ public partial class AvisosPage : ContentPage
             SwTiempo.IsToggled = _ajustes.TiempoActivo;
 
             SwProgramaWeb.IsToggled = _ajustes.ProgramaWebActivo;
+
+            SwCombustible.IsToggled = _ajustes.CombustibleActivo;
+            int porcentaje = Array.IndexOf(PorcentajesCombustible, _ajustes.CombustibleMinimo);
+            PickerCombustible.SelectedIndex = porcentaje >= 0 ? porcentaje : Array.IndexOf(PorcentajesCombustible, 15);
 
             foreach (var (tipo, fila) in _alertas)
             {
@@ -126,6 +137,13 @@ public partial class AvisosPage : ContentPage
 
             _ajustes.ProgramaWebActivo = SwProgramaWeb.IsToggled;
 
+            _ajustes.CombustibleActivo = SwCombustible.IsToggled;
+
+            if (PickerCombustible.SelectedIndex >= 0)
+            {
+                _ajustes.CombustibleMinimo = PorcentajesCombustible[PickerCombustible.SelectedIndex];
+            }
+
             foreach (var (tipo, fila) in _alertas)
             {
                 int dias = _ajustes.DiasAlerta(tipo);
@@ -157,6 +175,10 @@ public partial class AvisosPage : ContentPage
             SCCosmos.Mobile.Platforms.Android.RecordatoriosVisitaScheduler.Revisar();
 
             _ = AlertasNotificacionService.ActualizarAsync();
+
+            // Con otro porcentaje, el surtidor del widget (rojo o no) y el aviso, al día.
+            SCCosmos.Mobile.Platforms.Android.SccosmosWidgetProvider.ActualizarCoche();
+            SCCosmos.Mobile.Platforms.Android.CocheAndroid.RevisarAvisoCombustible();
         }
         catch (Exception ex)
         {

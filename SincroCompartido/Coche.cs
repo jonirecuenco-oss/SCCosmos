@@ -34,6 +34,9 @@ public static class Coche
 
     public sealed record KmPuestos(long Km, DateTime Cuando);
 
+    /// <summary>En reserva: el combustible, por debajo del mínimo de Avisos.</summary>
+    public static bool EnReserva(Lectura lectura, int minimo) => lectura.Combustible is int c && c < minimo;
+
     /// <summary>El combustible (%) de la respuesta a 01 2F.</summary>
     public static int? CombustibleDe(string? recibido) =>
         PruebaCoche.DatosDe("012F", recibido) is { Length: >= 1 } d ? (int)Math.Round(d[0] * 100 / 255.0) : null;
@@ -111,9 +114,11 @@ public static class Coche
     /// Para Inicio: «64 % de combustible · 187.512 km» y, debajo, cuándo y quién
     /// («Leído hoy a las 16:02 (Jonatán)»).
     /// </summary>
-    public static (string Datos, string Cuando) Texto(Lectura lectura, DateTime ahora, string nombreSc, string nombreEsposa)
+    public static (string Datos, string Cuando) Texto(Lectura lectura, DateTime ahora, string nombreSc, string nombreEsposa, int minimo = 0)
     {
-        string combustible = lectura.Combustible is int c ? $"{c} % de combustible" : "Combustible sin leer";
+        string combustible = lectura.Combustible is int c
+            ? $"{c} % de combustible" + (c < minimo ? " (reserva)" : "")
+            : "Combustible sin leer";
 
         string km = lectura.Km is long k
             ? Km(k)
@@ -138,9 +143,11 @@ public static class Coche
     /// Para el widget, en una línea: «64 % · 187.512 km» y, aparte, cuándo
     /// («hoy, 16:02», «ayer, 18:30» o «22/11, 9:15»).
     /// </summary>
-    public static (string Datos, string Cuando) TextoWidget(Lectura lectura, DateTime ahora)
+    public static (string Datos, string Cuando) TextoWidget(Lectura lectura, DateTime ahora, int minimo = 0)
     {
-        string combustible = lectura.Combustible is int c ? $"{c} %" : "–";
+        string combustible = lectura.Combustible is int c
+            ? $"{c} %" + (c < minimo ? " (reserva)" : "")
+            : "–";
         string km = lectura.Km is long k ? Km(k) : "faltan los km";
 
         string dia = lectura.Cuando.Date == ahora.Date ? "hoy"
