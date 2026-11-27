@@ -63,6 +63,17 @@ public sealed class ServicioCoche : Service
             return StartCommandResult.NotSticky;
         }
 
+        // Con la app cerrada, la sincronización no está en marcha: así llegan
+        // durante el viaje los km de otro móvil y salen las lecturas de este.
+        try
+        {
+            SincronizacionMobile.Iniciar();
+        }
+        catch (Exception ex)
+        {
+            RegistroErrores.Anotar(ex, "Coche.Sincro");
+        }
+
         if (_parar is null)
         {
             var parar = new CancellationTokenSource();
@@ -147,6 +158,15 @@ public sealed class ServicioCoche : Service
             }
 
             conexion?.Dispose();
+
+            // Las últimas lecturas, a los demás (si hay red), antes de parar.
+            try
+            {
+                SincronizacionMobile.VaciarPendientesAsync(TimeSpan.FromSeconds(20)).Wait(TimeSpan.FromSeconds(25));
+            }
+            catch (Exception)
+            {
+            }
         }
     }
 

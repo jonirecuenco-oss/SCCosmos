@@ -104,7 +104,7 @@ public partial class ConfiguracionPage : ContentPage
                 ? "Bluetooth del coche: " + nombre
                 : "Elegir el Bluetooth del coche";
 
-            if (SCCosmos.Sincro.Coche.LecturaDe(DatabaseHelper.ObtenerConfiguracion(SCCosmos.Sincro.Coche.ClaveLectura, "")) is not { } lectura)
+            if (SCCosmos.Sincro.Coche.Ultima(clave => DatabaseHelper.ObtenerConfiguracion(clave, "")) is not { } lectura)
             {
                 LblCoche.Text = nombre.Length > 0 ? "Todavía no hay ninguna lectura del coche." : "";
                 return;

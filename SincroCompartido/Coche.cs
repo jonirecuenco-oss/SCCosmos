@@ -43,10 +43,13 @@ public static class Coche
         PruebaCoche.DatosDe("0131", recibido) is { Length: >= 2 } d ? d[0] * 256 + d[1] : null;
 
     /// <summary>
-    /// Una lectura nueva, con los km calculados y la base al día. Los km puestos
-    /// a mano después de la base valen desde esta lectura; si el contador baja
-    /// (en el taller se borraron las averías y vuelve a 0), se sigue desde los km
-    /// de la lectura anterior. Lo que no se haya podido leer queda como estaba.
+    /// Una lectura nueva, con los km calculados y la base al día. Los km se cuentan
+    /// desde lo último que se sabe: la base o, si es más reciente (o este móvil aún
+    /// no la tiene: la lectura llegó de otro móvil), la lectura anterior, que lleva
+    /// sus km y su contador. Los km puestos a mano después de eso valen desde esta
+    /// lectura; si el contador baja (en el taller se borraron las averías y vuelve
+    /// a 0), se sigue desde los km que se tenían. Lo que no se haya podido leer
+    /// queda como estaba.
     /// </summary>
     public static (Lectura Lectura, Base? Base) Aplicar(
         DateTime cuando,
@@ -57,27 +60,51 @@ public static class Coche
         Base? baseActual,
         KmPuestos? puestos)
     {
-        Base? nueva = baseActual;
+        Base? calibracion = baseActual;
+
+        Base? referencia =
+            anterior is { Km: long kmAnterior, Contador: int contadorAnterior }
+            && (calibracion is null || anterior.Cuando > calibracion.Cuando)
+                ? new Base(kmAnterior, contadorAnterior, anterior.Cuando)
+                : calibracion;
 
         if (contador is int c)
         {
-            if (puestos is not null && (nueva is null || puestos.Cuando > nueva.Cuando))
+            if (puestos is not null && (referencia is null || puestos.Cuando > referencia.Cuando))
             {
-                nueva = new Base(puestos.Km, c, cuando);
+                calibracion = referencia = new Base(puestos.Km, c, cuando);
             }
-            else if (nueva is not null && c < (anterior?.Contador ?? nueva.Contador))
+            else if (referencia is not null && c < referencia.Contador)
             {
-                nueva = new Base(anterior?.Km ?? nueva.Km, 0, cuando);
+                calibracion = referencia = new Base(referencia.Km, 0, cuando);
             }
         }
 
         int? contadorFinal = contador ?? anterior?.Contador;
 
-        long? km = nueva is not null && contadorFinal is int cuenta
-            ? nueva.Km + (cuenta - nueva.Contador)
+        long? km = referencia is not null && contadorFinal is int cuenta
+            ? referencia.Km + (cuenta - referencia.Contador)
             : anterior?.Km;
 
-        return (new Lectura(cuando, quien, combustible ?? anterior?.Combustible, contadorFinal, km), nueva);
+        return (new Lectura(cuando, quien, combustible ?? anterior?.Combustible, contadorFinal, km), calibracion);
+    }
+
+    /// <summary>
+    /// La última lectura, para enseñarla. Si llegó sin km (de un móvil que aún no
+    /// tenía desde dónde contarlos), se cuentan aquí con la base de este.
+    /// </summary>
+    public static Lectura? Ultima(Func<string, string> leerConfiguracion)
+    {
+        Lectura? lectura = LecturaDe(leerConfiguracion(ClaveLectura));
+
+        if (lectura is { Km: null, Contador: int c }
+            && BaseDe(leerConfiguracion(ClaveBase)) is { } calibracion
+            && c >= calibracion.Contador)
+        {
+            return lectura with { Km = calibracion.Km + (c - calibracion.Contador) };
+        }
+
+        return lectura;
     }
 
     /// <summary>

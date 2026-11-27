@@ -693,8 +693,8 @@ public class SccosmosWidgetProvider : AppWidgetProvider
     {
         try
         {
-            if (SCCosmos.Sincro.Coche.LecturaDe(
-                    SCCosmos.Mobile.Data.DatabaseHelper.ObtenerConfiguracion(SCCosmos.Sincro.Coche.ClaveLectura, ""))
+            if (SCCosmos.Sincro.Coche.Ultima(
+                    clave => SCCosmos.Mobile.Data.DatabaseHelper.ObtenerConfiguracion(clave, ""))
                 is not { } lectura)
             {
                 vistas.SetViewVisibility(Resource.Id.widget_coche, global::Android.Views.ViewStates.Gone);

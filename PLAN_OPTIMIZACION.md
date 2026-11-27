@@ -539,6 +539,12 @@ Datos medidos: el registro nuevo está completo (39 tablas, 14.321 filas, 0 sin 
 - 25/11/2026 · v2.1.87 (pedido por el usuario): el coche también en el widget. En la cabecera fija, bajo el día: surtidor (widget_combustible, vectorial, #A7AEB8) bajo el icono de la app, «64 % · 187.578 km» en negrita alineado con «Hoy» y «hoy, 8:45» apagado (Coche.TextoWidget). Sin lectura no sale; al tocarla, la app. Tras cada lectura, CocheAndroid llama a SccosmosWidgetProvider.ActualizarCoche (PartiallyUpdateAppWidget: solo esa línea, sin recargar la lista).
   - 180/180 comprobaciones (TextoWidget, en la del coche). Emulador: widget del escritorio con una lectura metida en su base (luego restaurada idéntica y emulador cerrado).
 - 25/11/2026 · Publicada la v2.1.87.
+- 27/11/2026 · v2.1.88 (fallo avisado por el usuario): el móvil de su esposa no tenía los km hasta guardarlos en él. Causa: la sincronización del móvil solo arranca con la app abierta (App.xaml.cs) y la lectura del coche es en segundo plano, así que su móvil leía sin haber recibido nunca la base del otro.
+  - ServicioCoche arranca la sincronización (SincronizacionMobile.Iniciar, que no hace nada si ya está) y al terminar envía lo pendiente (VaciarPendientesAsync, 20 s).
+  - Coche.Aplicar cuenta desde lo último que se sabe: la base o, si es más reciente o no hay base, la lectura anterior (km y contador). Los km puestos solo valen si son posteriores a eso. Antes, sin base, se congelaban los km o se volvía a los puestos (km de menos).
+  - Coche.Ultima: una lectura sin km se completa con la base de este dispositivo al enseñarla (Inicio del móvil y del PC, Configuración y widget).
+  - 181/181 comprobaciones (una nueva con el caso del otro móvil). La primera compilación falló por falta de memoria del PC (una pestaña de Firefox del usuario con 18 GB); la cerró él.
+- 27/11/2026 · Publicada la v2.1.88.
 
 ### v2.1.3 — 31/10/2026 (Windows; antes = 2.1.2 instalada, dos rondas alternas)
 

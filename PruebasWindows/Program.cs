@@ -435,6 +435,19 @@ internal static class Programa
             $"{cocheL1.Km} {cocheL2.Km} {cocheL3.Km} {cocheL4.Km} {cocheL4.Combustible} {cocheSinKm.Km?.ToString() ?? "-"} "
             + $"{SCCosmos.Sincro.Coche.ContadorDe("7E8 04 41 31 8D F8")} {SCCosmos.Sincro.Coche.CombustibleDe("7E8 03 41 2F A4\r\r>")} {SCCosmos.Sincro.Coche.ContadorDe("NO DATA")?.ToString() ?? "-"}",
             "187500 187556 187568 190000 58 - 36344 64 -");
+        // El otro móvil: tiene la última lectura (sincronizada) pero no la base, o ni siquiera la
+        // lectura (sin km): sigue contando desde esa lectura, sin volver a los km puestos a mano.
+        var cocheConfig = new Dictionary<string, string>
+        {
+            [SCCosmos.Sincro.Coche.ClaveLectura] = SCCosmos.Sincro.Coche.Json(cocheL2 with { Km = null, Cuando = t0.AddHours(2) }),
+            [SCCosmos.Sincro.Coche.ClaveBase] = SCCosmos.Sincro.Coche.Json(cocheB2!)
+        };
+        Ver("Coche: el otro móvil sigue desde la última lectura (sin la base) y una lectura sin km se completa con la base",
+            $"{SCCosmos.Sincro.Coche.Aplicar(t0.AddMinutes(40), "Esposa", 59, 36420, cocheL2, null, new SCCosmos.Sincro.Coche.KmPuestos(187500, t0)).Lectura.Km} "
+            + $"{SCCosmos.Sincro.Coche.Aplicar(t0.AddMinutes(40), "Esposa", 59, 36420, cocheL2, null, null).Lectura.Km} "
+            + $"{SCCosmos.Sincro.Coche.Aplicar(t0.AddMinutes(40), "Esposa", 59, 36420, cocheL2, cocheB2, null).Lectura.Km} "
+            + $"{SCCosmos.Sincro.Coche.Ultima(clave => cocheConfig.TryGetValue(clave, out string? valor) ? valor : "")?.Km}",
+            "187576 187576 187576 187556");
         Ver("Coche: en Configuración (JSON) y el texto de Inicio",
             string.Join("|",
                 SCCosmos.Sincro.Coche.LecturaDe(SCCosmos.Sincro.Coche.Json(cocheL2)) == cocheL2,

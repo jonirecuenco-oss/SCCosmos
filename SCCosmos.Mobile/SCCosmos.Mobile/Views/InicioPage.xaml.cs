@@ -853,7 +853,7 @@ public partial class InicioPage : ContentPage, IActualizableMobile
     {
         try
         {
-            if (SCCosmos.Sincro.Coche.LecturaDe(DatabaseHelper.ObtenerConfiguracion(SCCosmos.Sincro.Coche.ClaveLectura, "")) is not { } lectura)
+            if (SCCosmos.Sincro.Coche.Ultima(clave => DatabaseHelper.ObtenerConfiguracion(clave, "")) is not { } lectura)
             {
                 TarjetaCoche.IsVisible = false;
                 return;

@@ -85,7 +85,7 @@ namespace SCCosmos
         {
             try
             {
-                if (SCCosmos.Sincro.Coche.LecturaDe(DatabaseHelper.ObtenerConfiguracion(SCCosmos.Sincro.Coche.ClaveLectura, "")) is not { } lectura)
+                if (SCCosmos.Sincro.Coche.Ultima(clave => DatabaseHelper.ObtenerConfiguracion(clave, "")) is not { } lectura)
                 {
                     TarjetaCoche.Visibility = Visibility.Collapsed;
                     return;
