@@ -297,6 +297,14 @@ public partial class PersonaDetallePage : ContentPage
             SwSaludDelicada.IsToggled =
                 _extra?.SaludDelicada
                 ?? false;
+
+            TxtContactoEmergencia.Text =
+                _extra?.ContactoEmergencia
+                ?? "";
+
+            TxtTelefonoEmergencia.Text =
+                _extra?.TelefonoEmergencia
+                ?? "";
         }
         catch
         {
@@ -1192,6 +1200,15 @@ public partial class PersonaDetallePage : ContentPage
             bool saludDelicada =
                 SwSaludDelicada.IsToggled;
 
+            bool aprobado =
+                SwAprobado.IsToggled;
+
+            string contactoEmergencia =
+                TxtContactoEmergencia.Text?.Trim() ?? "";
+
+            string telefonoEmergencia =
+                TxtTelefonoEmergencia.Text?.Trim() ?? "";
+
             await Task.Run(() =>
             {
                 DatabaseHelper
@@ -1201,9 +1218,15 @@ public partial class PersonaDetallePage : ContentPage
                 DatabaseHelper
                     .ActualizarCamposExtraPersonaMobile(
                         _personaId,
-                        SwAprobado.IsToggled,
+                        aprobado,
                         requisito,
                         saludDelicada);
+
+                DatabaseHelper
+                    .GuardarEmergenciaPersonaMobile(
+                        _personaId,
+                        contactoEmergencia,
+                        telefonoEmergencia);
             });
 
             // Los cambios se envían de inmediato (dispositivos y carpeta):

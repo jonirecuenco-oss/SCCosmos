@@ -1081,7 +1081,7 @@ namespace SCCosmos
                                     NombreComun, Direccion, Latitud, Longitud, ConyugeId, EmailJW,
                                     Notas, OrigenRegistro, AprobadoExhibidores, RequisitoHoras,
                                     TrasladoAnteriorId, TrasladoSiguienteId, FechaTraslado,
-                                    RequisitoFijado, SaludDelicada
+                                    RequisitoFijado, SaludDelicada, ContactoEmergencia, TelefonoEmergencia
                                 )
                                 VALUES
                                 (
@@ -1093,7 +1093,9 @@ namespace SCCosmos
                                     $notas, $origen, $aprobado, $requisito,
                                     $anteriorId, 0, $fechaTraslado,
                                     COALESCE((SELECT RequisitoFijado FROM Personas WHERE Id = $anteriorId), 0),
-                                    COALESCE((SELECT SaludDelicada FROM Personas WHERE Id = $anteriorId), 0)
+                                    COALESCE((SELECT SaludDelicada FROM Personas WHERE Id = $anteriorId), 0),
+                                    (SELECT ContactoEmergencia FROM Personas WHERE Id = $anteriorId),
+                                    (SELECT TelefonoEmergencia FROM Personas WHERE Id = $anteriorId)
                                 );
                                 SELECT last_insert_rowid();";
 
@@ -1316,6 +1318,48 @@ namespace SCCosmos
                       AND (COALESCE(RequisitoFijado, 0) <> $fijado OR COALESCE(SaludDelicada, 0) <> $salud);";
                 cmd.Parameters.AddWithValue("$fijado", Math.Max(0, requisitoFijado));
                 cmd.Parameters.AddWithValue("$salud", saludDelicada ? 1 : 0);
+                cmd.Parameters.AddWithValue("$id", personaId);
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        /// <summary>
+        /// Contacto de emergencia (nombre y parentesco) y su teléfono (los guarda el
+        /// registro raíz, como el requisito).
+        /// </summary>
+        public static (string Contacto, string Telefono) ObtenerEmergenciaPersona(int personaId)
+        {
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                connection.Open();
+                var cmd = connection.CreateCommand();
+                cmd.CommandText = @"
+                    SELECT COALESCE(ContactoEmergencia, ''), COALESCE(TelefonoEmergencia, '')
+                    FROM Personas
+                    WHERE Id = COALESCE(NULLIF((SELECT PersonaRaizId FROM Personas WHERE Id = $id), 0), $id);";
+                cmd.Parameters.AddWithValue("$id", personaId);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    return reader.Read()
+                        ? (reader.GetString(0), reader.GetString(1))
+                        : ("", "");
+                }
+            }
+        }
+
+        public static void GuardarEmergenciaPersona(int personaId, string contacto, string telefono)
+        {
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                connection.Open();
+                var cmd = connection.CreateCommand();
+                cmd.CommandText = @"
+                    UPDATE Personas
+                    SET ContactoEmergencia = $contacto, TelefonoEmergencia = $telefono
+                    WHERE Id = COALESCE(NULLIF((SELECT PersonaRaizId FROM Personas WHERE Id = $id), 0), $id)
+                      AND (COALESCE(ContactoEmergencia, '') <> $contacto OR COALESCE(TelefonoEmergencia, '') <> $telefono);";
+                cmd.Parameters.AddWithValue("$contacto", (contacto ?? "").Trim());
+                cmd.Parameters.AddWithValue("$telefono", (telefono ?? "").Trim());
                 cmd.Parameters.AddWithValue("$id", personaId);
                 cmd.ExecuteNonQuery();
             }

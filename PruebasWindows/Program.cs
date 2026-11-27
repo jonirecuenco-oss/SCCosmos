@@ -425,6 +425,14 @@ internal static class Programa
                 AvisosTarea.MinutosDe(3, 2), AvisosTarea.MinutosDe(0, 1), AvisosTarea.MinutosDe(53, 3), AvisosTarea.MinutosDe(52, 3),
                 AvisosTarea.Descomponer(4320), AvisosTarea.Descomponer(90), AvisosTarea.EsDeLaLista(60), AvisosTarea.EsDeLaLista(45)),
             "45 minutos antes|3 semanas antes|1 minuto antes|3 días antes|1 día antes|Sin aviso|4320|-1|-1|524160|(3, 2)|(90, 0)|True|False");
+        long raizEmergencia = Ficha("E1", "Persona de prueba de emergencia");
+        Exec($"INSERT INTO Personas (Nombre, CongregacionCodigo, PersonaRaizId, MesHistorico) VALUES ('Persona de prueba de emergencia', 'E1', {raizEmergencia}, '2026-10')");
+        int versionEmergencia = int.Parse(Texto("SELECT MAX(Id) FROM Personas"), CultureInfo.InvariantCulture);
+        DatabaseHelper.GuardarEmergenciaPersona(versionEmergencia, " Ana (hija) ", " 600 111 222 ");
+        Ver("Personas: contacto de emergencia en el registro raíz (también desde una versión del mes)",
+            $"{DatabaseHelper.ObtenerEmergenciaPersona((int)raizEmergencia)} {DatabaseHelper.ObtenerEmergenciaPersona(versionEmergencia)} "
+            + Texto($"SELECT COALESCE(ContactoEmergencia, '-') FROM Personas WHERE Id = {versionEmergencia}"),
+            "(Ana (hija), 600 111 222) (Ana (hija), 600 111 222) -");
         var t0 = new DateTime(2026, 11, 24, 16, 0, 0);
         var (cocheL1, cocheB1) = SCCosmos.Sincro.Coche.Aplicar(t0.AddMinutes(2), "SC", 64, 36344, null, null, new SCCosmos.Sincro.Coche.KmPuestos(187500, t0));
         var (cocheL2, cocheB2) = SCCosmos.Sincro.Coche.Aplicar(t0.AddMinutes(30), "SC", 60, 36400, cocheL1, cocheB1, new SCCosmos.Sincro.Coche.KmPuestos(187500, t0));

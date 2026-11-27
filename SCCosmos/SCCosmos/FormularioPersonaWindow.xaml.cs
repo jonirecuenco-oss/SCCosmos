@@ -287,6 +287,10 @@ namespace SCCosmos
                 var requisito = DatabaseHelper.ObtenerRequisitoPersona(PersonaActualizada.Id);
                 TxtRequisitoAnual.Text = requisito.RequisitoFijado > 0 ? requisito.RequisitoFijado.ToString() : "";
                 ChkSaludDelicada.IsChecked = requisito.SaludDelicada;
+
+                var emergencia = DatabaseHelper.ObtenerEmergenciaPersona(PersonaActualizada.Id);
+                TxtContactoEmergencia.Text = emergencia.Contacto;
+                TxtTelefonoEmergencia.Text = emergencia.Telefono;
             }
 
             ActualizarPanelRequisito();
@@ -1738,6 +1742,11 @@ namespace SCCosmos
                     PersonaActualizada.Id,
                     RequisitoFijadoEnPantalla(),
                     ChkSaludDelicada.IsChecked == true);
+
+                DatabaseHelper.GuardarEmergenciaPersona(
+                    PersonaActualizada.Id,
+                    TxtContactoEmergencia.Text,
+                    TxtTelefonoEmergencia.Text);
 
                 foreach (var item in _actividadEditada)
                 {

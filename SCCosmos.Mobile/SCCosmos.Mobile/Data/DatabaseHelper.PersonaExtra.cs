@@ -26,6 +26,8 @@ public static partial class DatabaseHelper
         public int RequisitoHoras { get; set; }
     public int RequisitoFijado { get; set; }
     public bool SaludDelicada { get; set; }
+        public string ContactoEmergencia { get; set; } = "";
+        public string TelefonoEmergencia { get; set; } = "";
         public int TrasladoAnteriorId { get; set; }
         public int TrasladoSiguienteId { get; set; }
         public string FechaTraslado { get; set; } = "";
@@ -64,7 +66,9 @@ public static partial class DatabaseHelper
                 FechaEliminacion,
                 PersonaRaizId,
                 (SELECT COALESCE(r.RequisitoFijado, 0) FROM Personas r WHERE r.Id = COALESCE(NULLIF(Personas.PersonaRaizId, 0), Personas.Id)),
-                (SELECT COALESCE(r.SaludDelicada, 0) FROM Personas r WHERE r.Id = COALESCE(NULLIF(Personas.PersonaRaizId, 0), Personas.Id))
+                (SELECT COALESCE(r.SaludDelicada, 0) FROM Personas r WHERE r.Id = COALESCE(NULLIF(Personas.PersonaRaizId, 0), Personas.Id)),
+                (SELECT COALESCE(r.ContactoEmergencia, '') FROM Personas r WHERE r.Id = COALESCE(NULLIF(Personas.PersonaRaizId, 0), Personas.Id)),
+                (SELECT COALESCE(r.TelefonoEmergencia, '') FROM Personas r WHERE r.Id = COALESCE(NULLIF(Personas.PersonaRaizId, 0), Personas.Id))
             FROM Personas
             WHERE Id = $id
             LIMIT 1;
@@ -112,8 +116,54 @@ public static partial class DatabaseHelper
                 Entero(reader, 8),
 
             SaludDelicada =
-                Entero(reader, 9) == 1
+                Entero(reader, 9) == 1,
+
+            ContactoEmergencia =
+                Texto(reader, 10, ""),
+
+            TelefonoEmergencia =
+                Texto(reader, 11, "")
         };
+    }
+
+
+    /// <summary>
+    /// Contacto de emergencia (nombre y parentesco) y su teléfono: en el registro
+    /// raíz, como el requisito.
+    /// </summary>
+    public static void GuardarEmergenciaPersonaMobile(
+        int personaId,
+        string contacto,
+        string telefono)
+    {
+        if (personaId <= 0)
+        {
+            return;
+        }
+
+        using var connection =
+            new SqliteConnection(
+                ConnectionString);
+
+        connection.Open();
+
+        using SqliteCommand cmd =
+            connection.CreateCommand();
+
+        cmd.CommandText =
+            """
+            UPDATE Personas
+            SET ContactoEmergencia = $contacto,
+                TelefonoEmergencia = $telefono
+            WHERE Id = COALESCE(NULLIF((SELECT PersonaRaizId FROM Personas WHERE Id = $id), 0), $id)
+              AND (COALESCE(ContactoEmergencia, '') <> $contacto OR COALESCE(TelefonoEmergencia, '') <> $telefono);
+            """;
+
+        cmd.Parameters.AddWithValue("$contacto", (contacto ?? "").Trim());
+        cmd.Parameters.AddWithValue("$telefono", (telefono ?? "").Trim());
+        cmd.Parameters.AddWithValue("$id", personaId);
+
+        cmd.ExecuteNonQuery();
     }
 
 

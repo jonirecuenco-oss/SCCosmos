@@ -2700,7 +2700,7 @@ internal static class Program
                 // con una versión anterior, no debe borrarlas.
                 Escribir(
                     dbN,
-                    $"UPDATE Personas SET RequisitoFijado = 420, SaludDelicada = 1 WHERE Id = {fila2}; "
+                    $"UPDATE Personas SET RequisitoFijado = 420, SaludDelicada = 1, TelefonoEmergencia = '600111222' WHERE Id = {fila2}; "
                     + $"UPDATE ActividadPersonas SET Credito = 33 WHERE Id = {actividad};");
 
                 CambioSincro Antiguo(string tabla, long id, string cambiar, string valor)
@@ -2729,7 +2729,7 @@ internal static class Program
                         string columna =
                             lector.GetName(i);
 
-                        if (columna is not ("RequisitoFijado" or "SaludDelicada" or "Credito"))
+                        if (columna is not ("RequisitoFijado" or "SaludDelicada" or "Credito" or "ContactoEmergencia" or "TelefonoEmergencia"))
                         {
                             fila[columna] =
                                 lector.IsDBNull(i)
@@ -2763,7 +2763,7 @@ internal static class Program
                 string persona =
                     LeerTexto(
                         dbN,
-                        $"SELECT NombreComun || '/' || RequisitoFijado || '/' || SaludDelicada FROM Personas WHERE Id = {fila2};");
+                        $"SELECT NombreComun || '/' || RequisitoFijado || '/' || SaludDelicada || '/' || TelefonoEmergencia FROM Personas WHERE Id = {fila2};");
 
                 string mes =
                     LeerTexto(
@@ -2773,21 +2773,21 @@ internal static class Program
                 // Y entre dispositivos actuales, viajan.
                 Escribir(
                     _dbA,
-                    $"UPDATE Personas SET RequisitoFijado = 300, SaludDelicada = 1 WHERE Id = {fila3};");
+                    $"UPDATE Personas SET RequisitoFijado = 300, SaludDelicada = 1, ContactoEmergencia = 'Ana (hija)' WHERE Id = {fila3};");
 
                 bool viaja =
                     await EsperarAsync(
                         () =>
                             LeerTexto(
                                 _dbB,
-                                $"SELECT RequisitoFijado || '/' || SaludDelicada FROM Personas WHERE Id = {fila3};")
-                            == "300/1",
+                                $"SELECT RequisitoFijado || '/' || SaludDelicada || '/' || ContactoEmergencia FROM Personas WHERE Id = {fila3};")
+                            == "300/1/Ana (hija)",
                         30);
 
                 bool correcto =
                     reintenta
                     && rellenado
-                    && persona == "SINCRO-T31/420/1"
+                    && persona == "SINCRO-T31/420/1/600111222"
                     && mes == "SINCRO-T31/33"
                     && viaja;
 

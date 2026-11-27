@@ -391,6 +391,23 @@
                                 Keyboard="Email"
                                 TextColor="{StaticResource TextoPrincipal}"/>
 
+                            <Label Text="Contacto de emergencia (nombre y parentesco)"
+                                   TextColor="{StaticResource TextoTerciario}"
+                                   FontSize="12"/>
+
+                            <Entry
+                                x:Name="TxtContactoEmergencia"
+                                TextColor="{StaticResource TextoPrincipal}"/>
+
+                            <Label Text="Teléfono de emergencia"
+                                   TextColor="{StaticResource TextoTerciario}"
+                                   FontSize="12"/>
+
+                            <Entry
+                                x:Name="TxtTelefonoEmergencia"
+                                Keyboard="Telephone"
+                                TextColor="{StaticResource TextoPrincipal}"/>
+
                             <Label Text="Dirección"
                                    TextColor="{StaticResource TextoTerciario}"
                                    FontSize="12"/>

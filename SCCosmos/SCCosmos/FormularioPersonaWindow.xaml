@@ -152,6 +152,22 @@
                             <ListBox x:Name="ListaDirecciones" DisplayMemberPath="display_name" SelectionChanged="ListaDirecciones_SelectionChanged" Background="Transparent" BorderThickness="0"/>
                         </Border>
                     </Popup>
+
+                    <!-- Contacto de emergencia (lo guarda el registro raíz) -->
+                    <Grid Margin="0,10,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="200"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Margin="0,0,5,0">
+                            <TextBlock Text="Contacto de emergencia (nombre y parentesco)" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,3"/>
+                            <ui:TextBox x:Name="TxtContactoEmergencia"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Margin="5,0,0,0">
+                            <TextBlock Text="Teléfono de emergencia" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,3"/>
+                            <ui:TextBox x:Name="TxtTelefonoEmergencia"/>
+                        </StackPanel>
+                    </Grid>
                 </StackPanel>
                 <StackPanel Grid.Row="3" Grid.Column="3" Margin="5">
                     <TextBlock Text="Teléfono" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,3"/>

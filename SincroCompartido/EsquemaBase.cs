@@ -100,6 +100,20 @@ public static class EsquemaBase
             "SaludDelicada",
             "INTEGER DEFAULT 0");
 
+        // Contacto de emergencia (nombre y parentesco) y su teléfono: los guarda
+        // el registro raíz, como el requisito.
+        AnadirSiFalta(
+            conexion,
+            "Personas",
+            "ContactoEmergencia",
+            "TEXT");
+
+        AnadirSiFalta(
+            conexion,
+            "Personas",
+            "TelefonoEmergencia",
+            "TEXT");
+
         // Horas en otras actividades que se suman a las de predicación.
         AnadirSiFalta(
             conexion,
