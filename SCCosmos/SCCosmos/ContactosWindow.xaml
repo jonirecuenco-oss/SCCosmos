@@ -1,0 +1,184 @@
+<Window x:Class="SCCosmos.ContactosWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        Title="Datos de contacto" Height="780" Width="1280"
+        WindowStartupLocation="CenterOwner" Background="{DynamicResource ApplicationBackgroundBrush}">
+
+    <Window.Resources>
+        <!-- Lo nuevo y, debajo, lo que hay ahora («antes: …», «sin cambios»…). -->
+        <DataTemplate x:Key="PlantillaDato">
+            <StackPanel VerticalAlignment="Center" Margin="0,4,6,4">
+                <TextBlock Text="{Binding Nuevo}" TextWrapping="Wrap">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Cambia}" Value="True">
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                <TextBlock Text="{Binding Nota}" FontSize="11" TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
+            </StackPanel>
+        </DataTemplate>
+    </Window.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0">
+            <TextBlock x:Name="TxtTitulo" Text="Datos de contacto" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+            <TextBlock x:Name="TxtSubtitulo" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+        </StackPanel>
+
+        <!-- QUÉ ES CADA COLUMNA -->
+        <Expander x:Name="ExpColumnas" Grid.Row="1" Margin="0,14,0,0" Header="Qué es cada columna">
+            <ScrollViewer MaxHeight="230" VerticalScrollBarVisibility="Auto" Margin="0,6,0,0">
+                <ItemsControl x:Name="ListaTablas">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Margin="0,0,0,6">
+                                <TextBlock Text="{Binding Titulo}" FontWeight="SemiBold" FontSize="12.5" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="0,0,0,6"/>
+                                <ItemsControl ItemsSource="{Binding Columnas}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="6" Padding="8,6" Margin="0,0,8,8" Width="232">
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Titulo}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip="{Binding Titulo}" Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
+                                                    <TextBlock Text="{Binding Ejemplo}" FontSize="11" TextTrimming="CharacterEllipsis" ToolTip="{Binding Ejemplo}" Foreground="{DynamicResource TextFillColorTertiaryBrush}" Margin="0,1,0,5"/>
+                                                    <ComboBox ItemsSource="{Binding Opciones}" DisplayMemberPath="Texto" SelectedItem="{Binding Eleccion, Mode=TwoWay}"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Expander>
+
+        <!-- RESUMEN Y QUÉ SE GUARDA -->
+        <Grid Grid.Row="2" Margin="0,12,0,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="TxtResumen" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,16,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="Guardar:" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                <CheckBox x:Name="ChkTelefono" Content="Teléfono" IsChecked="True" Margin="0,0,10,0" Click="CampoGuardado_Click"/>
+                <CheckBox x:Name="ChkEmail" Content="Email" IsChecked="True" Margin="0,0,10,0" Click="CampoGuardado_Click"/>
+                <CheckBox x:Name="ChkDireccion" Content="Dirección" IsChecked="True" Margin="0,0,10,0" Click="CampoGuardado_Click"/>
+                <CheckBox x:Name="ChkEmergencia" Content="Contacto de emergencia" IsChecked="True" Click="CampoGuardado_Click"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- UNA FILA POR PERSONA DE LA LISTA -->
+        <DataGrid x:Name="GridContactos" Grid.Row="3" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" IsReadOnly="True"
+                  HeadersVisibility="Column" SelectionMode="Single" SelectionUnit="FullRow"
+                  EnableRowVirtualization="True" VirtualizingPanel.ScrollUnit="Pixel"
+                  Background="Transparent" RowBackground="Transparent" BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="{DynamicResource DividerStrokeColorDefaultBrush}">
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow">
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
+                    <Setter Property="MinHeight" Value="48"/>
+                </Style>
+            </DataGrid.RowStyle>
+            <DataGrid.Columns>
+                <DataGridTemplateColumn Header="Guardar" Width="70">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <CheckBox IsChecked="{Binding Aplicar, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding TienePersona}"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center" MinWidth="0"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTemplateColumn Header="En la lista" Width="1.7*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel VerticalAlignment="Center" Margin="0,4,6,4">
+                                <TextBlock Text="{Binding Nombre}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                <TextBlock Text="{Binding Origen}" FontSize="11" Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTemplateColumn Header="Persona" Width="2.2*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel VerticalAlignment="Center" Margin="0,4,8,4">
+                                <ComboBox ItemsSource="{Binding Opciones}" DisplayMemberPath="Texto" TextSearch.TextPath="Nombre" MaxDropDownHeight="320"
+                                          SelectedItem="{Binding Seleccion, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                <TextBlock Text="{Binding TextoParecido}" FontSize="11" Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="2,3,0,0"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTemplateColumn Header="Teléfono" Width="1.4*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <ContentPresenter Content="{Binding Telefono}" ContentTemplate="{StaticResource PlantillaDato}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTemplateColumn Header="Email" Width="1.6*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <ContentPresenter Content="{Binding Email}" ContentTemplate="{StaticResource PlantillaDato}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTemplateColumn Header="Dirección" Width="2*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <ContentPresenter Content="{Binding Direccion}" ContentTemplate="{StaticResource PlantillaDato}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTemplateColumn Header="Contacto de emergencia" Width="1.8*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <ContentPresenter Content="{Binding Emergencia}" ContentTemplate="{StaticResource PlantillaDato}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- BOTONES -->
+        <Grid Grid.Row="4" Margin="0,14,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="Solo se guardan las filas marcadas y, de ellas, lo que trae la lista: lo que en la lista está vacío no borra nada. Las coordenadas del mapa no cambian."
+                       TextWrapping="Wrap" FontSize="12" VerticalAlignment="Center" Margin="0,0,16,0" Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <ui:Button Content="Omitir" Cursor="Hand" Appearance="Secondary" Margin="0,0,10,0" Click="BtnOmitir_Click"/>
+                <ui:Button x:Name="BtnGuardar" Content="Guardar" Cursor="Hand" Appearance="Primary" Icon="{ui:SymbolIcon Checkmark24}" Click="BtnGuardar_Click"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

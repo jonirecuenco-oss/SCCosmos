@@ -42,6 +42,8 @@ internal static class Programa
             GuardarFicha();
             ActividadInicio();
             RegistroS13Excel();
+            DatosDeContacto();
+            PasoDatosDeContacto();
             TiempoHorasPasadas();
             TiempoTercerDia();
             PueblosDelTerritorio();
@@ -230,6 +232,217 @@ internal static class Programa
             Ver("S-13 Excel: territorio sin asignaciones", lista.Where(t => t.Nombre == "T 3").Select(t => t.AsignadoA + "|" + t.UltimaFechaCompletado).FirstOrDefault(), "|01/05/2024");
         }
         finally { try { File.Delete(ruta); } catch (IOException) { } }
+    }
+
+    // Las listas de contacto de las congregaciones, cada una con su formato (datos inventados).
+    private static void DatosDeContacto()
+    {
+        static string Fila(ConvertidorContactos.Contacto c) => $"{c.Nombre}|{c.Telefono}|{c.Email}|{c.Direccion}|{c.ContactoEmergencia}|{c.TelefonoEmergencia}";
+        static string Contactos(string ruta) => string.Join(" / ", ConvertidorContactos.SinRepetir(
+            ConvertidorContactos.Leer(ruta).Select(t => ConvertidorContactos.Analizar(t)).SelectMany(ConvertidorContactos.Contactos)).Select(Fila));
+
+        Ver("Contactos: qué es cada columna por su título",
+            string.Join(",", new[] { "Teléfono móvil:", "E-mail", "Nombre y apellidos", "APELLIDOS", "Persona de contacto", "Tlf. emergencia", "Domicilio", "C.P.", "Parentesco", "Grupo", "Calle Mayor 5", "ana@correo.es" }
+                .Select(ConvertidorContactos.CampoDeTitulo)),
+            "Telefono,Email,NombreCompleto,Apellidos,ContactoEmergencia,TelefonoEmergencia,Direccion,CodigoPostal,Parentesco,Ignorar,Ignorar,Ignorar");
+
+        string carpeta = Path.Combine(Path.GetTempPath(), "contactos_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(carpeta);
+        try
+        {
+            string csv = Path.Combine(carpeta, "lista.csv");
+            File.WriteAllText(csv, string.Join("\r\n",
+                "LISTA DE CONTACTOS · CONGREGACIÓN DE PRUEBA",
+                "Nombre;Apellidos;Teléfono;Email;Dirección;C.P.;Localidad;Contacto de emergencia",
+                "Ana;Ruiz Gil;600 111 222;ana@correo.es;C/ Mayor, 5;6800;Mérida;María (madre) 600 123 456",
+                "Nombre;Apellidos;Teléfono;Email;Dirección;C.P.;Localidad;Contacto de emergencia",
+                "Luis;Pérez Sanz;;;;;;",
+                "Eva;Gil Toro;924 000 111;;\"Plaza Sol; 3\";06800;Mérida;"), new System.Text.UTF8Encoding(true));
+            var tablaCsv = ConvertidorContactos.Leer(csv).Single();
+            Ver("Contactos CSV: fila de títulos (tras el rótulo) y sin la marca del principio",
+                $"{ConvertidorContactos.Analizar(tablaCsv).FilaTitulos} {tablaCsv.Filas[0][0][..5]}", "1 LISTA");
+            Ver("Contactos CSV: datos de cada fila (sin títulos repetidos ni filas sin datos)",
+                string.Join(" / ", ConvertidorContactos.Contactos(ConvertidorContactos.Analizar(tablaCsv)).Select(c => Fila(c) + "|" + c.Fila)),
+                "Ana Ruiz Gil|600 111 222|ana@correo.es|C/ Mayor, 5, 06800 Mérida|María (madre)|600 123 456|3 / Eva Gil Toro|924 000 111||Plaza Sol; 3, 06800 Mérida|||6");
+
+            string latin = Path.Combine(carpeta, "latin.csv");
+            File.WriteAllBytes(latin, System.Text.Encoding.Latin1.GetBytes("Nombre,Teléfono\r\nJosé Gómez,600 222 333\r\n"));
+            Ver("Contactos CSV en Latin-1 y con comas", Contactos(latin), "José Gómez|600 222 333||||");
+
+            string sinTitulos = Path.Combine(carpeta, "sin_titulos.csv");
+            File.WriteAllText(sinTitulos, string.Join("\n",
+                "1;Ana Ruiz Gil;C/ Mayor 5;06800 Mérida;600 111 222;ana@correo.es;María Gil 611 222 333",
+                "2;Luis Pérez Sanz;Avda. Sol 3;06800 Mérida;924 000 111;;Juan Pérez 622 333 444",
+                "3;Eva Gil Toro;Plaza Luna 7;06800 Mérida;633 444 555;eva@correo.es;Rosa Toro 644 555 666"));
+            var analisisSinTitulos = ConvertidorContactos.Analizar(ConvertidorContactos.Leer(sinTitulos).Single());
+            Ver("Contactos sin títulos: qué es cada columna por lo que contiene",
+                string.Join(",", analisisSinTitulos.Columnas), "Ignorar,NombreCompleto,Direccion,Localidad,Telefono,Email,ContactoEmergencia");
+            Ver("Contactos sin títulos: el contacto de emergencia y su teléfono, aparte",
+                Fila(ConvertidorContactos.Contactos(analisisSinTitulos)[1]), "Luis Pérez Sanz|924 000 111||Avda. Sol 3, 06800 Mérida|Juan Pérez|622 333 444");
+
+            const string H = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
+            static string T(string r, string texto) => $"<c r=\"{r}\" t=\"inlineStr\"><is><t>{texto}</t></is></c>";
+            static string S(string r, int indice) => $"<c r=\"{r}\" t=\"s\"><v>{indice}</v></c>";
+            static string N(string r, string valor) => $"<c r=\"{r}\"><v>{valor}</v></c>";
+            static string R(int n, params string[] celdas) => $"<row r=\"{n}\">{string.Concat(celdas)}</row>";
+            string xlsx = Path.Combine(carpeta, "grupos.xlsx");
+            using (var zip = ZipFile.Open(xlsx, ZipArchiveMode.Create))
+            {
+                void Entrada(string nombre, string xml) { using var w = new StreamWriter(zip.CreateEntry(nombre).Open()); w.Write(xml); }
+                Entrada("xl/workbook.xml", $"<workbook xmlns=\"{H}\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\"><sheets>"
+                    + "<sheet name=\"Grupo 2\" sheetId=\"2\" r:id=\"rId2\"/><sheet name=\"Grupo 1\" sheetId=\"1\" r:id=\"rId1\"/></sheets></workbook>");
+                Entrada("xl/_rels/workbook.xml.rels", "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">"
+                    + "<Relationship Id=\"rId1\" Target=\"worksheets/sheet1.xml\"/><Relationship Id=\"rId2\" Target=\"/xl/worksheets/sheet2.xml\"/></Relationships>");
+                Entrada("xl/sharedStrings.xml", $"<sst xmlns=\"{H}\"><si><t>Nombre</t></si><si><r><t>Telé</t></r><r><t>fono</t></r></si></sst>");
+                Entrada("xl/worksheets/sheet1.xml", $"<worksheet xmlns=\"{H}\"><sheetData>"
+                    + R(1, T("A1", "Grupo 1"))
+                    + R(2, S("A2", 0), S("B2", 1), T("C2", "C.P."), S("D2", 0), S("E2", 1), T("F2", "C.P."))
+                    + R(3, T("A3", "Ana Ruiz"), N("B3", "6.00111222E8"), N("C3", "6800"), T("D3", "Luis Pérez"), T("E3", "924 000 111"))
+                    + "</sheetData></worksheet>");
+                Entrada("xl/worksheets/sheet2.xml", $"<worksheet xmlns=\"{H}\"><sheetData>"
+                    + R(1, T("A1", "Nombre y apellidos"), T("B1", "Email"))
+                    + R(2, T("A2", "Eva Gil"), T("B2", "eva@correo.es"))
+                    + R(3, T("A3", "Ana Ruiz"), T("B3", "ana@correo.es"))
+                    + "</sheetData></worksheet>");
+            }
+            Ver("Contactos Excel: las hojas en su orden y las listas una al lado de otra, separadas",
+                string.Join(", ", ConvertidorContactos.Leer(xlsx).Select(t => t.Nombre)), "Grupo 2, Grupo 1 (1), Grupo 1 (2)");
+            Ver("Contactos Excel: teléfono y código postal guardados como número; la misma persona en dos hojas, una vez",
+                Contactos(xlsx), "Eva Gil||eva@correo.es||| / Ana Ruiz|600111222|ana@correo.es|06800|| / Luis Pérez|924 000 111||||");
+
+            const string W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+            static string P(string texto) => "<w:p>" + string.Concat(texto.Split('\t').Select((t, i) =>
+                (i > 0 ? "<w:r><w:tab/></w:r>" : "") + (t.Length > 0 ? $"<w:r><w:t xml:space=\"preserve\">{t}</w:t></w:r>" : ""))) + "</w:p>";
+            static string C(string texto, int ancho = 1) => "<w:tc>" + (ancho > 1 ? $"<w:tcPr><w:gridSpan w:val=\"{ancho}\"/></w:tcPr>" : "") + P(texto) + "</w:tc>";
+            static string F(params string[] celdas) => "<w:tr>" + string.Concat(celdas) + "</w:tr>";
+            static string Tbl(params string[] filas) => "<w:tbl>" + string.Concat(filas) + "</w:tbl>";
+            string Docx(string nombre, params string[] cuerpo)
+            {
+                string ruta = Path.Combine(carpeta, nombre);
+                using var zip = ZipFile.Open(ruta, ZipArchiveMode.Create);
+                using var w = new StreamWriter(zip.CreateEntry("word/document.xml").Open());
+                w.Write($"<w:document xmlns:w=\"{W}\"><w:body>" + string.Concat(cuerpo) + "</w:body></w:document>");
+                return ruta;
+            }
+
+            string tabla = Docx("tabla.docx", Tbl(
+                F(C("LISTA DEL GRUPO", 3)),
+                F(C("Nombre"), C("Teléfono"), C("Persona de contacto")),
+                F(C("Ana Ruiz"), C("600 111 222"), C("María (madre) 600 123 456")),
+                F(C("Luis Pérez Sanz", 2), C("Eva (esposa)"))));
+            Ver("Contactos Word: tabla con celdas unidas", Contactos(tabla),
+                "Ana Ruiz|600 111 222|||María (madre)|600 123 456 / Luis Pérez Sanz||||Eva (esposa)|");
+
+            string fichas = Docx("fichas.docx",
+                Tbl(F(C("Ana Ruiz Gil", 2)), F(C("Teléfono:"), C("600 111 222")), F(C("Email"), C("ana@correo.es"))),
+                P(""),
+                Tbl(F(C("Luis Pérez", 2)), F(C("Teléfono"), C("924 000 111")), F(C("Dirección:"), C("C/ Sol, 3"))),
+                Tbl(F(C("Eva Gil", 2)), F(C("Teléfono: 611 222 333", 2)), F(C("Persona de contacto"), C("Juan (hijo)"))));
+            Ver("Contactos Word: una ficha (tabla) por persona", Contactos(fichas),
+                "Ana Ruiz Gil|600 111 222|ana@correo.es||| / Luis Pérez|924 000 111||C/ Sol, 3|| / Eva Gil|611 222 333|||Juan (hijo)|");
+
+            string texto = Docx("texto.docx", P("Nombre\tTeléfono\t\tEmail"), P("Ana Ruiz\t\t600 111 222\tana@correo.es"), P(""), P("Luis Pérez Sanz\t924 000 111"));
+            Ver("Contactos Word: lista escrita con tabulaciones", Contactos(texto),
+                "Ana Ruiz|600 111 222|ana@correo.es||| / Luis Pérez Sanz|924 000 111||||");
+        }
+        finally { try { Directory.Delete(carpeta, true); } catch (IOException) { } }
+
+        Ver("Contactos: parecido de nombres (orden, tildes, tratamientos, una letra, otra persona, una sola palabra)",
+            string.Join(" ", ConvertidorContactos.Parecido("GARCÍA PÉREZ, Juan", "Juan García Pérez"), ConvertidorContactos.Parecido("Juan García", "Juan García Pérez"),
+                ConvertidorContactos.Parecido("Hno. Juan García Pérez (anciano)", "García Pérez, Juan"), ConvertidorContactos.Parecido("María García Pérez", "Marta García Pérez"),
+                ConvertidorContactos.Parecido("Ana López", "Juan Pérez"), ConvertidorContactos.Parecido("Juan", "Juan García")),
+            "100 90 100 88 0 60");
+
+        var vinculos = ConvertidorContactos.Vincular(ConvertidorContactos.Parecidos(
+            new[] { "Juan García", "Marta García Pérez", "Pedro Sanz", "J. Ruiz" },
+            new[] { new[] { "García Pérez, Juan", "Juan García" }, new[] { "García Pérez, María" }, new[] { "García López, Juan" }, new[] { "Ruiz Gil, José" }, new[] { "Ruiz Gil, Jaime" } }));
+        Ver("Contactos: vínculo con la persona más parecida, sin repetir, y «dudoso» si hay otra casi igual",
+            string.Join(" ", vinculos.Select(x => x.Persona < 0 ? "-" : x.Persona + (x.Dudoso ? "?" : ""))) + " " + vinculos[1].Porcentaje,
+            "0 1 - 3? 88");
+
+        var tablaMapeo = new ConvertidorContactos.Tabla
+        {
+            Nombre = "T",
+            Filas = new() { new[] { "Nombre", "Tlf. casa", "Otro" }, new[] { "Ana Ruiz", "924 000 111", "600 111 222" } }
+        };
+        var mapeo = ConvertidorContactos.Analizar(tablaMapeo);
+        mapeo.Columnas[2] = ConvertidorContactos.Campo.Telefono;
+        var recordado = ConvertidorContactos.ColumnasDe(ConvertidorContactos.ColumnasJson(new[] { mapeo }, "{\"movil\":\"Telefono\"}"));
+        var otraVez = ConvertidorContactos.Analizar(tablaMapeo, recordado);
+        Ver("Contactos: lo elegido para cada título se recuerda (sumado a lo de antes)",
+            $"{recordado.Count} {string.Join(",", otraVez.Columnas)} {ConvertidorContactos.Contactos(otraVez).Single().Telefono}",
+            "4 Nombre,Telefono,Telefono 924 000 111 / 600 111 222");
+    }
+
+    // El paso 2 de «Importar actividad»: vínculos, revisión y lo que se guarda (datos inventados).
+    private static void PasoDatosDeContacto()
+    {
+        long ana = Ficha("K7", "Ruiz Gil, Ana");
+        long luis = Ficha("K7", "Pérez Sanz, Luis");
+        long eva = Ficha("K7", "Gómez Toro, Eva");
+        long jose = Ficha("K7", "Sanz Ruiz, José Antonio");
+        long baja = Ficha("K7", "Ruiz Baja, Pedro");
+        Exec($"UPDATE Personas SET Telefono = '924 000 000', Direccion = 'Calle Mayor, 5, 06800 Mérida, Badajoz' WHERE Id = {ana}");
+        Exec($"UPDATE Personas SET Telefono = '600 222 333' WHERE Id = {luis}");
+        Exec($"UPDATE Personas SET FechaEliminacion = '2026-01-01' WHERE Id = {baja}");
+        Exec($"INSERT INTO Personas (Nombre, CongregacionCodigo, PersonaRaizId, MesHistorico) VALUES ('Ruiz Gil, Ana', 'K7', {ana}, '2026-10')");
+        long versionAna = long.Parse(Texto("SELECT MAX(Id) FROM Personas"), CultureInfo.InvariantCulture);
+
+        string csv = Path.Combine(Path.GetTempPath(), $"contactos_{Guid.NewGuid():N}.csv");
+        try
+        {
+            File.WriteAllText(csv, string.Join("\n",
+                "Nombre y apellidos;Teléfono;Email;Dirección;Contacto de emergencia;Teléfono de emergencia",
+                "Ana Ruiz Gil;600 111 222;ana@correo.es;C/ Mayor 5;María Gil (madre);611 000 111",
+                "Luis Pérez;600 222 333;;;;",
+                "Eva Gómez Toro;;;Plaza Sol 3;;",
+                "Pepe Sanz;600 444 555;;;;",
+                "Pedro Ruiz Baja;600 999 999;;;;"));
+
+            var ventana = new ContactosWindow("K7", "Congregación inventada", csv, true);
+            ventana.Cargar();
+            var filas = (List<ContactosWindow.FilaContacto>)((DataGrid)ventana.FindName("GridContactos")).ItemsSource;
+            string Fila(string nombre) => filas.Where(f => f.Nombre == nombre).Select(f => $"{f.Seleccion.Nombre}|{f.Aplicar}|{f.TextoParecido}").Single();
+
+            Ver("Contactos, paso 2: vínculos y marcas (solas, las seguras con algo nuevo; sin las bajas)",
+                string.Join(" / ", Fila("Ana Ruiz Gil"), Fila("Luis Pérez"), Fila("Eva Gómez Toro"), Fila("Pepe Sanz"), Fila("Pedro Ruiz Baja")),
+                "Ruiz Gil, Ana|True|100 % · segura / Pérez Sanz, Luis|False|90 % · segura / Gómez Toro, Eva|True|100 % · segura / |False|sin persona / |False|sin persona");
+
+            var filaAna = filas.Single(f => f.Nombre == "Ana Ruiz Gil");
+            Ver("Contactos, paso 2: lo de ahora y lo nuevo de cada campo",
+                $"{filaAna.Telefono.Nota} | {filaAna.Email.Nota} | {filaAna.Direccion.Nota} | {filaAna.Emergencia.Nuevo} · {filaAna.Emergencia.Nota}",
+                "antes: 924 000 000 | nuevo (no tenía) | sin cambios | María Gil (madre) · 611 000 111 · nuevo (no tenía)");
+
+            var filaPepe = filas.Single(f => f.Nombre == "Pepe Sanz");
+            filaPepe.Seleccion = filaPepe.Opciones.Single(o => o.Persona?.Id == jose);
+            Ver("Contactos, paso 2: elegida a mano, se marca", $"{filaPepe.Aplicar} {filaPepe.TextoParecido.EndsWith("· elegida a mano", StringComparison.Ordinal)}", "True True");
+            Ver("Contactos, paso 2: el resumen", ((TextBlock)ventana.FindName("TxtResumen")).Text,
+                "5 en la lista · 4 con persona (3 seguras) · 1 sin persona · 3 para guardar");
+
+            Ver("Contactos, paso 2: guarda las marcadas", ventana.GuardarMarcadas(), 3);
+            Ver("Contactos, paso 2: en la base, solo lo nuevo (la emergencia en la raíz) y sin borrar nada",
+                string.Join(" / ",
+                    Texto($"SELECT Telefono || '|' || Email || '|' || Direccion || '|' || ContactoEmergencia || '|' || TelefonoEmergencia FROM Personas WHERE Id = {ana}"),
+                    Texto($"SELECT COALESCE(ContactoEmergencia, '-') FROM Personas WHERE Id = {versionAna}"),
+                    Texto($"SELECT Telefono FROM Personas WHERE Id = {luis}"),
+                    Texto($"SELECT COALESCE(Telefono, '-') || '|' || Direccion FROM Personas WHERE Id = {eva}"),
+                    Texto($"SELECT Telefono FROM Personas WHERE Id = {jose}"),
+                    Texto($"SELECT COALESCE(Telefono, '-') FROM Personas WHERE Id = {baja}")),
+                "600 111 222|ana@correo.es|Calle Mayor, 5, 06800 Mérida, Badajoz|María Gil (madre)|611 000 111 / - / 600 222 333 / -|Plaza Sol 3 / 600 444 555 / -");
+
+            List<ContactosWindow.ColumnaContacto> Columnas(ContactosWindow v) =>
+                ((List<ContactosWindow.TablaContacto>)((ItemsControl)v.FindName("ListaTablas")).ItemsSource).SelectMany(t => t.Columnas).ToList();
+            var segunda = new ContactosWindow("K7", "Congregación inventada", csv, false);
+            segunda.Cargar();
+            Columnas(segunda).Single(c => c.Titulo == "Email").Eleccion = ContactosWindow.OpcionCampo.De(ConvertidorContactos.Campo.Ignorar);
+            int otraVez = segunda.GuardarMarcadas();
+            var tercera = new ContactosWindow("K7", "Congregación inventada", csv, false);
+            tercera.Cargar();
+            Ver("Contactos, paso 2: ya al día no hay nada que guardar, y lo elegido a mano en una columna se recuerda",
+                $"{otraVez} {DatabaseHelper.ObtenerConfiguracion(ConvertidorContactos.ClaveColumnas("K7"), "")} {Columnas(tercera).Single(c => c.Titulo == "Email").Eleccion.Texto}",
+                "0 {\"email\":\"Ignorar\"} No usar");
+        }
+        finally { try { File.Delete(csv); } catch (IOException) { } }
     }
 
     // AEMET quita de hoy los tramos pasados: se conservan los de la previsión anterior.

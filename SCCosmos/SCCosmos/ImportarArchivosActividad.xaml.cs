@@ -14,6 +14,7 @@ namespace SCCosmos
         private string _rutaS21;
         private string _rutaTerritorios;
         private string _rutaJsonConvertido;
+        private string _rutaContactos;
         private readonly string _mesReferencia;
 
         public ImportarArchivosActividad(string congreCodigo, string congreNombre, bool yaImportado, string mesReferencia = null)
@@ -31,6 +32,95 @@ namespace SCCosmos
             {
                 PanelAviso.Visibility = Visibility.Visible;
             }
+
+            BuscarContactosSubidos();
+        }
+
+        // La lista de contactos que subieron los ancianos para esta visita, si la hay.
+        private void BuscarContactosSubidos()
+        {
+            try
+            {
+                string carpeta = System.IO.Path.Combine(
+                    ProgramaWebPc.CarpetaArchivos(_congreCodigo, _mesReferencia),
+                    SCCosmos.Sincro.ArchivosProgramaWeb.Carpeta("contactos") ?? "Datos de contacto");
+
+                if (!System.IO.Directory.Exists(carpeta))
+                {
+                    return;
+                }
+
+                var archivos = new System.IO.DirectoryInfo(carpeta).GetFiles()
+                    .OrderByDescending(f => f.LastWriteTimeUtc)
+                    .ToList();
+                var legible = archivos.FirstOrDefault(f => SCCosmos.Sincro.ConvertidorContactos.Extensiones.Contains(f.Extension.ToLowerInvariant()));
+
+                if (legible is not null)
+                {
+                    ElegirContactos(legible.FullName, "la subieron los ancianos");
+                }
+                else if (archivos.Count > 0)
+                {
+                    TxtContactos.Text = $"Los ancianos subieron «{archivos[0].Name}», que todavía no se puede leer: solo Excel (.xlsx), Word (.docx) o CSV.";
+                }
+            }
+            catch (Exception)
+            {
+                // Sin la carpeta de los ancianos se elige a mano.
+            }
+        }
+
+        private void BtnContactos_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog ofd = new OpenFileDialog
+            {
+                Filter = "Listas de contactos (*.xlsx;*.docx;*.csv)|*.xlsx;*.docx;*.csv;*.txt|Todos los archivos (*.*)|*.*",
+                Title = "Seleccionar la lista de contactos"
+            };
+
+            if (ofd.ShowDialog() == true)
+            {
+                ElegirContactos(ofd.FileName, null);
+            }
+        }
+
+        // Se lee ya, para decir cuántas personas trae (o por qué no se puede leer).
+        private void ElegirContactos(string ruta, string origen)
+        {
+            try
+            {
+                var lista = SCCosmos.Sincro.ConvertidorContactos.SinRepetir(
+                    SCCosmos.Sincro.ConvertidorContactos.Leer(ruta)
+                        .Select(t => SCCosmos.Sincro.ConvertidorContactos.Analizar(t))
+                        .SelectMany(SCCosmos.Sincro.ConvertidorContactos.Contactos));
+
+                _rutaContactos = ruta;
+                TxtContactos.Text = System.IO.Path.GetFileName(ruta)
+                    + (origen is null ? "" : $" ({origen})")
+                    + (lista.Count == 0
+                        ? " · no se ve ninguna persona con datos: en el paso siguiente elige qué es cada columna."
+                        : $" · {lista.Count} {(lista.Count == 1 ? "persona" : "personas")} con datos");
+                TxtContactos.Foreground = System.Windows.Media.Brushes.LightGreen;
+                TxtContactos.FontStyle = FontStyles.Normal;
+            }
+            catch (Exception ex)
+            {
+                _rutaContactos = null;
+                TxtContactos.Text = $"{System.IO.Path.GetFileName(ruta)}: {ex.Message}";
+                TxtContactos.Foreground = (System.Windows.Media.Brush)FindResource("TextFillColorTertiaryBrush");
+                TxtContactos.FontStyle = FontStyles.Italic;
+            }
+        }
+
+        // Paso 2: los datos de contacto, con las personas ya al día.
+        private bool AbrirContactos(bool trasPersonas)
+        {
+            var ventana = new ContactosWindow(_congreCodigo, _congreNombre, _rutaContactos, trasPersonas)
+            {
+                Owner = Window.GetWindow(this)
+            };
+
+            return ventana.ShowDialog() == true;
         }
 
         private void BtnS21_Click(object sender, RoutedEventArgs e)
@@ -268,7 +358,20 @@ namespace SCCosmos
         {
             if (string.IsNullOrEmpty(_rutaS21))
             {
-                MessageBox.Show("Debes seleccionar al menos el archivo S-21 para continuar.", "Archivo faltante", MessageBoxButton.OK, MessageBoxImage.Warning);
+                // Solo los datos de contacto: no es una importación de actividad (la
+                // semana no se marca como importada).
+                if (!string.IsNullOrEmpty(_rutaContactos))
+                {
+                    if (AbrirContactos(false))
+                    {
+                        this.DialogResult = false;
+                        this.Close();
+                    }
+
+                    return;
+                }
+
+                MessageBox.Show("Debes seleccionar al menos el archivo S-21 (o solo la lista de contactos) para continuar.", "Archivo faltante", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -296,6 +399,11 @@ namespace SCCosmos
 
                     if (syncDashboard.ShowDialog() == true)
                     {
+                        if (!string.IsNullOrEmpty(_rutaContactos))
+                        {
+                            AbrirContactos(true);
+                        }
+
                         this.DialogResult = true;
                         this.Close();
                     }

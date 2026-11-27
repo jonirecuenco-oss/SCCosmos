@@ -1366,6 +1366,57 @@ namespace SCCosmos
         }
 
         /// <summary>
+        /// Lo revisado al importar la lista de contactos de una congregación. Solo cambia
+        /// lo que no es null: teléfono, email y dirección en la fila de la persona, y el
+        /// contacto de emergencia en su registro raíz. Todo en una transacción.
+        /// </summary>
+        public static void GuardarDatosContacto(
+            IEnumerable<(int PersonaId, string Telefono, string Email, string Direccion, string ContactoEmergencia, string TelefonoEmergencia)> cambios)
+        {
+            using (var connection = new SqliteConnection(ConnectionString))
+            {
+                connection.Open();
+                using (var transaccion = connection.BeginTransaction())
+                {
+                    var cmd = connection.CreateCommand();
+                    cmd.Transaction = transaccion;
+                    cmd.CommandText = @"
+                        UPDATE Personas
+                        SET Telefono = COALESCE($telefono, Telefono),
+                            Email = COALESCE($email, Email),
+                            Direccion = COALESCE($direccion, Direccion)
+                        WHERE Id = $id
+                          AND ($telefono IS NOT NULL OR $email IS NOT NULL OR $direccion IS NOT NULL);
+
+                        UPDATE Personas
+                        SET ContactoEmergencia = COALESCE($contacto, ContactoEmergencia),
+                            TelefonoEmergencia = COALESCE($telefonoEmergencia, TelefonoEmergencia)
+                        WHERE Id = COALESCE(NULLIF((SELECT PersonaRaizId FROM Personas WHERE Id = $id), 0), $id)
+                          AND ($contacto IS NOT NULL OR $telefonoEmergencia IS NOT NULL);";
+                    var id = cmd.Parameters.Add("$id", SqliteType.Integer);
+                    var telefono = cmd.Parameters.Add("$telefono", SqliteType.Text);
+                    var email = cmd.Parameters.Add("$email", SqliteType.Text);
+                    var direccion = cmd.Parameters.Add("$direccion", SqliteType.Text);
+                    var contacto = cmd.Parameters.Add("$contacto", SqliteType.Text);
+                    var telefonoEmergencia = cmd.Parameters.Add("$telefonoEmergencia", SqliteType.Text);
+
+                    foreach (var cambio in cambios)
+                    {
+                        id.Value = cambio.PersonaId;
+                        telefono.Value = (object)cambio.Telefono?.Trim() ?? DBNull.Value;
+                        email.Value = (object)cambio.Email?.Trim() ?? DBNull.Value;
+                        direccion.Value = (object)cambio.Direccion?.Trim() ?? DBNull.Value;
+                        contacto.Value = (object)cambio.ContactoEmergencia?.Trim() ?? DBNull.Value;
+                        telefonoEmergencia.Value = (object)cambio.TelefonoEmergencia?.Trim() ?? DBNull.Value;
+                        cmd.ExecuteNonQuery();
+                    }
+
+                    transaccion.Commit();
+                }
+            }
+        }
+
+        /// <summary>
         /// Solo las personas con algo distinto de lo normal: son muy pocas.
         /// </summary>
         public static Dictionary<int, (int RequisitoFijado, bool SaludDelicada)> ObtenerRequisitosPersonales()
