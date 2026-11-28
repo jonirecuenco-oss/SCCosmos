@@ -15,11 +15,11 @@ namespace SCCosmos.Sincro;
 
 /// <summary>
 /// Los datos de contacto que mandan las congregaciones, cada una con su formato:
-/// las tablas de un Excel (.xlsx), de un Word (.docx) o de un CSV; qué es cada
-/// columna, por su título (o, sin títulos, por lo que contiene); los datos de cada
-/// fila; y cuánto se parece cada nombre al de una persona, para vincularlos.
+/// las tablas de un Excel (.xlsx), de un Word (.docx), de un PDF con texto o de un CSV;
+/// qué es cada columna, por su título (o, sin títulos, por lo que contiene); los datos
+/// de cada fila; y cuánto se parece cada nombre al de una persona, para vincularlos.
 /// </summary>
-public static class ConvertidorContactos
+public static partial class ConvertidorContactos
 {
     public enum Campo
     {
@@ -55,7 +55,7 @@ public static class ConvertidorContactos
     };
 
     /// <summary>Los archivos que se pueden leer.</summary>
-    public static readonly string[] Extensiones = { ".xlsx", ".docx", ".csv", ".txt" };
+    public static readonly string[] Extensiones = { ".xlsx", ".docx", ".pdf", ".csv", ".txt" };
 
     /// <summary>Una tabla del archivo (una hoja del Excel, una tabla del Word…), celda a celda.</summary>
     public sealed class Tabla
@@ -101,6 +101,7 @@ public static class ConvertidorContactos
         {
             ".xlsx" => LeerXlsx(ruta),
             ".docx" => LeerDocx(ruta),
+            ".pdf" => LeerPdf(ruta),
             ".csv" or ".txt" => new List<Tabla> { LeerCsv(LeerTexto(ruta), Path.GetFileNameWithoutExtension(ruta)) },
             _ => throw new NotSupportedException("Ese tipo de archivo todavía no se puede leer. Guárdalo como Excel (.xlsx) o Word (.docx).")
         })
@@ -348,11 +349,14 @@ public static class ConvertidorContactos
     /// </summary>
     private static Tabla? Fichas(List<Tabla> bloques)
     {
-        List<Tabla> fichas = bloques
-            .Where(b => b.Columnas <= 4 && b.Filas.Count(f => Rotulos(f).Any(r => CampoDeTitulo(r.Titulo) != Campo.Ignorar)) >= 2)
-            .ToList();
+        // Las filas con un dato con rótulo («Teléfono: 600…»; no los títulos solos).
+        static int ConDatos(Tabla bloque) =>
+            bloque.Filas.Count(f => Rotulos(f).Any(r => r.Valor.Length > 0 && CampoDeTitulo(r.Titulo) != Campo.Ignorar));
 
-        if (fichas.Count < 3 || fichas.Count < bloques.Count * 0.7)
+        // Al menos tres fichas con dos datos, y casi todos los bloques con alguno.
+        List<Tabla> fichas = bloques.Where(b => ConDatos(b) >= 1).ToList();
+
+        if (bloques.Count(b => b.Columnas <= 4 && ConDatos(b) >= 2) < 3 || fichas.Count < bloques.Count * 0.7)
         {
             return null;
         }
@@ -364,29 +368,65 @@ public static class ConvertidorContactos
         foreach (Tabla ficha in fichas)
         {
             var valores = new Dictionary<string, string>();
+            string suelta = "";
+            string? abierto = null;
+            int sueltasDelAbierto = 0;
+
+            void Poner(string rotulo, string valor)
+            {
+                string titulo = titulos.FirstOrDefault(t => Normalizar(t) == Normalizar(rotulo)) ?? rotulo;
+
+                if (!titulos.Contains(titulo))
+                {
+                    titulos.Add(titulo);
+                }
+
+                valores[titulo] = valores.TryGetValue(titulo, out string? antes) && antes.Length > 0
+                    ? (valor.Length > 0 ? antes + " / " + valor : antes)
+                    : valor;
+            }
 
             foreach (string[] fila in ficha.Filas)
             {
                 List<(string Titulo, string Valor)> pares = Rotulos(fila);
-                string[] llenas = fila.Select(c => c.Trim()).Where(c => c.Length > 0).ToArray();
+                string texto = string.Join(" ", fila.Select(c => c.Trim()).Where(c => c.Length > 0));
 
-                // La primera línea suelta es el nombre.
-                if (pares.Count == 0 && llenas.Length == 1 && !valores.ContainsKey(TituloNombre))
+                if (pares.Count > 0)
                 {
-                    pares.Add((TituloNombre, llenas[0]));
-                }
-
-                foreach (var (rotulo, valor) in pares)
-                {
-                    string titulo = titulos.FirstOrDefault(t => Normalizar(t) == Normalizar(rotulo)) ?? rotulo;
-
-                    if (!titulos.Contains(titulo))
+                    foreach (var (rotulo, valor) in pares)
                     {
-                        titulos.Add(titulo);
+                        Poner(rotulo, valor);
                     }
 
-                    valores[titulo] = valores.TryGetValue(titulo, out string? anterior) ? anterior + " / " + valor : valor;
+                    // Un rótulo sin valor en su línea («Emergencia:»): las líneas sueltas que siguen son suyas.
+                    abierto = pares[^1].Valor.Length == 0 ? pares[^1].Titulo : null;
+                    sueltasDelAbierto = 0;
                 }
+                else if (texto.Length == 0)
+                {
+                    continue;
+                }
+                else if (abierto is not null && sueltasDelAbierto < 5)
+                {
+                    Poner(abierto, texto);
+                    sueltasDelAbierto++;
+                }
+                else if (Regex.Match(texto, @"[^\s/;,:]+@[^\s/;,:]+\.[A-Za-z]{2,}") is { Success: true } correo)
+                {
+                    // Un email suelto en la ficha es el suyo.
+                    Poner("Email", correo.Value);
+                }
+                else if (valores.Count == 0 && suelta.Length == 0)
+                {
+                    // La primera línea suelta, antes de ningún rótulo: el nombre (si no hay uno con rótulo).
+                    suelta = texto;
+                }
+            }
+
+            if (suelta.Length > 0
+                && !valores.Any(v => v.Value.Length > 0 && (CampoDeTitulo(v.Key) is Campo.NombreCompleto or Campo.Nombre or Campo.Apellidos)))
+            {
+                Poner(TituloNombre, suelta);
             }
 
             filas.Add(valores);
@@ -408,35 +448,85 @@ public static class ConvertidorContactos
         string[] llenas = fila.Select(c => c.Trim()).Where(c => c.Length > 0).ToArray();
         var pares = new List<(string Titulo, string Valor)>();
 
+        // El valor de un rótulo que no lo trae: la celda siguiente, si no es otro rótulo.
+        string Siguiente(ref int i) =>
+            i + 1 < llenas.Length && !llenas[i + 1].EndsWith(':') && SoloRotulo(llenas[i + 1]) is null ? llenas[++i] : "";
+
         for (int i = 0; i < llenas.Length; i++)
         {
             string celda = llenas[i];
             int dosPuntos = celda.IndexOf(':');
             string antes = dosPuntos > 0 ? celda[..dosPuntos].Trim() : "";
 
-            if (antes.Length > 0
-                && dosPuntos < celda.Length - 1
-                && !antes.Any(char.IsDigit)
-                && antes.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length <= 4)
+            if (antes.Length > 0 && !antes.Any(char.IsDigit) && antes.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length <= 4)
             {
-                pares.Add((antes, celda[(dosPuntos + 1)..].Trim()));
+                // «Teléfono: 600…», o «Grupo:» con su valor en la celda siguiente.
+                string valor = celda[(dosPuntos + 1)..].Trim();
+                pares.Add((antes, valor.Length > 0 ? valor : Siguiente(ref i)));
             }
-            else if (CampoDeTitulo(celda) != Campo.Ignorar && i + 1 < llenas.Length)
+            else if (SoloRotulo(celda) is { } rotulo)
             {
-                pares.Add((celda.TrimEnd(':', ' '), llenas[++i]));
+                pares.Add((rotulo, Siguiente(ref i)));
             }
-            else if (pares.Count > 0)
+            else if (RotuloDelante(celda) is { } delante)
             {
-                // Lo que sigue a un valor (otro teléfono…) va con él.
-                pares[^1] = (pares[^1].Titulo, pares[^1].Valor + " " + celda);
+                pares.Add(delante);
             }
-            else
+            else if (pares.Count > 0 && pares[^1].Valor.Length == 0)
+            {
+                pares[^1] = (pares[^1].Titulo, celda);
+            }
+            else if (pares.Count == 0)
             {
                 break;
             }
         }
 
         return pares;
+    }
+
+    // Las palabras de los rótulos («Teléfono móvil», «Correo electrónico», «Persona de contacto»…).
+    private static readonly HashSet<string> PalabrasDeRotulo = new()
+    {
+        "nombre", "nombres", "apellido", "apellidos", "completo", "y", "de", "del", "la", "el", "en", "caso",
+        "telefono", "telefonos", "tel", "telf", "tlf", "tlfno", "tfno", "movil", "moviles", "fijo", "celular", "whatsapp",
+        "email", "emails", "mail", "correo", "correos", "electronico", "direccion", "direcciones", "domicilio", "domicilios",
+        "localidad", "localidades", "poblacion", "municipio", "cp", "codigo", "postal", "contacto", "contactos", "persona",
+        "emergencia", "emergencias", "urgencia", "urgencias", "parentesco", "relacion", "pariente", "familiar",
+        "otro", "otra", "1", "2", "n", "no", "num", "numero", "personal", "particular", "casa"
+    };
+
+    private static readonly HashSet<string> Conectores = new() { "y", "de", "del", "la", "el", "en" };
+
+    // Si todo el texto es un rótulo («Teléfono móvil», «E-mail:»), el rótulo; si no, null.
+    private static string? SoloRotulo(string texto)
+    {
+        string limpio = texto.Trim().TrimEnd(':').Trim();
+        string[] palabras = Normalizar(limpio).Replace("e mail", "email").Replace("c p", "cp")
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        return palabras.Length is > 0 and <= 6
+               && palabras.All(PalabrasDeRotulo.Contains)
+               && !Conectores.Contains(palabras[^1])
+               && CampoDeTitulo(limpio) != Campo.Ignorar
+            ? limpio
+            : null;
+    }
+
+    // «Dirección Madroño 20», «Teléfono móvil 600…» (sin dos puntos): el rótulo de delante y lo demás.
+    private static (string Titulo, string Valor)? RotuloDelante(string texto)
+    {
+        string[] palabras = texto.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        for (int k = Math.Min(4, palabras.Length - 1); k >= 1; k--)
+        {
+            if (SoloRotulo(string.Join(" ", palabras.Take(k))) is { } rotulo)
+            {
+                return (rotulo, string.Join(" ", palabras.Skip(k)));
+            }
+        }
+
+        return null;
     }
 
     private static string LeerTexto(string ruta)
@@ -532,7 +622,7 @@ public static class ConvertidorContactos
 
         bool telefono = Regex.IsMatch(t, @"\b(tel|telf|tlf|tlfno|tfno|telefono|telefonos|movil|moviles|celular|fijo|whatsapp)\b");
 
-        if (Regex.IsMatch(t, @"\b(emergencia|emergencias|urgencia|urgencias)\b") || t.Contains("persona de contacto") || t.Contains("en caso de"))
+        if (Regex.IsMatch(t, @"\b(emergencia|emergencias|urgencia|urgencias|pariente|parientes|familiar|familiares)\b") || t.Contains("persona de contacto") || t.Contains("en caso de"))
         {
             return telefono ? Campo.TelefonoEmergencia : Campo.ContactoEmergencia;
         }
@@ -691,6 +781,22 @@ public static class ConvertidorContactos
     {
         Campo[] campos = titulos.Select(CampoDeTitulo).ToArray();
 
+        // «Contacto» a secas: con teléfonos, es el suyo; con nombres, el de emergencia.
+        for (int c = 0; c < campos.Length; c++)
+        {
+            if (Normalizar(titulos[c]) is "contacto" or "contactos")
+            {
+                List<string> valores = Valores(tabla, c, filaTitulos);
+
+                if (valores.Count > 0)
+                {
+                    campos[c] = valores.Count(v => v.Count(char.IsDigit) >= 9) >= valores.Count * 0.6 ? Campo.Telefono
+                        : valores.Count(v => v.Count(char.IsLetter) >= 3 && !v.Contains('@')) >= valores.Count * 0.6 ? Campo.ContactoEmergencia
+                        : Campo.Ignorar;
+                }
+            }
+        }
+
         for (int c = 0; c < campos.Length; c++)
         {
             if (campos[c] != Campo.ContactoEmergencia)
@@ -829,8 +935,13 @@ public static class ConvertidorContactos
                 }
                 .Where(s => s.Length > 0));
 
+            // Solo lo que lo parece: un email con su arroba y un teléfono con sus cifras (si una
+            // columna se tomó por otra, no se cuela un número de grupo).
             string telefono = Juntar(Campo.Telefono, " / ");
-            string email = Juntar(Campo.Email, " / ");
+            telefono = telefono.Count(char.IsDigit) >= 6 ? telefono : "";
+            string email = string.Join(" / ", Regex.Matches(Juntar(Campo.Email, " "), @"[^\s/;,:<>()]+@[^\s/;,:<>()]+\.[A-Za-z]{2,}")
+                .Select(m => m.Value)
+                .Distinct(StringComparer.OrdinalIgnoreCase));
             string emergencia = Juntar(Campo.ContactoEmergencia, " · ");
             string telefonoEmergencia = Juntar(Campo.TelefonoEmergencia, " / ");
 
@@ -838,6 +949,17 @@ public static class ConvertidorContactos
             if (telefonoEmergencia.Length == 0)
             {
                 (emergencia, telefonoEmergencia) = SepararTelefono(emergencia);
+            }
+
+            telefonoEmergencia = telefonoEmergencia.Count(char.IsDigit) >= 6 ? telefonoEmergencia : "";
+
+            // En una ficha, el contacto de emergencia puede traer en líneas aparte su email o su
+            // dirección: se quedan el nombre y el parentesco.
+            if (emergencia.Contains(" / "))
+            {
+                emergencia = string.Join(" ", emergencia.Split(" / ")
+                    .Select(p => p.Trim(' ', '/'))
+                    .Where(p => p.Length > 0 && !p.Contains('@') && !p.Any(char.IsDigit)));
             }
 
             string parentesco = Juntar(Campo.Parentesco, " ");

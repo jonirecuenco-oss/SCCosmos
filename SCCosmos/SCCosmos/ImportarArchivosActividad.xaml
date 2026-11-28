@@ -135,7 +135,7 @@
                             <TextBlock Text="· opcional" Foreground="#7E8794" FontSize="13" VerticalAlignment="Center" Margin="6,0,0,0"/>
                         </StackPanel>
 
-                        <TextBlock Text="La lista de teléfonos, emails, direcciones y contactos de emergencia, en Excel (.xlsx), Word (.docx) o CSV. Después de la página de personas verás qué cambia en cada una antes de guardar."
+                        <TextBlock Text="La lista de teléfonos, emails, direcciones y contactos de emergencia, en Excel (.xlsx), Word (.docx), PDF o CSV. Después de la página de personas verás qué cambia en cada una antes de guardar."
                                    Foreground="#7E8794" FontSize="12" Margin="31,0,0,12" TextWrapping="Wrap"/>
 
                         <Grid>

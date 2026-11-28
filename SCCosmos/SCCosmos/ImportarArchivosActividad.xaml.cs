@@ -61,7 +61,7 @@ namespace SCCosmos
                 }
                 else if (archivos.Count > 0)
                 {
-                    TxtContactos.Text = $"Los ancianos subieron «{archivos[0].Name}», que todavía no se puede leer: solo Excel (.xlsx), Word (.docx) o CSV.";
+                    TxtContactos.Text = $"Los ancianos subieron «{archivos[0].Name}», que todavía no se puede leer: solo Excel (.xlsx), Word (.docx), PDF con texto o CSV.";
                 }
             }
             catch (Exception)
@@ -74,7 +74,7 @@ namespace SCCosmos
         {
             OpenFileDialog ofd = new OpenFileDialog
             {
-                Filter = "Listas de contactos (*.xlsx;*.docx;*.csv)|*.xlsx;*.docx;*.csv;*.txt|Todos los archivos (*.*)|*.*",
+                Filter = "Listas de contactos (*.xlsx;*.docx;*.pdf;*.csv)|*.xlsx;*.docx;*.pdf;*.csv;*.txt|Todos los archivos (*.*)|*.*",
                 Title = "Seleccionar la lista de contactos"
             };
 

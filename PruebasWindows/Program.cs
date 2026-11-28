@@ -344,6 +344,81 @@ internal static class Programa
             string texto = Docx("texto.docx", P("Nombre\tTeléfono\t\tEmail"), P("Ana Ruiz\t\t600 111 222\tana@correo.es"), P(""), P("Luis Pérez Sanz\t924 000 111"));
             Ver("Contactos Word: lista escrita con tabulaciones", Contactos(texto),
                 "Ana Ruiz|600 111 222|ana@correo.es||| / Luis Pérez Sanz|924 000 111||||");
+
+            string emergencias = Path.Combine(carpeta, "emergencias.csv");
+            File.WriteAllText(emergencias, string.Join("\n",
+                "Nombre;Contacto;Parentesco;Teléfono pariente",
+                "Luis Ruiz Gil;Ana López Ruiz;hija;600 111 222",
+                "Eva Sanz Toro;Juan Sanz Gil;padre;611 222 333"));
+            var analisisEmergencias = ConvertidorContactos.Analizar(ConvertidorContactos.Leer(emergencias).Single());
+            Ver("Contactos: «Contacto» con nombres y «Teléfono pariente» son de emergencia (no el teléfono de la persona)",
+                string.Join(",", analisisEmergencias.Columnas) + " " + Fila(ConvertidorContactos.Contactos(analisisEmergencias)[0]),
+                "Nombre,ContactoEmergencia,Parentesco,TelefonoEmergencia Luis Ruiz Gil||||Ana López Ruiz (hija)|600 111 222");
+
+            // PDF: una tabla de 45 personas en dos páginas (la segunda sin títulos), con un
+            // rótulo encima y una dirección en dos líneas.
+            string[] nombres = { "Ana", "Luis", "Eva", "Juan", "María", "José", "Rosa", "Pedro", "Carmen" };
+            string[] apellidos = { "Ruiz", "Gil", "Pérez", "Sanz", "Toro" };
+            string[] segundos = { "López", "Martín", "Díaz", "Romero", "Navarro" };
+            string pdfTabla = Path.Combine(carpeta, "tabla.pdf");
+            using (var documento = new iText.Layout.Document(new iText.Kernel.Pdf.PdfDocument(new iText.Kernel.Pdf.PdfWriter(pdfTabla)), iText.Kernel.Geom.PageSize.A4.Rotate()))
+            {
+                documento.Add(new iText.Layout.Element.Paragraph("LISTA DE CONTACTOS DE LA CONGREGACIÓN"));
+                var tablaPdf = new iText.Layout.Element.Table(new float[] { 3, 4, 2, 3 }).UseAllAvailableWidth();
+                foreach (string titulo in new[] { "Nombre y apellidos", "Dirección", "Teléfono", "Email" })
+                    tablaPdf.AddCell(titulo);
+                for (int i = 0; i < 45; i++)
+                {
+                    tablaPdf.AddCell($"{nombres[i % 9]} {apellidos[i / 9]} {segundos[(i / 9 + 1 + i % 4) % 5]}");
+                    tablaPdf.AddCell(i == 2 ? "Calle de la Constitución Española, número 15, piso 3º izquierda, 06800 Mérida" : $"Calle {apellidos[i / 9]} {i}");
+                    tablaPdf.AddCell($"600 {i:000} {i:000}");
+                    tablaPdf.AddCell($"p{i}@correo.es");
+                }
+                documento.Add(tablaPdf);
+            }
+            var tablasPdf = ConvertidorContactos.Leer(pdfTabla);
+            var contactosPdf = ConvertidorContactos.SinRepetir(tablasPdf.Select(t => ConvertidorContactos.Analizar(t)).SelectMany(ConvertidorContactos.Contactos));
+            string FilaPdf(int n) => n < contactosPdf.Count ? Fila(contactosPdf[n]) : "(no está)";
+            Ver("Contactos PDF: una tabla en tres páginas (las siguientes sin títulos), sin el rótulo de encima",
+                $"{string.Join(", ", tablasPdf.Select(t => t.Nombre))} · {contactosPdf.Count}", "Páginas 1-3 · 45");
+            Ver("Contactos PDF: la dirección en dos líneas, entera, y los datos de la última fila",
+                FilaPdf(2) + " / " + FilaPdf(44),
+                "Eva Ruiz Romero|600 002 002|p2@correo.es|Calle de la Constitución Española, número 15, piso 3º izquierda, 06800 Mérida|| / "
+                + "Carmen Toro López|600 044 044|p44@correo.es|Calle Toro 44||");
+
+            // PDF: una ficha por página, con rótulos con y sin dos puntos y la emergencia en líneas sueltas.
+            string pdfFichas = Path.Combine(carpeta, "fichas.pdf");
+            using (var documento = new iText.Layout.Document(new iText.Kernel.Pdf.PdfDocument(new iText.Kernel.Pdf.PdfWriter(pdfFichas))))
+            {
+                string[][] personas =
+                {
+                    new[] { "Ana Ruiz Gil", "Calle Mayor 5", "600 111 222", "ana@correo.es", "María Gil (madre)", "611 000 111" },
+                    new[] { "Luis Pérez Sanz", "Plaza Sol 3", "622 333 444", "luis@correo.es", "Rosa Sanz (esposa)", "633 444 555" },
+                    new[] { "Eva Toro López", "Avenida Luna 7", "644 555 666", "eva@correo.es", "Juan Toro (padre)", "655 666 777" }
+                };
+                for (int i = 0; i < personas.Length; i++)
+                {
+                    if (i > 0) documento.Add(new iText.Layout.Element.AreaBreak());
+                    string[] p = personas[i];
+                    foreach (string linea in new[] { "Ficha de la persona", "Nombre " + p[0], "Dirección " + p[1], "Teléfono móvil: " + p[2], "Correo " + p[3], "Contactos de emergencia", p[4], p[5] })
+                        documento.Add(new iText.Layout.Element.Paragraph(linea));
+                }
+            }
+            Ver("Contactos PDF: una ficha por página (rótulos con y sin dos puntos; la emergencia en líneas sueltas)",
+                Contactos(pdfFichas),
+                "Ana Ruiz Gil|600 111 222|ana@correo.es|Calle Mayor 5|María Gil (madre)|611 000 111 / "
+                + "Luis Pérez Sanz|622 333 444|luis@correo.es|Plaza Sol 3|Rosa Sanz (esposa)|633 444 555 / "
+                + "Eva Toro López|644 555 666|eva@correo.es|Avenida Luna 7|Juan Toro (padre)|655 666 777");
+
+            string pdfEscaneado = Path.Combine(carpeta, "escaneado.pdf");
+            using (var pdf = new iText.Kernel.Pdf.PdfDocument(new iText.Kernel.Pdf.PdfWriter(pdfEscaneado)))
+            {
+                pdf.AddNewPage();
+            }
+            string escaneado;
+            try { ConvertidorContactos.Leer(pdfEscaneado); escaneado = "se leyó"; }
+            catch (NotSupportedException ex) { escaneado = ex.Message[..24]; }
+            Ver("Contactos PDF: uno escaneado (sin texto) se avisa", escaneado, "Es un PDF escaneado (una");
         }
         finally { try { Directory.Delete(carpeta, true); } catch (IOException) { } }
 
